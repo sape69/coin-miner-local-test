@@ -22,8 +22,33 @@ class CoinMinerApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  double balance = 0.0;
+  bool mining = false;
+
+  void startMining() {
+    if (mining) return;
+
+    setState(() {
+      mining = true;
+    });
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+
+      setState(() {
+        balance += 0.000001;
+        mining = false;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,17 +102,18 @@ class HomePage extends StatelessWidget {
                 width: double.infinity,
                 height: 70,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: mining ? null : startMining,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber,
                     foregroundColor: Colors.black,
+                    disabledBackgroundColor: Colors.grey,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text(
-                    'LOUHII',
-                    style: TextStyle(
+                  child: Text(
+                    mining ? 'LOUHINTA...' : 'LOUHII',
+                    style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -97,9 +123,9 @@ class HomePage extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              const Text(
-                'Saldo: 0.000000 COIN',
-                style: TextStyle(
+              Text(
+                'Saldo: ${balance.toStringAsFixed(6)} COIN',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
