@@ -14,7 +14,7 @@ class CoinMinerApp extends StatelessWidget {
       title: 'COIN MINER',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0B1020),
+        scaffoldBackgroundColor: const Color(0xFF10141C),
         useMaterial3: true,
       ),
       home: const HomePage(),
@@ -30,39 +30,40 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  double balance = 0.0;
-  bool mining = false;
+  double coins = 0.0;
+  bool minedToday = false;
 
-  void startMining() {
-    if (mining) return;
+  void mineCoins() {
+    if (minedToday) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Olet jo louhinut tänään!'),
+        ),
+      );
+      return;
+    }
 
     setState(() {
-      mining = true;
+      coins += 10.0;
+      minedToday = true;
     });
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return;
-
-      setState(() {
-        balance += 0.000001;
-        mining = false;
-      });
-    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('+10 COINS lisätty!'),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF11182D),
-        centerTitle: true,
         title: const Text(
           'COIN MINER',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
       ),
       body: Center(
         child: Padding(
@@ -71,63 +72,102 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.monetization_on,
-                size: 100,
+                Icons.currency_bitcoin,
+                size: 90,
                 color: Colors.amber,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
               const Text(
-                'COIN MINER',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              const Text(
-                'Louhi kolikoita päivittäin',
+                'YOUR BALANCE',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white70,
                 ),
               ),
 
-              const SizedBox(height: 45),
+              const SizedBox(height: 10),
+
+              Text(
+                coins.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
+                ),
+              ),
+
+              const Text(
+                'COINS',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white70,
+                ),
+              ),
+
+              const SizedBox(height: 50),
 
               SizedBox(
                 width: double.infinity,
-                height: 70,
-                child: ElevatedButton(
-                  onPressed: mining ? null : startMining,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    foregroundColor: Colors.black,
-                    disabledBackgroundColor: Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    mining ? 'LOUHINTA...' : 'LOUHII',
+                height: 60,
+                child: ElevatedButton.icon(
+                  onPressed: minedToday ? null : mineCoins,
+                  icon: const Icon(Icons.bolt),
+                  label: Text(
+                    minedToday
+                        ? 'MINED TODAY'
+                        : 'MINE COINS',
                     style: const TextStyle(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
 
-              Text(
-                'Saldo: ${balance.toStringAsFixed(6)} COIN',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              const Text(
+                'Come back tomorrow to mine again!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 15,
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.ondemand_video,
+                      size: 35,
+                      color: Colors.amber,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'WATCH AD TO EARN MORE',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'Ads will be added later with AdMob.',
+                      style: TextStyle(
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
