@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await MobileAds.instance.initialize();
-
+  // Käynnistetään sovellus ensin.
+  // Mainos-SDK ei saa estää sovellusta käynnistymästä.
   runApp(const CoinMinerApp());
+
+  // Alustetaan mainokset taustalla.
+  try {
+    await MobileAds.instance.initialize();
+  } catch (e) {
+    debugPrint('AdMob initialization error: $e');
+  }
 }
 
 class CoinMinerApp extends StatelessWidget {
@@ -50,7 +57,9 @@ class _HomePageState extends State<HomePage> {
 
   RewardedAd? rewardedAd;
   bool rewardedAdReady = false;
+  bool loadingAd = false;
 
+  // Googlen TEST rewarded ad.
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -67,21 +76,33 @@ class _HomePageState extends State<HomePage> {
   // ------------------------------------------------------------
 
   Future<void> loadData() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    final savedBalance = prefs.getDouble('balance') ?? 0.0;
-    final savedStreak = prefs.getInt('streak') ?? 0;
-    final savedDate = prefs.getString('lastMineDate') ?? '';
+      final savedBalance = prefs.getDouble('balance') ?? 0.0;
+      final savedStreak = prefs.getInt('streak') ?? 0;
+      final savedDate = prefs.getString('lastMineDate') ?? '';
 
-    final today = dateKey(DateTime.now());
+      final today = dateKey(DateTime.now());
 
-    setState(() {
-      balance = savedBalance;
-      streak = savedStreak;
-      lastMineDate = savedDate;
-      minedToday = savedDate == today;
-      loading = false;
-    });
+      if (!mounted) return;
+
+      setState(() {
+        balance = savedBalance;
+        streak = savedStreak;
+        lastMineDate = savedDate;
+        minedToday = savedDate == today;
+        loading = false;
+      });
+    } catch (e) {
+      debugPrint('Load data error: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
+    }
   }
 
   // ------------------------------------------------------------
@@ -89,11 +110,15 @@ class _HomePageState extends State<HomePage> {
   // ------------------------------------------------------------
 
   Future<void> saveData() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setDouble('balance', balance);
-    await prefs.setInt('streak', streak);
-    await prefs.setString('lastMineDate', lastMineDate);
+      await prefs.setDouble('balance', balance);
+      await prefs.setInt('streak', streak);
+      await prefs.setString('lastMineDate', lastMineDate);
+    } catch (e) {
+      debugPrint('Save data error: $e');
+    }
   }
 
   // ------------------------------------------------------------
@@ -101,7 +126,8 @@ class _HomePageState extends State<HomePage> {
   // ------------------------------------------------------------
 
   String dateKey(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+    return '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
   }
 
@@ -132,7 +158,6 @@ class _HomePageState extends State<HomePage> {
       streak = 1;
     }
 
-    // Daily mining reward.
     const double dailyReward = 10.0;
 
     balance += dailyReward;
@@ -141,6 +166,8 @@ class _HomePageState extends State<HomePage> {
     minedToday = true;
 
     await saveData();
+
+    if (!mounted) return;
 
     setState(() {});
 
@@ -155,13 +182,22 @@ class _HomePageState extends State<HomePage> {
   // ------------------------------------------------------------
 
   void loadRewardedAd() {
+    if (loadingAd || rewardedAdReady) {
+      return;
+    }
+
+    loadingAd = true;
+
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
-          rewardedAd = ad;
+          loadingAd = false;
 
+          rewardedAd?.dispose();
+
+          rewardedAd = ad;
           rewardedAdReady = true;
 
           ad.fullScreenContentCallback =
@@ -177,6 +213,10 @@ class _HomePageState extends State<HomePage> {
             },
             onAdFailedToShowFullScreenContent:
                 (RewardedAd ad, AdError error) {
+              debugPrint(
+                'Rewarded ad show error: $error',
+              );
+
               ad.dispose();
 
               rewardedAd = null;
@@ -186,13 +226,24 @@ class _HomePageState extends State<HomePage> {
             },
           );
 
-          setState(() {});
+          if (mounted) {
+            setState(() {});
+          }
         },
         onAdFailedToLoad: (LoadAdError error) {
+          loadingAd = false;
+
+          rewardedAd?.dispose();
           rewardedAd = null;
           rewardedAdReady = false;
 
-          setState(() {});
+          debugPrint(
+            'Rewarded ad load error: $error',
+          );
+
+          if (mounted) {
+            setState(() {});
+          }
         },
       ),
     );
@@ -206,7 +257,6 @@ class _HomePageState extends State<HomePage> {
       );
 
       loadRewardedAd();
-
       return;
     }
 
@@ -224,14 +274,14 @@ class _HomePageState extends State<HomePage> {
 
         await saveData();
 
-        if (mounted) {
-          setState(() {});
+        if (!mounted) return;
 
-          showMessage(
-            '+25 COINS reward!',
-            Icons.card_giftcard,
-          );
-        }
+        setState(() {});
+
+        showMessage(
+          '+25 COINS reward!',
+          Icons.card_giftcard,
+        );
       },
     );
   }
@@ -241,11 +291,17 @@ class _HomePageState extends State<HomePage> {
   // ------------------------------------------------------------
 
   Future<void> resetAccount() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    await prefs.remove('balance');
-    await prefs.remove('streak');
-    await prefs.remove('lastMineDate');
+      await prefs.remove('balance');
+      await prefs.remove('streak');
+      await prefs.remove('lastMineDate');
+    } catch (e) {
+      debugPrint('Reset error: $e');
+    }
+
+    if (!mounted) return;
 
     setState(() {
       balance = 0.0;
@@ -342,16 +398,13 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-
               const SizedBox(height: 25),
 
-              // COIN ICON
               Container(
                 width: 125,
                 height: 125,
@@ -408,7 +461,6 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 25),
 
-              // STREAK
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -450,7 +502,6 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 25),
 
-              // MINE BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 64,
@@ -502,7 +553,6 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 30),
 
-              // REWARDED AD CARD
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
@@ -515,7 +565,6 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: Column(
                   children: [
-
                     const Icon(
                       Icons.ondemand_video,
                       color: Colors.amber,
@@ -580,7 +629,6 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 30),
 
-              // STATS
               Row(
                 children: [
                   Expanded(
@@ -603,7 +651,6 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 30),
 
-              // INFO
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
@@ -711,9 +758,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Reset account?',
-          ),
+          title: const Text('Reset account?'),
           content: const Text(
             'This will delete the local test balance '
             'and mining streak.',
