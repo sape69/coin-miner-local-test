@@ -12,69 +12,78 @@ jobs:
 
     steps:
 
-      # 1. Hae projektin tiedostot
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Asenna Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: "3.27.0"
           channel: stable
           cache: true
 
-      # 3. Tarkista Flutter
-      - name: Flutter version
+      - name: Show Flutter version
         run: flutter --version
 
-      # 4. Luo Android-projekti uudelleen
       - name: Regenerate Android project
         run: flutter create --platforms=android .
 
-      # 5. Korjaa Android Gradle Plugin
       - name: Fix Android Gradle Plugin
-        shell: bash
-        run: |
-          set -e
-
-          sed -i \
-            's/id "com.android.application" version "8.1.0"/id "com.android.application" version "8.1.1"/' \
-            android/settings.gradle
-
-          sed -i \
-            "s/id 'com.android.application' version '8.1.0'/id 'com.android.application' version '8.1.1'/" \
-            android/settings.gradle
-
-          echo "Android Gradle Plugin:"
-          grep "com.android.application" android/settings.gradle || true
-
-      # 6. Aseta Android min SDK 23
-      - name: Set Android minSdk 23
         shell: bash
         run: |
           set -e
 
           python3 <<'PY'
           from pathlib import Path
+          import re
+
+          path = Path("android/settings.gradle")
+          text = path.read_text()
+
+          # Vaihdetaan mikä tahansa com.android.application
+          # version 8.x.x -> 8.1.1
+          text = re.sub(
+              r'(com\.android\.application["\']?\)?\s*version\s*[\"\']?)8\.\d+\.\d+',
+              r'\g<1>8.1.1',
+              text
+          )
+
+          path.write_text(text)
+          PY
+
+          echo "===== android/settings.gradle ====="
+          cat android/settings.gradle
+
+          echo "===== Android Gradle Plugin ====="
+          grep -n "com.android.application" android/settings.gradle
+
+      - name: Set minSdk 23
+        shell: bash
+        run: |
+          set -e
+
+          python3 <<'PY'
+          from pathlib import Path
+          import re
 
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          # Uudempi Flutter/Gradle-muoto
+          # Flutterin uusi syntaksi
           text = text.replace(
               "minSdk = flutter.minSdkVersion",
               "minSdk = 23"
           )
 
-          # Vanhempi Gradle-muoto
+          # Vanha syntaksi
           text = text.replace(
               "minSdkVersion flutter.minSdkVersion",
               "minSdkVersion 23"
           )
 
-          # Jos minSdk-arvoa ei löytynyt, lisää se defaultConfig-lohkoon
-          if "minSdk = 23" not in text and "minSdkVersion 23" not in text:
+          # Jos minSdk ei ole vielä olemassa,
+          # lisätään se defaultConfig-lohkoon.
+          if not re.search(r'\bminSdk(?:Version)?\s*[=:]\s*23', text):
               text = text.replace(
                   "defaultConfig {",
                   "defaultConfig {\n        minSdk = 23",
@@ -84,23 +93,15 @@ jobs:
           path.write_text(text)
           PY
 
-          echo "Android minSdk:"
+          echo "===== minSdk ====="
           grep -n "minSdk" android/app/build.gradle || true
 
-      # 7. Hae riippuvuudet
       - name: Flutter dependencies
         run: flutter pub get
 
-      # 8. Tarkista projektin analyysi
-      - name: Flutter analyze
-        run: flutter analyze
-        continue-on-error: true
-
-      # 9. Rakenna APK
       - name: Build APK
         run: flutter build apk --debug
 
-      # 10. Lataa APK GitHub Actionsista
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
