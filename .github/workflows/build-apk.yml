@@ -1,4 +1,4 @@
-name: Build COIN MINER APK
+name: Build Android APK
 
 on:
   workflow_dispatch:
@@ -11,18 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.29.3'
           channel: stable
+          cache: true
 
-      - name: Create Android project
-        run: flutter create --platforms=android .
-
-      - name: Get dependencies
+      - name: Flutter dependencies
         run: flutter pub get
 
       - name: Build APK
@@ -31,5 +30,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: coin-miner-test-apk
+          name: coin-miner-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
