@@ -15,16 +15,12 @@ jobs:
 
     steps:
 
-      # --------------------------------------------------
       # 1. Hae projekti
-      # --------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
 
-      # --------------------------------------------------
       # 2. Asenna Flutter
-      # --------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -33,24 +29,23 @@ jobs:
           cache: true
 
 
-      # --------------------------------------------------
       # 3. Tarkista Flutter
-      # --------------------------------------------------
       - name: Show Flutter version
         run: flutter --version
 
 
-      # --------------------------------------------------
       # 4. Luo Android-projekti
-      # --------------------------------------------------
       - name: Create Android project
         run: |
           flutter create --platforms=android .
 
+          # flutter create luo oletuksena widget_test.dart-tiedoston.
+          # Meidän sovelluksemme ei käytä MyApp-luokkaa,
+          # joten poistetaan automaattisesti luotu testi.
+          rm -rf test
 
-      # --------------------------------------------------
+
       # 5. Korjaa Android Gradle Plugin + Kotlin
-      # --------------------------------------------------
       - name: Fix Android Gradle and Kotlin
         shell: bash
         run: |
@@ -63,14 +58,14 @@ jobs:
           path = Path("android/settings.gradle")
           text = path.read_text()
 
-          # Android Gradle Plugin 8.1.1
+          # Android Gradle Plugin
           text = re.sub(
               r'(id\s+["\']com\.android\.application["\']\s+version\s+["\'])[^"\']+',
               r'\g<1>8.1.1',
               text
           )
 
-          # Kotlin 2.1.0
+          # Kotlin
           text = re.sub(
               r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'])[^"\']+',
               r'\g<1>2.1.0',
@@ -84,9 +79,7 @@ jobs:
           cat android/settings.gradle
 
 
-      # --------------------------------------------------
       # 6. Aseta minSdk 23
-      # --------------------------------------------------
       - name: Set minSdk 23
         shell: bash
         run: |
@@ -98,13 +91,11 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          # Uusi Flutter-syntaksi
           text = text.replace(
               "minSdk = flutter.minSdkVersion",
               "minSdk = 23"
           )
 
-          # Vanha Flutter-syntaksi
           text = text.replace(
               "minSdkVersion flutter.minSdkVersion",
               "minSdkVersion 23"
@@ -117,9 +108,7 @@ jobs:
           grep -n "minSdk" android/app/build.gradle || true
 
 
-      # --------------------------------------------------
       # 7. Lisää AdMob TESTI App ID
-      # --------------------------------------------------
       - name: Configure AdMob
         shell: bash
         run: |
@@ -134,7 +123,7 @@ jobs:
 
           text = path.read_text()
 
-          # Googlen virallinen TESTI App ID
+          # Googlen virallinen AdMob TESTI App ID
           app_id = "ca-app-pub-3940256099942544~3347511713"
 
           metadata = (
@@ -158,32 +147,23 @@ jobs:
           cat android/app/src/main/AndroidManifest.xml
 
 
-      # --------------------------------------------------
       # 8. Flutter riippuvuudet
-      # --------------------------------------------------
       - name: Flutter dependencies
         run: flutter pub get
 
 
-      # --------------------------------------------------
       # 9. Tarkista Flutter-projekti
-      # --------------------------------------------------
       - name: Flutter analyze
         run: flutter analyze
-        continue-on-error: true
 
 
-      # --------------------------------------------------
       # 10. Rakenna APK
-      # --------------------------------------------------
       - name: Build APK
         run: |
           flutter build apk --debug
 
 
-      # --------------------------------------------------
       # 11. Tallenna Android-kansio GitHubiin
-      # --------------------------------------------------
       - name: Commit Android project
         shell: bash
         run: |
@@ -203,9 +183,7 @@ jobs:
           fi
 
 
-      # --------------------------------------------------
       # 12. Lataa APK GitHub Actionsiin
-      # --------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
