@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,14 +27,13 @@ jobs:
       - name: Show Flutter version
         run: flutter --version
 
-      - name: Regenerate Android project
-        run: flutter create --platforms=android .
+      - name: Create Android project
+        run: |
+          flutter create --platforms=android .
 
       - name: Fix Android Gradle and Kotlin
         shell: bash
         run: |
-          set -e
-
           python3 <<'PY'
           from pathlib import Path
           import re
@@ -39,34 +41,26 @@ jobs:
           path = Path("android/settings.gradle")
           text = path.read_text()
 
-          # Android Gradle Plugin 8.1.1
           text = re.sub(
-              r'(id\s+["\']com\.android\.application["\']\s+version\s+["\'])[^"\']+(["\'])',
-              r'\g<1>8.1.1\g<2>',
+              r'(id\s+["\']com\.android\.application["\']\s+version\s+["\'])[^"\']+',
+              r'\g<1>8.1.1',
               text
           )
 
-          # Kotlin 2.1.0
           text = re.sub(
-              r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'])[^"\']+(["\'])',
-              r'\g<1>2.1.0\g<2>',
+              r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'])[^"\']+',
+              r'\g<1>2.1.0',
               text
           )
 
           path.write_text(text)
           PY
 
-          echo "===== settings.gradle ====="
-          cat android/settings.gradle
-
-      - name: Set Android minSdk 23
+      - name: Set minSdk 23
         shell: bash
         run: |
-          set -e
-
           python3 <<'PY'
           from pathlib import Path
-          import re
 
           path = Path("android/app/build.gradle")
           text = path.read_text()
@@ -81,24 +75,29 @@ jobs:
               "minSdkVersion 23"
           )
 
-          if not re.search(r'\bminSdk(?:Version)?\s*[=:]\s*23', text):
-              text = text.replace(
-                  "defaultConfig {",
-                  "defaultConfig {\n        minSdk = 23",
-                  1
-              )
-
           path.write_text(text)
           PY
-
-          echo "===== minSdk ====="
-          grep -n "minSdk" android/app/build.gradle || true
 
       - name: Flutter dependencies
         run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --debug
+
+      - name: Commit Android folder
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add android
+
+          if git diff --cached --quiet; then
+            echo "No Android changes to commit."
+          else
+            git commit -m "Add generated Android project"
+            git push
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
