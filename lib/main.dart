@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  MobileAds.instance.initialize();
+  await MobileAds.instance.initialize();
 
   runApp(const CoinMinerApp());
 }
@@ -20,7 +20,7 @@ class CoinMinerApp extends StatelessWidget {
       title: 'COIN MINER',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0E1119),
+        scaffoldBackgroundColor: const Color(0xFF0E1118),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.amber,
           brightness: Brightness.dark,
@@ -40,17 +40,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  double coins = 0.0;
+  double balance = 0.0;
+  int streak = 0;
+
+  String lastMineDate = '';
+
   bool minedToday = false;
   bool loading = true;
-  bool adLoading = false;
 
   RewardedAd? rewardedAd;
+  bool rewardedAdReady = false;
 
-  static const double dailyReward = 10.0;
-  static const double adReward = 5.0;
-
-  // Googlen virallinen Android Rewarded testimainos.
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -62,32 +62,97 @@ class _HomePageState extends State<HomePage> {
     loadRewardedAd();
   }
 
-  @override
-  void dispose() {
-    rewardedAd?.dispose();
-    super.dispose();
-  }
-
-  String dateKey(DateTime date) {
-    return '${date.year}-${date.month}-${date.day}';
-  }
+  // ------------------------------------------------------------
+  // LOAD DATA
+  // ------------------------------------------------------------
 
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final savedCoins = prefs.getDouble('coins') ?? 0.0;
-    final lastMineDate = prefs.getString('lastMineDate');
+    final savedBalance = prefs.getDouble('balance') ?? 0.0;
+    final savedStreak = prefs.getInt('streak') ?? 0;
+    final savedDate = prefs.getString('lastMineDate') ?? '';
 
     final today = dateKey(DateTime.now());
 
-    if (!mounted) return;
-
     setState(() {
-      coins = savedCoins;
-      minedToday = lastMineDate == today;
+      balance = savedBalance;
+      streak = savedStreak;
+      lastMineDate = savedDate;
+      minedToday = savedDate == today;
       loading = false;
     });
   }
+
+  // ------------------------------------------------------------
+  // SAVE DATA
+  // ------------------------------------------------------------
+
+  Future<void> saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setDouble('balance', balance);
+    await prefs.setInt('streak', streak);
+    await prefs.setString('lastMineDate', lastMineDate);
+  }
+
+  // ------------------------------------------------------------
+  // DATE
+  // ------------------------------------------------------------
+
+  String dateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  // ------------------------------------------------------------
+  // MINE
+  // ------------------------------------------------------------
+
+  Future<void> mineCoins() async {
+    if (minedToday) {
+      showMessage(
+        'You have already mined today.',
+        Icons.lock_clock,
+      );
+      return;
+    }
+
+    final today = DateTime.now();
+
+    final yesterday = today.subtract(
+      const Duration(days: 1),
+    );
+
+    final yesterdayKey = dateKey(yesterday);
+
+    if (lastMineDate == yesterdayKey) {
+      streak++;
+    } else {
+      streak = 1;
+    }
+
+    // Daily mining reward.
+    const double dailyReward = 10.0;
+
+    balance += dailyReward;
+
+    lastMineDate = dateKey(today);
+    minedToday = true;
+
+    await saveData();
+
+    setState(() {});
+
+    showMessage(
+      '+10 COINS mined!',
+      Icons.bolt,
+    );
+  }
+
+  // ------------------------------------------------------------
+  // REWARDED AD
+  // ------------------------------------------------------------
 
   void loadRewardedAd() {
     RewardedAd.load(
@@ -96,57 +161,51 @@ class _HomePageState extends State<HomePage> {
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
           rewardedAd = ad;
-          adLoading = false;
 
-          debugPrint('Rewarded Ad loaded.');
+          rewardedAdReady = true;
+
+          ad.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdDismissedFullScreenContent:
+                (RewardedAd ad) {
+              ad.dispose();
+
+              rewardedAd = null;
+              rewardedAdReady = false;
+
+              loadRewardedAd();
+            },
+            onAdFailedToShowFullScreenContent:
+                (RewardedAd ad, AdError error) {
+              ad.dispose();
+
+              rewardedAd = null;
+              rewardedAdReady = false;
+
+              loadRewardedAd();
+            },
+          );
+
+          setState(() {});
         },
         onAdFailedToLoad: (LoadAdError error) {
           rewardedAd = null;
-          adLoading = false;
+          rewardedAdReady = false;
 
-          debugPrint(
-            'Rewarded Ad failed to load: $error',
-          );
+          setState(() {});
         },
       ),
     );
-
-    adLoading = true;
   }
 
-  Future<void> mineCoins() async {
-    if (minedToday) {
-      showMessage('Olet jo louhinut tänään.');
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-
-    final newBalance = coins + dailyReward;
-    final today = dateKey(DateTime.now());
-
-    await prefs.setDouble('coins', newBalance);
-    await prefs.setString('lastMineDate', today);
-
-    if (!mounted) return;
-
-    setState(() {
-      coins = newBalance;
-      minedToday = true;
-    });
-
-    showMessage('+10 COINS lisätty!');
-  }
-
-  void watchAd() {
-    if (rewardedAd == null) {
+  void showRewardedAd() {
+    if (!rewardedAdReady || rewardedAd == null) {
       showMessage(
-        'Mainos ei ole vielä valmis. Yritä hetken päästä uudelleen.',
+        'Ad is loading. Try again in a moment.',
+        Icons.hourglass_top,
       );
 
-      if (!adLoading) {
-        loadRewardedAd();
-      }
+      loadRewardedAd();
 
       return;
     }
@@ -154,299 +213,534 @@ class _HomePageState extends State<HomePage> {
     final ad = rewardedAd!;
 
     rewardedAd = null;
-
-    ad.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (RewardedAd ad) {
-        debugPrint('Rewarded Ad shown.');
-      },
-      onAdDismissedFullScreenContent: (RewardedAd ad) {
-        debugPrint('Rewarded Ad dismissed.');
-
-        ad.dispose();
-        loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent:
-          (RewardedAd ad, AdError error) {
-        debugPrint(
-          'Rewarded Ad failed to show: $error',
-        );
-
-        ad.dispose();
-        loadRewardedAd();
-
-        showMessage('Mainoksen näyttäminen epäonnistui.');
-      },
-    );
+    rewardedAdReady = false;
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
-        addAdReward();
+          (AdWithoutView ad, RewardItem reward) async {
+        const double bonus = 25.0;
+
+        balance += bonus;
+
+        await saveData();
+
+        if (mounted) {
+          setState(() {});
+
+          showMessage(
+            '+25 COINS reward!',
+            Icons.card_giftcard,
+          );
+        }
       },
     );
   }
 
-  Future<void> addAdReward() async {
+  // ------------------------------------------------------------
+  // RESET
+  // ------------------------------------------------------------
+
+  Future<void> resetAccount() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final newBalance = coins + adReward;
-
-    await prefs.setDouble('coins', newBalance);
-
-    if (!mounted) return;
-
-    setState(() {
-      coins = newBalance;
-    });
-
-    showMessage('+5 COINS palkkiona!');
-  }
-
-  Future<void> resetDemo() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.remove('coins');
+    await prefs.remove('balance');
+    await prefs.remove('streak');
     await prefs.remove('lastMineDate');
 
-    if (!mounted) return;
-
     setState(() {
-      coins = 0.0;
+      balance = 0.0;
+      streak = 0;
+      lastMineDate = '';
       minedToday = false;
     });
 
-    showMessage('Demo nollattu.');
+    showMessage(
+      'Test account reset.',
+      Icons.refresh,
+    );
   }
 
-  void showMessage(String text) {
+  // ------------------------------------------------------------
+  // MESSAGE
+  // ------------------------------------------------------------
+
+  void showMessage(
+    String text,
+    IconData icon,
+  ) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(text),
         behavior: SnackBarBehavior.floating,
+        content: Row(
+          children: [
+            Icon(
+              icon,
+              color: Colors.amber,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(text),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // ------------------------------------------------------------
+  // UI
+  // ------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Colors.amber,
+          ),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           'COIN MINER',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
           ),
         ),
-        centerTitle: true,
         backgroundColor: const Color(0xFF17131C),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'reset') {
+                showResetDialog();
+              }
+            },
+            itemBuilder: (context) {
+              return const [
+                PopupMenuItem(
+                  value: 'reset',
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh),
+                      SizedBox(width: 10),
+                      Text('Reset test account'),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const SizedBox(height: 25),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
 
-                const Icon(
-                  Icons.currency_bitcoin,
-                  size: 95,
+              const SizedBox(height: 25),
+
+              // COIN ICON
+              Container(
+                width: 125,
+                height: 125,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.amber.withOpacity(0.12),
+                  border: Border.all(
+                    color: Colors.amber.withOpacity(0.35),
+                    width: 2,
+                  ),
+                ),
+                child: const Center(
+                  child: Text(
+                    '₿',
+                    style: TextStyle(
+                      fontSize: 82,
+                      color: Colors.amber,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              const Text(
+                'YOUR BALANCE',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white70,
+                  letterSpacing: 1,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                balance.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 58,
+                  fontWeight: FontWeight.bold,
                   color: Colors.amber,
                 ),
+              ),
 
-                const SizedBox(height: 25),
-
-                const Text(
-                  'YOUR BALANCE',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
-                  ),
+              const Text(
+                'COINS',
+                style: TextStyle(
+                  fontSize: 21,
+                  color: Colors.white70,
+                  letterSpacing: 2,
                 ),
+              ),
 
-                const SizedBox(height: 10),
+              const SizedBox(height: 25),
 
-                Text(
-                  coins.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 52,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber,
-                  ),
+              // STREAK
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 20,
                 ),
-
-                const Text(
-                  'COINS',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.white70,
-                  ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B1F29),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-
-                const SizedBox(height: 45),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 62,
-                  child: ElevatedButton.icon(
-                    onPressed:
-                        minedToday ? null : mineCoins,
-                    icon: Icon(
-                      minedToday
-                          ? Icons.check_circle
-                          : Icons.bolt,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.local_fire_department,
+                      color: Colors.orange,
+                      size: 30,
                     ),
-                    label: Text(
-                      minedToday
-                          ? 'MINED TODAY'
-                          : 'MINE +10 COINS',
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'MINING STREAK',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$streak DAYS',
                       style: const TextStyle(
-                        fontSize: 20,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // MINE BUTTON
+              SizedBox(
+                width: double.infinity,
+                height: 64,
+                child: ElevatedButton.icon(
+                  onPressed:
+                      minedToday ? null : mineCoins,
+                  icon: Icon(
+                    minedToday
+                        ? Icons.check_circle
+                        : Icons.bolt,
+                    size: 28,
+                  ),
+                  label: Text(
+                    minedToday
+                        ? 'MINED TODAY'
+                        : 'MINE COINS',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.black,
+                    disabledBackgroundColor:
+                        const Color(0xFF27232A),
+                    disabledForegroundColor:
+                        Colors.white54,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(32),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              Text(
+                minedToday
+                    ? 'Come back tomorrow to mine again!'
+                    : 'Mine once every day to build your streak.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white60,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // REWARDED AD CARD
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C202A),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ),
+                child: Column(
+                  children: [
+
+                    const Icon(
+                      Icons.ondemand_video,
+                      color: Colors.amber,
+                      size: 48,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'WATCH AD TO EARN MORE',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 20),
+                    const SizedBox(height: 8),
 
-                Text(
-                  minedToday
-                      ? 'Come back tomorrow to mine again!'
-                      : 'Mine once every day!',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.white54,
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1B1F29),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.ondemand_video,
-                        size: 55,
-                        color: Colors.amber,
+                    const Text(
+                      'Watch a short video and receive +25 coins.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
                       ),
+                    ),
 
-                      const SizedBox(height: 15),
+                    const SizedBox(height: 18),
 
-                      const Text(
-                        'WATCH AD TO EARN MORE',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: showRewardedAd,
+                        icon: const Icon(
+                          Icons.play_arrow,
                         ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      const Text(
-                        'Watch a rewarded ad and get +5 COINS.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white54,
+                        label: Text(
+                          rewardedAdReady
+                              ? 'WATCH & EARN +25'
+                              : 'LOADING AD...',
                         ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              adLoading ? null : watchAd,
-                          icon: const Icon(
-                            Icons.play_arrow,
+                        style:
+                            OutlinedButton.styleFrom(
+                          foregroundColor:
+                              Colors.amber,
+                          side: const BorderSide(
+                            color: Colors.amber,
                           ),
-                          label: Text(
-                            adLoading
-                                ? 'LOADING AD...'
-                                : 'WATCH AD +5',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(28),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171B24),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        minedToday
-                            ? Icons.check_circle
-                            : Icons.access_time,
-                        color: minedToday
-                            ? Colors.greenAccent
-                            : Colors.amber,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          minedToday
-                              ? 'Daily mining completed'
-                              : 'Daily mining available',
-                          style: const TextStyle(
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 25),
-
-                TextButton(
-                  onPressed: resetDemo,
-                  child: const Text(
-                    'Reset demo',
-                    style: TextStyle(
-                      color: Colors.white38,
+              // STATS
+              Row(
+                children: [
+                  Expanded(
+                    child: statCard(
+                      Icons.bolt,
+                      'DAILY',
+                      '+10',
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: statCard(
+                      Icons.card_giftcard,
+                      'AD BONUS',
+                      '+25',
+                    ),
+                  ),
+                ],
+              ),
 
-                const SizedBox(height: 20),
-              ],
-            ),
+              const SizedBox(height: 30),
+
+              // INFO
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171B24),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white54,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'COIN MINER is a reward simulation app. '
+                      'The coins shown here are virtual in-app '
+                      'points and are not real cryptocurrency.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              const Text(
+                'COIN MINER v2',
+                style: TextStyle(
+                  color: Colors.white30,
+                  fontSize: 12,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  // ------------------------------------------------------------
+  // STAT CARD
+  // ------------------------------------------------------------
+
+  Widget statCard(
+    IconData icon,
+    String title,
+    String value,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B1F29),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: Colors.amber,
+            size: 28,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.amber,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Text(
+            'COINS',
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // RESET DIALOG
+  // ------------------------------------------------------------
+
+  void showResetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Reset account?',
+          ),
+          content: const Text(
+            'This will delete the local test balance '
+            'and mining streak.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                resetAccount();
+              },
+              child: const Text('RESET'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    rewardedAd?.dispose();
+    super.dispose();
   }
 }
