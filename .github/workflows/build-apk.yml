@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -28,7 +27,7 @@ jobs:
       - name: Regenerate Android project
         run: flutter create --platforms=android .
 
-      - name: Fix Android Gradle Plugin and Kotlin
+      - name: Fix Android build configuration
         shell: bash
         run: |
           set -e
@@ -36,59 +35,51 @@ jobs:
           python3 <<'PY'
           from pathlib import Path
           import re
+
+          # -------------------------------------------------
+          # android/settings.gradle
+          # -------------------------------------------------
 
           path = Path("android/settings.gradle")
           text = path.read_text()
 
           # Android Gradle Plugin
           text = re.sub(
-              r'(id\s+["\']com\.android\.application["\']\s+version\s+["\'])[^"\']+',
-              r'\g<1>8.1.1',
+              r'(id\s+["\']com\.android\.application["\']\s+version\s+["\'])[^"\']+(["\'])',
+              r'\g<1>8.1.1\g<2>',
               text
           )
 
-          # Kotlin Gradle Plugin
+          # Kotlin plugin
           text = re.sub(
-              r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'])[^"\']+',
-              r'\g<1>1.9.24',
+              r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'])[^"\']+(["\'])',
+              r'\g<1>1.9.24\g<2>',
               text
           )
 
           path.write_text(text)
-          PY
 
-          echo "===== settings.gradle ====="
-          cat android/settings.gradle
-
-          echo "===== Android Gradle Plugin ====="
-          grep -n "com.android.application" android/settings.gradle || true
-
-          echo "===== Kotlin ====="
-          grep -n "org.jetbrains.kotlin.android" android/settings.gradle || true
-
-      - name: Set minSdk 23
-        shell: bash
-        run: |
-          set -e
-
-          python3 <<'PY'
-          from pathlib import Path
-          import re
+          # -------------------------------------------------
+          # android/app/build.gradle
+          # -------------------------------------------------
 
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
+          # New Flutter syntax
           text = text.replace(
               "minSdk = flutter.minSdkVersion",
               "minSdk = 23"
           )
 
+          # Old Flutter syntax
           text = text.replace(
               "minSdkVersion flutter.minSdkVersion",
               "minSdkVersion 23"
           )
 
-          if not re.search(r'\bminSdk(?:Version)?\s*[=:]\s*23', text):
+          # If minSdk is missing, insert it
+          if not re.search(r'\bminSdk(?:Version)?\s*[=:]\s*23\b', text):
               text = text.replace(
                   "defaultConfig {",
                   "defaultConfig {\n        minSdk = 23",
@@ -96,9 +87,31 @@ jobs:
               )
 
           path.write_text(text)
+
           PY
 
-          echo "===== minSdk ====="
+          echo ""
+          echo "======================================"
+          echo "settings.gradle"
+          echo "======================================"
+          cat android/settings.gradle
+
+          echo ""
+          echo "======================================"
+          echo "Kotlin plugin"
+          echo "======================================"
+          grep -n "org.jetbrains.kotlin.android" android/settings.gradle || true
+
+          echo ""
+          echo "======================================"
+          echo "Android Gradle plugin"
+          echo "======================================"
+          grep -n "com.android.application" android/settings.gradle || true
+
+          echo ""
+          echo "======================================"
+          echo "minSdk"
+          echo "======================================"
           grep -n "minSdk" android/app/build.gradle || true
 
       - name: Flutter dependencies
