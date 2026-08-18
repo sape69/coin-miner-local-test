@@ -355,7 +355,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -372,9 +371,17 @@ class _HomePageState extends State<HomePage> {
                 height: 125,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.amber.withOpacity(0.12),
+
+                  // FIXED:
+                  // withOpacity(0.12)
+                  // -> withValues(alpha: 0.12)
+                  color: Colors.amber.withValues(alpha: 0.12),
+
                   border: Border.all(
-                    color: Colors.amber.withOpacity(0.35),
+                    // FIXED:
+                    // withOpacity(0.35)
+                    // -> withValues(alpha: 0.35)
+                    color: Colors.amber.withValues(alpha: 0.35),
                     width: 2,
                   ),
                 ),
@@ -534,7 +541,10 @@ class _HomePageState extends State<HomePage> {
                   color: const Color(0xFF1C202A),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.05),
+                    // FIXED:
+                    // withOpacity(0.05)
+                    // -> withValues(alpha: 0.05)
+                    color: Colors.white.withValues(alpha: 0.05),
                   ),
                 ),
                 child: Column(
