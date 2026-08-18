@@ -27,6 +27,11 @@ jobs:
       - name: Regenerate Android project
         run: flutter create --platforms=android .
 
+      - name: Update Android Gradle Plugin
+        run: |
+          sed -i 's/id "com.android.application" version "8.1.0"/id "com.android.application" version "8.1.1"/' android/settings.gradle
+          grep 'com.android.application' android/settings.gradle
+
       - name: Flutter dependencies
         run: flutter pub get
 
