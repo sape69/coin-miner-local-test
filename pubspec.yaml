@@ -11,5 +11,6 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.5.5
+  google_mobile_ads: ^6.0.0
 flutter:
   uses-material-design: true
