@@ -44,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   int streak = 0;
 
   String lastMineDate = '';
+  String username = '';
 
   bool minedToday = false;
   bool loading = true;
@@ -51,7 +52,6 @@ class _HomePageState extends State<HomePage> {
   RewardedAd? rewardedAd;
   bool rewardedAdReady = false;
 
-  // Google test rewarded ad.
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -73,6 +73,7 @@ class _HomePageState extends State<HomePage> {
     final savedBalance = prefs.getDouble('balance') ?? 0.0;
     final savedStreak = prefs.getInt('streak') ?? 0;
     final savedDate = prefs.getString('lastMineDate') ?? '';
+    final savedUsername = prefs.getString('username') ?? '';
 
     final today = dateKey(DateTime.now());
 
@@ -82,9 +83,14 @@ class _HomePageState extends State<HomePage> {
       balance = savedBalance;
       streak = savedStreak;
       lastMineDate = savedDate;
+      username = savedUsername;
       minedToday = savedDate == today;
       loading = false;
     });
+
+    if (username.trim().isEmpty) {
+      await showUsernameDialog();
+    }
   }
 
   // ============================================================
@@ -97,6 +103,74 @@ class _HomePageState extends State<HomePage> {
     await prefs.setDouble('balance', balance);
     await prefs.setInt('streak', streak);
     await prefs.setString('lastMineDate', lastMineDate);
+    await prefs.setString('username', username);
+  }
+
+  // ============================================================
+  // USERNAME
+  // ============================================================
+
+  Future<void> showUsernameDialog() async {
+    final controller = TextEditingController();
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Welcome to COIN MINER!',
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Choose your username.',
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLength: 20,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  hintText: 'Enter your name',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                final name = controller.text.trim();
+
+                if (name.isEmpty) {
+                  return;
+                }
+
+                username = name;
+
+                await saveData();
+
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+
+                if (mounted) {
+                  setState(() {});
+                }
+              },
+              child: const Text('CONTINUE'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
   }
 
   // ============================================================
@@ -257,6 +331,7 @@ class _HomePageState extends State<HomePage> {
     await prefs.remove('balance');
     await prefs.remove('streak');
     await prefs.remove('lastMineDate');
+    await prefs.remove('username');
 
     if (!mounted) return;
 
@@ -264,6 +339,7 @@ class _HomePageState extends State<HomePage> {
       balance = 0.0;
       streak = 0;
       lastMineDate = '';
+      username = '';
       minedToday = false;
     });
 
@@ -271,6 +347,8 @@ class _HomePageState extends State<HomePage> {
       'Test account reset.',
       Icons.refresh,
     );
+
+    await showUsernameDialog();
   }
 
   // ============================================================
@@ -355,11 +433,66 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
+              const SizedBox(height: 20),
+
+              // ==================================================
+              // USERNAME
+              // ==================================================
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B1F29),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      backgroundColor: Colors.amber,
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'MINER',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            username,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 25),
 
               // ==================================================
@@ -371,16 +504,8 @@ class _HomePageState extends State<HomePage> {
                 height: 125,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-
-                  // FIXED:
-                  // withOpacity(0.12)
-                  // -> withValues(alpha: 0.12)
                   color: Colors.amber.withValues(alpha: 0.12),
-
                   border: Border.all(
-                    // FIXED:
-                    // withOpacity(0.35)
-                    // -> withValues(alpha: 0.35)
                     color: Colors.amber.withValues(alpha: 0.35),
                     width: 2,
                   ),
@@ -541,9 +666,6 @@ class _HomePageState extends State<HomePage> {
                   color: const Color(0xFF1C202A),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    // FIXED:
-                    // withOpacity(0.05)
-                    // -> withValues(alpha: 0.05)
                     color: Colors.white.withValues(alpha: 0.05),
                   ),
                 ),
@@ -754,8 +876,8 @@ class _HomePageState extends State<HomePage> {
             'Reset account?',
           ),
           content: const Text(
-            'This will delete the local test balance '
-            'and mining streak.',
+            'This will delete the local test balance, '
+            'mining streak and username.',
           ),
           actions: [
             TextButton(
