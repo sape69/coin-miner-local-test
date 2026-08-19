@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -49,6 +51,9 @@ class _HomePageState extends State<HomePage> {
   bool minedToday = false;
   bool loading = true;
 
+  Duration timeUntilClaim = Duration.zero;
+  Timer? claimTimer;
+
   RewardedAd? rewardedAd;
   bool rewardedAdReady = false;
 
@@ -61,6 +66,13 @@ class _HomePageState extends State<HomePage> {
 
     loadData();
     loadRewardedAd();
+
+    claimTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) {
+        updateClaimTimer();
+      },
+    );
   }
 
   // ============================================================
@@ -75,8 +87,6 @@ class _HomePageState extends State<HomePage> {
     final savedDate = prefs.getString('lastMineDate') ?? '';
     final savedUsername = prefs.getString('username') ?? '';
 
-    final today = dateKey(DateTime.now());
-
     if (!mounted) return;
 
     setState(() {
@@ -84,11 +94,12 @@ class _HomePageState extends State<HomePage> {
       streak = savedStreak;
       lastMineDate = savedDate;
       username = savedUsername;
-      minedToday = savedDate == today;
       loading = false;
     });
 
-    if (username.trim().isEmpty) {
+    updateClaimTimer();
+
+    if (username.trim().isEmpty && mounted) {
       await showUsernameDialog();
     }
   }
@@ -174,7 +185,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // DATE
+  // DATE KEY
   // ============================================================
 
   String dateKey(DateTime date) {
@@ -184,28 +195,99 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
+  // CLAIM TIMER
+  // ============================================================
+
+  void updateClaimTimer() {
+    if (!mounted || loading) return;
+
+    if (lastMineDate.trim().isEmpty) {
+      if (minedToday || timeUntilClaim != Duration.zero) {
+        setState(() {
+          minedToday = false;
+          timeUntilClaim = Duration.zero;
+        });
+      }
+      return;
+    }
+
+    final lastClaim = DateTime.tryParse(lastMineDate);
+
+    if (lastClaim == null) {
+      if (minedToday || timeUntilClaim != Duration.zero) {
+        setState(() {
+          minedToday = false;
+          timeUntilClaim = Duration.zero;
+        });
+      }
+      return;
+    }
+
+    final nextClaim = lastClaim.add(
+      const Duration(hours: 24),
+    );
+
+    final remaining = nextClaim.difference(
+      DateTime.now(),
+    );
+
+    if (remaining <= Duration.zero) {
+      if (minedToday || timeUntilClaim != Duration.zero) {
+        setState(() {
+          minedToday = false;
+          timeUntilClaim = Duration.zero;
+        });
+      }
+    } else {
+      if (!minedToday ||
+          timeUntilClaim.inSeconds != remaining.inSeconds) {
+        setState(() {
+          minedToday = true;
+          timeUntilClaim = remaining;
+        });
+      }
+    }
+  }
+
+  String formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  // ============================================================
   // MINE COINS
   // ============================================================
 
   Future<void> mineCoins() async {
+    updateClaimTimer();
+
     if (minedToday) {
       showMessage(
-        'You have already mined today.',
+        'Next claim in ${formatDuration(timeUntilClaim)}',
         Icons.lock_clock,
       );
       return;
     }
 
-    final today = DateTime.now();
+    final now = DateTime.now();
 
-    final yesterday = today.subtract(
-      const Duration(days: 1),
-    );
+    final previousClaim = DateTime.tryParse(lastMineDate);
 
-    final yesterdayKey = dateKey(yesterday);
+    if (previousClaim != null) {
+      final difference = now.difference(previousClaim);
 
-    if (lastMineDate == yesterdayKey) {
-      streak++;
+      if (difference.inHours >= 24 &&
+          dateKey(previousClaim) ==
+              dateKey(now.subtract(const Duration(days: 1)))) {
+        streak++;
+      } else {
+        streak = 1;
+      }
     } else {
       streak = 1;
     }
@@ -214,8 +296,11 @@ class _HomePageState extends State<HomePage> {
 
     balance += dailyReward;
 
-    lastMineDate = dateKey(today);
+    // Save exact claim time.
+    lastMineDate = now.toIso8601String();
+
     minedToday = true;
+    timeUntilClaim = const Duration(hours: 24);
 
     await saveData();
 
@@ -224,7 +309,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
 
     showMessage(
-      '+10 COINS mined!',
+      '+10 COINS claimed!',
       Icons.bolt,
     );
   }
@@ -341,6 +426,7 @@ class _HomePageState extends State<HomePage> {
       lastMineDate = '';
       username = '';
       minedToday = false;
+      timeUntilClaim = Duration.zero;
     });
 
     showMessage(
@@ -504,9 +590,13 @@ class _HomePageState extends State<HomePage> {
                 height: 125,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.amber.withValues(alpha: 0.12),
+                  color: Colors.amber.withValues(
+                    alpha: 0.12,
+                  ),
                   border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.35),
+                    color: Colors.amber.withValues(
+                      alpha: 0.35,
+                    ),
                     width: 2,
                   ),
                 ),
@@ -601,7 +691,73 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 25),
 
               // ==================================================
-              // MINE BUTTON
+              // 24 HOUR COUNTDOWN
+              // ==================================================
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171B24),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.amber.withValues(
+                      alpha: 0.18,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      minedToday
+                          ? Icons.timer
+                          : Icons.check_circle,
+                      color: Colors.amber,
+                      size: 38,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      minedToday
+                          ? 'NEXT CLAIM IN'
+                          : 'CLAIM AVAILABLE',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      minedToday
+                          ? formatDuration(timeUntilClaim)
+                          : '00:00:00',
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      minedToday
+                          ? '24 hours between claims'
+                          : 'You can claim your +10 COINS now',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // ==================================================
+              // CLAIM BUTTON
               // ==================================================
 
               SizedBox(
@@ -612,14 +768,14 @@ class _HomePageState extends State<HomePage> {
                       minedToday ? null : mineCoins,
                   icon: Icon(
                     minedToday
-                        ? Icons.check_circle
+                        ? Icons.lock_clock
                         : Icons.bolt,
                     size: 28,
                   ),
                   label: Text(
                     minedToday
-                        ? 'MINED TODAY'
-                        : 'MINE COINS',
+                        ? 'CLAIM LOCKED'
+                        : 'CLAIM +10 COINS',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -644,8 +800,8 @@ class _HomePageState extends State<HomePage> {
 
               Text(
                 minedToday
-                    ? 'Come back tomorrow to mine again!'
-                    : 'Mine once every day to build your streak.',
+                    ? 'You can claim again when the timer reaches zero.'
+                    : 'Claim once every 24 hours.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,
@@ -666,7 +822,9 @@ class _HomePageState extends State<HomePage> {
                   color: const Color(0xFF1C202A),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: Colors.white.withValues(
+                      alpha: 0.05,
+                    ),
                   ),
                 ),
                 child: Column(
@@ -877,7 +1035,7 @@ class _HomePageState extends State<HomePage> {
           ),
           content: const Text(
             'This will delete the local test balance, '
-            'mining streak and username.',
+            'mining streak, username and 24-hour claim timer.',
           ),
           actions: [
             TextButton(
@@ -905,6 +1063,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    claimTimer?.cancel();
     rewardedAd?.dispose();
     super.dispose();
   }
