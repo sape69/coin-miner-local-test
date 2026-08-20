@@ -1,16 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await MobileAds.instance.initialize();
 
   runApp(const CoinMinerApp());
 }
+
+// ============================================================
+// APP
+// ============================================================
 
 class CoinMinerApp extends StatelessWidget {
   const CoinMinerApp({super.key});
@@ -34,6 +38,10 @@ class CoinMinerApp extends StatelessWidget {
   }
 }
 
+// ============================================================
+// HOME PAGE
+// ============================================================
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -42,124 +50,107 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // ============================================================
+  // ==========================================================
   // DATA
-  // ============================================================
+  // ==========================================================
 
   double balance = 0.0;
+
   int streak = 0;
 
   String username = '';
-  String lastMineDate = '';
 
-  DateTime? lastMineTime;
+  int lastMineAt = 0;
 
-  bool minedToday = false;
   bool loading = true;
-  bool usernameDialogShowing = false;
 
-  // ============================================================
+  // ==========================================================
   // TIMER
-  // ============================================================
+  // ==========================================================
 
   Timer? countdownTimer;
 
-  Duration timeUntilNextMine = Duration.zero;
+  Duration remaining = Duration.zero;
 
-  // ============================================================
-  // ADS
-  // ============================================================
+  // ==========================================================
+  // REWARDED AD
+  // ==========================================================
 
   RewardedAd? rewardedAd;
+
   bool rewardedAdReady = false;
 
-  // Google test rewarded ad.
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  // ============================================================
+  // ==========================================================
+  // CONSTANTS
+  // ==========================================================
+
+  static const Duration claimCooldown = Duration(hours: 24);
+
+  // ==========================================================
   // INIT
-  // ============================================================
+  // ==========================================================
 
   @override
   void initState() {
     super.initState();
 
     loadData();
-    loadRewardedAd();
 
-    countdownTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        updateCountdown();
-      },
-    );
+    loadRewardedAd();
   }
 
-  // ============================================================
+  // ==========================================================
   // LOAD DATA
-  // ============================================================
+  // ==========================================================
 
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final savedBalance = prefs.getDouble('balance') ?? 0.0;
-    final savedStreak = prefs.getInt('streak') ?? 0;
-    final savedDate = prefs.getString('lastMineDate') ?? '';
-    final savedUsername = prefs.getString('username') ?? '';
+    final savedBalance =
+        prefs.getDouble('balance') ?? 0.0;
 
-    final savedMineMillis = prefs.getInt('lastMineTime');
+    final savedStreak =
+        prefs.getInt('streak') ?? 0;
 
-    DateTime? savedMineTime;
+    final savedUsername =
+        prefs.getString('username') ?? '';
 
-    if (savedMineMillis != null) {
-      savedMineTime =
-          DateTime.fromMillisecondsSinceEpoch(savedMineMillis);
+    final savedLastMineAt =
+        prefs.getInt('lastMineAt') ?? 0;
+
+    if (!mounted) {
+      return;
     }
-
-    final now = DateTime.now();
-
-    bool canMine = true;
-
-    if (savedMineTime != null) {
-      final difference = now.difference(savedMineTime);
-
-      canMine = difference >= const Duration(hours: 24);
-    } else if (savedDate.isNotEmpty) {
-      final today = dateKey(now);
-
-      canMine = savedDate != today;
-    }
-
-    if (!mounted) return;
 
     setState(() {
       balance = savedBalance;
       streak = savedStreak;
-      lastMineDate = savedDate;
       username = savedUsername;
-      lastMineTime = savedMineTime;
-      minedToday = !canMine;
+      lastMineAt = savedLastMineAt;
       loading = false;
     });
 
     updateCountdown();
 
-    // IMPORTANT:
-    // Open username dialog AFTER the first frame.
-    // This prevents Flutter framework assertion errors.
-    if (username.trim().isEmpty && mounted) {
+    startCountdown();
+
+    // Näytetään käyttäjänimidiagogi vasta,
+    // kun ensimmäinen frame on valmis.
+    if (username.trim().isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && username.trim().isEmpty) {
+        if (mounted) {
           showUsernameDialog();
         }
       });
     }
   }
 
-  // ============================================================
+  // ==========================================================
   // SAVE DATA
-  // ============================================================
+  // ==========================================================
 
   Future<void> saveData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -175,35 +166,178 @@ class _HomePageState extends State<HomePage> {
     );
 
     await prefs.setString(
-      'lastMineDate',
-      lastMineDate,
-    );
-
-    await prefs.setString(
       'username',
       username,
     );
 
-    if (lastMineTime != null) {
-      await prefs.setInt(
-        'lastMineTime',
-        lastMineTime!.millisecondsSinceEpoch,
-      );
+    await prefs.setInt(
+      'lastMineAt',
+      lastMineAt,
+    );
+  }
+
+  // ==========================================================
+  // COUNTDOWN
+  // ==========================================================
+
+  void startCountdown() {
+    countdownTimer?.cancel();
+
+    countdownTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) {
+        updateCountdown();
+      },
+    );
+  }
+
+  void updateCountdown() {
+    if (!mounted) {
+      return;
+    }
+
+    if (lastMineAt == 0) {
+      setState(() {
+        remaining = Duration.zero;
+      });
+
+      return;
+    }
+
+    final lastClaim =
+        DateTime.fromMillisecondsSinceEpoch(
+      lastMineAt,
+    );
+
+    final nextClaim =
+        lastClaim.add(claimCooldown);
+
+    final now = DateTime.now();
+
+    final difference =
+        nextClaim.difference(now);
+
+    if (difference.isNegative ||
+        difference == Duration.zero) {
+      setState(() {
+        remaining = Duration.zero;
+      });
+    } else {
+      setState(() {
+        remaining = difference;
+      });
     }
   }
 
-  // ============================================================
+  // ==========================================================
+  // CAN CLAIM?
+  // ==========================================================
+
+  bool get canClaim {
+    if (lastMineAt == 0) {
+      return true;
+    }
+
+    return remaining == Duration.zero;
+  }
+
+  // ==========================================================
+  // FORMAT TIME
+  // ==========================================================
+
+  String formatDuration(Duration duration) {
+    final hours =
+        duration.inHours.toString().padLeft(2, '0');
+
+    final minutes =
+        (duration.inMinutes % 60)
+            .toString()
+            .padLeft(2, '0');
+
+    final seconds =
+        (duration.inSeconds % 60)
+            .toString()
+            .padLeft(2, '0');
+
+    return '$hours:$minutes:$seconds';
+  }
+
+  // ==========================================================
+  // CLAIM +10
+  // ==========================================================
+
+  Future<void> claimCoins() async {
+    if (!canClaim) {
+      showMessage(
+        'You must wait until the timer reaches 00:00:00.',
+        Icons.lock_clock,
+      );
+
+      return;
+    }
+
+    final now = DateTime.now();
+
+    // --------------------------------------------------------
+    // STREAK
+    // --------------------------------------------------------
+
+    if (lastMineAt == 0) {
+      streak = 1;
+    } else {
+      final previous =
+          DateTime.fromMillisecondsSinceEpoch(
+        lastMineAt,
+      );
+
+      final elapsed =
+          now.difference(previous);
+
+      if (elapsed <= const Duration(hours: 48)) {
+        streak++;
+      } else {
+        streak = 1;
+      }
+    }
+
+    // --------------------------------------------------------
+    // REWARD
+    // --------------------------------------------------------
+
+    balance += 10.0;
+
+    lastMineAt =
+        now.millisecondsSinceEpoch;
+
+    remaining = claimCooldown;
+
+    await saveData();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {});
+
+    showMessage(
+      '+10 COINS claimed!',
+      Icons.bolt,
+    );
+  }
+
+  // ==========================================================
   // USERNAME
-  // ============================================================
+  // ==========================================================
 
   Future<void> showUsernameDialog() async {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
-    if (usernameDialogShowing) return;
-
-    usernameDialogShowing = true;
-
-    final controller = TextEditingController();
+    final controller =
+        TextEditingController(
+      text: username,
+    );
 
     await showDialog<void>(
       context: context,
@@ -219,17 +353,23 @@ class _HomePageState extends State<HomePage> {
               const Text(
                 'Choose your username.',
               ),
+
               const SizedBox(height: 18),
+
               TextField(
                 controller: controller,
                 autofocus: true,
                 maxLength: 20,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
+                textCapitalization:
+                    TextCapitalization.words,
+                decoration:
+                    const InputDecoration(
                   labelText: 'Username',
                   hintText: 'Enter your name',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
+                  prefixIcon:
+                      Icon(Icons.person),
+                  border:
+                      OutlineInputBorder(),
                 ),
               ),
             ],
@@ -237,7 +377,8 @@ class _HomePageState extends State<HomePage> {
           actions: [
             ElevatedButton(
               onPressed: () async {
-                final name = controller.text.trim();
+                final name =
+                    controller.text.trim();
 
                 if (name.isEmpty) {
                   return;
@@ -247,17 +388,19 @@ class _HomePageState extends State<HomePage> {
 
                 await saveData();
 
-                if (!mounted) return;
-
                 if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
+                  Navigator.of(
+                    dialogContext,
+                  ).pop();
                 }
 
                 if (mounted) {
                   setState(() {});
                 }
               },
-              child: const Text('CONTINUE'),
+              child: const Text(
+                'CONTINUE',
+              ),
             ),
           ],
         );
@@ -265,141 +408,21 @@ class _HomePageState extends State<HomePage> {
     );
 
     controller.dispose();
-
-    usernameDialogShowing = false;
   }
 
-  // ============================================================
-  // DATE KEY
-  // ============================================================
-
-  String dateKey(DateTime date) {
-    return '${date.year}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-  }
-
-  // ============================================================
-  // COUNTDOWN
-  // ============================================================
-
-  void updateCountdown() {
-    if (!mounted) return;
-
-    if (lastMineTime == null) {
-      if (timeUntilNextMine != Duration.zero) {
-        setState(() {
-          timeUntilNextMine = Duration.zero;
-          minedToday = false;
-        });
-      }
-
-      return;
-    }
-
-    final now = DateTime.now();
-
-    final nextMine =
-        lastMineTime!.add(const Duration(hours: 24));
-
-    final remaining = nextMine.difference(now);
-
-    if (remaining <= Duration.zero) {
-      if (mounted) {
-        setState(() {
-          timeUntilNextMine = Duration.zero;
-          minedToday = false;
-        });
-      }
-
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        timeUntilNextMine = remaining;
-        minedToday = true;
-      });
-    }
-  }
-
-  String formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
-  }
-
-  // ============================================================
-  // MINE COINS
-  // ============================================================
-
-  Future<void> mineCoins() async {
-    updateCountdown();
-
-    if (minedToday) {
-      showMessage(
-        'You must wait 24 hours before mining again.',
-        Icons.lock_clock,
-      );
-      return;
-    }
-
-    final now = DateTime.now();
-
-    final yesterday = now.subtract(
-      const Duration(days: 1),
-    );
-
-    final yesterdayKey = dateKey(yesterday);
-
-    if (lastMineDate == yesterdayKey) {
-      streak++;
-    } else {
-      streak = 1;
-    }
-
-    const double dailyReward = 10.0;
-
-    balance += dailyReward;
-
-    lastMineDate = dateKey(now);
-    lastMineTime = now;
-
-    minedToday = true;
-
-    await saveData();
-
-    updateCountdown();
-
-    if (!mounted) return;
-
-    setState(() {});
-
-    showMessage(
-      '+10 COINS mined!',
-      Icons.bolt,
-    );
-  }
-
-  // ============================================================
-  // LOAD REWARDED AD
-  // ============================================================
+  // ==========================================================
+  // REWARDED AD - LOAD
+  // ==========================================================
 
   void loadRewardedAd() {
-    if (rewardedAdReady || rewardedAd != null) {
-      return;
-    }
-
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
+      rewardedAdLoadCallback:
+          RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
           rewardedAd = ad;
+
           rewardedAdReady = true;
 
           ad.fullScreenContentCallback =
@@ -409,18 +432,31 @@ class _HomePageState extends State<HomePage> {
               ad.dispose();
 
               rewardedAd = null;
+
               rewardedAdReady = false;
 
               loadRewardedAd();
+
+              if (mounted) {
+                setState(() {});
+              }
             },
             onAdFailedToShowFullScreenContent:
-                (RewardedAd ad, AdError error) {
+                (
+              RewardedAd ad,
+              AdError error,
+            ) {
               ad.dispose();
 
               rewardedAd = null;
+
               rewardedAdReady = false;
 
               loadRewardedAd();
+
+              if (mounted) {
+                setState(() {});
+              }
             },
           );
 
@@ -428,8 +464,10 @@ class _HomePageState extends State<HomePage> {
             setState(() {});
           }
         },
-        onAdFailedToLoad: (LoadAdError error) {
+        onAdFailedToLoad:
+            (LoadAdError error) {
           rewardedAd = null;
+
           rewardedAdReady = false;
 
           if (mounted) {
@@ -440,12 +478,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ============================================================
-  // SHOW REWARDED AD
-  // ============================================================
+  // ==========================================================
+  // REWARDED AD - SHOW
+  // ==========================================================
 
   void showRewardedAd() {
-    if (!rewardedAdReady || rewardedAd == null) {
+    if (!rewardedAdReady ||
+        rewardedAd == null) {
       showMessage(
         'Ad is loading. Try again in a moment.',
         Icons.hourglass_top,
@@ -459,6 +498,7 @@ class _HomePageState extends State<HomePage> {
     final ad = rewardedAd!;
 
     rewardedAd = null;
+
     rewardedAdReady = false;
 
     if (mounted) {
@@ -467,14 +507,19 @@ class _HomePageState extends State<HomePage> {
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) async {
+          (
+        AdWithoutView ad,
+        RewardItem reward,
+      ) async {
         const double bonus = 25.0;
 
         balance += bonus;
 
         await saveData();
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         setState(() {});
 
@@ -486,29 +531,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // RESET ACCOUNT
-  // ============================================================
+  // ==========================================================
 
   Future<void> resetAccount() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     await prefs.remove('balance');
-    await prefs.remove('streak');
-    await prefs.remove('lastMineDate');
-    await prefs.remove('username');
-    await prefs.remove('lastMineTime');
 
-    if (!mounted) return;
+    await prefs.remove('streak');
+
+    await prefs.remove('username');
+
+    await prefs.remove('lastMineAt');
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       balance = 0.0;
+
       streak = 0;
-      lastMineDate = '';
+
       username = '';
-      lastMineTime = null;
-      minedToday = false;
-      timeUntilNextMine = Duration.zero;
+
+      lastMineAt = 0;
+
+      remaining = Duration.zero;
     });
 
     showMessage(
@@ -516,29 +568,80 @@ class _HomePageState extends State<HomePage> {
       Icons.refresh,
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && username.trim().isEmpty) {
-        showUsernameDialog();
-      }
-    });
+    await Future.delayed(
+      const Duration(milliseconds: 300),
+    );
+
+    if (mounted) {
+      await showUsernameDialog();
+    }
   }
 
-  // ============================================================
+  // ==========================================================
+  // RESET DIALOG
+  // ==========================================================
+
+  void showResetDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Reset account?',
+          ),
+          content: const Text(
+            'This will delete your local balance, '
+            'mining streak and username.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop();
+              },
+              child: const Text(
+                'CANCEL',
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop();
+
+                resetAccount();
+              },
+              child: const Text(
+                'RESET',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ==========================================================
   // MESSAGE
-  // ============================================================
+  // ==========================================================
 
   void showMessage(
     String text,
     IconData icon,
   ) {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context)
         .hideCurrentSnackBar();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
-        behavior: SnackBarBehavior.floating,
+        behavior:
+            SnackBarBehavior.floating,
         content: Row(
           children: [
             Icon(
@@ -555,16 +658,17 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
+  // ==========================================================
+  // BUILD
+  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
+          child:
+              CircularProgressIndicator(
             color: Colors.amber,
           ),
         ),
@@ -577,11 +681,13 @@ class _HomePageState extends State<HomePage> {
         title: const Text(
           'COIN MINER',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
             letterSpacing: 1.5,
           ),
         ),
-        backgroundColor: const Color(0xFF17131C),
+        backgroundColor:
+            const Color(0xFF17131C),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -591,13 +697,17 @@ class _HomePageState extends State<HomePage> {
             },
             itemBuilder: (context) {
               return const [
-                PopupMenuItem(
+                PopupMenuItem<String>(
                   value: 'reset',
                   child: Row(
                     children: [
-                      Icon(Icons.refresh),
+                      Icon(
+                        Icons.refresh,
+                      ),
                       SizedBox(width: 10),
-                      Text('Reset test account'),
+                      Text(
+                        'Reset test account',
+                      ),
                     ],
                   ),
                 ),
@@ -607,12 +717,17 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
+      // ========================================================
+      // BODY
+      // ========================================================
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding:
+              const EdgeInsets.all(20),
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               // ==================================================
               // USERNAME
@@ -620,43 +735,64 @@ class _HomePageState extends State<HomePage> {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 14,
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B1F29),
-                  borderRadius: BorderRadius.circular(18),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF1B1F29),
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
                 ),
                 child: Row(
                   children: [
                     const CircleAvatar(
-                      backgroundColor: Colors.amber,
+                      backgroundColor:
+                          Colors.amber,
                       child: Icon(
                         Icons.person,
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(width: 14),
+
+                    const SizedBox(
+                      width: 14,
+                    ),
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                            CrossAxisAlignment
+                                .start,
                         children: [
                           const Text(
                             'MINER',
-                            style: TextStyle(
-                              color: Colors.white54,
+                            style:
+                                TextStyle(
+                              color:
+                                  Colors.white54,
                               fontSize: 12,
-                              letterSpacing: 1,
+                              letterSpacing:
+                                  1,
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(
+                            height: 3,
+                          ),
                           Text(
-                            username,
-                            style: const TextStyle(
+                            username.isEmpty
+                                ? 'Miner'
+                                : username,
+                            style:
+                                const TextStyle(
                               fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                              fontWeight:
+                                  FontWeight.bold,
                             ),
                           ),
                         ],
@@ -666,71 +802,101 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(
+                height: 25,
+              ),
 
               // ==================================================
-              // COIN ICON
+              // COIN
               // ==================================================
 
               Container(
                 width: 125,
                 height: 125,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.amber.withValues(
+                decoration:
+                    BoxDecoration(
+                  shape:
+                      BoxShape.circle,
+                  color: Colors.amber
+                      .withValues(
                     alpha: 0.12,
                   ),
-                  border: Border.all(
-                    color: Colors.amber.withValues(
+                  border:
+                      Border.all(
+                    color: Colors.amber
+                        .withValues(
                       alpha: 0.35,
                     ),
                     width: 2,
                   ),
                 ),
-                child: const Center(
+                child:
+                    const Center(
                   child: Text(
                     '₿',
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontSize: 82,
-                      color: Colors.amber,
-                      fontWeight: FontWeight.bold,
+                      color:
+                          Colors.amber,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 25,
+              ),
+
+              // ==================================================
+              // BALANCE
+              // ==================================================
 
               const Text(
                 'YOUR BALANCE',
-                style: TextStyle(
+                style:
+                    TextStyle(
                   fontSize: 20,
-                  color: Colors.white70,
+                  color:
+                      Colors.white70,
                   letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(
+                height: 8,
+              ),
 
               Text(
-                balance.toStringAsFixed(1),
-                style: const TextStyle(
+                balance.toStringAsFixed(
+                  1,
+                ),
+                style:
+                    const TextStyle(
                   fontSize: 58,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber,
+                  fontWeight:
+                      FontWeight.bold,
+                  color:
+                      Colors.amber,
                 ),
               ),
 
               const Text(
                 'COINS',
-                style: TextStyle(
+                style:
+                    TextStyle(
                   fontSize: 21,
-                  color: Colors.white70,
+                  color:
+                      Colors.white70,
                   letterSpacing: 2,
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(
+                height: 25,
+              ),
 
               // ==================================================
               // STREAK
@@ -738,36 +904,54 @@ class _HomePageState extends State<HomePage> {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets.symmetric(
                   vertical: 15,
                   horizontal: 20,
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B1F29),
-                  borderRadius: BorderRadius.circular(18),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF1B1F29),
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
                 ),
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.local_fire_department,
-                      color: Colors.orange,
+                      Icons
+                          .local_fire_department,
+                      color:
+                          Colors.orange,
                       size: 30,
                     ),
-                    const SizedBox(width: 12),
+
+                    const SizedBox(
+                      width: 12,
+                    ),
+
                     const Expanded(
                       child: Text(
                         'MINING STREAK',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                        style:
+                            TextStyle(
+                          fontWeight:
+                              FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                     ),
+
                     Text(
                       '$streak DAYS',
-                      style: const TextStyle(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.orange,
+                        fontWeight:
+                            FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
@@ -775,67 +959,106 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(
+                height: 25,
+              ),
 
               // ==================================================
-              // 24 HOUR TIMER
+              // 24H TIMER
               // ==================================================
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF191D27),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.amber.withValues(
-                      alpha: 0.15,
+                padding:
+                    const EdgeInsets.all(
+                  20,
+                ),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF171B24),
+                  borderRadius:
+                      BorderRadius.circular(
+                    20,
+                  ),
+                  border:
+                      Border.all(
+                    color: Colors.amber
+                        .withValues(
+                      alpha: 0.20,
                     ),
                   ),
                 ),
                 child: Column(
                   children: [
+                    const Icon(
+                      Icons
+                          .access_time,
+                      color:
+                          Colors.amber,
+                      size: 32,
+                    ),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
+
                     const Text(
-                      'NEXT CLAIM IN',
-                      style: TextStyle(
-                        color: Colors.white54,
+                      'NEXT CLAIM',
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white54,
                         fontSize: 13,
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.bold,
+                        letterSpacing:
+                            1.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
+
+                    const SizedBox(
+                      height: 5,
+                    ),
+
                     Text(
-                      minedToday
-                          ? formatDuration(
-                              timeUntilNextMine,
-                            )
-                          : '00:00:00',
-                      style: const TextStyle(
-                        color: Colors.amber,
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
+                      canClaim
+                          ? '00:00:00'
+                          : formatDuration(
+                              remaining,
+                            ),
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.amber,
+                        fontSize: 38,
+                        fontWeight:
+                            FontWeight.bold,
+                        letterSpacing:
+                            2,
                       ),
                     ),
-                    const SizedBox(height: 5),
+
+                    const SizedBox(
+                      height: 5,
+                    ),
+
                     Text(
-                      minedToday
-                          ? '24 hour cooldown'
-                          : 'CLAIM AVAILABLE',
-                      style: TextStyle(
-                        color: minedToday
-                            ? Colors.white54
-                            : Colors.greenAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                      canClaim
+                          ? 'CLAIM AVAILABLE'
+                          : 'HOURS : MINUTES : SECONDS',
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white38,
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(
+                height: 20,
+              ),
 
               // ==================================================
               // CLAIM BUTTON
@@ -844,53 +1067,73 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: double.infinity,
                 height: 64,
-                child: ElevatedButton.icon(
+                child:
+                    ElevatedButton.icon(
                   onPressed:
-                      minedToday ? null : mineCoins,
+                      canClaim
+                          ? claimCoins
+                          : null,
                   icon: Icon(
-                    minedToday
-                        ? Icons.check_circle
-                        : Icons.bolt,
+                    canClaim
+                        ? Icons.bolt
+                        : Icons.lock_clock,
                     size: 28,
                   ),
                   label: Text(
-                    minedToday
-                        ? 'CLAIMED'
-                        : 'CLAIM +10 COINS',
-                    style: const TextStyle(
+                    canClaim
+                        ? 'CLAIM +10 COINS'
+                        : 'CLAIM LOCKED',
+                    style:
+                        const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    foregroundColor: Colors.black,
+                  style:
+                      ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Colors.amber,
+                    foregroundColor:
+                        Colors.black,
                     disabledBackgroundColor:
-                        const Color(0xFF27232A),
+                        const Color(
+                      0xFF27232A,
+                    ),
                     disabledForegroundColor:
                         Colors.white54,
-                    shape: RoundedRectangleBorder(
+                    shape:
+                        RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(32),
+                          BorderRadius.circular(
+                        32,
+                      ),
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(
+                height: 12,
+              ),
 
               Text(
-                minedToday
-                    ? 'Come back when the 24 hour timer reaches zero.'
-                    : 'Claim once every 24 hours to build your streak.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white60,
+                canClaim
+                    ? 'Your daily claim is ready.'
+                    : 'Come back when the 24 hour timer reaches zero.',
+                textAlign:
+                    TextAlign.center,
+                style:
+                    const TextStyle(
+                  color:
+                      Colors.white54,
+                  fontSize: 14,
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
 
               // ==================================================
               // REWARDED AD
@@ -898,12 +1141,22 @@ class _HomePageState extends State<HomePage> {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C202A),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: Colors.white.withValues(
+                padding:
+                    const EdgeInsets.all(
+                  22,
+                ),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF1C202A),
+                  borderRadius:
+                      BorderRadius.circular(
+                    22,
+                  ),
+                  border:
+                      Border.all(
+                    color: Colors.white
+                        .withValues(
                       alpha: 0.05,
                     ),
                   ),
@@ -911,41 +1164,59 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     const Icon(
-                      Icons.ondemand_video,
-                      color: Colors.amber,
+                      Icons
+                          .ondemand_video,
+                      color:
+                          Colors.amber,
                       size: 48,
                     ),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(
+                      height: 14,
+                    ),
 
                     const Text(
                       'WATCH AD TO EARN MORE',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
+                      textAlign:
+                          TextAlign.center,
+                      style:
+                          TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(
+                      height: 8,
+                    ),
 
                     const Text(
                       'Watch a short video and receive +25 coins.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white60,
+                      textAlign:
+                          TextAlign.center,
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white60,
                         fontSize: 14,
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(
+                      height: 18,
+                    ),
 
                     SizedBox(
-                      width: double.infinity,
+                      width:
+                          double.infinity,
                       height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: showRewardedAd,
-                        icon: const Icon(
+                      child:
+                          OutlinedButton.icon(
+                        onPressed:
+                            showRewardedAd,
+                        icon:
+                            const Icon(
                           Icons.play_arrow,
                         ),
                         label: Text(
@@ -954,16 +1225,22 @@ class _HomePageState extends State<HomePage> {
                               : 'LOADING AD...',
                         ),
                         style:
-                            OutlinedButton.styleFrom(
+                            OutlinedButton
+                                .styleFrom(
                           foregroundColor:
                               Colors.amber,
-                          side: const BorderSide(
-                            color: Colors.amber,
+                          side:
+                              const BorderSide(
+                            color:
+                                Colors.amber,
                           ),
                           shape:
                               RoundedRectangleBorder(
                             borderRadius:
-                                BorderRadius.circular(28),
+                                BorderRadius
+                                    .circular(
+                              28,
+                            ),
                           ),
                         ),
                       ),
@@ -972,7 +1249,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
 
               // ==================================================
               // STATS
@@ -987,7 +1266,11 @@ class _HomePageState extends State<HomePage> {
                       '+10',
                     ),
                   ),
-                  const SizedBox(width: 12),
+
+                  const SizedBox(
+                    width: 12,
+                  ),
+
                   Expanded(
                     child: statCard(
                       Icons.card_giftcard,
@@ -998,7 +1281,9 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
 
               // ==================================================
               // INFO
@@ -1006,25 +1291,42 @@ class _HomePageState extends State<HomePage> {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF171B24),
-                  borderRadius: BorderRadius.circular(18),
+                padding:
+                    const EdgeInsets.all(
+                  18,
                 ),
-                child: const Column(
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF171B24),
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
+                ),
+                child:
+                    const Column(
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: Colors.white54,
+                      color:
+                          Colors.white54,
                     ),
-                    SizedBox(height: 10),
+
+                    SizedBox(
+                      height: 10,
+                    ),
+
                     Text(
                       'COIN MINER is a reward simulation app. '
                       'The coins shown here are virtual in-app '
                       'points and are not real cryptocurrency.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white54,
+                      textAlign:
+                          TextAlign.center,
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white54,
                         fontSize: 13,
                         height: 1.4,
                       ),
@@ -1033,17 +1335,23 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
 
               const Text(
                 'COIN MINER v3',
-                style: TextStyle(
-                  color: Colors.white30,
+                style:
+                    TextStyle(
+                  color:
+                      Colors.white30,
                   fontSize: 12,
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(
+                height: 20,
+              ),
             ],
           ),
         ),
@@ -1061,10 +1369,16 @@ class _HomePageState extends State<HomePage> {
     String value,
   ) {
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B1F29),
-        borderRadius: BorderRadius.circular(18),
+      padding:
+          const EdgeInsets.all(18),
+      decoration:
+          BoxDecoration(
+        color:
+            const Color(0xFF1B1F29),
+        borderRadius:
+            BorderRadius.circular(
+          18,
+        ),
       ),
       child: Column(
         children: [
@@ -1073,74 +1387,48 @@ class _HomePageState extends State<HomePage> {
             color: Colors.amber,
             size: 28,
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(
+            height: 8,
+          ),
+
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white54,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white54,
               fontSize: 12,
             ),
           ),
-          const SizedBox(height: 4),
+
+          const SizedBox(
+            height: 4,
+          ),
+
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.amber,
+            style:
+                const TextStyle(
+              color:
+                  Colors.amber,
               fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
+
           const Text(
             'COINS',
-            style: TextStyle(
-              color: Colors.white38,
+            style:
+                TextStyle(
+              color:
+                  Colors.white38,
               fontSize: 10,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  // ============================================================
-  // RESET DIALOG
-  // ============================================================
-
-  void showResetDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text(
-            'Reset account?',
-          ),
-          content: const Text(
-            'This will delete the local test balance, '
-            'mining streak, username and 24 hour timer.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-
-                WidgetsBinding.instance
-                    .addPostFrameCallback((_) {
-                  if (mounted) {
-                    resetAccount();
-                  }
-                });
-              },
-              child: const Text('RESET'),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -1151,6 +1439,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     countdownTimer?.cancel();
+
     rewardedAd?.dispose();
 
     super.dispose();
