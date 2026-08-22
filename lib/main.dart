@@ -4,17 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await MobileAds.instance.initialize();
 
   runApp(const CoinMinerApp());
 }
-
-// ============================================================
-// APP
-// ============================================================
 
 class CoinMinerApp extends StatelessWidget {
   const CoinMinerApp({super.key});
@@ -26,257 +22,17 @@ class CoinMinerApp extends StatelessWidget {
       title: 'COIN MINER',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0E1118),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF101116),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.amber,
           brightness: Brightness.dark,
         ),
-        useMaterial3: true,
       ),
-      home: const StartPage(),
+      home: const HomePage(),
     );
   }
 }
-
-// ============================================================
-// START PAGE
-// IMPORTANT:
-// We do NOT use AlertDialog for the username.
-// This avoids the Flutter _dependents.isEmpty error.
-// ============================================================
-
-class StartPage extends StatefulWidget {
-  const StartPage({super.key});
-
-  @override
-  State<StartPage> createState() => _StartPageState();
-}
-
-class _StartPageState extends State<StartPage> {
-  final TextEditingController controller = TextEditingController();
-
-  bool loading = true;
-  bool saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    checkUsername();
-  }
-
-  Future<void> checkUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final savedUsername =
-        prefs.getString('username')?.trim() ?? '';
-
-    if (!mounted) return;
-
-    if (savedUsername.isNotEmpty) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      loading = false;
-    });
-  }
-
-  Future<void> continueToApp() async {
-    if (saving) return;
-
-    final name = controller.text.trim();
-
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a username.'),
-        ),
-      );
-      return;
-    }
-
-    if (name.length > 20) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Username can contain maximum 20 characters.'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      saving = true;
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'username',
-      name,
-    );
-
-    if (!mounted) return;
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const HomePage(),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Colors.amber,
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.amber.withValues(
-                      alpha: 0.12,
-                    ),
-                    border: Border.all(
-                      color: Colors.amber.withValues(
-                        alpha: 0.4,
-                      ),
-                      width: 2,
-                    ),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '₿',
-                      style: TextStyle(
-                        fontSize: 70,
-                        color: Colors.amber,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'COIN MINER',
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                const Text(
-                  'Welcome!',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
-                  ),
-                ),
-
-                const SizedBox(height: 35),
-
-                TextField(
-                  controller: controller,
-                  maxLength: 20,
-                  textCapitalization:
-                      TextCapitalization.words,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    hintText: 'Enter your name',
-                    prefixIcon: const Icon(
-                      Icons.person,
-                    ),
-                    filled: true,
-                    fillColor: const Color(
-                      0xFF1B1F29,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: ElevatedButton(
-                    onPressed:
-                        saving ? null : continueToApp,
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      foregroundColor: Colors.black,
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: saving
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.black,
-                            ),
-                          )
-                        : const Text(
-                            'CONTINUE',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// HOME PAGE
-// ============================================================
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -286,207 +42,613 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // ----------------------------------------------------------
-  // ACCOUNT
-  // ----------------------------------------------------------
+  // ------------------------------------------------------------
+  // TEST AD IDS
+  // ------------------------------------------------------------
 
-  String username = '';
-
-  double balance = 0.0;
-
-  DateTime? lastClaimTime;
-
-  bool loading = true;
-
-  // ----------------------------------------------------------
-  // REWARDED AD
-  // ----------------------------------------------------------
-
-  RewardedAd? rewardedAd;
-
-  bool rewardedAdReady = false;
-
-  // Google official rewarded test ad.
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  // ----------------------------------------------------------
-  // AD LIMITS
-  // ----------------------------------------------------------
+  static const String interstitialAdUnitId =
+      'ca-app-pub-3940256099942544/1033173712';
 
-  static const int maxAdsPerDay = 5;
+  // ------------------------------------------------------------
+  // STORAGE KEYS
+  // ------------------------------------------------------------
 
-  static const Duration adCooldown =
-      Duration(hours: 1);
+  static const String keyName = 'user_name';
+  static const String keyBalance = 'balance';
 
-  List<int> adWatchTimes = [];
+  static const String keyClaimTime = 'claim_time';
+
+  static const String keyRewardCount = 'reward_count';
+  static const String keyRewardDay = 'reward_day';
+  static const String keyLastRewardTime = 'last_reward_time';
+
+  // ------------------------------------------------------------
+  // APP STATE
+  // ------------------------------------------------------------
+
+  SharedPreferences? prefs;
+
+  String userName = '';
+
+  double balance = 0;
+
+  DateTime? lastClaimTime;
+
+  DateTime? lastRewardTime;
+
+  int rewardCountToday = 0;
+
+  String rewardDay = '';
+
+  bool loading = true;
+  bool savingName = false;
+  bool claiming = false;
+  bool watchingReward = false;
+
+  Duration claimRemaining = Duration.zero;
+  Duration rewardRemaining = Duration.zero;
 
   Timer? timer;
 
-  DateTime now = DateTime.now();
+  // ------------------------------------------------------------
+  // ADS
+  // ------------------------------------------------------------
 
-  // ==========================================================
-  // INIT
-  // ==========================================================
+  RewardedAd? rewardedAd;
+  bool rewardedAdLoading = false;
+
+  InterstitialAd? interstitialAd;
+  bool interstitialAdLoading = false;
+
+  // ------------------------------------------------------------
+  // LIFECYCLE
+  // ------------------------------------------------------------
 
   @override
   void initState() {
     super.initState();
 
-    loadData();
-
-    loadRewardedAd();
+    _loadData();
 
     timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) {
         if (!mounted) return;
 
-        setState(() {
-          now = DateTime.now();
-          cleanOldAdTimes();
-        });
+        _updateTimers();
+        _checkRewardDay();
       },
     );
   }
 
-  // ==========================================================
+  @override
+  void dispose() {
+    timer?.cancel();
+
+    rewardedAd?.dispose();
+    interstitialAd?.dispose();
+
+    super.dispose();
+  }
+
+  // ------------------------------------------------------------
   // LOAD DATA
-  // ==========================================================
+  // ------------------------------------------------------------
 
-  Future<void> loadData() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+  Future<void> _loadData() async {
+    final storage = await SharedPreferences.getInstance();
 
-    final savedUsername =
-        prefs.getString('username') ?? '';
+    prefs = storage;
 
-    final savedBalance =
-        prefs.getDouble('balance') ?? 0.0;
+    final savedName = storage.getString(keyName);
 
-    final savedLastClaim =
-        prefs.getString('lastClaimTime') ?? '';
+    final savedBalance = storage.getDouble(keyBalance);
 
-    final savedAdTimes =
-        prefs.getStringList('adWatchTimes') ?? [];
+    final savedClaim = storage.getInt(keyClaimTime);
 
-    DateTime? parsedClaim;
+    final savedRewardTime = storage.getInt(keyLastRewardTime);
 
-    if (savedLastClaim.isNotEmpty) {
-      parsedClaim =
-          DateTime.tryParse(savedLastClaim);
+    final savedRewardCount = storage.getInt(keyRewardCount);
+
+    final savedRewardDay = storage.getString(keyRewardDay);
+
+    if (!mounted) return;
+
+    setState(() {
+      userName = savedName ?? '';
+
+      balance = savedBalance ?? 0;
+
+      if (savedClaim != null) {
+        lastClaimTime =
+            DateTime.fromMillisecondsSinceEpoch(savedClaim).toUtc();
+      }
+
+      if (savedRewardTime != null) {
+        lastRewardTime =
+            DateTime.fromMillisecondsSinceEpoch(savedRewardTime).toUtc();
+      }
+
+      rewardCountToday = savedRewardCount ?? 0;
+
+      rewardDay = savedRewardDay ?? '';
+
+      loading = false;
+    });
+
+    _checkRewardDay();
+    _updateTimers();
+
+    _loadRewardedAd();
+    _loadInterstitialAd();
+  }
+
+  // ------------------------------------------------------------
+  // SAVE
+  // ------------------------------------------------------------
+
+  Future<void> _saveBalance() async {
+    await prefs?.setDouble(keyBalance, balance);
+  }
+
+  Future<void> _saveClaimTime() async {
+    if (lastClaimTime == null) return;
+
+    await prefs?.setInt(
+      keyClaimTime,
+      lastClaimTime!.millisecondsSinceEpoch,
+    );
+  }
+
+  // ------------------------------------------------------------
+  // NAME
+  // ------------------------------------------------------------
+
+  Future<void> _continueWithName() async {
+    final controller = _nameController;
+
+    final name = controller.text.trim();
+
+    if (name.isEmpty) {
+      setState(() {
+        _nameError = 'Enter your name';
+      });
+
+      return;
     }
 
-    final parsedAds = <int>[];
+    setState(() {
+      savingName = true;
+      _nameError = '';
+    });
 
-    for (final value in savedAdTimes) {
-      final timestamp = int.tryParse(value);
+    await prefs?.setString(keyName, name);
 
-      if (timestamp != null) {
-        parsedAds.add(timestamp);
+    if (!mounted) return;
+
+    setState(() {
+      userName = name;
+      savingName = false;
+    });
+
+    // IMPORTANT:
+    // No Navigator.
+    // No showDialog.
+    // No route change.
+    //
+    // The page simply changes its own state.
+  }
+
+  final TextEditingController _nameController =
+      TextEditingController();
+
+  String _nameError = '';
+
+  // ------------------------------------------------------------
+  // CLAIM TIMER
+  // ------------------------------------------------------------
+
+  bool get canClaim {
+    if (lastClaimTime == null) {
+      return true;
+    }
+
+    final now = DateTime.now().toUtc();
+
+    final nextClaim =
+        lastClaimTime!.add(const Duration(hours: 24));
+
+    return !now.isBefore(nextClaim);
+  }
+
+  void _updateTimers() {
+    final now = DateTime.now().toUtc();
+
+    Duration newClaimRemaining = Duration.zero;
+
+    if (lastClaimTime != null) {
+      final nextClaim =
+          lastClaimTime!.add(const Duration(hours: 24));
+
+      if (now.isBefore(nextClaim)) {
+        newClaimRemaining = nextClaim.difference(now);
+      }
+    }
+
+    Duration newRewardRemaining = Duration.zero;
+
+    if (lastRewardTime != null) {
+      final nextReward =
+          lastRewardTime!.add(const Duration(hours: 1));
+
+      if (now.isBefore(nextReward)) {
+        newRewardRemaining = nextReward.difference(now);
       }
     }
 
     if (!mounted) return;
 
     setState(() {
-      username = savedUsername;
-      balance = savedBalance;
-      lastClaimTime = parsedClaim;
-      adWatchTimes = parsedAds;
-      loading = false;
-      now = DateTime.now();
+      claimRemaining = newClaimRemaining;
+      rewardRemaining = newRewardRemaining;
     });
-
-    cleanOldAdTimes();
   }
 
-  // ==========================================================
-  // SAVE DATA
-  // ==========================================================
+  // ------------------------------------------------------------
+  // DAILY REWARD COUNTER
+  // ------------------------------------------------------------
 
-  Future<void> saveData() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+  String _todayUtc() {
+    final now = DateTime.now().toUtc();
 
-    await prefs.setString(
-      'username',
-      username,
-    );
+    final year = now.year.toString().padLeft(4, '0');
+    final month = now.month.toString().padLeft(2, '0');
+    final day = now.day.toString().padLeft(2, '0');
 
-    await prefs.setDouble(
-      'balance',
-      balance,
-    );
+    return '$year-$month-$day';
+  }
 
-    if (lastClaimTime != null) {
-      await prefs.setString(
-        'lastClaimTime',
-        lastClaimTime!.toIso8601String(),
-      );
-    } else {
-      await prefs.remove('lastClaimTime');
+  Future<void> _checkRewardDay() async {
+    final today = _todayUtc();
+
+    if (rewardDay == today) {
+      return;
     }
 
-    await prefs.setStringList(
-      'adWatchTimes',
-      adWatchTimes
-          .map((e) => e.toString())
-          .toList(),
-    );
+    rewardDay = today;
+    rewardCountToday = 0;
+
+    await prefs?.setString(keyRewardDay, today);
+    await prefs?.setInt(keyRewardCount, 0);
+
+    if (!mounted) return;
+
+    setState(() {});
   }
 
-  // ==========================================================
-  // CLAIM READY
-  // ==========================================================
+  // ------------------------------------------------------------
+  // CLAIM 10 COINS
+  // ------------------------------------------------------------
 
-  bool get claimReady {
-    if (lastClaimTime == null) {
+  Future<void> _claimCoins() async {
+    if (claiming) return;
+
+    if (!canClaim) {
+      _showMessage(
+        'You can claim again when the 24 hour timer reaches zero.',
+      );
+
+      return;
+    }
+
+    setState(() {
+      claiming = true;
+    });
+
+    balance += 10;
+
+    lastClaimTime = DateTime.now().toUtc();
+
+    await _saveBalance();
+    await _saveClaimTime();
+
+    if (!mounted) return;
+
+    setState(() {
+      claiming = false;
+      claimRemaining = const Duration(hours: 24);
+    });
+
+    _showMessage('+10 coins added!');
+
+    // Show an interstitial advertisement after Claim.
+    _showInterstitialAfterClaim();
+  }
+
+  // ------------------------------------------------------------
+  // REWARDED AD +5
+  // ------------------------------------------------------------
+
+  bool get canWatchReward {
+    if (rewardCountToday >= 5) {
+      return false;
+    }
+
+    if (lastRewardTime == null) {
       return true;
     }
 
-    final difference =
-        DateTime.now().difference(lastClaimTime!);
+    final now = DateTime.now().toUtc();
 
-    return difference >=
-        const Duration(hours: 24);
+    final nextReward =
+        lastRewardTime!.add(const Duration(hours: 1));
+
+    return !now.isBefore(nextReward);
   }
 
-  // ==========================================================
-  // CLAIM TIME LEFT
-  // ==========================================================
+  Future<void> _watchRewardAd() async {
+    if (watchingReward) return;
 
-  Duration get claimTimeLeft {
-    if (lastClaimTime == null) {
-      return Duration.zero;
+    await _checkRewardDay();
+
+    if (rewardCountToday >= 5) {
+      _showMessage(
+        'Daily limit reached. You can watch up to 5 ads per day.',
+      );
+
+      return;
     }
 
-    final nextClaim =
-        lastClaimTime!.add(
-      const Duration(hours: 24),
+    if (!canWatchReward) {
+      _showMessage(
+        'Please wait until the 1 hour timer reaches zero.',
+      );
+
+      return;
+    }
+
+    if (rewardedAd == null) {
+      _showMessage(
+        'The ad is still loading. Please try again.',
+      );
+
+      _loadRewardedAd();
+
+      return;
+    }
+
+    setState(() {
+      watchingReward = true;
+    });
+
+    final ad = rewardedAd;
+
+    rewardedAd = null;
+
+    ad!.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+
+        if (mounted) {
+          setState(() {
+            watchingReward = false;
+          });
+        }
+
+        _loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+
+        if (mounted) {
+          setState(() {
+            watchingReward = false;
+          });
+
+          _showMessage(
+            'The advertisement could not be shown.',
+          );
+        }
+
+        _loadRewardedAd();
+      },
     );
 
-    final difference =
-        nextClaim.difference(DateTime.now());
-
-    if (difference.isNegative) {
-      return Duration.zero;
-    }
-
-    return difference;
+    ad.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) async {
+        await _giveRewardCoins();
+      },
+    );
   }
 
-  // ==========================================================
-  // CLAIM TIMER TEXT
-  // ==========================================================
+  Future<void> _giveRewardCoins() async {
+    await _checkRewardDay();
 
-  String get claimTimerText {
-    if (claimReady) {
-      return 'READY TO CLAIM';
+    balance += 5;
+
+    rewardCountToday++;
+
+    lastRewardTime = DateTime.now().toUtc();
+
+    await _saveBalance();
+
+    await prefs?.setInt(
+      keyRewardCount,
+      rewardCountToday,
+    );
+
+    await prefs?.setInt(
+      keyLastRewardTime,
+      lastRewardTime!.millisecondsSinceEpoch,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      rewardRemaining = const Duration(hours: 1);
+    });
+
+    _showMessage('+5 coins added!');
+  }
+
+  // ------------------------------------------------------------
+  // REWARDED AD LOAD
+  // ------------------------------------------------------------
+
+  void _loadRewardedAd() {
+    if (rewardedAdLoading) return;
+
+    if (rewardedAd != null) return;
+
+    rewardedAdLoading = true;
+
+    RewardedAd.load(
+      adUnitId: rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          rewardedAdLoading = false;
+
+          rewardedAd = ad;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          rewardedAdLoading = false;
+          rewardedAd = null;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // INTERSTITIAL AD
+  // ------------------------------------------------------------
+
+  void _loadInterstitialAd() {
+    if (interstitialAdLoading) return;
+
+    if (interstitialAd != null) return;
+
+    interstitialAdLoading = true;
+
+    InterstitialAd.load(
+      adUnitId: interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          interstitialAdLoading = false;
+
+          interstitialAd = ad;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          interstitialAdLoading = false;
+          interstitialAd = null;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAfterClaim() {
+    final ad = interstitialAd;
+
+    if (ad == null) {
+      _loadInterstitialAd();
+      return;
     }
 
-    final duration = claimTimeLeft;
+    interstitialAd = null;
 
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+
+        _loadInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+
+        _loadInterstitialAd();
+      },
+    );
+
+    ad.show();
+  }
+
+  // ------------------------------------------------------------
+  // RESET TEST DATA
+  // ------------------------------------------------------------
+
+  Future<void> _resetTestData() async {
+    await prefs?.remove(keyName);
+    await prefs?.remove(keyBalance);
+    await prefs?.remove(keyClaimTime);
+    await prefs?.remove(keyRewardCount);
+    await prefs?.remove(keyRewardDay);
+    await prefs?.remove(keyLastRewardTime);
+
+    if (!mounted) return;
+
+    setState(() {
+      userName = '';
+      balance = 0;
+
+      lastClaimTime = null;
+      lastRewardTime = null;
+
+      rewardCountToday = 0;
+      rewardDay = '';
+
+      claimRemaining = Duration.zero;
+      rewardRemaining = Duration.zero;
+
+      _nameController.clear();
+    });
+
+    _showMessage('Test data reset.');
+  }
+
+  // ------------------------------------------------------------
+  // MESSAGE
+  // ------------------------------------------------------------
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
+  // ------------------------------------------------------------
+  // TIME FORMAT
+  // ------------------------------------------------------------
+
+  String _formatDuration(Duration duration) {
     final hours =
         duration.inHours.toString().padLeft(2, '0');
 
@@ -503,947 +665,214 @@ class _HomePageState extends State<HomePage> {
     return '$hours:$minutes:$seconds';
   }
 
-  // ==========================================================
-  // CLEAN OLD AD TIMES
-  // ==========================================================
-
-  void cleanOldAdTimes() {
-    final cutoff =
-        DateTime.now()
-            .subtract(const Duration(hours: 24))
-            .millisecondsSinceEpoch;
-
-    final before = adWatchTimes.length;
-
-    adWatchTimes.removeWhere(
-      (time) => time < cutoff,
-    );
-
-    if (before != adWatchTimes.length) {
-      saveData();
-    }
-  }
-
-  // ==========================================================
-  // ADS WATCHED TODAY
-  // ==========================================================
-
-  int get adsWatchedToday {
-    cleanOldAdTimes();
-
-    final now = DateTime.now();
-
-    return adWatchTimes.where((timestamp) {
-      final date =
-          DateTime.fromMillisecondsSinceEpoch(
-        timestamp,
-      );
-
-      return date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
-    }).length;
-  }
-
-  // ==========================================================
-  // AD AVAILABLE
-  // ==========================================================
-
-  bool get adLimitReached {
-    return adsWatchedToday >= maxAdsPerDay;
-  }
-
-  // ==========================================================
-  // AD COOLDOWN
-  // ==========================================================
-
-  Duration get adCooldownLeft {
-    if (adWatchTimes.isEmpty) {
-      return Duration.zero;
-    }
-
-    final latest =
-        adWatchTimes.reduce(
-      (a, b) => a > b ? a : b,
-    );
-
-    final next =
-        DateTime.fromMillisecondsSinceEpoch(
-      latest,
-    ).add(adCooldown);
-
-    final difference =
-        next.difference(DateTime.now());
-
-    if (difference.isNegative) {
-      return Duration.zero;
-    }
-
-    return difference;
-  }
-
-  // ==========================================================
-  // AD READY TO WATCH
-  // ==========================================================
-
-  bool get canWatchAd {
-    if (!rewardedAdReady) {
-      return false;
-    }
-
-    if (adLimitReached) {
-      return false;
-    }
-
-    return adCooldownLeft == Duration.zero;
-  }
-
-  // ==========================================================
-  // AD TIMER TEXT
-  // ==========================================================
-
-  String get adTimerText {
-    if (adLimitReached) {
-      return '5 / 5 TODAY';
-    }
-
-    final left = adCooldownLeft;
-
-    if (left == Duration.zero) {
-      return 'READY';
-    }
-
-    final minutes =
-        left.inMinutes
-            .toString()
-            .padLeft(2, '0');
-
-    final seconds =
-        (left.inSeconds % 60)
-            .toString()
-            .padLeft(2, '0');
-
-    return '$minutes:$seconds';
-  }
-
-  // ==========================================================
-  // CLAIM 10 COINS
-  // ==========================================================
-
-  Future<void> claimCoins() async {
-    if (!claimReady) {
-      showMessage(
-        'Next claim in ${claimTimerText}',
-        Icons.lock_clock,
-      );
-      return;
-    }
-
-    // Give the daily reward.
-    balance += 10.0;
-
-    lastClaimTime = DateTime.now();
-
-    await saveData();
-
-    if (!mounted) return;
-
-    setState(() {});
-
-    showMessage(
-      '+10 COINS CLAIMED!',
-      Icons.bolt,
-    );
-
-    // --------------------------------------------------------
-    // SHOW REWARDED AD AFTER CLAIM
-    // --------------------------------------------------------
-
-    await Future.delayed(
-      const Duration(milliseconds: 500),
-    );
-
-    if (!mounted) return;
-
-    showRewardedAd();
-  }
-
-  // ==========================================================
-  // LOAD REWARDED AD
-  // ==========================================================
-
-  void loadRewardedAd() {
-    if (rewardedAdReady) {
-      return;
-    }
-
-    RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback:
-          RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
-          rewardedAd = ad;
-          rewardedAdReady = true;
-
-          ad.fullScreenContentCallback =
-              FullScreenContentCallback(
-            onAdDismissedFullScreenContent:
-                (RewardedAd ad) {
-              ad.dispose();
-
-              rewardedAd = null;
-              rewardedAdReady = false;
-
-              loadRewardedAd();
-
-              if (mounted) {
-                setState(() {});
-              }
-            },
-            onAdFailedToShowFullScreenContent:
-                (RewardedAd ad, AdError error) {
-              ad.dispose();
-
-              rewardedAd = null;
-              rewardedAdReady = false;
-
-              loadRewardedAd();
-
-              if (mounted) {
-                setState(() {});
-              }
-            },
-          );
-
-          if (mounted) {
-            setState(() {});
-          }
-        },
-        onAdFailedToLoad:
-            (LoadAdError error) {
-          rewardedAd = null;
-          rewardedAdReady = false;
-
-          if (mounted) {
-            setState(() {});
-          }
-        },
-      ),
-    );
-  }
-
-  // ==========================================================
-  // SHOW REWARDED AD
-  // ==========================================================
-
-  void showRewardedAd() {
-    if (adLimitReached) {
-      showMessage(
-        'You have watched 5 ads today.',
-        Icons.block,
-      );
-      return;
-    }
-
-    if (adCooldownLeft != Duration.zero) {
-      showMessage(
-        'Next ad available in $adTimerText',
-        Icons.timer,
-      );
-      return;
-    }
-
-    if (!rewardedAdReady ||
-        rewardedAd == null) {
-      showMessage(
-        'Ad is loading. Try again soon.',
-        Icons.hourglass_top,
-      );
-
-      loadRewardedAd();
-      return;
-    }
-
-    final ad = rewardedAd!;
-
-    rewardedAd = null;
-    rewardedAdReady = false;
-
-    ad.show(
-      onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) async {
-        // ----------------------------------------------------
-        // +5 COINS
-        // ----------------------------------------------------
-
-        balance += 5.0;
-
-        adWatchTimes.add(
-          DateTime.now()
-              .millisecondsSinceEpoch,
-        );
-
-        await saveData();
-
-        if (!mounted) return;
-
-        setState(() {});
-
-        showMessage(
-          '+5 COINS AD REWARD!',
-          Icons.card_giftcard,
-        );
-
-        loadRewardedAd();
-      },
-    );
-  }
-
-  // ==========================================================
-  // RESET ACCOUNT
-  // ==========================================================
-
-  Future<void> resetAccount() async {
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.remove('username');
-    await prefs.remove('balance');
-    await prefs.remove('lastClaimTime');
-    await prefs.remove('adWatchTimes');
-
-    if (!mounted) return;
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => const StartPage(),
-      ),
-      (route) => false,
-    );
-  }
-
-  // ==========================================================
-  // MESSAGE
-  // ==========================================================
-
-  void showMessage(
-    String text,
-    IconData icon,
-  ) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-        .hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        behavior:
-            SnackBarBehavior.floating,
-        content: Row(
-          children: [
-            Icon(
-              icon,
-              color: Colors.amber,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(text),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // FORMAT COINS
-  // ==========================================================
-
-  String get balanceText {
-    return balance.toStringAsFixed(1);
-  }
-
-  // ==========================================================
-  // FORMAT DATE
-  // ==========================================================
-
-  String formatLastClaim() {
-    if (lastClaimTime == null) {
-      return 'Never';
-    }
-
-    final time = lastClaimTime!;
-
-    final hour =
-        time.hour.toString().padLeft(2, '0');
-
-    final minute =
-        time.minute.toString().padLeft(2, '0');
-
-    return '${time.day}.${time.month}.${time.year} '
-        '$hour:$minute';
-  }
-
-  // ==========================================================
+  // ------------------------------------------------------------
   // BUILD
-  // ==========================================================
+  // ------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
-            color: Colors.amber,
-          ),
+          child: CircularProgressIndicator(),
         ),
       );
     }
 
+    if (userName.isEmpty) {
+      return _buildNamePage();
+    }
+
+    return _buildHomePage();
+  }
+
+  // ------------------------------------------------------------
+  // NAME PAGE
+  // ------------------------------------------------------------
+
+  Widget _buildNamePage() {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.currency_bitcoin,
+                  size: 90,
+                  color: Colors.amber,
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  'COIN MINER',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                const Text(
+                  'Welcome!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white70,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                TextField(
+                  controller: _nameController,
+                  textInputAction: TextInputAction.done,
+                  maxLength: 20,
+                  decoration: InputDecoration(
+                    labelText: 'Your name',
+                    hintText: 'Enter your name',
+                    errorText:
+                        _nameError.isEmpty
+                            ? null
+                            : _nameError,
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                    prefixIcon:
+                        const Icon(Icons.person),
+                  ),
+                  onSubmitted: (_) {
+                    if (!savingName) {
+                      _continueWithName();
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed:
+                        savingName
+                            ? null
+                            : _continueWithName,
+                    child:
+                        savingName
+                            ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Text(
+                              'CONTINUE',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                const Text(
+                  'Coins in this app are virtual points.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // HOME PAGE
+  // ------------------------------------------------------------
+
+  Widget _buildHomePage() {
+    final claimAvailable = canClaim;
+
+    final rewardAvailable = canWatchReward;
+
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
         title: const Text(
           'COIN MINER',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
           ),
         ),
-        backgroundColor:
-            const Color(0xFF17131C),
+        centerTitle: true,
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'reset') {
-                showResetDialog();
-              }
-            },
-            itemBuilder: (context) {
-              return const [
-                PopupMenuItem(
-                  value: 'reset',
-                  child: Row(
-                    children: [
-                      Icon(Icons.refresh),
-                      SizedBox(width: 10),
-                      Text(
-                        'Reset test account',
-                      ),
-                    ],
-                  ),
-                ),
-              ];
-            },
+          IconButton(
+            tooltip: 'Reset test data',
+            icon: const Icon(Icons.refresh),
+            onPressed: _resetTestData,
           ),
         ],
       ),
-
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(20),
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            _updateTimers();
+            await _checkRewardDay();
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(18),
             children: [
-              const SizedBox(height: 15),
+              _buildWelcomeCard(),
 
-              // =================================================
-              // USER
-              // =================================================
+              const SizedBox(height: 16),
 
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 14,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(0xFF1B1F29),
-                  borderRadius:
-                      BorderRadius.circular(18),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor:
-                          Colors.amber,
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'MINER',
-                            style: TextStyle(
-                              color:
-                                  Colors.white54,
-                              fontSize: 12,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            username,
-                            style:
-                                const TextStyle(
-                              fontSize: 20,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              _buildBalanceCard(),
+
+              const SizedBox(height: 16),
+
+              _buildDailyClaimCard(
+                claimAvailable,
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 16),
 
-              // =================================================
-              // COIN
-              // =================================================
-
-              Container(
-                width: 125,
-                height: 125,
-                decoration:
-                    BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.amber
-                      .withValues(
-                    alpha: 0.12,
-                  ),
-                  border: Border.all(
-                    color: Colors.amber
-                        .withValues(
-                      alpha: 0.35,
-                    ),
-                    width: 2,
-                  ),
-                ),
-                child: const Center(
-                  child: Text(
-                    '₿',
-                    style: TextStyle(
-                      fontSize: 82,
-                      color: Colors.amber,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-                ),
+              _buildRewardCard(
+                rewardAvailable,
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 16),
 
-              const Text(
-                'YOUR BALANCE',
-                style: TextStyle(
-                  fontSize: 19,
-                  color: Colors.white70,
-                  letterSpacing: 1,
-                ),
-              ),
-
-              const SizedBox(height: 5),
-
-              Text(
-                balanceText,
-                style: const TextStyle(
-                  fontSize: 56,
-                  fontWeight:
-                      FontWeight.bold,
-                  color: Colors.amber,
-                ),
-              ),
-
-              const Text(
-                'COINS',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white70,
-                  letterSpacing: 2,
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // =================================================
-              // CLAIM CARD
-              // =================================================
-
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.all(22),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(0xFF1C202A),
-                  borderRadius:
-                      BorderRadius.circular(22),
-                  border: Border.all(
-                    color: Colors.amber
-                        .withValues(
-                      alpha: 0.15,
-                    ),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.bolt,
-                      color: Colors.amber,
-                      size: 48,
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    const Text(
-                      'DAILY CLAIM',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    const Text(
-                      'Claim 10 coins once every 24 hours.',
-                      textAlign:
-                          TextAlign.center,
-                      style: TextStyle(
-                        color:
-                            Colors.white60,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    Container(
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      decoration:
-                          BoxDecoration(
-                        color: Colors.black26,
-                        borderRadius:
-                            BorderRadius
-                                .circular(20),
-                      ),
-                      child: Text(
-                        claimTimerText,
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.amber,
-                          fontSize: 22,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 58,
-                      child:
-                          ElevatedButton.icon(
-                        onPressed:
-                            claimReady
-                                ? claimCoins
-                                : null,
-                        icon: const Icon(
-                          Icons.bolt,
-                        ),
-                        label: Text(
-                          claimReady
-                              ? 'CLAIM 10 COINS'
-                              : 'WAIT $claimTimerText',
-                          style:
-                              const TextStyle(
-                            fontSize: 17,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                        style:
-                            ElevatedButton
-                                .styleFrom(
-                          backgroundColor:
-                              Colors.amber,
-                          foregroundColor:
-                              Colors.black,
-                          disabledBackgroundColor:
-                              const Color(
-                                  0xFF27232A),
-                          disabledForegroundColor:
-                              Colors.white38,
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                                        30),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      'Last claim: ${formatLastClaim()}',
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // =================================================
-              // AD CARD
-              // =================================================
-
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.all(22),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(0xFF1C202A),
-                  borderRadius:
-                      BorderRadius.circular(22),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.ondemand_video,
-                      color: Colors.amber,
-                      size: 45,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    const Text(
-                      'WATCH AD',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 7),
-
-                    const Text(
-                      'Watch a video and receive +5 coins.',
-                      textAlign:
-                          TextAlign.center,
-                      style: TextStyle(
-                        color:
-                            Colors.white60,
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment
-                              .center,
-                      children: [
-                        const Icon(
-                          Icons.timer,
-                          size: 18,
-                          color:
-                              Colors.amber,
-                        ),
-                        const SizedBox(
-                          width: 6,
-                        ),
-                        Text(
-                          adTimerText,
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.amber,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    Text(
-                      '$adsWatchedToday / $maxAdsPerDay ads today',
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.white54,
-                      ),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child:
-                          OutlinedButton.icon(
-                        onPressed:
-                            canWatchAd
-                                ? showRewardedAd
-                                : null,
-                        icon: const Icon(
-                          Icons.play_arrow,
-                        ),
-                        label: Text(
-                          adLimitReached
-                              ? 'DAILY LIMIT REACHED'
-                              : adCooldownLeft !=
-                                      Duration
-                                          .zero
-                                  ? 'WAIT $adTimerText'
-                                  : rewardedAdReady
-                                      ? 'WATCH & EARN +5'
-                                      : 'LOADING AD...',
-                        ),
-                        style:
-                            OutlinedButton
-                                .styleFrom(
-                          foregroundColor:
-                              Colors.amber,
-                          disabledForegroundColor:
-                              Colors.white30,
-                          side:
-                              const BorderSide(
-                            color:
-                                Colors.amber,
-                          ),
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                                        28),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // =================================================
-              // STATS
-              // =================================================
-
-              Row(
-                children: [
-                  Expanded(
-                    child: statCard(
-                      Icons.bolt,
-                      'CLAIM',
-                      '+10',
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 12,
-                  ),
-                  Expanded(
-                    child: statCard(
-                      Icons.card_giftcard,
-                      'AD',
-                      '+5',
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-
-              // =================================================
-              // INFO
-              // =================================================
-
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.all(18),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(0xFF171B24),
-                  borderRadius:
-                      BorderRadius.circular(18),
-                ),
-                child: const Column(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color:
-                          Colors.white54,
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'COIN MINER is currently a local test version. '
-                      'Coins are virtual in-app points and are not real cryptocurrency.',
-                      textAlign:
-                          TextAlign.center,
-                      style: TextStyle(
-                        color:
-                            Colors.white54,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              const Text(
-                'COIN MINER v3',
-                style: TextStyle(
-                  color: Colors.white30,
-                  fontSize: 12,
-                ),
-              ),
+              _buildStatsCard(),
 
               const SizedBox(height: 20),
+
+              const Text(
+                'How it works',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              _buildInfoCard(),
+
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -1451,119 +880,163 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ==========================================================
-  // STAT CARD
-  // ==========================================================
+  // ------------------------------------------------------------
+  // WELCOME
+  // ------------------------------------------------------------
 
-  Widget statCard(
-    IconData icon,
-    String title,
-    String value,
-  ) {
-    return Container(
-      padding:
-          const EdgeInsets.all(18),
-      decoration:
-          BoxDecoration(
-        color:
-            const Color(0xFF1B1F29),
-        borderRadius:
-            BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: Colors.amber,
-            size: 28,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style:
-                const TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
+  Widget _buildWelcomeCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 30,
+              child: Icon(Icons.person),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style:
-                const TextStyle(
-              color: Colors.amber,
-              fontSize: 22,
-              fontWeight:
-                  FontWeight.bold,
-            ),
-          ),
-          const Text(
-            'COINS',
-            style:
-                TextStyle(
-              color: Colors.white38,
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // ==========================================================
-  // RESET DIALOG
-  // This one is safe because it is opened from the main page,
-  // not automatically during the first screen.
-  // ==========================================================
+            const SizedBox(width: 16),
 
-  void showResetDialog() {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title:
-              const Text('Reset account?'),
-          content:
-              const Text(
-            'This will delete the local test balance, '
-            'claim timer, ad limits and username.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop();
-              },
-              child:
-                  const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop();
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Welcome back',
+                    style: TextStyle(
+                      color: Colors.white60,
+                    ),
+                  ),
 
-                resetAccount();
-              },
-              child:
-                  const Text('RESET'),
+                  const SizedBox(height: 4),
+
+                  Text(
+                    userName,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  // ==========================================================
-  // DISPOSE
-  // ==========================================================
+  // ------------------------------------------------------------
+  // BALANCE
+  // ------------------------------------------------------------
 
-  @override
-  void dispose() {
-    timer?.cancel();
-    rewardedAd?.dispose();
+  Widget _buildBalanceCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Text(
+              'YOUR BALANCE',
+              style: TextStyle(
+                color: Colors.white60,
+                letterSpacing: 2,
+                fontSize: 12,
+              ),
+            ),
 
-    super.dispose();
+            const SizedBox(height: 10),
+
+            Text(
+              balance.toStringAsFixed(0),
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+
+            const Text(
+              'COINS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-}
+
+  // ------------------------------------------------------------
+  // DAILY CLAIM CARD
+  // ------------------------------------------------------------
+
+  Widget _buildDailyClaimCard(
+    bool claimAvailable,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: const [
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.amber,
+                ),
+
+                SizedBox(width: 10),
+
+                Text(
+                  'DAILY CLAIM',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              'Claim 10 coins once every 24 hours.',
+              style: TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            if (!claimAvailable) ...[
+              const Text(
+                'NEXT CLAIM IN',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+
+              const SizedBox(height: 5),
+
+              Text(
+                _formatDuration(claimRemaining),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 15),
+            ],
+
+            SizedBox(
+              height: 58
