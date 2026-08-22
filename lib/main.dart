@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await MobileAds.instance.initialize();
@@ -33,115 +33,87 @@ class CoinMinerApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const StartupPage(),
+      home: const StartPage(),
     );
   }
 }
 
 // ============================================================
-// STARTUP PAGE
+// START PAGE
+// IMPORTANT:
+// We do NOT use AlertDialog for the username.
+// This avoids the Flutter _dependents.isEmpty error.
 // ============================================================
 
-class StartupPage extends StatefulWidget {
-  const StartupPage({super.key});
+class StartPage extends StatefulWidget {
+  const StartPage({super.key});
 
   @override
-  State<StartupPage> createState() => _StartupPageState();
+  State<StartPage> createState() => _StartPageState();
 }
 
-class _StartupPageState extends State<StartupPage> {
+class _StartPageState extends State<StartPage> {
+  final TextEditingController controller = TextEditingController();
+
   bool loading = true;
-  String username = '';
+  bool saving = false;
 
   @override
   void initState() {
     super.initState();
-    checkAccount();
+    checkUsername();
   }
 
-  Future<void> checkAccount() async {
+  Future<void> checkUsername() async {
     final prefs = await SharedPreferences.getInstance();
 
     final savedUsername =
-        prefs.getString('username') ?? '';
+        prefs.getString('username')?.trim() ?? '';
 
     if (!mounted) return;
 
-    if (savedUsername.trim().isEmpty) {
-      setState(() {
-        loading = false;
-        username = '';
-      });
-    } else {
+    if (savedUsername.isNotEmpty) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const HomePage(),
         ),
       );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Colors.amber,
-          ),
-        ),
-      );
+      return;
     }
 
-    return const UsernamePage();
-  }
-}
-
-// ============================================================
-// USERNAME PAGE
-// ============================================================
-
-class UsernamePage extends StatefulWidget {
-  const UsernamePage({super.key});
-
-  @override
-  State<UsernamePage> createState() => _UsernamePageState();
-}
-
-class _UsernamePageState extends State<UsernamePage> {
-  final TextEditingController controller =
-      TextEditingController();
-
-  bool saving = false;
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
+    setState(() {
+      loading = false;
+    });
   }
 
-  Future<void> continueToGame() async {
+  Future<void> continueToApp() async {
+    if (saving) return;
+
     final name = controller.text.trim();
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter a username.',
-          ),
+          content: Text('Please enter a username.'),
         ),
       );
       return;
     }
 
-    if (saving) return;
+    if (name.length > 20) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username can contain maximum 20 characters.'),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       saving = true;
     });
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
       'username',
@@ -158,26 +130,43 @@ class _UsernamePageState extends State<UsernamePage> {
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Colors.amber,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(28),
             child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 110,
+                  height: 110,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.amber.withValues(
                       alpha: 0.12,
                     ),
                     border: Border.all(
-                      color: Colors.amber,
+                      color: Colors.amber.withValues(
+                        alpha: 0.4,
+                      ),
                       width: 2,
                     ),
                   ),
@@ -185,7 +174,7 @@ class _UsernamePageState extends State<UsernamePage> {
                     child: Text(
                       '₿',
                       style: TextStyle(
-                        fontSize: 75,
+                        fontSize: 70,
                         color: Colors.amber,
                         fontWeight: FontWeight.bold,
                       ),
@@ -193,7 +182,7 @@ class _UsernamePageState extends State<UsernamePage> {
                   ),
                 ),
 
-                const SizedBox(height: 35),
+                const SizedBox(height: 30),
 
                 const Text(
                   'COIN MINER',
@@ -204,40 +193,37 @@ class _UsernamePageState extends State<UsernamePage> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 const Text(
                   'Welcome!',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     color: Colors.white70,
                   ),
                 ),
 
-                const SizedBox(height: 8),
-
-                const Text(
-                  'Choose your username to continue.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white54,
-                  ),
-                ),
-
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
                 TextField(
                   controller: controller,
                   maxLength: 20,
-                  textInputAction:
-                      TextInputAction.done,
-                  decoration: const InputDecoration(
+                  textCapitalization:
+                      TextCapitalization.words,
+                  decoration: InputDecoration(
                     labelText: 'Username',
                     hintText: 'Enter your name',
-                    prefixIcon: Icon(
+                    prefixIcon: const Icon(
                       Icons.person,
                     ),
-                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: const Color(
+                      0xFF1B1F29,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
                   ),
                 ),
 
@@ -248,21 +234,15 @@ class _UsernamePageState extends State<UsernamePage> {
                   height: 58,
                   child: ElevatedButton(
                     onPressed:
-                        saving ? null : continueToGame,
+                        saving ? null : continueToApp,
                     style:
                         ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.amber,
-                      foregroundColor:
-                          Colors.black,
-                      disabledBackgroundColor:
-                          Colors.grey.shade800,
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black,
                       shape:
                           RoundedRectangleBorder(
                         borderRadius:
-                            BorderRadius.circular(
-                          30,
-                        ),
+                            BorderRadius.circular(30),
                       ),
                     ),
                     child: saving
@@ -306,32 +286,48 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  double balance = 0.0;
-
-  int streak = 0;
+  // ----------------------------------------------------------
+  // ACCOUNT
+  // ----------------------------------------------------------
 
   String username = '';
 
+  double balance = 0.0;
+
   DateTime? lastClaimTime;
-
-  DateTime? lastBonusTime;
-
-  int bonusCountToday = 0;
-
-  String bonusDay = '';
 
   bool loading = true;
 
-  Timer? timer;
+  // ----------------------------------------------------------
+  // REWARDED AD
+  // ----------------------------------------------------------
 
   RewardedAd? rewardedAd;
 
   bool rewardedAdReady = false;
 
-  bool showingAd = false;
-
+  // Google official rewarded test ad.
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
+
+  // ----------------------------------------------------------
+  // AD LIMITS
+  // ----------------------------------------------------------
+
+  static const int maxAdsPerDay = 5;
+
+  static const Duration adCooldown =
+      Duration(hours: 1);
+
+  List<int> adWatchTimes = [];
+
+  Timer? timer;
+
+  DateTime now = DateTime.now();
+
+  // ==========================================================
+  // INIT
+  // ==========================================================
 
   @override
   void initState() {
@@ -344,9 +340,12 @@ class _HomePageState extends State<HomePage> {
     timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) {
-        if (mounted) {
-          setState(() {});
-        }
+        if (!mounted) return;
+
+        setState(() {
+          now = DateTime.now();
+          cleanOldAdTimes();
+        });
       },
     );
   }
@@ -359,252 +358,291 @@ class _HomePageState extends State<HomePage> {
     final prefs =
         await SharedPreferences.getInstance();
 
-    final savedBalance =
-        prefs.getDouble('balance') ?? 0.0;
-
-    final savedStreak =
-        prefs.getInt('streak') ?? 0;
-
     final savedUsername =
         prefs.getString('username') ?? '';
 
-    final claimMs =
-        prefs.getInt('lastClaimTime');
+    final savedBalance =
+        prefs.getDouble('balance') ?? 0.0;
 
-    final bonusMs =
-        prefs.getInt('lastBonusTime');
+    final savedLastClaim =
+        prefs.getString('lastClaimTime') ?? '';
 
-    final savedBonusCount =
-        prefs.getInt('bonusCountToday') ?? 0;
+    final savedAdTimes =
+        prefs.getStringList('adWatchTimes') ?? [];
 
-    final savedBonusDay =
-        prefs.getString('bonusDay') ?? '';
+    DateTime? parsedClaim;
 
-    DateTime? claimTime;
-
-    if (claimMs != null) {
-      claimTime =
-          DateTime.fromMillisecondsSinceEpoch(
-        claimMs,
-      );
+    if (savedLastClaim.isNotEmpty) {
+      parsedClaim =
+          DateTime.tryParse(savedLastClaim);
     }
 
-    DateTime? bonusTime;
+    final parsedAds = <int>[];
 
-    if (bonusMs != null) {
-      bonusTime =
-          DateTime.fromMillisecondsSinceEpoch(
-        bonusMs,
-      );
-    }
+    for (final value in savedAdTimes) {
+      final timestamp = int.tryParse(value);
 
-    final today =
-        dateKey(DateTime.now());
-
-    int bonusCount = savedBonusCount;
-
-    if (savedBonusDay != today) {
-      bonusCount = 0;
+      if (timestamp != null) {
+        parsedAds.add(timestamp);
+      }
     }
 
     if (!mounted) return;
 
     setState(() {
-      balance = savedBalance;
-      streak = savedStreak;
       username = savedUsername;
-
-      lastClaimTime = claimTime;
-      lastBonusTime = bonusTime;
-
-      bonusCountToday = bonusCount;
-      bonusDay = today;
-
+      balance = savedBalance;
+      lastClaimTime = parsedClaim;
+      adWatchTimes = parsedAds;
       loading = false;
+      now = DateTime.now();
     });
+
+    cleanOldAdTimes();
   }
 
   // ==========================================================
-  // SAVE
+  // SAVE DATA
   // ==========================================================
 
   Future<void> saveData() async {
     final prefs =
         await SharedPreferences.getInstance();
 
-    await prefs.setDouble(
-      'balance',
-      balance,
-    );
-
-    await prefs.setInt(
-      'streak',
-      streak,
-    );
-
     await prefs.setString(
       'username',
       username,
     );
 
+    await prefs.setDouble(
+      'balance',
+      balance,
+    );
+
     if (lastClaimTime != null) {
-      await prefs.setInt(
+      await prefs.setString(
         'lastClaimTime',
-        lastClaimTime!
-            .millisecondsSinceEpoch,
+        lastClaimTime!.toIso8601String(),
       );
+    } else {
+      await prefs.remove('lastClaimTime');
     }
 
-    if (lastBonusTime != null) {
-      await prefs.setInt(
-        'lastBonusTime',
-        lastBonusTime!
-            .millisecondsSinceEpoch,
-      );
-    }
-
-    await prefs.setInt(
-      'bonusCountToday',
-      bonusCountToday,
-    );
-
-    await prefs.setString(
-      'bonusDay',
-      bonusDay,
+    await prefs.setStringList(
+      'adWatchTimes',
+      adWatchTimes
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 
   // ==========================================================
-  // DATE
+  // CLAIM READY
   // ==========================================================
 
-  String dateKey(DateTime date) {
-    return '${date.year}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-  }
-
-  // ==========================================================
-  // CLAIM
-  // ==========================================================
-
-  bool get canClaim {
+  bool get claimReady {
     if (lastClaimTime == null) {
       return true;
     }
 
-    return DateTime.now()
-            .difference(lastClaimTime!) >=
+    final difference =
+        DateTime.now().difference(lastClaimTime!);
+
+    return difference >=
         const Duration(hours: 24);
   }
 
-  Duration get claimRemaining {
+  // ==========================================================
+  // CLAIM TIME LEFT
+  // ==========================================================
+
+  Duration get claimTimeLeft {
     if (lastClaimTime == null) {
       return Duration.zero;
     }
 
-    final next =
+    final nextClaim =
         lastClaimTime!.add(
       const Duration(hours: 24),
     );
 
-    final remaining =
-        next.difference(DateTime.now());
+    final difference =
+        nextClaim.difference(DateTime.now());
 
-    if (remaining.isNegative) {
+    if (difference.isNegative) {
       return Duration.zero;
     }
 
-    return remaining;
+    return difference;
   }
 
   // ==========================================================
-  // BONUS
+  // CLAIM TIMER TEXT
   // ==========================================================
 
-  void checkBonusDay() {
-    final today =
-        dateKey(DateTime.now());
+  String get claimTimerText {
+    if (claimReady) {
+      return 'READY TO CLAIM';
+    }
 
-    if (bonusDay != today) {
-      bonusDay = today;
-      bonusCountToday = 0;
-      lastBonusTime = null;
+    final duration = claimTimeLeft;
+
+    final hours =
+        duration.inHours.toString().padLeft(2, '0');
+
+    final minutes =
+        (duration.inMinutes % 60)
+            .toString()
+            .padLeft(2, '0');
+
+    final seconds =
+        (duration.inSeconds % 60)
+            .toString()
+            .padLeft(2, '0');
+
+    return '$hours:$minutes:$seconds';
+  }
+
+  // ==========================================================
+  // CLEAN OLD AD TIMES
+  // ==========================================================
+
+  void cleanOldAdTimes() {
+    final cutoff =
+        DateTime.now()
+            .subtract(const Duration(hours: 24))
+            .millisecondsSinceEpoch;
+
+    final before = adWatchTimes.length;
+
+    adWatchTimes.removeWhere(
+      (time) => time < cutoff,
+    );
+
+    if (before != adWatchTimes.length) {
+      saveData();
     }
   }
 
-  bool get canBonus {
-    checkBonusDay();
+  // ==========================================================
+  // ADS WATCHED TODAY
+  // ==========================================================
 
-    if (bonusCountToday >= 5) {
+  int get adsWatchedToday {
+    cleanOldAdTimes();
+
+    final now = DateTime.now();
+
+    return adWatchTimes.where((timestamp) {
+      final date =
+          DateTime.fromMillisecondsSinceEpoch(
+        timestamp,
+      );
+
+      return date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+    }).length;
+  }
+
+  // ==========================================================
+  // AD AVAILABLE
+  // ==========================================================
+
+  bool get adLimitReached {
+    return adsWatchedToday >= maxAdsPerDay;
+  }
+
+  // ==========================================================
+  // AD COOLDOWN
+  // ==========================================================
+
+  Duration get adCooldownLeft {
+    if (adWatchTimes.isEmpty) {
+      return Duration.zero;
+    }
+
+    final latest =
+        adWatchTimes.reduce(
+      (a, b) => a > b ? a : b,
+    );
+
+    final next =
+        DateTime.fromMillisecondsSinceEpoch(
+      latest,
+    ).add(adCooldown);
+
+    final difference =
+        next.difference(DateTime.now());
+
+    if (difference.isNegative) {
+      return Duration.zero;
+    }
+
+    return difference;
+  }
+
+  // ==========================================================
+  // AD READY TO WATCH
+  // ==========================================================
+
+  bool get canWatchAd {
+    if (!rewardedAdReady) {
       return false;
     }
 
-    if (lastBonusTime == null) {
-      return true;
+    if (adLimitReached) {
+      return false;
     }
 
-    return DateTime.now()
-            .difference(lastBonusTime!) >=
-        const Duration(hours: 1);
-  }
-
-  Duration get bonusRemaining {
-    if (lastBonusTime == null) {
-      return Duration.zero;
-    }
-
-    final next =
-        lastBonusTime!.add(
-      const Duration(hours: 1),
-    );
-
-    final remaining =
-        next.difference(DateTime.now());
-
-    if (remaining.isNegative) {
-      return Duration.zero;
-    }
-
-    return remaining;
+    return adCooldownLeft == Duration.zero;
   }
 
   // ==========================================================
-  // CLAIM 10
+  // AD TIMER TEXT
+  // ==========================================================
+
+  String get adTimerText {
+    if (adLimitReached) {
+      return '5 / 5 TODAY';
+    }
+
+    final left = adCooldownLeft;
+
+    if (left == Duration.zero) {
+      return 'READY';
+    }
+
+    final minutes =
+        left.inMinutes
+            .toString()
+            .padLeft(2, '0');
+
+    final seconds =
+        (left.inSeconds % 60)
+            .toString()
+            .padLeft(2, '0');
+
+    return '$minutes:$seconds';
+  }
+
+  // ==========================================================
+  // CLAIM 10 COINS
   // ==========================================================
 
   Future<void> claimCoins() async {
-    if (!canClaim) {
+    if (!claimReady) {
       showMessage(
-        'Next claim in ${formatDuration(claimRemaining)}',
-        Icons.timer,
+        'Next claim in ${claimTimerText}',
+        Icons.lock_clock,
       );
       return;
     }
 
-    final now = DateTime.now();
+    // Give the daily reward.
+    balance += 10.0;
 
-    if (lastClaimTime == null) {
-      streak = 1;
-    } else {
-      final yesterday =
-          dateKey(
-        now.subtract(
-          const Duration(days: 1),
-        ),
-      );
-
-      if (dateKey(lastClaimTime!) ==
-          yesterday) {
-        streak++;
-      } else {
-        streak = 1;
-      }
-    }
-
-    balance += 10;
-
-    lastClaimTime = now;
+    lastClaimTime = DateTime.now();
 
     await saveData();
 
@@ -613,28 +651,29 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
 
     showMessage(
-      '+10 COINS claimed!',
+      '+10 COINS CLAIMED!',
       Icons.bolt,
     );
 
+    // --------------------------------------------------------
+    // SHOW REWARDED AD AFTER CLAIM
+    // --------------------------------------------------------
+
     await Future.delayed(
-      const Duration(milliseconds: 400),
+      const Duration(milliseconds: 500),
     );
 
-    if (mounted) {
-      showRewardedAd(
-        RewardType.afterClaim,
-      );
-    }
+    if (!mounted) return;
+
+    showRewardedAd();
   }
 
   // ==========================================================
-  // LOAD AD
+  // LOAD REWARDED AD
   // ==========================================================
 
   void loadRewardedAd() {
-    if (rewardedAd != null ||
-        rewardedAdReady) {
+    if (rewardedAdReady) {
       return;
     }
 
@@ -643,10 +682,8 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded:
-            (RewardedAd ad) {
+        onAdLoaded: (RewardedAd ad) {
           rewardedAd = ad;
-
           rewardedAdReady = true;
 
           ad.fullScreenContentCallback =
@@ -657,7 +694,6 @@ class _HomePageState extends State<HomePage> {
 
               rewardedAd = null;
               rewardedAdReady = false;
-              showingAd = false;
 
               loadRewardedAd();
 
@@ -666,13 +702,11 @@ class _HomePageState extends State<HomePage> {
               }
             },
             onAdFailedToShowFullScreenContent:
-                (RewardedAd ad,
-                    AdError error) {
+                (RewardedAd ad, AdError error) {
               ad.dispose();
 
               rewardedAd = null;
               rewardedAdReady = false;
-              showingAd = false;
 
               loadRewardedAd();
 
@@ -691,27 +725,32 @@ class _HomePageState extends State<HomePage> {
           rewardedAd = null;
           rewardedAdReady = false;
 
-          Future.delayed(
-            const Duration(seconds: 10),
-            () {
-              if (mounted) {
-                loadRewardedAd();
-              }
-            },
-          );
+          if (mounted) {
+            setState(() {});
+          }
         },
       ),
     );
   }
 
   // ==========================================================
-  // SHOW AD
+  // SHOW REWARDED AD
   // ==========================================================
 
-  void showRewardedAd(
-    RewardType type,
-  ) {
-    if (showingAd) {
+  void showRewardedAd() {
+    if (adLimitReached) {
+      showMessage(
+        'You have watched 5 ads today.',
+        Icons.block,
+      );
+      return;
+    }
+
+    if (adCooldownLeft != Duration.zero) {
+      showMessage(
+        'Next ad available in $adTimerText',
+        Icons.timer,
+      );
       return;
     }
 
@@ -730,100 +769,58 @@ class _HomePageState extends State<HomePage> {
 
     rewardedAd = null;
     rewardedAdReady = false;
-    showingAd = true;
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad,
-              RewardItem reward) async {
-        if (type ==
-            RewardType.hourlyBonus) {
-          await giveBonus();
-        }
+          (AdWithoutView ad, RewardItem reward) async {
+        // ----------------------------------------------------
+        // +5 COINS
+        // ----------------------------------------------------
+
+        balance += 5.0;
+
+        adWatchTimes.add(
+          DateTime.now()
+              .millisecondsSinceEpoch,
+        );
+
+        await saveData();
+
+        if (!mounted) return;
+
+        setState(() {});
+
+        showMessage(
+          '+5 COINS AD REWARD!',
+          Icons.card_giftcard,
+        );
+
+        loadRewardedAd();
       },
     );
   }
 
   // ==========================================================
-  // +5 BONUS
+  // RESET ACCOUNT
   // ==========================================================
 
-  Future<void> watchBonus() async {
-    checkBonusDay();
+  Future<void> resetAccount() async {
+    final prefs =
+        await SharedPreferences.getInstance();
 
-    if (bonusCountToday >= 5) {
-      showMessage(
-        'You have reached 5/5 bonuses today.',
-        Icons.lock,
-      );
-      return;
-    }
-
-    if (!canBonus) {
-      showMessage(
-        'Next bonus in ${formatDuration(bonusRemaining)}',
-        Icons.timer,
-      );
-      return;
-    }
-
-    showRewardedAd(
-      RewardType.hourlyBonus,
-    );
-  }
-
-  // ==========================================================
-  // GIVE BONUS
-  // ==========================================================
-
-  Future<void> giveBonus() async {
-    checkBonusDay();
-
-    if (bonusCountToday >= 5) {
-      return;
-    }
-
-    balance += 5;
-
-    bonusCountToday++;
-
-    lastBonusTime = DateTime.now();
-
-    await saveData();
+    await prefs.remove('username');
+    await prefs.remove('balance');
+    await prefs.remove('lastClaimTime');
+    await prefs.remove('adWatchTimes');
 
     if (!mounted) return;
 
-    setState(() {});
-
-    showMessage(
-      '+5 COINS!',
-      Icons.card_giftcard,
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const StartPage(),
+      ),
+      (route) => false,
     );
-  }
-
-  // ==========================================================
-  // FORMAT TIME
-  // ==========================================================
-
-  String formatDuration(
-    Duration d,
-  ) {
-    if (d.isNegative ||
-        d == Duration.zero) {
-      return '00:00:00';
-    }
-
-    final h = d.inHours;
-
-    final m =
-        d.inMinutes.remainder(60);
-
-    final s =
-        d.inSeconds.remainder(60);
-
-    return '${h.toString().padLeft(2, '0')}:'
-        '${m.toString().padLeft(2, '0')}:'
-        '${s.toString().padLeft(2, '0')}';
   }
 
   // ==========================================================
@@ -861,73 +858,32 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // RESET
+  // FORMAT COINS
   // ==========================================================
 
-  Future<void> resetAccount() async {
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.clear();
-
-    if (!mounted) return;
-
-    Navigator.of(context)
-        .pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) =>
-            const UsernamePage(),
-      ),
-      (route) => false,
-    );
+  String get balanceText {
+    return balance.toStringAsFixed(1);
   }
 
   // ==========================================================
-  // RESET CONFIRMATION
+  // FORMAT DATE
   // ==========================================================
 
-  Future<void> confirmReset() async {
-    final result =
-        await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'Reset account?',
-          ),
-          content: const Text(
-            'All local test data will be deleted.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  context,
-                  false,
-                );
-              },
-              child:
-                  const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(
-                  context,
-                  true,
-                );
-              },
-              child:
-                  const Text('RESET'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == true &&
-        mounted) {
-      await resetAccount();
+  String formatLastClaim() {
+    if (lastClaimTime == null) {
+      return 'Never';
     }
+
+    final time = lastClaimTime!;
+
+    final hour =
+        time.hour.toString().padLeft(2, '0');
+
+    final minute =
+        time.minute.toString().padLeft(2, '0');
+
+    return '${time.day}.${time.month}.${time.year} '
+        '$hour:$minute';
   }
 
   // ==========================================================
@@ -939,27 +895,12 @@ class _HomePageState extends State<HomePage> {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child:
-              CircularProgressIndicator(
+          child: CircularProgressIndicator(
             color: Colors.amber,
           ),
         ),
       );
     }
-
-    checkBonusDay();
-
-    final claimText =
-        canClaim
-            ? 'CLAIM 10 COINS'
-            : 'NEXT CLAIM\n${formatDuration(claimRemaining)}';
-
-    final bonusText =
-        canBonus
-            ? 'WATCH & EARN +5'
-            : bonusCountToday >= 5
-                ? '5 / 5 COMPLETED'
-                : 'WAIT ${formatDuration(bonusRemaining)}';
 
     return Scaffold(
       appBar: AppBar(
@@ -967,16 +908,17 @@ class _HomePageState extends State<HomePage> {
         title: const Text(
           'COIN MINER',
           style: TextStyle(
-            fontWeight:
-                FontWeight.bold,
+            fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
           ),
         ),
+        backgroundColor:
+            const Color(0xFF17131C),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'reset') {
-                confirmReset();
+                showResetDialog();
               }
             },
             itemBuilder: (context) {
@@ -985,9 +927,7 @@ class _HomePageState extends State<HomePage> {
                   value: 'reset',
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.refresh,
-                      ),
+                      Icon(Icons.refresh),
                       SizedBox(width: 10),
                       Text(
                         'Reset test account',
@@ -1002,32 +942,30 @@ class _HomePageState extends State<HomePage> {
       ),
 
       body: SafeArea(
-        child:
-            SingleChildScrollView(
+        child: SingleChildScrollView(
           padding:
               const EdgeInsets.all(20),
           child: Column(
             children: [
-              const SizedBox(
-                height: 10,
-              ),
+              const SizedBox(height: 15),
 
+              // =================================================
               // USER
+              // =================================================
+
               Container(
-                width:
-                    double.infinity,
+                width: double.infinity,
                 padding:
-                    const EdgeInsets.all(16),
+                    const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
                 decoration:
                     BoxDecoration(
                   color:
-                      const Color(
-                    0xFF1B1F29,
-                  ),
+                      const Color(0xFF1B1F29),
                   borderRadius:
-                      BorderRadius.circular(
-                    18,
-                  ),
+                      BorderRadius.circular(18),
                 ),
                 child: Row(
                   children: [
@@ -1036,60 +974,71 @@ class _HomePageState extends State<HomePage> {
                           Colors.amber,
                       child: Icon(
                         Icons.person,
-                        color:
-                            Colors.black,
+                        color: Colors.black,
                       ),
                     ),
-                    const SizedBox(
-                      width: 14,
-                    ),
+                    const SizedBox(width: 14),
                     Expanded(
-                      child: Text(
-                        username,
-                        style:
-                            const TextStyle(
-                          fontSize: 20,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'MINER',
+                            style: TextStyle(
+                              color:
+                                  Colors.white54,
+                              fontSize: 12,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            username,
+                            style:
+                                const TextStyle(
+                              fontSize: 20,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(
-                height: 25,
-              ),
+              const SizedBox(height: 25),
 
+              // =================================================
               // COIN
+              // =================================================
+
               Container(
                 width: 125,
                 height: 125,
                 decoration:
                     BoxDecoration(
-                  shape:
-                      BoxShape.circle,
+                  shape: BoxShape.circle,
                   color: Colors.amber
                       .withValues(
                     alpha: 0.12,
                   ),
-                  border:
-                      Border.all(
-                    color:
-                        Colors.amber,
+                  border: Border.all(
+                    color: Colors.amber
+                        .withValues(
+                      alpha: 0.35,
+                    ),
                     width: 2,
                   ),
                 ),
-                child:
-                    const Center(
+                child: const Center(
                   child: Text(
                     '₿',
-                    style:
-                        TextStyle(
+                    style: TextStyle(
                       fontSize: 82,
-                      color:
-                          Colors.amber,
+                      color: Colors.amber,
                       fontWeight:
                           FontWeight.bold,
                     ),
@@ -1097,294 +1046,305 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(
-                height: 25,
-              ),
+              const SizedBox(height: 25),
 
               const Text(
                 'YOUR BALANCE',
-                style:
-                    TextStyle(
-                  fontSize: 20,
-                  color:
-                      Colors.white70,
+                style: TextStyle(
+                  fontSize: 19,
+                  color: Colors.white70,
+                  letterSpacing: 1,
                 ),
               ),
 
+              const SizedBox(height: 5),
+
               Text(
-                balance
-                    .toStringAsFixed(
-                  0,
-                ),
-                style:
-                    const TextStyle(
-                  fontSize: 58,
+                balanceText,
+                style: const TextStyle(
+                  fontSize: 56,
                   fontWeight:
                       FontWeight.bold,
-                  color:
-                      Colors.amber,
+                  color: Colors.amber,
                 ),
               ),
 
               const Text(
                 'COINS',
-                style:
-                    TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color:
-                      Colors.white70,
-                  letterSpacing:
-                      2,
+                  color: Colors.white70,
+                  letterSpacing: 2,
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 25),
 
-              // STREAK
+              // =================================================
+              // CLAIM CARD
+              // =================================================
+
               Container(
-                width:
-                    double.infinity,
+                width: double.infinity,
                 padding:
-                    const EdgeInsets.all(
-                  18,
-                ),
+                    const EdgeInsets.all(22),
                 decoration:
                     BoxDecoration(
                   color:
-                      const Color(
-                    0xFF1B1F29,
-                  ),
+                      const Color(0xFF1C202A),
                   borderRadius:
-                      BorderRadius.circular(
-                    18,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons
-                          .local_fire_department,
-                      color:
-                          Colors.orange,
-                      size: 30,
+                      BorderRadius.circular(22),
+                  border: Border.all(
+                    color: Colors.amber
+                        .withValues(
+                      alpha: 0.15,
                     ),
-                    const SizedBox(
-                      width: 12,
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'MINING STREAK',
-                        style:
-                            TextStyle(
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '$streak DAYS',
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.orange,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(
-                height: 20,
-              ),
-
-              // DAILY CLAIM
-              Container(
-                width:
-                    double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  20,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(
-                    0xFF1C202A,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    22,
                   ),
                 ),
                 child: Column(
                   children: [
                     const Icon(
                       Icons.bolt,
-                      color:
-                          Colors.amber,
-                      size: 45,
+                      color: Colors.amber,
+                      size: 48,
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
+
+                    const SizedBox(height: 10),
+
                     const Text(
                       'DAILY CLAIM',
-                      style:
-                          TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight:
                             FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(
-                      height: 6,
-                    ),
+
+                    const SizedBox(height: 6),
+
                     const Text(
-                      '10 coins every 24 hours',
-                      style:
-                          TextStyle(
+                      'Claim 10 coins once every 24 hours.',
+                      textAlign:
+                          TextAlign.center,
+                      style: TextStyle(
                         color:
                             Colors.white60,
                       ),
                     ),
-                    const SizedBox(
-                      height: 15,
+
+                    const SizedBox(height: 18),
+
+                    Container(
+                      padding:
+                          const EdgeInsets
+                              .symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      decoration:
+                          BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius:
+                            BorderRadius
+                                .circular(20),
+                      ),
+                      child: Text(
+                        claimTimerText,
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.amber,
+                          fontSize: 22,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
                     ),
+
+                    const SizedBox(height: 18),
+
                     SizedBox(
-                      width:
-                          double.infinity,
-                      height: 60,
+                      width: double.infinity,
+                      height: 58,
                       child:
-                          ElevatedButton(
+                          ElevatedButton.icon(
                         onPressed:
-                            canClaim &&
-                                    !showingAd
+                            claimReady
                                 ? claimCoins
                                 : null,
+                        icon: const Icon(
+                          Icons.bolt,
+                        ),
+                        label: Text(
+                          claimReady
+                              ? 'CLAIM 10 COINS'
+                              : 'WAIT $claimTimerText',
+                          style:
+                              const TextStyle(
+                            fontSize: 17,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
                         style:
-                            ElevatedButton.styleFrom(
+                            ElevatedButton
+                                .styleFrom(
                           backgroundColor:
                               Colors.amber,
                           foregroundColor:
                               Colors.black,
+                          disabledBackgroundColor:
+                              const Color(
+                                  0xFF27232A),
+                          disabledForegroundColor:
+                              Colors.white38,
                           shape:
                               RoundedRectangleBorder(
                             borderRadius:
-                                BorderRadius.circular(
-                              30,
-                            ),
+                                BorderRadius
+                                    .circular(
+                                        30),
                           ),
                         ),
-                        child: Text(
-                          claimText,
-                          textAlign:
-                              TextAlign.center,
-                          style:
-                              const TextStyle(
-                            fontWeight:
-                                FontWeight.bold,
-                            fontSize: 17,
-                          ),
-                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      'Last claim: ${formatLastClaim()}',
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white38,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 25),
 
-              // +5 BONUS
+              // =================================================
+              // AD CARD
+              // =================================================
+
               Container(
-                width:
-                    double.infinity,
+                width: double.infinity,
                 padding:
-                    const EdgeInsets.all(
-                  20,
-                ),
+                    const EdgeInsets.all(22),
                 decoration:
                     BoxDecoration(
                   color:
-                      const Color(
-                    0xFF1C202A,
-                  ),
+                      const Color(0xFF1C202A),
                   borderRadius:
-                      BorderRadius.circular(
-                    22,
-                  ),
+                      BorderRadius.circular(22),
                 ),
                 child: Column(
                   children: [
                     const Icon(
-                      Icons
-                          .ondemand_video,
-                      color:
-                          Colors.amber,
+                      Icons.ondemand_video,
+                      color: Colors.amber,
                       size: 45,
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
+
+                    const SizedBox(height: 12),
+
                     const Text(
-                      'WATCH AD +5 COINS',
-                      style:
-                          TextStyle(
+                      'WATCH AD',
+                      style: TextStyle(
                         fontSize: 19,
                         fontWeight:
                             FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(
-                      height: 6,
-                    ),
+
+                    const SizedBox(height: 7),
+
                     const Text(
-                      'Once every hour, maximum 5 times per day.',
+                      'Watch a video and receive +5 coins.',
                       textAlign:
                           TextAlign.center,
-                      style:
-                          TextStyle(
+                      style: TextStyle(
                         color:
                             Colors.white60,
                       ),
                     ),
-                    const SizedBox(
-                      height: 12,
+
+                    const SizedBox(height: 14),
+
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .center,
+                      children: [
+                        const Icon(
+                          Icons.timer,
+                          size: 18,
+                          color:
+                              Colors.amber,
+                        ),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        Text(
+                          adTimerText,
+                          style:
+                              const TextStyle(
+                            color:
+                                Colors.amber,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
+
+                    const SizedBox(height: 15),
+
                     Text(
-                      '$bonusCountToday / 5 TODAY',
+                      '$adsWatchedToday / $maxAdsPerDay ads today',
                       style:
                           const TextStyle(
                         color:
-                            Colors.amber,
-                        fontSize: 18,
-                        fontWeight:
-                            FontWeight.bold,
+                            Colors.white54,
                       ),
                     ),
-                    const SizedBox(
-                      height: 15,
-                    ),
+
+                    const SizedBox(height: 15),
+
                     SizedBox(
-                      width:
-                          double.infinity,
+                      width: double.infinity,
                       height: 52,
                       child:
-                          OutlinedButton(
+                          OutlinedButton.icon(
                         onPressed:
-                            canBonus &&
-                                    !showingAd
-                                ? watchBonus
+                            canWatchAd
+                                ? showRewardedAd
                                 : null,
+                        icon: const Icon(
+                          Icons.play_arrow,
+                        ),
+                        label: Text(
+                          adLimitReached
+                              ? 'DAILY LIMIT REACHED'
+                              : adCooldownLeft !=
+                                      Duration
+                                          .zero
+                                  ? 'WAIT $adTimerText'
+                                  : rewardedAdReady
+                                      ? 'WATCH & EARN +5'
+                                      : 'LOADING AD...',
+                        ),
                         style:
-                            OutlinedButton.styleFrom(
+                            OutlinedButton
+                                .styleFrom(
                           foregroundColor:
                               Colors.amber,
+                          disabledForegroundColor:
+                              Colors.white30,
                           side:
                               const BorderSide(
                             color:
@@ -1393,15 +1353,10 @@ class _HomePageState extends State<HomePage> {
                           shape:
                               RoundedRectangleBorder(
                             borderRadius:
-                                BorderRadius.circular(
-                              28,
-                            ),
+                                BorderRadius
+                                    .circular(
+                                        28),
                           ),
-                        ),
-                        child: Text(
-                          bonusText,
-                          textAlign:
-                              TextAlign.center,
                         ),
                       ),
                     ),
@@ -1409,17 +1364,18 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 25),
 
+              // =================================================
               // STATS
+              // =================================================
+
               Row(
                 children: [
                   Expanded(
                     child: statCard(
                       Icons.bolt,
-                      'DAILY',
+                      'CLAIM',
                       '+10',
                     ),
                   ),
@@ -1428,8 +1384,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   Expanded(
                     child: statCard(
-                      Icons
-                          .card_giftcard,
+                      Icons.card_giftcard,
                       'AD',
                       '+5',
                     ),
@@ -1437,23 +1392,58 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
 
-              const SizedBox(
-                height: 25,
+              const SizedBox(height: 25),
+
+              // =================================================
+              // INFO
+              // =================================================
+
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.all(18),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF171B24),
+                  borderRadius:
+                      BorderRadius.circular(18),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color:
+                          Colors.white54,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'COIN MINER is currently a local test version. '
+                      'Coins are virtual in-app points and are not real cryptocurrency.',
+                      textAlign:
+                          TextAlign.center,
+                      style: TextStyle(
+                        color:
+                            Colors.white54,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
+              const SizedBox(height: 25),
+
               const Text(
-                'COIN MINER v4',
-                style:
-                    TextStyle(
-                  color:
-                      Colors.white30,
+                'COIN MINER v3',
+                style: TextStyle(
+                  color: Colors.white30,
                   fontSize: 12,
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -1478,9 +1468,7 @@ class _HomePageState extends State<HomePage> {
         color:
             const Color(0xFF1B1F29),
         borderRadius:
-            BorderRadius.circular(
-          18,
-        ),
+            BorderRadius.circular(18),
       ),
       child: Column(
         children: [
@@ -1489,26 +1477,21 @@ class _HomePageState extends State<HomePage> {
             color: Colors.amber,
             size: 28,
           ),
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
           Text(
             title,
             style:
                 const TextStyle(
-              color:
-                  Colors.white54,
+              color: Colors.white54,
+              fontSize: 12,
             ),
           ),
-          const SizedBox(
-            height: 4,
-          ),
+          const SizedBox(height: 4),
           Text(
             value,
             style:
                 const TextStyle(
-              color:
-                  Colors.amber,
+              color: Colors.amber,
               fontSize: 22,
               fontWeight:
                   FontWeight.bold,
@@ -1518,8 +1501,7 @@ class _HomePageState extends State<HomePage> {
             'COINS',
             style:
                 TextStyle(
-              color:
-                  Colors.white38,
+              color: Colors.white38,
               fontSize: 10,
             ),
           ),
@@ -1528,21 +1510,60 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ==========================================================
+  // RESET DIALOG
+  // This one is safe because it is opened from the main page,
+  // not automatically during the first screen.
+  // ==========================================================
+
+  void showResetDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title:
+              const Text('Reset account?'),
+          content:
+              const Text(
+            'This will delete the local test balance, '
+            'claim timer, ad limits and username.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop();
+              },
+              child:
+                  const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop();
+
+                resetAccount();
+              },
+              child:
+                  const Text('RESET'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
+
   @override
   void dispose() {
     timer?.cancel();
-
     rewardedAd?.dispose();
 
     super.dispose();
   }
-}
-
-// ============================================================
-// REWARD TYPE
-// ============================================================
-
-enum RewardType {
-  afterClaim,
-  hourlyBonus,
 }
