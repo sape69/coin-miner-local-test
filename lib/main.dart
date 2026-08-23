@@ -42,6 +42,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Google test ad IDs.
+  // Replace these later with your own AdMob IDs before release.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -61,6 +63,7 @@ class _HomePageState extends State<HomePage> {
       TextEditingController();
 
   Timer? _timer;
+  Timer? _rewardAdRetryTimer;
 
   String _name = '';
   String _error = '';
@@ -107,6 +110,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _rewardAdRetryTimer?.cancel();
 
     _nameController.dispose();
 
@@ -115,10 +119,6 @@ class _HomePageState extends State<HomePage> {
 
     super.dispose();
   }
-
-  // ============================================================
-  // LOAD DATA
-  // ============================================================
 
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -171,13 +171,11 @@ class _HomePageState extends State<HomePage> {
     }
 
     _updateTimers();
+
+    // Start loading advertisements immediately.
     _loadRewardedAd();
     _loadInterstitialAd();
   }
-
-  // ============================================================
-  // DATE
-  // ============================================================
 
   String _today() {
     final now = DateTime.now().toUtc();
@@ -189,10 +187,6 @@ class _HomePageState extends State<HomePage> {
     return '$year-$month-$day';
   }
 
-  // ============================================================
-  // NEW DAY
-  // ============================================================
-
   Future<void> _checkNewDay() async {
     if (_prefs == null) {
       return;
@@ -200,7 +194,8 @@ class _HomePageState extends State<HomePage> {
 
     final today = _today();
 
-    final savedDay = _prefs!.getString(rewardDayKey);
+    final savedDay =
+        _prefs!.getString(rewardDayKey);
 
     if (savedDay == today) {
       return;
@@ -222,10 +217,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {});
     }
   }
-
-  // ============================================================
-  // TIMERS
-  // ============================================================
 
   void _updateTimers() {
     final now = DateTime.now().toUtc();
@@ -276,9 +267,9 @@ class _HomePageState extends State<HomePage> {
     return _rewardTimer == Duration.zero;
   }
 
-  // ============================================================
-  // USERNAME
-  // ============================================================
+  bool get adReady {
+    return _rewardedAd != null;
+  }
 
   Future<void> _continue() async {
     final name = _nameController.text.trim();
@@ -317,14 +308,10 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         _savingName = false;
-        _error = 'Could not save your name';
+        _error = 'Could not save name. Please try again.';
       });
     }
   }
-
-  // ============================================================
-  // DAILY CLAIM
-  // ============================================================
 
   Future<void> _claimCoins() async {
     if (_claiming || !canClaim) {
@@ -359,13 +346,9 @@ class _HomePageState extends State<HomePage> {
 
     _message('+10 coins!');
 
-    // Interstitial after daily claim.
+    // Show interstitial after claiming.
     _showInterstitial();
   }
-
-  // ============================================================
-  // REWARDED AD
-  // ============================================================
 
   Future<void> _watchRewardAd() async {
     if (_showingReward) {
@@ -392,9 +375,11 @@ class _HomePageState extends State<HomePage> {
 
     final ad = _rewardedAd;
 
+    // IMPORTANT:
+    // Do not try to show an ad that has not finished loading.
     if (ad == null) {
       _message(
-        'Advertisement is loading. Try again shortly.',
+        'Advertisement is still loading. Please wait.',
       );
 
       _loadRewardedAd();
@@ -410,6 +395,9 @@ class _HomePageState extends State<HomePage> {
 
     ad.fullScreenContentCallback =
         FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        // Advertisement successfully opened.
+      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
 
@@ -419,6 +407,7 @@ class _HomePageState extends State<HomePage> {
           });
         }
 
+        // Immediately start loading the next ad.
         _loadRewardedAd();
       },
       onAdFailedToShowFullScreenContent:
@@ -431,7 +420,7 @@ class _HomePageState extends State<HomePage> {
           });
 
           _message(
-            'Advertisement could not be shown.',
+            'Advertisement could not be shown. Please try again.',
           );
         }
 
@@ -449,6 +438,10 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _giveFiveCoins() async {
     await _checkNewDay();
+
+    if (_rewardCount >= 5) {
+      return;
+    }
 
     _coins += 5;
     _rewardCount++;
@@ -481,16 +474,20 @@ class _HomePageState extends State<HomePage> {
     _message('+5 coins!');
   }
 
-  // ============================================================
-  // LOAD REWARDED AD
-  // ============================================================
-
   void _loadRewardedAd() {
-    if (_loadingRewarded || _rewardedAd != null) {
+    if (_loadingRewarded ||
+        _rewardedAd != null) {
       return;
     }
 
+    _rewardAdRetryTimer?.cancel();
+    _rewardAdRetryTimer = null;
+
     _loadingRewarded = true;
+
+    if (mounted) {
+      setState(() {});
+    }
 
     RewardedAd.load(
       adUnitId: rewardedAdId,
@@ -506,4 +503,662 @@ class _HomePageState extends State<HomePage> {
           }
         },
         onAdFailedToLoad: (error) {
-          _loading
+          _loadingRewarded = false;
+          _rewardedAd = null;
+
+          if (mounted) {
+            setState(() {});
+          }
+
+          // Try again automatically after 5 seconds.
+          _rewardAdRetryTimer = Timer(
+            const Duration(seconds: 5),
+            () {
+              if (!mounted) {
+                return;
+              }
+
+              _loadRewardedAd();
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _loadInterstitialAd() {
+    if (_loadingInterstitial ||
+        _interstitialAd != null) {
+      return;
+    }
+
+    _loadingInterstitial = true;
+
+    InterstitialAd.load(
+      adUnitId: interstitialAdId,
+      request: const AdRequest(),
+      adLoadCallback:
+          InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _loadingInterstitial = false;
+          _interstitialAd = ad;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onAdFailedToLoad: (error) {
+          _loadingInterstitial = false;
+          _interstitialAd = null;
+
+          if (mounted) {
+            setState(() {});
+          }
+
+          // Retry after 5 seconds.
+          Future.delayed(
+            const Duration(seconds: 5),
+            () {
+              if (mounted) {
+                _loadInterstitialAd();
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _showInterstitial() {
+    final ad = _interstitialAd;
+
+    if (ad == null) {
+      _loadInterstitialAd();
+      return;
+    }
+
+    _interstitialAd = null;
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent:
+          (ad, error) {
+        ad.dispose();
+        _loadInterstitialAd();
+      },
+    );
+
+    ad.show();
+  }
+
+  Future<void> _resetData() async {
+    await _prefs?.clear();
+
+    _rewardedAd?.dispose();
+    _rewardedAd = null;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _name = '';
+      _coins = 0;
+      _rewardCount = 0;
+
+      _lastClaim = null;
+      _lastReward = null;
+
+      _claimTimer = Duration.zero;
+      _rewardTimer = Duration.zero;
+
+      _error = '';
+
+      _nameController.clear();
+    });
+
+    _loadRewardedAd();
+    _loadInterstitialAd();
+
+    _message('Test data reset');
+  }
+
+  void _message(String text) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(text),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
+  String _time(Duration duration) {
+    final hours = duration.inHours
+        .toString()
+        .padLeft(2, '0');
+
+    final minutes = (duration.inMinutes % 60)
+        .toString()
+        .padLeft(2, '0');
+
+    final seconds = (duration.inSeconds % 60)
+        .toString()
+        .padLeft(2, '0');
+
+    return '$hours:$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_name.isEmpty) {
+      return _namePage();
+    }
+
+    return _homePage();
+  }
+
+  Widget _namePage() {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.monetization_on,
+                  size: 90,
+                  color: Colors.amber,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'COIN MINER',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Enter your name to continue',
+                  style: TextStyle(
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 35),
+                TextField(
+                  controller: _nameController,
+                  maxLength: 20,
+                  textInputAction:
+                      TextInputAction.done,
+                  decoration: InputDecoration(
+                    labelText: 'Your name',
+                    hintText: 'Name',
+                    errorText:
+                        _error.isEmpty
+                            ? null
+                            : _error,
+                    prefixIcon:
+                        const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                  ),
+                  onSubmitted: (_) {
+                    if (!_savingName) {
+                      _continue();
+                    }
+                  },
+                ),
+                const SizedBox(height: 15),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed:
+                        _savingName
+                            ? null
+                            : _continue,
+                    child:
+                        _savingName
+                            ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Text(
+                              'CONTINUE',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _homePage() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'COIN MINER',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Reset test data',
+            onPressed: _resetData,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            _welcomeCard(),
+            const SizedBox(height: 15),
+            _balanceCard(),
+            const SizedBox(height: 15),
+            _claimCard(),
+            const SizedBox(height: 15),
+            _rewardCard(),
+            const SizedBox(height: 15),
+            _statsCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _welcomeCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 28,
+              child: Icon(Icons.person),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Welcome',
+                    style: TextStyle(
+                      color: Colors.white60,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _name,
+                    style: const TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _balanceCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Text(
+              'YOUR BALANCE',
+              style: TextStyle(
+                color: Colors.white60,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$_coins',
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+            const Text(
+              'COINS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _claimCard() {
+    final available = canClaim;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.amber,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'DAILY CLAIM',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Claim 10 coins once every 24 hours.',
+              style: TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 15),
+            if (!available) ...[
+              const Text(
+                'NEXT CLAIM IN',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _time(_claimTimer),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 31,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            SizedBox(
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed:
+                    available && !_claiming
+                        ? _claimCoins
+                        : null,
+                icon:
+                    _claiming
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : const Icon(
+                          Icons.add_circle,
+                        ),
+                label: Text(
+                  available
+                      ? 'CLAIM 10 COINS'
+                      : 'CLAIMED',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rewardCard() {
+    final available = canReward;
+    final loading = _loadingRewarded ||
+        _rewardedAd == null;
+
+    String buttonText;
+
+    if (_rewardCount >= 5) {
+      buttonText = 'DAILY LIMIT';
+    } else if (!canReward) {
+      buttonText = 'WAIT ${_time(_rewardTimer)}';
+    } else if (loading) {
+      buttonText = 'LOADING AD...';
+    } else {
+      buttonText = 'WATCH AD +5';
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.ondemand_video,
+                  color: Colors.amber,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'WATCH & EARN',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Watch an advertisement and get 5 coins.',
+              style: TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Today: $_rewardCount / 5',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (!available &&
+                _rewardCount < 5) ...[
+              const Text(
+                'NEXT AD IN',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _time(_rewardTimer),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (_rewardCount >= 5)
+              const Padding(
+                padding: EdgeInsets.only(
+                  bottom: 10,
+                ),
+                child: Text(
+                  'Daily limit reached.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.amber,
+                  ),
+                ),
+              ),
+            SizedBox(
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed:
+                    available &&
+                            !loading &&
+                            !_showingReward &&
+                            _rewardCount < 5
+                        ? _watchRewardAd
+                        : null,
+                icon:
+                    _showingReward
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : loading &&
+                                available
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Icon(
+                              Icons.play_arrow,
+                            ),
+                label: Text(
+                  buttonText,
+                ),
+              ),
+            ),
+            if (available && loading)
+              const Padding(
+                padding: EdgeInsets.only(
+                  top: 10,
+                ),
+                child: Text(
+                  'The advertisement is loading. The button will activate automatically.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statsCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  const Text(
+                    'COINS',
+                    style: TextStyle(
+                      color: Colors.white54,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '$_coins',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  const Text(
+                    'ADS TODAY',
+                    style: TextStyle(
+                      color: Colors.white54,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '$_rewardCount / 5',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
