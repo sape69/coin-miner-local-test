@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,12 +22,12 @@ class StelluriiniMinerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF35D0A0),
           brightness: Brightness.dark,
         ),
         scaffoldBackgroundColor: const Color(0xFF0B1112),
+        useMaterial3: true,
       ),
       home: const HomePage(),
     );
@@ -43,16 +43,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // Google AdMob TEST IDs.
-  // Älä vaihda näitä vielä.
+  // Vaihdetaan myöhemmin omiin AdMob-tunnuksiin.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
- 
+  static const String interstitialAdId =
       'ca-app-pub-3940256099942544/1033173712';
-
-  // Solana Stelluriini tokenin mint address.
-  static const String stelluriiniMint =
-      'AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFJbdas';
 
   SharedPreferences? _prefs;
 
@@ -119,37 +115,43 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // DATA
-  // ------------------------------------------------------------
+  // ============================================================
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     _prefs = prefs;
 
-    _name = prefs.getString('name') ?? '';
+    _name =
+        prefs.getString('name') ?? '';
 
-    _stl = prefs.getInt('stl') ?? 0;
+    _stl =
+        prefs.getInt('stl') ?? 0;
 
-    _rewardCount = prefs.getInt('rewardCount') ?? 0;
+    _rewardCount =
+        prefs.getInt('rewardCount') ?? 0;
 
-    final claimTime = prefs.getInt('claimTime');
+    final claimMilliseconds =
+        prefs.getInt('claimTime');
 
-    if (claimTime != null) {
+    if (claimMilliseconds != null) {
       _lastClaim =
           DateTime.fromMillisecondsSinceEpoch(
-        claimTime,
+        claimMilliseconds,
         isUtc: true,
       );
     }
 
-    final rewardTime = prefs.getInt('rewardTime');
+    final rewardMilliseconds =
+        prefs.getInt('rewardTime');
 
-    if (rewardTime != null) {
+    if (rewardMilliseconds != null) {
       _lastReward =
           DateTime.fromMillisecondsSinceEpoch(
-        rewardTime,
+        rewardMilliseconds,
         isUtc: true,
       );
     }
@@ -188,7 +190,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _today() {
-    final now = DateTime.now().toUtc();
+    final now =
+        DateTime.now().toUtc();
 
     final year =
         now.year.toString().padLeft(4, '0');
@@ -233,16 +236,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // TIMERS
-  // ------------------------------------------------------------
+  // ============================================================
 
   void _updateTimers() {
-    final now = DateTime.now().toUtc();
+    final now =
+        DateTime.now().toUtc();
 
-    Duration claim = Duration.zero;
+    Duration claim =
+        Duration.zero;
 
-    Duration reward = Duration.zero;
+    Duration reward =
+        Duration.zero;
 
     if (_lastClaim != null) {
       final nextClaim =
@@ -279,15 +285,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool get canClaim {
-    return _claimTimer == Duration.zero;
+    return _claimTimer ==
+        Duration.zero;
   }
 
   bool get canReward {
     return _rewardCount < 5 &&
-        _rewardTimer == Duration.zero;
+        _rewardTimer ==
+            Duration.zero;
   }
 
-  String _formatTime(Duration duration) {
+  String _formatTime(
+    Duration duration,
+  ) {
     final hours =
         duration.inHours
             .toString()
@@ -306,9 +316,9 @@ class _HomePageState extends State<HomePage> {
     return '$hours:$minutes:$seconds';
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // NAME
-  // ------------------------------------------------------------
+  // ============================================================
 
   Future<void> _continue() async {
     final name =
@@ -316,7 +326,8 @@ class _HomePageState extends State<HomePage> {
 
     if (name.isEmpty) {
       setState(() {
-        _error = 'Kirjoita nimesi';
+        _error =
+            'Kirjoita nimesi';
       });
 
       return;
@@ -354,12 +365,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // DAILY CLAIM
-  // ------------------------------------------------------------
+  // ============================================================
 
   Future<void> _claimStl() async {
-    if (_claiming || !canClaim) {
+    if (_claiming ||
+        !canClaim) {
       return;
     }
 
@@ -367,7 +379,7 @@ class _HomePageState extends State<HomePage> {
       _claiming = true;
     });
 
-    // Päivittäinen palkinto.
+    // Daily Claim antaa 10 STL.
     _stl += 10;
 
     _lastClaim =
@@ -380,7 +392,8 @@ class _HomePageState extends State<HomePage> {
 
     await _prefs?.setInt(
       'claimTime',
-      _lastClaim!.millisecondsSinceEpoch,
+      _lastClaim!
+          .millisecondsSinceEpoch,
     );
 
     _updateTimers();
@@ -396,13 +409,12 @@ class _HomePageState extends State<HomePage> {
       Icons.pets,
     );
 
-    // Interstitial-mainos testikäyttöön.
     _showInterstitial();
   }
 
-  // ------------------------------------------------------------
-  // REWARDED AD
-  // ------------------------------------------------------------
+  // ============================================================
+  // WATCH REWARDED AD
+  // ============================================================
 
   Future<void> _watchRewardAd() async {
     if (_showingReward) {
@@ -450,27 +462,31 @@ class _HomePageState extends State<HomePage> {
 
     ad.fullScreenContentCallback =
         FullScreenContentCallback(
-      onAdShowedFullScreenContent: (ad) {
-        // Mainos avautui.
-      },
-      onAdDismissedFullScreenContent: (ad) {
+      onAdShowedFullScreenContent:
+          (ad) {},
+
+      onAdDismissedFullScreenContent:
+          (ad) {
         ad.dispose();
 
         if (mounted) {
           setState(() {
-            _showingReward = false;
+            _showingReward =
+                false;
           });
         }
 
         _loadRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent:
           (ad, error) {
         ad.dispose();
 
         if (mounted) {
           setState(() {
-            _showingReward = false;
+            _showingReward =
+                false;
           });
 
           _message(
@@ -485,7 +501,10 @@ class _HomePageState extends State<HomePage> {
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
+          (
+        AdWithoutView ad,
+        RewardItem reward,
+      ) {
         _giveFiveStl();
       },
     );
@@ -518,7 +537,8 @@ class _HomePageState extends State<HomePage> {
 
     await _prefs?.setInt(
       'rewardTime',
-      _lastReward!.millisecondsSinceEpoch,
+      _lastReward!
+          .millisecondsSinceEpoch,
     );
 
     if (!mounted) {
@@ -535,9 +555,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // REWARDED AD LOAD
-  // ------------------------------------------------------------
+  // ============================================================
 
   void _loadRewardedAd() {
     if (_loadingRewarded ||
@@ -552,12 +572,15 @@ class _HomePageState extends State<HomePage> {
     }
 
     RewardedAd.load(
-      adUnitId: rewardedAdId,
-      request: const AdRequest(),
+      adUnitId:
+          rewardedAdId,
+      request:
+          const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          _loadingRewarded = false;
+          _loadingRewarded =
+              false;
 
           _rewardedAd = ad;
 
@@ -565,19 +588,27 @@ class _HomePageState extends State<HomePage> {
             setState(() {});
           }
         },
-        onAdFailedToLoad: (error) {
-          _loadingRewarded = false;
 
-          _rewardedAd = null;
+        onAdFailedToLoad:
+            (error) {
+          _loadingRewarded =
+              false;
+
+          _rewardedAd =
+              null;
 
           if (mounted) {
             setState(() {});
           }
 
-          _rewardRetryTimer?.cancel();
+          _rewardRetryTimer
+              ?.cancel();
 
-          _rewardRetryTimer = Timer(
-            const Duration(seconds: 5),
+          _rewardRetryTimer =
+              Timer(
+            const Duration(
+              seconds: 5,
+            ),
             () {
               if (mounted) {
                 _loadRewardedAd();
@@ -589,9 +620,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // INTERSTITIAL AD
-  // ------------------------------------------------------------
+  // ============================================================
+  // INTERSTITIAL
+  // ============================================================
 
   void _loadInterstitialAd() {
     if (_loadingInterstitial ||
@@ -599,35 +630,48 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    _loadingInterstitial = true;
+    _loadingInterstitial =
+        true;
 
     InterstitialAd.load(
-      adUnitId: interstitialAdId,
-      request: const AdRequest(),
+      adUnitId:
+          interstitialAdId,
+      request:
+          const AdRequest(),
       adLoadCallback:
           InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
-          _loadingInterstitial = false;
+          _loadingInterstitial =
+              false;
 
-          _interstitialAd = ad;
+          _interstitialAd =
+              ad;
 
           if (mounted) {
             setState(() {});
           }
         },
-        onAdFailedToLoad: (error) {
-          _loadingInterstitial = false;
 
-          _interstitialAd = null;
+        onAdFailedToLoad:
+            (error) {
+          _loadingInterstitial =
+              false;
+
+          _interstitialAd =
+              null;
 
           if (mounted) {
             setState(() {});
           }
 
-          _interstitialRetryTimer?.cancel();
+          _interstitialRetryTimer
+              ?.cancel();
 
-          _interstitialRetryTimer = Timer(
-            const Duration(seconds: 5),
+          _interstitialRetryTimer =
+              Timer(
+            const Duration(
+              seconds: 5,
+            ),
             () {
               if (mounted) {
                 _loadInterstitialAd();
@@ -640,7 +684,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showInterstitial() {
-    final ad = _interstitialAd;
+    final ad =
+        _interstitialAd;
 
     if (ad == null) {
       _loadInterstitialAd();
@@ -656,6 +701,7 @@ class _HomePageState extends State<HomePage> {
         ad.dispose();
         _loadInterstitialAd();
       },
+
       onAdFailedToShowFullScreenContent:
           (ad, error) {
         ad.dispose();
@@ -666,9 +712,9 @@ class _HomePageState extends State<HomePage> {
     ad.show();
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // RESET
-  // ------------------------------------------------------------
+  // ============================================================
 
   Future<void> _resetData() async {
     await _prefs?.clear();
@@ -714,9 +760,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // MESSAGE
-  // ------------------------------------------------------------
+  // ============================================================
 
   void _message(
     String text,
@@ -735,23 +781,30 @@ class _HomePageState extends State<HomePage> {
               Icon(
                 icon,
                 color:
-                    const Color(0xFF35D0A0),
+                    const Color(
+                  0xFF35D0A0,
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(
+                width: 10,
+              ),
               Expanded(
-                child: Text(text),
+                child:
+                    Text(text),
               ),
             ],
           ),
           duration:
-              const Duration(seconds: 2),
+              const Duration(
+            seconds: 2,
+          ),
         ),
       );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // STELLA IMAGE
-  // ------------------------------------------------------------
+  // ============================================================
 
   Widget _stella({
     double size = 80,
@@ -759,29 +812,42 @@ class _HomePageState extends State<HomePage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
+      decoration:
+          BoxDecoration(
+        shape:
+            BoxShape.circle,
+        border:
+            Border.all(
           color:
-              const Color(0xFF35D0A0),
+              const Color(
+            0xFF35D0A0,
+          ),
           width: 3,
         ),
       ),
       child: ClipOval(
         child: Image.asset(
-          'assets/stella.jpg',
+          'stella.jpg',
           width: size,
           height: size,
           fit: BoxFit.cover,
           errorBuilder:
-              (context, error, stackTrace) {
+              (
+            context,
+            error,
+            stackTrace,
+          ) {
             return Container(
               color:
-                  const Color(0xFF35D0A0),
+                  const Color(
+                0xFF35D0A0,
+              ),
               child: Icon(
                 Icons.pets,
-                size: size * 0.5,
-                color: Colors.white,
+                size:
+                    size * 0.5,
+                color:
+                    Colors.white,
               ),
             );
           },
@@ -790,12 +856,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // BUILD
-  // ------------------------------------------------------------
+  // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     if (_loading) {
       return const Scaffold(
         body: Center(
@@ -812,40 +880,53 @@ class _HomePageState extends State<HomePage> {
     return _homePage();
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // NAME PAGE
-  // ------------------------------------------------------------
+  // ============================================================
 
   Widget _namePage() {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
+          child:
+              SingleChildScrollView(
             padding:
-                const EdgeInsets.all(24),
+                const EdgeInsets.all(
+              24,
+            ),
             child: Column(
               children: [
-                _stella(size: 150),
+                _stella(
+                  size: 150,
+                ),
 
-                const SizedBox(height: 18),
+                const SizedBox(
+                  height: 18,
+                ),
 
                 const Text(
                   'STELLURIINI',
-                  style: TextStyle(
+                  style:
+                      TextStyle(
                     fontSize: 34,
                     fontWeight:
                         FontWeight.bold,
                     letterSpacing: 1,
                     color:
-                        Color(0xFF35D0A0),
+                        Color(
+                      0xFF35D0A0,
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(
+                  height: 4,
+                ),
 
                 const Text(
                   'STL MINER',
-                  style: TextStyle(
+                  style:
+                      TextStyle(
                     fontSize: 18,
                     fontWeight:
                         FontWeight.bold,
@@ -853,18 +934,25 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(
+                  height: 10,
+                ),
 
                 const Text(
-                  'Louhi Stelluriinia Stellan kanssa 🐱',
+                  'Louhi Stelluriinia '
+                  'Stellan kanssa 🐱',
                   textAlign:
                       TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white70,
+                  style:
+                      TextStyle(
+                    color:
+                        Colors.white70,
                   ),
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(
+                  height: 28,
+                ),
 
                 TextField(
                   controller:
@@ -889,19 +977,23 @@ class _HomePageState extends State<HomePage> {
                     border:
                         OutlineInputBorder(
                       borderRadius:
-                          BorderRadius.circular(
+                          BorderRadius
+                              .circular(
                         16,
                       ),
                     ),
                   ),
-                  onSubmitted: (_) {
+                  onSubmitted:
+                      (_) {
                     if (!_savingName) {
                       _continue();
                     }
                   },
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(
+                  height: 8,
+                ),
 
                 SizedBox(
                   width:
@@ -919,7 +1011,8 @@ class _HomePageState extends State<HomePage> {
                             height: 22,
                             child:
                                 CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth:
+                                  2,
                             ),
                           )
                         : const Icon(
@@ -939,23 +1032,17 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(
+                  height: 30,
+                ),
 
                 const Text(
                   'Stelluriini Miner',
-                  style: TextStyle(
-                    color: Colors.white38,
+                  style:
+                      TextStyle(
+                    color:
+                        Colors.white38,
                     fontSize: 12,
-                  ),
-                ),
-
-                const SizedBox(height: 5),
-
-                const Text(
-                  'STL mint: AyZun5s9...FJbdas',
-                  style: TextStyle(
-                    color: Colors.white24,
-                    fontSize: 10,
                   ),
                 ),
               ],
@@ -966,16 +1053,17 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // HOME
-  // ------------------------------------------------------------
+  // ============================================================
+  // HOME PAGE
+  // ============================================================
 
   Widget _homePage() {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'STELLURIINI',
-          style: TextStyle(
+          style:
+              TextStyle(
             fontWeight:
                 FontWeight.bold,
           ),
@@ -988,55 +1076,74 @@ class _HomePageState extends State<HomePage> {
             onPressed:
                 _resetData,
             icon:
-                const Icon(Icons.refresh),
+                const Icon(
+              Icons.refresh,
+            ),
           ),
         ],
       ),
       body: SafeArea(
         child: ListView(
           padding:
-              const EdgeInsets.all(16),
+              const EdgeInsets.all(
+            16,
+          ),
           children: [
             _welcomeCard(),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             _balanceCard(),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             _claimCard(),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             _rewardCard(),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             _statsCard(),
 
-            const SizedBox(height: 18),
+            const SizedBox(
+              height: 18,
+            ),
 
             const Text(
-              'Stelluriini Miner on tällä hetkellä '
-              'palkintosimulaatio. STL-saldo tallennetaan '
-              'laitteelle eikä ole vielä sama asia kuin '
-              'Solana-lompakon oikea STL-saldo.',
+              'Stelluriini Miner on tällä '
+              'hetkellä palkintosimulaatio. '
+              'STL-saldo tallennetaan '
+              'laitteelle.',
               textAlign:
                   TextAlign.center,
-              style: TextStyle(
-                color: Colors.white38,
+              style:
+                  TextStyle(
+                color:
+                    Colors.white38,
                 fontSize: 12,
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(
+              height: 8,
+            ),
 
             const Text(
               'Stelluriini • STL 🐾',
               textAlign:
                   TextAlign.center,
-              style: TextStyle(
+              style:
+                  TextStyle(
                 color:
                     Color(0xFF35D0A0),
                 fontWeight:
@@ -1049,9 +1156,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // WELCOME CARD
-  // ------------------------------------------------------------
+  // ============================================================
 
   Widget _welcomeCard() {
     return Card(
@@ -1059,46 +1166,63 @@ class _HomePageState extends State<HomePage> {
           const Color(0xFF101B1D),
       child: Padding(
         padding:
-            const EdgeInsets.all(16),
+            const EdgeInsets.all(
+          16,
+        ),
         child: Row(
           children: [
-            _stella(size: 68),
+            _stella(
+              size: 68,
+            ),
 
-            const SizedBox(width: 14),
+            const SizedBox(
+              width: 14,
+            ),
 
             Expanded(
               child: Column(
                 crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    CrossAxisAlignment
+                        .start,
                 children: [
                   const Text(
                     'TERVETULOA',
-                    style: TextStyle(
-                      color: Colors.white54,
-                      letterSpacing: 1.5,
+                    style:
+                        TextStyle(
+                      color:
+                          Colors.white54,
+                      letterSpacing:
+                          1.5,
                       fontSize: 12,
                     ),
                   ),
 
-                  const SizedBox(height: 3),
+                  const SizedBox(
+                    height: 3,
+                  ),
 
                   const Text(
                     'Stelluriini Miner 🐾',
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontSize: 21,
                       fontWeight:
                           FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 3),
+                  const SizedBox(
+                    height: 3,
+                  ),
 
                   Text(
                     _name,
                     style:
                         const TextStyle(
                       color:
-                          Color(0xFF35D0A0),
+                          Color(
+                        0xFF35D0A0,
+                      ),
                       fontWeight:
                           FontWeight.bold,
                     ),
@@ -1112,9 +1236,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // BALANCE
-  // ------------------------------------------------------------
+  // ============================================================
+  // BALANCE CARD
+  // ============================================================
 
   Widget _balanceCard() {
     return Card(
@@ -1122,37 +1246,51 @@ class _HomePageState extends State<HomePage> {
           const Color(0xFF101B1D),
       child: Padding(
         padding:
-            const EdgeInsets.all(22),
+            const EdgeInsets.all(
+          22,
+        ),
         child: Column(
           children: [
-            _stella(size: 96),
+            _stella(
+              size: 96,
+            ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             const Text(
               'STELLA BALANCE',
-              style: TextStyle(
-                color: Colors.white54,
+              style:
+                  TextStyle(
+                color:
+                    Colors.white54,
                 letterSpacing: 2,
               ),
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(
+              height: 4,
+            ),
 
             Text(
               '$_stl',
-              style: const TextStyle(
+              style:
+                  const TextStyle(
                 fontSize: 46,
                 fontWeight:
                     FontWeight.bold,
                 color:
-                    Color(0xFF35D0A0),
+                    Color(
+                  0xFF35D0A0,
+                ),
               ),
             ),
 
             const Text(
               'STL',
-              style: TextStyle(
+              style:
+                  TextStyle(
                 fontWeight:
                     FontWeight.bold,
                 letterSpacing: 2,
@@ -1164,9 +1302,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // DAILY CLAIM CARD
-  // ------------------------------------------------------------
+  // ============================================================
 
   Widget _claimCard() {
     final available =
@@ -1175,25 +1313,33 @@ class _HomePageState extends State<HomePage> {
     return Card(
       child: Padding(
         padding:
-            const EdgeInsets.all(20),
+            const EdgeInsets.all(
+          20,
+        ),
         child: Column(
           crossAxisAlignment:
-              CrossAxisAlignment.stretch,
+              CrossAxisAlignment
+                  .stretch,
           children: [
             const Row(
               children: [
                 Icon(
                   Icons.pets,
                   color:
-                      Color(0xFF35D0A0),
+                      Color(
+                    0xFF35D0A0,
+                  ),
                   size: 30,
                 ),
 
-                SizedBox(width: 10),
+                SizedBox(
+                  width: 10,
+                ),
 
                 Text(
                   'STELLA DAILY CLAIM',
-                  style: TextStyle(
+                  style:
+                      TextStyle(
                     fontSize: 18,
                     fontWeight:
                         FontWeight.bold,
@@ -1202,29 +1348,40 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             const Text(
-              'Stella antaa sinulle 10 STL '
-              'kerran 24 tunnissa.',
-              style: TextStyle(
-                color: Colors.white70,
+              'Stella antaa sinulle '
+              '10 STL kerran '
+              '24 tunnissa.',
+              style:
+                  TextStyle(
+                color:
+                    Colors.white70,
               ),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
 
             if (!available) ...[
               const Text(
                 'SEURAAVA TASSU',
                 textAlign:
                     TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white54,
+                style:
+                    TextStyle(
+                  color:
+                      Colors.white54,
                 ),
               ),
 
-              const SizedBox(height: 4),
+              const SizedBox(
+                height: 4,
+              ),
 
               Text(
                 _formatTime(
@@ -1240,7 +1397,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: 12,
+              ),
             ],
 
             SizedBox(
@@ -1269,8 +1428,8 @@ class _HomePageState extends State<HomePage> {
 
                 label: Text(
                   available
-                      ? '🐾 CLAIM +10 STL'
-                      : '🐾 TULE MYÖHEMMIN',
+                      ? 'CLAIM +10 STL 🐾'
+                      : 'TULE MYÖHEMMIN',
                   style:
                       const TextStyle(
                     fontSize: 16,
@@ -1286,9 +1445,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // WATCH AD CARD
-  // ------------------------------------------------------------
+  // ============================================================
+  // WATCH & EARN CARD
+  // ============================================================
 
   Widget _rewardCard() {
     final available =
@@ -1317,24 +1476,32 @@ class _HomePageState extends State<HomePage> {
     return Card(
       child: Padding(
         padding:
-            const EdgeInsets.all(20),
+            const EdgeInsets.all(
+          20,
+        ),
         child: Column(
           crossAxisAlignment:
-              CrossAxisAlignment.stretch,
+              CrossAxisAlignment
+                  .stretch,
           children: [
             const Row(
               children: [
                 Icon(
                   Icons.ondemand_video,
                   color:
-                      Color(0xFF35D0A0),
+                      Color(
+                    0xFF35D0A0,
+                  ),
                 ),
 
-                SizedBox(width: 10),
+                SizedBox(
+                  width: 10,
+                ),
 
                 Text(
-                  'WATCH & EARN',
-                  style: TextStyle(
+                  'WATCH & EARN STL',
+                  style:
+                      TextStyle(
                     fontSize: 18,
                     fontWeight:
                         FontWeight.bold,
@@ -1343,17 +1510,23 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             const Text(
-              'Katso mainos ja Stella antaa '
-              'sinulle 5 STL.',
-              style: TextStyle(
-                color: Colors.white70,
+              'Katso mainos ja Stella '
+              'antaa sinulle 5 STL.',
+              style:
+                  TextStyle(
+                color:
+                    Colors.white70,
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             Text(
               'Tänään: $_rewardCount / 5 mainosta',
@@ -1364,7 +1537,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(
+              height: 12,
+            ),
 
             if (!available &&
                 _rewardCount < 5) ...[
@@ -1372,12 +1547,16 @@ class _HomePageState extends State<HomePage> {
                 'SEURAAVA MAINOS',
                 textAlign:
                     TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white54,
+                style:
+                    TextStyle(
+                  color:
+                      Colors.white54,
                 ),
               ),
 
-              const SizedBox(height: 4),
+              const SizedBox(
+                height: 4,
+              ),
 
               Text(
                 _formatTime(
@@ -1393,7 +1572,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(
+                height: 10,
+              ),
             ],
 
             if (_rewardCount >= 5)
@@ -1406,9 +1587,12 @@ class _HomePageState extends State<HomePage> {
                   'Stella lepää tänään 🐱',
                   textAlign:
                       TextAlign.center,
-                  style: TextStyle(
+                  style:
+                      TextStyle(
                     color:
-                        Color(0xFF35D0A0),
+                        Color(
+                      0xFF35D0A0,
+                    ),
                     fontWeight:
                         FontWeight.bold,
                   ),
@@ -1472,8 +1656,10 @@ class _HomePageState extends State<HomePage> {
                   'Nappi aktivoituu automaattisesti.',
                   textAlign:
                       TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white54,
+                  style:
+                      TextStyle(
+                    color:
+                        Colors.white54,
                     fontSize: 12,
                   ),
                 ),
@@ -1484,15 +1670,17 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // STATS
-  // ------------------------------------------------------------
+  // ============================================================
+  // STATS CARD
+  // ============================================================
 
   Widget _statsCard() {
     return Card(
       child: Padding(
         padding:
-            const EdgeInsets.all(18),
+            const EdgeInsets.all(
+          18,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -1500,12 +1688,16 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const Text(
                     'STL BALANCE',
-                    style: TextStyle(
-                      color: Colors.white54,
+                    style:
+                        TextStyle(
+                      color:
+                          Colors.white54,
                     ),
                   ),
 
-                  const SizedBox(height: 5),
+                  const SizedBox(
+                    height: 5,
+                  ),
 
                   Text(
                     '$_stl',
@@ -1515,7 +1707,9 @@ class _HomePageState extends State<HomePage> {
                       fontWeight:
                           FontWeight.bold,
                       color:
-                          Color(0xFF35D0A0),
+                          Color(
+                        0xFF35D0A0,
+                      ),
                     ),
                   ),
                 ],
@@ -1527,12 +1721,16 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const Text(
                     'ADS TODAY',
-                    style: TextStyle(
-                      color: Colors.white54,
+                    style:
+                        TextStyle(
+                      color:
+                          Colors.white54,
                     ),
                   ),
 
-                  const SizedBox(height: 5),
+                  const SizedBox(
+                    height: 5,
+                  ),
 
                   Text(
                     '$_rewardCount / 5',
