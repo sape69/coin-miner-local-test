@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1092267018183",
+    "project_id": "stelluriini",
+    "storage_bucket": "stelluriini.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092267018183:android:7f0014fb071288ab4afbe2",
+        "android_client_info": {
+          "package_name": "com.example.stelluriini"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9ps9LluuGyxCsVlTlVMozJglOYHg0wqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
