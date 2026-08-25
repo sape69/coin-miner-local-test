@@ -1,32 +1,101 @@
-- name: Check Stelluriini icon
-  run: |
-    test -f stelluriini_icon.png
-    echo "Stelluriini icon found."
+name: Build Stelluriini APK
 
-- name: Install ImageMagick
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y imagemagick
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
-- name: Create Android launcher icons
-  run: |
-    mkdir -p android/app/src/main/res/mipmap-mdpi
-    mkdir -p android/app/src/main/res/mipmap-hdpi
-    mkdir -p android/app/src/main/res/mipmap-xhdpi
-    mkdir -p android/app/src/main/res/mipmap-xxhdpi
-    mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    convert stelluriini_icon.png -resize 48x48 \
-      android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    convert stelluriini_icon.png -resize 72x72 \
-      android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0'
+          channel: stable
+          cache: true
 
-    convert stelluriini_icon.png -resize 96x96 \
-      android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-    convert stelluriini_icon.png -resize 144x144 \
-      android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-    convert stelluriini_icon.png -resize 192x192 \
-      android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+      - name: Install Android SDK
+        run: |
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.1"
+
+      - name: Check Stelluriini icon
+        run: |
+          test -f stelluriini_icon.png
+          echo "Stelluriini icon found."
+
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+      - name: Create Android launcher icons
+        run: |
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+
+          convert stelluriini_icon.png \
+            -resize 48x48 \
+            android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 72x72 \
+            android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 96x96 \
+            android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 144x144 \
+            android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 192x192 \
+            android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+      - name: Set application name
+        run: |
+          sed -i 's/android:label="[^"]*"/android:label="Stelluriini"/' \
+            android/app/src/main/AndroidManifest.xml
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze
+
+      - name: Build Stelluriini APK
+        run: |
+          mkdir -p build
+
+          flutter build apk --release
+
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            build/Stelluriini.apk
+
+      - name: Upload Stelluriini APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Stelluriini
+          path: build/Stelluriini.apk
