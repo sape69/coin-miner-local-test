@@ -1,6 +1,6 @@
 name: stelluriini
 
-description: Stelluriini STL Miner Android app
+description: STELLURIINI Android app
 
 publish_to: "none"
 
@@ -23,8 +23,17 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
 
+  flutter_launcher_icons: ^0.14.4
+
 flutter:
   uses-material-design: true
 
   assets:
     - stella.jpg
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "stella.jpg"
+  adaptive_icon_background: "#0B1112"
+  adaptive_icon_foreground: "stella.jpg"
