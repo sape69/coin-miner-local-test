@@ -7,12 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await MobileAds.instance.initialize();
-
-  runApp(const StelluriiniMinerApp());
+  runApp(const StelluriiniApp());
 }
 
-class StelluriiniMinerApp extends StatelessWidget {
-  const StelluriiniMinerApp({super.key});
+class StelluriiniApp extends StatelessWidget {
+  const StelluriiniApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +25,6 @@ class StelluriiniMinerApp extends StatelessWidget {
           seedColor: const Color(0xFF35D0A0),
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF0B1112),
       ),
       home: const HomePage(),
     );
@@ -41,211 +39,136 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Google AdMob TEST IDs.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  static const String interstitialAdId =
-      'ca-app-pub-3940256099942544/1033173712';
+  SharedPreferences? prefs;
 
-  SharedPreferences? _prefs;
+  RewardedAd? rewardedAd;
 
-  final TextEditingController _nameController =
-      TextEditingController();
+  Timer? timer;
 
-  Timer? _timer;
-  Timer? _rewardRetryTimer;
-  Timer? _interstitialRetryTimer;
+  int stl = 0;
+  int streak = 0;
+  int adsToday = 0;
 
-  String _name = '';
-  String _error = '';
+  DateTime? lastDaily;
+  DateTime? lastAd;
 
-  // Stelluriini-saldo.
-  int _stl = 0;
+  Duration dailyTimer = Duration.zero;
+  Duration adTimer = Duration.zero;
 
-  // Daily Login -putki.
-  //
-  // 0 = ensimmäinen claim antaa 1 STL
-  // 1 = seuraava antaa 2 STL
-  // 2 = seuraava antaa 3 STL
-  // ...
-  // 6 = seuraava antaa 7 STL
-  // 7 = seuraava antaa edelleen 7 STL
-  int _dailyStreak = 0;
-
-  // Tänään katsotut mainokset.
-  int _adsToday = 0;
-
-  DateTime? _lastDailyClaim;
-  DateTime? _lastAdReward;
-
-  Duration _dailyTimer = Duration.zero;
-  Duration _adTimer = Duration.zero;
-
-  bool _loading = true;
-  bool _savingName = false;
-  bool _claiming = false;
-  bool _showingAd = false;
-
-  bool _loadingRewarded = false;
-  bool _loadingInterstitial = false;
-
-  RewardedAd? _rewardedAd;
-  InterstitialAd? _interstitialAd;
+  bool loading = true;
+  bool loadingAd = false;
+  bool showingAd = false;
 
   @override
   void initState() {
     super.initState();
 
-    _loadData();
+    loadData();
 
-    _timer = Timer.periodic(
+    timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) {
-        if (!mounted) {
-          return;
+        if (mounted) {
+          updateTimers();
+          checkNewDay();
         }
-
-        _updateTimers();
-        _checkNewDay();
       },
     );
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _rewardRetryTimer?.cancel();
-    _interstitialRetryTimer?.cancel();
-
-    _nameController.dispose();
-
-    _rewardedAd?.dispose();
-    _interstitialAd?.dispose();
-
+    timer?.cancel();
+    rewardedAd?.dispose();
     super.dispose();
   }
 
-  // ============================================================
-  // DATA
-  // ============================================================
+  Future<void> loadData() async {
+    prefs = await SharedPreferences.getInstance();
 
-  Future<void> _loadData() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    stl = prefs!.getInt('stl') ?? 0;
+    streak = prefs!.getInt('streak') ?? 0;
+    adsToday = prefs!.getInt('adsToday') ?? 0;
 
-    _prefs = prefs;
+    final dailyMilliseconds =
+        prefs!.getInt('lastDaily');
 
-    _name =
-        prefs.getString('name') ?? '';
-
-    _stl =
-        prefs.getInt('stl') ?? 0;
-
-    _dailyStreak =
-        prefs.getInt('dailyStreak') ?? 0;
-
-    _adsToday =
-        prefs.getInt('adsToday') ?? 0;
-
-    final dailyClaimTime =
-        prefs.getInt('dailyClaimTime');
-
-    if (dailyClaimTime != null) {
-      _lastDailyClaim =
+    if (dailyMilliseconds != null) {
+      lastDaily =
           DateTime.fromMillisecondsSinceEpoch(
-        dailyClaimTime,
+        dailyMilliseconds,
         isUtc: true,
       );
     }
 
-    final adRewardTime =
-        prefs.getInt('adRewardTime');
+    final adMilliseconds =
+        prefs!.getInt('lastAd');
 
-    if (adRewardTime != null) {
-      _lastAdReward =
+    if (adMilliseconds != null) {
+      lastAd =
           DateTime.fromMillisecondsSinceEpoch(
-        adRewardTime,
+        adMilliseconds,
         isUtc: true,
       );
     }
 
-    await _checkNewDay();
+    await checkNewDay();
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
-      _loading = false;
+      loading = false;
     });
 
-    _updateTimers();
-
-    _loadRewardedAd();
-    _loadInterstitialAd();
+    updateTimers();
+    loadRewardedAd();
   }
 
-  String _today() {
-    final now =
-        DateTime.now().toUtc();
+  String today() {
+    final now = DateTime.now();
 
-    final year =
-        now.year.toString().padLeft(4, '0');
-
-    final month =
-        now.month.toString().padLeft(2, '0');
-
-    final day =
-        now.day.toString().padLeft(2, '0');
-
-    return '$year-$month-$day';
+    return '${now.year}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _checkNewDay() async {
-    if (_prefs == null) {
-      return;
-    }
+  Future<void> checkNewDay() async {
+    if (prefs == null) return;
 
-    final today = _today();
-
+    final currentDay = today();
     final savedDay =
-        _prefs!.getString('savedDay');
+        prefs!.getString('day');
 
-    if (savedDay == today) {
+    if (savedDay == currentDay) {
       return;
     }
 
-    // Uusi päivä:
-    // mainosten päiväkohtainen määrä nollataan.
-    _adsToday = 0;
+    adsToday = 0;
 
-    await _prefs!.setString(
-      'savedDay',
-      today,
+    await prefs!.setString(
+      'day',
+      currentDay,
     );
 
-    await _prefs!.setInt(
+    await prefs!.setInt(
       'adsToday',
       0,
     );
 
-    // Jos viimeisestä Daily Claimistä
-    // on vähintään 48 tuntia,
-    // yksi kokonainen päivä on jäänyt väliin.
-    if (_lastDailyClaim != null) {
+    if (lastDaily != null) {
       final difference =
           DateTime.now()
               .toUtc()
-              .difference(
-                _lastDailyClaim!,
-              );
+              .difference(lastDaily!);
 
       if (difference.inHours >= 48) {
-        _dailyStreak = 0;
+        streak = 0;
 
-        await _prefs!.setInt(
-          'dailyStreak',
+        await prefs!.setInt(
+          'streak',
           0,
         );
       }
@@ -256,100 +179,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ============================================================
-  // DAILY LOGIN
-  // ============================================================
-
-  int get nextDailyReward {
-    if (_dailyStreak >= 7) {
-      return 7;
-    }
-
-    return _dailyStreak + 1;
-  }
-
-  bool get canDailyClaim {
-    return _dailyTimer == Duration.zero;
-  }
-
-  Future<void> _claimDaily() async {
-    if (_claiming ||
-        !canDailyClaim) {
-      return;
-    }
-
-    await _checkNewDay();
-
-    final now =
-        DateTime.now().toUtc();
-
-    // Jos käyttäjä jätti kokonaisen päivän väliin,
-    // putki alkaa uudelleen päivästä 1.
-    if (_lastDailyClaim != null) {
-      final difference =
-          now.difference(
-        _lastDailyClaim!,
-      );
-
-      if (difference.inHours >= 48) {
-        _dailyStreak = 0;
-      }
-    }
-
-    final reward =
-        nextDailyReward;
-
-    setState(() {
-      _claiming = true;
-    });
-
-    _stl += reward;
-
-    // Maksimi on 7.
-    if (_dailyStreak < 7) {
-      _dailyStreak++;
-    }
-
-    _lastDailyClaim = now;
-
-    await _prefs?.setInt(
-      'stl',
-      _stl,
-    );
-
-    await _prefs?.setInt(
-      'dailyStreak',
-      _dailyStreak,
-    );
-
-    await _prefs?.setInt(
-      'dailyClaimTime',
-      now.millisecondsSinceEpoch,
-    );
-
-    _updateTimers();
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _claiming = false;
-    });
-
-    _showMessage(
-      'Miau! +$reward STL 🐾',
-      Icons.pets,
-    );
-
-    _showInterstitial();
-  }
-
-  // ============================================================
-  // TIMERS
-  // ============================================================
-
-  void _updateTimers() {
+  void updateTimers() {
     final now =
         DateTime.now().toUtc();
 
@@ -359,48 +189,245 @@ class _HomePageState extends State<HomePage> {
     Duration ad =
         Duration.zero;
 
-    if (_lastDailyClaim != null) {
-      final nextClaim =
-          _lastDailyClaim!.add(
+    if (lastDaily != null) {
+      final next =
+          lastDaily!.add(
         const Duration(hours: 24),
       );
 
-      if (now.isBefore(nextClaim)) {
+      if (now.isBefore(next)) {
         daily =
-            nextClaim.difference(now);
+            next.difference(now);
       }
     }
 
-    if (_lastAdReward != null) {
-      final nextAd =
-          _lastAdReward!.add(
+    if (lastAd != null) {
+      final next =
+          lastAd!.add(
         const Duration(hours: 1),
       );
 
-      if (now.isBefore(nextAd)) {
+      if (now.isBefore(next)) {
         ad =
-            nextAd.difference(now);
+            next.difference(now);
       }
     }
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
-      _dailyTimer = daily;
-      _adTimer = ad;
+      dailyTimer = daily;
+      adTimer = ad;
     });
   }
 
-  bool get canWatchAd {
-    return _adsToday < 5 &&
-        _adTimer == Duration.zero;
+  int get dailyReward {
+    if (streak >= 7) {
+      return 7;
+    }
+
+    return streak + 1;
   }
 
-  String _formatTime(
-    Duration time,
-  ) {
+  Future<void> claimDaily() async {
+    if (dailyTimer != Duration.zero) {
+      return;
+    }
+
+    final now =
+        DateTime.now().toUtc();
+
+    if (lastDaily != null) {
+      final difference =
+          now.difference(lastDaily!);
+
+      if (difference.inHours >= 48) {
+        streak = 0;
+      }
+    }
+
+    final reward = dailyReward;
+
+    stl += reward;
+
+    if (streak < 7) {
+      streak++;
+    }
+
+    lastDaily = now;
+
+    await prefs!.setInt(
+      'stl',
+      stl,
+    );
+
+    await prefs!.setInt(
+      'streak',
+      streak,
+    );
+
+    await prefs!.setInt(
+      'lastDaily',
+      now.millisecondsSinceEpoch,
+    );
+
+    updateTimers();
+
+    if (mounted) {
+      setState(() {});
+      message(
+        'Miau! +$reward STL 🐾',
+      );
+    }
+  }
+
+  void loadRewardedAd() {
+    if (loadingAd ||
+        rewardedAd != null) {
+      return;
+    }
+
+    loadingAd = true;
+
+    RewardedAd.load(
+      adUnitId: rewardedAdId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback:
+          RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          loadingAd = false;
+          rewardedAd = ad;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onAdFailedToLoad: (error) {
+          loadingAd = false;
+          rewardedAd = null;
+
+          if (mounted) {
+            setState(() {});
+          }
+
+          Future.delayed(
+            const Duration(seconds: 5),
+            () {
+              if (mounted) {
+                loadRewardedAd();
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> watchAd() async {
+    if (showingAd) return;
+
+    if (adsToday >= 5) {
+      message(
+        'Päivän mainosraja on täynnä.',
+      );
+      return;
+    }
+
+    if (adTimer != Duration.zero) {
+      message(
+        'Odota ${formatTime(adTimer)}.',
+      );
+      return;
+    }
+
+    final ad = rewardedAd;
+
+    if (ad == null) {
+      message(
+        'Mainos latautuu vielä.',
+      );
+
+      loadRewardedAd();
+      return;
+    }
+
+    rewardedAd = null;
+
+    showingAd = true;
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent:
+          (ad) {
+        ad.dispose();
+        showingAd = false;
+
+        if (mounted) {
+          setState(() {});
+        }
+
+        loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent:
+          (ad, error) {
+        ad.dispose();
+        showingAd = false;
+
+        if (mounted) {
+          setState(() {});
+        }
+
+        loadRewardedAd();
+      },
+    );
+
+    ad.show(
+      onUserEarnedReward:
+          (AdWithoutView ad, RewardItem reward) {
+        giveThreeStl();
+      },
+    );
+  }
+
+  Future<void> giveThreeStl() async {
+    if (adsToday >= 5) return;
+
+    stl += 3;
+    adsToday++;
+
+    lastAd =
+        DateTime.now().toUtc();
+
+    await prefs!.setInt(
+      'stl',
+      stl,
+    );
+
+    await prefs!.setInt(
+      'adsToday',
+      adsToday,
+    );
+
+    await prefs!.setInt(
+      'lastAd',
+      lastAd!.millisecondsSinceEpoch,
+    );
+
+    updateTimers();
+
+    if (mounted) {
+      setState(() {});
+      message(
+        'Miau! +3 STL 🐾',
+      );
+    }
+  }
+
+  String formatTime(Duration time) {
     final hours =
         time.inHours
             .toString()
@@ -419,132 +446,377 @@ class _HomePageState extends State<HomePage> {
     return '$hours:$minutes:$seconds';
   }
 
-  // ============================================================
-  // NAME
-  // ============================================================
+  void message(String text) {
+    if (!mounted) return;
 
-  Future<void> _continue() async {
-    final name =
-        _nameController.text.trim();
-
-    if (name.isEmpty) {
-      setState(() {
-        _error =
-            'Kirjoita nimesi';
-      });
-
-      return;
-    }
-
-    setState(() {
-      _savingName = true;
-      _error = '';
-    });
-
-    await _prefs?.setString(
-      'name',
-      name,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _name = name;
-      _savingName = false;
-    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(text),
+        ),
+      );
   }
 
-  // ============================================================
-  // REWARDED AD
-  // ============================================================
-
-  Future<void> _watchAd() async {
-    if (_showingAd) {
-      return;
-    }
-
-    await _checkNewDay();
-
-    if (_adsToday >= 5) {
-      _showMessage(
-        'Päivän 5 mainoksen raja on täynnä.',
-        Icons.pets,
-      );
-
-      return;
-    }
-
-    if (!canWatchAd) {
-      _showMessage(
-        'Odota ${_formatTime(_adTimer)}.',
-        Icons.timer,
-      );
-
-      return;
-    }
-
-    final ad =
-        _rewardedAd;
-
-    if (ad == null) {
-      _showMessage(
-        'Mainos latautuu vielä.',
-        Icons.hourglass_empty,
-      );
-
-      _loadRewardedAd();
-
-      return;
-    }
-
-    _rewardedAd = null;
-
-    setState(() {
-      _showingAd = true;
-    });
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback(
-      onAdDismissedFullScreenContent:
-          (ad) {
-        ad.dispose();
-
-        if (mounted) {
-          setState(() {
-            _showingAd = false;
-          });
-        }
-
-        _loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent:
-          (ad, error) {
-        ad.dispose();
-
-        if (mounted) {
-          setState(() {
-            _showingAd = false;
-          });
-
-          _showMessage(
-            'Mainoksen näyttäminen epäonnistui.',
-            Icons.error,
+  Widget stella(double size) {
+    return ClipOval(
+      child: Image.asset(
+        'stella.jpg',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder:
+            (context, error, stackTrace) {
+          return Container(
+            width: size,
+            height: size,
+            color: const Color(0xFF35D0A0),
+            child: Icon(
+              Icons.pets,
+              size: size * 0.5,
+            ),
           );
-        }
-
-        _loadRewardedAd();
-      },
-    );
-
-    ad.show(
-      onUserEarnedReward:
-          (
-        AdWithoutView ad,
-        RewardItem reward,
-      ) {
-        _giveThreeStl();
-      },
+        },
+      ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'STELLURIINI 🐱',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          stella(130),
+
+          const SizedBox(height: 15),
+
+          const Text(
+            'STELLURIINI MINER',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF35D0A0),
+            ),
+          ),
+
+          const SizedBox(height: 5),
+
+          const Text(
+            'Stellan kanssa 🐾',
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 20),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                children: [
+                  const Text(
+                    'STL BALANCE',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      letterSpacing: 2,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    '$stl STL',
+                    style: const TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF35D0A0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          // DAILY LOGIN
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.pets,
+                        color: Color(0xFF35D0A0),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'DAILY LOGIN',
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  Text(
+                    streak >= 7
+                        ? '🔥 7 PÄIVÄN PUTKI'
+                        : '🐾 PÄIVÄ ${streak + 1} / 7',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF35D0A0),
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  Text(
+                    '+$dailyReward STL',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'Jos yksi kokonainen päivä jää väliin, '
+                    'putki alkaa uudelleen päivästä 1.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  if (dailyTimer != Duration.zero) ...[
+                    Text(
+                      formatTime(dailyTimer),
+                      style: const TextStyle(
+                        fontSize: 27,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          dailyTimer == Duration.zero
+                              ? claimDaily
+                              : null,
+                      icon: const Icon(
+                        Icons.pets,
+                      ),
+                      label: Text(
+                        dailyTimer == Duration.zero
+                            ? 'CLAIM +$dailyReward STL'
+                            : 'TULE HUOMENNA',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          // WATCH AD
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.play_circle,
+                        color: Color(0xFF35D0A0),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'WATCH & EARN',
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    'Katso mainos ja saat +3 STL.',
+                    style: TextStyle(
+                      color: Colors.white70,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Tänään: $adsToday / 5',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  if (adTimer != Duration.zero) ...[
+                    Text(
+                      formatTime(adTimer),
+                      style: const TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          adTimer == Duration.zero &&
+                                  adsToday < 5 &&
+                                  rewardedAd != null &&
+                                  !showingAd
+                              ? watchAd
+                              : null,
+                      icon: showingAd
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.play_arrow,
+                            ),
+                      label: Text(
+                        adsToday >= 5
+                            ? 'PÄIVÄN RAJA'
+                            : rewardedAd == null
+                                ? 'LADATAAN MAINOSTA...'
+                                : 'KATSO MAINOS +3 STL',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          // STATS
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'STL',
+                          style: TextStyle(
+                            color: Colors.white54,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          '$stl',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'STREAK',
+                          style: TextStyle(
+                            color: Colors.white54,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          '$streak / 7',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'ADS',
+                          style: TextStyle(
+                            color: Colors.white54,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          '$adsToday / 5',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
