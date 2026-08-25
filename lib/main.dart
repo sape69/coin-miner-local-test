@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  static const String interstitialAdId =
+ 
       'ca-app-pub-3940256099942544/1033173712';
 
   // Solana Stelluriini tokenin mint address.
