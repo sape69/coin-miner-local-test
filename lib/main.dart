@@ -39,6 +39,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Google test rewarded ad.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -61,6 +62,10 @@ class _HomePageState extends State<HomePage> {
   bool loading = true;
   bool loadingAd = false;
   bool showingAd = false;
+
+  // Estää Daily Claimin ja Watch Adin
+  // käyttämästä samaa mainosta samaan aikaan.
+  bool dailyClaimPending = false;
 
   @override
   void initState() {
@@ -85,6 +90,10 @@ class _HomePageState extends State<HomePage> {
     rewardedAd?.dispose();
     super.dispose();
   }
+
+  // ============================================================
+  // DATA
+  // ============================================================
 
   Future<void> loadData() async {
     prefs = await SharedPreferences.getInstance();
@@ -139,6 +148,7 @@ class _HomePageState extends State<HomePage> {
     if (prefs == null) return;
 
     final currentDay = today();
+
     final savedDay =
         prefs!.getString('day');
 
@@ -146,6 +156,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    // Uusi päivä.
     adsToday = 0;
 
     await prefs!.setString(
@@ -158,6 +169,8 @@ class _HomePageState extends State<HomePage> {
       0,
     );
 
+    // Jos Daily Claim on ollut yli 48 h sitten,
+    // putki alkaa alusta.
     if (lastDaily != null) {
       final difference =
           DateTime.now()
@@ -178,6 +191,10 @@ class _HomePageState extends State<HomePage> {
       setState(() {});
     }
   }
+
+  // ============================================================
+  // TIMERS
+  // ============================================================
 
   void updateTimers() {
     final now =
@@ -221,6 +238,10 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // ============================================================
+  // DAILY REWARD
+  // ============================================================
+
   int get dailyReward {
     if (streak >= 7) {
       return 7;
@@ -229,14 +250,108 @@ class _HomePageState extends State<HomePage> {
     return streak + 1;
   }
 
+  // ============================================================
+  // DAILY CLAIM + REWARDED AD
+  // ============================================================
+
   Future<void> claimDaily() async {
     if (dailyTimer != Duration.zero) {
       return;
     }
 
+    if (showingAd ||
+        dailyClaimPending) {
+      return;
+    }
+
+    final ad = rewardedAd;
+
+    if (ad == null) {
+      message(
+        'Daily-mainos latautuu vielä.',
+      );
+
+      loadRewardedAd();
+      return;
+    }
+
+    // Tallennetaan tämän claimin palkinto
+    // ennen mainoksen avaamista.
+    final reward = dailyReward;
+
+    dailyClaimPending = true;
+    showingAd = true;
+
+    rewardedAd = null;
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent:
+          (ad) {
+        ad.dispose();
+
+        showingAd = false;
+
+        // Jos käyttäjä sulkee mainoksen
+        // ennen palkinnon saamista,
+        // Daily Claimia ei merkitä käytetyksi.
+        if (dailyClaimPending) {
+          dailyClaimPending = false;
+        }
+
+        if (mounted) {
+          setState(() {});
+        }
+
+        loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent:
+          (ad, error) {
+        ad.dispose();
+
+        showingAd = false;
+        dailyClaimPending = false;
+
+        if (mounted) {
+          setState(() {});
+
+          message(
+            'Daily-mainosta ei voitu näyttää.',
+          );
+        }
+
+        loadRewardedAd();
+      },
+    );
+
+    ad.show(
+      onUserEarnedReward:
+          (
+        AdWithoutView ad,
+        RewardItem rewardItem,
+      ) {
+        giveDailyReward(reward);
+      },
+    );
+  }
+
+  Future<void> giveDailyReward(
+    int reward,
+  ) async {
+    if (!dailyClaimPending) {
+      return;
+    }
+
+    dailyClaimPending = false;
+
     final now =
         DateTime.now().toUtc();
 
+    // Tarkistetaan mahdollinen väliin jäänyt päivä.
     if (lastDaily != null) {
       final difference =
           now.difference(lastDaily!);
@@ -245,8 +360,6 @@ class _HomePageState extends State<HomePage> {
         streak = 0;
       }
     }
-
-    final reward = dailyReward;
 
     stl += reward;
 
@@ -275,11 +388,16 @@ class _HomePageState extends State<HomePage> {
 
     if (mounted) {
       setState(() {});
+
       message(
-        'Miau! +$reward STL 🐾',
+        'Miau! Daily Login +$reward STL 🐾',
       );
     }
   }
+
+  // ============================================================
+  // REWARDED AD
+  // ============================================================
 
   void loadRewardedAd() {
     if (loadingAd ||
@@ -288,6 +406,10 @@ class _HomePageState extends State<HomePage> {
     }
 
     loadingAd = true;
+
+    if (mounted) {
+      setState(() {});
+    }
 
     RewardedAd.load(
       adUnitId: rewardedAdId,
@@ -323,8 +445,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ============================================================
+  // WATCH AD +3 STL
+  // ============================================================
+
   Future<void> watchAd() async {
-    if (showingAd) return;
+    if (showingAd) {
+      return;
+    }
 
     if (adsToday >= 5) {
       message(
@@ -352,7 +480,6 @@ class _HomePageState extends State<HomePage> {
     }
 
     rewardedAd = null;
-
     showingAd = true;
 
     if (mounted) {
@@ -364,6 +491,7 @@ class _HomePageState extends State<HomePage> {
       onAdDismissedFullScreenContent:
           (ad) {
         ad.dispose();
+
         showingAd = false;
 
         if (mounted) {
@@ -375,6 +503,7 @@ class _HomePageState extends State<HomePage> {
       onAdFailedToShowFullScreenContent:
           (ad, error) {
         ad.dispose();
+
         showingAd = false;
 
         if (mounted) {
@@ -387,14 +516,19 @@ class _HomePageState extends State<HomePage> {
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
+          (
+        AdWithoutView ad,
+        RewardItem reward,
+      ) {
         giveThreeStl();
       },
     );
   }
 
   Future<void> giveThreeStl() async {
-    if (adsToday >= 5) return;
+    if (adsToday >= 5) {
+      return;
+    }
 
     stl += 3;
     adsToday++;
@@ -421,13 +555,20 @@ class _HomePageState extends State<HomePage> {
 
     if (mounted) {
       setState(() {});
+
       message(
         'Miau! +3 STL 🐾',
       );
     }
   }
 
-  String formatTime(Duration time) {
+  // ============================================================
+  // HELPERS
+  // ============================================================
+
+  String formatTime(
+    Duration time,
+  ) {
     final hours =
         time.inHours
             .toString()
@@ -458,7 +599,9 @@ class _HomePageState extends State<HomePage> {
       );
   }
 
-  Widget stella(double size) {
+  Widget stella(
+    double size,
+  ) {
     return ClipOval(
       child: Image.asset(
         'stella.jpg',
@@ -470,7 +613,8 @@ class _HomePageState extends State<HomePage> {
           return Container(
             width: size,
             height: size,
-            color: const Color(0xFF35D0A0),
+            color:
+                const Color(0xFF35D0A0),
             child: Icon(
               Icons.pets,
               size: size * 0.5,
@@ -481,12 +625,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(),
         ),
       );
     }
@@ -496,58 +647,80 @@ class _HomePageState extends State<HomePage> {
         title: const Text(
           'STELLURIINI 🐱',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
         centerTitle: true,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding:
+            const EdgeInsets.all(16),
         children: [
           stella(130),
 
-          const SizedBox(height: 15),
+          const SizedBox(
+            height: 15,
+          ),
 
           const Text(
             'STELLURIINI MINER',
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF35D0A0),
+              fontWeight:
+                  FontWeight.bold,
+              color:
+                  Color(0xFF35D0A0),
             ),
           ),
 
-          const SizedBox(height: 5),
+          const SizedBox(
+            height: 5,
+          ),
 
           const Text(
             'Stellan kanssa 🐾',
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(
+            height: 20,
+          ),
 
+          // BALANCE
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(22),
+              padding:
+                  const EdgeInsets.all(22),
               child: Column(
                 children: [
                   const Text(
                     'STL BALANCE',
                     style: TextStyle(
-                      color: Colors.white54,
+                      color:
+                          Colors.white54,
                       letterSpacing: 2,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
 
                   Text(
                     '$stl STL',
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF35D0A0),
+                      fontWeight:
+                          FontWeight.bold,
+                      color:
+                          Color(
+                        0xFF35D0A0,
+                      ),
                     ),
                   ),
                 ],
@@ -555,93 +728,142 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(
+            height: 15,
+          ),
 
           // DAILY LOGIN
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding:
+                  const EdgeInsets.all(20),
               child: Column(
                 children: [
                   const Row(
                     children: [
                       Icon(
                         Icons.pets,
-                        color: Color(0xFF35D0A0),
+                        color:
+                            Color(
+                          0xFF35D0A0,
+                        ),
                       ),
-                      SizedBox(width: 10),
+                      SizedBox(
+                        width: 10,
+                      ),
                       Text(
                         'DAILY LOGIN',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 19,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 15),
+                  const SizedBox(
+                    height: 15,
+                  ),
 
                   Text(
                     streak >= 7
                         ? '🔥 7 PÄIVÄN PUTKI'
                         : '🐾 PÄIVÄ ${streak + 1} / 7',
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF35D0A0),
+                      fontWeight:
+                          FontWeight.bold,
+                      color:
+                          Color(
+                        0xFF35D0A0,
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 5),
+                  const SizedBox(
+                    height: 5,
+                  ),
 
                   Text(
                     '+$dailyReward STL',
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 32,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(
+                    height: 10,
+                  ),
 
                   const Text(
-                    'Jos yksi kokonainen päivä jää väliin, '
-                    'putki alkaa uudelleen päivästä 1.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white70,
+                    'Katso ensin lyhyt mainos. '
+                    'Sen jälkeen Stella antaa '
+                    'päivän STL-palkinnon.',
+                    textAlign:
+                        TextAlign.center,
+                    style:
+                        TextStyle(
+                      color:
+                          Colors.white70,
                     ),
                   ),
 
-                  const SizedBox(height: 15),
+                  const SizedBox(
+                    height: 15,
+                  ),
 
-                  if (dailyTimer != Duration.zero) ...[
+                  if (dailyTimer !=
+                      Duration.zero) ...[
                     Text(
-                      formatTime(dailyTimer),
-                      style: const TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.bold,
+                      formatTime(
+                        dailyTimer,
+                      ),
+                      style:
+                          const TextStyle(
+                        fontSize: 25,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 10),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
                   ],
 
                   SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
+                    width:
+                        double.infinity,
+                    height: 58,
+                    child:
+                        ElevatedButton.icon(
                       onPressed:
-                          dailyTimer == Duration.zero
+                          dailyTimer ==
+                                      Duration.zero &&
+                                  !showingAd &&
+                                  rewardedAd !=
+                                      null
                               ? claimDaily
                               : null,
-                      icon: const Icon(
+                      icon:
+                          const Icon(
                         Icons.pets,
+                        size: 27,
                       ),
-                      label: Text(
-                        dailyTimer == Duration.zero
-                            ? 'CLAIM +$dailyReward STL'
+                      label:
+                          Text(
+                        dailyTimer ==
+                                    Duration.zero
+                            ? 'WATCH AD + CLAIM +$dailyReward STL'
                             : 'TULE HUOMENNA',
+                        textAlign:
+                            TextAlign.center,
                       ),
                     ),
                   ),
@@ -650,89 +872,115 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(
+            height: 15,
+          ),
 
-          // WATCH AD
+          // WATCH AD +3
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding:
+                  const EdgeInsets.all(20),
               child: Column(
                 children: [
                   const Row(
                     children: [
                       Icon(
                         Icons.play_circle,
-                        color: Color(0xFF35D0A0),
+                        color:
+                            Color(
+                          0xFF35D0A0,
+                        ),
                       ),
-                      SizedBox(width: 10),
+                      SizedBox(
+                        width: 10,
+                      ),
                       Text(
                         'WATCH & EARN',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 19,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
 
                   const Text(
                     'Katso mainos ja saat +3 STL.',
-                    style: TextStyle(
-                      color: Colors.white70,
+                    style:
+                        TextStyle(
+                      color:
+                          Colors.white70,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
 
                   Text(
                     'Tänään: $adsToday / 5',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
 
-                  if (adTimer != Duration.zero) ...[
+                  if (adTimer !=
+                      Duration.zero) ...[
                     Text(
-                      formatTime(adTimer),
-                      style: const TextStyle(
+                      formatTime(
+                        adTimer,
+                      ),
+                      style:
+                          const TextStyle(
                         fontSize: 25,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 10),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
                   ],
 
                   SizedBox(
-                    width: double.infinity,
+                    width:
+                        double.infinity,
                     height: 56,
-                    child: ElevatedButton.icon(
+                    child:
+                        ElevatedButton.icon(
                       onPressed:
-                          adTimer == Duration.zero &&
+                          adTimer ==
+                                      Duration.zero &&
                                   adsToday < 5 &&
-                                  rewardedAd != null &&
+                                  rewardedAd !=
+                                      null &&
                                   !showingAd
                               ? watchAd
                               : null,
-                      icon: showingAd
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.play_arrow,
-                            ),
-                      label: Text(
+                      icon:
+                          const Icon(
+                        Icons.play_arrow,
+                      ),
+                      label:
+                          Text(
                         adsToday >= 5
                             ? 'PÄIVÄN RAJA'
-                            : rewardedAd == null
+                            : rewardedAd ==
+                                    null
                                 ? 'LADATAAN MAINOSTA...'
                                 : 'KATSO MAINOS +3 STL',
                       ),
@@ -743,12 +991,15 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(
+            height: 15,
+          ),
 
           // STATS
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding:
+                  const EdgeInsets.all(18),
               child: Row(
                 children: [
                   Expanded(
@@ -756,56 +1007,76 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         const Text(
                           'STL',
-                          style: TextStyle(
-                            color: Colors.white54,
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.white54,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(
+                          height: 5,
+                        ),
                         Text(
                           '$stl',
-                          style: const TextStyle(
+                          style:
+                              const TextStyle(
                             fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                            fontWeight:
+                                FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
+
                   Expanded(
                     child: Column(
                       children: [
                         const Text(
                           'STREAK',
-                          style: TextStyle(
-                            color: Colors.white54,
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.white54,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(
+                          height: 5,
+                        ),
                         Text(
                           '$streak / 7',
-                          style: const TextStyle(
+                          style:
+                              const TextStyle(
                             fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                            fontWeight:
+                                FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
+
                   Expanded(
                     child: Column(
                       children: [
                         const Text(
                           'ADS',
-                          style: TextStyle(
-                            color: Colors.white54,
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.white54,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(
+                          height: 5,
+                        ),
                         Text(
                           '$adsToday / 5',
-                          style: const TextStyle(
+                          style:
+                              const TextStyle(
                             fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                            fontWeight:
+                                FontWeight.bold,
                           ),
                         ),
                       ],
