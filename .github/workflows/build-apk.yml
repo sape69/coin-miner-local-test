@@ -1,43 +1,32 @@
-name: Build Stelluriini APK
+- name: Check Stelluriini icon
+  run: |
+    test -f stelluriini_icon.png
+    echo "Stelluriini icon found."
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+- name: Install ImageMagick
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y imagemagick
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+- name: Create Android launcher icons
+  run: |
+    mkdir -p android/app/src/main/res/mipmap-mdpi
+    mkdir -p android/app/src/main/res/mipmap-hdpi
+    mkdir -p android/app/src/main/res/mipmap-xhdpi
+    mkdir -p android/app/src/main/res/mipmap-xxhdpi
+    mkdir -p android/app/src/main/res/mipmap-xxxhdpi
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    convert stelluriini_icon.png -resize 48x48 \
+      android/app/src/main/res/mipmap-mdpi/ic_launcher.png
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.27.0'
-          channel: stable
+    convert stelluriini_icon.png -resize 72x72 \
+      android/app/src/main/res/mipmap-hdpi/ic_launcher.png
 
-      - name: Flutter pub get
-        run: flutter pub get
+    convert stelluriini_icon.png -resize 96x96 \
+      android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
 
-      - name: Flutter analyze
-        run: flutter analyze
+    convert stelluriini_icon.png -resize 144x144 \
+      android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
 
-      - name: Build APK
-        run: flutter build apk --release
-
-      - name: Rename APK
-        run: |
-          mkdir -p build/final
-          cp build/app/outputs/flutter-apk/app-release.apk \
-            build/final/Stelluriini.apk
-
-      - name: Upload Stelluriini APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Stelluriini
-          path: build/final/Stelluriini.apk
-          if-no-files-found: error
+    convert stelluriini_icon.png -resize 192x192 \
+      android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
