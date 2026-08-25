@@ -43,7 +43,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // Google AdMob TEST IDs.
-  // Vaihdetaan myöhemmin omiin AdMob-tunnuksiin.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -63,9 +62,22 @@ class _HomePageState extends State<HomePage> {
   String _error = '';
 
   int _stl = 0;
+
+  // Mainosmäärä tänään.
   int _rewardCount = 0;
 
-  DateTime? _lastClaim;
+  // Daily Login -putken päivä.
+  // 1 = +1 STL
+  // 2 = +2 STL
+  // ...
+  // 7 = +7 STL
+  // 8+ = aina +7 STL
+  int _dailyStreak = 0;
+
+  // Viimeisin Daily Login.
+  DateTime? _lastDailyClaim;
+
+  // Viimeisin mainospalkinto.
   DateTime? _lastReward;
 
   Duration _claimTimer = Duration.zero;
@@ -134,13 +146,16 @@ class _HomePageState extends State<HomePage> {
     _rewardCount =
         prefs.getInt('rewardCount') ?? 0;
 
-    final claimMilliseconds =
-        prefs.getInt('claimTime');
+    _dailyStreak =
+        prefs.getInt('dailyStreak') ?? 0;
 
-    if (claimMilliseconds != null) {
-      _lastClaim =
+    final dailyClaimMilliseconds =
+        prefs.getInt('dailyClaimTime');
+
+    if (dailyClaimMilliseconds != null) {
+      _lastDailyClaim =
           DateTime.fromMillisecondsSinceEpoch(
-        claimMilliseconds,
+        dailyClaimMilliseconds,
         isUtc: true,
       );
     }
@@ -205,6 +220,10 @@ class _HomePageState extends State<HomePage> {
     return '$year-$month-$day';
   }
 
+  // ============================================================
+  // NEW DAY
+  // ============================================================
+
   Future<void> _checkNewDay() async {
     if (_prefs == null) {
       return;
@@ -237,6 +256,103 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
+  // DAILY LOGIN
+  // ============================================================
+
+  int get dailyReward {
+    if (_dailyStreak <= 0) {
+      return 1;
+    }
+
+    if (_dailyStreak >= 7) {
+      return 7;
+    }
+
+    return _dailyStreak + 1;
+  }
+
+  int get displayedDay {
+    if (_dailyStreak >= 7) {
+      return 7;
+    }
+
+    return _dailyStreak + 1;
+  }
+
+  bool get canClaim {
+    return _claimTimer == Duration.zero;
+  }
+
+  Future<void> _claimDailyLogin() async {
+    if (_claiming || !canClaim) {
+      return;
+    }
+
+    final now =
+        DateTime.now().toUtc();
+
+    // Jos edellinen claim oli olemassa,
+    // tarkistetaan jäikö kokonainen päivä väliin.
+    if (_lastDailyClaim != null) {
+      final difference =
+          now.difference(
+        _lastDailyClaim!,
+      );
+
+      if (difference.inHours >= 48) {
+        // Vähintään yksi kokonainen päivä väliin.
+        _dailyStreak = 0;
+      }
+    }
+
+    final reward = dailyReward;
+
+    setState(() {
+      _claiming = true;
+    });
+
+    // Kasvatetaan putkea ennen seuraavaa claimia.
+    if (_dailyStreak < 7) {
+      _dailyStreak++;
+    }
+
+    _stl += reward;
+
+    _lastDailyClaim = now;
+
+    await _prefs?.setInt(
+      'stl',
+      _stl,
+    );
+
+    await _prefs?.setInt(
+      'dailyStreak',
+      _dailyStreak,
+    );
+
+    await _prefs?.setInt(
+      'dailyClaimTime',
+      _lastDailyClaim!
+          .millisecondsSinceEpoch,
+    );
+
+    _updateTimers();
+
+    if (mounted) {
+      setState(() {
+        _claiming = false;
+      });
+    }
+
+    _message(
+      'Miau! +$reward STL 🐾',
+      Icons.pets,
+    );
+
+    _showInterstitial();
+  }
+
+  // ============================================================
   // TIMERS
   // ============================================================
 
@@ -250,9 +366,9 @@ class _HomePageState extends State<HomePage> {
     Duration reward =
         Duration.zero;
 
-    if (_lastClaim != null) {
+    if (_lastDailyClaim != null) {
       final nextClaim =
-          _lastClaim!.add(
+          _lastDailyClaim!.add(
         const Duration(hours: 24),
       );
 
@@ -282,11 +398,6 @@ class _HomePageState extends State<HomePage> {
       _claimTimer = claim;
       _rewardTimer = reward;
     });
-  }
-
-  bool get canClaim {
-    return _claimTimer ==
-        Duration.zero;
   }
 
   bool get canReward {
@@ -366,54 +477,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // DAILY CLAIM
-  // ============================================================
-
-  Future<void> _claimStl() async {
-    if (_claiming ||
-        !canClaim) {
-      return;
-    }
-
-    setState(() {
-      _claiming = true;
-    });
-
-    // Daily Claim antaa 10 STL.
-    _stl += 10;
-
-    _lastClaim =
-        DateTime.now().toUtc();
-
-    await _prefs?.setInt(
-      'stl',
-      _stl,
-    );
-
-    await _prefs?.setInt(
-      'claimTime',
-      _lastClaim!
-          .millisecondsSinceEpoch,
-    );
-
-    _updateTimers();
-
-    if (mounted) {
-      setState(() {
-        _claiming = false;
-      });
-    }
-
-    _message(
-      '+10 STL 🐾',
-      Icons.pets,
-    );
-
-    _showInterstitial();
-  }
-
-  // ============================================================
-  // WATCH REWARDED AD
+  // REWARDED AD
   // ============================================================
 
   Future<void> _watchRewardAd() async {
@@ -471,8 +535,7 @@ class _HomePageState extends State<HomePage> {
 
         if (mounted) {
           setState(() {
-            _showingReward =
-                false;
+            _showingReward = false;
           });
         }
 
@@ -485,8 +548,7 @@ class _HomePageState extends State<HomePage> {
 
         if (mounted) {
           setState(() {
-            _showingReward =
-                false;
+            _showingReward = false;
           });
 
           _message(
@@ -505,20 +567,20 @@ class _HomePageState extends State<HomePage> {
         AdWithoutView ad,
         RewardItem reward,
       ) {
-        _giveFiveStl();
+        _giveThreeStl();
       },
     );
   }
 
-  Future<void> _giveFiveStl() async {
+  Future<void> _giveThreeStl() async {
     await _checkNewDay();
 
     if (_rewardCount >= 5) {
       return;
     }
 
-    // Mainoksesta +5 STL.
-    _stl += 5;
+    // Mainoksesta +3 STL.
+    _stl += 3;
 
     _rewardCount++;
 
@@ -550,7 +612,7 @@ class _HomePageState extends State<HomePage> {
     _updateTimers();
 
     _message(
-      '+5 STL 🐾',
+      'Miau! +3 STL 🐾',
       Icons.pets,
     );
   }
@@ -601,8 +663,7 @@ class _HomePageState extends State<HomePage> {
             setState(() {});
           }
 
-          _rewardRetryTimer
-              ?.cancel();
+          _rewardRetryTimer?.cancel();
 
           _rewardRetryTimer =
               Timer(
@@ -621,7 +682,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // INTERSTITIAL
+  // INTERSTITIAL AD
   // ============================================================
 
   void _loadInterstitialAd() {
@@ -630,8 +691,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    _loadingInterstitial =
-        true;
+    _loadingInterstitial = true;
 
     InterstitialAd.load(
       adUnitId:
@@ -644,8 +704,7 @@ class _HomePageState extends State<HomePage> {
           _loadingInterstitial =
               false;
 
-          _interstitialAd =
-              ad;
+          _interstitialAd = ad;
 
           if (mounted) {
             setState(() {});
@@ -736,7 +795,9 @@ class _HomePageState extends State<HomePage> {
 
       _rewardCount = 0;
 
-      _lastClaim = null;
+      _dailyStreak = 0;
+
+      _lastDailyClaim = null;
 
       _lastReward = null;
 
@@ -1054,7 +1115,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // HOME PAGE
+  // HOME
   // ============================================================
 
   Widget _homePage() {
@@ -1101,7 +1162,7 @@ class _HomePageState extends State<HomePage> {
               height: 14,
             ),
 
-            _claimCard(),
+            _dailyLoginCard(),
 
             const SizedBox(
               height: 14,
@@ -1145,7 +1206,9 @@ class _HomePageState extends State<HomePage> {
               style:
                   TextStyle(
                 color:
-                    Color(0xFF35D0A0),
+                    Color(
+                  0xFF35D0A0,
+                ),
                 fontWeight:
                     FontWeight.bold,
               ),
@@ -1157,7 +1220,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // WELCOME CARD
+  // WELCOME
   // ============================================================
 
   Widget _welcomeCard() {
@@ -1237,7 +1300,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // BALANCE CARD
+  // BALANCE
   // ============================================================
 
   Widget _balanceCard() {
@@ -1303,10 +1366,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // DAILY CLAIM CARD
+  // DAILY LOGIN CARD
   // ============================================================
 
-  Widget _claimCard() {
+  Widget _dailyLoginCard() {
     final available =
         canClaim;
 
@@ -1321,9 +1384,9 @@ class _HomePageState extends State<HomePage> {
               CrossAxisAlignment
                   .stretch,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.pets,
                   color:
                       Color(
@@ -1332,44 +1395,87 @@ class _HomePageState extends State<HomePage> {
                   size: 30,
                 ),
 
-                SizedBox(
+                const SizedBox(
                   width: 10,
                 ),
 
-                Text(
-                  'STELLA DAILY CLAIM',
-                  style:
-                      TextStyle(
-                    fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                const Expanded(
+                  child: Text(
+                    'STELLA DAILY LOGIN',
+                    style:
+                        TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
 
             const SizedBox(
-              height: 10,
+              height: 12,
             ),
 
-            const Text(
-              'Stella antaa sinulle '
-              '10 STL kerran '
-              '24 tunnissa.',
+            Text(
+              _dailyStreak >= 7
+                  ? '🔥 7 päivän putki täynnä!'
+                  : 'Päivä $displayedDay / 7',
+              textAlign:
+                  TextAlign.center,
               style:
-                  TextStyle(
+                  const TextStyle(
+                fontSize: 22,
+                fontWeight:
+                    FontWeight.bold,
                 color:
-                    Colors.white70,
+                    Color(
+                  0xFF35D0A0,
+                ),
               ),
             ),
 
             const SizedBox(
-              height: 14,
+              height: 6,
+            ),
+
+            Text(
+              '+$dailyReward STL',
+              textAlign:
+                  TextAlign.center,
+              style:
+                  const TextStyle(
+                fontSize: 32,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(
+              height: 6,
+            ),
+
+            const Text(
+              'Paina Daily Claim joka päivä. '
+              'Jos yksi päivä jää väliin, '
+              'putki alkaa uudelleen päivästä 1.',
+              textAlign:
+                  TextAlign.center,
+              style:
+                  TextStyle(
+                color:
+                    Colors.white70,
+                fontSize: 13,
+              ),
+            ),
+
+            const SizedBox(
+              height: 15,
             ),
 
             if (!available) ...[
               const Text(
-                'SEURAAVA TASSU',
+                'SEURAAVA CLAIM',
                 textAlign:
                     TextAlign.center,
                 style:
@@ -1391,7 +1497,7 @@ class _HomePageState extends State<HomePage> {
                     TextAlign.center,
                 style:
                     const TextStyle(
-                  fontSize: 30,
+                  fontSize: 28,
                   fontWeight:
                       FontWeight.bold,
                 ),
@@ -1409,7 +1515,7 @@ class _HomePageState extends State<HomePage> {
                 onPressed:
                     available &&
                             !_claiming
-                        ? _claimStl
+                        ? _claimDailyLogin
                         : null,
 
                 icon: _claiming
@@ -1428,8 +1534,8 @@ class _HomePageState extends State<HomePage> {
 
                 label: Text(
                   available
-                      ? 'CLAIM +10 STL 🐾'
-                      : 'TULE MYÖHEMMIN',
+                      ? '🐾 CLAIM +$dailyReward STL'
+                      : '🐾 TULE MYÖHEMMIN',
                   style:
                       const TextStyle(
                     fontSize: 16,
@@ -1446,7 +1552,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // WATCH & EARN CARD
+  // WATCH AD
   // ============================================================
 
   Widget _rewardCard() {
@@ -1470,7 +1576,7 @@ class _HomePageState extends State<HomePage> {
           'LADATAAN MAINOSTA...';
     } else {
       buttonText =
-          'KATSO MAINOS +5 STL 🐾';
+          'KATSO MAINOS +3 STL 🐾';
     }
 
     return Card(
@@ -1516,7 +1622,7 @@ class _HomePageState extends State<HomePage> {
 
             const Text(
               'Katso mainos ja Stella '
-              'antaa sinulle 5 STL.',
+              'antaa sinulle 3 STL.',
               style:
                   TextStyle(
                 color:
@@ -1623,130 +1729,4 @@ class _HomePageState extends State<HomePage> {
                     : loading &&
                             available
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.play_arrow,
-                          ),
-
-                label: Text(
-                  buttonText,
-                  style:
-                      const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            if (available && loading)
-              const Padding(
-                padding:
-                    EdgeInsets.only(
-                  top: 10,
-                ),
-                child: Text(
-                  'Mainos latautuu. '
-                  'Nappi aktivoituu automaattisesti.',
-                  textAlign:
-                      TextAlign.center,
-                  style:
-                      TextStyle(
-                    color:
-                        Colors.white54,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // STATS CARD
-  // ============================================================
-
-  Widget _statsCard() {
-    return Card(
-      child: Padding(
-        padding:
-            const EdgeInsets.all(
-          18,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  const Text(
-                    'STL BALANCE',
-                    style:
-                        TextStyle(
-                      color:
-                          Colors.white54,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 5,
-                  ),
-
-                  Text(
-                    '$_stl',
-                    style:
-                        const TextStyle(
-                      fontSize: 24,
-                      fontWeight:
-                          FontWeight.bold,
-                      color:
-                          Color(
-                        0xFF35D0A0,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: Column(
-                children: [
-                  const Text(
-                    'ADS TODAY',
-                    style:
-                        TextStyle(
-                      color:
-                          Colors.white54,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 5,
-                  ),
-
-                  Text(
-                    '$_rewardCount / 5',
-                    style:
-                        const TextStyle(
-                      fontSize: 24,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+                            width:
