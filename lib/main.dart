@@ -49,12 +49,11 @@ class _HomePageState extends State<HomePage> {
   static const String tokenName = 'Stelluriini';
   static const String tokenSymbol = 'STL';
 
-  // Stelluriinin mint-osoite.
-  // Vaihda tähän oikea mint-osoite, jos haluat näyttää sen sovelluksessa.
+  // Lisää oikea Stelluriinin mint address tähän myöhemmin.
   static const String stelluriiniMint = '';
 
   // ============================================================
-  // ADMOB TEST ID
+  // ADMOB TEST MAINOKSET
   // ============================================================
 
   static const String rewardedAdId =
@@ -67,13 +66,13 @@ class _HomePageState extends State<HomePage> {
   // TALLENNUKSEN AVAIMET
   // ============================================================
 
-  static const String coinsKey = 'stl';
+  static const String stlKey = 'stl';
   static const String streakKey = 'dailyStreak';
   static const String lastDailyKey = 'lastDaily';
   static const String adsTodayKey = 'adsToday';
   static const String lastAdKey = 'lastAd';
   static const String factDayKey = 'factDay';
-  static const String nameKey = 'name';
+  static const String currentDayKey = 'currentDay';
 
   SharedPreferences? prefs;
 
@@ -82,21 +81,18 @@ class _HomePageState extends State<HomePage> {
 
   Timer? timer;
 
-  String name = '';
-
   int stl = 0;
 
-  // 0 = päivä 1
-  // 1 = päivä 2
+  // 0 = seuraavaksi päivä 1
+  // 1 = seuraavaksi päivä 2
   // ...
-  // 6 = päivä 7
+  // 6 = seuraavaksi päivä 7
   // 7 = 7 STL joka päivä
   int streak = 0;
 
   int adsToday = 0;
 
-  // Kasvaa joka Daily Claimin jälkeen.
-  // Näin fakta vaihtuu joka päivä.
+  // Kissafaktan päivä.
   int factDay = 1;
 
   DateTime? lastDaily;
@@ -116,15 +112,15 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   static const List<String> catFacts = [
-    'Kissat nukkuvat suuren osan päivästä.',
+    'Kissat nukkuvat usein noin 12–16 tuntia vuorokaudessa.',
     'Kissan viikset ovat erittäin herkkiä tuntoelimiä.',
     'Kissan nenän kuvio on yksilöllinen.',
     'Kissat käyttävät häntäänsä tasapainon apuna.',
     'Kissan kynnet ovat sisäänvedettävät.',
     'Kissat voivat kuulla erittäin korkeita ääniä.',
-    'Kissan korvat voivat liikkua lähes itsenäisesti.',
+    'Kissan korvat voivat liikkua eri suuntiin.',
     'Kissan kielessä on pieniä koukkumaisia nystyjä.',
-    'Kissat ovat luonnostaan uteliaita.',
+    'Kissat ovat luonnostaan uteliaita eläimiä.',
     'Kissat voivat hypätä erittäin ketterästi.',
     'Kissan silmät auttavat sitä näkemään hämärässä.',
     'Kissat käyttävät hajuaistiaan ympäristön tutkimiseen.',
@@ -132,7 +128,7 @@ class _HomePageState extends State<HomePage> {
     'Hidas silmien räpytys voi olla kissan ystävällinen tervehdys.',
     'Kissat voivat muodostaa vahvan siteen ihmiseen.',
     'Kissan tassujen anturat ovat herkkiä.',
-    'Kissat käyttävät raapimista myös merkitsemiseen.',
+    'Kissat käyttävät raapimista myös ympäristön merkitsemiseen.',
     'Kissat voivat oppia erilaisia päivittäisiä rutiineja.',
     'Kissat pitävät usein korkeista tarkkailupaikoista.',
     'Kissan häntä auttaa tasapainossa hypyn aikana.',
@@ -166,10 +162,45 @@ class _HomePageState extends State<HomePage> {
     'Kissat voivat käyttää hajumerkkejä kommunikointiin.',
     'Kissan turkki auttaa suojaamaan ihoa.',
     'Kissat voivat oppia yhdistämään äänen tiettyyn tapahtumaan.',
+    'Kissa voi ilmaista turvallisuutta rentoutuneella vartalolla.',
+    'Kissat voivat pitää tutuista ja ennakoitavista rutiineista.',
+    'Kissan tassut auttavat sitä pysähtymään ja muuttamaan suuntaa.',
+    'Kissat voivat oppia, missä niiden ruoka yleensä tarjoillaan.',
+    'Kissa voi osoittaa uteliaisuutta seuraamalla liikettä.',
+    'Kissat voivat käyttää viiksiään myös ympäristön tunnusteluun.',
+    'Kissa voi tunnistaa tutun ihmisen tuoksun.',
+    'Kissat voivat viettää paljon aikaa tarkkaillen ympäristöään.',
+    'Kissan kuuloalue on laaja.',
+    'Kissat voivat reagoida hyvin korkeisiin ääniin.',
+    'Kissa voi tutkia uuden esineen ensin haistamalla sitä.',
+    'Kissat voivat oppia toistuvista palkinnoista.',
+    'Kissa voi yhdistää tietyn äänen ruokaan.',
+    'Kissat voivat käyttää leikkiä luonnollisten taitojen harjoitteluun.',
+    'Kissa voi harjoitella hyppyjä leikin aikana.',
+    'Kissat voivat olla erittäin ketteriä pienessäkin tilassa.',
+    'Kissa voi tehdä nopean suunnanmuutoksen kesken juoksun.',
+    'Kissat voivat käyttää kynsiään tarttumiseen.',
+    'Kissa voi käyttää tassujaan tasapainon säätelyyn.',
+    'Kissat voivat oppia, missä turvalliset lepopaikat sijaitsevat.',
+    'Kissa voi osoittaa tyytyväisyyttä venyttelemällä.',
+    'Kissat voivat nukkua monissa erilaisissa asennoissa.',
+    'Kissa voi vaihtaa nukkumapaikkaa ympäristön lämpötilan mukaan.',
+    'Kissat voivat käyttää turkkiaan lämmön säätelyyn.',
+    'Kissa voi pörröttää turkkiaan kylmässä.',
+    'Kissat nuolevat turkkiaan sen puhdistamiseksi.',
+    'Kissa voi käyttää nuolemista myös rauhoittavana käyttäytymisenä.',
+    'Kissat viettävät paljon aikaa itsensä hoitamiseen.',
+    'Kissa voi tunnistaa oman tutun lepopaikkansa.',
+    'Kissat voivat oppia, missä niiden vesipaikka sijaitsee.',
+    'Kissa voi ilmaista mieltymystä tiettyyn ruokailupaikkaan.',
+    'Kissat voivat pitää rutiineista, koska ne tekevät ympäristöstä ennakoitavan.',
+    'Kissa voi tarkkailla ympäristöään ennen kuin lähtee liikkeelle.',
+    'Kissat voivat reagoida nopeasti äkilliseen liikkeeseen.',
+    'Kissa voi käyttää kuuloaan ympäristön tarkkailuun silmien lisäksi.',
   ];
 
   // ============================================================
-  // ELINKAARI
+  // INIT
   // ============================================================
 
   @override
@@ -206,21 +237,22 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   Future<void> _loadData() async {
-    final loadedPrefs = await SharedPreferences.getInstance();
+    final loadedPrefs =
+        await SharedPreferences.getInstance();
 
     prefs = loadedPrefs;
 
-    stl = loadedPrefs.getInt(coinsKey) ?? 0;
+    stl = loadedPrefs.getInt(stlKey) ?? 0;
     streak = loadedPrefs.getInt(streakKey) ?? 0;
     adsToday = loadedPrefs.getInt(adsTodayKey) ?? 0;
     factDay = loadedPrefs.getInt(factDayKey) ?? 1;
-    name = loadedPrefs.getString(nameKey) ?? '';
 
     final dailyMilliseconds =
         loadedPrefs.getInt(lastDailyKey);
 
     if (dailyMilliseconds != null) {
-      lastDaily = DateTime.fromMillisecondsSinceEpoch(
+      lastDaily =
+          DateTime.fromMillisecondsSinceEpoch(
         dailyMilliseconds,
         isUtc: true,
       );
@@ -230,7 +262,8 @@ class _HomePageState extends State<HomePage> {
         loadedPrefs.getInt(lastAdKey);
 
     if (adMilliseconds != null) {
-      lastAd = DateTime.fromMillisecondsSinceEpoch(
+      lastAd =
+          DateTime.fromMillisecondsSinceEpoch(
         adMilliseconds,
         isUtc: true,
       );
@@ -247,6 +280,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     _updateTimers();
+
     _loadRewardedAd();
     _loadInterstitialAd();
   }
@@ -254,9 +288,14 @@ class _HomePageState extends State<HomePage> {
   String _todayKey() {
     final now = DateTime.now();
 
-    final year = now.year.toString().padLeft(4, '0');
-    final month = now.month.toString().padLeft(2, '0');
-    final day = now.day.toString().padLeft(2, '0');
+    final year =
+        now.year.toString().padLeft(4, '0');
+
+    final month =
+        now.month.toString().padLeft(2, '0');
+
+    final day =
+        now.day.toString().padLeft(2, '0');
 
     return '$year-$month-$day';
   }
@@ -267,10 +306,16 @@ class _HomePageState extends State<HomePage> {
     }
 
     final today = _todayKey();
-    final savedDay = prefs!.getString('currentDay');
+
+    final savedDay =
+        prefs!.getString(currentDayKey);
 
     if (savedDay == null) {
-      await prefs!.setString('currentDay', today);
+      await prefs!.setString(
+        currentDayKey,
+        today,
+      );
+
       return;
     }
 
@@ -278,9 +323,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // Uusi päivä.
     await prefs!.setString(
-      'currentDay',
+      currentDayKey,
       today,
     );
 
@@ -297,7 +341,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // AJASTIMET
+  // TIMERIT
   // ============================================================
 
   void _updateTimers() {
@@ -306,24 +350,28 @@ class _HomePageState extends State<HomePage> {
     Duration daily = Duration.zero;
 
     if (lastDaily != null) {
-      final nextDaily = lastDaily!.add(
+      final nextDaily =
+          lastDaily!.add(
         const Duration(hours: 24),
       );
 
       if (now.isBefore(nextDaily)) {
-        daily = nextDaily.difference(now);
+        daily =
+            nextDaily.difference(now);
       }
     }
 
     Duration ad = Duration.zero;
 
     if (lastAd != null) {
-      final nextAd = lastAd!.add(
+      final nextAd =
+          lastAd!.add(
         const Duration(hours: 1),
       );
 
       if (now.isBefore(nextAd)) {
-        ad = nextAd.difference(now);
+        ad =
+            nextAd.difference(now);
       }
     }
 
@@ -364,9 +412,13 @@ class _HomePageState extends State<HomePage> {
     return catFacts[index];
   }
 
-  String _formatDuration(Duration duration) {
+  String _formatDuration(
+    Duration duration,
+  ) {
     final hours =
-        duration.inHours.toString().padLeft(2, '0');
+        duration.inHours
+            .toString()
+            .padLeft(2, '0');
 
     final minutes =
         (duration.inMinutes % 60)
@@ -386,17 +438,16 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   Future<void> _claimDaily() async {
-    if (!canDailyClaim || dailyClaimPending) {
-      return;
-    }
-
-    if (prefs == null) {
+    if (!canDailyClaim ||
+        dailyClaimPending ||
+        prefs == null) {
       return;
     }
 
     final now = DateTime.now().toUtc();
 
-    // Tarkistetaan, jäikö edellinen päivä väliin.
+    // Jos viimeisestä claimista on vähintään 48 tuntia,
+    // putki aloitetaan uudestaan.
     if (lastDaily != null) {
       final difference =
           now.difference(lastDaily!).inHours;
@@ -406,9 +457,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    if (streak >= 7) {
-      streak = 7;
-    } else {
+    if (streak < 7) {
       streak++;
     }
 
@@ -421,16 +470,15 @@ class _HomePageState extends State<HomePage> {
       setState(() {});
     }
 
-    // Päivitetään päivittäinen tieto heti,
-    // jotta samaa palkintoa ei voi hakea uudelleen.
-    lastDaily = now;
-
     stl += reward;
 
+    lastDaily = now;
+
+    // Seuraavan päivän fakta.
     factDay++;
 
     await prefs!.setInt(
-      coinsKey,
+      stlKey,
       stl,
     );
 
@@ -451,19 +499,17 @@ class _HomePageState extends State<HomePage> {
 
     _updateTimers();
 
-    if (!mounted) {
-      return;
+    if (mounted) {
+      setState(() {
+        dailyClaimPending = false;
+      });
     }
-
-    setState(() {
-      dailyClaimPending = false;
-    });
 
     _showMessage(
       '🐾 Daily Claim +$reward STL!',
     );
 
-    // Daily Claim näyttää interstitial-mainoksen.
+    // Daily Claimin jälkeen interstitial-mainos.
     _showInterstitial();
   }
 
@@ -482,6 +528,7 @@ class _HomePageState extends State<HomePage> {
       _showMessage(
         'Päivän mainosraja 5/5 on täynnä.',
       );
+
       return;
     }
 
@@ -489,6 +536,7 @@ class _HomePageState extends State<HomePage> {
       _showMessage(
         'Odota ${_formatDuration(adTimer)}.',
       );
+
       return;
     }
 
@@ -500,6 +548,7 @@ class _HomePageState extends State<HomePage> {
       );
 
       _loadRewardedAd();
+
       return;
     }
 
@@ -513,7 +562,9 @@ class _HomePageState extends State<HomePage> {
     ad.fullScreenContentCallback =
         FullScreenContentCallback(
       onAdShowedFullScreenContent: (ad) {},
-      onAdDismissedFullScreenContent: (ad) {
+
+      onAdDismissedFullScreenContent:
+          (ad) {
         ad.dispose();
 
         if (mounted) {
@@ -524,6 +575,7 @@ class _HomePageState extends State<HomePage> {
 
         _loadRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent:
           (ad, error) {
         ad.dispose();
@@ -544,7 +596,10 @@ class _HomePageState extends State<HomePage> {
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
+          (
+            AdWithoutView ad,
+            RewardItem reward,
+          ) {
         _giveThreeStl();
       },
     );
@@ -561,14 +616,15 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final now = DateTime.now().toUtc();
+    final now =
+        DateTime.now().toUtc();
 
     stl += 3;
     adsToday++;
     lastAd = now;
 
     await prefs!.setInt(
-      coinsKey,
+      stlKey,
       stl,
     );
 
@@ -588,7 +644,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {});
     }
 
-    _showMessage('+3 STL! 🐱');
+    _showMessage(
+      '+3 STL! 🐱',
+    );
   }
 
   // ============================================================
@@ -596,7 +654,8 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   void _loadRewardedAd() {
-    if (loadingRewarded || rewardedAd != null) {
+    if (loadingRewarded ||
+        rewardedAd != null) {
       return;
     }
 
@@ -619,6 +678,7 @@ class _HomePageState extends State<HomePage> {
             setState(() {});
           }
         },
+
         onAdFailedToLoad: (error) {
           loadingRewarded = false;
           rewardedAd = null;
@@ -641,7 +701,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // INTERSTITIAL
+  // INTERSTITIAL AD
   // ============================================================
 
   void _loadInterstitialAd() {
@@ -665,6 +725,7 @@ class _HomePageState extends State<HomePage> {
             setState(() {});
           }
         },
+
         onAdFailedToLoad: (error) {
           loadingInterstitial = false;
           interstitialAd = null;
@@ -686,565 +747,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showInterstitial() {
-    final ad = interstitialAd;
-
-    if (ad == null) {
-      _loadInterstitialAd();
-      return;
-    }
-
-    interstitialAd = null;
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
-        _loadInterstitialAd();
-      },
-      onAdFailedToShowFullScreenContent:
-          (ad, error) {
-        ad.dispose();
-        _loadInterstitialAd();
-      },
-    );
-
-    ad.show();
-  }
-
-  // ============================================================
-  // VIESTIT
-  // ============================================================
-
-  void _showMessage(String text) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-  }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'STELLURIINI',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await _checkNewDay();
-            _updateTimers();
-            _loadRewardedAd();
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _headerCard(),
-              const SizedBox(height: 14),
-              _balanceCard(),
-              const SizedBox(height: 14),
-              _dailyClaimCard(),
-              const SizedBox(height: 14),
-              _watchAdCard(),
-              const SizedBox(height: 14),
-              _catFactCard(),
-              const SizedBox(height: 14),
-              _statsCard(),
-              const SizedBox(height: 14),
-              _aboutCard(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // HEADER
-  // ============================================================
-
-  Widget _headerCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.pets,
-              size: 58,
-              color: Color(0xFF35D0A0),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'STELLURIINI',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '$tokenSymbol • $tokenName',
-              style: const TextStyle(
-                color: Colors.white60,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // BALANCE
-  // ============================================================
-
-  Widget _balanceCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Text(
-              'YOUR BALANCE',
-              style: TextStyle(
-                color: Colors.white60,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$stl',
-              style: const TextStyle(
-                fontSize: 50,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF35D0A0),
-              ),
-            ),
-            const Text(
-              'STL',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // DAILY CLAIM
-  // ============================================================
-
-  Widget _dailyClaimCard() {
-    final available = canDailyClaim;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-          children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.pets,
-                  color: Color(0xFF35D0A0),
-                  size: 30,
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'DAILY CLAIM',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              streak >= 7
-                  ? '7 päivän putki on täynnä!'
-                  : 'Päivä ${streak + 1} / 7',
-              style: const TextStyle(
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'Tämän päivän palkinto: $dailyReward STL',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 17,
-              ),
-            ),
-            const SizedBox(height: 14),
-            if (!available) ...[
-              const Text(
-                'NEXT CLAIM IN',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white54,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _formatDuration(dailyTimer),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            SizedBox(
-              height: 58,
-              child: ElevatedButton.icon(
-                onPressed:
-                    available && !dailyClaimPending
-                        ? _claimDaily
-                        : null,
-                icon: dailyClaimPending
-                    ? const SizedBox(
-                        width: 21,
-                        height: 21,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.pets,
-                        size: 27,
-                      ),
-                label: Text(
-                  available
-                      ? 'DAILY CLAIM +$dailyReward STL'
-                      : 'CLAIMED',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '📺 Daily Claim näyttää mainoksen.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // WATCH AD
-  // ============================================================
-
-  Widget _watchAdCard() {
-    final available = canWatchAd;
-    final adReady = rewardedAd != null;
-
-    String buttonText;
-
-    if (adsToday >= 5) {
-      buttonText = 'DAILY LIMIT';
-    } else if (!available) {
-      buttonText =
-          'WAIT ${_formatDuration(adTimer)}';
-    } else if (!adReady) {
-      buttonText = 'LOADING AD...';
-    } else {
-      buttonText = 'WATCH AD +3 STL';
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-          children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.ondemand_video,
-                  color: Color(0xFF35D0A0),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'WATCH & EARN',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Katso mainos ja saat +3 STL.',
-              style: TextStyle(
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Today: $adsToday / 5',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed:
-                    available &&
-                            adReady &&
-                            !showingAd &&
-                            adsToday < 5
-                        ? _watchAd
-                        : null,
-                icon: showingAd
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.play_arrow,
-                      ),
-                label: Text(buttonText),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // KISSAFAKTA
-  // ============================================================
-
-  Widget _catFactCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.pets,
-                  color: Color(0xFF35D0A0),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'STELLAN KISSAFAKTA',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Päivä $factDay',
-              style: const TextStyle(
-                color: Color(0xFF35D0A0),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              currentFact,
-              style: const TextStyle(
-                fontSize: 17,
-                height: 1.45,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // STATS
-  // ============================================================
-
-  Widget _statsCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  const Text(
-                    'STL',
-                    style: TextStyle(
-                      color: Colors.white54,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '$stl',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  const Text(
-                    'STREAK',
-                    style: TextStyle(
-                      color: Colors.white54,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    streak >= 7
-                        ? '7+'
-                        : '$streak / 7',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  const Text(
-                    'ADS',
-                    style: TextStyle(
-                      color: Colors.white54,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '$adsToday / 5',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // ABOUT
-  // ============================================================
-
-  Widget _aboutCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'STELLURIINI',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Stelluriini on Solana-verkossa oleva yhteisötokeni.',
-              style: TextStyle(
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '🐱 Stella pitää sinulle seuraa louhinnan aikana!',
-              style: TextStyle(
-                color: Color(0xFF35D0A0),
-              ),
-            ),
-            if (stelluriiniMint.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              const Text(
-                'Mint Address',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 4),
-              SelectableText(
-                stelluriiniMint,
-                style: const TextStyle(
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
+  void _showInterstitial
