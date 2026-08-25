@@ -25,6 +25,7 @@ class StelluriiniApp extends StatelessWidget {
           seedColor: const Color(0xFF35D0A0),
           brightness: Brightness.dark,
         ),
+        scaffoldBackgroundColor: const Color(0xFF0B1112),
       ),
       home: const HomePage(),
     );
@@ -39,7 +40,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Google test rewarded ad.
+  // Google AdMob test rewarded ad.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -50,8 +51,22 @@ class _HomePageState extends State<HomePage> {
   Timer? timer;
 
   int stl = 0;
+
+  // Daily Login -putki.
+  // 0 = päivä 1 seuraavaksi
+  // 1 = päivä 2 seuraavaksi
+  // ...
+  // 6 = päivä 7 seuraavaksi
+  // 7 = aina 7 STL
   int streak = 0;
+
+  // Tavallisten Watch Ad -mainosten määrä tänään.
   int adsToday = 0;
+
+  // Kissafaktan päivä.
+  // Tämä jatkaa eteenpäin riippumatta siitä,
+  // katkeaako Daily Login -putki.
+  int factDay = 0;
 
   DateTime? lastDaily;
   DateTime? lastAd;
@@ -63,1031 +78,254 @@ class _HomePageState extends State<HomePage> {
   bool loadingAd = false;
   bool showingAd = false;
 
-  // Estää Daily Claimin ja Watch Adin
-  // käyttämästä samaa mainosta samaan aikaan.
+  // Kertoo, odotetaanko Daily Login -mainoksen palkintoa.
   bool dailyClaimPending = false;
 
-  @override
-  void initState() {
-    super.initState();
-
-    loadData();
-
-    timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (mounted) {
-          updateTimers();
-          checkNewDay();
-        }
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    timer?.cancel();
-    rewardedAd?.dispose();
-    super.dispose();
-  }
-
   // ============================================================
-  // DATA
+  // KISSAFAKTAT
   // ============================================================
 
-  Future<void> loadData() async {
-    prefs = await SharedPreferences.getInstance();
-
-    stl = prefs!.getInt('stl') ?? 0;
-    streak = prefs!.getInt('streak') ?? 0;
-    adsToday = prefs!.getInt('adsToday') ?? 0;
-
-    final dailyMilliseconds =
-        prefs!.getInt('lastDaily');
-
-    if (dailyMilliseconds != null) {
-      lastDaily =
-          DateTime.fromMillisecondsSinceEpoch(
-        dailyMilliseconds,
-        isUtc: true,
-      );
-    }
-
-    final adMilliseconds =
-        prefs!.getInt('lastAd');
-
-    if (adMilliseconds != null) {
-      lastAd =
-          DateTime.fromMillisecondsSinceEpoch(
-        adMilliseconds,
-        isUtc: true,
-      );
-    }
-
-    await checkNewDay();
-
-    if (!mounted) return;
-
-    setState(() {
-      loading = false;
-    });
-
-    updateTimers();
-    loadRewardedAd();
-  }
-
-  String today() {
-    final now = DateTime.now();
-
-    return '${now.year}-'
-        '${now.month.toString().padLeft(2, '0')}-'
-        '${now.day.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> checkNewDay() async {
-    if (prefs == null) return;
-
-    final currentDay = today();
-
-    final savedDay =
-        prefs!.getString('day');
-
-    if (savedDay == currentDay) {
-      return;
-    }
-
-    // Uusi päivä.
-    adsToday = 0;
-
-    await prefs!.setString(
-      'day',
-      currentDay,
-    );
-
-    await prefs!.setInt(
-      'adsToday',
-      0,
-    );
-
-    // Jos Daily Claim on ollut yli 48 h sitten,
-    // putki alkaa alusta.
-    if (lastDaily != null) {
-      final difference =
-          DateTime.now()
-              .toUtc()
-              .difference(lastDaily!);
-
-      if (difference.inHours >= 48) {
-        streak = 0;
-
-        await prefs!.setInt(
-          'streak',
-          0,
-        );
-      }
-    }
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  // ============================================================
-  // TIMERS
-  // ============================================================
-
-  void updateTimers() {
-    final now =
-        DateTime.now().toUtc();
-
-    Duration daily =
-        Duration.zero;
-
-    Duration ad =
-        Duration.zero;
-
-    if (lastDaily != null) {
-      final next =
-          lastDaily!.add(
-        const Duration(hours: 24),
-      );
-
-      if (now.isBefore(next)) {
-        daily =
-            next.difference(now);
-      }
-    }
-
-    if (lastAd != null) {
-      final next =
-          lastAd!.add(
-        const Duration(hours: 1),
-      );
-
-      if (now.isBefore(next)) {
-        ad =
-            next.difference(now);
-      }
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      dailyTimer = daily;
-      adTimer = ad;
-    });
-  }
-
-  // ============================================================
-  // DAILY REWARD
-  // ============================================================
-
-  int get dailyReward {
-    if (streak >= 7) {
-      return 7;
-    }
-
-    return streak + 1;
-  }
-
-  // ============================================================
-  // DAILY CLAIM + REWARDED AD
-  // ============================================================
-
-  Future<void> claimDaily() async {
-    if (dailyTimer != Duration.zero) {
-      return;
-    }
-
-    if (showingAd ||
-        dailyClaimPending) {
-      return;
-    }
-
-    final ad = rewardedAd;
-
-    if (ad == null) {
-      message(
-        'Daily-mainos latautuu vielä.',
-      );
-
-      loadRewardedAd();
-      return;
-    }
-
-    // Tallennetaan tämän claimin palkinto
-    // ennen mainoksen avaamista.
-    final reward = dailyReward;
-
-    dailyClaimPending = true;
-    showingAd = true;
-
-    rewardedAd = null;
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback(
-      onAdDismissedFullScreenContent:
-          (ad) {
-        ad.dispose();
-
-        showingAd = false;
-
-        // Jos käyttäjä sulkee mainoksen
-        // ennen palkinnon saamista,
-        // Daily Claimia ei merkitä käytetyksi.
-        if (dailyClaimPending) {
-          dailyClaimPending = false;
-        }
-
-        if (mounted) {
-          setState(() {});
-        }
-
-        loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent:
-          (ad, error) {
-        ad.dispose();
-
-        showingAd = false;
-        dailyClaimPending = false;
-
-        if (mounted) {
-          setState(() {});
-
-          message(
-            'Daily-mainosta ei voitu näyttää.',
-          );
-        }
-
-        loadRewardedAd();
-      },
-    );
-
-    ad.show(
-      onUserEarnedReward:
-          (
-        AdWithoutView ad,
-        RewardItem rewardItem,
-      ) {
-        giveDailyReward(reward);
-      },
-    );
-  }
-
-  Future<void> giveDailyReward(
-    int reward,
-  ) async {
-    if (!dailyClaimPending) {
-      return;
-    }
-
-    dailyClaimPending = false;
-
-    final now =
-        DateTime.now().toUtc();
-
-    // Tarkistetaan mahdollinen väliin jäänyt päivä.
-    if (lastDaily != null) {
-      final difference =
-          now.difference(lastDaily!);
-
-      if (difference.inHours >= 48) {
-        streak = 0;
-      }
-    }
-
-    stl += reward;
-
-    if (streak < 7) {
-      streak++;
-    }
-
-    lastDaily = now;
-
-    await prefs!.setInt(
-      'stl',
-      stl,
-    );
-
-    await prefs!.setInt(
-      'streak',
-      streak,
-    );
-
-    await prefs!.setInt(
-      'lastDaily',
-      now.millisecondsSinceEpoch,
-    );
-
-    updateTimers();
-
-    if (mounted) {
-      setState(() {});
-
-      message(
-        'Miau! Daily Login +$reward STL 🐾',
-      );
-    }
-  }
-
-  // ============================================================
-  // REWARDED AD
-  // ============================================================
-
-  void loadRewardedAd() {
-    if (loadingAd ||
-        rewardedAd != null) {
-      return;
-    }
-
-    loadingAd = true;
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    RewardedAd.load(
-      adUnitId: rewardedAdId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback:
-          RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          loadingAd = false;
-          rewardedAd = ad;
-
-          if (mounted) {
-            setState(() {});
-          }
-        },
-        onAdFailedToLoad: (error) {
-          loadingAd = false;
-          rewardedAd = null;
-
-          if (mounted) {
-            setState(() {});
-          }
-
-          Future.delayed(
-            const Duration(seconds: 5),
-            () {
-              if (mounted) {
-                loadRewardedAd();
-              }
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  // ============================================================
-  // WATCH AD +3 STL
-  // ============================================================
-
-  Future<void> watchAd() async {
-    if (showingAd) {
-      return;
-    }
-
-    if (adsToday >= 5) {
-      message(
-        'Päivän mainosraja on täynnä.',
-      );
-      return;
-    }
-
-    if (adTimer != Duration.zero) {
-      message(
-        'Odota ${formatTime(adTimer)}.',
-      );
-      return;
-    }
-
-    final ad = rewardedAd;
-
-    if (ad == null) {
-      message(
-        'Mainos latautuu vielä.',
-      );
-
-      loadRewardedAd();
-      return;
-    }
-
-    rewardedAd = null;
-    showingAd = true;
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback(
-      onAdDismissedFullScreenContent:
-          (ad) {
-        ad.dispose();
-
-        showingAd = false;
-
-        if (mounted) {
-          setState(() {});
-        }
-
-        loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent:
-          (ad, error) {
-        ad.dispose();
-
-        showingAd = false;
-
-        if (mounted) {
-          setState(() {});
-        }
-
-        loadRewardedAd();
-      },
-    );
-
-    ad.show(
-      onUserEarnedReward:
-          (
-        AdWithoutView ad,
-        RewardItem reward,
-      ) {
-        giveThreeStl();
-      },
-    );
-  }
-
-  Future<void> giveThreeStl() async {
-    if (adsToday >= 5) {
-      return;
-    }
-
-    stl += 3;
-    adsToday++;
-
-    lastAd =
-        DateTime.now().toUtc();
-
-    await prefs!.setInt(
-      'stl',
-      stl,
-    );
-
-    await prefs!.setInt(
-      'adsToday',
-      adsToday,
-    );
-
-    await prefs!.setInt(
-      'lastAd',
-      lastAd!.millisecondsSinceEpoch,
-    );
-
-    updateTimers();
-
-    if (mounted) {
-      setState(() {});
-
-      message(
-        'Miau! +3 STL 🐾',
-      );
-    }
-  }
-
-  // ============================================================
-  // HELPERS
-  // ============================================================
-
-  String formatTime(
-    Duration time,
-  ) {
-    final hours =
-        time.inHours
-            .toString()
-            .padLeft(2, '0');
-
-    final minutes =
-        (time.inMinutes % 60)
-            .toString()
-            .padLeft(2, '0');
-
-    final seconds =
-        (time.inSeconds % 60)
-            .toString()
-            .padLeft(2, '0');
-
-    return '$hours:$minutes:$seconds';
-  }
-
-  void message(String text) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-        ),
-      );
-  }
-
-  Widget stella(
-    double size,
-  ) {
-    return ClipOval(
-      child: Image.asset(
-        'stella.jpg',
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder:
-            (context, error, stackTrace) {
-          return Container(
-            width: size,
-            height: size,
-            color:
-                const Color(0xFF35D0A0),
-            child: Icon(
-              Icons.pets,
-              size: size * 0.5,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
-
-  @override
-  Widget build(
-    BuildContext context,
-  ) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(
-          child:
-              CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'STELLURIINI 🐱',
-          style: TextStyle(
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding:
-            const EdgeInsets.all(16),
-        children: [
-          stella(130),
-
-          const SizedBox(
-            height: 15,
-          ),
-
-          const Text(
-            'STELLURIINI MINER',
-            textAlign:
-                TextAlign.center,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight:
-                  FontWeight.bold,
-              color:
-                  Color(0xFF35D0A0),
-            ),
-          ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
-          const Text(
-            'Stellan kanssa 🐾',
-            textAlign:
-                TextAlign.center,
-          ),
-
-          const SizedBox(
-            height: 20,
-          ),
-
-          // BALANCE
-          Card(
-            child: Padding(
-              padding:
-                  const EdgeInsets.all(22),
-              child: Column(
-                children: [
-                  const Text(
-                    'STL BALANCE',
-                    style: TextStyle(
-                      color:
-                          Colors.white54,
-                      letterSpacing: 2,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  Text(
-                    '$stl STL',
-                    style:
-                        const TextStyle(
-                      fontSize: 42,
-                      fontWeight:
-                          FontWeight.bold,
-                      color:
-                          Color(
-                        0xFF35D0A0,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 15,
-          ),
-
-          // DAILY LOGIN
-          Card(
-            child: Padding(
-              padding:
-                  const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.pets,
-                        color:
-                            Color(
-                          0xFF35D0A0,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        'DAILY LOGIN',
-                        style:
-                            TextStyle(
-                          fontSize: 19,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 15,
-                  ),
-
-                  Text(
-                    streak >= 7
-                        ? '🔥 7 PÄIVÄN PUTKI'
-                        : '🐾 PÄIVÄ ${streak + 1} / 7',
-                    style:
-                        const TextStyle(
-                      fontSize: 22,
-                      fontWeight:
-                          FontWeight.bold,
-                      color:
-                          Color(
-                        0xFF35D0A0,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 5,
-                  ),
-
-                  Text(
-                    '+$dailyReward STL',
-                    style:
-                        const TextStyle(
-                      fontSize: 32,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 10,
-                  ),
-
-                  const Text(
-                    'Katso ensin lyhyt mainos. '
-                    'Sen jälkeen Stella antaa '
-                    'päivän STL-palkinnon.',
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        TextStyle(
-                      color:
-                          Colors.white70,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 15,
-                  ),
-
-                  if (dailyTimer !=
-                      Duration.zero) ...[
-                    Text(
-                      formatTime(
-                        dailyTimer,
-                      ),
-                      style:
-                          const TextStyle(
-                        fontSize: 25,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-                  ],
-
-                  SizedBox(
-                    width:
-                        double.infinity,
-                    height: 58,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed:
-                          dailyTimer ==
-                                      Duration.zero &&
-                                  !showingAd &&
-                                  rewardedAd !=
-                                      null
-                              ? claimDaily
-                              : null,
-                      icon:
-                          const Icon(
-                        Icons.pets,
-                        size: 27,
-                      ),
-                      label:
-                          Text(
-                        dailyTimer ==
-                                    Duration.zero
-                            ? 'WATCH AD + CLAIM +$dailyReward STL'
-                            : 'TULE HUOMENNA',
-                        textAlign:
-                            TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 15,
-          ),
-
-          // WATCH AD +3
-          Card(
-            child: Padding(
-              padding:
-                  const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.play_circle,
-                        color:
-                            Color(
-                          0xFF35D0A0,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        'WATCH & EARN',
-                        style:
-                            TextStyle(
-                          fontSize: 19,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 12,
-                  ),
-
-                  const Text(
-                    'Katso mainos ja saat +3 STL.',
-                    style:
-                        TextStyle(
-                      color:
-                          Colors.white70,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  Text(
-                    'Tänään: $adsToday / 5',
-                    style:
-                        const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 12,
-                  ),
-
-                  if (adTimer !=
-                      Duration.zero) ...[
-                    Text(
-                      formatTime(
-                        adTimer,
-                      ),
-                      style:
-                          const TextStyle(
-                        fontSize: 25,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-                  ],
-
-                  SizedBox(
-                    width:
-                        double.infinity,
-                    height: 56,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed:
-                          adTimer ==
-                                      Duration.zero &&
-                                  adsToday < 5 &&
-                                  rewardedAd !=
-                                      null &&
-                                  !showingAd
-                              ? watchAd
-                              : null,
-                      icon:
-                          const Icon(
-                        Icons.play_arrow,
-                      ),
-                      label:
-                          Text(
-                        adsToday >= 5
-                            ? 'PÄIVÄN RAJA'
-                            : rewardedAd ==
-                                    null
-                                ? 'LADATAAN MAINOSTA...'
-                                : 'KATSO MAINOS +3 STL',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 15,
-          ),
-
-          // STATS
-          Card(
-            child: Padding(
-              padding:
-                  const EdgeInsets.all(18),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'STL',
-                          style:
-                              TextStyle(
-                            color:
-                                Colors.white54,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          '$stl',
-                          style:
-                              const TextStyle(
-                            fontSize: 22,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'STREAK',
-                          style:
-                              TextStyle(
-                            color:
-                                Colors.white54,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          '$streak / 7',
-                          style:
-                              const TextStyle(
-                            fontSize: 22,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'ADS',
-                          style:
-                              TextStyle(
-                            color:
-                                Colors.white54,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          '$adsToday / 5',
-                          style:
-                              const TextStyle(
-                            fontSize: 22,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+  static const List<String> catFacts = [
+    'Kissat nukkuvat usein noin 12–16 tuntia vuorokaudessa.',
+    'Kissan viikset auttavat sitä hahmottamaan ympäristöään.',
+    'Kissan nenän kuvio on yksilöllinen aivan kuten sormenjälki.',
+    'Kissat voivat käyttää kehräystä myös rauhoittuakseen.',
+    'Kissan korvat voivat liikkua eri suuntiin toisistaan riippumatta.',
+    'Kissat käyttävät häntäänsä tasapainon apuna.',
+    'Kissat pystyvät hyppäämään korkealle suhteessa kehon kokoonsa.',
+    'Kissan kynnet ovat sisäänvedettävät.',
+    'Kissat käyttävät hajuaistiaan tärkeänä osana ympäristön tutkimista.',
+    'Kissan kielessä on pieniä koukkumaisia nystyjä.',
+    'Kissat voivat tunnistaa tutun ihmisen äänen.',
+    'Kissan kehräys voi kuulua myös silloin, kun kissa on stressaantunut.',
+    'Kissat kommunikoivat paljon kehonkielellä.',
+    'Hidas silmien räpytys voi olla kissalle ystävällinen viesti.',
+    'Kissat voivat oppia oman nimensä.',
+    'Kissan tasapainoaisti auttaa sitä liikkumaan ketterästi.',
+    'Kissat käyttävät viiksiään myös silloin, kun ne tutkivat esineitä.',
+    'Kissan korvan ulompi osa auttaa suuntaamaan ääniä.',
+    'Kissat ovat luonnostaan uteliaita eläimiä.',
+    'Kissat voivat tunnistaa tuttuja paikkoja hajujen perusteella.',
+    'Kissan häntä voi ilmaista sen mielialaa.',
+    'Kissat voivat venytellä herätessään valmistautuakseen liikkumaan.',
+    'Kissan tassuissa on herkkiä tuntoalueita.',
+    'Monet kissat pitävät korkeista tarkkailupaikoista.',
+    'Kissat voivat käyttää erilaisia ääniä eri tilanteissa.',
+    'Kissan silmät heijastavat valoa hämärässä.',
+    'Kissan oppiminen perustuu usein palkitsemiseen ja toistoon.',
+    'Kissat voivat muodostaa vahvan siteen ihmiseen.',
+    'Kissat käyttävät kynsiään myös kiipeilyssä.',
+    'Kissan viiksien tyvet ovat erittäin herkkiä.',
+    'Kissat puhdistavat turkkiaan nuolemalla sitä.',
+    'Kissan hajuaisti on huomattavasti ihmisen hajuaistia tarkempi.',
+    'Kissat voivat seurata liikkuvaa kohdetta erittäin tarkasti.',
+    'Kissan pennut syntyvät silmät suljettuina.',
+    'Kissan pennut oppivat paljon tarkkailemalla emoaan.',
+    'Kissat voivat käyttää kehon asentoa viestintään.',
+    'Kissa voi venyttää kehoaan hyvin pitkäksi.',
+    'Kissan tassut auttavat sitä liikkumaan hiljaisesti.',
+    'Kissat voivat oppia avaamaan joitakin ovia ja laatikoita.',
+    'Kissat käyttävät paljon aikaa turkkinsa hoitamiseen.',
+    'Kissan häntä auttaa sitä säilyttämään tasapainon hypyissä.',
+    'Kissat voivat tunnistaa tuttujen ihmisten hajun.',
+    'Kissan viikset ovat yleensä suunnilleen kehon leveyden mittaiset.',
+    'Kissat voivat käyttää erilaisia kehräyksen sävyjä.',
+    'Kissat voivat nähdä hämärässä paremmin kuin ihmiset.',
+    'Kissoilla on hyvä lähietäisyyden liikkeen havaitsemiskyky.',
+    'Kissat voivat nukkua useita lyhyitä jaksoja päivän aikana.',
+    'Kissan tassujen alla olevat pehmeät anturat vaimentavat askeleita.',
+    'Kissat käyttävät korviaan nopeasti paikantaakseen äänen suunnan.',
+    'Kissat voivat oppia rutiineja hyvin nopeasti.',
+    'Kissan häntä voi olla pystyssä silloin, kun se on rento ja ystävällinen.',
+    'Kissat voivat osoittaa luottamusta makaamalla selällään.',
+    'Kissat pitävät usein rauhallisista ja turvallisista paikoista.',
+    'Kissan turkki suojaa ihoa ja auttaa lämmön säätelyssä.',
+    'Kissat käyttävät kynsiään myös venyttelyn yhteydessä.',
+    'Kissa voi käyttää tassuaan esineen koskettamiseen ennen kuin lähestyy sitä.',
+    'Kissan kuuloalue on laaja.',
+    'Kissat voivat reagoida hyvin korkeisiin ääniin.',
+    'Kissan nenä auttaa sitä tutkimaan uusia ympäristöjä.',
+    'Kissat voivat oppia yhdistämään äänen tiettyyn tapahtumaan.',
+    'Kissat käyttävät paljon aikaa lepäämiseen energian säästämiseksi.',
+    'Kissat voivat pitää erilaisista leluista yksilöllisten mieltymystensä mukaan.',
+    'Kissan silmien pupillit muuttuvat valaistuksen mukaan.',
+    'Kissat voivat käyttää kehräystä sosiaalisena viestinä.',
+    'Kissa voi ilmaista tyytyväisyyttä rentouttamalla koko kehonsa.',
+    'Kissat voivat oppia tunnistamaan ruokailuajan rutiinin.',
+    'Kissan tassut ovat tärkeitä sekä liikkumisessa että tutkimisessa.',
+    'Kissat voivat seurata ihmisen liikkeitä tarkasti.',
+    'Kissat voivat oppia käyttämään raapimispaikkaa.',
+    'Kissa voi käyttää raapimista myös merkitsemiseen.',
+    'Kissat voivat muodostaa omia päivittäisiä rutiinejaan.',
+    'Kissat tarvitsevat sekä lepoa että leikkiä.',
+    'Kissa voi ilmaista kiinnostusta kallistamalla päätään.',
+    'Kissan keho on erittäin joustava.',
+    'Kissat voivat käyttää viiksiään arvioidessaan aukkojen kokoa.',
+    'Kissat voivat muistaa tuttuja ympäristöjä pitkään.',
+    'Kissa voi ilmaista rentoutta silmien ollessa puoliksi kiinni.',
+    'Kissat voivat oppia pieniä temppuja palkkioiden avulla.',
+    'Kissat käyttävät hajumerkkejä kommunikointiin.',
+    'Kissat voivat hieroa päätään tuttuihin ihmisiin.',
+    'Pään hierominen voi olla kissalle sosiaalinen tervehdys.',
+    'Kissat voivat tunnistaa tutun ihmisen askeleet.',
+    'Kissan turkin väri ja kuvio voivat vaihdella suuresti.',
+    'Kissat voivat käyttää erilaisia ääniä tervehtiessään.',
+    'Kissat voivat leikkiessään harjoitella saalistamiseen liittyviä liikkeitä.',
+    'Kissan nopea suunnanmuutos perustuu sen ketteryyteen.',
+    'Kissat voivat piiloutua, kun ne haluavat rauhaa.',
+    'Kissat voivat käyttää korkeita paikkoja ympäristön tarkkailuun.',
+    'Kissat voivat oppia ennakoimaan tuttuja päivittäisiä tapahtumia.',
+    'Kissa voi venyttää etujalkojaan pitkälle eteen.',
+    'Kissan kehräys voi olla ihmiselle rauhoittavan kuuloinen.',
+    'Kissat voivat pitää pehmeistä nukkumapaikoista.',
+    'Kissat voivat käyttää erilaisia kehon asentoja ilmaistakseen tunnetilaansa.',
+    'Kissan häntä voi heilua eri tavoin eri tilanteissa.',
+    'Kissat ovat taitavia tasapainoilijoita.',
+    'Kissan kynnet kasvavat jatkuvasti.',
+    'Kissat tarvitsevat raapimismahdollisuuksia kynsiensä luonnolliseen käyttöön.',
+    'Kissat voivat käyttää leikkiä liikunnan muotona.',
+    'Kissan tassunjälki on yksilöllinen.',
+    'Kissat voivat oppia odottamaan ruokaa tiettyyn aikaan.',
+    'Kissan viikset voivat liikkua hieman eri asentoihin tunnetilan mukaan.',
+    'Kissat voivat tarkkailla ympäristöä pitkään täysin paikallaan.',
+    'Kissa voi osoittaa luottamusta tulemalla lähelle lepäämään.',
+    'Kissat voivat käyttää ääntelyä erityisesti ihmisten kanssa kommunikointiin.',
+    'Kissa voi tunnistaa tutun ihmisen tuoksun.',
+    'Kissat ovat erittäin puhtautta ylläpitäviä eläimiä.',
+    'Kissa voi käyttää häntäänsä tasapainottamaan kehoa nopeassa liikkeessä.',
+    'Kissat voivat oppia, missä niiden lempipaikat ovat.',
+    'Kissan silmien rakenne auttaa sitä toimimaan hämärässä.',
+    'Kissat voivat tarkkailla pieniäkin liikkeitä.',
+    'Kissa voi tehdä pieniä hyppyjä erittäin tarkasti.',
+    'Kissat voivat käyttää etutassujaan esineiden tutkimiseen.',
+    'Kissat voivat oppia tunnistamaan kodin tuttuja ääniä.',
+    'Kissan keho pystyy tekemään nopeita suunnanmuutoksia.',
+    'Kissat voivat viettää suuren osan päivästä leväten.',
+    'Kissa voi osoittaa ystävällisyyttä hitaalla räpytyksellä.',
+    'Kissat voivat muodostaa vahvoja sosiaalisia suhteita.',
+    'Kissa voi käyttää raapimista myös ympäristön merkitsemiseen.',
+    'Kissat voivat muistaa tuttuja ihmisiä.',
+    'Kissa voi ilmaista jännitystä korvien asennolla.',
+    'Kissat käyttävät nenäänsä paljon ympäristön tutkimiseen.',
+    'Kissat voivat oppia toistuvia käyttäytymismalleja.',
+    'Kissa voi löytää suosikkipaikan kodista nopeasti.',
+    'Kissat voivat leikkiessään harjoitella hyppyjä ja nopeita liikkeitä.',
+    'Kissan häntä toimii tasapainon apuna myös käännöksissä.',
+    'Kissat voivat tunnistaa tuttuja ääniä monien muiden äänien joukosta.',
+    'Kissa voi käyttää tassujaan hellästi koskettaessaan ihmistä.',
+    'Kissat voivat osoittaa tyytyväisyyttä rentoutuneella asennolla.',
+    'Kissat voivat oppia uusia asioita koko elämänsä ajan.',
+    'Kissan viikset ovat tärkeä osa sen aistijärjestelmää.',
+    'Kissat voivat viettää paljon aikaa tarkkaillen ympäristöään.',
+    'Kissa voi osoittaa uteliaisuutta lähestymällä uutta esinettä hitaasti.',
+    'Kissat voivat mukautua erilaisiin päivittäisiin rutiineihin.',
+    'Kissan tassujen anturat auttavat sitä liikkumaan hiljaisesti.',
+    'Kissat voivat oppia, mistä kodin ovista pääsee eri tiloihin.',
+    'Kissa voi ilmaista rentoutta venyttelemällä.',
+    'Kissat ovat luonnostaan hyviä kiipeilijöitä.',
+    'Kissan kynnet auttavat sitä tarttumaan pintoihin.',
+    'Kissat voivat tarkkailla ympäristöään myös levätessään.',
+    'Kissa voi tunnistaa tutun ruokailupaikan.',
+    'Kissat voivat käyttää ääntelyä saadakseen ihmisen huomion.',
+    'Kissa voi ilmaista kiinnostusta korvien suunnalla.',
+    'Kissat voivat oppia oman kotinsa hajumaailman.',
+    'Kissa voi olla aktiivinen erityisesti aamulla tai illalla.',
+    'Kissat ovat usein aktiivisempia hämärän aikaan.',
+    'Kissan silmät voivat näyttää kirkkailta valossa niiden heijastavan rakenteen vuoksi.',
+    'Kissat voivat käyttää leikkiä sekä harjoitteluun että viihteeseen.',
+    'Kissa voi osoittaa luottamusta nukkumalla lähellä ihmistä.',
+    'Kissat voivat oppia tunnistamaan omistajansa päivittäisiä rutiineja.',
+    'Kissa voi käyttää häntäänsä viestinnässä.',
+    'Kissat voivat säätää pupilliensa kokoa valaistuksen mukaan.',
+    'Kissan kuulo auttaa sitä havaitsemaan pieniäkin ääniä.',
+    'Kissat voivat käyttää nenäänsä uuden paikan tutkimiseen.',
+    'Kissa voi pitää omasta rauhallisesta lepopaikastaan.',
+    'Kissat voivat muodostaa erilaisia persoonallisuuksia.',
+    'Jokaisella kissalla voi olla omat yksilölliset mieltymyksensä.',
+    'Kissa voi osoittaa kiintymystä tulemalla vapaaehtoisesti lähelle.',
+    'Kissat voivat oppia yhdistämään tietyn äänen palkintoon.',
+    'Kissan ketteryys auttaa sitä liikkumaan pienissäkin tiloissa.',
+    'Kissat voivat käyttää tassujaan myös lelujen käsittelyyn.',
+    'Kissa voi oppia odottamaan tuttua päivittäistä tapahtumaa.',
+    'Kissat voivat ilmaista rauhallisuutta hitailla liikkeillä.',
+    'Kissa voi tutkia uutta paikkaa ensin hajun avulla.',
+    'Kissat voivat pitää erilaisista korkeista paikoista.',
+    'Kissan häntä voi auttaa tasapainottamaan vartaloa hypyn aikana.',
+    'Kissat voivat oppia ihmisen käyttäytymisestä rutiinien kautta.',
+    'Kissa voi osoittaa uteliaisuutta seuraamalla liikettä.',
+    'Kissat voivat levätä hyvin monissa erilaisissa asennoissa.',
+    'Kissan viikset voivat auttaa arvioimaan ympäröivää tilaa.',
+    'Kissat voivat olla hyvin taitavia piiloutujia.',
+    'Kissa voi käyttää raapimispaikkaa säännöllisesti.',
+    'Kissat voivat oppia uusia nimiä ja ääniä.',
+    'Kissan keho on rakennettu ketterään liikkumiseen.',
+    'Kissat voivat käyttää sekä näköä että kuuloa saalistamiseen liittyvissä liikkeissä.',
+    'Kissa voi ilmaista turvallisuuden tunnetta rentoutuneella vartalolla.',
+    'Kissat voivat pitää tutuista ja ennakoitavista rutiineista.',
+    'Kissa voi osoittaa kiinnostusta uudella äänellä tai liikkeellä.',
+    'Kissat voivat tarkkailla ihmisiä oppiakseen heidän rutiinejaan.',
+    'Kissa voi oppia, missä sen ruoka yleensä tarjoillaan.',
+    'Kissat voivat käyttää viiksiään myös pimeässä liikkumisen apuna.',
+    'Kissa voi tunnistaa tutun kodin äänimaailman.',
+    'Kissat voivat käyttää häntäänsä tunnetilan viestimiseen.',
+    'Kissa voi osoittaa luottamusta rentoutumalla ihmisen lähellä.',
+    'Kissat voivat oppia nopeasti toistuvia päivittäisiä tapahtumia.',
+    'Kissan tassut auttavat sitä pysähtymään ja muuttamaan suuntaa.',
+    'Kissat voivat olla hyvin tarkkoja liikkeiden seuraamisessa.',
+    'Kissa voi oppia, milloin on leikkiaika.',
+    'Kissat voivat nauttia erilaisista raapimis- ja kiipeilypaikoista.',
+    'Kissa voi käyttää kehräystä monissa erilaisissa tilanteissa.',
+    'Kissat voivat olla sekä itsenäisiä että hyvin seurallisia.',
+    'Kissan persoonallisuus kehittyy kokemusten ja ympäristön vaikutuksesta.',
+    'Kissat voivat oppia luottamaan ihmiseen vähitellen.',
+    'Kissa voi osoittaa ystävällisyyttä tulemalla tervehtimään.',
+    'Kissat voivat käyttää ääntelyä eri tarkoituksiin.',
+    'Kissa voi osoittaa kiinnostusta pienellä pään liikkeellä.',
+    'Kissat voivat oppia uusia rutiineja muutosten jälkeen.',
+    'Kissa voi käyttää tassujaan leikkiessä hyvin tarkasti.',
+    'Kissat voivat viettää aikaa tarkkaillen ikkunasta ulos.',
+    'Kissa voi oppia tunnistamaan tutun auton äänen.',
+    'Kissat voivat muistaa tutun ihmisen äänen.',
+    'Kissa voi osoittaa rentoutta makaamalla kyljellään.',
+    'Kissat voivat olla erittäin uteliaita uusista laatikoista.',
+    'Kissa voi tutkia laatikon ennen kuin päättää mennä sisään.',
+    'Kissat voivat pitää piilopaikoista, joissa ne tuntevat olonsa turvalliseksi.',
+    'Kissa voi käyttää korkeaa paikkaa ympäristön tarkkailuun.',
+    'Kissat voivat oppia erilaisia pieniä temppuja.',
+    'Kissa voi yhdistää nimen tiettyyn henkilöön.',
+    'Kissat voivat tunnistaa toistuvia ääniä.',
+    'Kissa voi oppia, milloin omistaja yleensä tulee kotiin.',
+    'Kissat voivat muodostaa vahvan siteen tuttuun ympäristöön.',
+    'Kissa voi käyttää kehon asentoa viestiessään toiselle kissalle.',
+    'Kissat voivat käyttää häntää tasapainon lisäksi viestintään.',
+    'Kissa voi osoittaa uteliaisuutta nostamalla korvansa kohti ääntä.',
+    'Kissat voivat kuulla ääniä, joita ihmiset eivät kuule.',
+    'Kissa voi käyttää viiksiään ympäristön tunnusteluun.',
+    'Kissat voivat oppia, mistä lempilelu löytyy.',
+    'Kissa voi muistaa lempipaikkansa pitkään.',
+    'Kissat voivat pitää tutuista tuoksuista.',
+    'Kissa voi tutkia uuden esineen ensin haistamalla sitä.',
+    'Kissat voivat oppia toistuvista palkinnoista.',
+    'Kissa voi yhdistää tietyn äänen ruokaan.',
+    'Kissat voivat käyttää leikkiä luonnollisten taitojen harjoitteluun.',
+    'Kissa voi harjoitella hyppyjä leikin aikana.',
+    'Kissat voivat olla erittäin ketteriä pienessäkin tilassa.',
+    'Kissa voi tehdä nopean suunnanmuutoksen kesken juoksun.',
+    'Kissat voivat käyttää kynsiään tarttumiseen.',
+    'Kissa voi käyttää tassujaan tasapainon säätelyyn.',
+    'Kissat voivat oppia, missä turvalliset lepopaikat sijaitsevat.',
+    'Kissa voi osoittaa tyytyväisyyttä venyttelemällä.',
+    'Kissat voivat nukkua eri asennoissa päivän aikana.',
+    'Kissa voi vaihtaa nukkumapaikkaa ympäristön lämpötilan mukaan.',
+    'Kissat voivat käyttää turkkiaan lämmön säätelyyn.',
+    'Kissa voi pörröttää turkkiaan kylmässä.',
+    'Kissat voivat nuolla turkkiaan sen puhdistamiseksi.',
+    'Kissa voi käyttää nuolemista myös rauhoittavana käyttäytymisenä.',
+    'Kissat voivat viettää paljon aikaa itsensä hoitamiseen.',
+    'Kissa voi tunnistaa oman tutun lepopaikkansa.',
+    'Kissat voivat oppia, missä niiden vesipaikka sijaitsee.',
+    'Kissa voi ilmaista mieltymystä tiettyyn ruokailupaikkaan.',
+    'Kissat voivat pitää rutiineista, koska ne tekevät ympäristöstä ennakoitavan.',
+    'Kissa voi tarkkailla ympäristöään ennen kuin lähtee liikkeelle.',
+    'Kissat voivat reagoida nopeasti äkilliseen liikkeeseen.',
+    'Kissa voi käyttää kuuloaan ympäristön tarkkailuun silmien lisäksi
