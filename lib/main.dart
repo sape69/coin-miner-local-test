@@ -43,7 +43,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // Google test ad IDs.
-  // Replace with your own AdMob IDs before publishing.
+  // Replace these with your own AdMob IDs before publishing.
   static const String rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -266,10 +266,6 @@ class _HomePageState extends State<HomePage> {
     return _rewardTimer == Duration.zero;
   }
 
-  bool get adReady {
-    return _rewardedAd != null;
-  }
-
   Future<void> _continue() async {
     final name = _nameController.text.trim();
 
@@ -347,6 +343,7 @@ class _HomePageState extends State<HomePage> {
 
     _message('+10 STL!');
 
+    // Show interstitial after claiming.
     _showInterstitial();
   }
 
@@ -678,12 +675,13 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment:
                   MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.pets,
-                  size: 90,
-                  color: Colors.amber,
+                const Text(
+                  '🐱',
+                  style: TextStyle(
+                    fontSize: 80,
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
                 const Text(
                   'STELLURIINI',
                   style: TextStyle(
@@ -699,3 +697,522 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.amber,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Enter your name to start mining',
+                  style: TextStyle(
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 35),
+                TextField(
+                  controller: _nameController,
+                  maxLength: 20,
+                  textInputAction:
+                      TextInputAction.done,
+                  decoration: InputDecoration(
+                    labelText: 'Your name',
+                    hintText: 'Name',
+                    errorText:
+                        _error.isEmpty
+                            ? null
+                            : _error,
+                    prefixIcon:
+                        const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                  ),
+                  onSubmitted: (_) {
+                    if (!_savingName) {
+                      _continue();
+                    }
+                  },
+                ),
+                const SizedBox(height: 15),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed:
+                        _savingName
+                            ? null
+                            : _continue,
+                    child:
+                        _savingName
+                            ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Text(
+                              'START MINING',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _homePage() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'STELLURIINI',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Reset test data',
+            onPressed: _resetData,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            _welcomeCard(),
+            const SizedBox(height: 15),
+            _balanceCard(),
+            const SizedBox(height: 15),
+            _claimCard(),
+            const SizedBox(height: 15),
+            _rewardCard(),
+            const SizedBox(height: 15),
+            _statsCard(),
+            const SizedBox(height: 15),
+            _infoCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _welcomeCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            const Text(
+              '🐱',
+              style: TextStyle(
+                fontSize: 42,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Welcome',
+                    style: TextStyle(
+                      color: Colors.white60,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _name,
+                    style: const TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _balanceCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Text(
+              '🐾',
+              style: TextStyle(
+                fontSize: 42,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'YOUR STELLURIINI',
+              style: TextStyle(
+                color: Colors.white60,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$_stl',
+              style: const TextStyle(
+                fontSize: 45,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+            const Text(
+              'STL',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _claimCard() {
+    final available = canClaim;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Text(
+                  '🐾',
+                  style: TextStyle(
+                    fontSize: 25,
+                  ),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'DAILY CLAIM',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Claim 10 STL once every 24 hours.',
+              style: TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 15),
+            if (!available) ...[
+              const Text(
+                'NEXT CLAIM IN',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _time(_claimTimer),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 31,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            SizedBox(
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed:
+                    available && !_claiming
+                        ? _claimStelluriini
+                        : null,
+                icon:
+                    _claiming
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : const Text(
+                          '🐾',
+                          style: TextStyle(
+                            fontSize: 24,
+                          ),
+                        ),
+                label: Text(
+                  available
+                      ? 'CLAIM +10 STL'
+                      : 'CLAIMED',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rewardCard() {
+    final available = canReward;
+    final loading =
+        _loadingRewarded ||
+        _rewardedAd == null;
+
+    String buttonText;
+
+    if (_rewardCount >= 5) {
+      buttonText = 'DAILY LIMIT';
+    } else if (!canReward) {
+      buttonText =
+          'WAIT ${_time(_rewardTimer)}';
+    } else if (loading) {
+      buttonText = 'LOADING AD...';
+    } else {
+      buttonText = 'WATCH AD +5 STL';
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.ondemand_video,
+                  color: Colors.amber,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'WATCH & EARN',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Watch an advertisement and earn 5 STL.',
+              style: TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Today: $_rewardCount / 5',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (!available &&
+                _rewardCount < 5) ...[
+              const Text(
+                'NEXT AD IN',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _time(_rewardTimer),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (_rewardCount >= 5)
+              const Padding(
+                padding: EdgeInsets.only(
+                  bottom: 10,
+                ),
+                child: Text(
+                  'Daily limit reached.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.amber,
+                  ),
+                ),
+              ),
+            SizedBox(
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed:
+                    available &&
+                            !loading &&
+                            !_showingReward &&
+                            _rewardCount < 5
+                        ? _watchRewardAd
+                        : null,
+                icon:
+                    _showingReward
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : loading &&
+                                available
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Icon(
+                              Icons.play_arrow,
+                            ),
+                label: Text(buttonText),
+              ),
+            ),
+            if (available && loading)
+              const Padding(
+                padding: EdgeInsets.only(
+                  top: 10,
+                ),
+                child: Text(
+                  'The advertisement is loading. The button will activate automatically.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statsCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  const Text(
+                    'STL BALANCE',
+                    style: TextStyle(
+                      color: Colors.white54,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '$_stl STL',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  const Text(
+                    'ADS TODAY',
+                    style: TextStyle(
+                      color: Colors.white54,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '$_rewardCount / 5',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          children: const [
+            Text(
+              '🐱',
+              style: TextStyle(
+                fontSize: 32,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'STELLURIINI MINER',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'STL shown in this app is currently '
+              'an in-app mining balance. It is not '
+              'yet automatically transferred to a '
+              'Solana wallet.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white60,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
