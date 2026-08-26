@@ -1,48 +1,24 @@
 plugins {
-    id "com.android.application"
-    id "kotlin-android"
-
-    // Firebase / Google Services
-    id "com.google.gms.google-services"
-
-    // Flutter Gradle Plugin
-    // Must be applied after Android and Kotlin plugins.
-    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services" version "4.4.3" apply false
 }
 
-android {
-    namespace = "com.example.stelluriini"
-
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
-
-    defaultConfig {
-        applicationId = "com.example.stelluriini"
-
-        minSdk = 23
-        targetSdk = flutter.targetSdkVersion
-
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
-
-    buildTypes {
-        release {
-            // Debug signing for now.
-            signingConfig = signingConfigs.debug
-        }
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
     }
 }
 
-flutter {
-    source = "../.."
+rootProject.buildDir = "../build"
+
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
 }
