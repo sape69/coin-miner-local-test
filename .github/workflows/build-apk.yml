@@ -36,6 +36,106 @@ jobs:
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.1"
 
+      # ----------------------------------------------------------
+      # Create a clean Flutter Android project
+      # ----------------------------------------------------------
+
+      - name: Create clean Flutter Android project
+        run: |
+          mkdir -p /tmp/stelluriini_android
+
+          flutter create \
+            --platforms=android \
+            --project-name stelluriini \
+            --org com.example \
+            /tmp/stelluriini_android
+
+          rm -rf android
+
+          cp -R /tmp/stelluriini_android/android ./android
+
+      # ----------------------------------------------------------
+      # Firebase
+      # ----------------------------------------------------------
+
+      - name: Check Firebase configuration
+        run: |
+          test -f android/app/google-services.json || {
+            echo "ERROR: android/app/google-services.json is missing."
+            exit 1
+          }
+
+          echo "Firebase configuration found."
+
+      - name: Configure Firebase Gradle plugin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("android/settings.gradle")
+          text = path.read_text()
+
+          old = 'id "org.jetbrains.kotlin.android" version "2.1.0" apply false'
+
+          if old in text:
+              text = text.replace(
+                  old,
+                  'id "org.jetbrains.kotlin.android" version "1.9.24" apply false'
+              )
+
+          marker = 'id "org.jetbrains.kotlin.android" version "1.9.24" apply false'
+
+          if 'com.google.gms.google-services' not in text:
+              text = text.replace(
+                  marker,
+                  marker + '\n    id "com.google.gms.google-services" version "4.4.3" apply false'
+              )
+
+          path.write_text(text)
+          PY
+
+      - name: Configure Android application
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("android/app/build.gradle")
+          text = path.read_text()
+
+          text = text.replace(
+              'id "dev.flutter.flutter-gradle-plugin"',
+              'id "dev.flutter.flutter-gradle-plugin"\n    id "com.google.gms.google-services"'
+          )
+
+          text = text.replace(
+              'namespace = "com.example.stelluriini"',
+              'namespace = "com.example.stelluriini"'
+          )
+
+          text = text.replace(
+              'applicationId = "com.example.stelluriini"',
+              'applicationId = "com.example.stelluriini"'
+          )
+
+          path.write_text(text)
+          PY
+
+      # ----------------------------------------------------------
+      # Copy Firebase configuration into the new Android project
+      # ----------------------------------------------------------
+
+      - name: Copy Firebase configuration
+        run: |
+          cp android/app/google-services.json \
+             /tmp/firebase-google-services.json
+
+          cp /tmp/firebase-google-services.json \
+             android/app/google-services.json
+
+      # ----------------------------------------------------------
+      # Launcher icon
+      # ----------------------------------------------------------
+
       - name: Check Stelluriini icon
         run: |
           test -f stelluriini_icon.png
@@ -74,16 +174,28 @@ jobs:
             -resize 192x192 \
             android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
+      # ----------------------------------------------------------
+      # Android application name
+      # ----------------------------------------------------------
+
       - name: Set application name
         run: |
           sed -i 's/android:label="[^"]*"/android:label="Stelluriini"/' \
             android/app/src/main/AndroidManifest.xml
+
+      # ----------------------------------------------------------
+      # Flutter
+      # ----------------------------------------------------------
 
       - name: Flutter pub get
         run: flutter pub get
 
       - name: Flutter analyze
         run: flutter analyze
+
+      # ----------------------------------------------------------
+      # Build
+      # ----------------------------------------------------------
 
       - name: Build Stelluriini APK
         run: |
@@ -93,6 +205,10 @@ jobs:
 
           cp build/app/outputs/flutter-apk/app-release.apk \
             build/Stelluriini.apk
+
+      # ----------------------------------------------------------
+      # Upload APK
+      # ----------------------------------------------------------
 
       - name: Upload Stelluriini APK
         uses: actions/upload-artifact@v4
