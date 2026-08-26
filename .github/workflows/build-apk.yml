@@ -37,75 +37,58 @@ jobs:
           sdkmanager "build-tools;35.0.1"
 
       # ----------------------------------------------------------
-      # Create a clean Flutter Android project
+      # Save files before recreating Android project
+      # ----------------------------------------------------------
+
+      - name: Save Firebase configuration
+        run: |
+          if [ ! -f android/app/google-services.json ]; then
+            echo "ERROR: android/app/google-services.json not found."
+            exit 1
+          fi
+
+          cp android/app/google-services.json /tmp/google-services.json
+
+      # ----------------------------------------------------------
+      # Create clean Flutter Android project
       # ----------------------------------------------------------
 
       - name: Create clean Flutter Android project
         run: |
-          mkdir -p /tmp/stelluriini_android
+          rm -rf android
 
           flutter create \
             --platforms=android \
             --project-name stelluriini \
             --org com.example \
-            /tmp/stelluriini_android
-
-          rm -rf android
-
-          cp -R /tmp/stelluriini_android/android ./android
+            .
 
       # ----------------------------------------------------------
-      # Firebase
+      # Restore Firebase
       # ----------------------------------------------------------
 
-      - name: Check Firebase configuration
+      - name: Restore Firebase configuration
         run: |
-          test -f android/app/google-services.json || {
-            echo "ERROR: android/app/google-services.json is missing."
-            exit 1
-          }
+          mkdir -p android/app
 
-          echo "Firebase configuration found."
+          cp /tmp/google-services.json \
+            android/app/google-services.json
 
-      - name: Configure Firebase Gradle plugin
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          test -f android/app/google-services.json
 
-          path = Path("android/settings.gradle")
-          text = path.read_text()
+          echo "Firebase configuration restored."
 
-          old = 'id "org.jetbrains.kotlin.android" version "2.1.0" apply false'
+      # ----------------------------------------------------------
+      # Configure Android package
+      # ----------------------------------------------------------
 
-          if old in text:
-              text = text.replace(
-                  old,
-                  'id "org.jetbrains.kotlin.android" version "1.9.24" apply false'
-              )
-
-          marker = 'id "org.jetbrains.kotlin.android" version "1.9.24" apply false'
-
-          if 'com.google.gms.google-services' not in text:
-              text = text.replace(
-                  marker,
-                  marker + '\n    id "com.google.gms.google-services" version "4.4.3" apply false'
-              )
-
-          path.write_text(text)
-          PY
-
-      - name: Configure Android application
+      - name: Configure Android package
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           path = Path("android/app/build.gradle")
           text = path.read_text()
-
-          text = text.replace(
-              'id "dev.flutter.flutter-gradle-plugin"',
-              'id "dev.flutter.flutter-gradle-plugin"\n    id "com.google.gms.google-services"'
-          )
 
           text = text.replace(
               'namespace = "com.example.stelluriini"',
@@ -117,23 +100,70 @@ jobs:
               'applicationId = "com.example.stelluriini"'
           )
 
+          if 'id "com.google.gms.google-services"' not in text:
+              text = text.replace(
+                  'id "dev.flutter.flutter-gradle-plugin"',
+                  'id "dev.flutter.flutter-gradle-plugin"\n    id "com.google.gms.google-services"'
+              )
+
           path.write_text(text)
           PY
 
       # ----------------------------------------------------------
-      # Copy Firebase configuration into the new Android project
+      # Configure Firebase Gradle plugin
       # ----------------------------------------------------------
 
-      - name: Copy Firebase configuration
+      - name: Configure Firebase Gradle plugin
         run: |
-          cp android/app/google-services.json \
-             /tmp/firebase-google-services.json
+          python3 - <<'PY'
+          from pathlib import Path
 
-          cp /tmp/firebase-google-services.json \
-             android/app/google-services.json
+          path = Path("android/settings.gradle")
+          text = path.read_text()
+
+          if 'com.google.gms.google-services' not in text:
+              marker = 'id "org.jetbrains.kotlin.android"'
+
+              lines = text.splitlines()
+
+              insert_at = None
+
+              for i, line in enumerate(lines):
+                  if marker in line:
+                      insert_at = i + 1
+                      break
+
+              if insert_at is None:
+                  raise SystemExit(
+                      "Could not find Kotlin plugin in settings.gradle"
+                  )
+
+              lines.insert(
+                  insert_at,
+                  '    id "com.google.gms.google-services" version "4.4.3" apply false'
+              )
+
+              text = "\n".join(lines) + "\n"
+
+          path.write_text(text)
+          PY
 
       # ----------------------------------------------------------
-      # Launcher icon
+      # Verify Firebase package name
+      # ----------------------------------------------------------
+
+      - name: Verify Firebase configuration
+        run: |
+          echo "Firebase package:"
+          grep -o '"package_name": "[^"]*"' \
+            android/app/google-services.json || true
+
+          echo "Android applicationId:"
+          grep -n "applicationId" \
+            android/app/build.gradle || true
+
+      # ----------------------------------------------------------
+      # Stelluriini icon
       # ----------------------------------------------------------
 
       - name: Check Stelluriini icon
@@ -175,26 +205,33 @@ jobs:
             android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       # ----------------------------------------------------------
-      # Android application name
+      # App name
       # ----------------------------------------------------------
 
       - name: Set application name
         run: |
-          sed -i 's/android:label="[^"]*"/android:label="Stelluriini"/' \
+          sed -i \
+            's/android:label="[^"]*"/android:label="Stelluriini"/' \
             android/app/src/main/AndroidManifest.xml
 
       # ----------------------------------------------------------
-      # Flutter
+      # Flutter dependencies
       # ----------------------------------------------------------
 
       - name: Flutter pub get
-        run: flutter pub get
-
-      - name: Flutter analyze
-        run: flutter analyze
+        run: |
+          flutter pub get
 
       # ----------------------------------------------------------
-      # Build
+      # Analyze
+      # ----------------------------------------------------------
+
+      - name: Flutter analyze
+        run: |
+          flutter analyze
+
+      # ----------------------------------------------------------
+      # Build APK
       # ----------------------------------------------------------
 
       - name: Build Stelluriini APK
@@ -203,7 +240,8 @@ jobs:
 
           flutter build apk --release
 
-          cp build/app/outputs/flutter-apk/app-release.apk \
+          cp \
+            build/app/outputs/flutter-apk/app-release.apk \
             build/Stelluriini.apk
 
       # ----------------------------------------------------------
