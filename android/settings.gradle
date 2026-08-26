@@ -1,6 +1,7 @@
 pluginManagement {
     def flutterSdkPath = {
         def properties = new Properties()
+
         file("local.properties").withInputStream {
             properties.load(it)
         }
@@ -24,10 +25,8 @@ pluginManagement {
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
 
-    // Android Gradle Plugin
     id "com.android.application" version "8.2.2" apply false
 
-    // Kotlin
     id "org.jetbrains.kotlin.android" version "2.3.0" apply false
 }
 
