@@ -11,16 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ----------------------------------------------------------
-      # CHECKOUT
-      # ----------------------------------------------------------
-
       - name: Checkout
         uses: actions/checkout@v4
-
-      # ----------------------------------------------------------
-      # FLUTTER
-      # ----------------------------------------------------------
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -29,19 +21,11 @@ jobs:
           channel: stable
           cache: true
 
-      # ----------------------------------------------------------
-      # JAVA
-      # ----------------------------------------------------------
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      # ----------------------------------------------------------
-      # ANDROID SDK
-      # ----------------------------------------------------------
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -53,22 +37,18 @@ jobs:
           sdkmanager "build-tools;35.0.1"
 
       # ----------------------------------------------------------
-      # SAVE FIREBASE CONFIGURATION
+      # Save Firebase configuration
       # ----------------------------------------------------------
 
       - name: Save Firebase configuration
         run: |
-          if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: android/app/google-services.json not found."
-            exit 1
-          fi
+          test -f android/app/google-services.json
 
-          cp android/app/google-services.json /tmp/google-services.json
-
-          echo "Firebase configuration saved."
+          cp android/app/google-services.json \
+            /tmp/google-services.json
 
       # ----------------------------------------------------------
-      # CREATE CLEAN ANDROID PROJECT
+      # Create clean Flutter Android project
       # ----------------------------------------------------------
 
       - name: Create clean Flutter Android project
@@ -82,22 +62,18 @@ jobs:
             .
 
       # ----------------------------------------------------------
-      # RESTORE FIREBASE
+      # Restore Firebase configuration
       # ----------------------------------------------------------
 
       - name: Restore Firebase configuration
         run: |
-          mkdir -p android/app
-
           cp /tmp/google-services.json \
             android/app/google-services.json
 
           test -f android/app/google-services.json
 
-          echo "Firebase configuration restored."
-
       # ----------------------------------------------------------
-      # CONFIGURE ANDROID PACKAGE
+      # Configure Android package
       # ----------------------------------------------------------
 
       - name: Configure Android package
@@ -121,14 +97,15 @@ jobs:
           if 'id "com.google.gms.google-services"' not in text:
               text = text.replace(
                   'id "dev.flutter.flutter-gradle-plugin"',
-                  'id "dev.flutter.flutter-gradle-plugin"\n    id "com.google.gms.google-services"'
+                  'id "dev.flutter.flutter-gradle-plugin"\n'
+                  '    id "com.google.gms.google-services"'
               )
 
           path.write_text(text)
           PY
 
       # ----------------------------------------------------------
-      # FIREBASE GRADLE PLUGIN
+      # Firebase Google Services plugin
       # ----------------------------------------------------------
 
       - name: Configure Firebase Gradle plugin
@@ -140,27 +117,22 @@ jobs:
           text = path.read_text()
 
           if 'com.google.gms.google-services' not in text:
-
               marker = 'id "org.jetbrains.kotlin.android"'
 
               lines = text.splitlines()
 
-              insert_at = None
-
               for i, line in enumerate(lines):
                   if marker in line:
-                      insert_at = i + 1
+                      lines.insert(
+                          i + 1,
+                          '    id "com.google.gms.google-services" '
+                          'version "4.4.3" apply false'
+                      )
                       break
-
-              if insert_at is None:
+              else:
                   raise SystemExit(
-                      "Could not find Kotlin plugin in settings.gradle"
+                      "Kotlin Android plugin not found"
                   )
-
-              lines.insert(
-                  insert_at,
-                  '    id "com.google.gms.google-services" version "4.4.3" apply false'
-              )
 
               text = "\n".join(lines) + "\n"
 
@@ -168,28 +140,26 @@ jobs:
           PY
 
       # ----------------------------------------------------------
-      # VERIFY FIREBASE
+      # Verify Firebase
       # ----------------------------------------------------------
 
       - name: Verify Firebase configuration
         run: |
           echo "Firebase package:"
           grep -o '"package_name": "[^"]*"' \
-            android/app/google-services.json || true
+            android/app/google-services.json
 
           echo "Android applicationId:"
           grep -n "applicationId" \
-            android/app/build.gradle || true
+            android/app/build.gradle
 
       # ----------------------------------------------------------
-      # STELLURIINI ICON
+      # Stelluriini icon
       # ----------------------------------------------------------
 
       - name: Check Stelluriini icon
         run: |
           test -f stelluriini_icon.png
-
-          echo "Stelluriini icon found."
 
       - name: Install ImageMagick
         run: |
@@ -225,7 +195,7 @@ jobs:
             android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       # ----------------------------------------------------------
-      # APP NAME
+      # App name
       # ----------------------------------------------------------
 
       - name: Set application name
@@ -235,7 +205,7 @@ jobs:
             android/app/src/main/AndroidManifest.xml
 
       # ----------------------------------------------------------
-      # FLUTTER DEPENDENCIES
+      # Flutter packages
       # ----------------------------------------------------------
 
       - name: Flutter pub get
@@ -243,17 +213,15 @@ jobs:
           flutter pub get
 
       # ----------------------------------------------------------
-      # REMOVE GENERATED DEFAULT TEST
+      # Remove generated example tests
       # ----------------------------------------------------------
 
       - name: Remove generated Flutter tests
         run: |
           rm -rf test
 
-          echo "Generated Flutter tests removed."
-
       # ----------------------------------------------------------
-      # FLUTTER ANALYZE
+      # Analyze
       # ----------------------------------------------------------
 
       - name: Flutter analyze
@@ -261,7 +229,7 @@ jobs:
           flutter analyze
 
       # ----------------------------------------------------------
-      # BUILD APK
+      # Build
       # ----------------------------------------------------------
 
       - name: Build Stelluriini APK
@@ -274,10 +242,8 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk \
             build/Stelluriini.apk
 
-          echo "Stelluriini APK created."
-
       # ----------------------------------------------------------
-      # UPLOAD APK
+      # Upload
       # ----------------------------------------------------------
 
       - name: Upload Stelluriini APK
