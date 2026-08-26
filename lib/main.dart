@@ -1,14 +1,23 @@
-import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
+  await MobileAds.instance.initialize();
 
   runApp(const StelluriiniApp());
 }
+
+// ==========================================================
+// APP
+// ==========================================================
 
 class StelluriiniApp extends StatelessWidget {
   const StelluriiniApp({super.key});
@@ -32,9 +41,9 @@ class StelluriiniApp extends StatelessWidget {
   }
 }
 
-// --------------------------------------------------
+// ==========================================================
 // AUTH GATE
-// --------------------------------------------------
+// ==========================================================
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -58,9 +67,9 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-// --------------------------------------------------
+// ==========================================================
 // LOADING
-// --------------------------------------------------
+// ==========================================================
 
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
@@ -75,9 +84,9 @@ class LoadingScreen extends StatelessWidget {
   }
 }
 
-// --------------------------------------------------
+// ==========================================================
 // LOGIN
-// --------------------------------------------------
+// ==========================================================
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -130,11 +139,11 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
 
         default:
-          message = 'Kirjautuminen epäonnistui: ${e.message}';
+          message = 'Kirjautuminen epäonnistui.';
       }
 
       showMessage(message);
-    } catch (e) {
+    } catch (_) {
       showMessage('Kirjautuminen epäonnistui.');
     }
 
@@ -149,9 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -170,9 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(28),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // LOGO
                 ClipRRect(
                   borderRadius: BorderRadius.circular(30),
                   child: Image.asset(
@@ -206,7 +211,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 40),
 
-                // EMAIL
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -223,7 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 16),
 
-                // PASSWORD
                 TextField(
                   controller: passwordController,
                   obscureText: hidePassword,
@@ -250,7 +253,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 24),
 
-                // LOGIN BUTTON
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -276,7 +278,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 16),
 
-                // CREATE ACCOUNT
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -309,9 +310,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// --------------------------------------------------
+// ==========================================================
 // REGISTER
-// --------------------------------------------------
+// ==========================================================
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -379,11 +380,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           break;
 
         default:
-          message = 'Tilin luominen epäonnistui: ${e.message}';
+          message = 'Tilin luominen epäonnistui.';
       }
 
       showMessage(message);
-    } catch (e) {
+    } catch (_) {
       showMessage('Tilin luominen epäonnistui.');
     }
 
@@ -398,9 +399,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -497,7 +496,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     onPressed: () {
                       setState(() {
-                        hideConfirmPassword = !hideConfirmPassword;
+                        hideConfirmPassword =
+                            !hideConfirmPassword;
                       });
                     },
                   ),
@@ -539,20 +539,442 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// --------------------------------------------------
+// ==========================================================
 // HOME
-// --------------------------------------------------
+// ==========================================================
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  Future<void> logout() async {
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final FirebaseFirestore firestore =
+      FirebaseFirestore.instance;
+
+  RewardedAd? rewardedAd;
+
+  bool adLoading = false;
+  bool dataLoading = true;
+
+  int points = 0;
+  int weeklyPoints = 0;
+
+  bool dailyLoginClaimed = false;
+
+  String weekKey = '';
+
+  static const int weeklyLimit = 100;
+
+  // Google test Rewarded Ad ID.
+  //
+  // Tämä on TESTITUNNUS.
+  // Vaihdetaan myöhemmin omaan AdMob-tunnukseen.
+  static const String rewardedAdUnitId =
+      'ca-app-pub-3940256099942544/5224354917';
+
+  @override
+  void initState() {
+    super.initState();
+
+    weekKey = _getWeekKey();
+
+    _loadUserData();
+    _loadRewardedAd();
+  }
+
+  // ========================================================
+  // WEEK KEY
+  // ========================================================
+
+  String _getWeekKey() {
+    final now = DateTime.now();
+
+    final monday =
+        now.subtract(Duration(days: now.weekday - 1));
+
+    return '${monday.year}-'
+        '${monday.month.toString().padLeft(2, '0')}-'
+        '${monday.day.toString().padLeft(2, '0')}';
+  }
+
+  // ========================================================
+  // USER DOCUMENT
+  // ========================================================
+
+  DocumentReference<Map<String, dynamic>>
+      get userDocument {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('Käyttäjää ei löytynyt.');
+    }
+
+    return firestore.collection('users').doc(user.uid);
+  }
+
+  // ========================================================
+  // LOAD USER DATA
+  // ========================================================
+
+  Future<void> _loadUserData() async {
+    try {
+      final snapshot = await userDocument.get();
+
+      if (!snapshot.exists) {
+        await userDocument.set({
+          'email':
+              FirebaseAuth.instance.currentUser?.email ?? '',
+          'points': 0,
+          'weeklyPoints': 0,
+          'weekKey': weekKey,
+          'dailyLoginClaimed': false,
+          'tasksCompleted': 0,
+          'adsWatched': 0,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        points = 0;
+        weeklyPoints = 0;
+        dailyLoginClaimed = false;
+      } else {
+        final data = snapshot.data()!;
+
+        final storedWeekKey =
+            data['weekKey'] as String? ?? '';
+
+        if (storedWeekKey != weekKey) {
+          await userDocument.update({
+            'weeklyPoints': 0,
+            'weekKey': weekKey,
+            'dailyLoginClaimed': false,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+
+          points = (data['points'] as num?)?.toInt() ?? 0;
+          weeklyPoints = 0;
+          dailyLoginClaimed = false;
+        } else {
+          points = (data['points'] as num?)?.toInt() ?? 0;
+          weeklyPoints =
+              (data['weeklyPoints'] as num?)?.toInt() ?? 0;
+
+          dailyLoginClaimed =
+              data['dailyLoginClaimed'] == true;
+        }
+      }
+    } catch (e) {
+      _showMessage(
+        'Tietojen lataaminen epäonnistui.',
+      );
+    }
+
+    if (mounted) {
+      setState(() {
+        dataLoading = false;
+      });
+    }
+  }
+
+  // ========================================================
+  // LOAD REWARDED AD
+  // ========================================================
+
+  void _loadRewardedAd() {
+    if (adLoading || rewardedAd != null) {
+      return;
+    }
+
+    adLoading = true;
+
+    RewardedAd.load(
+      adUnitId: rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          rewardedAd = ad;
+          adLoading = false;
+
+          ad.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              rewardedAd = null;
+
+              _loadRewardedAd();
+
+              if (mounted) {
+                setState(() {});
+              }
+            },
+            onAdFailedToShowFullScreenContent:
+                (ad, error) {
+              ad.dispose();
+              rewardedAd = null;
+
+              _loadRewardedAd();
+
+              _showMessage(
+                'Mainosta ei voitu näyttää.',
+              );
+            },
+          );
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onAdFailedToLoad: (error) {
+          rewardedAd = null;
+          adLoading = false;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+  }
+
+  // ========================================================
+  // SHOW REWARDED AD
+  // ========================================================
+
+  void _showRewardedAd({
+    required Future<void> Function() onReward,
+  }) {
+    final ad = rewardedAd;
+
+    if (ad == null) {
+      _showMessage(
+        'Mainos ei ole vielä valmis. Yritä hetken päästä uudelleen.',
+      );
+
+      _loadRewardedAd();
+      return;
+    }
+
+    rewardedAd = null;
+
+    ad.show(
+      onUserEarnedReward: (ad, reward) async {
+        await onReward();
+      },
+    );
+  }
+
+  // ========================================================
+  // ADD POINTS
+  // ========================================================
+
+  Future<bool> _addPoints(int amount) async {
+    try {
+      final result =
+          await firestore.runTransaction<Map<String, dynamic>>(
+        (transaction) async {
+          final snapshot =
+              await transaction.get(userDocument);
+
+          if (!snapshot.exists) {
+            throw Exception(
+              'Käyttäjätietoja ei löytynyt.',
+            );
+          }
+
+          final data = snapshot.data()!;
+
+          int currentPoints =
+              (data['points'] as num?)?.toInt() ?? 0;
+
+          int currentWeekly =
+              (data['weeklyPoints'] as num?)?.toInt() ?? 0;
+
+          String storedWeekKey =
+              data['weekKey'] as String? ?? '';
+
+          if (storedWeekKey != weekKey) {
+            currentWeekly = 0;
+            storedWeekKey = weekKey;
+          }
+
+          final remaining =
+              weeklyLimit - currentWeekly;
+
+          if (remaining <= 0) {
+            return {
+              'success': false,
+              'currentPoints': currentPoints,
+              'currentWeekly': currentWeekly,
+            };
+          }
+
+          final actualAmount =
+              amount > remaining ? remaining : amount;
+
+          currentPoints += actualAmount;
+          currentWeekly += actualAmount;
+
+          transaction.update(
+            userDocument,
+            {
+              'points': currentPoints,
+              'weeklyPoints': currentWeekly,
+              'weekKey': storedWeekKey,
+              'updatedAt':
+                  FieldValue.serverTimestamp(),
+            },
+          );
+
+          return {
+            'success': true,
+            'currentPoints': currentPoints,
+            'currentWeekly': currentWeekly,
+          };
+        },
+      );
+
+      points =
+          result['currentPoints'] as int? ?? points;
+
+      weeklyPoints =
+          result['currentWeekly'] as int? ?? weeklyPoints;
+
+      return result['success'] == true;
+    } catch (e) {
+      _showMessage(
+        'Pisteiden tallentaminen epäonnistui.',
+      );
+
+      return false;
+    }
+  }
+
+  // ========================================================
+  // DAILY LOGIN
+  // ========================================================
+
+  void _dailyLoginAd() {
+    if (dailyLoginClaimed) {
+      _showMessage(
+        'Daily Login on jo käytetty tällä viikolla.',
+      );
+      return;
+    }
+
+    if (weeklyPoints >= weeklyLimit) {
+      _showMessage(
+        'Viikon 100 pisteen raja on täynnä.',
+      );
+      return;
+    }
+
+    _showRewardedAd(
+      onReward: () async {
+        final success = await _addPoints(10);
+
+        if (!success) {
+          return;
+        }
+
+        await userDocument.update({
+          'dailyLoginClaimed': true,
+          'adsWatched': FieldValue.increment(1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        if (mounted) {
+          setState(() {
+            dailyLoginClaimed = true;
+          });
+        }
+
+        _showMessage(
+          '+10 pistettä! Daily Login suoritettu.',
+        );
+      },
+    );
+  }
+
+  // ========================================================
+  // TASK
+  // ========================================================
+
+  void _watchTaskAd() {
+    if (weeklyPoints >= weeklyLimit) {
+      _showMessage(
+        'Viikon 100 pisteen raja on täynnä.',
+      );
+      return;
+    }
+
+    _showRewardedAd(
+      onReward: () async {
+        final success = await _addPoints(10);
+
+        if (!success) {
+          return;
+        }
+
+        await userDocument.update({
+          'tasksCompleted': FieldValue.increment(1),
+          'adsWatched': FieldValue.increment(1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        _showMessage(
+          '+10 pistettä! Tehtävä suoritettu.',
+        );
+
+        if (mounted) {
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  // ========================================================
+  // LOGOUT
+  // ========================================================
+
+  Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
   }
 
+  // ========================================================
+  // MESSAGE
+  // ========================================================
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
+  // ========================================================
+  // BUILD
+  // ========================================================
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    if (dataLoading) {
+      return const LoadingScreen();
+    }
+
+    final user =
+        FirebaseAuth.instance.currentUser;
+
+    final progress =
+        (weeklyPoints / weeklyLimit).clamp(0.0, 1.0);
+
+    final limitReached =
+        weeklyPoints >= weeklyLimit;
 
     return Scaffold(
       appBar: AppBar(
@@ -560,61 +982,371 @@ class HomeScreen extends StatelessWidget {
           'STELLURIINI',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            letterSpacing: 1,
           ),
         ),
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
             icon: const Icon(Icons.logout),
-            onPressed: logout,
+            onPressed: _logout,
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.check_circle,
-                size: 90,
+
+      body: RefreshIndicator(
+        onRefresh: _loadUserData,
+
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          children: [
+
+            // ==========================================
+            // WELCOME
+            // ==========================================
+
+            Text(
+              'Tervetuloa!',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineMedium
+                  ?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              user?.email ?? '',
+              style: const TextStyle(
+                color: Colors.white70,
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-              const Text(
-                'Tervetuloa Stelluriiniin!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+            // ==========================================
+            // POINTS CARD
+            // ==========================================
+
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF33205F),
+                    Color(0xFF16121F),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
+              child: Column(
+                children: [
 
-              const SizedBox(height: 16),
+                  const Icon(
+                    Icons.stars_rounded,
+                    size: 50,
+                  ),
 
-              Text(
-                user?.email ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    'PISTEET',
+                    style: TextStyle(
+                      fontSize: 15,
+                      letterSpacing: 2,
+                      color: Colors.white70,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    '$points',
+                    style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  const Text(
+                    'Sovelluksen pisteitä',
+                    style: TextStyle(
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ==========================================
+            // WEEKLY PROGRESS
+            // ==========================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_month,
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Viikon aktiivisuus',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '$weeklyPoints / $weeklyLimit',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 10,
+                      borderRadius:
+                          BorderRadius.circular(10),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      limitReached
+                          ? 'Viikon pistekatto on täynnä.'
+                          : 'Voit ansaita vielä '
+                              '${weeklyLimit - weeklyPoints} pistettä tällä viikolla.',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ==========================================
+            // DAILY LOGIN
+            // ==========================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.login_rounded,
+                          size: 30,
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'DAILY LOGIN',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    const Text(
+                      'Kirjaudu päivittäin ja pidä aktiivisuutesi yllä.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed:
+                            dailyLoginClaimed ||
+                                    limitReached
+                                ? null
+                                : _dailyLoginAd,
+                        icon: const Icon(
+                          Icons.play_circle_outline,
+                        ),
+                        label: Text(
+                          dailyLoginClaimed
+                              ? 'KÄYTETTY'
+                              : 'KATSO MAINOS +10',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ==========================================
+            // TASKS
+            // ==========================================
+
+            const Text(
+              'TEHTÄVÄT',
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Card(
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.all(16),
+
+                leading: const CircleAvatar(
+                  radius: 28,
+                  child: Icon(
+                    Icons.ondemand_video,
+                  ),
+                ),
+
+                title: const Text(
+                  'Katso mainos',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                subtitle: const Text(
+                  '+10 pistettä',
+                ),
+
+                trailing: FilledButton(
+                  onPressed:
+                      limitReached
+                          ? null
+                          : _watchTaskAd,
+                  child: const Text(
+                    'TEE',
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Card(
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.all(16),
+
+                leading: const CircleAvatar(
+                  radius: 28,
+                  child: Icon(
+                    Icons.task_alt,
+                  ),
+                ),
+
+                title: const Text(
+                  'Viikon aktiivisuus',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                subtitle: Text(
+                  '$weeklyPoints / $weeklyLimit pistettä',
+                ),
+
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 18,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ==========================================
+            // INFORMATION
+            // ==========================================
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(16),
+                color: Colors.white.withOpacity(0.05),
+              ),
+              child: const Text(
+                'Stelluriini-pisteet ovat tällä hetkellä '
+                'sovelluksen sisäisiä pisteitä. Niitä ei '
+                'pidä tässä vaiheessa käsittää oikeina '
+                'STL-tokeneina tai rahana.',
+                style: TextStyle(
                   color: Colors.white70,
-                  fontSize: 16,
+                  height: 1.4,
                 ),
               ),
+            ),
 
-              const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
-              const Text(
-                'Kirjautuminen onnistui.',
-                style: TextStyle(
-                  fontSize: 18,
+            Center(
+              child: Text(
+                'STELLURIINI • $weekKey',
+                style: const TextStyle(
+                  color: Colors.white38,
+                  fontSize: 12,
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    rewardedAd?.dispose();
+    super.dispose();
   }
 }
