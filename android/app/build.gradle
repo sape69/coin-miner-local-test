@@ -2,10 +2,8 @@ plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
 
-    // Firebase / Google Services
     id "com.google.gms.google-services"
 
-    // Flutter
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -27,7 +25,6 @@ android {
     defaultConfig {
         applicationId = "com.example.stelluriini"
 
-        // Firebase Auth vaatii vähintään 23
         minSdk = 23
 
         targetSdk = flutter.targetSdkVersion
