@@ -34,6 +34,8 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
 
+    if (!mounted) return;
+
     setState(() {
       languageCode = prefs.getString('languageCode') ?? 'fi';
       loading = false;
@@ -44,6 +46,8 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString('languageCode', newLanguage);
+
+    if (!mounted) return;
 
     setState(() {
       languageCode = newLanguage;
@@ -110,21 +114,12 @@ class _HomePageState extends State<HomePage> {
   bool loading = true;
   bool rewardedAdReady = false;
   bool adLoading = false;
+  bool adShowing = false;
 
   RewardedAd? rewardedAd;
 
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
-
-  final List<String> catFacts = [
-    '🐱 Kissat nukkuvat jopa 12–16 tuntia päivässä.',
-    '🐱 Kissalla on erittäin hyvä kuulo.',
-    '🐱 Kissan viikset auttavat sitä arvioimaan tilaa.',
-    '🐱 Kissat voivat kehrätä monista eri syistä.',
-    '🐱 Kissan nenän kuvio on yksilöllinen.',
-    '🐱 Kissat käyttävät häntäänsä tasapainon ylläpitämiseen.',
-    '🐱 Stella on Stelluriinin inspiraation lähde!',
-  ];
 
   int factIndex = 0;
 
@@ -139,14 +134,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
     _loadData();
   }
 
   @override
   void dispose() {
     rewardedAd?.dispose();
-
     super.dispose();
   }
 
@@ -160,18 +153,23 @@ class _HomePageState extends State<HomePage> {
     final savedAdCount = prefs.getInt('adCount') ?? 0;
 
     int currentAdCount = savedAdCount;
+    String currentAdDate = savedAdDate;
 
-    if (savedAdDate != todayKey) {
+    if (currentAdDate != todayKey) {
       currentAdCount = 0;
-      await prefs.setString('adDate', todayKey);
-      await prefs.setInt('adCount', 0);
+      currentAdDate = todayKey;
+
+      await prefs.setString('adDate', currentAdDate);
+      await prefs.setInt('adCount', currentAdCount);
     }
+
+    if (!mounted) return;
 
     setState(() {
       balance = savedBalance;
       streak = savedStreak;
       lastClaimDate = savedClaimDate;
-      adDate = todayKey;
+      adDate = currentAdDate;
       adCount = currentAdCount;
       loading = false;
     });
@@ -185,31 +183,32 @@ class _HomePageState extends State<HomePage> {
     await prefs.setDouble('balance', balance);
     await prefs.setInt('streak', streak);
     await prefs.setString('lastClaimDate', lastClaimDate);
-
     await prefs.setString('adDate', adDate);
     await prefs.setInt('adCount', adCount);
   }
 
   Future<void> _loadRewardedAd() async {
-    if (adLoading || rewardedAdReady) {
+    if (adLoading || rewardedAdReady || adShowing) {
       return;
     }
 
-    setState(() {
-      adLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        adLoading = true;
+      });
+    }
 
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          rewardedAd = ad;
-
           if (!mounted) {
             ad.dispose();
             return;
           }
+
+          rewardedAd = ad;
 
           setState(() {
             rewardedAdReady = true;
@@ -217,9 +216,7 @@ class _HomePageState extends State<HomePage> {
           });
         },
         onAdFailedToLoad: (error) {
-          if (!mounted) {
-            return;
-          }
+          if (!mounted) return;
 
           setState(() {
             rewardedAd = null;
@@ -229,7 +226,11 @@ class _HomePageState extends State<HomePage> {
 
           Future.delayed(
             const Duration(seconds: 5),
-            _loadRewardedAd,
+            () {
+              if (mounted && !adShowing) {
+                _loadRewardedAd();
+              }
+            },
           );
         },
       ),
@@ -240,9 +241,7 @@ class _HomePageState extends State<HomePage> {
     final t = AppLocalizations(widget.languageCode);
 
     if (lastClaimDate == todayKey) {
-      _showMessage(
-        t.get('claimed'),
-      );
+      _showMessage(t.get('claimed'));
       return;
     }
 
@@ -261,13 +260,7 @@ class _HomePageState extends State<HomePage> {
       streak = 1;
     }
 
-    final double reward;
-
-    if (streak >= 7) {
-      reward = 7.0;
-    } else {
-      reward = 1.0;
-    }
+    final double reward = streak >= 7 ? 7.0 : 1.0;
 
     setState(() {
       balance += reward;
@@ -276,23 +269,23 @@ class _HomePageState extends State<HomePage> {
 
     await _saveData();
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (streak == 7) {
       _showMessage(
         '${t.get('sevenDayStreak')}\n${t.get('sevenDayReward')}',
       );
     } else {
-      _showMessage(
-        '+${reward.toStringAsFixed(0)} STL! 🐱',
-      );
+      _showMessage('+${reward.toStringAsFixed(0)} STL! 🐱');
     }
   }
 
   Future<void> _watchAd() async {
     final t = AppLocalizations(widget.languageCode);
+
+    if (adShowing) {
+      return;
+    }
 
     if (adDate != todayKey) {
       setState(() {
@@ -304,19 +297,13 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (adCount >= 5) {
-      _showMessage(
-        t.get('dailyLimitReached'),
-      );
+      _showMessage(t.get('dailyLimitReached'));
       return;
     }
 
     if (!rewardedAdReady || rewardedAd == null) {
-      _showMessage(
-        t.get('adLoading'),
-      );
-
+      _showMessage(t.get('adLoading'));
       _loadRewardedAd();
-
       return;
     }
 
@@ -325,47 +312,70 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       rewardedAd = null;
       rewardedAdReady = false;
+      adShowing = true;
     });
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {},
+
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
+
+        if (!mounted) return;
+
+        setState(() {
+          adShowing = false;
+        });
+
         _loadRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
 
-        if (mounted) {
-          _showMessage(
-            t.get('adFailed'),
-          );
-        }
+        if (!mounted) return;
+
+        setState(() {
+          adShowing = false;
+        });
+
+        _showMessage(t.get('adFailed'));
 
         _loadRewardedAd();
       },
     );
 
-    ad.show(
-      onUserEarnedReward: (ad, reward) async {
-        if (!mounted) {
-          return;
-        }
+    try {
+      await ad.show(
+        onUserEarnedReward: (adWithoutView, reward) async {
+          if (!mounted) return;
 
-        setState(() {
-          balance += 3.0;
-          adCount++;
-          adDate = todayKey;
-        });
+          if (adCount >= 5) return;
 
-        await _saveData();
+          setState(() {
+            balance += 3.0;
+            adCount++;
+            adDate = todayKey;
+          });
 
-        if (mounted) {
-          _showMessage(
-            t.get('pointsAdded'),
-          );
-        }
-      },
-    );
+          await _saveData();
+
+          if (!mounted) return;
+
+          _showMessage(t.get('pointsAdded'));
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        adShowing = false;
+      });
+
+      _showMessage(t.get('adFailed'));
+
+      _loadRewardedAd();
+    }
   }
 
   Future<void> _resetTestData() async {
@@ -376,6 +386,8 @@ class _HomePageState extends State<HomePage> {
     await prefs.remove('lastClaimDate');
     await prefs.remove('adCount');
     await prefs.remove('adDate');
+
+    if (!mounted) return;
 
     setState(() {
       balance = 0.0;
@@ -389,9 +401,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showMessage(String message) {
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
@@ -407,11 +417,152 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  List<String> _getCatFacts(AppLocalizations t) {
+    switch (widget.languageCode) {
+      case 'en':
+        return [
+          '🐱 Cats can sleep 12–16 hours a day.',
+          '🐱 Cats have excellent hearing.',
+          '🐱 Whiskers help cats measure spaces.',
+          '🐱 Cats can purr for many different reasons.',
+          '🐱 Every cat has a unique nose pattern.',
+          '🐱 Cats use their tails to maintain balance.',
+          '🐱 Stella is the inspiration behind Stelluriini!',
+        ];
+
+      case 'sv':
+        return [
+          '🐱 Katter kan sova 12–16 timmar om dagen.',
+          '🐱 Katter har mycket bra hörsel.',
+          '🐱 Morrhår hjälper katter att bedöma utrymmen.',
+          '🐱 Katter kan spinna av många olika orsaker.',
+          '🐱 Varje katt har ett unikt nosmönster.',
+          '🐱 Katter använder svansen för balansen.',
+          '🐱 Stella är inspirationen bakom Stelluriini!',
+        ];
+
+      case 'de':
+        return [
+          '🐱 Katzen können 12–16 Stunden am Tag schlafen.',
+          '🐱 Katzen haben ein ausgezeichnetes Gehör.',
+          '🐱 Schnurrhaare helfen Katzen, Räume einzuschätzen.',
+          '🐱 Katzen können aus vielen Gründen schnurren.',
+          '🐱 Jede Katze hat ein einzigartiges Nasenmuster.',
+          '🐱 Katzen benutzen ihren Schwanz für das Gleichgewicht.',
+          '🐱 Stella ist die Inspiration hinter Stelluriini!',
+        ];
+
+      case 'es':
+        return [
+          '🐱 Los gatos pueden dormir entre 12 y 16 horas al día.',
+          '🐱 Los gatos tienen un oído excelente.',
+          '🐱 Los bigotes ayudan a medir los espacios.',
+          '🐱 Los gatos pueden ronronear por muchas razones.',
+          '🐱 Cada gato tiene un patrón de nariz único.',
+          '🐱 Los gatos usan la cola para mantener el equilibrio.',
+          '🐱 ¡Stella es la inspiración de Stelluriini!',
+        ];
+
+      case 'fr':
+        return [
+          '🐱 Les chats peuvent dormir 12 à 16 heures par jour.',
+          '🐱 Les chats ont une excellente audition.',
+          '🐱 Les moustaches aident les chats à mesurer les espaces.',
+          '🐱 Les chats peuvent ronronner pour différentes raisons.',
+          '🐱 Chaque chat possède un motif de nez unique.',
+          '🐱 Les chats utilisent leur queue pour garder l’équilibre.',
+          '🐱 Stella est l’inspiration derrière Stelluriini !',
+        ];
+
+      case 'it':
+        return [
+          '🐱 I gatti possono dormire 12–16 ore al giorno.',
+          '🐱 I gatti hanno un udito eccellente.',
+          '🐱 I baffi aiutano i gatti a valutare gli spazi.',
+          '🐱 I gatti possono fare le fusa per molte ragioni.',
+          '🐱 Ogni gatto ha un disegno del naso unico.',
+          '🐱 I gatti usano la coda per mantenere l’equilibrio.',
+          '🐱 Stella è l’ispirazione dietro Stelluriini!',
+        ];
+
+      case 'pt':
+        return [
+          '🐱 Os gatos podem dormir 12–16 horas por dia.',
+          '🐱 Os gatos têm uma audição excelente.',
+          '🐱 Os bigodes ajudam os gatos a avaliar espaços.',
+          '🐱 Os gatos podem ronronar por muitos motivos.',
+          '🐱 Cada gato tem um padrão de nariz único.',
+          '🐱 Os gatos usam a cauda para manter o equilíbrio.',
+          '🐱 Stella é a inspiração por trás do Stelluriini!',
+        ];
+
+      case 'ja':
+        return [
+          '🐱 猫は1日に12〜16時間眠ることがあります。',
+          '🐱 猫はとても優れた聴覚を持っています。',
+          '🐱 猫のひげは空間を判断するのに役立ちます。',
+          '🐱 猫はさまざまな理由でゴロゴロ鳴きます。',
+          '🐱 猫の鼻の模様はそれぞれ異なります。',
+          '🐱 猫は尻尾を使ってバランスを取ります。',
+          '🐱 StellaはStelluriiniのインスピレーションです！',
+        ];
+
+      case 'zh':
+        return [
+          '🐱 猫每天可以睡12到16个小时。',
+          '🐱 猫拥有非常出色的听力。',
+          '🐱 猫的胡须可以帮助判断空间。',
+          '🐱 猫会因为不同原因发出呼噜声。',
+          '🐱 每只猫的鼻子纹路都是独特的。',
+          '🐱 猫使用尾巴保持平衡。',
+          '🐱 Stella 是 Stelluriini 的灵感来源！',
+        ];
+
+      default:
+        return [
+          '🐱 Kissat nukkuvat jopa 12–16 tuntia päivässä.',
+          '🐱 Kissalla on erittäin hyvä kuulo.',
+          '🐱 Kissan viikset auttavat sitä arvioimaan tilaa.',
+          '🐱 Kissat voivat kehrätä monista eri syistä.',
+          '🐱 Kissan nenän kuvio on yksilöllinen.',
+          '🐱 Kissat käyttävät häntäänsä tasapainon ylläpitämiseen.',
+          '🐱 Stella on Stelluriinin inspiraation lähde!',
+        ];
+    }
+  }
+
+  String _nextButtonText() {
+    switch (widget.languageCode) {
+      case 'en':
+        return 'Next';
+      case 'sv':
+        return 'Nästa';
+      case 'de':
+        return 'Weiter';
+      case 'es':
+        return 'Siguiente';
+      case 'fr':
+        return 'Suivant';
+      case 'it':
+        return 'Avanti';
+      case 'pt':
+        return 'Próximo';
+      case 'ja':
+        return '次へ';
+      case 'zh':
+        return '下一个';
+      default:
+        return 'Seuraava';
+    }
+  }
+
   void _nextFact() {
+    final facts = _getCatFacts(AppLocalizations(widget.languageCode));
+
     setState(() {
       factIndex++;
 
-      if (factIndex >= catFacts.length) {
+      if (factIndex >= facts.length) {
         factIndex = 0;
       }
     });
@@ -455,9 +606,9 @@ class _HomePageState extends State<HomePage> {
             },
             itemBuilder: (context) {
               return [
-                PopupMenuItem(
+                const PopupMenuItem(
                   value: 'reset',
-                  child: Text(t.get('wait')),
+                  child: Text('Nollaa testidata'),
                 ),
               ];
             },
@@ -465,41 +616,23 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await _loadData();
-        },
+        onRefresh: _loadData,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _buildHeader(t),
-
             const SizedBox(height: 20),
-
             _buildBalanceCard(t),
-
             const SizedBox(height: 16),
-
-            _buildDailyCard(
-              t,
-              claimedToday,
-            ),
-
+            _buildDailyCard(t, claimedToday),
             const SizedBox(height: 16),
-
             _buildAdCard(t),
-
             const SizedBox(height: 16),
-
             _buildStatsCard(t),
-
             const SizedBox(height: 16),
-
             _buildStellaCard(t),
-
             const SizedBox(height: 16),
-
             _buildInfoCard(t),
-
             const SizedBox(height: 30),
           ],
         ),
@@ -582,14 +715,6 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xFF4DE3C1),
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Virtual in-app points',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 12,
-              ),
-            ),
           ],
         ),
       ),
@@ -624,20 +749,11 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              t.get('dailyAd'),
-              style: const TextStyle(
-                color: Colors.white70,
-              ),
-            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: claimedToday
-                    ? null
-                    : _claimDailyReward,
+                onPressed: claimedToday ? null : _claimDailyReward,
                 icon: Icon(
                   claimedToday
                       ? Icons.check_circle
@@ -663,6 +779,8 @@ class _HomePageState extends State<HomePage> {
 
     if (limitReached) {
       buttonText = '${t.get('dailyLimit')} 5/5';
+    } else if (adShowing) {
+      buttonText = t.get('wait');
     } else if (rewardedAdReady) {
       buttonText = '${t.get('watchEarn')} +3 STL';
     } else {
@@ -711,18 +829,16 @@ class _HomePageState extends State<HomePage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: limitReached
-                    ? null
-                    : _watchAd,
-                icon: rewardedAdReady
-                    ? const Icon(Icons.play_arrow)
-                    : const SizedBox(
+                onPressed: limitReached || adShowing ? null : _watchAd,
+                icon: adLoading
+                    ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                         ),
-                      ),
+                      )
+                    : const Icon(Icons.play_arrow),
                 label: Text(buttonText),
               ),
             ),
@@ -816,6 +932,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildStellaCard(AppLocalizations t) {
+    final facts = _getCatFacts(t);
+
     return Card(
       color: const Color(0xFF1B2533),
       child: Padding(
@@ -839,7 +957,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              catFacts[factIndex],
+              facts[factIndex % facts.length],
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
@@ -850,7 +968,7 @@ class _HomePageState extends State<HomePage> {
             OutlinedButton.icon(
               onPressed: _nextFact,
               icon: const Icon(Icons.refresh),
-              label: const Text('Next'),
+              label: Text(_nextButtonText()),
             ),
           ],
         ),
@@ -930,7 +1048,7 @@ class _HomePageState extends State<HomePage> {
                     children:
                         AppLocalizations.supportedLanguages.entries.map(
                       (entry) {
-                        final bool selected =
+                        final selected =
                             entry.key == widget.languageCode;
 
                         return ListTile(
@@ -953,18 +1071,16 @@ class _HomePageState extends State<HomePage> {
                           onTap: () async {
                             Navigator.pop(context);
 
-                            await widget.onLanguageChanged(
-                              entry.key,
+                            await widget.onLanguageChanged(entry.key);
+
+                            if (!mounted) return;
+
+                            final newT =
+                                AppLocalizations(entry.key);
+
+                            _showMessage(
+                              newT.get('languageChanged'),
                             );
-
-                            if (mounted) {
-                              final newT =
-                                  AppLocalizations(entry.key);
-
-                              _showMessage(
-                                newT.get('languageChanged'),
-                              );
-                            }
                           },
                         );
                       },
