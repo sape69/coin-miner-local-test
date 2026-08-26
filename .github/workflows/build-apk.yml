@@ -228,6 +228,7 @@ jobs:
 
       - name: Flutter analyze
         run: |
+          rm -rf test
           flutter analyze
 
       # ----------------------------------------------------------
