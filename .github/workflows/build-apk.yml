@@ -53,7 +53,7 @@ jobs:
           sdkmanager "build-tools;35.0.1"
 
       # ==========================================================
-      # SAVE FIREBASE
+      # SAVE FIREBASE CONFIGURATION
       # ==========================================================
 
       - name: Save Firebase configuration
@@ -63,7 +63,8 @@ jobs:
             exit 1
           fi
 
-          cp android/app/google-services.json /tmp/google-services.json
+          cp android/app/google-services.json \
+            /tmp/google-services.json
 
           echo "Firebase configuration saved."
 
@@ -110,7 +111,7 @@ jobs:
           grep 'com.android.application' android/settings.gradle
 
       # ==========================================================
-      # ANDROID PACKAGE
+      # ANDROID CONFIGURATION
       # ==========================================================
 
       - name: Configure Android package
@@ -120,6 +121,10 @@ jobs:
 
           path = Path("android/app/build.gradle")
           text = path.read_text()
+
+          # ------------------------------------------------------
+          # Package name
+          # ------------------------------------------------------
 
           text = text.replace(
               'namespace = "com.example.stelluriini"',
@@ -131,6 +136,29 @@ jobs:
               'applicationId = "com.example.stelluriini"'
           )
 
+          # ------------------------------------------------------
+          # Firebase Auth requires Android API 23+
+          # ------------------------------------------------------
+
+          text = text.replace(
+              'minSdk = flutter.minSdkVersion',
+              'minSdk = 23'
+          )
+
+          text = text.replace(
+              'minSdk = 21',
+              'minSdk = 23'
+          )
+
+          text = text.replace(
+              'minSdkVersion 21',
+              'minSdkVersion 23'
+          )
+
+          # ------------------------------------------------------
+          # Firebase Google Services
+          # ------------------------------------------------------
+
           if 'id "com.google.gms.google-services"' not in text:
               text = text.replace(
                   'id "dev.flutter.flutter-gradle-plugin"',
@@ -140,6 +168,11 @@ jobs:
 
           path.write_text(text)
           PY
+
+          echo "Android configuration:"
+          grep -n \
+            "minSdk\|applicationId\|namespace" \
+            android/app/build.gradle
 
       # ==========================================================
       # FIREBASE GOOGLE SERVICES PLUGIN
@@ -189,6 +222,10 @@ jobs:
 
           echo "Android applicationId:"
           grep -n "applicationId" \
+            android/app/build.gradle
+
+          echo "Android minSdk:"
+          grep -n "minSdk" \
             android/app/build.gradle
 
       # ==========================================================
@@ -253,7 +290,7 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # REMOVE GENERATED TEST
+      # REMOVE GENERATED FLUTTER TEST
       # ==========================================================
 
       - name: Remove generated Flutter tests
@@ -261,7 +298,7 @@ jobs:
           rm -rf test
 
       # ==========================================================
-      # ANALYZE
+      # FLUTTER ANALYZE
       # ==========================================================
 
       - name: Flutter analyze
