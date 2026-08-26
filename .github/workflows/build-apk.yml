@@ -11,8 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ==========================================================
+      # CHECKOUT
+      # ==========================================================
+
       - name: Checkout
         uses: actions/checkout@v4
+
+      # ==========================================================
+      # FLUTTER
+      # ==========================================================
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -21,11 +29,19 @@ jobs:
           channel: stable
           cache: true
 
+      # ==========================================================
+      # JAVA
+      # ==========================================================
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      # ==========================================================
+      # ANDROID SDK
+      # ==========================================================
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -36,20 +52,24 @@ jobs:
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.1"
 
-      # ----------------------------------------------------------
-      # Save Firebase configuration
-      # ----------------------------------------------------------
+      # ==========================================================
+      # SAVE FIREBASE
+      # ==========================================================
 
       - name: Save Firebase configuration
         run: |
-          test -f android/app/google-services.json
+          if [ ! -f android/app/google-services.json ]; then
+            echo "ERROR: android/app/google-services.json not found."
+            exit 1
+          fi
 
-          cp android/app/google-services.json \
-            /tmp/google-services.json
+          cp android/app/google-services.json /tmp/google-services.json
 
-      # ----------------------------------------------------------
-      # Create clean Flutter Android project
-      # ----------------------------------------------------------
+          echo "Firebase configuration saved."
+
+      # ==========================================================
+      # CREATE CLEAN FLUTTER ANDROID PROJECT
+      # ==========================================================
 
       - name: Create clean Flutter Android project
         run: |
@@ -61,20 +81,37 @@ jobs:
             --org com.example \
             .
 
-      # ----------------------------------------------------------
-      # Restore Firebase configuration
-      # ----------------------------------------------------------
+      # ==========================================================
+      # RESTORE FIREBASE
+      # ==========================================================
 
       - name: Restore Firebase configuration
         run: |
+          mkdir -p android/app
+
           cp /tmp/google-services.json \
             android/app/google-services.json
 
           test -f android/app/google-services.json
 
-      # ----------------------------------------------------------
-      # Configure Android package
-      # ----------------------------------------------------------
+          echo "Firebase configuration restored."
+
+      # ==========================================================
+      # ANDROID GRADLE PLUGIN 8.1.1
+      # ==========================================================
+
+      - name: Set Android Gradle Plugin version
+        run: |
+          sed -i \
+            's/com.android.application" version "[^"]*"/com.android.application" version "8.1.1"/' \
+            android/settings.gradle
+
+          echo "Android Gradle Plugin:"
+          grep 'com.android.application' android/settings.gradle
+
+      # ==========================================================
+      # ANDROID PACKAGE
+      # ==========================================================
 
       - name: Configure Android package
         run: |
@@ -104,9 +141,9 @@ jobs:
           path.write_text(text)
           PY
 
-      # ----------------------------------------------------------
-      # Firebase Google Services plugin
-      # ----------------------------------------------------------
+      # ==========================================================
+      # FIREBASE GOOGLE SERVICES PLUGIN
+      # ==========================================================
 
       - name: Configure Firebase Gradle plugin
         run: |
@@ -117,6 +154,7 @@ jobs:
           text = path.read_text()
 
           if 'com.google.gms.google-services' not in text:
+
               marker = 'id "org.jetbrains.kotlin.android"'
 
               lines = text.splitlines()
@@ -139,9 +177,9 @@ jobs:
           path.write_text(text)
           PY
 
-      # ----------------------------------------------------------
-      # Verify Firebase
-      # ----------------------------------------------------------
+      # ==========================================================
+      # VERIFY FIREBASE
+      # ==========================================================
 
       - name: Verify Firebase configuration
         run: |
@@ -153,13 +191,15 @@ jobs:
           grep -n "applicationId" \
             android/app/build.gradle
 
-      # ----------------------------------------------------------
-      # Stelluriini icon
-      # ----------------------------------------------------------
+      # ==========================================================
+      # STELLURIINI ICON
+      # ==========================================================
 
       - name: Check Stelluriini icon
         run: |
           test -f stelluriini_icon.png
+
+          echo "Stelluriini icon found."
 
       - name: Install ImageMagick
         run: |
@@ -194,9 +234,9 @@ jobs:
             -resize 192x192 \
             android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-      # ----------------------------------------------------------
-      # App name
-      # ----------------------------------------------------------
+      # ==========================================================
+      # APP NAME
+      # ==========================================================
 
       - name: Set application name
         run: |
@@ -204,33 +244,33 @@ jobs:
             's/android:label="[^"]*"/android:label="Stelluriini"/' \
             android/app/src/main/AndroidManifest.xml
 
-      # ----------------------------------------------------------
-      # Flutter packages
-      # ----------------------------------------------------------
+      # ==========================================================
+      # FLUTTER PACKAGES
+      # ==========================================================
 
       - name: Flutter pub get
         run: |
           flutter pub get
 
-      # ----------------------------------------------------------
-      # Remove generated example tests
-      # ----------------------------------------------------------
+      # ==========================================================
+      # REMOVE GENERATED TEST
+      # ==========================================================
 
       - name: Remove generated Flutter tests
         run: |
           rm -rf test
 
-      # ----------------------------------------------------------
-      # Analyze
-      # ----------------------------------------------------------
+      # ==========================================================
+      # ANALYZE
+      # ==========================================================
 
       - name: Flutter analyze
         run: |
           flutter analyze
 
-      # ----------------------------------------------------------
-      # Build
-      # ----------------------------------------------------------
+      # ==========================================================
+      # BUILD APK
+      # ==========================================================
 
       - name: Build Stelluriini APK
         run: |
@@ -242,9 +282,13 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk \
             build/Stelluriini.apk
 
-      # ----------------------------------------------------------
-      # Upload
-      # ----------------------------------------------------------
+          echo "========================================"
+          echo "STELLURIINI APK CREATED SUCCESSFULLY"
+          echo "========================================"
+
+      # ==========================================================
+      # UPLOAD APK
+      # ==========================================================
 
       - name: Upload Stelluriini APK
         uses: actions/upload-artifact@v4
