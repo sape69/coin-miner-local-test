@@ -1,10 +1,39 @@
+name: stelluriini
+
+description: STELLURIINI Android app
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+
 dependencies:
   flutter:
     sdk: flutter
 
   shared_preferences: ^2.5.3
-
   google_mobile_ads: ^6.0.0
-
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - stella.jpg
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "stella.jpg"
+  adaptive_icon_background: "#0B1112"
+  adaptive_icon_foreground: "stella.jpg"
