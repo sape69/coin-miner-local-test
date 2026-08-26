@@ -187,9 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 const Text(
                   'STELLURIINI',
                   style: TextStyle(
@@ -198,9 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     letterSpacing: 2,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 const Text(
                   'Tervetuloa takaisin',
                   style: TextStyle(
@@ -208,9 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white70,
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -224,9 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 TextField(
                   controller: passwordController,
                   obscureText: hidePassword,
@@ -250,9 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -275,9 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -423,14 +411,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             children: [
               const SizedBox(height: 20),
-
               const Icon(
                 Icons.person_add_alt_1,
                 size: 80,
               ),
-
               const SizedBox(height: 20),
-
               const Text(
                 'Luo Stelluriini-tili',
                 style: TextStyle(
@@ -438,9 +423,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 32),
-
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -453,9 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: passwordController,
                 obscureText: hidePassword,
@@ -479,9 +460,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: confirmPasswordController,
                 obscureText: hideConfirmPassword,
@@ -506,9 +485,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -654,11 +631,15 @@ class _HomeScreenState extends State<HomeScreen> {
             'updatedAt': FieldValue.serverTimestamp(),
           });
 
-          points = (data['points'] as num?)?.toInt() ?? 0;
+          points =
+              (data['points'] as num?)?.toInt() ?? 0;
+
           weeklyPoints = 0;
           dailyLoginClaimed = false;
         } else {
-          points = (data['points'] as num?)?.toInt() ?? 0;
+          points =
+              (data['points'] as num?)?.toInt() ?? 0;
+
           weeklyPoints =
               (data['weeklyPoints'] as num?)?.toInt() ?? 0;
 
@@ -993,15 +974,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
       body: RefreshIndicator(
         onRefresh: _loadUserData,
-
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
           children: [
-
             // ==========================================
             // WELCOME
             // ==========================================
@@ -1046,7 +1024,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Column(
                 children: [
-
                   const Icon(
                     Icons.stars_rounded,
                     size: 50,
@@ -1098,7 +1075,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-
                     Row(
                       children: [
                         const Icon(
@@ -1161,7 +1137,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-
                     Row(
                       children: [
                         const Icon(
@@ -1237,25 +1212,21 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListTile(
                 contentPadding:
                     const EdgeInsets.all(16),
-
                 leading: const CircleAvatar(
                   radius: 28,
                   child: Icon(
                     Icons.ondemand_video,
                   ),
                 ),
-
                 title: const Text(
                   'Katso mainos',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 subtitle: const Text(
                   '+10 pistettä',
                 ),
-
                 trailing: FilledButton(
                   onPressed:
                       limitReached
@@ -1274,25 +1245,21 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListTile(
                 contentPadding:
                     const EdgeInsets.all(16),
-
                 leading: const CircleAvatar(
                   radius: 28,
                   child: Icon(
                     Icons.task_alt,
                   ),
                 ),
-
                 title: const Text(
                   'Viikon aktiivisuus',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 subtitle: Text(
                   '$weeklyPoints / $weeklyLimit pistettä',
                 ),
-
                 trailing: const Icon(
                   Icons.arrow_forward_ios,
                   size: 18,
@@ -1311,7 +1278,12 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 borderRadius:
                     BorderRadius.circular(16),
-                color: Colors.white.withOpacity(0.05),
+
+                // KORJATTU:
+                // withOpacity() -> withValues(alpha:)
+                color: Colors.white.withValues(
+                  alpha: 0.05,
+                ),
               ),
               child: const Text(
                 'Stelluriini-pisteet ovat tällä hetkellä '
