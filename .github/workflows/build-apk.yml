@@ -58,12 +58,12 @@ jobs:
 
 
       # ==========================================
-      # CHECK FIREBASE
+      # VERIFY FIREBASE
       # ==========================================
 
       - name: Verify Firebase configuration
         run: |
-          echo "Checking Firebase..."
+          echo "Checking Firebase configuration..."
 
           test -f android/app/google-services.json
 
@@ -76,27 +76,127 @@ jobs:
 
 
       # ==========================================
-      # CHECK ANDROID CONFIGURATION
+      # VERIFY ANDROID PROJECT
       # ==========================================
 
-      - name: Verify Android configuration
+      - name: Verify Android project
         run: |
-          echo "===== android/app/build.gradle ====="
+          echo "===== settings.gradle ====="
+          cat android/settings.gradle
 
+          echo "===== app/build.gradle ====="
           cat android/app/build.gradle
 
           echo "===== google-services.json ====="
-
           test -f android/app/google-services.json
+
+          echo "Android project OK."
 
 
       # ==========================================
-      # FLUTTER DEPENDENCIES
+      # CHECK ICON
+      # ==========================================
+
+      - name: Check Stelluriini icon
+        run: |
+          test -f stelluriini_icon.png
+          echo "Stelluriini icon found."
+
+
+      # ==========================================
+      # INSTALL IMAGEMAGICK
+      # ==========================================
+
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+
+      # ==========================================
+      # CREATE ANDROID ICONS
+      # ==========================================
+
+      - name: Create Android launcher icons
+        run: |
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+
+          convert stelluriini_icon.png \
+            -resize 48x48 \
+            android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 72x72 \
+            android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 96x96 \
+            android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 144x144 \
+            android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+
+          convert stelluriini_icon.png \
+            -resize 192x192 \
+            android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          echo "Launcher icons created."
+
+
+      # ==========================================
+      # APP NAME
+      # ==========================================
+
+      - name: Set application name
+        run: |
+          sed -i \
+            's/android:label="[^"]*"/android:label="Stelluriini"/' \
+            android/app/src/main/AndroidManifest.xml
+
+          echo "Application name set to Stelluriini."
+
+
+      # ==========================================
+      # DISABLE JETIFIER
+      # ==========================================
+
+      - name: Configure AndroidX and Jetifier
+        run: |
+          touch android/gradle.properties
+
+          sed -i '/^android.useAndroidX=/d' \
+            android/gradle.properties
+
+          sed -i '/^android.enableJetifier=/d' \
+            android/gradle.properties
+
+          echo "android.useAndroidX=true" >> \
+            android/gradle.properties
+
+          echo "android.enableJetifier=false" >> \
+            android/gradle.properties
+
+          echo "===== gradle.properties ====="
+          cat android/gradle.properties
+
+
+      # ==========================================
+      # FLUTTER CLEAN
       # ==========================================
 
       - name: Flutter clean
         run: |
           flutter clean
+
+
+      # ==========================================
+      # FLUTTER PUB GET
+      # ==========================================
 
       - name: Flutter pub get
         run: |
@@ -104,7 +204,16 @@ jobs:
 
 
       # ==========================================
-      # ANALYZE
+      # REMOVE GENERATED TESTS
+      # ==========================================
+
+      - name: Remove generated Flutter tests
+        run: |
+          rm -rf test
+
+
+      # ==========================================
+      # FLUTTER ANALYZE
       # ==========================================
 
       - name: Flutter analyze
@@ -122,16 +231,20 @@ jobs:
 
 
       # ==========================================
-      # RENAME APK
+      # PREPARE APK
       # ==========================================
 
-      - name: Prepare APK
+      - name: Prepare Stelluriini APK
         run: |
           mkdir -p build
 
           cp \
             build/app/outputs/flutter-apk/app-release.apk \
             build/Stelluriini.apk
+
+          echo "========================================"
+          echo "STELLURIINI APK CREATED SUCCESSFULLY"
+          echo "========================================"
 
           ls -lh build/Stelluriini.apk
 
