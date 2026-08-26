@@ -5,9 +5,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_localizations.dart';
-import 'cat_facts.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await MobileAds.instance.initialize();
@@ -15,612 +14,303 @@ Future<void> main() async {
   runApp(const StelluriiniApp());
 }
 
-// ==========================================================
-// APP
-// ==========================================================
-
-class StelluriiniApp extends StatelessWidget {
+class StelluriiniApp extends StatefulWidget {
   const StelluriiniApp({super.key});
 
   @override
+  State<StelluriiniApp> createState() => _StelluriiniAppState();
+}
+
+class _StelluriiniAppState extends State<StelluriiniApp> {
+  String languageCode = 'fi';
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLanguage();
+  }
+
+  Future<void> _loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      languageCode = prefs.getString('languageCode') ?? 'fi';
+      loading = false;
+    });
+  }
+
+  Future<void> _changeLanguage(String newLanguage) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString('languageCode', newLanguage);
+
+    setState(() {
+      languageCode = newLanguage;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.dark(useMaterial3: true),
+        home: const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
     return MaterialApp(
-      title: 'Stelluriini',
       debugShowCheckedModeBanner: false,
+      title: 'Stelluriini',
       theme: ThemeData(
-        brightness: Brightness.dark,
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0B1112),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0B0F16),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF35D0A0),
+          seedColor: const Color(0xFF22C7B8),
           brightness: Brightness.dark,
         ),
       ),
-      home: const HomePage(),
+      home: HomePage(
+        languageCode: languageCode,
+        onLanguageChanged: _changeLanguage,
+      ),
     );
   }
 }
 
-// ==========================================================
-// HOME
-// ==========================================================
-
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String languageCode;
+  final Future<void> Function(String languageCode) onLanguageChanged;
+
+  const HomePage({
+    super.key,
+    required this.languageCode,
+    required this.onLanguageChanged,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  // ========================================================
-  // TEST ADS
-  // ========================================================
+  double balance = 0.0;
 
-  static const String rewardedAdId =
-      'ca-app-pub-3940256099942544/5224354917';
-
-  static const String interstitialAdId =
-      'ca-app-pub-3940256099942544/1033173712';
-
-  // Lisää oikea mint address tähän myöhemmin.
-  static const String stelluriiniMint = '';
-
-  // ========================================================
-  // STORAGE KEYS
-  // ========================================================
-
-  static const String stlKey = 'stl';
-  static const String streakKey = 'streak';
-  static const String lastDailyKey = 'lastDaily';
-  static const String adsKey = 'adsToday';
-  static const String lastAdKey = 'lastAd';
-  static const String factKey = 'factDay';
-  static const String dateKey = 'currentDate';
-  static const String languageKey = 'language';
-
-  SharedPreferences? prefs;
-
-  RewardedAd? rewardedAd;
-  InterstitialAd? interstitialAd;
-
-  Timer? timer;
-
-  int stl = 0;
   int streak = 0;
-  int adsToday = 0;
-  int factDay = 1;
+  int adCount = 0;
 
-  String selectedLanguage = 'fi';
-
-  DateTime? lastDaily;
-  DateTime? lastAd;
-
-  Duration dailyTimer = Duration.zero;
-  Duration adTimer = Duration.zero;
+  String lastClaimDate = '';
+  String adDate = '';
 
   bool loading = true;
-  bool loadingRewarded = false;
-  bool loadingInterstitial = false;
-  bool showingAd = false;
+  bool rewardedAdReady = false;
+  bool adLoading = false;
 
-  // ========================================================
-  // LOCALIZATION
-  // ========================================================
+  RewardedAd? rewardedAd;
 
-  AppLocalizations get t =>
-      AppLocalizations(selectedLanguage);
+  static const String rewardedAdUnitId =
+      'ca-app-pub-3940256099942544/5224354917';
 
-  // ========================================================
-  // INIT
-  // ========================================================
+  final List<String> catFacts = [
+    '🐱 Kissat nukkuvat jopa 12–16 tuntia päivässä.',
+    '🐱 Kissalla on erittäin hyvä kuulo.',
+    '🐱 Kissan viikset auttavat sitä arvioimaan tilaa.',
+    '🐱 Kissat voivat kehrätä monista eri syistä.',
+    '🐱 Kissan nenän kuvio on yksilöllinen.',
+    '🐱 Kissat käyttävät häntäänsä tasapainon ylläpitämiseen.',
+    '🐱 Stella on Stelluriinin inspiraation lähde!',
+  ];
+
+  int factIndex = 0;
+
+  String get todayKey {
+    final now = DateTime.now();
+
+    return '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+  }
 
   @override
   void initState() {
     super.initState();
 
     _loadData();
-
-    timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (!mounted) return;
-
-        _updateTimers();
-        _checkNewDay();
-      },
-    );
   }
-
-  // ========================================================
-  // DISPOSE
-  // ========================================================
 
   @override
   void dispose() {
-    timer?.cancel();
     rewardedAd?.dispose();
-    interstitialAd?.dispose();
+
     super.dispose();
   }
 
-  // ========================================================
-  // LOAD DATA
-  // ========================================================
-
   Future<void> _loadData() async {
-    prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
-    stl = prefs!.getInt(stlKey) ?? 0;
-    streak = prefs!.getInt(streakKey) ?? 0;
-    adsToday = prefs!.getInt(adsKey) ?? 0;
-    factDay = prefs!.getInt(factKey) ?? 1;
+    final savedBalance = prefs.getDouble('balance') ?? 0.0;
+    final savedStreak = prefs.getInt('streak') ?? 0;
+    final savedClaimDate = prefs.getString('lastClaimDate') ?? '';
+    final savedAdDate = prefs.getString('adDate') ?? '';
+    final savedAdCount = prefs.getInt('adCount') ?? 0;
 
-    selectedLanguage =
-        prefs!.getString(languageKey) ?? 'fi';
+    int currentAdCount = savedAdCount;
 
-    if (!AppLocalizations.supportedLanguages
-        .containsKey(selectedLanguage)) {
-      selectedLanguage = 'fi';
+    if (savedAdDate != todayKey) {
+      currentAdCount = 0;
+      await prefs.setString('adDate', todayKey);
+      await prefs.setInt('adCount', 0);
     }
-
-    if (factDay < 1) {
-      factDay = 1;
-    }
-
-    // ------------------------------------------------------
-    // LAST DAILY
-    // ------------------------------------------------------
-
-    final dailyMilliseconds =
-        prefs!.getInt(lastDailyKey);
-
-    if (dailyMilliseconds != null) {
-      lastDaily = DateTime.fromMillisecondsSinceEpoch(
-        dailyMilliseconds,
-        isUtc: true,
-      );
-    }
-
-    // ------------------------------------------------------
-    // LAST AD
-    // ------------------------------------------------------
-
-    final adMilliseconds =
-        prefs!.getInt(lastAdKey);
-
-    if (adMilliseconds != null) {
-      lastAd = DateTime.fromMillisecondsSinceEpoch(
-        adMilliseconds,
-        isUtc: true,
-      );
-    }
-
-    await _checkNewDay();
-
-    if (!mounted) return;
 
     setState(() {
+      balance = savedBalance;
+      streak = savedStreak;
+      lastClaimDate = savedClaimDate;
+      adDate = todayKey;
+      adCount = currentAdCount;
       loading = false;
     });
 
-    _updateTimers();
-
     _loadRewardedAd();
-    _loadInterstitialAd();
   }
 
-  // ========================================================
-  // DATE
-  // ========================================================
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  String _today() {
-    final now = DateTime.now();
+    await prefs.setDouble('balance', balance);
+    await prefs.setInt('streak', streak);
+    await prefs.setString('lastClaimDate', lastClaimDate);
 
-    final year =
-        now.year.toString().padLeft(4, '0');
-
-    final month =
-        now.month.toString().padLeft(2, '0');
-
-    final day =
-        now.day.toString().padLeft(2, '0');
-
-    return '$year-$month-$day';
+    await prefs.setString('adDate', adDate);
+    await prefs.setInt('adCount', adCount);
   }
 
-  // ========================================================
-  // NEW DAY
-  // ========================================================
-
-  Future<void> _checkNewDay() async {
-    if (prefs == null) return;
-
-    final today = _today();
-
-    final saved =
-        prefs!.getString(dateKey);
-
-    if (saved == null) {
-      await prefs!.setString(
-        dateKey,
-        today,
-      );
+  Future<void> _loadRewardedAd() async {
+    if (adLoading || rewardedAdReady) {
       return;
     }
-
-    if (saved == today) {
-      return;
-    }
-
-    adsToday = 0;
-
-    await prefs!.setString(
-      dateKey,
-      today,
-    );
-
-    await prefs!.setInt(
-      adsKey,
-      0,
-    );
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  // ========================================================
-  // TIMERS
-  // ========================================================
-
-  void _updateTimers() {
-    final now = DateTime.now().toUtc();
-
-    // ------------------------------------------------------
-    // DAILY TIMER
-    // ------------------------------------------------------
-
-    Duration daily = Duration.zero;
-
-    if (lastDaily != null) {
-      final nextDaily = lastDaily!.add(
-        const Duration(hours: 24),
-      );
-
-      if (now.isBefore(nextDaily)) {
-        daily = nextDaily.difference(now);
-      }
-    }
-
-    // ------------------------------------------------------
-    // AD TIMER
-    // ------------------------------------------------------
-
-    Duration ad = Duration.zero;
-
-    if (lastAd != null) {
-      final nextAd = lastAd!.add(
-        const Duration(hours: 1),
-      );
-
-      if (now.isBefore(nextAd)) {
-        ad = nextAd.difference(now);
-      }
-    }
-
-    if (!mounted) return;
 
     setState(() {
-      dailyTimer = daily;
-      adTimer = ad;
-    });
-  }
-
-  // ========================================================
-  // CAN DAILY
-  // ========================================================
-
-  bool get canDaily {
-    return dailyTimer == Duration.zero;
-  }
-
-  // ========================================================
-  // CAN AD
-  // ========================================================
-
-  bool get canAd {
-    return adsToday < 5 &&
-        adTimer == Duration.zero;
-  }
-
-  // ========================================================
-  // DAILY REWARD
-  // ========================================================
-
-  int get dailyReward {
-    if (streak >= 7) {
-      return 7;
-    }
-
-    return streak + 1;
-  }
-
-  // ========================================================
-  // CURRENT FACT
-  // ========================================================
-
-  String get currentFact {
-    if (catFacts.isEmpty) {
-      return '🐱 Stella';
-    }
-
-    final index =
-        (factDay - 1) % catFacts.length;
-
-    return catFacts[index].text(
-      selectedLanguage,
-    );
-  }
-
-  // ========================================================
-  // TIME
-  // ========================================================
-
-  String _time(Duration duration) {
-    final hours =
-        duration.inHours
-            .toString()
-            .padLeft(2, '0');
-
-    final minutes =
-        (duration.inMinutes % 60)
-            .toString()
-            .padLeft(2, '0');
-
-    final seconds =
-        (duration.inSeconds % 60)
-            .toString()
-            .padLeft(2, '0');
-
-    return '$hours:$minutes:$seconds';
-  }
-
-  // ========================================================
-  // CHANGE LANGUAGE
-  // ========================================================
-
-  Future<void> _changeLanguage(
-    String language,
-  ) async {
-    if (prefs == null) return;
-
-    await prefs!.setString(
-      languageKey,
-      language,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      selectedLanguage = language;
+      adLoading = true;
     });
 
-    _showMessage(
-      t.get('languageChanged'),
+    RewardedAd.load(
+      adUnitId: rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          rewardedAd = ad;
+
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+
+          setState(() {
+            rewardedAdReady = true;
+            adLoading = false;
+          });
+        },
+        onAdFailedToLoad: (error) {
+          if (!mounted) {
+            return;
+          }
+
+          setState(() {
+            rewardedAd = null;
+            rewardedAdReady = false;
+            adLoading = false;
+          });
+
+          Future.delayed(
+            const Duration(seconds: 5),
+            _loadRewardedAd,
+          );
+        },
+      ),
     );
   }
 
-  // ========================================================
-  // SETTINGS
-  // ========================================================
+  Future<void> _claimDailyReward() async {
+    final t = AppLocalizations(widget.languageCode);
 
-  void _openSettings() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF151B1C),
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              10,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  t.get('settings'),
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  t.get('selectLanguage'),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                ...AppLocalizations
-                    .supportedLanguages
-                    .entries
-                    .map(
-                  (entry) {
-                    final isSelected =
-                        entry.key ==
-                            selectedLanguage;
-
-                    return ListTile(
-                      contentPadding:
-                          EdgeInsets.zero,
-
-                      leading: Text(
-                        entry.value
-                            .substring(0, 2),
-                        style:
-                            const TextStyle(
-                          fontSize: 25,
-                        ),
-                      ),
-
-                      title: Text(
-                        entry.value
-                            .substring(3),
-                      ),
-
-                      trailing: isSelected
-                          ? const Icon(
-                              Icons
-                                  .check_circle,
-                              color:
-                                  Color(
-                                0xFF35D0A0,
-                              ),
-                            )
-                          : null,
-
-                      onTap: () {
-                        Navigator.pop(
-                          sheetContext,
-                        );
-
-                        _changeLanguage(
-                          entry.key,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ========================================================
-  // DAILY CLAIM
-  // ========================================================
-
-  Future<void> _claimDaily() async {
-    if (!canDaily || prefs == null) {
+    if (lastClaimDate == todayKey) {
+      _showMessage(
+        t.get('claimed'),
+      );
       return;
     }
 
-    final now = DateTime.now().toUtc();
+    final yesterday = DateTime.now().subtract(
+      const Duration(days: 1),
+    );
 
-    // ------------------------------------------------------
-    // RESET STREAK IF MORE THAN 48 HOURS
-    // ------------------------------------------------------
+    final yesterdayKey =
+        '${yesterday.year.toString().padLeft(4, '0')}-'
+        '${yesterday.month.toString().padLeft(2, '0')}-'
+        '${yesterday.day.toString().padLeft(2, '0')}';
 
-    if (lastDaily != null) {
-      final hours =
-          now.difference(lastDaily!).inHours;
-
-      if (hours >= 48) {
-        streak = 0;
-      }
-    }
-
-    // ------------------------------------------------------
-    // INCREASE STREAK
-    // ------------------------------------------------------
-
-    if (streak < 7) {
+    if (lastClaimDate == yesterdayKey) {
       streak++;
+    } else {
+      streak = 1;
     }
 
-    final reward = dailyReward;
+    final double reward;
 
-    stl += reward;
-
-    lastDaily = now;
-
-    factDay++;
-
-    if (factDay < 1) {
-      factDay = 1;
+    if (streak >= 7) {
+      reward = 7.0;
+    } else {
+      reward = 1.0;
     }
 
-    // ------------------------------------------------------
-    // SAVE
-    // ------------------------------------------------------
+    setState(() {
+      balance += reward;
+      lastClaimDate = todayKey;
+    });
 
-    await prefs!.setInt(
-      stlKey,
-      stl,
-    );
+    await _saveData();
 
-    await prefs!.setInt(
-      streakKey,
-      streak,
-    );
-
-    await prefs!.setInt(
-      lastDailyKey,
-      now.millisecondsSinceEpoch,
-    );
-
-    await prefs!.setInt(
-      factKey,
-      factDay,
-    );
-
-    _updateTimers();
-
-    if (mounted) {
-      setState(() {});
+    if (!mounted) {
+      return;
     }
 
-    _showMessage(
-      '🐾 +$reward STL!',
-    );
-
-    // Näytetään interstitial vain jos se on valmis.
-    _showInterstitial();
+    if (streak == 7) {
+      _showMessage(
+        '${t.get('sevenDayStreak')}\n${t.get('sevenDayReward')}',
+      );
+    } else {
+      _showMessage(
+        '+${reward.toStringAsFixed(0)} STL! 🐱',
+      );
+    }
   }
-
-  // ========================================================
-  // WATCH AD
-  // ========================================================
 
   Future<void> _watchAd() async {
-    if (showingAd) {
-      return;
+    final t = AppLocalizations(widget.languageCode);
+
+    if (adDate != todayKey) {
+      setState(() {
+        adDate = todayKey;
+        adCount = 0;
+      });
+
+      await _saveData();
     }
 
-    await _checkNewDay();
-
-    if (adsToday >= 5) {
+    if (adCount >= 5) {
       _showMessage(
         t.get('dailyLimitReached'),
       );
       return;
     }
 
-    if (!canAd) {
-      _showMessage(
-        '${t.get('waitMessage')} ${_time(adTimer)}',
-      );
-      return;
-    }
-
-    final ad = rewardedAd;
-
-    if (ad == null) {
+    if (!rewardedAdReady || rewardedAd == null) {
       _showMessage(
         t.get('adLoading'),
       );
@@ -630,261 +320,107 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    rewardedAd = null;
-    showingAd = true;
+    final ad = rewardedAd!;
 
-    if (mounted) {
-      setState(() {});
-    }
+    setState(() {
+      rewardedAd = null;
+      rewardedAdReady = false;
+    });
 
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback(
+    ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
-
-        showingAd = false;
-
-        if (mounted) {
-          setState(() {});
-        }
-
         _loadRewardedAd();
       },
-
-      onAdFailedToShowFullScreenContent:
-          (ad, error) {
+      onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
 
-        showingAd = false;
-
         if (mounted) {
-          setState(() {});
+          _showMessage(
+            t.get('adFailed'),
+          );
         }
-
-        _showMessage(
-          t.get('adFailed'),
-        );
 
         _loadRewardedAd();
       },
     );
 
     ad.show(
-      onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
-        _giveThreeStl();
-      },
-    );
-  }
+      onUserEarnedReward: (ad, reward) async {
+        if (!mounted) {
+          return;
+        }
 
-  // ========================================================
-  // GIVE STL
-  // ========================================================
+        setState(() {
+          balance += 3.0;
+          adCount++;
+          adDate = todayKey;
+        });
 
-  Future<void> _giveThreeStl() async {
-    if (prefs == null) {
-      return;
-    }
+        await _saveData();
 
-    if (adsToday >= 5) {
-      return;
-    }
-
-    final now =
-        DateTime.now().toUtc();
-
-    stl += 3;
-    adsToday++;
-    lastAd = now;
-
-    await prefs!.setInt(
-      stlKey,
-      stl,
-    );
-
-    await prefs!.setInt(
-      adsKey,
-      adsToday,
-    );
-
-    await prefs!.setInt(
-      lastAdKey,
-      now.millisecondsSinceEpoch,
-    );
-
-    _updateTimers();
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    _showMessage(
-      t.get('pointsAdded'),
-    );
-  }
-
-  // ========================================================
-  // LOAD REWARDED
-  // ========================================================
-
-  void _loadRewardedAd() {
-    if (loadingRewarded ||
-        rewardedAd != null) {
-      return;
-    }
-
-    loadingRewarded = true;
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    RewardedAd.load(
-      adUnitId: rewardedAdId,
-      request: const AdRequest(),
-
-      rewardedAdLoadCallback:
-          RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          loadingRewarded = false;
-          rewardedAd = ad;
-
-          if (mounted) {
-            setState(() {});
-          }
-        },
-
-        onAdFailedToLoad: (error) {
-          loadingRewarded = false;
-          rewardedAd = null;
-
-          if (mounted) {
-            setState(() {});
-          }
-
-          Future.delayed(
-            const Duration(seconds: 5),
-            () {
-              if (mounted) {
-                _loadRewardedAd();
-              }
-            },
+        if (mounted) {
+          _showMessage(
+            t.get('pointsAdded'),
           );
-        },
-      ),
-    );
-  }
-
-  // ========================================================
-  // LOAD INTERSTITIAL
-  // ========================================================
-
-  void _loadInterstitialAd() {
-    if (loadingInterstitial ||
-        interstitialAd != null) {
-      return;
-    }
-
-    loadingInterstitial = true;
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    InterstitialAd.load(
-      adUnitId: interstitialAdId,
-      request: const AdRequest(),
-
-      adLoadCallback:
-          InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          loadingInterstitial = false;
-          interstitialAd = ad;
-
-          if (mounted) {
-            setState(() {});
-          }
-        },
-
-        onAdFailedToLoad: (error) {
-          loadingInterstitial = false;
-          interstitialAd = null;
-
-          if (mounted) {
-            setState(() {});
-          }
-
-          Future.delayed(
-            const Duration(seconds: 5),
-            () {
-              if (mounted) {
-                _loadInterstitialAd();
-              }
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  // ========================================================
-  // SHOW INTERSTITIAL
-  // ========================================================
-
-  void _showInterstitial() {
-    final ad = interstitialAd;
-
-    if (ad == null) {
-      _loadInterstitialAd();
-      return;
-    }
-
-    interstitialAd = null;
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback(
-      onAdDismissedFullScreenContent:
-          (ad) {
-        ad.dispose();
-        _loadInterstitialAd();
-      },
-
-      onAdFailedToShowFullScreenContent:
-          (ad, error) {
-        ad.dispose();
-        _loadInterstitialAd();
+        }
       },
     );
-
-    ad.show();
   }
 
-  // ========================================================
-  // MESSAGE
-  // ========================================================
+  Future<void> _resetTestData() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  void _showMessage(String text) {
+    await prefs.remove('balance');
+    await prefs.remove('streak');
+    await prefs.remove('lastClaimDate');
+    await prefs.remove('adCount');
+    await prefs.remove('adDate');
+
+    setState(() {
+      balance = 0.0;
+      streak = 0;
+      adCount = 0;
+      lastClaimDate = '';
+      adDate = todayKey;
+    });
+
+    _showMessage('Testidata nollattu');
+  }
+
+  void _showMessage(String message) {
     if (!mounted) {
       return;
     }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-          duration:
-              const Duration(seconds: 2),
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
         ),
-      );
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
-  // ========================================================
-  // BUILD
-  // ========================================================
+  void _nextFact() {
+    setState(() {
+      factIndex++;
+
+      if (factIndex >= catFacts.length) {
+        factIndex = 0;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations(widget.languageCode);
+
     if (loading) {
       return const Scaffold(
         body: Center(
@@ -893,58 +429,76 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
+    final bool claimedToday = lastClaimDate == todayKey;
+
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFF101720),
         title: Text(
-          t.get('appTitle').toUpperCase(),
+          t.get('appTitle'),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
           ),
         ),
-
-        centerTitle: true,
-
         actions: [
           IconButton(
-            tooltip: t.get('settings'),
-            icon: const Icon(
-              Icons.settings,
-            ),
-            onPressed: _openSettings,
+            tooltip: t.get('language'),
+            onPressed: _showLanguageDialog,
+            icon: const Icon(Icons.language),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'reset') {
+                _resetTestData();
+              }
+            },
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                  value: 'reset',
+                  child: Text(t.get('wait')),
+                ),
+              ];
+            },
           ),
         ],
       ),
-
-      body: SafeArea(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _loadData();
+        },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _stellaCard(),
+            _buildHeader(t),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
 
-            _balanceCard(),
+            _buildBalanceCard(t),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            _dailyCard(),
+            _buildDailyCard(
+              t,
+              claimedToday,
+            ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            _adCard(),
+            _buildAdCard(t),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            _factCard(),
+            _buildStatsCard(t),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            _statsCard(),
+            _buildStellaCard(t),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            _infoCard(),
+            _buildInfoCard(t),
 
             const SizedBox(height: 30),
           ],
@@ -953,67 +507,50 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ========================================================
-  // STELLA CARD
-  // ========================================================
+  Widget _buildHeader(AppLocalizations t) {
+    final languageName =
+        AppLocalizations.supportedLanguages[widget.languageCode] ??
+            '🇫🇮 Suomi';
 
-  Widget _stellaCard() {
     return Card(
-      clipBehavior: Clip.antiAlias,
+      color: const Color(0xFF101720),
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+        padding: const EdgeInsets.all(18),
+        child: Row(
           children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/stella.jpg',
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-
-                errorBuilder:
-                    (context, error, stackTrace) {
-                  return const CircleAvatar(
-                    radius: 60,
-                    child: Icon(
-                      Icons.pets,
-                      size: 55,
+            const CircleAvatar(
+              radius: 30,
+              backgroundColor: Color(0xFF1D3D42),
+              child: Text(
+                '🐱',
+                style: TextStyle(fontSize: 30),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.get('appTitle'),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    languageName,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 14),
-
-            const Text(
-              'STELLURIINI',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-
-            const SizedBox(height: 5),
-
-            const Text(
-              'STL',
-              style: TextStyle(
-                color: Colors.white60,
-                fontSize: 16,
-              ),
-            ),
-
-            const SizedBox(height: 7),
-
-            Text(
-              t.get('stella'),
-              style: const TextStyle(
-                color: Color(0xFF35D0A0),
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+            IconButton(
+              onPressed: _showLanguageDialog,
+              icon: const Icon(Icons.translate),
             ),
           ],
         ),
@@ -1021,12 +558,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ========================================================
-  // BALANCE
-  // ========================================================
-
-  Widget _balanceCard() {
+  Widget _buildBalanceCard(AppLocalizations t) {
     return Card(
+      color: const Color(0xFF12322F),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -1034,336 +568,24 @@ class _HomePageState extends State<HomePage> {
             Text(
               t.get('yourBalance'),
               style: const TextStyle(
-                color: Colors.white60,
-                letterSpacing: 2,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              '$stl',
-              style: const TextStyle(
-                fontSize: 50,
+                color: Colors.white70,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF35D0A0),
+                letterSpacing: 1.2,
               ),
             ),
-
+            const SizedBox(height: 12),
+            Text(
+              '${balance.toStringAsFixed(2)} STL',
+              style: const TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4DE3C1),
+              ),
+            ),
+            const SizedBox(height: 8),
             const Text(
-              'STL',
+              'Virtual in-app points',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ========================================================
-  // DAILY CARD
-  // ========================================================
-
-  Widget _dailyCard() {
-    final int currentDay =
-        streak >= 7 ? 7 : streak + 1;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.card_giftcard,
-                  color: Color(0xFF35D0A0),
-                  size: 30,
-                ),
-
-                const SizedBox(width: 10),
-
-                Expanded(
-                  child: Text(
-                    t.get('dailyClaim'),
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              streak >= 7
-                  ? t.get('sevenDayStreak')
-                  : '${t.get('day')} $currentDay / 7',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            Row(
-              children:
-                  List.generate(7, (index) {
-                final int day = index + 1;
-
-                final bool completed =
-                    streak >= day;
-
-                final bool today =
-                    !completed &&
-                        day == currentDay;
-
-                return Expanded(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 2,
-                    ),
-                    child: Container(
-                      height: 82,
-
-                      decoration:
-                          BoxDecoration(
-                        borderRadius:
-                            BorderRadius.circular(
-                          12,
-                        ),
-
-                        border: Border.all(
-                          color: today ||
-                                  completed
-                              ? const Color(
-                                  0xFF35D0A0,
-                                )
-                              : Colors.white12,
-
-                          width:
-                              today ? 2 : 1,
-                        ),
-
-                        color: today
-                            ? const Color(
-                                0xFF35D0A0,
-                              ).withValues(
-                                alpha: 0.18,
-                              )
-                            : completed
-                                ? const Color(
-                                    0xFF35D0A0,
-                                  ).withValues(
-                                    alpha: 0.10,
-                                  )
-                                : Colors.white
-                                    .withValues(
-                                    alpha: 0.04,
-                                  ),
-                      ),
-
-                      child: Column(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            completed
-                                ? '✓'
-                                : today
-                                    ? '🎁'
-                                    : '🔒',
-                            style:
-                                const TextStyle(
-                              fontSize: 20,
-                            ),
-                          ),
-
-                          const SizedBox(height: 3),
-
-                          Text(
-                            '${t.get('day')} $day',
-                            style:
-                                TextStyle(
-                              fontSize: 9,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color: today
-                                  ? Colors.white
-                                  : Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-
-            const SizedBox(height: 16),
-
-            Container(
-              padding:
-                  const EdgeInsets.all(14),
-
-              decoration:
-                  BoxDecoration(
-                borderRadius:
-                    BorderRadius.circular(14),
-
-                color:
-                    const Color(0xFF35D0A0)
-                        .withValues(
-                  alpha: 0.10,
-                ),
-              ),
-
-              child: Column(
-                children: [
-                  Text(
-                    streak >= 7
-                        ? '🔥 7+ ${t.get('streak')}'
-                        : t.get('dailyReward'),
-                    style:
-                        const TextStyle(
-                      color:
-                          Color(0xFF35D0A0),
-                      fontWeight:
-                          FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    '$dailyReward STL',
-                    style:
-                        const TextStyle(
-                      fontSize: 26,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  if (streak >= 7)
-                    Text(
-                      t.get(
-                        'sevenDayReward',
-                      ),
-                      textAlign:
-                          TextAlign.center,
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            if (!canDaily) ...[
-              const SizedBox(height: 14),
-
-              Text(
-                t.get('nextClaim'),
-                textAlign:
-                    TextAlign.center,
-                style:
-                    const TextStyle(
-                  color: Colors.white54,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                _time(dailyTimer),
-                textAlign:
-                    TextAlign.center,
-                style:
-                    const TextStyle(
-                  fontSize: 28,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-            ],
-
-            const SizedBox(height: 14),
-
-            SizedBox(
-              height: 58,
-              child: ElevatedButton.icon(
-                onPressed:
-                    canDaily
-                        ? _claimDaily
-                        : null,
-
-                icon: const Icon(
-                  Icons.card_giftcard,
-                  size: 27,
-                ),
-
-                label: Text(
-                  canDaily
-                      ? '${t.get('dailyClaim')} +$dailyReward STL'
-                      : t.get('claimed'),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Text(
-              '🎁 ${t.get('day')} 1 → 1 STL\n'
-              '🎁 ${t.get('day')} 2 → 2 STL\n'
-              '🎁 ${t.get('day')} 3 → 3 STL\n'
-              '🎁 ${t.get('day')} 4 → 4 STL\n'
-              '🎁 ${t.get('day')} 5 → 5 STL\n'
-              '🎁 ${t.get('day')} 6 → 6 STL\n'
-              '🎁 ${t.get('day')} 7 → 7 STL',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              t.get('sevenDayReward'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF35D0A0),
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              t.get('dailyAd'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
                 color: Colors.white54,
                 fontSize: 12,
               ),
@@ -1374,125 +596,26 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ========================================================
-  // AD CARD
-  // ========================================================
-
-  Widget _adCard() {
-    String buttonText;
-
-    if (adsToday >= 5) {
-      buttonText =
-          t.get('dailyLimit');
-    } else if (!canAd) {
-      buttonText =
-          '${t.get('wait')} ${_time(adTimer)}';
-    } else if (rewardedAd == null) {
-      buttonText =
-          t.get('loadingAd');
-    } else {
-      buttonText =
-          'WATCH AD +3 STL';
-    }
-
+  Widget _buildDailyCard(
+    AppLocalizations t,
+    bool claimedToday,
+  ) {
     return Card(
+      color: const Color(0xFF161C26),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 const Icon(
-                  Icons.ondemand_video,
-                  color: Color(0xFF35D0A0),
+                  Icons.card_giftcard,
+                  color: Color(0xFFFFD166),
                 ),
-
                 const SizedBox(width: 10),
-
-                Text(
-                  t.get('watchEarn'),
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Text(
-              t.get('watchAdReward'),
-              style: const TextStyle(
-                color: Colors.white70,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              '${t.get('today')}: $adsToday / 5',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            SizedBox(
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed:
-                    canAd &&
-                            rewardedAd != null &&
-                            !showingAd
-                        ? _watchAd
-                        : null,
-
-                icon: const Icon(
-                  Icons.play_arrow,
-                ),
-
-                label: Text(
-                  buttonText,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ========================================================
-  // FACT CARD
-  // ========================================================
-
-  Widget _factCard() {
-    final factNumber =
-        ((factDay - 1) % catFacts.length) + 1;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.pets,
-                  color: Color(0xFF35D0A0),
-                ),
-
-                const SizedBox(width: 10),
-
                 Expanded(
                   child: Text(
-                    t.get('stellaFacts'),
+                    t.get('dailyClaim'),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1501,24 +624,30 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
-
             Text(
-              '${t.get('day')} $factNumber / ${catFacts.length}',
+              t.get('dailyAd'),
               style: const TextStyle(
-                color: Color(0xFF35D0A0),
-                fontWeight: FontWeight.bold,
+                color: Colors.white70,
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              currentFact,
-              style: const TextStyle(
-                fontSize: 17,
-                height: 1.45,
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: claimedToday
+                    ? null
+                    : _claimDailyReward,
+                icon: Icon(
+                  claimedToday
+                      ? Icons.check_circle
+                      : Icons.card_giftcard,
+                ),
+                label: Text(
+                  claimedToday
+                      ? t.get('claimed')
+                      : t.get('dailyReward'),
+                ),
               ),
             ),
           ],
@@ -1527,153 +656,326 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ========================================================
-  // STATS
-  // ========================================================
+  Widget _buildAdCard(AppLocalizations t) {
+    final bool limitReached = adCount >= 5;
 
-  Widget _statsCard() {
+    String buttonText;
+
+    if (limitReached) {
+      buttonText = '${t.get('dailyLimit')} 5/5';
+    } else if (rewardedAdReady) {
+      buttonText = '${t.get('watchEarn')} +3 STL';
+    } else {
+      buttonText = t.get('loadingAd');
+    }
+
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  const Text(
-                    'STL',
-                    style: TextStyle(
-                      color: Colors.white54,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    '$stl',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    t.get('streak'),
-                    style: const TextStyle(
-                      color: Colors.white54,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    streak >= 7
-                        ? '7+'
-                        : '$streak / 7',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    t.get('ads'),
-                    style: const TextStyle(
-                      color: Colors.white54,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    '$adsToday / 5',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ========================================================
-  // INFO
-  // ========================================================
-
-  Widget _infoCard() {
-    return Card(
+      color: const Color(0xFF161C26),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.play_circle_fill,
+                  color: Color(0xFF54A8FF),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.get('watchEarn'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$adCount/5',
+                  style: const TextStyle(
+                    color: Color(0xFF54A8FF),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              t.get('watchAdReward'),
+              style: const TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: limitReached
+                    ? null
+                    : _watchAd,
+                icon: rewardedAdReady
+                    ? const Icon(Icons.play_arrow)
+                    : const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                label: Text(buttonText),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(AppLocalizations t) {
+    return Card(
+      color: const Color(0xFF161C26),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
           children: [
             Text(
-              t.get('info'),
+              t.get('stats'),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _statItem(
+                    Icons.local_fire_department,
+                    t.get('streak'),
+                    '$streak',
+                    const Color(0xFFFF8C42),
+                  ),
+                ),
+                Expanded(
+                  child: _statItem(
+                    Icons.play_circle_outline,
+                    t.get('ads'),
+                    '$adCount/5',
+                    const Color(0xFF54A8FF),
+                  ),
+                ),
+                Expanded(
+                  child: _statItem(
+                    Icons.today,
+                    t.get('today'),
+                    lastClaimDate == todayKey ? '✓' : '—',
+                    const Color(0xFF4DE3C1),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 8),
+  Widget _statItem(
+    IconData icon,
+    String title,
+    String value,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: color,
+          size: 28,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white60,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildStellaCard(AppLocalizations t) {
+    return Card(
+      color: const Color(0xFF1B2533),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          children: [
+            Text(
+              t.get('stella'),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              t.get('stellaFacts'),
+              style: const TextStyle(
+                color: Color(0xFF4DE3C1),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              catFacts[factIndex],
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _nextFact,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Next'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(AppLocalizations t) {
+    return Card(
+      color: const Color(0xFF161C26),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  color: Color(0xFF4DE3C1),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  t.get('info'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             Text(
               t.get('solanaToken'),
               style: const TextStyle(
                 color: Colors.white70,
+                height: 1.5,
               ),
             ),
-
             const SizedBox(height: 12),
-
             Text(
               t.get('stellaCompany'),
               style: const TextStyle(
-                color: Color(0xFF35D0A0),
+                color: Colors.white70,
+                height: 1.5,
               ),
             ),
-
-            if (stelluriiniMint.isNotEmpty) ...[
-              const SizedBox(height: 14),
-
-              const Text(
-                'Mint Address',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              SelectableText(
-                stelluriiniMint,
-              ),
-            ],
           ],
         ),
       ),
+    );
+  }
+
+  void _showLanguageDialog() {
+    final t = AppLocalizations(widget.languageCode);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF161C26),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  t.get('selectLanguage'),
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children:
+                        AppLocalizations.supportedLanguages.entries.map(
+                      (entry) {
+                        final bool selected =
+                            entry.key == widget.languageCode;
+
+                        return ListTile(
+                          leading: Icon(
+                            selected
+                                ? Icons.check_circle
+                                : Icons.language,
+                            color: selected
+                                ? const Color(0xFF4DE3C1)
+                                : Colors.white54,
+                          ),
+                          title: Text(
+                            entry.value,
+                            style: TextStyle(
+                              fontWeight: selected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          onTap: () async {
+                            Navigator.pop(context);
+
+                            await widget.onLanguageChanged(
+                              entry.key,
+                            );
+
+                            if (mounted) {
+                              final newT =
+                                  AppLocalizations(entry.key);
+
+                              _showMessage(
+                                newT.get('languageChanged'),
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
