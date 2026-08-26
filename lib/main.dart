@@ -1,13 +1,18 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_localizations.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   await MobileAds.instance.initialize();
 
@@ -80,7 +85,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
           brightness: Brightness.dark,
         ),
       ),
-      home: HomePage(
+      home: AuthGate(
         languageCode: languageCode,
         onLanguageChanged: _changeLanguage,
       ),
@@ -88,9 +93,318 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
   }
 }
 
+// ============================================================
+// FIREBASE AUTH GATE
+// ============================================================
+
+class AuthGate extends StatelessWidget {
+  final String languageCode;
+  final Future<void> Function(String) onLanguageChanged;
+
+  const AuthGate({
+    super.key,
+    required this.languageCode,
+    required this.onLanguageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasData) {
+          return HomePage(
+            languageCode: languageCode,
+            onLanguageChanged: onLanguageChanged,
+          );
+        }
+
+        return LoginPage(
+          languageCode: languageCode,
+        );
+      },
+    );
+  }
+}
+
+// ============================================================
+// LOGIN PAGE
+// ============================================================
+
+class LoginPage extends StatefulWidget {
+  final String languageCode;
+
+  const LoginPage({
+    super.key,
+    required this.languageCode,
+  });
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool loading = false;
+  bool registerMode = false;
+  bool hidePassword = true;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage('Syötä sähköposti ja salasana.');
+      return;
+    }
+
+    if (password.length < 6) {
+      _showMessage('Salasanassa pitää olla vähintään 6 merkkiä.');
+      return;
+    }
+
+    setState(() {
+      loading = true;
+    });
+
+    try {
+      if (registerMode) {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } else {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      _showMessage(_firebaseErrorMessage(e));
+    } catch (_) {
+      _showMessage('Tapahtui odottamaton virhe.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  String _firebaseErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-email':
+        return 'Sähköpostiosoite ei ole kelvollinen.';
+
+      case 'user-not-found':
+        return 'Käyttäjää ei löytynyt.';
+
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Sähköposti tai salasana on väärä.';
+
+      case 'email-already-in-use':
+        return 'Tämä sähköpostiosoite on jo käytössä.';
+
+      case 'weak-password':
+        return 'Salasana on liian heikko.';
+
+      case 'network-request-failed':
+        return 'Tarkista internet-yhteytesi.';
+
+      default:
+        return 'Kirjautuminen epäonnistui.';
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isRegister = registerMode;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF101720),
+        title: const Text(
+          'Stelluriini',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Card(
+              color: const Color(0xFF161C26),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircleAvatar(
+                      radius: 48,
+                      backgroundColor: Color(0xFF12322F),
+                      child: Text(
+                        '🐱',
+                        style: TextStyle(fontSize: 50),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'STELLURIINI',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4DE3C1),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isRegister
+                          ? 'Luo uusi käyttäjätili'
+                          : 'Kirjaudu sisään',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [
+                        AutofillHints.email,
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Sähköposti',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: passwordController,
+                      obscureText: hidePassword,
+                      autofillHints: isRegister
+                          ? const [AutofillHints.newPassword]
+                          : const [AutofillHints.password],
+                      decoration: InputDecoration(
+                        labelText: 'Salasana',
+                        prefixIcon: const Icon(Icons.lock),
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            hidePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              hidePassword = !hidePassword;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: loading ? null : _submit,
+                        icon: loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                isRegister
+                                    ? Icons.person_add
+                                    : Icons.login,
+                              ),
+                        label: Text(
+                          isRegister
+                              ? 'LUO KÄYTTÄJÄTILI'
+                              : 'KIRJAUDU SISÄÄN',
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextButton(
+                      onPressed: loading
+                          ? null
+                          : () {
+                              setState(() {
+                                registerMode = !registerMode;
+                              });
+                            },
+                      child: Text(
+                        isRegister
+                            ? 'Onko sinulla jo tili? Kirjaudu sisään'
+                            : 'Ei vielä tiliä? Luo käyttäjätili',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// HOME PAGE
+// ============================================================
+
 class HomePage extends StatefulWidget {
   final String languageCode;
-  final Future<void> Function(String languageCode) onLanguageChanged;
+  final Future<void> Function(String) onLanguageChanged;
 
   const HomePage({
     super.key,
@@ -114,12 +428,21 @@ class _HomePageState extends State<HomePage> {
   bool loading = true;
   bool rewardedAdReady = false;
   bool adLoading = false;
-  bool adShowing = false;
 
   RewardedAd? rewardedAd;
 
   static const String rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
+
+  final List<String> catFacts = [
+    '🐱 Kissat nukkuvat jopa 12–16 tuntia päivässä.',
+    '🐱 Kissalla on erittäin hyvä kuulo.',
+    '🐱 Kissan viikset auttavat sitä arvioimaan tilaa.',
+    '🐱 Kissat voivat kehrätä monista eri syistä.',
+    '🐱 Kissan nenän kuvio on yksilöllinen.',
+    '🐱 Kissat käyttävät häntäänsä tasapainon ylläpitämiseen.',
+    '🐱 Stella on Stelluriinin inspiraation lähde!',
+  ];
 
   int factIndex = 0;
 
@@ -130,6 +453,17 @@ class _HomePageState extends State<HomePage> {
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
   }
+
+  String get _userPrefix {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    return 'user_$uid';
+  }
+
+  String get _balanceKey => '${_userPrefix}_balance';
+  String get _streakKey => '${_userPrefix}_streak';
+  String get _lastClaimKey => '${_userPrefix}_lastClaimDate';
+  String get _adDateKey => '${_userPrefix}_adDate';
+  String get _adCountKey => '${_userPrefix}_adCount';
 
   @override
   void initState() {
@@ -146,21 +480,19 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final savedBalance = prefs.getDouble('balance') ?? 0.0;
-    final savedStreak = prefs.getInt('streak') ?? 0;
-    final savedClaimDate = prefs.getString('lastClaimDate') ?? '';
-    final savedAdDate = prefs.getString('adDate') ?? '';
-    final savedAdCount = prefs.getInt('adCount') ?? 0;
+    final savedBalance = prefs.getDouble(_balanceKey) ?? 0.0;
+    final savedStreak = prefs.getInt(_streakKey) ?? 0;
+    final savedClaimDate = prefs.getString(_lastClaimKey) ?? '';
+    final savedAdDate = prefs.getString(_adDateKey) ?? '';
+    final savedAdCount = prefs.getInt(_adCountKey) ?? 0;
 
     int currentAdCount = savedAdCount;
-    String currentAdDate = savedAdDate;
 
-    if (currentAdDate != todayKey) {
+    if (savedAdDate != todayKey) {
       currentAdCount = 0;
-      currentAdDate = todayKey;
 
-      await prefs.setString('adDate', currentAdDate);
-      await prefs.setInt('adCount', currentAdCount);
+      await prefs.setString(_adDateKey, todayKey);
+      await prefs.setInt(_adCountKey, 0);
     }
 
     if (!mounted) return;
@@ -169,7 +501,7 @@ class _HomePageState extends State<HomePage> {
       balance = savedBalance;
       streak = savedStreak;
       lastClaimDate = savedClaimDate;
-      adDate = currentAdDate;
+      adDate = todayKey;
       adCount = currentAdCount;
       loading = false;
     });
@@ -180,17 +512,15 @@ class _HomePageState extends State<HomePage> {
   Future<void> _saveData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setDouble('balance', balance);
-    await prefs.setInt('streak', streak);
-    await prefs.setString('lastClaimDate', lastClaimDate);
-    await prefs.setString('adDate', adDate);
-    await prefs.setInt('adCount', adCount);
+    await prefs.setDouble(_balanceKey, balance);
+    await prefs.setInt(_streakKey, streak);
+    await prefs.setString(_lastClaimKey, lastClaimDate);
+    await prefs.setString(_adDateKey, adDate);
+    await prefs.setInt(_adCountKey, adCount);
   }
 
   Future<void> _loadRewardedAd() async {
-    if (adLoading || rewardedAdReady || adShowing) {
-      return;
-    }
+    if (adLoading || rewardedAdReady) return;
 
     if (mounted) {
       setState(() {
@@ -203,12 +533,12 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          rewardedAd = ad;
+
           if (!mounted) {
             ad.dispose();
             return;
           }
-
-          rewardedAd = ad;
 
           setState(() {
             rewardedAdReady = true;
@@ -226,11 +556,7 @@ class _HomePageState extends State<HomePage> {
 
           Future.delayed(
             const Duration(seconds: 5),
-            () {
-              if (mounted && !adShowing) {
-                _loadRewardedAd();
-              }
-            },
+            _loadRewardedAd,
           );
         },
       ),
@@ -254,15 +580,18 @@ class _HomePageState extends State<HomePage> {
         '${yesterday.month.toString().padLeft(2, '0')}-'
         '${yesterday.day.toString().padLeft(2, '0')}';
 
+    int newStreak;
+
     if (lastClaimDate == yesterdayKey) {
-      streak++;
+      newStreak = streak + 1;
     } else {
-      streak = 1;
+      newStreak = 1;
     }
 
-    final double reward = streak >= 7 ? 7.0 : 1.0;
+    final double reward = newStreak >= 7 ? 7.0 : 1.0;
 
     setState(() {
+      streak = newStreak;
       balance += reward;
       lastClaimDate = todayKey;
     });
@@ -271,21 +600,11 @@ class _HomePageState extends State<HomePage> {
 
     if (!mounted) return;
 
-    if (streak == 7) {
-      _showMessage(
-        '${t.get('sevenDayStreak')}\n${t.get('sevenDayReward')}',
-      );
-    } else {
-      _showMessage('+${reward.toStringAsFixed(0)} STL! 🐱');
-    }
+    _showMessage('+${reward.toStringAsFixed(0)} STL! 🐱');
   }
 
   Future<void> _watchAd() async {
     final t = AppLocalizations(widget.languageCode);
-
-    if (adShowing) {
-      return;
-    }
 
     if (adDate != todayKey) {
       setState(() {
@@ -312,80 +631,59 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       rewardedAd = null;
       rewardedAdReady = false;
-      adShowing = true;
     });
 
-    ad.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (ad) {},
+    bool rewardEarned = false;
 
+    ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
-
-        if (!mounted) return;
-
-        setState(() {
-          adShowing = false;
-        });
-
         _loadRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
 
-        if (!mounted) return;
-
-        setState(() {
-          adShowing = false;
-        });
-
-        _showMessage(t.get('adFailed'));
+        if (mounted) {
+          _showMessage(t.get('adFailed'));
+        }
 
         _loadRewardedAd();
       },
     );
 
-    try {
-      await ad.show(
-        onUserEarnedReward: (adWithoutView, reward) async {
-          if (!mounted) return;
+    ad.show(
+      onUserEarnedReward: (adWithoutView, reward) async {
+        if (rewardEarned || !mounted) return;
 
-          if (adCount >= 5) return;
+        rewardEarned = true;
 
-          setState(() {
-            balance += 3.0;
-            adCount++;
-            adDate = todayKey;
-          });
+        setState(() {
+          balance += 3.0;
+          adCount++;
+          adDate = todayKey;
+        });
 
-          await _saveData();
+        await _saveData();
 
-          if (!mounted) return;
+        if (mounted) {
+          _showMessage('+3 STL! 🐱');
+        }
+      },
+    );
+  }
 
-          _showMessage(t.get('pointsAdded'));
-        },
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        adShowing = false;
-      });
-
-      _showMessage(t.get('adFailed'));
-
-      _loadRewardedAd();
-    }
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
   }
 
   Future<void> _resetTestData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.remove('balance');
-    await prefs.remove('streak');
-    await prefs.remove('lastClaimDate');
-    await prefs.remove('adCount');
-    await prefs.remove('adDate');
+    await prefs.remove(_balanceKey);
+    await prefs.remove(_streakKey);
+    await prefs.remove(_lastClaimKey);
+    await prefs.remove(_adDateKey);
+    await prefs.remove(_adCountKey);
 
     if (!mounted) return;
 
@@ -412,159 +710,13 @@ class _HomePageState extends State<HomePage> {
           textAlign: TextAlign.center,
         ),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  List<String> _getCatFacts(AppLocalizations t) {
-    switch (widget.languageCode) {
-      case 'en':
-        return [
-          '🐱 Cats can sleep 12–16 hours a day.',
-          '🐱 Cats have excellent hearing.',
-          '🐱 Whiskers help cats measure spaces.',
-          '🐱 Cats can purr for many different reasons.',
-          '🐱 Every cat has a unique nose pattern.',
-          '🐱 Cats use their tails to maintain balance.',
-          '🐱 Stella is the inspiration behind Stelluriini!',
-        ];
-
-      case 'sv':
-        return [
-          '🐱 Katter kan sova 12–16 timmar om dagen.',
-          '🐱 Katter har mycket bra hörsel.',
-          '🐱 Morrhår hjälper katter att bedöma utrymmen.',
-          '🐱 Katter kan spinna av många olika orsaker.',
-          '🐱 Varje katt har ett unikt nosmönster.',
-          '🐱 Katter använder svansen för balansen.',
-          '🐱 Stella är inspirationen bakom Stelluriini!',
-        ];
-
-      case 'de':
-        return [
-          '🐱 Katzen können 12–16 Stunden am Tag schlafen.',
-          '🐱 Katzen haben ein ausgezeichnetes Gehör.',
-          '🐱 Schnurrhaare helfen Katzen, Räume einzuschätzen.',
-          '🐱 Katzen können aus vielen Gründen schnurren.',
-          '🐱 Jede Katze hat ein einzigartiges Nasenmuster.',
-          '🐱 Katzen benutzen ihren Schwanz für das Gleichgewicht.',
-          '🐱 Stella ist die Inspiration hinter Stelluriini!',
-        ];
-
-      case 'es':
-        return [
-          '🐱 Los gatos pueden dormir entre 12 y 16 horas al día.',
-          '🐱 Los gatos tienen un oído excelente.',
-          '🐱 Los bigotes ayudan a medir los espacios.',
-          '🐱 Los gatos pueden ronronear por muchas razones.',
-          '🐱 Cada gato tiene un patrón de nariz único.',
-          '🐱 Los gatos usan la cola para mantener el equilibrio.',
-          '🐱 ¡Stella es la inspiración de Stelluriini!',
-        ];
-
-      case 'fr':
-        return [
-          '🐱 Les chats peuvent dormir 12 à 16 heures par jour.',
-          '🐱 Les chats ont une excellente audition.',
-          '🐱 Les moustaches aident les chats à mesurer les espaces.',
-          '🐱 Les chats peuvent ronronner pour différentes raisons.',
-          '🐱 Chaque chat possède un motif de nez unique.',
-          '🐱 Les chats utilisent leur queue pour garder l’équilibre.',
-          '🐱 Stella est l’inspiration derrière Stelluriini !',
-        ];
-
-      case 'it':
-        return [
-          '🐱 I gatti possono dormire 12–16 ore al giorno.',
-          '🐱 I gatti hanno un udito eccellente.',
-          '🐱 I baffi aiutano i gatti a valutare gli spazi.',
-          '🐱 I gatti possono fare le fusa per molte ragioni.',
-          '🐱 Ogni gatto ha un disegno del naso unico.',
-          '🐱 I gatti usano la coda per mantenere l’equilibrio.',
-          '🐱 Stella è l’ispirazione dietro Stelluriini!',
-        ];
-
-      case 'pt':
-        return [
-          '🐱 Os gatos podem dormir 12–16 horas por dia.',
-          '🐱 Os gatos têm uma audição excelente.',
-          '🐱 Os bigodes ajudam os gatos a avaliar espaços.',
-          '🐱 Os gatos podem ronronar por muitos motivos.',
-          '🐱 Cada gato tem um padrão de nariz único.',
-          '🐱 Os gatos usam a cauda para manter o equilíbrio.',
-          '🐱 Stella é a inspiração por trás do Stelluriini!',
-        ];
-
-      case 'ja':
-        return [
-          '🐱 猫は1日に12〜16時間眠ることがあります。',
-          '🐱 猫はとても優れた聴覚を持っています。',
-          '🐱 猫のひげは空間を判断するのに役立ちます。',
-          '🐱 猫はさまざまな理由でゴロゴロ鳴きます。',
-          '🐱 猫の鼻の模様はそれぞれ異なります。',
-          '🐱 猫は尻尾を使ってバランスを取ります。',
-          '🐱 StellaはStelluriiniのインスピレーションです！',
-        ];
-
-      case 'zh':
-        return [
-          '🐱 猫每天可以睡12到16个小时。',
-          '🐱 猫拥有非常出色的听力。',
-          '🐱 猫的胡须可以帮助判断空间。',
-          '🐱 猫会因为不同原因发出呼噜声。',
-          '🐱 每只猫的鼻子纹路都是独特的。',
-          '🐱 猫使用尾巴保持平衡。',
-          '🐱 Stella 是 Stelluriini 的灵感来源！',
-        ];
-
-      default:
-        return [
-          '🐱 Kissat nukkuvat jopa 12–16 tuntia päivässä.',
-          '🐱 Kissalla on erittäin hyvä kuulo.',
-          '🐱 Kissan viikset auttavat sitä arvioimaan tilaa.',
-          '🐱 Kissat voivat kehrätä monista eri syistä.',
-          '🐱 Kissan nenän kuvio on yksilöllinen.',
-          '🐱 Kissat käyttävät häntäänsä tasapainon ylläpitämiseen.',
-          '🐱 Stella on Stelluriinin inspiraation lähde!',
-        ];
-    }
-  }
-
-  String _nextButtonText() {
-    switch (widget.languageCode) {
-      case 'en':
-        return 'Next';
-      case 'sv':
-        return 'Nästa';
-      case 'de':
-        return 'Weiter';
-      case 'es':
-        return 'Siguiente';
-      case 'fr':
-        return 'Suivant';
-      case 'it':
-        return 'Avanti';
-      case 'pt':
-        return 'Próximo';
-      case 'ja':
-        return '次へ';
-      case 'zh':
-        return '下一个';
-      default:
-        return 'Seuraava';
-    }
-  }
-
   void _nextFact() {
-    final facts = _getCatFacts(AppLocalizations(widget.languageCode));
-
     setState(() {
-      factIndex++;
-
-      if (factIndex >= facts.length) {
-        factIndex = 0;
-      }
+      factIndex = (factIndex + 1) % catFacts.length;
     });
   }
 
@@ -580,7 +732,8 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final bool claimedToday = lastClaimDate == todayKey;
+    final claimedToday = lastClaimDate == todayKey;
+    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -594,21 +747,42 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            tooltip: t.get('language'),
+            tooltip: 'Kieli',
             onPressed: _showLanguageDialog,
             icon: const Icon(Icons.language),
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
+              if (value == 'logout') {
+                _signOut();
+              }
+
               if (value == 'reset') {
                 _resetTestData();
               }
             },
             itemBuilder: (context) {
-              return [
-                const PopupMenuItem(
+              return const [
+                PopupMenuItem(
                   value: 'reset',
-                  child: Text('Nollaa testidata'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh),
+                      SizedBox(width: 10),
+                      Text('Nollaa testidata'),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout),
+                      SizedBox(width: 10),
+                      Text('Kirjaudu ulos'),
+                    ],
+                  ),
                 ),
               ];
             },
@@ -620,19 +794,32 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildHeader(t),
+            _buildHeader(t, user),
+
             const SizedBox(height: 20),
+
             _buildBalanceCard(t),
+
             const SizedBox(height: 16),
+
             _buildDailyCard(t, claimedToday),
+
             const SizedBox(height: 16),
+
             _buildAdCard(t),
+
             const SizedBox(height: 16),
+
             _buildStatsCard(t),
+
             const SizedBox(height: 16),
+
             _buildStellaCard(t),
+
             const SizedBox(height: 16),
+
             _buildInfoCard(t),
+
             const SizedBox(height: 30),
           ],
         ),
@@ -640,7 +827,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHeader(AppLocalizations t) {
+  Widget _buildHeader(AppLocalizations t, User? user) {
     final languageName =
         AppLocalizations.supportedLanguages[widget.languageCode] ??
             '🇫🇮 Suomi';
@@ -673,9 +860,19 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    languageName,
+                    user?.email ?? languageName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    languageName,
+                    style: const TextStyle(
+                      color: Color(0xFF4DE3C1),
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -715,6 +912,14 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xFF4DE3C1),
               ),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              'Virtual in-app points',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),
@@ -749,6 +954,13 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Text(
+              t.get('dailyAd'),
+              style: const TextStyle(
+                color: Colors.white70,
+              ),
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -773,14 +985,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildAdCard(AppLocalizations t) {
-    final bool limitReached = adCount >= 5;
+    final limitReached = adCount >= 5;
 
     String buttonText;
 
     if (limitReached) {
       buttonText = '${t.get('dailyLimit')} 5/5';
-    } else if (adShowing) {
-      buttonText = t.get('wait');
     } else if (rewardedAdReady) {
       buttonText = '${t.get('watchEarn')} +3 STL';
     } else {
@@ -829,16 +1039,16 @@ class _HomePageState extends State<HomePage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: limitReached || adShowing ? null : _watchAd,
-                icon: adLoading
-                    ? const SizedBox(
+                onPressed: limitReached ? null : _watchAd,
+                icon: rewardedAdReady
+                    ? const Icon(Icons.play_arrow)
+                    : const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                         ),
-                      )
-                    : const Icon(Icons.play_arrow),
+                      ),
                 label: Text(buttonText),
               ),
             ),
@@ -932,8 +1142,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildStellaCard(AppLocalizations t) {
-    final facts = _getCatFacts(t);
-
     return Card(
       color: const Color(0xFF1B2533),
       child: Padding(
@@ -957,7 +1165,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              facts[factIndex % facts.length],
+              catFacts[factIndex],
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
@@ -968,7 +1176,7 @@ class _HomePageState extends State<HomePage> {
             OutlinedButton.icon(
               onPressed: _nextFact,
               icon: const Icon(Icons.refresh),
-              label: Text(_nextButtonText()),
+              label: const Text('Next'),
             ),
           ],
         ),
@@ -1045,8 +1253,8 @@ class _HomePageState extends State<HomePage> {
                 Flexible(
                   child: ListView(
                     shrinkWrap: true,
-                    children:
-                        AppLocalizations.supportedLanguages.entries.map(
+                    children: AppLocalizations.supportedLanguages.entries
+                        .map(
                       (entry) {
                         final selected =
                             entry.key == widget.languageCode;
@@ -1073,14 +1281,14 @@ class _HomePageState extends State<HomePage> {
 
                             await widget.onLanguageChanged(entry.key);
 
-                            if (!mounted) return;
+                            if (mounted) {
+                              final newT =
+                                  AppLocalizations(entry.key);
 
-                            final newT =
-                                AppLocalizations(entry.key);
-
-                            _showMessage(
-                              newT.get('languageChanged'),
-                            );
+                              _showMessage(
+                                newT.get('languageChanged'),
+                              );
+                            }
                           },
                         );
                       },
