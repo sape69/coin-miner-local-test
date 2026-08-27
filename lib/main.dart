@@ -1,12 +1,23 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// ==========================================================
-// MAIN
-// ==========================================================
+const Color backgroundColor = Color(0xFF0B1112);
+const Color cardColor = Color(0xFF151B1C);
+const Color accentColor = Color(0xFF35D0A0);
+
+// Google TEST Rewarded Ad.
+// Vaihda omaan tuotanto-ID:hen ennen julkaisua.
+const String rewardedAdUnitId =
+    'ca-app-pub-3940256099942544/5224354917';
+
+const int maxAdsPerDay = 5;
+const int adReward = 3;
+const Duration adCooldown = Duration(hours: 1);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,19 +27,6 @@ Future<void> main() async {
 
   runApp(const StelluriiniApp());
 }
-
-// ==========================================================
-// COLORS
-// ==========================================================
-
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color accentColor = Color(0xFF35D0A0);
-
-// Googlen virallinen TEST Rewarded Ad -ID.
-// Älä käytä tätä tuotantoversiossa.
-const String rewardedAdUnitId =
-    'ca-app-pub-3940256099942544/5224354917';
 
 // ==========================================================
 // APP
@@ -43,7 +41,7 @@ class StelluriiniApp extends StatefulWidget {
 
 class _StelluriiniAppState extends State<StelluriiniApp> {
   String languageCode = 'fi';
-  bool languageLoaded = false;
+  bool loaded = false;
 
   @override
   void initState() {
@@ -58,27 +56,24 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
 
     setState(() {
       languageCode = prefs.getString('language') ?? 'fi';
-      languageLoaded = true;
+      loaded = true;
     });
   }
 
   Future<void> changeLanguage(String language) async {
     final prefs = await SharedPreferences.getInstance();
-
     await prefs.setString('language', language);
 
     if (!mounted) return;
 
-    setState(() {
-      languageCode = language;
-    });
+    setState(() => languageCode = language);
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Stelluriini',
       debugShowCheckedModeBanner: false,
+      title: 'Stelluriini',
       theme: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
@@ -103,7 +98,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
           ),
         ),
       ),
-      home: languageLoaded
+      home: loaded
           ? AuthGate(
               languageCode: languageCode,
               changeLanguage: changeLanguage,
@@ -153,7 +148,7 @@ class AuthGate extends StatelessWidget {
 }
 
 // ==========================================================
-// LOADING PAGE
+// LOADING
 // ==========================================================
 
 class LoadingPage extends StatelessWidget {
@@ -172,7 +167,7 @@ class LoadingPage extends StatelessWidget {
 }
 
 // ==========================================================
-// LOGIN PAGE
+// LOGIN
 // ==========================================================
 
 class LoginPage extends StatefulWidget {
@@ -190,11 +185,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController =
-      TextEditingController();
-
-  final TextEditingController passwordController =
-      TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
   bool loading = false;
   bool showPassword = false;
@@ -206,6 +198,12 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  void _message(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
   Future<void> _login() async {
     final email = emailController.text.trim();
     final password = passwordController.text;
@@ -215,9 +213,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      loading = true;
-    });
+    setState(() => loading = true);
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -230,49 +226,27 @@ class _LoginPageState extends State<LoginPage> {
       _message('Kirjautuminen epäonnistui.');
     }
 
-    if (!mounted) return;
-
-    setState(() {
-      loading = false;
-    });
+    if (mounted) {
+      setState(() => loading = false);
+    }
   }
 
   String _firebaseError(String code) {
     switch (code) {
       case 'invalid-email':
         return 'Sähköpostiosoite ei ole kelvollinen.';
-
       case 'user-not-found':
         return 'Käyttäjää ei löytynyt.';
-
       case 'wrong-password':
       case 'invalid-credential':
         return 'Väärä sähköposti tai salasana.';
-
-      case 'user-disabled':
-        return 'Käyttäjätili on poistettu käytöstä.';
-
       case 'too-many-requests':
         return 'Liian monta yritystä. Odota hetki.';
-
       case 'network-request-failed':
         return 'Internet-yhteyttä ei löytynyt.';
-
       default:
         return 'Virhe: $code';
     }
-  }
-
-  void _message(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
   }
 
   @override
@@ -288,10 +262,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CatAvatar(size: 120),
-
+                    const CatAvatar(size: 110),
                     const SizedBox(height: 20),
-
                     const Text(
                       'STELLURIINI',
                       style: TextStyle(
@@ -300,22 +272,13 @@ class _LoginPageState extends State<LoginPage> {
                         letterSpacing: 2,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
-                    const Text(
-                      'Kirjaudu Stelluriiniin 🐱',
-                      style: TextStyle(
-                        color: Colors.white70,
-                      ),
-                    ),
-
+                    const Text('Kirjaudu Stelluriiniin 🐱'),
                     const SizedBox(height: 28),
 
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
                       decoration: const InputDecoration(
                         labelText: 'Sähköposti',
                         prefixIcon: Icon(Icons.email_outlined),
@@ -340,9 +303,9 @@ class _LoginPageState extends State<LoginPage> {
                                 : Icons.visibility_off,
                           ),
                           onPressed: () {
-                            setState(() {
-                              showPassword = !showPassword;
-                            });
+                            setState(
+                              () => showPassword = !showPassword,
+                            );
                           },
                         ),
                       ),
@@ -362,9 +325,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 );
                               },
-                        child: const Text(
-                          'Unohditko salasanan?',
-                        ),
+                        child: const Text('Unohditko salasanan?'),
                       ),
                     ),
 
@@ -372,7 +333,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     SizedBox(
                       width: double.infinity,
-                      height: 55,
+                      height: 54,
                       child: ElevatedButton.icon(
                         onPressed: loading ? null : _login,
                         icon: loading
@@ -393,8 +354,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 10),
-
                     TextButton(
                       onPressed: loading
                           ? null
@@ -402,8 +361,7 @@ class _LoginPageState extends State<LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      const RegisterPage(),
+                                  builder: (_) => const RegisterPage(),
                                 ),
                               );
                             },
@@ -423,7 +381,7 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 // ==========================================================
-// REGISTER PAGE
+// REGISTER
 // ==========================================================
 
 class RegisterPage extends StatefulWidget {
@@ -434,14 +392,9 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final TextEditingController emailController =
-      TextEditingController();
-
-  final TextEditingController passwordController =
-      TextEditingController();
-
-  final TextEditingController confirmController =
-      TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
 
   bool loading = false;
   bool showPassword = false;
@@ -454,22 +407,24 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  void _message(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
   Future<void> _register() async {
     final email = emailController.text.trim();
     final password = passwordController.text;
     final confirm = confirmController.text;
 
-    if (email.isEmpty ||
-        password.isEmpty ||
-        confirm.isEmpty) {
+    if (email.isEmpty || password.isEmpty || confirm.isEmpty) {
       _message('Täytä kaikki kentät.');
       return;
     }
 
     if (password.length < 6) {
-      _message(
-        'Salasanassa pitää olla vähintään 6 merkkiä.',
-      );
+      _message('Salasanassa pitää olla vähintään 6 merkkiä.');
       return;
     }
 
@@ -478,170 +433,107 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    setState(() {
-      loading = true;
-    });
+    setState(() => loading = true);
 
     try {
-      await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      if (!mounted) return;
-
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } on FirebaseAuthException catch (e) {
-      _message(_firebaseError(e.code));
+      _message('Virhe: ${e.code}');
     } catch (_) {
       _message('Tilin luominen epäonnistui.');
     }
 
-    if (!mounted) return;
-
-    setState(() {
-      loading = false;
-    });
-  }
-
-  String _firebaseError(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'Tämä sähköpostiosoite on jo käytössä.';
-
-      case 'invalid-email':
-        return 'Sähköpostiosoite ei ole kelvollinen.';
-
-      case 'weak-password':
-        return 'Salasana on liian heikko.';
-
-      case 'network-request-failed':
-        return 'Internet-yhteyttä ei löytynyt.';
-
-      default:
-        return 'Virhe: $code';
+    if (mounted) {
+      setState(() => loading = false);
     }
-  }
-
-  void _message(String text) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-        ),
-      );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('LUO TILI'),
-      ),
+      appBar: AppBar(title: const Text('LUO TILI')),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.person_add,
-                      size: 70,
-                      color: accentColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.person_add,
+                    size: 70,
+                    color: accentColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Sähköposti',
+                      prefixIcon: Icon(Icons.email),
+                      border: OutlineInputBorder(),
                     ),
+                  ),
 
-                    const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                    const Text(
-                      'LUO STELLURIINI-TILI',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    TextField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Sähköposti',
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextField(
-                      controller: passwordController,
-                      obscureText: !showPassword,
-                      decoration: InputDecoration(
-                        labelText: 'Salasana',
-                        prefixIcon: const Icon(Icons.lock),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            showPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              showPassword = !showPassword;
-                            });
-                          },
+                  TextField(
+                    controller: passwordController,
+                    obscureText: !showPassword,
+                    decoration: InputDecoration(
+                      labelText: 'Salasana',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          showPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
+                        onPressed: () {
+                          setState(
+                            () => showPassword = !showPassword,
+                          );
+                        },
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                    TextField(
-                      controller: confirmController,
-                      obscureText: !showPassword,
-                      decoration: const InputDecoration(
-                        labelText: 'Vahvista salasana',
-                        prefixIcon: Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(),
+                  TextField(
+                    controller: confirmController,
+                    obscureText: !showPassword,
+                    decoration: const InputDecoration(
+                      labelText: 'Vahvista salasana',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton.icon(
+                      onPressed: loading ? null : _register,
+                      icon: const Icon(Icons.person_add),
+                      label: Text(
+                        loading ? 'LUODAAN...' : 'LUO TILI',
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            loading ? null : _register,
-                        icon: loading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.black,
-                                ),
-                              )
-                            : const Icon(Icons.person_add),
-                        label: Text(
-                          loading
-                              ? 'LUODAAN...'
-                              : 'LUO TILI',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -663,17 +555,20 @@ class ForgotPasswordPage extends StatefulWidget {
       _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState
-    extends State<ForgotPasswordPage> {
-  final TextEditingController emailController =
-      TextEditingController();
-
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final emailController = TextEditingController();
   bool loading = false;
 
   @override
   void dispose() {
     emailController.dispose();
     super.dispose();
+  }
+
+  void _message(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
   }
 
   Future<void> _reset() async {
@@ -684,69 +579,45 @@ class _ForgotPasswordPageState
       return;
     }
 
-    setState(() {
-      loading = true;
-    });
+    setState(() => loading = true);
 
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: email,
       );
 
-      _message(
-        'Palautuslinkki lähetettiin sähköpostiin.',
-      );
+      _message('Palautuslinkki lähetettiin sähköpostiin.');
     } on FirebaseAuthException catch (e) {
       _message('Virhe: ${e.code}');
     } catch (_) {
       _message('Palautuslinkin lähetys epäonnistui.');
     }
 
-    if (!mounted) return;
-
-    setState(() {
-      loading = false;
-    });
-  }
-
-  void _message(String text) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-        ),
-      );
+    if (mounted) {
+      setState(() => loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PALAUTA SALASANA'),
-      ),
+      appBar: AppBar(title: const Text('PALAUTA SALASANA')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
               const SizedBox(height: 30),
-
               const Icon(
                 Icons.lock_reset,
                 size: 70,
                 color: accentColor,
               ),
-
               const SizedBox(height: 25),
-
               const Text(
-                'Anna sähköpostiosoitteesi. Lähetämme sinulle salasanan palautuslinkin.',
+                'Anna sähköpostiosoitteesi. Lähetämme sinulle palautuslinkin.',
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 25),
 
               TextField(
@@ -782,7 +653,7 @@ class _ForgotPasswordPageState
 }
 
 // ==========================================================
-// HOME PAGE
+// HOME
 // ==========================================================
 
 class HomePage extends StatefulWidget {
@@ -807,79 +678,85 @@ class _HomePageState extends State<HomePage> {
   bool dailyClaimed = false;
   bool loading = true;
   bool adLoading = false;
+  bool showingAd = false;
 
-  String today = '';
-
+  DateTime? lastAdTime;
   RewardedAd? rewardedAd;
+
+  Timer? cooldownTimer;
 
   AppLocalizations get t =>
       AppLocalizations(widget.languageCode);
+
+  String get _userId =>
+      FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+
+  String _key(String name) => '${name}_$_userId';
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _loadRewardedAd();
+
+    cooldownTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   @override
   void dispose() {
+    cooldownTimer?.cancel();
     rewardedAd?.dispose();
     super.dispose();
   }
 
-  String _dateKey() {
-    final now = DateTime.now();
-
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  String _dateKey(DateTime date) {
+    return '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
   }
 
-  // ========================================================
-  // LOAD DATA
-  // ========================================================
+  String get today => _dateKey(DateTime.now());
 
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final currentToday = _dateKey();
+    final adDate = prefs.getString(_key('ad_date')) ?? '';
+    int savedAds = prefs.getInt(_key('ads_today')) ?? 0;
 
-    final savedDate =
-        prefs.getString('last_daily') ?? '';
+    if (adDate != today) {
+      savedAds = 0;
 
-    final savedAdDate =
-        prefs.getString('ad_date') ?? '';
-
-    int currentAds =
-        prefs.getInt('ads_today') ?? 0;
-
-    if (savedAdDate != currentToday) {
-      currentAds = 0;
-
-      await prefs.setString(
-        'ad_date',
-        currentToday,
-      );
-
-      await prefs.setInt(
-        'ads_today',
-        0,
-      );
+      await prefs.setString(_key('ad_date'), today);
+      await prefs.setInt(_key('ads_today'), 0);
     }
+
+    final lastAdString = prefs.getString(_key('last_ad_time'));
 
     if (!mounted) return;
 
     setState(() {
-      today = currentToday;
-      stl = prefs.getInt('stl_balance') ?? 0;
-      streak = prefs.getInt('streak') ?? 0;
-      adsToday = currentAds;
-      dailyClaimed = savedDate == currentToday;
+      stl = prefs.getInt(_key('stl_balance')) ?? 0;
+      streak = prefs.getInt(_key('streak')) ?? 0;
+      adsToday = savedAds;
+
+      dailyClaimed =
+          prefs.getString(_key('last_daily')) == today;
+
+      lastAdTime = lastAdString == null
+          ? null
+          : DateTime.tryParse(lastAdString);
+
       loading = false;
     });
   }
 
   // ========================================================
-  // DAILY CLAIM
+  // DAILY REWARD
   // ========================================================
 
   Future<void> _dailyClaim() async {
@@ -891,45 +768,22 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
 
     final lastDate =
-        prefs.getString('last_daily') ?? '';
+        prefs.getString(_key('last_daily')) ?? '';
 
-    int newStreak;
+    final yesterday = _dateKey(
+      DateTime.now().subtract(const Duration(days: 1)),
+    );
 
-    if (lastDate.isEmpty) {
-      newStreak = 1;
-    } else {
-      final yesterday = DateTime.now()
-          .subtract(const Duration(days: 1));
+    final newStreak =
+        lastDate == yesterday ? streak + 1 : 1;
 
-      final yesterdayKey =
-          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
-
-      if (lastDate == yesterdayKey) {
-        newStreak = streak + 1;
-      } else {
-        newStreak = 1;
-      }
-    }
-
-    final reward =
-        newStreak >= 7 ? 7 : 3;
-
+    // Päivä 1-6 = +3 STL, päivä 7 = +7 STL
+    final reward = newStreak >= 7 ? 7 : 3;
     final newBalance = stl + reward;
 
-    await prefs.setInt(
-      'stl_balance',
-      newBalance,
-    );
-
-    await prefs.setInt(
-      'streak',
-      newStreak,
-    );
-
-    await prefs.setString(
-      'last_daily',
-      today,
-    );
+    await prefs.setInt(_key('stl_balance'), newBalance);
+    await prefs.setInt(_key('streak'), newStreak);
+    await prefs.setString(_key('last_daily'), today);
 
     if (!mounted) return;
 
@@ -943,19 +797,64 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ========================================================
-  // REWARDED AD
+  // AD COOLDOWN
+  // ========================================================
+
+  bool get canWatchAd {
+    if (lastAdTime == null) return true;
+
+    final next =
+        lastAdTime!.add(adCooldown);
+
+    return !DateTime.now().isBefore(next);
+  }
+
+  Duration get remainingAdTime {
+    if (lastAdTime == null) {
+      return Duration.zero;
+    }
+
+    final next = lastAdTime!.add(adCooldown);
+    final remaining = next.difference(DateTime.now());
+
+    return remaining.isNegative
+        ? Duration.zero
+        : remaining;
+  }
+
+  String get cooldownText {
+    final remaining = remainingAdTime;
+
+    if (remaining == Duration.zero) {
+      return t.get('adAvailable');
+    }
+
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes.remainder(60);
+
+    if (hours > 0) {
+      return '${t.get('nextAd')}: ${hours} h ${minutes} min';
+    }
+
+    return '${t.get('nextAd')}: $minutes min';
+  }
+
+  // ========================================================
+  // LOAD AD
   // ========================================================
 
   void _loadRewardedAd() {
-    setState(() {
-      adLoading = true;
-    });
+    if (adLoading || rewardedAd != null) return;
+
+    if (mounted) {
+      setState(() => adLoading = true);
+    }
 
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
+        onAdLoaded: (ad) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -966,7 +865,7 @@ class _HomePageState extends State<HomePage> {
             adLoading = false;
           });
         },
-        onAdFailedToLoad: (LoadAdError error) {
+        onAdFailedToLoad: (_) {
           if (!mounted) return;
 
           setState(() {
@@ -978,111 +877,119 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ========================================================
+  // WATCH AD
+  // ========================================================
+
   Future<void> _watchAd() async {
-    if (adsToday >= 5) {
+    if (showingAd) return;
+
+    if (adsToday >= maxAdsPerDay) {
       _message(t.get('dailyLimitReached'));
       return;
     }
 
+    if (!canWatchAd) {
+      _message(
+        '${t.get('nextAd')} '
+        '${cooldownText.replaceFirst('${t.get('nextAd')}: ', '')}',
+      );
+      return;
+    }
+
     if (rewardedAd == null) {
-      _message('Mainosta ladataan. Yritä hetken kuluttua.');
+      _message(t.get('adLoading'));
       _loadRewardedAd();
       return;
     }
 
     final ad = rewardedAd!;
-
     rewardedAd = null;
 
-    bool earnedReward = false;
+    setState(() => showingAd = true);
+
+    var earnedReward = false;
 
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
-      onAdDismissedFullScreenContent: (RewardedAd ad) {
+      onAdDismissedFullScreenContent: (ad) async {
         ad.dispose();
 
         if (earnedReward) {
-          _addAdReward();
+          await _addAdReward();
+        }
+
+        if (mounted) {
+          setState(() => showingAd = false);
         }
 
         _loadRewardedAd();
       },
-      onAdFailedToShowFullScreenContent:
-          (RewardedAd ad, AdError error) {
+      onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
+
+        if (mounted) {
+          setState(() => showingAd = false);
+        }
+
+        _message('Mainoksen näyttäminen epäonnistui.');
         _loadRewardedAd();
       },
     );
 
     ad.show(
-      onUserEarnedReward: (
-        AdWithoutView ad,
-        RewardItem reward,
-      ) {
+      onUserEarnedReward: (ad, reward) {
         earnedReward = true;
       },
     );
   }
 
+  // ========================================================
+  // ADD AD REWARD
+  // ========================================================
+
   Future<void> _addAdReward() async {
-    if (adsToday >= 5) return;
+    if (adsToday >= maxAdsPerDay) return;
 
     final prefs = await SharedPreferences.getInstance();
 
-    final newBalance = stl + 3;
-    final newAdsToday = adsToday + 1;
+    final now = DateTime.now();
+    final newBalance = stl + adReward;
+    final newAds = adsToday + 1;
 
     await prefs.setInt(
-      'stl_balance',
+      _key('stl_balance'),
       newBalance,
     );
 
     await prefs.setInt(
-      'ads_today',
-      newAdsToday,
+      _key('ads_today'),
+      newAds,
     );
 
     await prefs.setString(
-      'ad_date',
-      today,
+      _key('ad_date'),
+      _dateKey(now),
+    );
+
+    await prefs.setString(
+      _key('last_ad_time'),
+      now.toIso8601String(),
     );
 
     if (!mounted) return;
 
     setState(() {
       stl = newBalance;
-      adsToday = newAdsToday;
+      adsToday = newAds;
+      lastAdTime = now;
     });
 
-    _message(t.get('pointsAdded'));
+    _message('+$adReward STL! 🐱');
   }
 
   // ========================================================
-  // MESSAGE
-  // ========================================================
-
-  void _message(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
-  }
-
-  // ========================================================
-  // LOGOUT
-  // ========================================================
-
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
-  }
-
-  // ========================================================
-  // LANGUAGE DIALOG
+  // LANGUAGE
   // ========================================================
 
   void _openLanguageDialog() {
@@ -1091,15 +998,11 @@ class _HomePageState extends State<HomePage> {
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(t.get('selectLanguage')),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: AppLocalizations
-                  .supportedLanguages.entries
-                  .map(
-                (entry) {
-                  return ListTile(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: AppLocalizations.supportedLanguages.entries
+                .map(
+                  (entry) => ListTile(
                     title: Text(entry.value),
                     trailing:
                         widget.languageCode == entry.key
@@ -1109,42 +1012,50 @@ class _HomePageState extends State<HomePage> {
                               )
                             : null,
                     onTap: () async {
-                      await widget.changeLanguage(
-                        entry.key,
-                      );
+                      await widget.changeLanguage(entry.key);
 
-                      if (!mounted) return;
-
-                      Navigator.pop(dialogContext);
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
                     },
-                  );
-                },
-              ).toList(),
-            ),
+                  ),
+                )
+                .toList(),
           ),
         );
       },
     );
   }
 
-  // ========================================================
-  // BUILD
-  // ========================================================
+  void _message(String text) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(text)),
+      );
+  }
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const LoadingPage();
-    }
+    if (loading) return const LoadingPage();
 
-    final user =
-        FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
+    final fact = catFacts[
+        DateTime.now().day % catFacts.length]
+        .text(widget.languageCode);
 
-    final factIndex =
-        DateTime.now().day % catFacts.length;
-
-    final fact =
-        catFacts[factIndex].text(widget.languageCode);
+    final adButtonEnabled =
+        adsToday < maxAdsPerDay &&
+        canWatchAd &&
+        rewardedAd != null &&
+        !adLoading &&
+        !showingAd;
 
     return Scaffold(
       appBar: AppBar(
@@ -1157,33 +1068,30 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Vaihda kieli',
             icon: const Icon(Icons.language),
             onPressed: _openLanguageDialog,
           ),
           IconButton(
-            tooltip: 'Kirjaudu ulos',
             icon: const Icon(Icons.logout),
             onPressed: _logout,
           ),
         ],
       ),
+
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadData,
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // USER
+              // PROFILE
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      const CatAvatar(size: 110),
-
+                      const CatAvatar(size: 105),
                       const SizedBox(height: 12),
-
                       Text(
                         t.get('stella'),
                         style: const TextStyle(
@@ -1191,9 +1099,7 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      const SizedBox(height: 8),
-
+                      const SizedBox(height: 6),
                       Text(
                         user?.email ?? '',
                         style: const TextStyle(
@@ -1210,7 +1116,7 @@ class _HomePageState extends State<HomePage> {
               // BALANCE
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(28),
+                  padding: const EdgeInsets.all(26),
                   child: Column(
                     children: [
                       Text(
@@ -1220,9 +1126,7 @@ class _HomePageState extends State<HomePage> {
                           letterSpacing: 2,
                         ),
                       ),
-
-                      const SizedBox(height: 10),
-
+                      const SizedBox(height: 8),
                       Text(
                         '$stl',
                         style: const TextStyle(
@@ -1231,18 +1135,15 @@ class _HomePageState extends State<HomePage> {
                           color: accentColor,
                         ),
                       ),
-
                       const Text(
                         'STL',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
                           letterSpacing: 3,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      const SizedBox(height: 10),
-
+                      const SizedBox(height: 8),
                       Text(
                         t.get('virtualPoints'),
                         style: const TextStyle(
@@ -1256,7 +1157,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // DAILY CLAIM
+              // DAILY
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -1267,9 +1168,7 @@ class _HomePageState extends State<HomePage> {
                         size: 42,
                         color: accentColor,
                       ),
-
                       const SizedBox(height: 10),
-
                       Text(
                         t.get('dailyClaim'),
                         style: const TextStyle(
@@ -1277,18 +1176,14 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       Text(
                         '${t.get('streak')}: 🔥 $streak',
                         style: const TextStyle(
                           color: Colors.white70,
                         ),
                       ),
-
                       const SizedBox(height: 15),
-
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -1310,7 +1205,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // WATCH & EARN
+              // ADS
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -1318,12 +1213,10 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Icon(
                         Icons.play_circle_outline,
-                        size: 42,
+                        size: 45,
                         color: accentColor,
                       ),
-
                       const SizedBox(height: 10),
-
                       Text(
                         t.get('watchEarn'),
                         style: const TextStyle(
@@ -1331,33 +1224,36 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      const SizedBox(height: 8),
-
+                      const SizedBox(height: 10),
                       Text(
-                        '${t.get('dailyLimit')}: $adsToday / 5',
+                        '${t.get('dailyLimit')}: '
+                        '$adsToday / $maxAdsPerDay',
                         style: const TextStyle(
                           color: Colors.white70,
                         ),
                       ),
-
+                      const SizedBox(height: 6),
+                      Text(
+                        adsToday >= maxAdsPerDay
+                            ? t.get('dailyLimitReached')
+                            : cooldownText,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                        ),
+                      ),
                       const SizedBox(height: 15),
 
                       SizedBox(
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton.icon(
-                          onPressed: adsToday >= 5 ||
-                                  rewardedAd == null ||
-                                  adLoading
-                              ? null
-                              : _watchAd,
+                          onPressed:
+                              adButtonEnabled ? _watchAd : null,
                           icon: adLoading
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child:
-                                      CircularProgressIndicator(
+                                  child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.black,
                                   ),
@@ -1365,10 +1261,16 @@ class _HomePageState extends State<HomePage> {
                               : const Icon(Icons.play_arrow),
                           label: Text(
                             adLoading
-                                ? 'MAINOSTA LADATAAN...'
-                                : rewardedAd == null
-                                    ? 'MAINOS EI SAATAVILLA'
-                                    : t.get('watchAd'),
+                                ? t.get('adLoading')
+                                : showingAd
+                                    ? t.get('adShowing')
+                                    : adsToday >= maxAdsPerDay
+                                        ? t.get('limitReached')
+                                        : !canWatchAd
+                                            ? cooldownText
+                                            : rewardedAd == null
+                                                ? t.get('adUnavailable')
+                                                : t.get('watchAd'),
                           ),
                         ),
                       ),
@@ -1392,17 +1294,13 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       const Icon(
                         Icons.pets,
                         size: 45,
                         color: accentColor,
                       ),
-
                       const SizedBox(height: 14),
-
                       Text(
                         fact,
                         textAlign: TextAlign.center,
@@ -1430,9 +1328,7 @@ class _HomePageState extends State<HomePage> {
                         size: 38,
                         color: accentColor,
                       ),
-
                       const SizedBox(height: 10),
-
                       Text(
                         t.get('info'),
                         style: const TextStyle(
@@ -1440,9 +1336,7 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 19,
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       Text(
                         t.get('solanaToken'),
                         textAlign: TextAlign.center,
@@ -1450,9 +1344,7 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.white70,
                         ),
                       ),
-
                       const SizedBox(height: 10),
-
                       Text(
                         t.get('stellaCompany'),
                         textAlign: TextAlign.center,
@@ -1490,7 +1382,7 @@ class CatAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipOval(
       child: Image.asset(
-        'stella.jpg',
+        'assets/stella.jpg',
         width: size,
         height: size,
         fit: BoxFit.cover,
@@ -1521,71 +1413,75 @@ class AppLocalizations {
 
   const AppLocalizations(this.languageCode);
 
-  static const Map<String, String> supportedLanguages = {
+  static const supportedLanguages = {
     'fi': '🇫🇮 Suomi',
     'en': '🇬🇧 English',
   };
 
   String get(String key) {
-    final language =
-        _translations[languageCode] ?? _translations['fi']!;
-
-    return language[key] ??
-        _translations['fi']![key] ??
+    return _translations[languageCode]?[key] ??
+        _translations['fi']?[key] ??
         key;
   }
 
-  static const Map<String, Map<String, String>>
-      _translations = {
+  static const _translations = {
     'fi': {
       'selectLanguage': 'Valitse kieli',
       'yourBalance': 'SALDOSI',
       'dailyClaim': 'PÄIVITTÄINEN PALKINTO',
+      'dailyReward': 'HAE PÄIVÄN PALKINTO',
+      'claimed': 'KÄYTETTY',
+      'streak': 'PUTKI',
       'watchEarn': 'KATSO JA ANSAITSE',
       'watchAd': 'Katso mainos +3 STL',
       'dailyLimit': 'PÄIVÄRAJA',
+      'dailyLimitReached': 'Päivän mainosraja on täynnä.',
+      'limitReached': 'PÄIVÄRAJA TÄYNNÄ',
+      'nextAd': 'Seuraava mainos',
+      'adAvailable': 'Mainos on saatavilla!',
+      'adLoading': 'MAINOSTA LADATAAN...',
+      'adShowing': 'MAINOS AVAUTUU...',
+      'adUnavailable': 'MAINOS EI SAATAVILLA',
       'stella': '🐱 Stella',
       'stellaFacts': 'STELLAN KISSAFAKTA',
-      'streak': 'PUTKI',
       'info': 'TIETOJA',
       'solanaToken':
           'Stelluriini on Solana-verkossa oleva yhteisötokeni.',
       'stellaCompany':
           '🐱 Stella pitää sinulle seuraa Stelluriinin parissa!',
-      'claimed': 'KÄYTETTY',
-      'dailyReward': 'HAE PÄIVÄN PALKINTO',
-      'dailyLimitReached':
-          'Päivän mainosraja 5/5 on täynnä.',
-      'pointsAdded': '+3 STL! 🐱',
       'virtualPoints': 'Virtuaalisia sovelluspisteitä',
     },
     'en': {
       'selectLanguage': 'Select language',
       'yourBalance': 'YOUR BALANCE',
-      'dailyClaim': 'DAILY CLAIM',
+      'dailyClaim': 'DAILY REWARD',
+      'dailyReward': 'CLAIM DAILY REWARD',
+      'claimed': 'CLAIMED',
+      'streak': 'STREAK',
       'watchEarn': 'WATCH & EARN',
       'watchAd': 'Watch ad +3 STL',
       'dailyLimit': 'DAILY LIMIT',
+      'dailyLimitReached': 'The daily ad limit has been reached.',
+      'limitReached': 'DAILY LIMIT REACHED',
+      'nextAd': 'Next ad',
+      'adAvailable': 'Ad is available!',
+      'adLoading': 'LOADING AD...',
+      'adShowing': 'OPENING AD...',
+      'adUnavailable': 'AD UNAVAILABLE',
       'stella': '🐱 Stella',
       'stellaFacts': "STELLA'S CAT FACT",
-      'streak': 'STREAK',
       'info': 'INFORMATION',
       'solanaToken':
           'Stelluriini is a community token on the Solana network.',
       'stellaCompany':
           '🐱 Stella keeps you company while using Stelluriini!',
-      'claimed': 'CLAIMED',
-      'dailyReward': 'CLAIM DAILY REWARD',
-      'dailyLimitReached':
-          'The daily ad limit of 5/5 has been reached.',
-      'pointsAdded': '+3 STL! 🐱',
       'virtualPoints': 'Virtual in-app points',
     },
   };
 }
 
 // ==========================================================
-// CAT FACT
+// CAT FACTS
 // ==========================================================
 
 class CatFact {
@@ -1595,71 +1491,39 @@ class CatFact {
 
   String text(String languageCode) {
     return translations[languageCode] ??
-        translations['en'] ??
         translations['fi'] ??
+        translations['en'] ??
         '';
   }
 }
 
 const List<CatFact> catFacts = [
   CatFact({
-    'fi':
-        'Kissat nukkuvat usein noin 12–16 tuntia vuorokaudessa.',
-    'en':
-        'Cats often sleep around 12–16 hours a day.',
+    'fi': 'Kissat nukkuvat usein noin 12–16 tuntia vuorokaudessa.',
+    'en': 'Cats often sleep around 12–16 hours a day.',
   }),
   CatFact({
-    'fi':
-        'Kissan viikset ovat erittäin herkkiä tuntoelimiä.',
-    'en':
-        'A cat’s whiskers are very sensitive sensory organs.',
+    'fi': 'Kissan viikset ovat erittäin herkkiä tuntoelimiä.',
+    'en': 'A cat’s whiskers are very sensitive sensory organs.',
   }),
   CatFact({
-    'fi':
-        'Kissan nenän kuvio on yksilöllinen.',
-    'en':
-        'Every cat has a unique nose pattern.',
+    'fi': 'Kissan nenän kuvio on yksilöllinen.',
+    'en': 'Every cat has a unique nose pattern.',
   }),
   CatFact({
-    'fi':
-        'Kissat voivat kuulla erittäin korkeita ääniä.',
-    'en':
-        'Cats can hear very high-frequency sounds.',
+    'fi': 'Kissat voivat kuulla erittäin korkeita ääniä.',
+    'en': 'Cats can hear very high-frequency sounds.',
   }),
   CatFact({
-    'fi':
-        'Kissan kynnet ovat sisäänvedettävät.',
-    'en':
-        'Cats have retractable claws.',
+    'fi': 'Kissan kynnet ovat sisäänvedettävät.',
+    'en': 'Cats have retractable claws.',
   }),
   CatFact({
-    'fi':
-        'Kissat käyttävät häntäänsä myös tasapainon apuna.',
-    'en':
-        'Cats also use their tails to help with balance.',
+    'fi': 'Kissat käyttävät häntäänsä tasapainon apuna.',
+    'en': 'Cats use their tails to help with balance.',
   }),
   CatFact({
-    'fi':
-        'Hidas silmien räpytys voi olla kissan ystävällinen tervehdys.',
-    'en':
-        'A slow blink can be a friendly greeting from a cat.',
-  }),
-  CatFact({
-    'fi':
-        'Kissat pitävät usein korkeista tarkkailupaikoista.',
-    'en':
-        'Cats often enjoy high places where they can observe their surroundings.',
-  }),
-  CatFact({
-    'fi':
-        'Kissat käyttävät paljon aikaa turkkinsa hoitamiseen.',
-    'en':
-        'Cats spend a lot of time grooming their fur.',
-  }),
-  CatFact({
-    'fi':
-        'Kissat ovat luonnostaan uteliaita eläimiä.',
-    'en':
-        'Cats are naturally curious animals.',
+    'fi': 'Hidas silmien räpytys voi olla kissan ystävällinen tervehdys.',
+    'en': 'A slow blink can be a friendly greeting from a cat.',
   }),
 ];
