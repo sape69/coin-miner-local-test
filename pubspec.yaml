@@ -1,5 +1,4 @@
 name: stelluriini
-
 description: STELLURIINI Android app
 
 publish_to: "none"
@@ -36,6 +35,8 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
+
   image_path: "stella.jpg"
+
   adaptive_icon_background: "#0B1112"
   adaptive_icon_foreground: "stella.jpg"
