@@ -49,6 +49,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
 
   Future<void> changeLanguage(String language) async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.setString('language', language);
 
     if (!mounted) return;
@@ -79,6 +80,12 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
           backgroundColor: backgroundColor,
           foregroundColor: Colors.white,
           centerTitle: true,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accentColor,
+            foregroundColor: Colors.black,
+          ),
         ),
       ),
       home: languageLoaded
