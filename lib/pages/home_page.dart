@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -7,13 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../cat_facts.dart';
 import '../localization.dart';
-import '../services/user_service.dart';
 import '../widgets/cat_avatar.dart';
 
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
+// Googlen virallinen RewardedAd TEST-ID.
+// Vaihda tuotantoversiossa omaan AdMob Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -39,7 +41,6 @@ class _HomePageState extends State<HomePage> {
   bool dailyClaimed = false;
   bool loading = true;
   bool adLoading = false;
-  bool saving = false;
 
   String today = '';
 
@@ -51,9 +52,19 @@ class _HomePageState extends State<HomePage> {
   AppLocalizations get t =>
       AppLocalizations(widget.languageCode);
 
+  CollectionReference<Map<String, dynamic>> get _users =>
+      FirebaseFirestore.instance.collection('users');
+
+  String get _uid =>
+      FirebaseAuth.instance.currentUser!.uid;
+
+  DocumentReference<Map<String, dynamic>> get _userDoc =>
+      _users.doc(_uid);
+
   @override
   void initState() {
     super.initState();
+
     _loadData();
     _loadRewardedAd();
     _startCooldownTimer();
@@ -63,6 +74,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     rewardedAd?.dispose();
     cooldownTimer?.cancel();
+
     super.dispose();
   }
 
@@ -84,179 +96,189 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
+
     final currentToday = _dateKey();
 
     try {
-      // ------------------------------------------------------
-      // FIRESTORE
-      // ------------------------------------------------------
+      final snapshot = await _userDoc.get();
 
-      final userData =
-          await UserService.loadUserData();
+      Map<String, dynamic> data;
 
-      int currentAds = userData.adsToday;
+      if (!snapshot.exists) {
+        data = {
+          'stlBalance': 0,
+          'streak': 0,
+          'lastDaily': '',
+          'adsToday': 0,
+          'adDate': currentToday,
+          'lastAdTime': '',
+        };
 
-      // Nollataan mainoslaskuri uuden päivän alkaessa.
-      if (userData.adDate != currentToday) {
-        currentAds = 0;
-
-        await UserService.saveUserData(
-          userData.copyWith(
-            adsToday: 0,
-            adDate: currentToday,
-          ),
-        );
+        await _userDoc.set(data);
+      } else {
+        data = snapshot.data() ?? {};
       }
 
-      // Tallennetaan myös paikalliseen välimuistiin.
-      await prefs.setInt(
-        'stl_balance',
-        userData.stlBalance,
+      int loadedStl =
+          (data['stlBalance'] as num?)?.toInt() ?? 0;
+
+      int loadedStreak =
+          (data['streak'] as num?)?.toInt() ?? 0;
+
+      int loadedAds =
+          (data['adsToday'] as num?)?.toInt() ?? 0;
+
+      String lastDaily =
+          data['lastDaily'] as String? ?? '';
+
+      String adDate =
+          data['adDate'] as String? ?? '';
+
+      String lastAdString =
+          data['lastAdTime'] as String? ?? '';
+
+      DateTime? loadedLastAdTime;
+
+      if (lastAdString.isNotEmpty) {
+        loadedLastAdTime =
+            DateTime.tryParse(lastAdString);
+      }
+
+      // Uusi päivä -> mainoslaskuri nollataan.
+      if (adDate != currentToday) {
+        loadedAds = 0;
+        adDate = currentToday;
+
+        await _userDoc.update({
+          'adsToday': 0,
+          'adDate': currentToday,
+        });
+      }
+
+      // Tallennetaan myös paikallinen cache.
+      await _saveLocalCache(
+        stlValue: loadedStl,
+        streakValue: loadedStreak,
+        adsValue: loadedAds,
+        lastDailyValue: lastDaily,
+        adDateValue: adDate,
+        lastAdTimeValue: lastAdString,
       );
 
-      await prefs.setInt(
-        'streak',
-        userData.streak,
-      );
+      if (!mounted) return;
 
-      await prefs.setString(
-        'last_daily',
-        userData.lastDaily,
-      );
+      setState(() {
+        today = currentToday;
+        stl = loadedStl;
+        streak = loadedStreak;
+        adsToday = loadedAds;
+        dailyClaimed = lastDaily == currentToday;
+        lastAdTime = loadedLastAdTime;
+        loading = false;
+      });
+    } catch (_) {
+      // Jos Firestore ei ole käytettävissä,
+      // käytetään paikallista cachea.
+      await _loadLocalCache();
+    }
+  }
+
+  // ==========================================================
+  // LOCAL CACHE SAVE
+  // ==========================================================
+
+  Future<void> _saveLocalCache({
+    required int stlValue,
+    required int streakValue,
+    required int adsValue,
+    required String lastDailyValue,
+    required String adDateValue,
+    required String lastAdTimeValue,
+  }) async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setInt('stl_balance', stlValue);
+    await prefs.setInt('streak', streakValue);
+    await prefs.setInt('ads_today', adsValue);
+
+    await prefs.setString(
+      'last_daily',
+      lastDailyValue,
+    );
+
+    await prefs.setString(
+      'ad_date',
+      adDateValue,
+    );
+
+    await prefs.setString(
+      'last_ad_time',
+      lastAdTimeValue,
+    );
+  }
+
+  // ==========================================================
+  // LOCAL CACHE LOAD
+  // ==========================================================
+
+  Future<void> _loadLocalCache() async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final currentToday = _dateKey();
+
+    int loadedAds =
+        prefs.getInt('ads_today') ?? 0;
+
+    final adDate =
+        prefs.getString('ad_date') ?? '';
+
+    if (adDate != currentToday) {
+      loadedAds = 0;
 
       await prefs.setInt(
         'ads_today',
-        currentAds,
+        0,
       );
 
       await prefs.setString(
         'ad_date',
         currentToday,
       );
-
-      if (userData.lastAdTime != null) {
-        await prefs.setString(
-          'last_ad_time',
-          userData.lastAdTime!
-              .toIso8601String(),
-        );
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        today = currentToday;
-        stl = userData.stlBalance;
-        streak = userData.streak;
-        adsToday = currentAds;
-
-        dailyClaimed =
-            userData.lastDaily == currentToday;
-
-        lastAdTime = userData.lastAdTime;
-
-        loading = false;
-      });
-    } catch (_) {
-      // ------------------------------------------------------
-      // FALLBACK: SHAREDPREFERENCES
-      // ------------------------------------------------------
-
-      final savedAdDate =
-          prefs.getString('ad_date') ?? '';
-
-      int currentAds =
-          prefs.getInt('ads_today') ?? 0;
-
-      if (savedAdDate != currentToday) {
-        currentAds = 0;
-
-        await prefs.setString(
-          'ad_date',
-          currentToday,
-        );
-
-        await prefs.setInt(
-          'ads_today',
-          0,
-        );
-      }
-
-      final lastAdString =
-          prefs.getString('last_ad_time');
-
-      DateTime? savedLastAdTime;
-
-      if (lastAdString != null) {
-        savedLastAdTime =
-            DateTime.tryParse(lastAdString);
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        today = currentToday;
-        stl = prefs.getInt('stl_balance') ?? 0;
-        streak = prefs.getInt('streak') ?? 0;
-        adsToday = currentAds;
-
-        dailyClaimed =
-            (prefs.getString('last_daily') ?? '') ==
-                currentToday;
-
-        lastAdTime = savedLastAdTime;
-
-        loading = false;
-      });
     }
-  }
 
-  // ==========================================================
-  // SAVE LOCAL CACHE
-  // ==========================================================
+    final lastAdString =
+        prefs.getString('last_ad_time') ?? '';
 
-  Future<void> _saveLocalData({
-    required int balance,
-    required int newStreak,
-    required String lastDaily,
-    required int newAdsToday,
-    required String adDate,
-    DateTime? newLastAdTime,
-  }) async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    DateTime? loadedLastAdTime;
 
-    await prefs.setInt(
-      'stl_balance',
-      balance,
-    );
-
-    await prefs.setInt(
-      'streak',
-      newStreak,
-    );
-
-    await prefs.setString(
-      'last_daily',
-      lastDaily,
-    );
-
-    await prefs.setInt(
-      'ads_today',
-      newAdsToday,
-    );
-
-    await prefs.setString(
-      'ad_date',
-      adDate,
-    );
-
-    if (newLastAdTime != null) {
-      await prefs.setString(
-        'last_ad_time',
-        newLastAdTime.toIso8601String(),
-      );
+    if (lastAdString.isNotEmpty) {
+      loadedLastAdTime =
+          DateTime.tryParse(lastAdString);
     }
+
+    if (!mounted) return;
+
+    setState(() {
+      today = currentToday;
+
+      stl =
+          prefs.getInt('stl_balance') ?? 0;
+
+      streak =
+          prefs.getInt('streak') ?? 0;
+
+      adsToday = loadedAds;
+
+      dailyClaimed =
+          prefs.getString('last_daily') ==
+              currentToday;
+
+      lastAdTime = loadedLastAdTime;
+
+      loading = false;
+    });
   }
 
   // ==========================================================
@@ -264,103 +286,121 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _dailyClaim() async {
-    if (dailyClaimed || saving) {
+    if (dailyClaimed) {
       _message(t.get('claimed'));
       return;
     }
 
-    setState(() {
-      saving = true;
-    });
+    final currentToday = _dateKey();
+
+    final yesterday =
+        DateTime.now().subtract(
+      const Duration(days: 1),
+    );
+
+    final yesterdayKey =
+        '${yesterday.year}-'
+        '${yesterday.month.toString().padLeft(2, '0')}-'
+        '${yesterday.day.toString().padLeft(2, '0')}';
 
     try {
-      final currentToday = _dateKey();
+      await FirebaseFirestore.instance
+          .runTransaction((transaction) async {
+        final snapshot =
+            await transaction.get(_userDoc);
 
-      final userData =
-          await UserService.loadUserData();
+        final data =
+            snapshot.data() ?? {};
 
-      // Tarkistetaan uudelleen Firestoresta,
-      // ettei palkintoa voi saada kahdesti.
-      if (userData.lastDaily == currentToday) {
-        if (!mounted) return;
+        final oldBalance =
+            (data['stlBalance'] as num?)
+                    ?.toInt() ??
+                0;
 
-        setState(() {
-          dailyClaimed = true;
-          saving = false;
-        });
+        final oldStreak =
+            (data['streak'] as num?)
+                    ?.toInt() ??
+                0;
 
-        _message(t.get('claimed'));
-        return;
-      }
+        final lastDaily =
+            data['lastDaily'] as String? ??
+                '';
 
-      int newStreak;
+        if (lastDaily == currentToday) {
+          return;
+        }
 
-      if (userData.lastDaily.isEmpty) {
-        newStreak = 1;
-      } else {
-        final yesterday =
-            DateTime.now().subtract(
-          const Duration(days: 1),
-        );
+        int newStreak;
 
-        final yesterdayKey =
-            '${yesterday.year}-'
-            '${yesterday.month.toString().padLeft(2, '0')}-'
-            '${yesterday.day.toString().padLeft(2, '0')}';
-
-        if (userData.lastDaily == yesterdayKey) {
-          newStreak = userData.streak + 1;
+        if (lastDaily == yesterdayKey) {
+          newStreak = oldStreak + 1;
         } else {
           newStreak = 1;
         }
-      }
 
-      // Maksimi näytettävä streak on 7.
-      final displayStreak =
-          newStreak > 7 ? 7 : newStreak;
+        if (newStreak > 7) {
+          newStreak = 7;
+        }
 
-      final reward =
-          displayStreak >= 7 ? 7 : 3;
+        final reward =
+            newStreak >= 7 ? 7 : 3;
+
+        final newBalance =
+            oldBalance + reward;
+
+        transaction.set(
+          _userDoc,
+          {
+            'stlBalance': newBalance,
+            'streak': newStreak,
+            'lastDaily': currentToday,
+          },
+          SetOptions(merge: true),
+        );
+      });
+
+      final snapshot =
+          await _userDoc.get();
+
+      final data =
+          snapshot.data() ?? {};
 
       final newBalance =
-          userData.stlBalance + reward;
+          (data['stlBalance'] as num?)
+                  ?.toInt() ??
+              stl;
 
-      // Firestore.
-      await UserService.saveDailyReward(
-        stlBalance: newBalance,
-        streak: displayStreak,
-        lastDaily: currentToday,
-      );
+      final newStreak =
+          (data['streak'] as num?)
+                  ?.toInt() ??
+              streak;
 
-      // Paikallinen varmuuskopio.
-      await _saveLocalData(
-        balance: newBalance,
-        newStreak: displayStreak,
-        lastDaily: currentToday,
-        newAdsToday: adsToday,
-        adDate: _dateKey(),
-        newLastAdTime: lastAdTime,
+      await _saveLocalCache(
+        stlValue: newBalance,
+        streakValue: newStreak,
+        adsValue: adsToday,
+        lastDailyValue: currentToday,
+        adDateValue: _dateKey(),
+        lastAdTimeValue:
+            lastAdTime?.toIso8601String() ?? '',
       );
 
       if (!mounted) return;
 
       setState(() {
         stl = newBalance;
-        streak = displayStreak;
+        streak = newStreak;
         dailyClaimed = true;
-        today = currentToday;
-        saving = false;
       });
+
+      final reward =
+          newStreak >= 7 ? 7 : 3;
 
       _message('+$reward STL! 🐱');
     } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        saving = false;
-      });
-
-      _message('Palkinnon tallennus epäonnistui.');
+      _message(
+        'Päivittäisen palkinnon tallennus epäonnistui.',
+      );
     }
   }
 
@@ -378,7 +418,8 @@ class _HomePageState extends State<HomePage> {
       const Duration(hours: 1),
     );
 
-    return !DateTime.now().isBefore(nextAdTime);
+    return !DateTime.now()
+        .isBefore(nextAdTime);
   }
 
   Duration _remainingAdTime() {
@@ -392,7 +433,9 @@ class _HomePageState extends State<HomePage> {
     );
 
     final remaining =
-        nextAdTime.difference(DateTime.now());
+        nextAdTime.difference(
+      DateTime.now(),
+    );
 
     if (remaining.isNegative) {
       return Duration.zero;
@@ -402,13 +445,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _remainingAdText() {
-    final remaining = _remainingAdTime();
+    final remaining =
+        _remainingAdTime();
 
     if (remaining == Duration.zero) {
       return '';
     }
 
-    final hours = remaining.inHours;
+    final hours =
+        remaining.inHours;
+
     final minutes =
         remaining.inMinutes.remainder(60);
 
@@ -439,11 +485,9 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        adLoading = true;
-      });
-    }
+    setState(() {
+      adLoading = true;
+    });
 
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
@@ -480,7 +524,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _watchAd() async {
     if (adsToday >= 5) {
-      _message(t.get('dailyLimitReached'));
+      _message(
+        t.get('dailyLimitReached'),
+      );
       return;
     }
 
@@ -493,8 +539,12 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (rewardedAd == null) {
-      _message(t.get('adUnavailable'));
+      _message(
+        'Mainosta ladataan. Yritä hetken kuluttua.',
+      );
+
       _loadRewardedAd();
+
       return;
     }
 
@@ -522,9 +572,11 @@ class _HomePageState extends State<HomePage> {
           (RewardedAd ad, AdError error) {
         ad.dispose();
 
-        _loadRewardedAd();
+        _message(
+          'Mainosta ei voitu näyttää.',
+        );
 
-        _message('Mainosta ei voitu näyttää.');
+        _loadRewardedAd();
       },
     );
 
@@ -541,106 +593,109 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _addAdReward() async {
-    if (saving) return;
-
-    setState(() {
-      saving = true;
-    });
+    final now = DateTime.now();
+    final currentToday = _dateKey();
 
     try {
-      final userData =
-          await UserService.loadUserData();
+      await FirebaseFirestore.instance
+          .runTransaction((transaction) async {
+        final snapshot =
+            await transaction.get(_userDoc);
 
-      final currentToday = _dateKey();
+        final data =
+            snapshot.data() ?? {};
 
-      // Nollataan päivän laskuri tarvittaessa.
-      int currentAds =
-          userData.adDate == currentToday
-              ? userData.adsToday
-              : 0;
+        int currentAds =
+            (data['adsToday'] as num?)
+                    ?.toInt() ??
+                0;
 
-      if (currentAds >= 5) {
-        if (!mounted) return;
+        final adDate =
+            data['adDate'] as String? ?? '';
 
-        setState(() {
-          saving = false;
-        });
+        // Uusi päivä.
+        if (adDate != currentToday) {
+          currentAds = 0;
+        }
 
-        _message(t.get('dailyLimitReached'));
-        return;
-      }
-
-      // Tarkistetaan cooldown myös Firestoresta.
-      if (userData.lastAdTime != null) {
-        final nextAdTime =
-            userData.lastAdTime!.add(
-          const Duration(hours: 1),
-        );
-
-        if (DateTime.now().isBefore(nextAdTime)) {
-          if (!mounted) return;
-
-          setState(() {
-            saving = false;
-            lastAdTime =
-                userData.lastAdTime;
-          });
-
-          _message(
-            '${t.get('nextAd')}: '
-            '${_remainingAdText()}',
-          );
-
+        if (currentAds >= 5) {
           return;
         }
-      }
 
-      final now = DateTime.now();
+        final balance =
+            (data['stlBalance'] as num?)
+                    ?.toInt() ??
+                0;
+
+        final newBalance =
+            balance + 3;
+
+        final newAds =
+            currentAds + 1;
+
+        transaction.set(
+          _userDoc,
+          {
+            'stlBalance': newBalance,
+            'adsToday': newAds,
+            'adDate': currentToday,
+            'lastAdTime':
+                now.toIso8601String(),
+          },
+          SetOptions(merge: true),
+        );
+      });
+
+      final snapshot =
+          await _userDoc.get();
+
+      final data =
+          snapshot.data() ?? {};
 
       final newBalance =
-          userData.stlBalance + 3;
+          (data['stlBalance'] as num?)
+                  ?.toInt() ??
+              stl;
 
-      final newAdsToday =
-          currentAds + 1;
+      final newAds =
+          (data['adsToday'] as num?)
+                  ?.toInt() ??
+              adsToday;
 
-      // Firestore.
-      await UserService.saveAdReward(
-        stlBalance: newBalance,
-        adsToday: newAdsToday,
-        adDate: currentToday,
-        lastAdTime: now,
+      final newLastAdString =
+          data['lastAdTime'] as String? ?? '';
+
+      DateTime? newLastAdTime =
+          DateTime.tryParse(
+        newLastAdString,
       );
 
-      // Paikallinen varmuuskopio.
-      await _saveLocalData(
-        balance: newBalance,
-        newStreak: userData.streak,
-        lastDaily: userData.lastDaily,
-        newAdsToday: newAdsToday,
-        adDate: currentToday,
-        newLastAdTime: now,
+      await _saveLocalCache(
+        stlValue: newBalance,
+        streakValue: streak,
+        adsValue: newAds,
+        lastDailyValue:
+            dailyClaimed ? today : '',
+        adDateValue: currentToday,
+        lastAdTimeValue:
+            newLastAdString,
       );
 
       if (!mounted) return;
 
       setState(() {
         stl = newBalance;
-        streak = userData.streak;
-        adsToday = newAdsToday;
-        lastAdTime = now;
+        adsToday = newAds;
+        lastAdTime =
+            newLastAdTime ?? now;
         today = currentToday;
-        saving = false;
       });
 
       _message(t.get('pointsAdded'));
     } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        saving = false;
-      });
-
-      _message('Mainospalkinnon tallennus epäonnistui.');
+      _message(
+        'Mainospalkinnon tallennus epäonnistui.',
+      );
     }
   }
 
@@ -677,7 +732,9 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(t.get('selectLanguage')),
+          title: Text(
+            t.get('selectLanguage'),
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView(
@@ -690,7 +747,8 @@ class _HomePageState extends State<HomePage> {
                   return ListTile(
                     title: Text(entry.value),
                     trailing:
-                        widget.languageCode == entry.key
+                        widget.languageCode ==
+                                entry.key
                             ? const Icon(
                                 Icons.check,
                                 color: accentColor,
@@ -701,10 +759,10 @@ class _HomePageState extends State<HomePage> {
                         entry.key,
                       );
 
-                      if (!mounted) return;
-
                       if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext);
+                        Navigator.pop(
+                          dialogContext,
+                        );
                       }
                     },
                   );
@@ -737,21 +795,23 @@ class _HomePageState extends State<HomePage> {
         FirebaseAuth.instance.currentUser;
 
     final factIndex =
-        DateTime.now().day % catFacts.length;
+        DateTime.now().day %
+            catFacts.length;
 
     final fact =
         catFacts[factIndex]
             .text(widget.languageCode);
 
     final canWatch = _canWatchAd();
-    final remainingText = _remainingAdText();
+
+    final remainingText =
+        _remainingAdText();
 
     final adButtonEnabled =
-        !saving &&
         adsToday < 5 &&
-        canWatch &&
-        rewardedAd != null &&
-        !adLoading;
+            canWatch &&
+            rewardedAd != null &&
+            !adLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -910,9 +970,10 @@ class _HomePageState extends State<HomePage> {
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton.icon(
+                        child:
+                            ElevatedButton.icon(
                           onPressed:
-                              dailyClaimed || saving
+                              dailyClaimed
                                   ? null
                                   : _dailyClaim,
                           icon: const Icon(
@@ -921,7 +982,9 @@ class _HomePageState extends State<HomePage> {
                           label: Text(
                             dailyClaimed
                                 ? t.get('claimed')
-                                : t.get('dailyReward'),
+                                : t.get(
+                                    'dailyReward',
+                                  ),
                           ),
                         ),
                       ),
@@ -975,7 +1038,8 @@ class _HomePageState extends State<HomePage> {
                           '${t.get('nextAd')}: '
                           '$remainingText',
                           style: const TextStyle(
-                            color: Colors.orangeAccent,
+                            color:
+                                Colors.orangeAccent,
                             fontWeight:
                                 FontWeight.bold,
                           ),
@@ -986,7 +1050,8 @@ class _HomePageState extends State<HomePage> {
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton.icon(
+                        child:
+                            ElevatedButton.icon(
                           onPressed:
                               adButtonEnabled
                                   ? _watchAd
@@ -1015,7 +1080,8 @@ class _HomePageState extends State<HomePage> {
                                     : !canWatch
                                         ? '${t.get('nextAd')}: '
                                             '$remainingText'
-                                        : rewardedAd == null
+                                        : rewardedAd ==
+                                                null
                                             ? t.get(
                                                 'adUnavailable',
                                               )
