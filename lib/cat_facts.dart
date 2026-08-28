@@ -12,1470 +12,1096 @@ class CatFact {
 }
 
 const List<CatFact> catFacts = [
+  // ==========================================================
+  // FACT 1
+  // ==========================================================
   CatFact({
-    'fi': 'Kissat nukkuvat usein 12–16 tuntia vuorokaudessa.',
-    'en': 'Cats often sleep 12–16 hours a day.',
+    'fi': 'Kissat nukkuvat usein noin 12–16 tuntia vuorokaudessa.',
+    'en': 'Cats often sleep around 12–16 hours a day.',
+    'de': 'Katzen schlafen oft etwa 12–16 Stunden am Tag.',
+    'es': 'Los gatos suelen dormir entre 12 y 16 horas al día.',
+    'fr': 'Les chats dorment souvent environ 12 à 16 heures par jour.',
+    'zh': '猫每天通常睡大约12到16个小时。',
+    'vi': 'Mèo thường ngủ khoảng 12–16 giờ mỗi ngày.',
+    'ja': '猫は1日に約12〜16時間眠ることがよくあります。',
   }),
+
+  // FACT 2
   CatFact({
     'fi': 'Kissan viikset ovat erittäin herkkiä tuntoelimiä.',
     'en': 'A cat’s whiskers are highly sensitive sensory organs.',
+    'de': 'Die Schnurrhaare einer Katze sind sehr empfindliche Sinnesorgane.',
+    'es': 'Los bigotes de un gato son órganos sensoriales muy sensibles.',
+    'fr': 'Les moustaches d’un chat sont des organes sensoriels très sensibles.',
+    'zh': '猫的胡须是非常敏感的感觉器官。',
+    'vi': 'Ria mèo là những cơ quan cảm giác rất nhạy bén.',
+    'ja': '猫のひげは非常に敏感な感覚器官です。',
   }),
+
+  // FACT 3
   CatFact({
-    'fi': 'Jokaisella kissalla on yksilöllinen nenän kuvio.',
+    'fi': 'Kissan nenän kuvio on yksilöllinen.',
     'en': 'Every cat has a unique nose pattern.',
+    'de': 'Jede Katze hat ein einzigartiges Nasenmuster.',
+    'es': 'Cada gato tiene un patrón nasal único.',
+    'fr': 'Chaque chat possède un motif de nez unique.',
+    'zh': '每只猫都有独特的鼻纹。',
+    'vi': 'Mỗi con mèo có một hoa văn mũi riêng biệt.',
+    'ja': '猫の鼻の模様はそれぞれ異なります。',
   }),
+
+  // FACT 4
   CatFact({
     'fi': 'Kissat voivat kuulla erittäin korkeita ääniä.',
-    'en': 'Cats can hear very high-frequency sounds.',
+    'en': 'Cats can hear extremely high-frequency sounds.',
+    'de': 'Katzen können extrem hohe Frequenzen hören.',
+    'es': 'Los gatos pueden escuchar sonidos de frecuencias muy altas.',
+    'fr': 'Les chats peuvent entendre des sons à très haute fréquence.',
+    'zh': '猫能够听到非常高频的声音。',
+    'vi': 'Mèo có thể nghe được những âm thanh có tần số rất cao.',
+    'ja': '猫は非常に高い周波数の音を聞くことができます。',
   }),
+
+  // FACT 5
   CatFact({
-    'fi': 'Useimpien kissojen kynnet ovat sisäänvedettävät.',
-    'en': 'Most cats have retractable claws.',
+    'fi': 'Kissan kynnet ovat yleensä sisäänvedettävät.',
+    'en': 'A cat’s claws are usually retractable.',
+    'de': 'Die Krallen einer Katze sind normalerweise einziehbar.',
+    'es': 'Las garras de un gato suelen ser retráctiles.',
+    'fr': 'Les griffes d’un chat sont généralement rétractiles.',
+    'zh': '猫的爪子通常可以伸缩。',
+    'vi': 'Móng vuốt của mèo thường có thể thu vào.',
+    'ja': '猫の爪は通常、引っ込めることができます。',
   }),
+
+  // FACT 6
   CatFact({
     'fi': 'Kissat käyttävät häntäänsä tasapainon apuna.',
-    'en': 'Cats use their tails to help with balance.',
+    'en': 'Cats use their tails to help maintain balance.',
+    'de': 'Katzen benutzen ihren Schwanz, um das Gleichgewicht zu halten.',
+    'es': 'Los gatos usan la cola para ayudar a mantener el equilibrio.',
+    'fr': 'Les chats utilisent leur queue pour maintenir leur équilibre.',
+    'zh': '猫会利用尾巴帮助保持平衡。',
+    'vi': 'Mèo sử dụng đuôi để giúp giữ thăng bằng.',
+    'ja': '猫はバランスを保つために尻尾を使います。',
   }),
+
+  // FACT 7
   CatFact({
     'fi': 'Hidas silmien räpytys voi olla kissan ystävällinen tervehdys.',
     'en': 'A slow blink can be a friendly greeting from a cat.',
+    'de': 'Langsames Blinzeln kann eine freundliche Begrüßung einer Katze sein.',
+    'es': 'Un parpadeo lento puede ser un saludo amistoso de un gato.',
+    'fr': 'Un clignement lent peut être un signe amical chez un chat.',
+    'zh': '缓慢眨眼可能是猫表达友好的方式。',
+    'vi': 'Cái chớp mắt chậm có thể là lời chào thân thiện của mèo.',
+    'ja': 'ゆっくりまばたきすることは、猫の友好的なあいさつかもしれません。',
   }),
+
+  // FACT 8
   CatFact({
     'fi': 'Kissat ovat luonnostaan uteliaita eläimiä.',
     'en': 'Cats are naturally curious animals.',
-  }),
-  CatFact({
-    'fi': 'Kissat käyttävät hajuaistiaan tutkiessaan ympäristöään.',
-    'en': 'Cats use their sense of smell to explore their surroundings.',
-  }),
-  CatFact({
-    'fi': 'Kissan kielessä on pieniä taaksepäin suuntautuvia papilleja.',
-    'en': 'A cat’s tongue has tiny backward-facing papillae.',
-  }),
-  CatFact({
-    'fi': 'Kissat pesevät itseään usein pitääkseen turkkinsa puhtaana.',
-    'en': 'Cats groom themselves frequently to keep their fur clean.',
-  }),
-  CatFact({
-    'fi': 'Kissan pupillit voivat muuttua hyvin kapeiksi tai suuriksi.',
-    'en': 'A cat’s pupils can become very narrow or very large.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat usein aktiivisimmillaan aamun ja illan hämärässä.',
-    'en': 'Cats are often most active around dawn and dusk.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hypätä monta kertaa oman pituutensa verran.',
-    'en': 'Cats can jump several times their own body length.',
-  }),
-  CatFact({
-    'fi': 'Kissan häntä voi kertoa paljon sen mielialasta.',
-    'en': 'A cat’s tail can communicate a lot about its mood.',
-  }),
-  CatFact({
-    'fi': 'Kissan pehmeät tassut auttavat sitä liikkumaan hiljaa.',
-    'en': 'A cat’s soft paws help it move quietly.',
-  }),
-  CatFact({
-    'fi': 'Kissan kehräys voi tuntua matalana värinänä.',
-    'en': 'A cat’s purr can feel like a low vibration.',
-  }),
-  CatFact({
-    'fi': 'Kissat oppivat tunnistamaan tuttuja ääniä.',
-    'en': 'Cats can learn to recognize familiar sounds.',
-  }),
-  CatFact({
-    'fi': 'Kissan hajuaisti on ihmisen hajuaistia voimakkaampi.',
-    'en': 'A cat’s sense of smell is stronger than a human’s.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat ilmaista itseään monilla erilaisilla äänillä.',
-    'en': 'Cats can communicate using many different sounds.',
-  }),
-  CatFact({
-    'fi': 'Aikuinen kissa maukuu usein ihmisille enemmän kuin toisille kissoille.',
-    'en': 'Adult cats often meow to humans more than to other cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää viiksiään arvioidakseen kapeita tiloja.',
-    'en': 'Cats can use their whiskers to judge narrow spaces.',
-  }),
-  CatFact({
-    'fi': 'Kissan etutassuissa on yleensä viisi varvasta.',
-    'en': 'A cat usually has five toes on each front paw.',
-  }),
-  CatFact({
-    'fi': 'Kissan takatassuissa on yleensä neljä varvasta.',
-    'en': 'A cat usually has four toes on each back paw.',
-  }),
-  CatFact({
-    'fi': 'Joillakin kissoilla on tavallista enemmän varpaita.',
-    'en': 'Some cats have more toes than usual.',
-  }),
-  CatFact({
-    'fi': 'Kissat näkevät hämärässä ihmisiä paremmin.',
-    'en': 'Cats see better than humans in dim light.',
-  }),
-  CatFact({
-    'fi': 'Kissat eivät kuitenkaan näe täydellisessä pimeydessä.',
-    'en': 'Cats still cannot see in complete darkness.',
-  }),
-  CatFact({
-    'fi': 'Kissan silmät ovat suuret suhteessa sen pään kokoon.',
-    'en': 'A cat’s eyes are large relative to its head size.',
-  }),
-  CatFact({
-    'fi': 'Kissat reagoivat nopeasti liikkuviin kohteisiin.',
-    'en': 'Cats react quickly to moving objects.',
-  }),
-  CatFact({
-    'fi': 'Kissan korvat voivat kääntyä äänen suuntaan.',
-    'en': 'A cat’s ears can rotate toward a sound.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia päivittäisiä rutiineja nopeasti.',
-    'en': 'Cats can learn daily routines quickly.',
-  }),
-  CatFact({
-    'fi': 'Monet kissat pitävät lämpimistä nukkumapaikoista.',
-    'en': 'Many cats enjoy warm places to sleep.',
-  }),
-  CatFact({
-    'fi': 'Kissat etsivät usein korkeita paikkoja tarkkaillakseen ympäristöään.',
-    'en': 'Cats often seek high places to observe their surroundings.',
-  }),
-  CatFact({
-    'fi': 'Raapiminen auttaa kissaa hoitamaan kynsiään.',
-    'en': 'Scratching helps a cat maintain its claws.',
-  }),
-  CatFact({
-    'fi': 'Raapiminen voi myös olla tapa merkitä aluetta.',
-    'en': 'Scratching can also be a way to mark territory.',
-  }),
-  CatFact({
-    'fi': 'Kissan tassuissa on tuoksurauhasia.',
-    'en': 'Cats have scent glands in their paws.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hieroa päätään ihmistä vasten jättääkseen tuttua tuoksua.',
-    'en': 'Cats may rub their heads against people to leave familiar scent.',
-  }),
-  CatFact({
-    'fi': 'Kissan kehon kieli on tärkeä osa sen viestintää.',
-    'en': 'A cat’s body language is an important part of communication.',
-  }),
-  CatFact({
-    'fi': 'Kissat venyttelevät usein levon jälkeen.',
-    'en': 'Cats often stretch after resting.',
-  }),
-  CatFact({
-    'fi': 'Kissan turkki auttaa säätelemään ruumiinlämpöä.',
-    'en': 'A cat’s fur helps regulate body temperature.',
-  }),
-  CatFact({
-    'fi': 'Kissat vaihtavat turkkiaan vuodenaikojen mukaan.',
-    'en': 'Cats shed and renew their coats with the seasons.',
-  }),
-  CatFact({
-    'fi': 'Säännöllinen harjaus voi vähentää irtokarvoja.',
-    'en': 'Regular brushing can reduce loose fur.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat taitavia tasapainoilijoita.',
-    'en': 'Cats are skilled at balancing.',
-  }),
-  CatFact({
-    'fi': 'Kissan sisäkorva auttaa tasapainon ylläpitämisessä.',
-    'en': 'A cat’s inner ear helps maintain balance.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kääntää vartaloaan ilmassa.',
-    'en': 'Cats can twist their bodies in the air.',
-  }),
-  CatFact({
-    'fi': 'Kissan refleksit ovat yleensä erittäin nopeat.',
-    'en': 'A cat’s reflexes are generally very fast.',
-  }),
-  CatFact({
-    'fi': 'Leikki auttaa kissaa harjoittamaan metsästyskäyttäytymistä.',
-    'en': 'Play helps a cat practice hunting behavior.',
-  }),
-  CatFact({
-    'fi': 'Monet kissat pitävät leluista, jotka liikkuvat kuin pieni saalis.',
-    'en': 'Many cats enjoy toys that move like small prey.',
-  }),
-  CatFact({
-    'fi': 'Kissat tarvitsevat ympäristöönsä virikkeitä.',
-    'en': 'Cats need stimulation in their environment.',
-  }),
-  CatFact({
-    'fi': 'Raapimapuu voi tarjota kissalle liikuntaa ja virikkeitä.',
-    'en': 'A scratching tree can provide exercise and enrichment.',
+    'de': 'Katzen sind von Natur aus neugierige Tiere.',
+    'es': 'Los gatos son animales naturalmente curiosos.',
+    'fr': 'Les chats sont naturellement des animaux curieux.',
+    'zh': '猫天生就是好奇的动物。',
+    'vi': 'Mèo là loài động vật có bản tính tò mò.',
+    'ja': '猫は生まれつき好奇心旺盛な動物です。',
   }),
 
-  // 51–100
+  // FACT 9
+  CatFact({
+    'fi': 'Kissat voivat kehrätä sekä sisään- että uloshengityksen aikana.',
+    'en': 'Cats can purr during both inhaling and exhaling.',
+    'de': 'Katzen können sowohl beim Ein- als auch beim Ausatmen schnurren.',
+    'es': 'Los gatos pueden ronronear tanto al inhalar como al exhalar.',
+    'fr': 'Les chats peuvent ronronner en inspirant comme en expirant.',
+    'zh': '猫在吸气和呼气时都可以发出呼噜声。',
+    'vi': 'Mèo có thể kêu gừ gừ khi cả hít vào và thở ra.',
+    'ja': '猫は息を吸う時も吐く時もゴロゴロと音を出すことができます。',
+  }),
+
+  // FACT 10
+  CatFact({
+    'fi': 'Kissat käyttävät hajuaistiaan tärkeänä tapana tutkia ympäristöään.',
+    'en': 'Cats use their sense of smell as an important way to explore their environment.',
+    'de': 'Katzen nutzen ihren Geruchssinn intensiv, um ihre Umgebung zu erkunden.',
+    'es': 'Los gatos utilizan el olfato para explorar su entorno.',
+    'fr': 'Les chats utilisent beaucoup leur odorat pour explorer leur environnement.',
+    'zh': '猫会利用嗅觉探索周围的环境。',
+    'vi': 'Mèo sử dụng khứu giác để khám phá môi trường xung quanh.',
+    'ja': '猫は嗅覚を使って周囲の環境を探索します。',
+  }),
+
+  // FACT 11
+  CatFact({
+    'fi': 'Kissan korvat voivat liikkua eri suuntiin äänten paikantamiseksi.',
+    'en': 'A cat can move its ears to help locate sounds.',
+    'de': 'Eine Katze kann ihre Ohren bewegen, um Geräusche besser zu orten.',
+    'es': 'Un gato puede mover las orejas para localizar sonidos.',
+    'fr': 'Un chat peut bouger ses oreilles pour mieux localiser les sons.',
+    'zh': '猫可以转动耳朵来定位声音。',
+    'vi': 'Mèo có thể xoay tai để xác định vị trí âm thanh.',
+    'ja': '猫は耳を動かして音の方向を探すことができます。',
+  }),
+
+  // FACT 12
+  CatFact({
+    'fi': 'Kissat viettävät paljon aikaa turkkinsa puhdistamiseen.',
+    'en': 'Cats spend a large amount of time grooming their fur.',
+    'de': 'Katzen verbringen viel Zeit mit der Fellpflege.',
+    'es': 'Los gatos pasan mucho tiempo limpiando su pelaje.',
+    'fr': 'Les chats passent beaucoup de temps à nettoyer leur pelage.',
+    'zh': '猫会花很多时间清洁自己的毛发。',
+    'vi': 'Mèo dành nhiều thời gian để làm sạch bộ lông của mình.',
+    'ja': '猫は毛づくろいに多くの時間を使います。',
+  }),
+
+  // FACT 13
+  CatFact({
+    'fi': 'Kissat voivat hypätä useita kertoja oman pituutensa korkeudelle.',
+    'en': 'Cats can jump several times their own body length.',
+    'de': 'Katzen können ein Mehrfaches ihrer eigenen Körperlänge hochspringen.',
+    'es': 'Los gatos pueden saltar varias veces la longitud de su cuerpo.',
+    'fr': 'Les chats peuvent sauter plusieurs fois la longueur de leur corps.',
+    'zh': '猫可以跳到自身身体长度数倍的高度。',
+    'vi': 'Mèo có thể nhảy cao gấp nhiều lần chiều dài cơ thể của chúng.',
+    'ja': '猫は自分の体長の何倍もの高さまで跳ぶことができます。',
+  }),
+
+  // FACT 14
+  CatFact({
+    'fi': 'Kissan häntä voi kertoa paljon sen mielialasta.',
+    'en': 'A cat’s tail can reveal a lot about its mood.',
+    'de': 'Der Schwanz einer Katze kann viel über ihre Stimmung verraten.',
+    'es': 'La cola de un gato puede revelar mucho sobre su estado de ánimo.',
+    'fr': 'La queue d’un chat peut révéler beaucoup de choses sur son humeur.',
+    'zh': '猫的尾巴可以透露很多关于它情绪的信息。',
+    'vi': 'Đuôi của mèo có thể cho biết nhiều điều về tâm trạng của chúng.',
+    'ja': '猫の尻尾は気分を知る手がかりになります。',
+  }),
+
+  // FACT 15
+  CatFact({
+    'fi': 'Kissat voivat oppia tunnistamaan omistajansa äänen.',
+    'en': 'Cats can learn to recognize their owner’s voice.',
+    'de': 'Katzen können lernen, die Stimme ihres Besitzers zu erkennen.',
+    'es': 'Los gatos pueden aprender a reconocer la voz de su dueño.',
+    'fr': 'Les chats peuvent apprendre à reconnaître la voix de leur propriétaire.',
+    'zh': '猫可以学会识别主人的声音。',
+    'vi': 'Mèo có thể học cách nhận ra giọng nói của chủ nhân.',
+    'ja': '猫は飼い主の声を覚えることができます。',
+  }),
+
+  // FACT 16
+  CatFact({
+    'fi': 'Kissat voivat olla aktiivisimpia aamun ja illan hämärässä.',
+    'en': 'Cats can be most active around dawn and dusk.',
+    'de': 'Katzen können besonders in der Morgen- und Abenddämmerung aktiv sein.',
+    'es': 'Los gatos pueden estar más activos al amanecer y al anochecer.',
+    'fr': 'Les chats peuvent être particulièrement actifs à l’aube et au crépuscule.',
+    'zh': '猫通常在黎明和黄昏时更加活跃。',
+    'vi': 'Mèo có thể hoạt động mạnh nhất vào lúc bình minh và hoàng hôn.',
+    'ja': '猫は明け方や夕暮れ時に特に活発になることがあります。',
+  }),
+
+  // FACT 17
+  CatFact({
+    'fi': 'Kissan tassujen pehmeät anturat auttavat sitä liikkumaan hiljaa.',
+    'en': 'The soft pads on a cat’s paws help it move quietly.',
+    'de': 'Die weichen Ballen an den Pfoten helfen Katzen, sich leise zu bewegen.',
+    'es': 'Las suaves almohadillas de las patas ayudan a los gatos a moverse en silencio.',
+    'fr': 'Les coussinets souples des pattes aident les chats à se déplacer silencieusement.',
+    'zh': '猫爪上的柔软肉垫帮助它安静地移动。',
+    'vi': 'Đệm thịt mềm ở bàn chân giúp mèo di chuyển nhẹ nhàng.',
+    'ja': '猫の柔らかい肉球は静かに移動するのに役立ちます。',
+  }),
+
+  // FACT 18
+  CatFact({
+    'fi': 'Kissat voivat käyttää erilaisia ääniä viestiäkseen ihmisten kanssa.',
+    'en': 'Cats can use different sounds to communicate with humans.',
+    'de': 'Katzen können verschiedene Laute verwenden, um mit Menschen zu kommunizieren.',
+    'es': 'Los gatos pueden usar diferentes sonidos para comunicarse con las personas.',
+    'fr': 'Les chats peuvent utiliser différents sons pour communiquer avec les humains.',
+    'zh': '猫可以使用不同的声音与人类交流。',
+    'vi': 'Mèo có thể sử dụng nhiều âm thanh khác nhau để giao tiếp với con người.',
+    'ja': '猫はさまざまな鳴き声を使って人間とコミュニケーションを取ることができます。',
+  }),
+
+  // FACT 19
+  CatFact({
+    'fi': 'Kissat voivat nähdä hämärässä paremmin kuin ihmiset.',
+    'en': 'Cats can see better in low light than humans.',
+    'de': 'Katzen können bei schwachem Licht besser sehen als Menschen.',
+    'es': 'Los gatos pueden ver mejor con poca luz que los humanos.',
+    'fr': 'Les chats voient mieux que les humains dans une faible luminosité.',
+    'zh': '猫在昏暗环境中的视力比人类更好。',
+    'vi': 'Mèo có thể nhìn trong điều kiện ánh sáng yếu tốt hơn con người.',
+    'ja': '猫は人間よりも暗い場所でよく見ることができます。',
+  }),
+
+  // FACT 20
+  // ==========================================================
+  // FACTS 21–50
+  // ==========================================================
+
+  CatFact({
+    'fi': 'Kissat voivat juosta lyhyitä matkoja erittäin nopeasti.',
+    'en': 'Cats can run very fast over short distances.',
+    'es': 'Los gatos pueden correr muy rápido en distancias cortas.',
+    'de': 'Katzen können über kurze Strecken sehr schnell laufen.',
+    'fr': 'Les chats peuvent courir très vite sur de courtes distances.',
+    'ru': 'Кошки могут очень быстро бегать на короткие расстояния.',
+    'ja': '猫は短い距離ならとても速く走ることができます。',
+    'ko': '고양이는 짧은 거리를 매우 빠르게 달릴 수 있습니다.',
+    'zh': '猫可以在短距离内跑得非常快。',
+    'vi': 'Mèo có thể chạy rất nhanh trong quãng đường ngắn.',
+  }),
+
+  CatFact({
+    'fi': 'Kissa voi kehrätä myös rauhoittaakseen itseään.',
+    'en': 'A cat may purr to comfort itself.',
+    'es': 'Un gato también puede ronronear para tranquilizarse.',
+    'de': 'Eine Katze kann auch schnurren, um sich selbst zu beruhigen.',
+    'fr': 'Un chat peut aussi ronronner pour se réconforter.',
+    'ru': 'Кошка может мурлыкать, чтобы успокоить себя.',
+    'ja': '猫は自分を落ち着かせるためにゴロゴロ鳴くこともあります。',
+    'ko': '고양이는 스스로를 진정시키기 위해서도 골골거릴 수 있습니다.',
+    'zh': '猫也可能通过呼噜声来安慰自己。',
+    'vi': 'Mèo cũng có thể rừ rừ để tự trấn an.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat käyttävät korviaan äänen suunnan paikantamiseen.',
+    'en': 'Cats use their ears to locate the direction of sounds.',
+    'es': 'Los gatos usan sus orejas para localizar la dirección de los sonidos.',
+    'de': 'Katzen nutzen ihre Ohren, um die Richtung von Geräuschen zu bestimmen.',
+    'fr': 'Les chats utilisent leurs oreilles pour localiser la direction des sons.',
+    'ru': 'Кошки используют уши, чтобы определять направление звуков.',
+    'ja': '猫は耳を使って音のする方向を探します。',
+    'ko': '고양이는 귀를 사용해 소리가 나는 방향을 찾습니다.',
+    'zh': '猫利用耳朵判断声音传来的方向。',
+    'vi': 'Mèo sử dụng tai để xác định hướng của âm thanh.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan korvat voivat liikkua toisistaan riippumatta.',
+    'en': 'A cat’s ears can move independently from each other.',
+    'es': 'Las orejas de un gato pueden moverse de forma independiente.',
+    'de': 'Die Ohren einer Katze können sich unabhängig voneinander bewegen.',
+    'fr': 'Les oreilles d’un chat peuvent bouger indépendamment l’une de l’autre.',
+    'ru': 'Уши кошки могут двигаться независимо друг от друга.',
+    'ja': '猫の耳はそれぞれ独立して動かすことができます。',
+    'ko': '고양이의 귀는 서로 독립적으로 움직일 수 있습니다.',
+    'zh': '猫的两只耳朵可以独立移动。',
+    'vi': 'Hai tai của mèo có thể di chuyển độc lập với nhau.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat hypätä monta kertaa oman korkeutensa verran.',
+    'en': 'Cats can jump several times their own height.',
+    'es': 'Los gatos pueden saltar varias veces su propia altura.',
+    'de': 'Katzen können ein Vielfaches ihrer eigenen Körperhöhe springen.',
+    'fr': 'Les chats peuvent sauter plusieurs fois leur propre hauteur.',
+    'ru': 'Кошки могут прыгать на высоту, во много раз превышающую их рост.',
+    'ja': '猫は自分の体高の何倍もの高さまで跳ぶことができます。',
+    'ko': '고양이는 자신의 키보다 몇 배나 높은 곳까지 점프할 수 있습니다.',
+    'zh': '猫可以跳到自身身高数倍的高度。',
+    'vi': 'Mèo có thể nhảy cao gấp nhiều lần chiều cao của mình.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan kielessä on pieniä taaksepäin suuntautuvia piikkejä.',
+    'en': 'A cat’s tongue has tiny backward-facing spines.',
+    'es': 'La lengua de un gato tiene pequeñas espinas orientadas hacia atrás.',
+    'de': 'Die Zunge einer Katze hat kleine nach hinten gerichtete Widerhaken.',
+    'fr': 'La langue d’un chat possède de petites aspérités orientées vers l’arrière.',
+    'ru': 'На языке кошки есть маленькие шипики, направленные назад.',
+    'ja': '猫の舌には後ろ向きの小さな突起があります。',
+    'ko': '고양이의 혀에는 뒤쪽을 향한 작은 돌기가 있습니다.',
+    'zh': '猫的舌头上有许多向后的小突起。',
+    'vi': 'Lưỡi mèo có những gai nhỏ hướng về phía sau.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat käyttävät kieltään turkin puhdistamiseen.',
+    'en': 'Cats use their tongues to clean their fur.',
+    'es': 'Los gatos usan la lengua para limpiar su pelaje.',
+    'de': 'Katzen benutzen ihre Zunge, um ihr Fell zu reinigen.',
+    'fr': 'Les chats utilisent leur langue pour nettoyer leur pelage.',
+    'ru': 'Кошки используют язык для чистки своей шерсти.',
+    'ja': '猫は舌を使って毛づくろいをします。',
+    'ko': '고양이는 혀를 사용해 털을 깨끗하게 합니다.',
+    'zh': '猫用舌头清洁自己的毛发。',
+    'vi': 'Mèo dùng lưỡi để làm sạch bộ lông của mình.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan tassunpohjat ovat erittäin herkkiä kosketukselle.',
+    'en': 'A cat’s paw pads are very sensitive to touch.',
+    'es': 'Las almohadillas de las patas de un gato son muy sensibles al tacto.',
+    'de': 'Die Pfotenballen einer Katze sind sehr berührungsempfindlich.',
+    'fr': 'Les coussinets d’un chat sont très sensibles au toucher.',
+    'ru': 'Подушечки лап кошки очень чувствительны к прикосновению.',
+    'ja': '猫の肉球は触覚にとても敏感です。',
+    'ko': '고양이의 발바닥은 촉감에 매우 민감합니다.',
+    'zh': '猫的肉垫对触觉非常敏感。',
+    'vi': 'Đệm bàn chân của mèo rất nhạy cảm với sự chạm vào.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat kommunikoida ihmisille erilaisilla maukumisilla.',
+    'en': 'Cats can communicate with humans using different types of meows.',
+    'es': 'Los gatos pueden comunicarse con los humanos mediante diferentes maullidos.',
+    'de': 'Katzen können mit Menschen durch verschiedene Arten des Miauens kommunizieren.',
+    'fr': 'Les chats peuvent communiquer avec les humains grâce à différents miaulements.',
+    'ru': 'Кошки могут общаться с людьми с помощью разных видов мяуканья.',
+    'ja': '猫はさまざまな鳴き声で人間とコミュニケーションを取ることができます。',
+    'ko': '고양이는 다양한 울음소리로 사람과 의사소통할 수 있습니다.',
+    'zh': '猫可以通过不同的叫声与人类交流。',
+    'vi': 'Mèo có thể giao tiếp với con người bằng nhiều kiểu tiếng kêu khác nhau.',
+  }),
+
+  CatFact({
+    'fi': 'Aikuiset kissat maukuvat ihmisille yleensä enemmän kuin toisille kissoille.',
+    'en': 'Adult cats usually meow more to humans than to other cats.',
+    'es': 'Los gatos adultos suelen maullar más a los humanos que a otros gatos.',
+    'de': 'Erwachsene Katzen miauen Menschen normalerweise häufiger an als andere Katzen.',
+    'fr': 'Les chats adultes miaulent généralement davantage aux humains qu’aux autres chats.',
+    'ru': 'Взрослые кошки обычно чаще мяукают людям, чем другим кошкам.',
+    'ja': '成猫は他の猫よりも人間に対してよく鳴く傾向があります。',
+    'ko': '성묘는 다른 고양이보다 사람에게 더 자주 야옹거리는 편입니다.',
+    'zh': '成年猫通常比对其他猫更常对人类喵叫。',
+    'vi': 'Mèo trưởng thành thường kêu với con người nhiều hơn với những con mèo khác.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan häntä voi kertoa paljon sen mielialasta.',
+    'en': 'A cat’s tail can reveal a lot about its mood.',
+    'es': 'La cola de un gato puede revelar mucho sobre su estado de ánimo.',
+    'de': 'Der Schwanz einer Katze kann viel über ihre Stimmung verraten.',
+    'fr': 'La queue d’un chat peut révéler beaucoup de choses sur son humeur.',
+    'ru': 'Хвост кошки может многое рассказать о её настроении.',
+    'ja': '猫のしっぽは気分をよく表しています。',
+    'ko': '고양이의 꼬리는 기분을 많이 보여줄 수 있습니다.',
+    'zh': '猫的尾巴可以反映它的情绪。',
+    'vi': 'Đuôi mèo có thể tiết lộ nhiều điều về tâm trạng của nó.',
+  }),
+
+  CatFact({
+    'fi': 'Pystyssä oleva häntä voi olla merkki ystävällisestä tervehtimisestä.',
+    'en': 'An upright tail can be a sign of a friendly greeting.',
+    'es': 'Una cola levantada puede ser una señal de un saludo amistoso.',
+    'de': 'Ein aufgerichteter Schwanz kann ein Zeichen für eine freundliche Begrüßung sein.',
+    'fr': 'Une queue dressée peut être le signe d’une salutation amicale.',
+    'ru': 'Поднятый хвост может быть признаком дружелюбного приветствия.',
+    'ja': '立てたしっぽは友好的なあいさつのサインになることがあります。',
+    'ko': '꼿꼿이 세운 꼬리는 친근한 인사의 표시일 수 있습니다.',
+    'zh': '竖起的尾巴可能是友好问候的信号。',
+    'vi': 'Đuôi dựng đứng có thể là dấu hiệu của một lời chào thân thiện.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat merkitsevät ympäristöään myös tuoksujen avulla.',
+    'en': 'Cats also mark their environment using scents.',
+    'es': 'Los gatos también marcan su entorno utilizando olores.',
+    'de': 'Katzen markieren ihre Umgebung auch mit Düften.',
+    'fr': 'Les chats marquent aussi leur environnement à l’aide d’odeurs.',
+    'ru': 'Кошки также помечают окружающую территорию с помощью запахов.',
+    'ja': '猫はにおいを使って周囲をマーキングします。',
+    'ko': '고양이는 냄새를 이용해 주변 환경을 표시하기도 합니다.',
+    'zh': '猫也会利用气味标记周围环境。',
+    'vi': 'Mèo cũng đánh dấu môi trường xung quanh bằng mùi hương.',
+  }),
+
+  CatFact({
+    'fi': 'Kissoilla on hajurauhasia esimerkiksi poskissa ja tassuissa.',
+    'en': 'Cats have scent glands in places such as their cheeks and paws.',
+    'es': 'Los gatos tienen glándulas odoríferas, por ejemplo, en las mejillas y las patas.',
+    'de': 'Katzen haben Duftdrüsen, zum Beispiel an ihren Wangen und Pfoten.',
+    'fr': 'Les chats possèdent des glandes odorantes, notamment sur leurs joues et leurs pattes.',
+    'ru': 'У кошек есть пахучие железы, например на щеках и лапах.',
+    'ja': '猫には頬や足などににおいを出す腺があります。',
+    'ko': '고양이에게는 볼과 발 등에 냄새샘이 있습니다.',
+    'zh': '猫的脸颊和爪子等部位有气味腺。',
+    'vi': 'Mèo có các tuyến mùi ở những vị trí như má và bàn chân.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat viettää paljon aikaa tarkkailemalla ympäristöään.',
+    'en': 'Cats can spend a lot of time observing their surroundings.',
+    'es': 'Los gatos pueden pasar mucho tiempo observando su entorno.',
+    'de': 'Katzen können viel Zeit damit verbringen, ihre Umgebung zu beobachten.',
+    'fr': 'Les chats peuvent passer beaucoup de temps à observer leur environnement.',
+    'ru': 'Кошки могут проводить много времени, наблюдая за окружающим миром.',
+    'ja': '猫は周囲を観察して長い時間を過ごすことがあります。',
+    'ko': '고양이는 주변을 관찰하며 많은 시간을 보낼 수 있습니다.',
+    'zh': '猫可以花很多时间观察周围环境。',
+    'vi': 'Mèo có thể dành nhiều thời gian để quan sát môi trường xung quanh.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan pupillit voivat muuttua nopeasti valon määrän mukaan.',
+    'en': 'A cat’s pupils can quickly change according to the amount of light.',
+    'es': 'Las pupilas de un gato pueden cambiar rápidamente según la cantidad de luz.',
+    'de': 'Die Pupillen einer Katze können sich je nach Lichtmenge schnell verändern.',
+    'fr': 'Les pupilles d’un chat peuvent changer rapidement selon la quantité de lumière.',
+    'ru': 'Зрачки кошки могут быстро меняться в зависимости от количества света.',
+    'ja': '猫の瞳孔は光の量に応じて素早く変化します。',
+    'ko': '고양이의 동공은 빛의 양에 따라 빠르게 변할 수 있습니다.',
+    'zh': '猫的瞳孔会根据光线强弱迅速变化。',
+    'vi': 'Đồng tử của mèo có thể thay đổi nhanh chóng tùy theo lượng ánh sáng.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat näkevät hämärässä ihmisiä paremmin.',
+    'en': 'Cats can see better than humans in low light.',
+    'es': 'Los gatos pueden ver mejor que los humanos con poca luz.',
+    'de': 'Katzen können bei schwachem Licht besser sehen als Menschen.',
+    'fr': 'Les chats voient mieux que les humains lorsque la lumière est faible.',
+    'ru': 'Кошки лучше людей видят при слабом освещении.',
+    'ja': '猫は薄暗い場所では人間よりよく見えます。',
+    'ko': '고양이는 어두운 곳에서 사람보다 더 잘 볼 수 있습니다.',
+    'zh': '猫在昏暗环境中的视力比人类更好。',
+    'vi': 'Mèo nhìn tốt hơn con người trong điều kiện ánh sáng yếu.',
+  }),
+
+  CatFact({
+    'fi': 'Täydellisessä pimeydessä kissakaan ei kuitenkaan näe.',
+    'en': 'However, even cats cannot see in complete darkness.',
+    'es': 'Sin embargo, incluso los gatos no pueden ver en la oscuridad total.',
+    'de': 'Auch Katzen können jedoch in völliger Dunkelheit nicht sehen.',
+    'fr': 'Cependant, même les chats ne peuvent pas voir dans l’obscurité totale.',
+    'ru': 'Однако даже кошки не могут видеть в полной темноте.',
+    'ja': 'しかし、完全な暗闇では猫でも見ることができません。',
+    'ko': '하지만 고양이도 완전한 어둠 속에서는 볼 수 없습니다.',
+    'zh': '不过，即使是猫也无法在完全黑暗中看见东西。',
+    'vi': 'Tuy nhiên, ngay cả mèo cũng không thể nhìn thấy trong bóng tối hoàn toàn.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat ovat luonnostaan taitavia metsästäjiä.',
+    'en': 'Cats are naturally skilled hunters.',
+    'es': 'Los gatos son cazadores hábiles por naturaleza.',
+    'de': 'Katzen sind von Natur aus geschickte Jäger.',
+    'fr': 'Les chats sont naturellement de bons chasseurs.',
+    'ru': 'Кошки от природы являются умелыми охотниками.',
+    'ja': '猫は生まれつき優れたハンターです。',
+    'ko': '고양이는 본래 뛰어난 사냥꾼입니다.',
+    'zh': '猫天生就是熟练的猎手。',
+    'vi': 'Mèo là những thợ săn tài giỏi theo bản năng.',
+  }),
+
+  CatFact({
+    'fi': 'Kissa voi väijyä saalistaan hyvin hiljaa.',
+    'en': 'A cat can stalk its prey very quietly.',
+    'es': 'Un gato puede acechar a su presa en silencio.',
+    'de': 'Eine Katze kann ihre Beute sehr leise anschleichen.',
+    'fr': 'Un chat peut traquer sa proie très silencieusement.',
+    'ru': 'Кошка может очень тихо подкрадываться к своей добыче.',
+    'ja': '猫は獲物にとても静かに忍び寄ることができます。',
+    'ko': '고양이는 먹잇감에게 매우 조용히 접근할 수 있습니다.',
+    'zh': '猫可以非常安静地潜伏接近猎物。',
+    'vi': 'Mèo có thể rình con mồi rất im lặng.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan pehmeät tassut auttavat sitä liikkumaan hiljaisesti.',
+    'en': 'A cat’s soft paws help it move quietly.',
+    'es': 'Las suaves patas de un gato le ayudan a moverse silenciosamente.',
+    'de': 'Die weichen Pfoten einer Katze helfen ihr, sich leise zu bewegen.',
+    'fr': 'Les pattes souples d’un chat l’aident à se déplacer silencieusement.',
+    'ru': 'Мягкие лапы помогают кошке передвигаться бесшумно.',
+    'ja': '猫の柔らかい足は静かに動くのに役立ちます。',
+    'ko': '고양이의 부드러운 발은 조용히 움직이는 데 도움이 됩니다.',
+    'zh': '猫柔软的爪子帮助它安静地移动。',
+    'vi': 'Bàn chân mềm giúp mèo di chuyển một cách yên lặng.',
+  }),
 
   CatFact({
     'fi': 'Kissat voivat oppia tunnistamaan oman nimensä.',
     'en': 'Cats can learn to recognize their own names.',
+    'es': 'Los gatos pueden aprender a reconocer su propio nombre.',
+    'de': 'Katzen können lernen, ihren eigenen Namen zu erkennen.',
+    'fr': 'Les chats peuvent apprendre à reconnaître leur propre nom.',
+    'ru': 'Кошки могут научиться узнавать своё имя.',
+    'ja': '猫は自分の名前を覚えて認識することができます。',
+    'ko': '고양이는 자신의 이름을 알아듣는 법을 배울 수 있습니다.',
+    'zh': '猫可以学会识别自己的名字。',
+    'vi': 'Mèo có thể học cách nhận ra tên của mình.',
   }),
+
   CatFact({
-    'fi': 'Jokaisen kissan persoonallisuus on erilainen.',
-    'en': 'Every cat has a different personality.',
+    'fi': 'Jokaisella kissalla on oma persoonallisuutensa.',
+    'en': 'Every cat has its own personality.',
+    'es': 'Cada gato tiene su propia personalidad.',
+    'de': 'Jede Katze hat ihre eigene Persönlichkeit.',
+    'fr': 'Chaque chat a sa propre personnalité.',
+    'ru': 'У каждой кошки есть своя индивидуальность.',
+    'ja': 'それぞれの猫には独自の個性があります。',
+    'ko': '모든 고양이는 각자의 성격을 가지고 있습니다.',
+    'zh': '每只猫都有自己的个性。',
+    'vi': 'Mỗi con mèo đều có tính cách riêng.',
   }),
+
+  CatFact({
+    'fi': 'Jotkut kissat ovat hyvin seurallisia, kun taas toiset viihtyvät enemmän omissa oloissaan.',
+    'en': 'Some cats are very social, while others prefer spending more time alone.',
+    'es': 'Algunos gatos son muy sociables, mientras que otros prefieren estar más tiempo solos.',
+    'de': 'Manche Katzen sind sehr gesellig, während andere lieber mehr Zeit allein verbringen.',
+    'fr': 'Certains chats sont très sociables, tandis que d’autres préfèrent passer plus de temps seuls.',
+    'ru': 'Некоторые кошки очень общительны, а другие предпочитают проводить больше времени в одиночестве.',
+    'ja': 'とても社交的な猫もいれば、一人で過ごすことを好む猫もいます。',
+    'ko': '매우 사교적인 고양이도 있고 혼자 있는 것을 더 좋아하는 고양이도 있습니다.',
+    'zh': '有些猫非常喜欢社交，而另一些则更喜欢独处。',
+    'vi': 'Một số mèo rất hòa đồng, trong khi những con khác thích ở một mình hơn.',
+  }),
+
   CatFact({
     'fi': 'Kissat voivat muodostaa vahvoja siteitä ihmisiin.',
     'en': 'Cats can form strong bonds with people.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat pitävät vedestä enemmän kuin toiset.',
-    'en': 'Some cats enjoy water more than others.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat juoda vettä erittäin nopeasti.',
-    'en': 'Cats can drink water very quickly.',
-  }),
-  CatFact({
-    'fi': 'Kissan kuulo auttaa sitä havaitsemaan pienenkin liikkeen.',
-    'en': 'A cat’s hearing helps detect even small movements.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nukkua useissa erilaisissa asennoissa.',
-    'en': 'Cats can sleep in many different positions.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nukkua käpertyneenä lämmön säilyttämiseksi.',
-    'en': 'Cats may curl up while sleeping to conserve warmth.',
-  }),
-  CatFact({
-    'fi': 'Rentoutunut kissa voi nukkua selällään.',
-    'en': 'A relaxed cat may sleep on its back.',
-  }),
-  CatFact({
-    'fi': 'Kissat käyttävät paljon aikaa ympäristön tarkkailuun.',
-    'en': 'Cats spend a lot of time observing their surroundings.',
-  }),
-  CatFact({
-    'fi': 'Kissan korvien asento voi kertoa sen mielialasta.',
-    'en': 'The position of a cat’s ears can reveal its mood.',
-  }),
-  CatFact({
-    'fi': 'Pystyssä oleva häntä voi olla ystävällinen tervehdys.',
-    'en': 'An upright tail can be a friendly greeting.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kommunikoida myös tuoksujen avulla.',
-    'en': 'Cats can also communicate through scents.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tunnistaa tuttuja paikkoja niiden hajujen perusteella.',
-    'en': 'Cats can recognize familiar places by their smells.',
-  }),
-  CatFact({
-    'fi': 'Kissat pitävät usein omista turvallisista piilopaikoistaan.',
-    'en': 'Cats often enjoy having their own safe hiding places.',
-  }),
-  CatFact({
-    'fi': 'Laatikot voivat tuntua kissasta turvallisilta piilopaikoilta.',
-    'en': 'Boxes can feel like safe hiding places to cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat viettää paljon aikaa ikkunasta katsellen.',
-    'en': 'Cats can spend a lot of time watching through windows.',
-  }),
-  CatFact({
-    'fi': 'Linnut ja pienet liikkuvat kohteet kiinnostavat monia kissoja.',
-    'en': 'Birds and small moving objects interest many cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia käyttämään erilaisia leluja.',
-    'en': 'Cats can learn how to use different toys.',
-  }),
-  CatFact({
-    'fi': 'Ruoka voi olla tehokas palkinto kissan koulutuksessa.',
-    'en': 'Food can be an effective reward in cat training.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia yksinkertaisia temppuja.',
-    'en': 'Cats can learn simple tricks.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat usein tarkkoja puhtaudestaan.',
-    'en': 'Cats are often very concerned with cleanliness.',
-  }),
-  CatFact({
-    'fi': 'Kissan hiekkalaatikon puhtaus on sille tärkeää.',
-    'en': 'A clean litter box is important to a cat.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla herkkiä muutoksille ympäristössään.',
-    'en': 'Cats can be sensitive to changes in their environment.',
-  }),
-  CatFact({
-    'fi': 'Uudet ihmiset voivat vaatia kissalta aikaa tottua.',
-    'en': 'Cats may need time to get used to new people.',
-  }),
-  CatFact({
-    'fi': 'Rauhallinen lähestyminen voi auttaa kissaa tuntemaan olonsa turvalliseksi.',
-    'en': 'A calm approach can help a cat feel safe.',
-  }),
-  CatFact({
-    'fi': 'Kissat pitävät usein ennakoitavista rutiineista.',
-    'en': 'Cats often enjoy predictable routines.',
-  }),
-  CatFact({
-    'fi': 'Kissan ruokailuaika voi muodostua tärkeäksi osaksi päivää.',
-    'en': 'Mealtime can become an important part of a cat’s day.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin kärsivällisiä tarkkailijoita.',
-    'en': 'Cats can be very patient observers.',
-  }),
-  CatFact({
-    'fi': 'Kissan metsästyskäyttäytyminen voi näkyä myös leikissä.',
-    'en': 'A cat’s hunting behavior can also appear during play.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat väijyä lelua ennen hyökkäystä.',
-    'en': 'Cats may stalk a toy before pouncing.',
-  }),
-  CatFact({
-    'fi': 'Kissan takajalat ovat voimakkaat hyppäämistä varten.',
-    'en': 'A cat’s hind legs are powerful for jumping.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kiivetä erittäin taitavasti.',
-    'en': 'Cats can climb very skillfully.',
-  }),
-  CatFact({
-    'fi': 'Kaikki kissat eivät kuitenkaan pidä samoista korkeuksista.',
-    'en': 'Not all cats enjoy the same heights.',
-  }),
-  CatFact({
-    'fi': 'Kissan leikki voi muuttua iän myötä.',
-    'en': 'A cat’s play behavior can change with age.',
-  }),
-  CatFact({
-    'fi': 'Pennut ovat yleensä hyvin leikkisiä.',
-    'en': 'Kittens are usually very playful.',
-  }),
-  CatFact({
-    'fi': 'Vanhemmat kissat voivat suosia rauhallisempaa toimintaa.',
-    'en': 'Older cats may prefer calmer activities.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää tassujaan esineiden tutkimiseen.',
-    'en': 'Cats can use their paws to explore objects.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla sekä itsenäisiä että seurallisia.',
-    'en': 'Cats can be both independent and social.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat seuraavat omistajaansa huoneesta toiseen.',
-    'en': 'Some cats follow their owners from room to room.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nauttia rauhallisesta puheesta.',
-    'en': 'Cats may enjoy calm voices.',
-  }),
-  CatFact({
-    'fi': 'Kissat tunnistavat usein tuttujen ihmisten ääniä.',
-    'en': 'Cats often recognize familiar human voices.',
-  }),
-  CatFact({
-    'fi': 'Kissan kehräys ei aina tarkoita vain onnellisuutta.',
-    'en': 'A cat’s purr does not always mean happiness.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kehrätä erilaisissa tilanteissa.',
-    'en': 'Cats can purr in different situations.',
-  }),
-  CatFact({
-    'fi': 'Kissan viikset auttavat sitä aistimaan lähellä olevia asioita.',
-    'en': 'A cat’s whiskers help it sense nearby objects.',
-  }),
-  CatFact({
-    'fi': 'Kissat käyttävät näköään ja kuuloaan yhdessä metsästyksessä.',
-    'en': 'Cats use vision and hearing together when hunting.',
-  }),
-  CatFact({
-    'fi': 'Kissan silmät voivat heijastaa valoa hämärässä.',
-    'en': 'A cat’s eyes can reflect light in dim conditions.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat havaita pieniä liikkeitä nopeasti.',
-    'en': 'Cats can quickly notice small movements.',
-  }),
-  CatFact({
-    'fi': 'Monet kissat pitävät aurinkoisista paikoista.',
-    'en': 'Many cats enjoy sunny spots.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat vaihtaa nukkumapaikkaansa päivän aikana.',
-    'en': 'Cats may change sleeping places during the day.',
-  }),
-  CatFact({
-    'fi': 'Turvallinen kotiympäristö auttaa kissaa rentoutumaan.',
-    'en': 'A safe home environment helps a cat relax.',
+    'es': 'Los gatos pueden crear fuertes vínculos con las personas.',
+    'de': 'Katzen können starke Bindungen zu Menschen aufbauen.',
+    'fr': 'Les chats peuvent créer des liens forts avec les humains.',
+    'ru': 'Кошки могут формировать крепкие связи с людьми.',
+    'ja': '猫は人間と強い絆を築くことができます。',
+    'ko': '고양이는 사람과 강한 유대감을 형성할 수 있습니다.',
+    'zh': '猫可以与人类建立深厚的感情联系。',
+    'vi': 'Mèo có thể hình thành mối gắn bó mạnh mẽ với con người.',
   }),
 
-  // 101–150
-
   CatFact({
-    'fi': 'Kissat voivat muistaa kokemuksia pitkään.',
-    'en': 'Cats can remember experiences for a long time.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat yhdistää ääniä tiettyihin tapahtumiin.',
-    'en': 'Cats can associate sounds with certain events.',
-  }),
-  CatFact({
-    'fi': 'Monet kissat tunnistavat ruokapussin äänen.',
-    'en': 'Many cats recognize the sound of their food bag.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia, mistä niiden ruoka tulee.',
-    'en': 'Cats can learn where their food comes from.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat odottaa omistajaansa tutun aikataulun mukaan.',
-    'en': 'Cats may wait for their owners according to familiar schedules.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat ilmaista kiinnostusta katseellaan.',
-    'en': 'Cats can show interest through their gaze.',
-  }),
-  CatFact({
-    'fi': 'Kissan rento asento kertoo usein turvallisuuden tunteesta.',
-    'en': 'A relaxed posture often shows that a cat feels safe.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat piiloutua, jos ne pelästyvät.',
-    'en': 'Cats may hide when they become frightened.',
-  }),
-  CatFact({
-    'fi': 'Kissat tarvitsevat aikaa tottuakseen uusiin tilanteisiin.',
-    'en': 'Cats need time to adjust to new situations.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat ovat rohkeampia kuin toiset.',
-    'en': 'Some cats are braver than others.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin tarkkoja siitä, missä ne nukkuvat.',
-    'en': 'Cats can be very selective about where they sleep.',
-  }),
-  CatFact({
-    'fi': 'Pehmeät alustat ovat monien kissojen suosikkeja.',
-    'en': 'Soft surfaces are favorites of many cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nauttia lämpimästä peitosta.',
-    'en': 'Cats may enjoy a warm blanket.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää ihmistä lämpimänä nukkumapaikkana.',
-    'en': 'Cats may use a human as a warm sleeping place.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat osoittaa luottamusta nukkumalla lähellä ihmistä.',
-    'en': 'Cats may show trust by sleeping near a person.',
-  }),
-  CatFact({
-    'fi': 'Kissan vatsan näyttäminen voi olla merkki luottamuksesta.',
-    'en': 'Showing the belly can be a sign of trust.',
-  }),
-  CatFact({
-    'fi': 'Vatsan näyttäminen ei aina tarkoita, että kissa haluaa vatsan rapsutusta.',
-    'en': 'Showing the belly does not always mean a cat wants belly rubs.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää erilaisia maukumisia eri tilanteissa.',
-    'en': 'Cats can use different meows in different situations.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat ovat luonnostaan hyvin puheliaita.',
-    'en': 'Some cats are naturally very vocal.',
-  }),
-  CatFact({
-    'fi': 'Toiset kissat ovat lähes hiljaisia.',
-    'en': 'Other cats are almost silent.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat viestiä myös kehonsa asennolla.',
-    'en': 'Cats can also communicate through body posture.',
-  }),
-  CatFact({
-    'fi': 'Pörröinen häntä voi olla merkki voimakkaasta tunnetilasta.',
-    'en': 'A puffed-up tail can signal a strong emotional state.',
-  }),
-  CatFact({
-    'fi': 'Kissan selkä voi kaartua sen yrittäessä näyttää suuremmalta.',
-    'en': 'A cat may arch its back to appear larger.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla erittäin nopeita lyhyillä matkoilla.',
-    'en': 'Cats can be extremely fast over short distances.',
-  }),
-  CatFact({
-    'fi': 'Kissan vartalo on rakennettu nopeisiin ja ketteriin liikkeisiin.',
-    'en': 'A cat’s body is built for quick and agile movements.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat liikkua lähes äänettömästi.',
-    'en': 'Cats can move almost silently.',
-  }),
-  CatFact({
-    'fi': 'Kissan tassunpohjat pehmentävät askelia.',
-    'en': 'The pads of a cat’s paws soften its steps.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää kynsiään kiipeämiseen.',
-    'en': 'Cats can use their claws for climbing.',
-  }),
-  CatFact({
-    'fi': 'Kynnet kasvavat jatkuvasti.',
-    'en': 'A cat’s claws continue to grow.',
-  }),
-  CatFact({
-    'fi': 'Raapiminen auttaa poistamaan kynsien ulompaa kerrosta.',
-    'en': 'Scratching helps remove the outer layer of the claws.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin tarkkoja saaliin liikkeistä.',
-    'en': 'Cats can pay close attention to prey movement.',
-  }),
-  CatFact({
-    'fi': 'Leikkiminen voi auttaa sisäkissaa käyttämään energiaa.',
-    'en': 'Playing can help an indoor cat use energy.',
-  }),
-  CatFact({
-    'fi': 'Lyhyet leikkihetket voivat olla kissalle hyödyllisiä.',
-    'en': 'Short play sessions can be beneficial for cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kyllästyä samaan leluun.',
-    'en': 'Cats can become bored with the same toy.',
-  }),
-  CatFact({
-    'fi': 'Lelujen vaihtelu voi tehdä leikistä kiinnostavampaa.',
-    'en': 'Rotating toys can make play more interesting.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia avaamaan yksinkertaisia ovia.',
-    'en': 'Cats can learn to open simple doors.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat ovat erityisen taitavia ongelmanratkaisijoita.',
-    'en': 'Some cats are especially skilled problem solvers.',
-  }),
-  CatFact({
-    'fi': 'Kissat tutkivat usein uusia esineitä hajun avulla.',
-    'en': 'Cats often investigate new objects by smell.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla epäluuloisia uusista asioista aluksi.',
-    'en': 'Cats can be cautious around new things at first.',
-  }),
-  CatFact({
-    'fi': 'Turvallinen tutustuminen auttaa kissaa hyväksymään muutoksia.',
-    'en': 'Safe introductions can help cats accept changes.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat pitää hiljaisista ympäristöistä.',
-    'en': 'Cats may prefer quiet environments.',
-  }),
-  CatFact({
-    'fi': 'Äkilliset kovat äänet voivat pelästyttää kissan.',
-    'en': 'Sudden loud noises can frighten a cat.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat etsiä suojaa ukkosen aikana.',
-    'en': 'Cats may seek shelter during thunderstorms.',
-  }),
-  CatFact({
-    'fi': 'Kissan kuulo on tärkeä osa sen ympäristön tarkkailua.',
-    'en': 'A cat’s hearing is an important part of observing its environment.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat liikuttaa korviaan toisistaan riippumatta.',
-    'en': 'Cats can move their ears independently.',
-  }),
-  CatFact({
-    'fi': 'Kissan korvat auttavat paikantamaan äänen suunnan.',
-    'en': 'A cat’s ears help locate the direction of sounds.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla erityisen aktiivisia iltaisin.',
-    'en': 'Cats can be especially active in the evening.',
-  }),
-  CatFact({
-    'fi': 'Päivän rytmi voi vaihdella kissan elämäntavan mukaan.',
-    'en': 'A cat’s daily rhythm can vary depending on its lifestyle.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat viettää paljon aikaa lepäämällä.',
-    'en': 'Cats can spend a large amount of time resting.',
-  }),
-  CatFact({
-    'fi': 'Lepo auttaa kissaa palautumaan aktiivisista hetkistä.',
-    'en': 'Rest helps a cat recover from active moments.',
+    'fi': 'Leikkiminen auttaa kissaa harjoittelemaan metsästystaitoja.',
+    'en': 'Playing helps a cat practice its hunting skills.',
+    'es': 'Jugar ayuda a un gato a practicar sus habilidades de caza.',
+    'de': 'Spielen hilft einer Katze, ihre Jagdfähigkeiten zu trainieren.',
+    'fr': 'Jouer aide un chat à pratiquer ses compétences de chasse.',
+    'ru': 'Игра помогает кошке тренировать охотничьи навыки.',
+    'ja': '遊びは猫が狩りの能力を練習するのに役立ちます。',
+    'ko': '놀이는 고양이가 사냥 기술을 연습하는 데 도움이 됩니다.',
+    'zh': '玩耍可以帮助猫练习捕猎技能。',
+    'vi': 'Chơi đùa giúp mèo rèn luyện kỹ năng săn mồi.',
   }),
 
-  // 151–200
-
   CatFact({
-    'fi': 'Kissat voivat vaihtaa asentoa monta kertaa unen aikana.',
-    'en': 'Cats can change position many times while sleeping.',
-  }),
-  CatFact({
-    'fi': 'Kissan uniasento voi riippua lämpötilasta.',
-    'en': 'A cat’s sleeping position can depend on temperature.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hakeutua viileään paikkaan kuumalla säällä.',
-    'en': 'Cats may seek cooler places in hot weather.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hakeutua lämpimään paikkaan kylmällä säällä.',
-    'en': 'Cats may seek warmer places in cold weather.',
-  }),
-  CatFact({
-    'fi': 'Monet kissat pitävät auringonpaisteesta.',
-    'en': 'Many cats enjoy sunshine.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tarkkailla maailmaa pitkään ikkunasta.',
-    'en': 'Cats can watch the world through a window for a long time.',
-  }),
-  CatFact({
-    'fi': 'Ikkunasta katselu voi tarjota kissalle virikkeitä.',
-    'en': 'Watching through a window can provide enrichment for cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kiinnostua hyönteisistä.',
-    'en': 'Cats can be interested in insects.',
-  }),
-  CatFact({
-    'fi': 'Nopeasti liikkuvat asiat herättävät usein kissan huomion.',
-    'en': 'Fast-moving things often attract a cat’s attention.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat väijyä ennen kuin ne hyppäävät.',
-    'en': 'Cats may stalk before they pounce.',
-  }),
-  CatFact({
-    'fi': 'Kissan hyppy alkaa usein voimakkaasta takajalkojen työnnöstä.',
-    'en': 'A cat’s jump often begins with a powerful push from its hind legs.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat laskeutua erittäin ketterästi.',
-    'en': 'Cats can land very agilely.',
-  }),
-  CatFact({
-    'fi': 'Kissat arvioivat etäisyyksiä ennen hyppäämistä.',
-    'en': 'Cats estimate distances before jumping.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat epäröidä, jos alusta tuntuu epävarmalta.',
-    'en': 'Cats may hesitate if a surface feels unstable.',
-  }),
-  CatFact({
-    'fi': 'Kissat pitävät usein tukevista kiipeilypaikoista.',
-    'en': 'Cats often prefer sturdy climbing places.',
-  }),
-  CatFact({
-    'fi': 'Korkeat tasot voivat tarjota kissalle turvallisuuden tunnetta.',
-    'en': 'High platforms can provide cats with a sense of security.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tarkkailla muita eläimiä turvalliselta etäisyydeltä.',
-    'en': 'Cats may observe other animals from a safe distance.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat ovat hyvin sosiaalisia.',
-    'en': 'Some cats are very social.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat tarvitsevat enemmän omaa tilaa.',
-    'en': 'Some cats need more personal space.',
-  }),
-  CatFact({
-    'fi': 'Kissan persoonallisuus vaikuttaa siihen, kuinka se käyttäytyy ihmisten kanssa.',
-    'en': 'A cat’s personality affects how it behaves with people.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat muodostaa ystävyyssuhteita toisten kissojen kanssa.',
-    'en': 'Cats can form friendships with other cats.',
-  }),
-  CatFact({
-    'fi': 'Kaikki kissat eivät kuitenkaan halua jakaa tilaansa.',
-    'en': 'Not all cats want to share their space.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tunnistaa toisensa tuoksujen avulla.',
-    'en': 'Cats can recognize one another through scent.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hieroa toisiaan vahvistaakseen sosiaalisia siteitä.',
-    'en': 'Cats may rub against each other to strengthen social bonds.',
-  }),
-  CatFact({
-    'fi': 'Yhdessä nukkuvat kissat voivat tuntea olonsa turvalliseksi.',
-    'en': 'Cats that sleep together may feel safe with each other.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hoitaa myös toistensa turkkia.',
-    'en': 'Cats can groom each other.',
-  }),
-  CatFact({
-    'fi': 'Kissan turkin väri ei yksin kerro sen persoonallisuudesta.',
-    'en': 'A cat’s fur color alone does not determine its personality.',
-  }),
-  CatFact({
-    'fi': 'Kissoilla on valtavasti erilaisia turkkikuvioita.',
-    'en': 'Cats have a huge variety of coat patterns.',
-  }),
-  CatFact({
-    'fi': 'Raidallinen turkki on yksi tavallisista kissakuvioista.',
-    'en': 'Striped coats are one common cat pattern.',
-  }),
-  CatFact({
-    'fi': 'Joillakin kissoilla on yksivärinen turkki.',
-    'en': 'Some cats have solid-colored coats.',
-  }),
-  CatFact({
-    'fi': 'Moniväriset turkit voivat muodostaa monimutkaisia kuvioita.',
-    'en': 'Multicolored coats can form complex patterns.',
-  }),
-  CatFact({
-    'fi': 'Kissan turkin pituus voi olla lyhyt tai pitkä.',
-    'en': 'A cat’s coat can be short or long.',
-  }),
-  CatFact({
-    'fi': 'Pitkäkarvaiset kissat tarvitsevat usein enemmän turkinhoitoa.',
-    'en': 'Long-haired cats often need more coat care.',
-  }),
-  CatFact({
-    'fi': 'Harjaaminen voi olla monelle kissalle miellyttävä hetki.',
-    'en': 'Brushing can be enjoyable for many cats.',
-  }),
-  CatFact({
-    'fi': 'Kaikki kissat eivät pidä samanlaisesta harjauksesta.',
-    'en': 'Not all cats enjoy the same type of brushing.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat ilmaista tyytyväisyyttä rentoutumalla.',
-    'en': 'Cats can show contentment by relaxing.',
-  }),
-  CatFact({
-    'fi': 'Rauhallinen kehräys voi kuulua tyytyväisen kissan ääniin.',
-    'en': 'Gentle purring can be one sound of a content cat.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat myös viestiä hiljaisuudella ja katseella.',
-    'en': 'Cats can also communicate through silence and eye contact.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat hyviä tarkkailemaan ihmisten käyttäytymistä.',
-    'en': 'Cats are good at observing human behavior.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia, kuka yleensä antaa niille ruokaa.',
-    'en': 'Cats can learn who usually gives them food.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat odottaa tuttuja rutiineja.',
-    'en': 'Cats can anticipate familiar routines.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia yhdistämään tietyn äänen ruokaan.',
-    'en': 'Cats can learn to associate a particular sound with food.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin motivoituneita herkkujen avulla.',
-    'en': 'Cats can be highly motivated by treats.',
-  }),
-  CatFact({
-    'fi': 'Positiivinen palkitseminen voi auttaa kissan koulutuksessa.',
-    'en': 'Positive rewards can help with cat training.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia tulemaan kutsusta.',
-    'en': 'Cats can learn to come when called.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia käyttämään raapimapuuta.',
-    'en': 'Cats can learn to use a scratching post.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia käyttämään valjaita vähitellen.',
-    'en': 'Cats can gradually learn to use a harness.',
-  }),
-  CatFact({
-    'fi': 'Jokainen kissa oppii omaan tahtiinsa.',
-    'en': 'Every cat learns at its own pace.',
-  }),
-  CatFact({
-    'fi': 'Kärsivällisyys on tärkeää kissan kanssa.',
-    'en': 'Patience is important when working with cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat arvostavat usein mahdollisuutta tehdä omia valintoja.',
-    'en': 'Cats often appreciate having choices.',
-  }),
-  CatFact({
-    'fi': 'Turvallinen ympäristö auttaa kissaa näyttämään persoonallisuutensa.',
-    'en': 'A safe environment helps a cat show its personality.',
+    'fi': 'Kissat rakastavat usein pieniä liikkuvia leluja.',
+    'en': 'Cats often enjoy small moving toys.',
+    'es': 'A los gatos a menudo les gustan los juguetes pequeños que se mueven.',
+    'de': 'Katzen mögen oft kleine bewegliche Spielzeuge.',
+    'fr': 'Les chats apprécient souvent les petits jouets qui bougent.',
+    'ru': 'Кошкам часто нравятся маленькие движущиеся игрушки.',
+    'ja': '猫は小さく動くおもちゃを好むことが多いです。',
+    'ko': '고양이는 작은 움직이는 장난감을 좋아하는 경우가 많습니다.',
+    'zh': '猫通常喜欢会移动的小玩具。',
+    'vi': 'Mèo thường thích những món đồ chơi nhỏ có thể di chuyển.',
   }),
 
-  // 201–250
-
   CatFact({
-    'fi': 'Kissat voivat olla hyvin leikkisiä myös aikuisina.',
-    'en': 'Cats can remain very playful as adults.',
-  }),
-  CatFact({
-    'fi': 'Leikki voi vahvistaa kissan ja ihmisen välistä suhdetta.',
-    'en': 'Play can strengthen the bond between a cat and a person.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat pitää erilaisista leikkityyleistä.',
-    'en': 'Cats can enjoy different styles of play.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat pitävät sulkaleluista.',
-    'en': 'Some cats enjoy feather toys.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat pitävät palloista.',
-    'en': 'Some cats enjoy balls.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat pitävät leluhiiristä.',
-    'en': 'Some cats enjoy toy mice.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kantaa pieniä leluja suussaan.',
-    'en': 'Cats may carry small toys in their mouths.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tuoda leluja ihmiselle.',
-    'en': 'Cats may bring toys to people.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia avaamaan kaappeja.',
-    'en': 'Cats can learn to open cabinets.',
-  }),
-  CatFact({
-    'fi': 'Uteliaisuus voi saada kissan tutkimaan uusia paikkoja.',
-    'en': 'Curiosity can lead cats to explore new places.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tarkistaa huoneen ennen kuin rentoutuvat.',
-    'en': 'Cats may inspect a room before relaxing.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat muistaa suosikkipaikkansa.',
-    'en': 'Cats can remember their favorite places.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat palata samaan nukkumapaikkaan usein.',
-    'en': 'Cats may return to the same sleeping place often.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat vaihtaa suosikkipaikkaansa ajan myötä.',
-    'en': 'Cats can change their favorite place over time.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nauttia rauhallisesta musiikista.',
-    'en': 'Cats may enjoy calm music.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat reagoida erilaisiin ääniin eri tavoin.',
-    'en': 'Cats can react differently to different sounds.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tunnistaa tutun auton äänen.',
-    'en': 'Cats may recognize the sound of a familiar car.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia, milloin joku on tulossa kotiin.',
-    'en': 'Cats can learn when someone is likely to come home.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat odottaa ovella tuttua ihmistä.',
-    'en': 'Cats may wait by the door for a familiar person.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat osoittaa kiintymystä monilla tavoilla.',
-    'en': 'Cats can show affection in many ways.',
-  }),
-  CatFact({
-    'fi': 'Pään puskeminen voi olla kissan tapa osoittaa kiintymystä.',
-    'en': 'Head bunting can be a cat’s way of showing affection.',
-  }),
-  CatFact({
-    'fi': 'Kissan vieressä istuminen voi olla merkki luottamuksesta.',
-    'en': 'Sitting near someone can be a sign of trust.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat seurata suosikki-ihmistään ympäri kotia.',
-    'en': 'Cats may follow their favorite person around the home.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nukkua ihmisen lähellä tunteakseen olonsa turvalliseksi.',
-    'en': 'Cats may sleep near people to feel safe.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nauttia hellästä rapsuttamisesta.',
-    'en': 'Cats may enjoy gentle petting.',
-  }),
-  CatFact({
-    'fi': 'Monet kissat pitävät rapsutuksesta poskien alueella.',
-    'en': 'Many cats enjoy scratches around the cheeks.',
-  }),
-  CatFact({
-    'fi': 'Jokaisella kissalla on omat mieluisat kosketusalueensa.',
-    'en': 'Every cat has its own preferred areas for touch.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat näyttää, milloin ne haluavat olla rauhassa.',
-    'en': 'Cats can show when they want to be left alone.',
-  }),
-  CatFact({
-    'fi': 'Kissan rajojen kunnioittaminen voi lisätä luottamusta.',
-    'en': 'Respecting a cat’s boundaries can increase trust.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää häntäänsä tasapainon lisäksi viestintään.',
-    'en': 'Cats use their tails for communication as well as balance.',
-  }),
-  CatFact({
-    'fi': 'Hitaasti liikkuva häntä voi kertoa keskittymisestä.',
-    'en': 'A slowly moving tail can indicate concentration.',
-  }),
-  CatFact({
-    'fi': 'Nopeasti heiluvat hännän liikkeet voivat kertoa ärsyyntymisestä.',
-    'en': 'Rapid tail movements can indicate irritation.',
-  }),
-  CatFact({
-    'fi': 'Kissan korvat voivat kertoa paljon sen tunnetilasta.',
-    'en': 'A cat’s ears can reveal a lot about its emotional state.',
-  }),
-  CatFact({
-    'fi': 'Eteenpäin suunnatut korvat voivat kertoa kiinnostuksesta.',
-    'en': 'Forward-facing ears can indicate interest.',
-  }),
-  CatFact({
-    'fi': 'Taaksepäin painuneet korvat voivat olla varoitusmerkki.',
-    'en': 'Flattened ears can be a warning sign.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää koko vartaloaan viestintään.',
-    'en': 'Cats can use their whole bodies for communication.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin ilmeikkäitä ilman ääntä.',
-    'en': 'Cats can be very expressive without making sounds.',
-  }),
-  CatFact({
-    'fi': 'Kissan silmien koko voi muuttua valaistuksen mukaan.',
-    'en': 'The size of a cat’s pupils changes with lighting.',
-  }),
-  CatFact({
-    'fi': 'Kissan pupillit voivat muuttua myös tunnetilan vuoksi.',
-    'en': 'A cat’s pupils can also change with emotional state.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tarkkailla ympäristöään lähes liikkumatta.',
-    'en': 'Cats can observe their surroundings while remaining almost still.',
-  }),
-  CatFact({
-    'fi': 'Kissat säästävät energiaa lepäämällä paljon.',
-    'en': 'Cats conserve energy by resting a lot.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla aktiivisia lyhyissä jaksoissa.',
-    'en': 'Cats can be active in short bursts.',
-  }),
-  CatFact({
-    'fi': 'Nopea spurtti voi olla osa kissan leikkiä.',
-    'en': 'A quick sprint can be part of a cat’s play.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat juosta yhtäkkiä ympäri kotia.',
-    'en': 'Cats may suddenly run around the home.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää leikkiä energian purkamiseen.',
-    'en': 'Cats can use play to release energy.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla erittäin nopeita suunnanvaihdoksissa.',
-    'en': 'Cats can change direction very quickly.',
-  }),
-  CatFact({
-    'fi': 'Kissan joustava selkäranka auttaa ketterissä liikkeissä.',
-    'en': 'A cat’s flexible spine helps with agile movement.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat pujotella pienistä aukoista.',
-    'en': 'Cats can squeeze through surprisingly small openings.',
-  }),
-  CatFact({
-    'fi': 'Kissan viikset voivat auttaa arvioimaan, mahtuuko se aukosta.',
-    'en': 'A cat’s whiskers can help estimate whether it fits through an opening.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat tunnettuja ketteryydestään.',
-    'en': 'Cats are known for their agility.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kiivetä monenlaisille pinnoille.',
-    'en': 'Cats can climb many different surfaces.',
+    'fi': 'Raapiminen auttaa kissaa hoitamaan kynsiään.',
+    'en': 'Scratching helps a cat maintain its claws.',
+    'es': 'Rascar ayuda a un gato a cuidar sus uñas.',
+    'de': 'Kratzen hilft einer Katze, ihre Krallen zu pflegen.',
+    'fr': 'Faire ses griffes aide un chat à entretenir ses griffes.',
+    'ru': 'Царапание помогает кошке ухаживать за когтями.',
+    'ja': '爪とぎは猫が爪を手入れするのに役立ちます。',
+    'ko': '긁는 행동은 고양이가 발톱을 관리하는 데 도움이 됩니다.',
+    'zh': '抓挠可以帮助猫护理爪子。',
+    'vi': 'Cào giúp mèo chăm sóc móng vuốt của mình.',
   }),
 
-  // 251–300
-
   CatFact({
-    'fi': 'Kissat voivat pitää korkeista tähystyspaikoista.',
-    'en': 'Cats may enjoy high observation points.',
-  }),
-  CatFact({
-    'fi': 'Korkea paikka voi antaa kissalle hyvän näkymän ympäristöön.',
-    'en': 'A high place can give a cat a good view of its surroundings.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tuntea olonsa turvalliseksi omalla alueellaan.',
-    'en': 'Cats can feel secure in their own territory.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat merkitä aluettaan tuoksujen avulla.',
-    'en': 'Cats can mark territory through scent.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat jättää tuoksuaan hieromalla esineitä.',
-    'en': 'Cats can leave their scent by rubbing against objects.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää raapimista alueen merkintään.',
-    'en': 'Cats can use scratching to mark territory.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tuntea olonsa turvallisemmaksi tuttujen hajujen keskellä.',
-    'en': 'Cats may feel safer around familiar scents.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla herkkiä uusille hajuille.',
-    'en': 'Cats can be sensitive to new smells.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tutkia vierasta ihmistä ensin haistamalla.',
-    'en': 'Cats may investigate a stranger first by smelling.',
-  }),
-  CatFact({
-    'fi': 'Kissat käyttävät paljon aikaa turkkinsa hoitamiseen.',
-    'en': 'Cats spend a lot of time grooming their fur.',
-  }),
-  CatFact({
-    'fi': 'Turkin hoitaminen voi auttaa poistamaan likaa.',
-    'en': 'Grooming can help remove dirt.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat hoitaa itseään erityisen paljon levon jälkeen.',
-    'en': 'Cats may groom themselves a lot after resting.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nuolla tassuaan ja käyttää sitä kasvojen pesuun.',
-    'en': 'Cats may lick a paw and use it to clean their face.',
-  }),
-  CatFact({
-    'fi': 'Kissan kieli on tärkeä työkalu turkinhoidossa.',
-    'en': 'A cat’s tongue is an important grooming tool.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin tarkkoja puhtaudestaan.',
-    'en': 'Cats can be very particular about cleanliness.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat välttää likaista paikkaa.',
-    'en': 'Cats may avoid a dirty place.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat pitää puhtaasta juomavedestä.',
-    'en': 'Cats may prefer clean drinking water.',
-  }),
-  CatFact({
-    'fi': 'Jotkut kissat pitävät juoksevasta vedestä.',
-    'en': 'Some cats enjoy running water.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat kiinnostua hanasta tulevasta vedestä.',
-    'en': 'Cats may be interested in water coming from a tap.',
-  }),
-  CatFact({
-    'fi': 'Veden saanti on tärkeä osa kissan hyvinvointia.',
-    'en': 'Access to water is an important part of a cat’s well-being.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat syödä pieniä aterioita päivän aikana.',
-    'en': 'Cats may eat small meals throughout the day.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia ruokailuajat.',
-    'en': 'Cats can learn regular meal times.',
-  }),
-  CatFact({
-    'fi': 'Ruokarutiini voi auttaa tekemään päivästä ennakoitavan.',
-    'en': 'A feeding routine can make the day more predictable.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat ilmaista ruokahaluaan maukumalla.',
-    'en': 'Cats may express hunger by meowing.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat odottaa ruokaansa kärsivällisesti.',
-    'en': 'Cats can wait patiently for food.',
-  }),
-  CatFact({
-    'fi': 'Toiset kissat ovat ruokailun suhteen kärsimättömämpiä.',
-    'en': 'Other cats can be less patient about meals.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla nirsoja ruoan suhteen.',
-    'en': 'Cats can be picky about food.',
-  }),
-  CatFact({
-    'fi': 'Kissan makumieltymykset voivat vaihdella.',
-    'en': 'A cat’s food preferences can vary.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tutkia uutta ruokaa ensin haistamalla.',
-    'en': 'Cats may investigate new food by smelling it first.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nauttia rauhallisesta ruokailupaikasta.',
-    'en': 'Cats may enjoy eating in a quiet place.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat pitää omasta ruokapaikastaan.',
-    'en': 'Cats may prefer having their own eating area.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla tarkkoja ruokakupin puhtaudesta.',
-    'en': 'Cats can be particular about a clean food bowl.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää tassuaan ruoan tutkimiseen.',
-    'en': 'Cats may use a paw to investigate food.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia monia asioita tarkkailemalla.',
-    'en': 'Cats can learn many things by observing.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat seurata ihmisen toimintaa tarkasti.',
-    'en': 'Cats can closely watch human activity.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia, missä tavaroita säilytetään.',
-    'en': 'Cats can learn where things are stored.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat muistaa reittejä kotonaan.',
-    'en': 'Cats can remember routes around their home.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat löytää suosikkipiilopaikkansa nopeasti.',
-    'en': 'Cats can quickly find their favorite hiding place.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat käyttää piilopaikkoja levätäkseen.',
-    'en': 'Cats may use hiding places to rest.',
-  }),
-  CatFact({
-    'fi': 'Turvallinen piilopaikka voi auttaa kissaa rentoutumaan.',
-    'en': 'A safe hiding place can help a cat relax.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tulla ulos piilosta, kun ne tuntevat olonsa turvalliseksi.',
-    'en': 'Cats may come out of hiding when they feel safe.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla rohkeampia tutussa ympäristössä.',
-    'en': 'Cats can be braver in familiar surroundings.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla varovaisempia uudessa paikassa.',
-    'en': 'Cats can be more cautious in a new place.',
-  }),
-  CatFact({
-    'fi': 'Uuteen kotiin tottuminen voi viedä aikaa.',
-    'en': 'Adjusting to a new home can take time.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tutkia uutta ympäristöä vähitellen.',
-    'en': 'Cats may explore a new environment gradually.',
-  }),
-  CatFact({
-    'fi': 'Rauhallinen ympäristö voi helpottaa sopeutumista.',
-    'en': 'A calm environment can make adjustment easier.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat muodostaa vahvan suhteen tuttuun kotiin.',
-    'en': 'Cats can form a strong connection with a familiar home.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tunnistaa oman alueensa hajujen avulla.',
-    'en': 'Cats can recognize their territory through scent.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat palata mielellään omiin suosikkipaikkoihinsa.',
-    'en': 'Cats often like returning to their favorite places.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tehdä samasta paikasta päivittäisen lepopaikan.',
-    'en': 'Cats may turn the same place into a daily resting spot.',
+    'fi': 'Raapiminen voi myös auttaa kissaa merkitsemään reviiriään.',
+    'en': 'Scratching can also help a cat mark its territory.',
+    'es': 'Rascar también puede ayudar a un gato a marcar su territorio.',
+    'de': 'Kratzen kann einer Katze auch helfen, ihr Revier zu markieren.',
+    'fr': 'Faire ses griffes peut aussi aider un chat à marquer son territoire.',
+    'ru': 'Царапание также может помогать кошке обозначать свою территорию.',
+    'ja': '爪とぎは猫が縄張りを示すことにも役立ちます。',
+    'ko': '긁는 행동은 고양이가 자신의 영역을 표시하는 데도 도움이 됩니다.',
+    'zh': '抓挠也可以帮助猫标记自己的领地。',
+    'vi': 'Cào cũng có thể giúp mèo đánh dấu lãnh thổ của mình.',
   }),
 
-  // 301–365
+  CatFact({
+    'fi': 'Kissat voivat nukkua eri paikoissa riippuen siitä, missä ne tuntevat olonsa turvalliseksi.',
+    'en': 'Cats may sleep in different places depending on where they feel safe.',
+    'es': 'Los gatos pueden dormir en diferentes lugares según dónde se sientan seguros.',
+    'de': 'Katzen können an verschiedenen Orten schlafen, je nachdem, wo sie sich sicher fühlen.',
+    'fr': 'Les chats peuvent dormir à différents endroits selon l’endroit où ils se sentent en sécurité.',
+    'ru': 'Кошки могут спать в разных местах в зависимости от того, где они чувствуют себя в безопасности.',
+    'ja': '猫は安心できる場所によって、さまざまな場所で眠ります。',
+    'ko': '고양이는 안전하다고 느끼는 장소에 따라 다양한 곳에서 잠을 잘 수 있습니다.',
+    'zh': '猫会根据自己感觉安全的地方选择不同的睡觉地点。',
+    'vi': 'Mèo có thể ngủ ở nhiều nơi khác nhau tùy vào nơi chúng cảm thấy an toàn.',
+  }),
+  // ==========================================================
+  // FACTS 51–100
+  // ==========================================================
 
   CatFact({
-    'fi': 'Kissat voivat olla aktiivisia heti pitkän unen jälkeen.',
-    'en': 'Cats can become active immediately after a long sleep.',
+    'fi': 'Kissat pesevät itseään usein useita kertoja päivässä.',
+    'en': 'Cats often groom themselves several times a day.',
+    'es': 'Los gatos suelen asearse varias veces al día.',
+    'de': 'Katzen putzen sich oft mehrmals am Tag.',
+    'fr': 'Les chats font souvent leur toilette plusieurs fois par jour.',
+    'ru': 'Кошки часто умываются несколько раз в день.',
+    'ja': '猫は一日に何度も毛づくろいをすることがあります。',
+    'ko': '고양이는 하루에 여러 번 몸단장을 하기도 합니다.',
+    'zh': '猫经常每天多次梳理自己的毛发。',
+    'vi': 'Mèo thường tự chải chuốt nhiều lần trong ngày.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan kehräys on yksi sen tunnetuimmista äänistä.',
+    'en': 'Purring is one of a cat’s most recognizable sounds.',
+    'es': 'El ronroneo es uno de los sonidos más reconocibles de un gato.',
+    'de': 'Das Schnurren ist eines der bekanntesten Geräusche einer Katze.',
+    'fr': 'Le ronronnement est l’un des sons les plus reconnaissables du chat.',
+    'ru': 'Мурлыканье — один из самых узнаваемых звуков кошки.',
+    'ja': 'ゴロゴロという音は猫の最もよく知られた音の一つです。',
+    'ko': '골골거림은 고양이의 가장 잘 알려진 소리 중 하나입니다.',
+    'zh': '呼噜声是猫最容易辨认的声音之一。',
+    'vi': 'Tiếng rừ rừ là một trong những âm thanh dễ nhận biết nhất của mèo.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat oppia päivittäisiä rutiineja nopeasti.',
+    'en': 'Cats can quickly learn daily routines.',
+    'es': 'Los gatos pueden aprender rápidamente las rutinas diarias.',
+    'de': 'Katzen können tägliche Routinen schnell lernen.',
+    'fr': 'Les chats peuvent apprendre rapidement les routines quotidiennes.',
+    'ru': 'Кошки могут быстро запоминать ежедневные привычки.',
+    'ja': '猫は日常の習慣をすぐに覚えることができます。',
+    'ko': '고양이는 일상적인 생활 습관을 빠르게 배울 수 있습니다.',
+    'zh': '猫可以很快学会日常规律。',
+    'vi': 'Mèo có thể nhanh chóng học các thói quen hằng ngày.',
+  }),
+
+  CatFact({
+    'fi': 'Monet kissat pitävät korkeista paikoista.',
+    'en': 'Many cats enjoy high places.',
+    'es': 'A muchos gatos les gustan los lugares altos.',
+    'de': 'Viele Katzen mögen hohe Plätze.',
+    'fr': 'Beaucoup de chats aiment les endroits en hauteur.',
+    'ru': 'Многим кошкам нравятся высокие места.',
+    'ja': '多くの猫は高い場所を好みます。',
+    'ko': '많은 고양이는 높은 곳을 좋아합니다.',
+    'zh': '许多猫喜欢待在高处。',
+    'vi': 'Nhiều con mèo thích những nơi cao.',
+  }),
+
+  CatFact({
+    'fi': 'Korkealta paikalta kissa voi tarkkailla ympäristöään paremmin.',
+    'en': 'From a high place, a cat can observe its surroundings more easily.',
+    'es': 'Desde un lugar alto, un gato puede observar mejor su entorno.',
+    'de': 'Von einem hohen Platz aus kann eine Katze ihre Umgebung besser beobachten.',
+    'fr': 'Depuis un endroit élevé, un chat peut mieux observer son environnement.',
+    'ru': 'С высокого места кошке легче наблюдать за окружающей обстановкой.',
+    'ja': '高い場所から猫は周囲を観察しやすくなります。',
+    'ko': '높은 곳에서는 고양이가 주변을 더 쉽게 관찰할 수 있습니다.',
+    'zh': '在高处，猫可以更容易观察周围环境。',
+    'vi': 'Từ nơi cao, mèo có thể quan sát xung quanh dễ dàng hơn.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat ovat usein aktiivisimmillaan aamulla ja illalla.',
+    'en': 'Cats are often most active in the morning and evening.',
+    'es': 'Los gatos suelen estar más activos por la mañana y por la noche.',
+    'de': 'Katzen sind oft morgens und abends am aktivsten.',
+    'fr': 'Les chats sont souvent plus actifs le matin et le soir.',
+    'ru': 'Кошки часто наиболее активны утром и вечером.',
+    'ja': '猫は朝と夕方に最も活発になることが多いです。',
+    'ko': '고양이는 아침과 저녁에 가장 활발한 경우가 많습니다.',
+    'zh': '猫通常在清晨和傍晚最活跃。',
+    'vi': 'Mèo thường hoạt động nhiều nhất vào buổi sáng và buổi tối.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan kuulo auttaa sitä havaitsemaan pieniä liikkeitä.',
+    'en': 'A cat’s hearing helps it detect small movements.',
+    'es': 'El oído de un gato le ayuda a detectar pequeños movimientos.',
+    'de': 'Das Gehör einer Katze hilft ihr, kleine Bewegungen wahrzunehmen.',
+    'fr': 'L’ouïe d’un chat l’aide à détecter de petits mouvements.',
+    'ru': 'Слух помогает кошке замечать небольшие движения.',
+    'ja': '猫の聴覚は小さな動きを察知するのに役立ちます。',
+    'ko': '고양이의 청각은 작은 움직임을 감지하는 데 도움이 됩니다.',
+    'zh': '猫的听觉可以帮助它发现细微的动静。',
+    'vi': 'Thính giác của mèo giúp nó phát hiện những chuyển động nhỏ.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat olla erittäin kärsivällisiä odottaessaan jotain kiinnostavaa.',
+    'en': 'Cats can be very patient while waiting for something interesting.',
+    'es': 'Los gatos pueden ser muy pacientes mientras esperan algo interesante.',
+    'de': 'Katzen können sehr geduldig sein, wenn sie auf etwas Interessantes warten.',
+    'fr': 'Les chats peuvent être très patients en attendant quelque chose d’intéressant.',
+    'ru': 'Кошки могут быть очень терпеливыми, ожидая чего-то интересного.',
+    'ja': '猫は興味深いものを待つとき、とても辛抱強いことがあります。',
+    'ko': '고양이는 흥미로운 것을 기다릴 때 매우 참을성 있을 수 있습니다.',
+    'zh': '猫在等待感兴趣的东西时可以非常有耐心。',
+    'vi': 'Mèo có thể rất kiên nhẫn khi chờ đợi điều gì đó thú vị.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan viikset auttavat sitä arvioimaan ahtaita tiloja.',
+    'en': 'A cat’s whiskers help it judge narrow spaces.',
+    'es': 'Los bigotes de un gato le ayudan a calcular los espacios estrechos.',
+    'de': 'Die Schnurrhaare einer Katze helfen ihr, enge Räume einzuschätzen.',
+    'fr': 'Les moustaches d’un chat l’aident à évaluer les espaces étroits.',
+    'ru': 'Усы помогают кошке оценивать узкие пространства.',
+    'ja': '猫のひげは狭い場所を判断するのに役立ちます。',
+    'ko': '고양이의 수염은 좁은 공간을 판단하는 데 도움이 됩니다.',
+    'zh': '猫的胡须帮助它判断狭窄空间。',
+    'vi': 'Ria mèo giúp nó đánh giá những không gian hẹp.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat viettää pitkän aikaa katsellen liikkuvia asioita.',
+    'en': 'Cats can spend a long time watching moving things.',
+    'es': 'Los gatos pueden pasar mucho tiempo observando cosas en movimiento.',
+    'de': 'Katzen können lange Zeit damit verbringen, bewegte Dinge zu beobachten.',
+    'fr': 'Les chats peuvent passer longtemps à regarder des choses en mouvement.',
+    'ru': 'Кошки могут долго наблюдать за движущимися предметами.',
+    'ja': '猫は動くものを長時間見つめることがあります。',
+    'ko': '고양이는 움직이는 것을 오랫동안 바라볼 수 있습니다.',
+    'zh': '猫可以长时间观察移动的物体。',
+    'vi': 'Mèo có thể dành nhiều thời gian quan sát những thứ đang chuyển động.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat osoittaa kiintymystä puskemalla ihmistä päällään.',
+    'en': 'Cats can show affection by gently bumping their heads against people.',
+    'es': 'Los gatos pueden mostrar cariño golpeando suavemente a las personas con la cabeza.',
+    'de': 'Katzen können Zuneigung zeigen, indem sie Menschen sanft mit dem Kopf anstoßen.',
+    'fr': 'Les chats peuvent montrer leur affection en donnant doucement des coups de tête aux humains.',
+    'ru': 'Кошки могут проявлять привязанность, слегка бодая человека головой.',
+    'ja': '猫は人に優しく頭をぶつけることで愛情を示すことがあります。',
+    'ko': '고양이는 사람에게 머리를 살짝 부딪치며 애정을 표현할 수 있습니다.',
+    'zh': '猫可以通过轻轻用头蹭人来表达亲近。',
+    'vi': 'Mèo có thể thể hiện tình cảm bằng cách nhẹ nhàng húc đầu vào người.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan asento voi kertoa paljon sen tunteista.',
+    'en': 'A cat’s posture can reveal a lot about its feelings.',
+    'es': 'La postura de un gato puede revelar mucho sobre sus sentimientos.',
+    'de': 'Die Körperhaltung einer Katze kann viel über ihre Gefühle verraten.',
+    'fr': 'La posture d’un chat peut révéler beaucoup de choses sur ses émotions.',
+    'ru': 'Поза кошки может многое рассказать о её чувствах.',
+    'ja': '猫の姿勢は気持ちをよく表すことがあります。',
+    'ko': '고양이의 자세는 감정을 많이 보여줄 수 있습니다.',
+    'zh': '猫的姿势可以反映很多情绪。',
+    'vi': 'Tư thế của mèo có thể tiết lộ nhiều điều về cảm xúc của nó.',
+  }),
+
+  CatFact({
+    'fi': 'Rentoutunut kissa voi venytellä pitkään.',
+    'en': 'A relaxed cat may stretch for a long time.',
+    'es': 'Un gato relajado puede estirarse durante mucho tiempo.',
+    'de': 'Eine entspannte Katze kann sich lange strecken.',
+    'fr': 'Un chat détendu peut s’étirer longuement.',
+    'ru': 'Расслабленная кошка может долго потягиваться.',
+    'ja': 'リラックスした猫は長く伸びをすることがあります。',
+    'ko': '편안한 고양이는 오랫동안 기지개를 켤 수 있습니다.',
+    'zh': '放松的猫可能会长时间伸展身体。',
+    'vi': 'Một con mèo thư giãn có thể vươn vai trong thời gian dài.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat oppia yhdistämään ääniä erilaisiin tapahtumiin.',
+    'en': 'Cats can learn to associate sounds with different events.',
+    'es': 'Los gatos pueden aprender a asociar sonidos con diferentes acontecimientos.',
+    'de': 'Katzen können lernen, Geräusche mit verschiedenen Ereignissen zu verbinden.',
+    'fr': 'Les chats peuvent apprendre à associer des sons à différents événements.',
+    'ru': 'Кошки могут научиться связывать звуки с разными событиями.',
+    'ja': '猫は音とさまざまな出来事を結びつけて覚えることができます。',
+    'ko': '고양이는 소리를 다양한 사건과 연결해 배울 수 있습니다.',
+    'zh': '猫可以学会将声音与不同事件联系起来。',
+    'vi': 'Mèo có thể học cách liên kết âm thanh với các sự kiện khác nhau.',
+  }),
+
+  CatFact({
+    'fi': 'Monet kissat tunnistavat ruokaan liittyviä ääniä.',
+    'en': 'Many cats recognize sounds associated with food.',
+    'es': 'Muchos gatos reconocen los sonidos relacionados con la comida.',
+    'de': 'Viele Katzen erkennen Geräusche, die mit Futter verbunden sind.',
+    'fr': 'De nombreux chats reconnaissent les sons associés à la nourriture.',
+    'ru': 'Многие кошки узнают звуки, связанные с едой.',
+    'ja': '多くの猫は食べ物に関係する音を覚えています。',
+    'ko': '많은 고양이는 음식과 관련된 소리를 알아봅니다.',
+    'zh': '许多猫能够识别与食物有关的声音。',
+    'vi': 'Nhiều con mèo nhận ra những âm thanh liên quan đến thức ăn.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat nukkua hyvin pienessäkin tilassa.',
+    'en': 'Cats can sleep even in very small spaces.',
+    'es': 'Los gatos pueden dormir incluso en espacios muy pequeños.',
+    'de': 'Katzen können sogar in sehr kleinen Räumen schlafen.',
+    'fr': 'Les chats peuvent dormir même dans de très petits espaces.',
+    'ru': 'Кошки могут спать даже в очень маленьких пространствах.',
+    'ja': '猫はとても狭い場所でも眠ることができます。',
+    'ko': '고양이는 매우 작은 공간에서도 잠을 잘 수 있습니다.',
+    'zh': '猫甚至可以在非常狭小的空间里睡觉。',
+    'vi': 'Mèo có thể ngủ ngay cả trong những không gian rất nhỏ.',
+  }),
+
+  CatFact({
+    'fi': 'Laatikot ovat monien kissojen mielestä kiinnostavia piilopaikkoja.',
+    'en': 'Boxes are interesting hiding places for many cats.',
+    'es': 'Las cajas son escondites interesantes para muchos gatos.',
+    'de': 'Kartons sind für viele Katzen interessante Verstecke.',
+    'fr': 'Les boîtes sont des cachettes intéressantes pour de nombreux chats.',
+    'ru': 'Коробки являются интересными укрытиями для многих кошек.',
+    'ja': '箱は多くの猫にとって魅力的な隠れ場所です。',
+    'ko': '상자는 많은 고양이에게 흥미로운 숨는 장소입니다.',
+    'zh': '纸箱对许多猫来说是有趣的藏身之处。',
+    'vi': 'Hộp là nơi ẩn náu thú vị đối với nhiều con mèo.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat tutkia uusia asioita ensin varovasti.',
+    'en': 'Cats may explore new things cautiously at first.',
+    'es': 'Los gatos pueden explorar cosas nuevas con cautela al principio.',
+    'de': 'Katzen können neue Dinge zunächst vorsichtig erkunden.',
+    'fr': 'Les chats peuvent explorer de nouvelles choses avec prudence au début.',
+    'ru': 'Кошки могут сначала осторожно исследовать новые вещи.',
+    'ja': '猫は新しいものを最初は慎重に調べることがあります。',
+    'ko': '고양이는 새로운 것을 처음에는 조심스럽게 탐색할 수 있습니다.',
+    'zh': '猫起初可能会谨慎地探索新事物。',
+    'vi': 'Mèo có thể thận trọng khám phá những điều mới lúc đầu.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan nenä on tärkeä osa sen ympäristön tutkimista.',
+    'en': 'A cat’s nose is an important tool for exploring its environment.',
+    'es': 'La nariz de un gato es una herramienta importante para explorar su entorno.',
+    'de': 'Die Nase einer Katze ist ein wichtiges Werkzeug zur Erkundung ihrer Umgebung.',
+    'fr': 'Le nez d’un chat est un outil important pour explorer son environnement.',
+    'ru': 'Нос кошки — важный инструмент для исследования окружающего мира.',
+    'ja': '猫の鼻は周囲を調べるための重要な道具です。',
+    'ko': '고양이의 코는 주변 환경을 탐색하는 중요한 도구입니다.',
+    'zh': '猫的鼻子是探索周围环境的重要工具。',
+    'vi': 'Mũi của mèo là công cụ quan trọng để khám phá môi trường xung quanh.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat tunnistaa ihmisiä myös hajun perusteella.',
+    'en': 'Cats can also recognize people by their scent.',
+    'es': 'Los gatos también pueden reconocer a las personas por su olor.',
+    'de': 'Katzen können Menschen auch an ihrem Geruch erkennen.',
+    'fr': 'Les chats peuvent également reconnaître les personnes grâce à leur odeur.',
+    'ru': 'Кошки также могут узнавать людей по запаху.',
+    'ja': '猫はにおいによって人を認識することもできます。',
+    'ko': '고양이는 냄새로 사람을 알아볼 수도 있습니다.',
+    'zh': '猫也可以通过气味识别人类。',
+    'vi': 'Mèo cũng có thể nhận ra con người qua mùi hương.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan tassut voivat jättää näkyviä jälkiä pehmeälle alustalle.',
+    'en': 'A cat’s paws can leave visible prints on soft surfaces.',
+    'es': 'Las patas de un gato pueden dejar huellas visibles en superficies blandas.',
+    'de': 'Die Pfoten einer Katze können auf weichen Oberflächen sichtbare Spuren hinterlassen.',
+    'fr': 'Les pattes d’un chat peuvent laisser des traces visibles sur des surfaces molles.',
+    'ru': 'Лапы кошки могут оставлять видимые следы на мягких поверхностях.',
+    'ja': '猫の足は柔らかい場所に見える足跡を残すことがあります。',
+    'ko': '고양이의 발은 부드러운 표면에 눈에 보이는 발자국을 남길 수 있습니다.',
+    'zh': '猫的爪子可以在柔软的表面留下明显的脚印。',
+    'vi': 'Bàn chân mèo có thể để lại dấu vết rõ ràng trên bề mặt mềm.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat käyttävät paljon aikaa ympäristönsä tarkkailuun.',
+    'en': 'Cats spend a lot of time observing their environment.',
+    'es': 'Los gatos pasan mucho tiempo observando su entorno.',
+    'de': 'Katzen verbringen viel Zeit damit, ihre Umgebung zu beobachten.',
+    'fr': 'Les chats passent beaucoup de temps à observer leur environnement.',
+    'ru': 'Кошки проводят много времени, наблюдая за окружающей средой.',
+    'ja': '猫は周囲を観察することに多くの時間を使います。',
+    'ko': '고양이는 주변 환경을 관찰하는 데 많은 시간을 보냅니다.',
+    'zh': '猫会花很多时间观察周围环境。',
+    'vi': 'Mèo dành nhiều thời gian để quan sát môi trường xung quanh.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat olla hyvin uteliaita uusista esineistä.',
+    'en': 'Cats can be very curious about new objects.',
+    'es': 'Los gatos pueden sentir mucha curiosidad por los objetos nuevos.',
+    'de': 'Katzen können sehr neugierig auf neue Gegenstände sein.',
+    'fr': 'Les chats peuvent être très curieux face à de nouveaux objets.',
+    'ru': 'Кошки могут проявлять большое любопытство к новым предметам.',
+    'ja': '猫は新しい物にとても興味を持つことがあります。',
+    'ko': '고양이는 새로운 물건에 매우 호기심을 보일 수 있습니다.',
+    'zh': '猫可能对新物品非常好奇。',
+    'vi': 'Mèo có thể rất tò mò về những đồ vật mới.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan leikki voi muistuttaa metsästämistä.',
+    'en': 'A cat’s play can resemble hunting.',
+    'es': 'El juego de un gato puede parecerse a la caza.',
+    'de': 'Das Spielen einer Katze kann dem Jagen ähneln.',
+    'fr': 'Le jeu d’un chat peut ressembler à la chasse.',
+    'ru': 'Игра кошки может напоминать охоту.',
+    'ja': '猫の遊びは狩りに似ていることがあります。',
+    'ko': '고양이의 놀이는 사냥과 비슷할 수 있습니다.',
+    'zh': '猫的玩耍行为可能类似于捕猎。',
+    'vi': 'Việc chơi của mèo có thể giống như săn mồi.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat vaania lelua ennen kuin ne hyökkäävät sen kimppuun.',
+    'en': 'Cats may stalk a toy before pouncing on it.',
+    'es': 'Los gatos pueden acechar un juguete antes de saltar sobre él.',
+    'de': 'Katzen können ein Spielzeug beobachten, bevor sie darauf springen.',
+    'fr': 'Les chats peuvent guetter un jouet avant de bondir dessus.',
+    'ru': 'Кошки могут подкрадываться к игрушке перед тем, как прыгнуть на неё.',
+    'ja': '猫はおもちゃに飛びかかる前に狙いを定めることがあります。',
+    'ko': '고양이는 장난감에 뛰어들기 전에 몰래 접근할 수 있습니다.',
+    'zh': '猫可能会先潜伏观察玩具，然后扑上去。',
+    'vi': 'Mèo có thể rình món đồ chơi trước khi lao vào nó.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat vaihtaa nopeasti levon ja aktiivisen leikin välillä.',
+    'en': 'Cats can quickly switch between resting and active play.',
+    'es': 'Los gatos pueden cambiar rápidamente entre descansar y jugar activamente.',
+    'de': 'Katzen können schnell zwischen Ruhe und aktivem Spielen wechseln.',
+    'fr': 'Les chats peuvent passer rapidement du repos au jeu actif.',
+    'ru': 'Кошки могут быстро переключаться между отдыхом и активной игрой.',
+    'ja': '猫は休息と活発な遊びを素早く切り替えることができます。',
+    'ko': '고양이는 휴식과 활발한 놀이 사이를 빠르게 전환할 수 있습니다.',
+    'zh': '猫可以迅速在休息和活跃玩耍之间切换。',
+    'vi': 'Mèo có thể nhanh chóng chuyển từ nghỉ ngơi sang chơi đùa năng động.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat pitää tietyistä nukkumapaikoista pitkään.',
+    'en': 'Cats may prefer certain sleeping spots for a long time.',
+    'es': 'Los gatos pueden preferir ciertos lugares para dormir durante mucho tiempo.',
+    'de': 'Katzen können bestimmte Schlafplätze lange bevorzugen.',
+    'fr': 'Les chats peuvent préférer certains endroits pour dormir pendant longtemps.',
+    'ru': 'Кошки могут долго предпочитать определённые места для сна.',
+    'ja': '猫は特定の寝場所を長く好むことがあります。',
+    'ko': '고양이는 특정한 잠자리를 오랫동안 선호할 수 있습니다.',
+    'zh': '猫可能会长期喜欢某些特定的睡觉地点。',
+    'vi': 'Mèo có thể thích một số chỗ ngủ nhất định trong thời gian dài.',
+  }),
+
+  CatFact({
+    'fi': 'Auringonpaisteinen paikka on monen kissan suosikki lepopaikka.',
+    'en': 'A sunny spot is a favorite resting place for many cats.',
+    'es': 'Un lugar soleado es un sitio favorito para descansar de muchos gatos.',
+    'de': 'Ein sonniger Platz ist für viele Katzen ein beliebter Ruheplatz.',
+    'fr': 'Un endroit ensoleillé est un lieu de repos préféré de nombreux chats.',
+    'ru': 'Солнечное место — любимое место отдыха для многих кошек.',
+    'ja': '日当たりの良い場所は多くの猫のお気に入りの休憩場所です。',
+    'ko': '햇볕이 드는 곳은 많은 고양이가 좋아하는 휴식 장소입니다.',
+    'zh': '阳光充足的地方是许多猫喜欢休息的地点。',
+    'vi': 'Một nơi có ánh nắng là chỗ nghỉ yêu thích của nhiều con mèo.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat reagoida nopeasti yllättäviin ääniin.',
+    'en': 'Cats can react quickly to unexpected sounds.',
+    'es': 'Los gatos pueden reaccionar rápidamente a sonidos inesperados.',
+    'de': 'Katzen können schnell auf unerwartete Geräusche reagieren.',
+    'fr': 'Les chats peuvent réagir rapidement aux sons inattendus.',
+    'ru': 'Кошки могут быстро реагировать на неожиданные звуки.',
+    'ja': '猫は突然の音に素早く反応できます。',
+    'ko': '고양이는 예상치 못한 소리에 빠르게 반응할 수 있습니다.',
+    'zh': '猫可以迅速对突如其来的声音作出反应。',
+    'vi': 'Mèo có thể phản ứng nhanh với những âm thanh bất ngờ.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat käyttää häntäänsä tasapainon säilyttämiseen.',
+    'en': 'Cats can use their tails to maintain balance.',
+    'es': 'Los gatos pueden usar la cola para mantener el equilibrio.',
+    'de': 'Katzen können ihren Schwanz nutzen, um das Gleichgewicht zu halten.',
+    'fr': 'Les chats peuvent utiliser leur queue pour maintenir leur équilibre.',
+    'ru': 'Кошки могут использовать хвост для сохранения равновесия.',
+    'ja': '猫はしっぽを使ってバランスを保つことができます。',
+    'ko': '고양이는 꼬리를 사용해 균형을 유지할 수 있습니다.',
+    'zh': '猫可以利用尾巴保持平衡。',
+    'vi': 'Mèo có thể dùng đuôi để giữ thăng bằng.',
+  }),
+
+  CatFact({
+    'fi': 'Kissan liikkeet voivat olla erittäin tarkkoja.',
+    'en': 'A cat’s movements can be extremely precise.',
+    'es': 'Los movimientos de un gato pueden ser extremadamente precisos.',
+    'de': 'Die Bewegungen einer Katze können äußerst präzise sein.',
+    'fr': 'Les mouvements d’un chat peuvent être extrêmement précis.',
+    'ru': 'Движения кошки могут быть чрезвычайно точными.',
+    'ja': '猫の動きは非常に正確なことがあります。',
+    'ko': '고양이의 움직임은 매우 정확할 수 있습니다.',
+    'zh': '猫的动作可以非常精准。',
+    'vi': 'Chuyển động của mèo có thể cực kỳ chính xác.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat oppia, mistä niiden suosikkilelut löytyvät.',
+    'en': 'Cats can learn where their favorite toys are kept.',
+    'es': 'Los gatos pueden aprender dónde se guardan sus juguetes favoritos.',
+    'de': 'Katzen können lernen, wo ihre Lieblingsspielzeuge aufbewahrt werden.',
+    'fr': 'Les chats peuvent apprendre où sont rangés leurs jouets préférés.',
+    'ru': 'Кошки могут запоминать, где находятся их любимые игрушки.',
+    'ja': '猫はお気に入りのおもちゃがどこにあるか覚えることができます。',
+    'ko': '고양이는 좋아하는 장난감이 어디에 있는지 배울 수 있습니다.',
+    'zh': '猫可以学会记住自己喜欢的玩具放在哪里。',
+    'vi': 'Mèo có thể học được nơi cất những món đồ chơi yêu thích.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat osoittaa kiinnostusta seuraamalla ihmistä huoneesta toiseen.',
+    'en': 'Cats may show interest by following a person from room to room.',
+    'es': 'Los gatos pueden mostrar interés siguiendo a una persona de una habitación a otra.',
+    'de': 'Katzen können Interesse zeigen, indem sie einer Person von Raum zu Raum folgen.',
+    'fr': 'Les chats peuvent montrer leur intérêt en suivant une personne de pièce en pièce.',
+    'ru': 'Кошки могут проявлять интерес, следуя за человеком из комнаты в комнату.',
+    'ja': '猫は人について部屋から部屋へ移動することで興味を示すことがあります。',
+    'ko': '고양이는 사람을 따라 방에서 방으로 이동하며 관심을 보일 수 있습니다.',
+    'zh': '猫可能通过跟着人从一个房间走到另一个房间来表达兴趣。',
+    'vi': 'Mèo có thể thể hiện sự quan tâm bằng cách đi theo người từ phòng này sang phòng khác.',
+  }),
+
+  CatFact({
+    'fi': 'Kissat voivat nauttia rauhallisesta ympäristöstä.',
+    'en': 'Cats can enjoy a calm environment.',
+    'es': 'Los gatos pueden disfrutar de un ambiente tranquilo.',
+    'de': 'Katzen können eine ruhige Umgebung genießen.',
+    'fr': 'Les chats peuvent apprécier un environnement calme.',
+    'ru': 'Кошкам может нравиться спокойная обстановка.',
+    'ja': '猫は静かな環境を好むことがあります。',
+    'ko': '고양이는 조용한 환경을 좋아할 수 있습니다.',
+    'zh': '猫可能喜欢安静的环境。',
+    'vi': 'Mèo có thể thích một môi trường yên tĩnh.',
+  }),
+
+  CatFact({
+    'fi': 'Jokainen kissa voi reagoida uusiin tilanteisiin omalla tavallaan.',
+    'en': 'Every cat can react to new situations in its own way.',
+    'es': 'Cada gato puede reaccionar a situaciones nuevas a su manera.',
+    'de': 'Jede Katze kann auf neue Situationen auf ihre eigene Weise reagieren.',
+    'fr': 'Chaque chat peut réagir aux nouvelles situations à sa manière.',
+    'ru': 'Каждая кошка может по-своему реагировать на новые ситуации.',
+    'ja': 'それぞれの猫は新しい状況に独自の方法で反応します。',
+    'ko': '모든 고양이는 새로운 상황에 자신만의 방식으로 반응할 수 있습니다.',
+    'zh': '每只猫都会以自己的方式应对新情况。',
+    'vi': 'Mỗi con mèo có thể phản ứng với những tình huống mới theo cách riêng.',
   }),
   CatFact({
-    'fi': 'Venytteleminen valmistaa kissaa liikkumiseen.',
-    'en': 'Stretching helps prepare a cat for movement.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat venyttää etu- ja takajalkojaan erikseen.',
-    'en': 'Cats can stretch their front and back legs separately.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat haukotella aivan kuten ihmiset.',
-    'en': 'Cats can yawn just like humans.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat näyttää hyvin rentoutuneilta nukkuessaan.',
-    'en': 'Cats can look very relaxed while sleeping.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat nähdä unia unen aikana.',
-    'en': 'Cats can dream while sleeping.',
-  }),
-  CatFact({
-    'fi': 'Nukkuvan kissan tassut voivat joskus nykiä.',
-    'en': 'A sleeping cat’s paws may sometimes twitch.',
-  }),
-  CatFact({
-    'fi': 'Kissan korvat voivat liikkua, vaikka se lepää.',
-    'en': 'A cat’s ears may move even while resting.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat herätä nopeasti mielenkiintoiseen ääneen.',
-    'en': 'Cats can wake quickly to an interesting sound.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat levätä kevyesti ja pysyä samalla tarkkaavaisina.',
-    'en': 'Cats can rest lightly while remaining alert.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat taitavia säästämään energiaa.',
-    'en': 'Cats are skilled at conserving energy.',
-  }),
-  CatFact({
-    'fi': 'Lyhyet aktiiviset hetket ovat kissalle luonnollisia.',
-    'en': 'Short active periods are natural for cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat leikkiä yksin tai ihmisen kanssa.',
-    'en': 'Cats can play alone or with people.',
-  }),
-  CatFact({
-    'fi': 'Yhteinen leikki voi olla hauskaa sekä kissalle että ihmiselle.',
-    'en': 'Shared play can be fun for both cats and people.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin luovia leikkiessään.',
-    'en': 'Cats can be very creative while playing.',
-  }),
-  CatFact({
-    'fi': 'Paperipussi voi kiinnostaa kissaa enemmän kuin kallis lelu.',
-    'en': 'A paper bag may interest a cat more than an expensive toy.',
-  }),
-  CatFact({
-    'fi': 'Laatikot ovat monien kissojen suosikkeja.',
-    'en': 'Boxes are favorites of many cats.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat istua yllättävän pienissä laatikoissa.',
-    'en': 'Cats can sit in surprisingly small boxes.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tutkia laatikkoa ennen kuin menevät sen sisään.',
-    'en': 'Cats may inspect a box before climbing inside.',
-  }),
-  CatFact({
-    'fi': 'Laatikko voi tarjota kissalle turvallisen tunteen.',
-    'en': 'A box can give a cat a sense of security.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tehdä melkein mistä tahansa paikasta lepopaikan.',
-    'en': 'Cats can turn almost any place into a resting spot.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat vaihtaa suosikkipaikkaansa sään mukaan.',
-    'en': 'Cats can change favorite places depending on the weather.',
-  }),
-  CatFact({
-    'fi': 'Talvella lämmin paikka voi olla erityisen houkutteleva.',
-    'en': 'A warm place can be especially attractive in winter.',
-  }),
-  CatFact({
-    'fi': 'Kesällä viileä lattia voi tuntua kissasta mukavalta.',
-    'en': 'A cool floor can feel comfortable to a cat in summer.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia kodin lämpimimmät paikat.',
-    'en': 'Cats can learn where the warmest places in a home are.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat löytää auringonsäteen nopeasti.',
-    'en': 'Cats can quickly find a patch of sunlight.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat seurata auringon liikettä päivän aikana.',
-    'en': 'Cats may follow the movement of sunlight during the day.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin kärsivällisiä saadakseen haluamansa paikan.',
-    'en': 'Cats can be very patient when waiting for a desired spot.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin päättäväisiä.',
-    'en': 'Cats can be very determined.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat yrittää uudelleen, jos ensimmäinen yritys epäonnistuu.',
-    'en': 'Cats may try again if their first attempt fails.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia kokemuksistaan.',
-    'en': 'Cats can learn from experience.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla taitavia ratkaisemaan yksinkertaisia ongelmia.',
-    'en': 'Cats can be skilled at solving simple problems.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat muistaa, miten saavuttaa suosikkipaikkansa.',
-    'en': 'Cats can remember how to reach a favorite place.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat oppia tarkkailemalla muita.',
-    'en': 'Cats can learn by watching others.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla erittäin tarkkoja ympäristöstään.',
-    'en': 'Cats can be highly attentive to their environment.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat havaita pieniä muutoksia kotonaan.',
-    'en': 'Cats can notice small changes in their home.',
-  }),
-  CatFact({
-    'fi': 'Uusi huonekalu voi herättää kissan uteliaisuuden.',
-    'en': 'New furniture can spark a cat’s curiosity.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tutkia uusia asioita vähitellen.',
-    'en': 'Cats may investigate new things gradually.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat palata myöhemmin tutkimaan jotain uudelleen.',
-    'en': 'Cats may return later to investigate something again.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla hyvin hyviä löytämään piilotettuja paikkoja.',
-    'en': 'Cats can be very good at finding hidden places.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tehdä kodista oman valtakuntansa.',
-    'en': 'Cats can turn a home into their own kingdom.',
-  }),
-  CatFact({
-    'fi': 'Jokainen kissa on yksilö omine tapoineen.',
-    'en': 'Every cat is an individual with its own habits.',
-  }),
-  CatFact({
-    'fi': 'Kissan persoonallisuus voi muuttua sen kasvaessa.',
-    'en': 'A cat’s personality can change as it grows.',
-  }),
-  CatFact({
-    'fi': 'Luottamus rakentuu kissan kanssa usein vähitellen.',
-    'en': 'Trust with a cat is often built gradually.',
-  }),
-  CatFact({
-    'fi': 'Rauhallinen ja turvallinen suhde voi kestää vuosia.',
-    'en': 'A calm and safe relationship can last for years.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tuoda paljon iloa ihmisten elämään.',
-    'en': 'Cats can bring a lot of joy into people’s lives.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat olla uskollisia omalla ainutlaatuisella tavallaan.',
-    'en': 'Cats can be loyal in their own unique way.',
-  }),
-  CatFact({
-    'fi': 'Kissan seura voi olla rauhoittavaa.',
-    'en': 'The company of a cat can be calming.',
-  }),
-  CatFact({
-    'fi': 'Kissat voivat tehdä tavallisesta päivästä hauskemman.',
-    'en': 'Cats can make an ordinary day more fun.',
-  }),
-  CatFact({
-    'fi': 'Jokainen päivä voi olla uusi seikkailu uteliaalle kissalle.',
-    'en': 'Every day can be a new adventure for a curious cat.',
-  }),
-  CatFact({
-    'fi': 'Kissat muistuttavat meitä pysähtymään ja lepäämään.',
-    'en': 'Cats remind us to slow down and rest.',
-  }),
-  CatFact({
-    'fi': 'Kissan uteliaisuus voi johtaa hauskoihin tilanteisiin.',
-    'en': 'A cat’s curiosity can lead to funny situations.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat pieniä, mutta niiden persoonallisuus voi olla valtava.',
-    'en': 'Cats may be small, but their personalities can be huge.',
-  }),
-  CatFact({
-    'fi': 'Kissa voi tehdä kodista kodikkaamman pelkällä läsnäolollaan.',
-    'en': 'A cat can make a home feel cozier simply by being there.',
-  }),
-  CatFact({
-    'fi': 'Jokainen päivä kissan kanssa voi tarjota jotain uutta.',
-    'en': 'Every day with a cat can offer something new.',
-  }),
-  CatFact({
-    'fi': 'Kissat ovat mestareita löytämään mukavan paikan.',
-    'en': 'Cats are masters at finding comfortable places.',
-  }),
-  CatFact({
-    'fi': 'Kissat osaavat usein näyttää, milloin on aika levätä.',
-    'en': 'Cats often know how to show when it is time to rest.',
-  }),
-  CatFact({
-    'fi': 'Kissan elämässä uteliaisuus ja lepo kulkevat usein yhdessä.',
-    'en': 'In a cat’s life, curiosity and rest often go together.',
-  }),
-  CatFact({
-    'fi': 'Vuoden viimeinen kissafakta: kissat ovat yksinkertaisesti mahtavia! 🐱',
-    'en': 'The final cat fact of the year: cats are simply amazing! 🐱',
+    'fi': 'Kissat merkitsevät reviiriään muun muassa tuoksujen avulla.',
+    'en': 'Cats can mark their territory using scents.',
+    'de': 'Katzen können ihr Revier unter anderem mit Duftstoffen markieren.',
+    'es': 'Los gatos pueden marcar su territorio utilizando olores.',
+    'fr': 'Les chats peuvent marquer leur territoire à l’aide d’odeurs.',
+    'zh': '猫可以通过气味标记自己的领地。',
+    'vi': 'Mèo có thể đánh dấu lãnh thổ của mình bằng mùi hương.',
+    'ja': '猫はにおいを使って縄張りを示すことがあります。',
   }),
 ];
