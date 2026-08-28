@@ -537,66 +537,91 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // WATCH AD
   // ==========================================================
-
-  Future<void> _watchAd() async {
-    if (adsToday >= 5) {
-      _message(t.get('dailyLimitReached'));
-      return;
-    }
-
-    if (!_canWatchAd()) {
-      _message(
-        '${t.get('nextAd')}: ${_remainingAdText()}',
-      );
-      return;
-    }
-
-    if (rewardedAd == null) {
-      _message('Mainosta ladataan...');
-
-      _loadRewardedAd();
-      return;
-    }
-
-    final ad = rewardedAd!;
-
-    setState(() {
-      rewardedAd = null;
-    });
-
-    bool earnedReward = false;
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback<RewardedAd>(
-      onAdDismissedFullScreenContent:
-          (RewardedAd ad) async {
-        ad.dispose();
-
-        if (earnedReward) {
-          await _addAdReward();
-        }
-
-        _loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent:
-          (RewardedAd ad, AdError error) {
-        ad.dispose();
-
-        _message('Mainosta ei voitu näyttää.');
-
-        _loadRewardedAd();
-      },
+Future<void> _watchAd() async {
+  if (adsToday >= 5) {
+    _message(
+      t.get('dailyLimitReached'),
     );
-
-    ad.show(
-      onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
-        earnedReward = true;
-      },
-    );
+    return;
   }
 
-  // ==========================================================
+  if (!_canWatchAd()) {
+    _message(
+      '${t.get('nextAd')}: '
+      '${_remainingAdText()}',
+    );
+    return;
+  }
+
+  if (rewardedAd == null) {
+    _message(
+      'Mainosta ladataan. Yritä hetken kuluttua.',
+    );
+
+    _loadRewardedAd();
+
+    return;
+  }
+
+  final ad = rewardedAd!;
+
+  setState(() {
+    rewardedAd = null;
+  });
+
+  bool earnedReward = false;
+
+  ad.fullScreenContentCallback =
+      FullScreenContentCallback<RewardedAd>(
+    onAdDismissedFullScreenContent:
+        (RewardedAd ad) async {
+      ad.dispose();
+
+      // ======================================================
+      // TÄRKEÄÄ
+      // ======================================================
+      //
+      // Emme lisää STL:ää täällä.
+      //
+      // AdMob lähettää varmennetun SSV-callbackin
+      // Firebase Functionille.
+      // ======================================================
+
+      if (earnedReward) {
+        _message(
+          'Mainospalkinto tarkistetaan palvelimella...',
+        );
+
+        // Haetaan uudet tiedot palvelimelta.
+        await Future.delayed(
+          const Duration(seconds: 3),
+        );
+
+        await _loadData();
+      }
+
+      _loadRewardedAd();
+    },
+
+    onAdFailedToShowFullScreenContent:
+        (RewardedAd ad, AdError error) {
+      ad.dispose();
+
+      _message(
+        'Mainosta ei voitu näyttää.',
+      );
+
+      _loadRewardedAd();
+    },
+  );
+
+  ad.show(
+    onUserEarnedReward:
+        (AdWithoutView ad, RewardItem reward) {
+      earnedReward = true;
+    },
+  );
+} ==========================================================
   // ADD AD REWARD
   // ==========================================================
 
