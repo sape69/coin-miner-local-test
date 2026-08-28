@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_functions/firebase_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,8 @@ const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
+/// Googlen virallinen Rewarded Ad TEST-ID.
+/// Vaihda myöhemmin omaan AdMob Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -39,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   bool dailyClaimed = false;
   bool loading = true;
   bool adLoading = false;
+  bool dailyLoading = false;
 
   String today = '';
 
@@ -54,7 +58,7 @@ class _HomePageState extends State<HomePage> {
       FirebaseFirestore.instance.collection('users');
 
   String get _uid =>
-      FirebaseAuth.instance.currentUser?.uid ?? '';
+      FirebaseAuth.instance.currentUser!.uid;
 
   DocumentReference<Map<String, dynamic>> get _userDoc =>
       _users.doc(_uid);
@@ -72,6 +76,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     rewardedAd?.dispose();
     cooldownTimer?.cancel();
+
     super.dispose();
   }
 
@@ -93,11 +98,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadData() async {
     final currentToday = _dateKey();
-
-    if (_uid.isEmpty) {
-      await _loadLocalCache();
-      return;
-    }
 
     try {
       final snapshot = await _userDoc.get();
@@ -131,7 +131,7 @@ class _HomePageState extends State<HomePage> {
       final lastDaily =
           data['lastDaily'] as String? ?? '';
 
-      String adDate =
+      var adDate =
           data['adDate'] as String? ?? '';
 
       final lastAdString =
@@ -144,6 +144,7 @@ class _HomePageState extends State<HomePage> {
             DateTime.tryParse(lastAdString);
       }
 
+      // Uusi päivä -> mainoslaskuri nollataan.
       if (adDate != currentToday) {
         loadedAds = 0;
         adDate = currentToday;
@@ -183,7 +184,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOCAL CACHE
+  // LOCAL CACHE SAVE
   // ==========================================================
 
   Future<void> _saveLocalCache({
@@ -194,7 +195,8 @@ class _HomePageState extends State<HomePage> {
     required String adDateValue,
     required String lastAdTimeValue,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     await prefs.setInt('stl_balance', stlValue);
     await prefs.setInt('streak', streakValue);
@@ -216,12 +218,17 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ==========================================================
+  // LOCAL CACHE LOAD
+  // ==========================================================
+
   Future<void> _loadLocalCache() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     final currentToday = _dateKey();
 
-    int loadedAds =
+    var loadedAds =
         prefs.getInt('ads_today') ?? 0;
 
     final adDate =
@@ -255,106 +262,113 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       today = currentToday;
-      stl = prefs.getInt('stl_balance') ?? 0;
-      streak = prefs.getInt('streak') ?? 0;
+
+      stl =
+          prefs.getInt('stl_balance') ?? 0;
+
+      streak =
+          prefs.getInt('streak') ?? 0;
+
       adsToday = loadedAds;
 
       dailyClaimed =
-          prefs.getString('last_daily') == currentToday;
+          prefs.getString('last_daily') ==
+              currentToday;
 
       lastAdTime = loadedLastAdTime;
+
       loading = false;
     });
   }
 
   // ==========================================================
-  // DAILY REWARD
+  // DAILY CHECK-IN
   // ==========================================================
 
   Future<void> _dailyClaim() async {
+    if (dailyLoading) return;
+
     if (dailyClaimed) {
       _message(t.get('claimed'));
       return;
     }
 
-    if (_uid.isEmpty) {
-      _message('Kirjaudu sisään ensin.');
-      return;
-    }
-
-    final currentToday = _dateKey();
-
-    final yesterday =
-        DateTime.now().subtract(
-      const Duration(days: 1),
-    );
-
-    final yesterdayKey =
-        '${yesterday.year}-'
-        '${yesterday.month.toString().padLeft(2, '0')}-'
-        '${yesterday.day.toString().padLeft(2, '0')}';
+    setState(() {
+      dailyLoading = true;
+    });
 
     try {
-      await FirebaseFirestore.instance
-          .runTransaction((transaction) async {
-        final snapshot =
-            await transaction.get(_userDoc);
+      final functions =
+          FirebaseFunctions.instance;
 
-        final data =
-            snapshot.data() ?? {};
+      final callable =
+          functions.httpsCallable(
+        'dailyCheckIn',
+      );
 
-        final oldBalance =
-            (data['stlBalance'] as num?)?.toInt() ?? 0;
+      final result =
+          await callable.call();
 
-        final oldStreak =
-            (data['streak'] as num?)?.toInt() ?? 0;
+      final data =
+          Map<String, dynamic>.from(
+        result.data as Map,
+      );
 
-        final lastDaily =
-            data['lastDaily'] as String? ?? '';
+      final alreadyClaimed =
+          data['alreadyClaimed'] == true;
 
-        if (lastDaily == currentToday) {
-          return;
-        }
+      final newBalance =
+          (data['balance'] as num?)?.toInt() ??
+              stl;
 
-        int newStreak;
-
-        if (lastDaily == yesterdayKey) {
-          newStreak = oldStreak + 1;
-        } else {
-          newStreak = 1;
-        }
-
-        if (newStreak > 7) {
-          newStreak = 7;
-        }
-
-        final reward =
-            newStreak >= 7 ? 7 : 3;
-
-        final newBalance =
-            oldBalance + reward;
-
-        transaction.set(
-          _userDoc,
-          {
-            'stlBalance': newBalance,
-            'streak': newStreak,
-            'lastDaily': currentToday,
-          },
-          SetOptions(merge: true),
-        );
-      });
-
-      await _loadData();
+      final newStreak =
+          (data['streak'] as num?)?.toInt() ??
+              streak;
 
       final reward =
-          streak >= 7 ? 7 : 3;
+          (data['reward'] as num?)?.toInt() ?? 0;
 
-      _message('+$reward STL! 🐱');
+      final currentToday = _dateKey();
+
+      await _saveLocalCache(
+        stlValue: newBalance,
+        streakValue: newStreak,
+        adsValue: adsToday,
+        lastDailyValue:
+            alreadyClaimed ? '' : currentToday,
+        adDateValue: currentToday,
+        lastAdTimeValue:
+            lastAdTime?.toIso8601String() ?? '',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        stl = newBalance;
+        streak = newStreak;
+        dailyClaimed = true;
+      });
+
+      if (alreadyClaimed) {
+        _message(t.get('claimed'));
+      } else {
+        _message('+$reward STL! 🐱');
+      }
+    } on FirebaseFunctionsException catch (error) {
+      _message(
+        error.message ??
+            'Päivittäisen palkinnon hakeminen epäonnistui.',
+      );
     } catch (_) {
       _message(
-        'Päivittäisen palkinnon tallennus epäonnistui.',
+        'Päivittäisen palkinnon hakeminen epäonnistui.',
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          dailyLoading = false;
+        });
+      }
     }
   }
 
@@ -372,7 +386,8 @@ class _HomePageState extends State<HomePage> {
       const Duration(hours: 1),
     );
 
-    return !DateTime.now().isBefore(nextAdTime);
+    return !DateTime.now()
+        .isBefore(nextAdTime);
   }
 
   Duration _remainingAdTime() {
@@ -386,7 +401,9 @@ class _HomePageState extends State<HomePage> {
     );
 
     final remaining =
-        nextAdTime.difference(DateTime.now());
+        nextAdTime.difference(
+      DateTime.now(),
+    );
 
     if (remaining.isNegative) {
       return Duration.zero;
@@ -396,13 +413,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _remainingAdText() {
-    final remaining = _remainingAdTime();
+    final remaining =
+        _remainingAdTime();
 
     if (remaining == Duration.zero) {
       return '';
     }
 
-    final hours = remaining.inHours;
+    final hours =
+        remaining.inHours;
 
     final minutes =
         remaining.inMinutes.remainder(60);
@@ -430,80 +449,15 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   void _loadRewardedAd() {
-  if (adLoading || rewardedAd != null) {
-    return;
-  }
-
-  setState(() {
-    adLoading = true;
-  });
-
-  RewardedAd.load(
-    adUnitId: rewardedAdUnitId,
-    request: const AdRequest(),
-    rewardedAdLoadCallback: RewardedAdLoadCallback(
-      onAdLoaded: (RewardedAd ad) {
-        if (!mounted) {
-          ad.dispose();
-          return;
-        }
-
-        final user =
-            FirebaseAuth.instance.currentUser;
-
-        if (user == null) {
-          ad.dispose();
-
-          setState(() {
-            rewardedAd = null;
-            adLoading = false;
-          });
-
-          return;
-        }
-
-        // ====================================================
-        // ADMOB SERVER-SIDE VERIFICATION
-        // ====================================================
-        //
-        // Firebase UID lähetetään AdMobille.
-        // AdMob lähettää sen myöhemmin
-        // Firebase Functionille user_id-kentässä.
-        // ====================================================
-
-        ad.setServerSideOptions(
-          ServerSideVerificationOptions(
-            userId: user.uid,
-          ),
-        );
-
-        setState(() {
-          rewardedAd = ad;
-          adLoading = false;
-        });
-      },
-      onAdFailedToLoad: (LoadAdError error) {
-        debugPrint(
-          'Rewarded ad failed to load: $error',
-        );
-
-        if (!mounted) return;
-
-        setState(() {
-          rewardedAd = null;
-          adLoading = false;
-        });
-      },
-    ),
-  );
-}
     if (adLoading || rewardedAd != null) {
       return;
     }
 
-    setState(() {
-      adLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        adLoading = true;
+      });
+    }
 
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
@@ -537,91 +491,146 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // WATCH AD
   // ==========================================================
-Future<void> _watchAd() async {
-  if (adsToday >= 5) {
-    _message(
-      t.get('dailyLimitReached'),
-    );
-    return;
-  }
 
-  if (!_canWatchAd()) {
-    _message(
-      '${t.get('nextAd')}: '
-      '${_remainingAdText()}',
-    );
-    return;
-  }
+  Future<void> _watchAd() async {
+    if (adsToday >= 5) {
+      _message(t.get('dailyLimitReached'));
+      return;
+    }
 
-  if (rewardedAd == null) {
-    _message(
-      'Mainosta ladataan. Yritä hetken kuluttua.',
-    );
-
-    _loadRewardedAd();
-
-    return;
-  }
-
-  final ad = rewardedAd!;
-
-  setState(() {
-    rewardedAd = null;
-  });
-
-  bool earnedReward = false;
-
-  ad.fullScreenContentCallback =
-      FullScreenContentCallback<RewardedAd>(
-    onAdDismissedFullScreenContent:
-        (RewardedAd ad) async {
-      ad.dispose();
-
-      // ======================================================
-      // TÄRKEÄÄ
-      // ======================================================
-      //
-      // Emme lisää STL:ää täällä.
-      //
-      // AdMob lähettää varmennetun SSV-callbackin
-      // Firebase Functionille.
-      // ======================================================
-
-      if (earnedReward) {
-        _message(
-          'Mainospalkinto tarkistetaan palvelimella...',
-        );
-
-        // Haetaan uudet tiedot palvelimelta.
-        await Future.delayed(
-          const Duration(seconds: 3),
-        );
-
-        await _loadData();
-      }
-
-      _loadRewardedAd();
-    },
-
-    onAdFailedToShowFullScreenContent:
-        (RewardedAd ad, AdError error) {
-      ad.dispose();
-
+    if (!_canWatchAd()) {
       _message(
-        'Mainosta ei voitu näyttää.',
+        '${t.get('nextAd')}: '
+        '${_remainingAdText()}',
+      );
+      return;
+    }
+
+    if (rewardedAd == null) {
+      _message(
+        'Mainosta ladataan. Yritä hetken kuluttua.',
       );
 
       _loadRewardedAd();
-    },
-  );
+      return;
+    }
 
-  ad.show(
-    onUserEarnedReward:
-        (AdWithoutView ad, RewardItem reward) {
-      earnedReward = true;
-    },
-  );
-} ========================================= ==========================================================
+    final ad = rewardedAd!;
+
+    setState(() {
+      rewardedAd = null;
+    });
+
+    var earnedReward = false;
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback<RewardedAd>(
+      onAdDismissedFullScreenContent:
+          (RewardedAd ad) async {
+        ad.dispose();
+
+        if (earnedReward) {
+          await _addAdReward();
+        }
+
+        _loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent:
+          (RewardedAd ad, AdError error) {
+        ad.dispose();
+
+        _message(
+          'Mainosta ei voitu näyttää.',
+        );
+
+        _loadRewardedAd();
+      },
+    );
+
+    ad.show(
+      onUserEarnedReward:
+          (AdWithoutView ad, RewardItem reward) {
+        earnedReward = true;
+      },
+    );
+  }
+
+  // ==========================================================
+  // ADD AD REWARD
+  // ==========================================================
+
+  Future<void> _addAdReward() async {
+    final now = DateTime.now();
+    final currentToday = _dateKey();
+
+    try {
+      await FirebaseFirestore.instance
+          .runTransaction(
+        (transaction) async {
+          final snapshot =
+              await transaction.get(_userDoc);
+
+          final data =
+              snapshot.data() ?? {};
+
+          var currentAds =
+              (data['adsToday'] as num?)
+                      ?.toInt() ??
+                  0;
+
+          final adDate =
+              data['adDate'] as String? ?? '';
+
+          if (adDate != currentToday) {
+            currentAds = 0;
+          }
+
+          if (currentAds >= 5) {
+            return;
+          }
+
+          final balance =
+              (data['stlBalance'] as num?)
+                      ?.toInt() ??
+                  0;
+
+          final newBalance =
+              balance + 3;
+
+          final newAds =
+              currentAds + 1;
+
+          transaction.set(
+            _userDoc,
+            {
+              'stlBalance': newBalance,
+              'adsToday': newAds,
+              'adDate': currentToday,
+              'lastAdTime':
+                  now.toIso8601String(),
+            },
+            SetOptions(merge: true),
+          );
+        },
+      );
+
+      await _loadData();
+
+      if (!mounted) return;
+
+      setState(() {
+        lastAdTime = now;
+      });
+
+      _message(t.get('pointsAdded'));
+    } catch (_) {
+      _message(
+        'Mainospalkinnon tallennus epäonnistui.',
+      );
+    }
+  }
+
+  // ==========================================================
   // MESSAGE
   // ==========================================================
 
@@ -632,7 +641,6 @@ Future<void> _watchAd() async {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
           content: Text(message),
         ),
       );
@@ -655,7 +663,9 @@ Future<void> _watchAd() async {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(t.get('selectLanguage')),
+          title: Text(
+            t.get('selectLanguage'),
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView(
@@ -666,20 +676,24 @@ Future<void> _watchAd() async {
                   .map(
                 (entry) {
                   return ListTile(
-                    leading: const Icon(Icons.language),
                     title: Text(entry.value),
                     trailing:
-                        widget.languageCode == entry.key
+                        widget.languageCode ==
+                                entry.key
                             ? const Icon(
-                                Icons.check_circle,
+                                Icons.check,
                                 color: accentColor,
                               )
                             : null,
                     onTap: () async {
-                      await widget.changeLanguage(entry.key);
+                      await widget.changeLanguage(
+                        entry.key,
+                      );
 
                       if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext);
+                        Navigator.pop(
+                          dialogContext,
+                        );
                       }
                     },
                   );
@@ -689,133 +703,6 @@ Future<void> _watchAd() async {
           ),
         );
       },
-    );
-  }
-
-  // ==========================================================
-  // STELLA HEADER
-  // ==========================================================
-
-  Widget _buildStellaHeader(User? user) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF182524),
-            Color(0xFF0E1516),
-          ],
-        ),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Column(
-        children: [
-          const CatAvatar(size: 130),
-
-          const SizedBox(height: 14),
-
-          Text(
-            t.get('stella'),
-            style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          const Text(
-            '🐾 STELLURIINI CAT 🐾',
-            style: TextStyle(
-              color: accentColor,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-            ),
-          ),
-
-          if ((user?.email ?? '').isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(
-              user!.email!,
-              style: const TextStyle(
-                color: Colors.white60,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ==========================================================
-  // BALANCE CARD
-  // ==========================================================
-
-  Widget _buildBalanceCard() {
-    return Container(
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: const Color(0xFF121C1C),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.account_balance_wallet_rounded,
-            size: 38,
-            color: accentColor,
-          ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            t.get('yourBalance'),
-            style: const TextStyle(
-              color: Colors.white60,
-              letterSpacing: 2,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            '$stl',
-            style: const TextStyle(
-              fontSize: 58,
-              fontWeight: FontWeight.bold,
-              color: accentColor,
-            ),
-          ),
-
-          const Text(
-            'STL',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 5,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            t.get('virtualPoints'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white54,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -839,7 +726,8 @@ Future<void> _watchAd() async {
         FirebaseAuth.instance.currentUser;
 
     final factIndex =
-        DateTime.now().day % catFacts.length;
+        DateTime.now().day %
+            catFacts.length;
 
     final fact =
         catFacts[factIndex]
@@ -862,15 +750,17 @@ Future<void> _watchAd() async {
           'STELLURIINI',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            letterSpacing: 3,
+            letterSpacing: 2,
           ),
         ),
         actions: [
           IconButton(
+            tooltip: 'Vaihda kieli',
             icon: const Icon(Icons.language),
             onPressed: _openLanguageDialog,
           ),
           IconButton(
+            tooltip: 'Kirjaudu ulos',
             icon: const Icon(Icons.logout),
             onPressed: _logout,
           ),
@@ -878,278 +768,390 @@ Future<void> _watchAd() async {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: accentColor,
           onRefresh: _loadData,
           child: ListView(
-            physics:
-                const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.all(16),
             children: [
-              _buildStellaHeader(user),
+              // ==================================================
+              // STELLA
+              // ==================================================
 
-              const SizedBox(height: 18),
+              Card(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const CatAvatar(size: 110),
 
-              _buildBalanceCard(),
+                      const SizedBox(height: 12),
 
-              const SizedBox(height: 18),
-
-              // DAILY REWARD
-
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      '🎁',
-                      style: TextStyle(fontSize: 42),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      t.get('dailyClaim'),
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Text(
-                      '🔥 ${t.get('streak')}: $streak / 7',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            dailyClaimed ? null : _dailyClaim,
-                        icon: const Icon(Icons.redeem),
-                        label: Text(
-                          dailyClaimed
-                              ? t.get('claimed')
-                              : t.get('dailyReward'),
+                      Text(
+                        t.get('stella'),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: 16),
-
-              // AD REWARD
-
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      '🐱 ▶️ 🪙',
-                      style: TextStyle(fontSize: 34),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      t.get('watchEarn'),
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Text(
-                      '${t.get('dailyLimit')}: $adsToday / 5',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                      ),
-                    ),
-
-                    if (adsToday < 5 &&
-                        !canWatch) ...[
                       const SizedBox(height: 8),
+
                       Text(
-                        '${t.get('nextAd')}: $remainingText',
+                        user?.email ?? '',
                         style: const TextStyle(
-                          color: Colors.orangeAccent,
+                          color: Colors.white60,
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
 
-                    const SizedBox(height: 18),
+              const SizedBox(height: 14),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            adButtonEnabled ? _watchAd : null,
-                        icon: adLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.black,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.play_circle_fill,
-                              ),
-                        label: Text(
-                          adLoading
-                              ? t.get('adLoading')
-                              : adsToday >= 5
-                                  ? t.get(
-                                      'dailyLimitReached',
-                                    )
-                                  : !canWatch
-                                      ? '${t.get('nextAd')}: '
-                                          '$remainingText'
-                                      : rewardedAd == null
-                                          ? t.get(
-                                              'adUnavailable',
-                                            )
-                                          : t.get(
-                                              'watchAd',
-                                            ),
+              // ==================================================
+              // BALANCE
+              // ==================================================
+
+              Card(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(28),
+                  child: Column(
+                    children: [
+                      Text(
+                        t.get('yourBalance'),
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          letterSpacing: 2,
                         ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        '$stl',
+                        style: const TextStyle(
+                          fontSize: 56,
+                          fontWeight:
+                              FontWeight.bold,
+                          color: accentColor,
+                        ),
+                      ),
+
+                      const Text(
+                        'STL',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing: 3,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        t.get('virtualPoints'),
+                        style: const TextStyle(
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
+              // ==================================================
+              // DAILY REWARD
+              // ==================================================
+
+              Card(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.card_giftcard,
+                        size: 42,
+                        color: accentColor,
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        t.get('dailyClaim'),
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        '${t.get('streak')}: '
+                        '🔥 $streak / 7',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child:
+                            ElevatedButton.icon(
+                          onPressed:
+                              dailyClaimed ||
+                                      dailyLoading
+                                  ? null
+                                  : _dailyClaim,
+                          icon: dailyLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color:
+                                        Colors.black,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.redeem,
+                                ),
+                          label: Text(
+                            dailyLoading
+                                ? 'LOADING...'
+                                : dailyClaimed
+                                    ? t.get('claimed')
+                                    : t.get(
+                                        'dailyReward',
+                                      ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // ==================================================
+              // WATCH AD
+              // ==================================================
+
+              Card(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.play_circle_outline,
+                        size: 42,
+                        color: accentColor,
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        t.get('watchEarn'),
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        '${t.get('dailyLimit')}: '
+                        '$adsToday / 5',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      if (adsToday < 5 &&
+                          !canWatch)
+                        Text(
+                          '${t.get('nextAd')}: '
+                          '$remainingText',
+                          style: const TextStyle(
+                            color:
+                                Colors.orangeAccent,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                      const SizedBox(height: 15),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child:
+                            ElevatedButton.icon(
+                          onPressed:
+                              adButtonEnabled
+                                  ? _watchAd
+                                  : null,
+                          icon: adLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color:
+                                        Colors.black,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.play_arrow,
+                                ),
+                          label: Text(
+                            adLoading
+                                ? t.get('adLoading')
+                                : adsToday >= 5
+                                    ? t.get(
+                                        'dailyLimitReached',
+                                      )
+                                    : !canWatch
+                                        ? '${t.get('nextAd')}: '
+                                            '$remainingText'
+                                        : rewardedAd ==
+                                                null
+                                            ? t.get(
+                                                'adUnavailable',
+                                              )
+                                            : t.get(
+                                                'watchAd',
+                                              ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // ==================================================
               // CAT FACT
+              // ==================================================
 
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color:
-                        accentColor.withValues(alpha: 0.15),
+              Card(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(22),
+                  child: Column(
+                    children: [
+                      Text(
+                        t.get('stellaFacts'),
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      const Icon(
+                        Icons.pets,
+                        size: 45,
+                        color: accentColor,
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Text(
+                        fact,
+                        textAlign:
+                            TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white70,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      '🐾',
-                      style: TextStyle(fontSize: 42),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      t.get('stellaFacts'),
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    Text(
-                      fact,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.6,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
+              // ==================================================
               // INFORMATION
+              // ==================================================
 
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: accentColor,
-                      size: 40,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      t.get('info'),
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
+              Card(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        size: 38,
+                        color: accentColor,
                       ),
-                    ),
 
-                    const SizedBox(height: 14),
+                      const SizedBox(height: 10),
 
-                    Text(
-                      t.get('solanaToken'),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        height: 1.5,
+                      Text(
+                        t.get('info'),
+                        style: const TextStyle(
+                          fontWeight:
+                              FontWeight.bold,
+                          fontSize: 19,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 12),
 
-                    Text(
-                      t.get('stellaCompany'),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white54,
+                      Text(
+                        t.get('solanaToken'),
+                        textAlign:
+                            TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: 35),
+                      const SizedBox(height: 10),
 
-              const Center(
-                child: Text(
-                  '🐱 Made with love for Stella 🐾',
-                  style: TextStyle(
-                    color: Colors.white38,
+                      Text(
+                        t.get('stellaCompany'),
+                        textAlign:
+                            TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 30),
             ],
           ),
         ),
