@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
+   
 
     final currentToday = _dateKey();
 
