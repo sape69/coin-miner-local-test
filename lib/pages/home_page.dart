@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_functions/firebase_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +16,6 @@ const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
 /// Googlen virallinen Rewarded Ad TEST-ID.
-/// Vaihda myöhemmin omaan AdMob Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -76,7 +75,6 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     rewardedAd?.dispose();
     cooldownTimer?.cancel();
-
     super.dispose();
   }
 
@@ -131,7 +129,7 @@ class _HomePageState extends State<HomePage> {
       final lastDaily =
           data['lastDaily'] as String? ?? '';
 
-      var adDate =
+      String adDate =
           data['adDate'] as String? ?? '';
 
       final lastAdString =
@@ -228,7 +226,7 @@ class _HomePageState extends State<HomePage> {
 
     final currentToday = _dateKey();
 
-    var loadedAds =
+    int loadedAds =
         prefs.getInt('ads_today') ?? 0;
 
     final adDate =
@@ -262,13 +260,8 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       today = currentToday;
-
-      stl =
-          prefs.getInt('stl_balance') ?? 0;
-
-      streak =
-          prefs.getInt('streak') ?? 0;
-
+      stl = prefs.getInt('stl_balance') ?? 0;
+      streak = prefs.getInt('streak') ?? 0;
       adsToday = loadedAds;
 
       dailyClaimed =
@@ -276,7 +269,6 @@ class _HomePageState extends State<HomePage> {
               currentToday;
 
       lastAdTime = loadedLastAdTime;
-
       loading = false;
     });
   }
@@ -298,20 +290,17 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final functions =
-          FirebaseFunctions.instance;
-
       final callable =
-          functions.httpsCallable(
+          FirebaseFunctions.instance.httpsCallable(
         'dailyCheckIn',
       );
 
-      final result =
-          await callable.call();
+      final result = await callable.call();
 
-      final data =
-          Map<String, dynamic>.from(
-        result.data as Map,
+      final rawData = result.data;
+
+      final data = Map<String, dynamic>.from(
+        rawData as Map,
       );
 
       final alreadyClaimed =
@@ -334,8 +323,7 @@ class _HomePageState extends State<HomePage> {
         stlValue: newBalance,
         streakValue: newStreak,
         adsValue: adsToday,
-        lastDailyValue:
-            alreadyClaimed ? '' : currentToday,
+        lastDailyValue: currentToday,
         adDateValue: currentToday,
         lastAdTimeValue:
             lastAdTime?.toIso8601String() ?? '',
@@ -386,8 +374,7 @@ class _HomePageState extends State<HomePage> {
       const Duration(hours: 1),
     );
 
-    return !DateTime.now()
-        .isBefore(nextAdTime);
+    return !DateTime.now().isBefore(nextAdTime);
   }
 
   Duration _remainingAdTime() {
@@ -401,9 +388,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     final remaining =
-        nextAdTime.difference(
-      DateTime.now(),
-    );
+        nextAdTime.difference(DateTime.now());
 
     if (remaining.isNegative) {
       return Duration.zero;
@@ -413,16 +398,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _remainingAdText() {
-    final remaining =
-        _remainingAdTime();
+    final remaining = _remainingAdTime();
 
     if (remaining == Duration.zero) {
       return '';
     }
 
-    final hours =
-        remaining.inHours;
-
+    final hours = remaining.inHours;
     final minutes =
         remaining.inMinutes.remainder(60);
 
@@ -453,11 +435,9 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        adLoading = true;
-      });
-    }
+    setState(() {
+      adLoading = true;
+    });
 
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
@@ -521,7 +501,7 @@ class _HomePageState extends State<HomePage> {
       rewardedAd = null;
     });
 
-    var earnedReward = false;
+    bool earnedReward = false;
 
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
@@ -573,7 +553,7 @@ class _HomePageState extends State<HomePage> {
           final data =
               snapshot.data() ?? {};
 
-          var currentAds =
+          int currentAds =
               (data['adsToday'] as num?)
                       ?.toInt() ??
                   0;
@@ -691,9 +671,7 @@ class _HomePageState extends State<HomePage> {
                       );
 
                       if (dialogContext.mounted) {
-                        Navigator.pop(
-                          dialogContext,
-                        );
+                        Navigator.pop(dialogContext);
                       }
                     },
                   );
@@ -726,8 +704,7 @@ class _HomePageState extends State<HomePage> {
         FirebaseAuth.instance.currentUser;
 
     final factIndex =
-        DateTime.now().day %
-            catFacts.length;
+        DateTime.now().day % catFacts.length;
 
     final fact =
         catFacts[factIndex]
@@ -773,9 +750,7 @@ class _HomePageState extends State<HomePage> {
             padding:
                 const EdgeInsets.all(16),
             children: [
-              // ==================================================
               // STELLA
-              // ==================================================
 
               Card(
                 child: Padding(
@@ -811,9 +786,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // BALANCE
-              // ==================================================
 
               Card(
                 child: Padding(
@@ -866,9 +839,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // DAILY REWARD
-              // ==================================================
 
               Card(
                 child: Padding(
@@ -947,9 +918,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // WATCH AD
-              // ==================================================
 
               Card(
                 child: Padding(
@@ -1052,9 +1021,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // CAT FACT
-              // ==================================================
 
               Card(
                 child: Padding(
@@ -1098,9 +1065,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // INFORMATION
-              // ==================================================
 
               Card(
                 child: Padding(
