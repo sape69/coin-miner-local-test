@@ -621,71 +621,7 @@ Future<void> _watchAd() async {
       earnedReward = true;
     },
   );
-} ==========================================================
-  // ADD AD REWARD
-  // ==========================================================
-
-  Future<void> _addAdReward() async {
-    if (_uid.isEmpty) return;
-
-    final now = DateTime.now();
-    final currentToday = _dateKey();
-
-    try {
-      await FirebaseFirestore.instance
-          .runTransaction((transaction) async {
-        final snapshot =
-            await transaction.get(_userDoc);
-
-        final data =
-            snapshot.data() ?? {};
-
-        int currentAds =
-            (data['adsToday'] as num?)?.toInt() ?? 0;
-
-        final adDate =
-            data['adDate'] as String? ?? '';
-
-        if (adDate != currentToday) {
-          currentAds = 0;
-        }
-
-        if (currentAds >= 5) {
-          return;
-        }
-
-        final balance =
-            (data['stlBalance'] as num?)?.toInt() ?? 0;
-
-        final newBalance =
-            balance + 3;
-
-        final newAds =
-            currentAds + 1;
-
-        transaction.set(
-          _userDoc,
-          {
-            'stlBalance': newBalance,
-            'adsToday': newAds,
-            'adDate': currentToday,
-            'lastAdTime': now.toIso8601String(),
-          },
-          SetOptions(merge: true),
-        );
-      });
-
-      await _loadData();
-
-      _message(t.get('pointsAdded'));
-    } catch (_) {
-      _message(
-        'Mainospalkinnon tallennus epäonnistui.',
-      );
-    }
-  }
-
-  // ==========================================================
+} ========================================= ==========================================================
   // MESSAGE
   // ==========================================================
 
