@@ -13,7 +13,10 @@ const Color accentColor = Color(0xFF35D0A0);
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Firebase alustetaan ennen sovelluksen käynnistämistä.
   await Firebase.initializeApp();
+
+  // Google Mobile Ads alustetaan.
   await MobileAds.instance.initialize();
 
   runApp(const StelluriiniApp());
@@ -23,36 +26,65 @@ class StelluriiniApp extends StatefulWidget {
   const StelluriiniApp({super.key});
 
   @override
-  State<StelluriiniApp> createState() => _StelluriiniAppState();
+  State<StelluriiniApp> createState() =>
+      _StelluriiniAppState();
 }
 
-class _StelluriiniAppState extends State<StelluriiniApp> {
+class _StelluriiniAppState
+    extends State<StelluriiniApp> {
   String languageCode = 'fi';
+
   bool languageLoaded = false;
 
   @override
   void initState() {
     super.initState();
+
     _loadLanguage();
   }
 
+  // ==========================================================
+  // LOAD LANGUAGE
+  // ==========================================================
+
   Future<void> _loadLanguage() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
 
-    final savedLanguage = prefs.getString('language') ?? 'fi';
+      final savedLanguage =
+          prefs.getString('language') ?? 'fi';
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      languageCode = savedLanguage;
-      languageLoaded = true;
-    });
+      setState(() {
+        languageCode = savedLanguage;
+        languageLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        languageCode = 'fi';
+        languageLoaded = true;
+      });
+    }
   }
 
-  Future<void> changeLanguage(String language) async {
-    final prefs = await SharedPreferences.getInstance();
+  // ==========================================================
+  // CHANGE LANGUAGE
+  // ==========================================================
 
-    await prefs.setString('language', language);
+  Future<void> changeLanguage(
+    String language,
+  ) async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      'language',
+      language,
+    );
 
     if (!mounted) return;
 
@@ -61,35 +93,69 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
     });
   }
 
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return MaterialApp(
       title: 'Stelluriini',
+
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
         brightness: Brightness.dark,
+
         useMaterial3: true,
-        scaffoldBackgroundColor: backgroundColor,
-        colorScheme: ColorScheme.fromSeed(
+
+        scaffoldBackgroundColor:
+            backgroundColor,
+
+        colorScheme:
+            ColorScheme.fromSeed(
           seedColor: accentColor,
           brightness: Brightness.dark,
         ),
+
         cardTheme: const CardThemeData(
           color: cardColor,
           elevation: 2,
+          margin: EdgeInsets.zero,
         ),
+
         appBarTheme: const AppBarTheme(
           backgroundColor: backgroundColor,
           foregroundColor: Colors.white,
           centerTitle: true,
+          elevation: 0,
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
+
+        elevatedButtonTheme:
+            ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: accentColor,
             foregroundColor: Colors.black,
+            elevation: 0,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
+
+        snackBarTheme:
+            const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+        ),
+
+        progressIndicatorTheme:
+            const ProgressIndicatorThemeData(
+          color: accentColor,
+        ),
       ),
+
       home: languageLoaded
           ? AuthGate(
               languageCode: languageCode,
