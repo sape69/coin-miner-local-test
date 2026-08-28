@@ -430,6 +430,73 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   void _loadRewardedAd() {
+  if (adLoading || rewardedAd != null) {
+    return;
+  }
+
+  setState(() {
+    adLoading = true;
+  });
+
+  RewardedAd.load(
+    adUnitId: rewardedAdUnitId,
+    request: const AdRequest(),
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (RewardedAd ad) {
+        if (!mounted) {
+          ad.dispose();
+          return;
+        }
+
+        final user =
+            FirebaseAuth.instance.currentUser;
+
+        if (user == null) {
+          ad.dispose();
+
+          setState(() {
+            rewardedAd = null;
+            adLoading = false;
+          });
+
+          return;
+        }
+
+        // ====================================================
+        // ADMOB SERVER-SIDE VERIFICATION
+        // ====================================================
+        //
+        // Firebase UID lähetetään AdMobille.
+        // AdMob lähettää sen myöhemmin
+        // Firebase Functionille user_id-kentässä.
+        // ====================================================
+
+        ad.setServerSideOptions(
+          ServerSideVerificationOptions(
+            userId: user.uid,
+          ),
+        );
+
+        setState(() {
+          rewardedAd = ad;
+          adLoading = false;
+        });
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        debugPrint(
+          'Rewarded ad failed to load: $error',
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          rewardedAd = null;
+          adLoading = false;
+        });
+      },
+    ),
+  );
+}
     if (adLoading || rewardedAd != null) {
       return;
     }
