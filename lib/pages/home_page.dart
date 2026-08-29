@@ -48,15 +48,23 @@ class _HomePageState extends State<HomePage> {
 
   bool dailyClaimed = false;
   bool loading = true;
+
   bool adLoading = false;
   bool dailyLoading = false;
+
+  bool dailyAdLoading = false;
+
   bool waitingForServerReward = false;
 
   String today = '';
 
   DateTime? lastAdTime;
 
+  /// Tavallinen WATCH AD -mainos.
   RewardedAd? rewardedAd;
+
+  /// Päivittäisen palkinnon mainos.
+  RewardedAd? dailyRewardedAd;
 
   Timer? cooldownTimer;
   Timer? rewardRefreshTimer;
@@ -92,13 +100,21 @@ class _HomePageState extends State<HomePage> {
     super.initState();
 
     _loadData();
+
+    // Tavallinen WATCH AD.
     _loadRewardedAd();
+
+    // Päivittäisen palkinnon mainos.
+    _loadDailyRewardedAd();
+
     _startCooldownTimer();
   }
 
   @override
   void dispose() {
     rewardedAd?.dispose();
+
+    dailyRewardedAd?.dispose();
 
     cooldownTimer?.cancel();
 
@@ -199,10 +215,6 @@ class _HomePageState extends State<HomePage> {
       }
 
       // Uusi päivä.
-      //
-      // Sovellus nollaa vain näkymän ja välimuistin.
-      // Varsinainen turvallinen raja
-      // tarkistetaan myös Firebase Functionsissa.
       if (adDate != currentToday) {
         loadedAds = 0;
         adDate = currentToday;
@@ -224,6 +236,7 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         today = currentToday;
+
         stl = loadedStl;
         streak = loadedStreak;
         adsToday = loadedAds;
@@ -467,6 +480,157 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // LOAD DAILY REWARD AD
+  // ==========================================================
+
+  void _loadDailyRewardedAd() {
+    if (dailyAdLoading ||
+        dailyRewardedAd != null) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      dailyAdLoading = true;
+    });
+
+    RewardedAd.load(
+      adUnitId: rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback:
+          RewardedAdLoadCallback(
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+
+          setState(() {
+            dailyRewardedAd = ad;
+            dailyAdLoading = false;
+          });
+        },
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
+          if (!mounted) return;
+
+          setState(() {
+            dailyRewardedAd = null;
+            dailyAdLoading = false;
+          });
+
+          Future.delayed(
+            const Duration(seconds: 15),
+            () {
+              if (mounted) {
+                _loadDailyRewardedAd();
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // ==========================================================
+  // SHOW DAILY REWARD AD
+  // ==========================================================
+
+  Future<void> _showDailyRewardAd() async {
+    if (dailyClaimed) {
+      _message(
+        t.get('claimed'),
+      );
+
+      return;
+    }
+
+    if (dailyLoading ||
+        dailyAdLoading) {
+      return;
+    }
+
+    if (dailyRewardedAd == null) {
+      _message(
+        'Mainosta ladataan. '
+        'Yritä hetken kuluttua.',
+      );
+
+      _loadDailyRewardedAd();
+
+      return;
+    }
+
+    final ad = dailyRewardedAd!;
+
+    setState(() {
+      dailyRewardedAd = null;
+      dailyAdLoading = true;
+    });
+
+    bool earnedReward = false;
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback<
+            RewardedAd>(
+      onAdDismissedFullScreenContent:
+          (RewardedAd dismissedAd) async {
+        dismissedAd.dispose();
+
+        if (mounted) {
+          setState(() {
+            dailyAdLoading = false;
+          });
+        }
+
+        if (earnedReward) {
+          await _dailyClaim();
+        } else {
+          _message(
+            'Katso mainos loppuun saadaksesi '
+            'päivittäisen palkinnon.',
+          );
+        }
+
+        _loadDailyRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent:
+          (
+        RewardedAd failedAd,
+        AdError error,
+      ) {
+        failedAd.dispose();
+
+        if (!mounted) return;
+
+        setState(() {
+          dailyAdLoading = false;
+        });
+
+        _message(
+          'Mainosta ei voitu näyttää.',
+        );
+
+        _loadDailyRewardedAd();
+      },
+    );
+
+    ad.show(
+      onUserEarnedReward:
+          (
+        AdWithoutView ad,
+        RewardItem reward,
+      ) {
+        earnedReward = true;
+      },
+    );
+  }
+
+  // ==========================================================
   // AD COOLDOWN
   // ==========================================================
 
@@ -588,7 +752,6 @@ class _HomePageState extends State<HomePage> {
             adLoading = false;
           });
 
-          // Yritetään myöhemmin uudelleen.
           Future.delayed(
             const Duration(seconds: 15),
             () {
@@ -603,7 +766,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // SERVER-SIDE VERIFICATION OPTIONS
+  // SERVER-SIDE VERIFICATION
   // ==========================================================
 
   void _configureServerSideVerification(
@@ -618,11 +781,6 @@ class _HomePageState extends State<HomePage> {
     ad.setServerSideOptions(
       ServerSideVerificationOptions(
         userId: uid,
-
-        // Lisätieto callbackia varten.
-        //
-        // Backend käyttää varsinaisena
-        // käyttäjätunnuksena user_id:tä.
         customData: 'stelluriini',
       ),
     );
@@ -676,10 +834,6 @@ class _HomePageState extends State<HomePage> {
       rewardedAd = null;
     });
 
-    // ========================================================
-    // ADMOB SERVER-SIDE VERIFICATION
-    // ========================================================
-
     _configureServerSideVerification(
       ad,
     );
@@ -704,15 +858,6 @@ class _HomePageState extends State<HomePage> {
             'Mainos katsottu! '
             'Palkinto vahvistetaan palvelimella...',
           );
-
-          // Flutter EI lisää STL:ää.
-          //
-          // AdMob SSV callback kutsuu
-          // Firebase Functionia.
-          //
-          // Firebase Function lisää
-          // palkinnon vasta Googlen
-          // allekirjoituksen tarkistuksen jälkeen.
 
           await _waitForServerReward();
         }
@@ -781,7 +926,6 @@ class _HomePageState extends State<HomePage> {
           return;
         }
 
-        // Palvelin lisäsi palkinnon.
         if (stl > oldBalance) {
           timer.cancel();
 
@@ -801,7 +945,6 @@ class _HomePageState extends State<HomePage> {
           return;
         }
 
-        // Callback ei ole vielä tullut.
         if (attempts >= maxAttempts) {
           timer.cancel();
 
@@ -959,6 +1102,12 @@ class _HomePageState extends State<HomePage> {
             !adLoading &&
             !waitingForServerReward;
 
+    final dailyButtonEnabled =
+        !dailyClaimed &&
+            !dailyLoading &&
+            !dailyAdLoading &&
+            dailyRewardedAd != null;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -996,10 +1145,6 @@ class _HomePageState extends State<HomePage> {
               16,
             ),
             children: [
-              // =================================================
-              // STELLA
-              // =================================================
-
               Card(
                 child: Padding(
                   padding:
@@ -1011,11 +1156,9 @@ class _HomePageState extends State<HomePage> {
                       const CatAvatar(
                         size: 110,
                       ),
-
                       const SizedBox(
                         height: 12,
                       ),
-
                       Text(
                         t.get('stella'),
                         style:
@@ -1025,11 +1168,9 @@ class _HomePageState extends State<HomePage> {
                               FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(
                         height: 8,
                       ),
-
                       Text(
                         user?.email ?? '',
                         style:
@@ -1046,10 +1187,6 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(
                 height: 14,
               ),
-
-              // =================================================
-              // BALANCE
-              // =================================================
 
               Card(
                 child: Padding(
@@ -1070,11 +1207,9 @@ class _HomePageState extends State<HomePage> {
                           letterSpacing: 2,
                         ),
                       ),
-
                       const SizedBox(
                         height: 10,
                       ),
-
                       Text(
                         '$stl',
                         style:
@@ -1086,7 +1221,6 @@ class _HomePageState extends State<HomePage> {
                               accentColor,
                         ),
                       ),
-
                       const Text(
                         'STL',
                         style: TextStyle(
@@ -1096,11 +1230,9 @@ class _HomePageState extends State<HomePage> {
                           letterSpacing: 3,
                         ),
                       ),
-
                       const SizedBox(
                         height: 10,
                       ),
-
                       Text(
                         t.get(
                           'virtualPoints',
@@ -1137,11 +1269,9 @@ class _HomePageState extends State<HomePage> {
                         size: 42,
                         color: accentColor,
                       ),
-
                       const SizedBox(
                         height: 10,
                       ),
-
                       Text(
                         t.get(
                           'dailyClaim',
@@ -1153,11 +1283,9 @@ class _HomePageState extends State<HomePage> {
                               FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(
                         height: 8,
                       ),
-
                       Text(
                         '${t.get('streak')}: '
                         '🔥 $streak / 7',
@@ -1167,11 +1295,9 @@ class _HomePageState extends State<HomePage> {
                               Colors.white70,
                         ),
                       ),
-
                       const SizedBox(
                         height: 15,
                       ),
-
                       SizedBox(
                         width:
                             double.infinity,
@@ -1179,36 +1305,39 @@ class _HomePageState extends State<HomePage> {
                         child:
                             ElevatedButton.icon(
                           onPressed:
-                              dailyClaimed ||
-                                      dailyLoading
-                                  ? null
-                                  : _dailyClaim,
-                          icon: dailyLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child:
-                                      CircularProgressIndicator(
-                                    strokeWidth:
-                                        2,
-                                    color:
-                                        Colors
-                                            .black,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.redeem,
-                                ),
+                              dailyButtonEnabled
+                                  ? _showDailyRewardAd
+                                  : null,
+                          icon:
+                              dailyLoading ||
+                                      dailyAdLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child:
+                                          CircularProgressIndicator(
+                                        strokeWidth:
+                                            2,
+                                        color:
+                                            Colors.black,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.play_arrow,
+                                    ),
                           label: Text(
                             dailyLoading
-                                ? 'LOADING...'
-                                : dailyClaimed
-                                    ? t.get(
-                                        'claimed',
-                                      )
-                                    : t.get(
-                                        'dailyReward',
-                                      ),
+                                ? 'PALKKIOTA HAETAAN...'
+                                : dailyAdLoading
+                                    ? 'MAINOSTA LADATAAN...'
+                                    : dailyClaimed
+                                        ? t.get(
+                                            'claimed',
+                                          )
+                                        : dailyRewardedAd ==
+                                                null
+                                            ? 'MAINOSTA LADATAAN...'
+                                            : 'KATSO MAINOS JA LUNASTA',
                           ),
                         ),
                       ),
@@ -1239,11 +1368,9 @@ class _HomePageState extends State<HomePage> {
                         size: 42,
                         color: accentColor,
                       ),
-
                       const SizedBox(
                         height: 10,
                       ),
-
                       Text(
                         t.get(
                           'watchEarn',
@@ -1255,11 +1382,9 @@ class _HomePageState extends State<HomePage> {
                               FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(
                         height: 8,
                       ),
-
                       Text(
                         '${t.get('dailyLimit')}: '
                         '$adsToday / $maxAdsPerDay',
@@ -1269,11 +1394,9 @@ class _HomePageState extends State<HomePage> {
                               Colors.white70,
                         ),
                       ),
-
                       const SizedBox(
                         height: 8,
                       ),
-
                       if (waitingForServerReward)
                         const Text(
                           'Palkintoa '
@@ -1285,7 +1408,6 @@ class _HomePageState extends State<HomePage> {
                                 FontWeight.bold,
                           ),
                         ),
-
                       if (!waitingForServerReward &&
                           adsToday <
                               maxAdsPerDay &&
@@ -1301,11 +1423,9 @@ class _HomePageState extends State<HomePage> {
                                 FontWeight.bold,
                           ),
                         ),
-
                       const SizedBox(
                         height: 15,
                       ),
-
                       SizedBox(
                         width:
                             double.infinity,
@@ -1390,21 +1510,17 @@ class _HomePageState extends State<HomePage> {
                               FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(
                         height: 14,
                       ),
-
                       const Icon(
                         Icons.pets,
                         size: 45,
                         color: accentColor,
                       ),
-
                       const SizedBox(
                         height: 14,
                       ),
-
                       Text(
                         fact,
                         textAlign:
@@ -1443,11 +1559,9 @@ class _HomePageState extends State<HomePage> {
                         size: 38,
                         color: accentColor,
                       ),
-
                       const SizedBox(
                         height: 10,
                       ),
-
                       Text(
                         t.get('info'),
                         style:
@@ -1457,11 +1571,9 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 19,
                         ),
                       ),
-
                       const SizedBox(
                         height: 12,
                       ),
-
                       Text(
                         t.get(
                           'solanaToken',
@@ -1474,11 +1586,9 @@ class _HomePageState extends State<HomePage> {
                               Colors.white70,
                         ),
                       ),
-
                       const SizedBox(
                         height: 10,
                       ),
-
                       Text(
                         t.get(
                           'stellaCompany',
