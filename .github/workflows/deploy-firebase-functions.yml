@@ -33,4 +33,4 @@ jobs:
         run: npm install
 
       - name: Deploy Firebase Functions
-  run: firebase deploy --only functions --project stelluriini --force
+        run: firebase deploy --only functions --project stelluriini --force
