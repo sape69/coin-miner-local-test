@@ -10,7 +10,7 @@ jobs:
     steps:
 
       # ==========================================
-      # CHECKOUT
+      # 1. CHECKOUT REPOSITORY
       # ==========================================
 
       - name: Checkout repository
@@ -18,43 +18,56 @@ jobs:
 
 
       # ==========================================
-      # NODE.JS
+      # 2. SETUP NODE.JS
       # ==========================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "22"
 
 
       # ==========================================
-      # INSTALL FIREBASE CLI
+      # 3. INSTALL FIREBASE CLI
       # ==========================================
 
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-
-      # ==========================================
-      # GOOGLE CLOUD CREDENTIALS
-      # ==========================================
-
-      - name: Create Google Cloud credentials
         run: |
-          echo '${{ secrets.GCP_SA_KEY }}' > "$GITHUB_WORKSPACE/gcp-key.json"
+          npm install -g firebase-tools
 
 
       # ==========================================
-      # INSTALL FUNCTIONS DEPENDENCIES
+      # 4. AUTHENTICATE GOOGLE CLOUD
+      # ==========================================
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+
+      # ==========================================
+      # 5. SETUP GOOGLE CLOUD CLI
+      # ==========================================
+
+      - name: Setup Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: stelluriini
+
+
+      # ==========================================
+      # 6. INSTALL FUNCTIONS DEPENDENCIES
       # ==========================================
 
       - name: Install Functions dependencies
         working-directory: functions
-        run: npm install
+        run: |
+          npm install
 
 
       # ==========================================
-      # DEPLOY FIREBASE FUNCTIONS
+      # 7. DEPLOY FIREBASE FUNCTIONS
       # ==========================================
 
       - name: Deploy Firebase Functions
@@ -63,26 +76,39 @@ jobs:
             --only functions \
             --project stelluriini \
             --force
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-key.json
 
 
       # ==========================================
-      # SHOW DEPLOYED FUNCTIONS
+      # 8. LIST ALL FUNCTIONS
       # ==========================================
 
-      - name: Show deployed Functions
+      - name: List Firebase Functions
         run: |
           firebase functions:list \
             --project stelluriini
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-key.json
 
 
       # ==========================================
-      # CLEAN UP SECRET FILE
+      # 9. SHOW ADMOB REWARD FUNCTION URL
       # ==========================================
 
-      - name: Remove credentials
-        if: always()
-        run: rm -f "$GITHUB_WORKSPACE/gcp-key.json"
+      - name: Show adMobReward URL
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "ADMOB REWARD FUNCTION URL"
+          echo "=========================================="
+          echo ""
+
+          URL=$(gcloud functions describe adMobReward \
+            --gen2 \
+            --region=us-central1 \
+            --project=stelluriini \
+            --format="value(serviceConfig.uri)")
+
+          echo "$URL"
+
+          echo ""
+          echo "=========================================="
+          echo "COPY THE URL ABOVE TO ADMOB"
+          echo "=========================================="
