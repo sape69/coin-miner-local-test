@@ -1,114 +1,124 @@
 name: Deploy Stelluriini Functions
 
 on:
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
 
 jobs:
-  deploy:
+
+  deploy-functions:
+
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
 
-      # ==========================================
-      # 1. CHECKOUT REPOSITORY
-      # ==========================================
+      # ======================================================
+      # CHECKOUT
+      # ======================================================
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
-      # ==========================================
-      # 2. SETUP NODE.JS
-      # ==========================================
+      # ======================================================
+      # NODE
+      # ======================================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
+
         with:
           node-version: "22"
+          cache: "npm"
+          cache-dependency-path: functions/package-lock.json
 
 
-      # ==========================================
-      # 3. INSTALL FIREBASE CLI
-      # ==========================================
+      # ======================================================
+      # INSTALL FIREBASE CLI
+      # ======================================================
 
       - name: Install Firebase CLI
         run: |
+
           npm install -g firebase-tools
 
 
-      # ==========================================
-      # 4. AUTHENTICATE GOOGLE CLOUD
-      # ==========================================
-
-      - name: Authenticate Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-
-
-      # ==========================================
-      # 5. SETUP GOOGLE CLOUD CLI
-      # ==========================================
-
-      - name: Setup Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: stelluriini
-
-
-      # ==========================================
-      # 6. INSTALL FUNCTIONS DEPENDENCIES
-      # ==========================================
+      # ======================================================
+      # INSTALL FUNCTION DEPENDENCIES
+      # ======================================================
 
       - name: Install Functions dependencies
         working-directory: functions
+
         run: |
-          npm install
+
+          npm ci
 
 
-      # ==========================================
-      # 7. DEPLOY FIREBASE FUNCTIONS
-      # ==========================================
+      # ======================================================
+      # AUTHENTICATE GOOGLE CLOUD
+      # ======================================================
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+
+      # ======================================================
+      # DEPLOY FUNCTIONS
+      # ======================================================
 
       - name: Deploy Firebase Functions
+
         run: |
+
           firebase deploy \
             --only functions \
             --project stelluriini \
-            --force
+            --non-interactive
 
 
-      # ==========================================
-      # 8. LIST ALL FUNCTIONS
-      # ==========================================
+      # ======================================================
+      # LIST FUNCTIONS
+      # ======================================================
 
-      - name: List Firebase Functions
+      - name: List deployed Functions
+
         run: |
+
           firebase functions:list \
             --project stelluriini
 
 
-      # ==========================================
-      # 9. SHOW ADMOB REWARD FUNCTION URL
-      # ==========================================
+      # ======================================================
+      # GET ADMOB FUNCTION URL
+      # ======================================================
 
-      - name: Show adMobReward URL
+      - name: Get AdMob Reward URL
+
         run: |
+
           echo ""
-          echo "=========================================="
+          echo "========================================"
           echo "ADMOB REWARD FUNCTION URL"
-          echo "=========================================="
+          echo "========================================"
           echo ""
 
-          URL=$(gcloud functions describe adMobReward \
-            --gen2 \
-            --region=us-central1 \
-            --project=stelluriini \
-            --format="value(serviceConfig.uri)")
-
-          echo "$URL"
+          firebase functions:describe adMobReward \
+            --project stelluriini \
+            --gen 2 \
+            --format="value(serviceConfig.uri)"
 
           echo ""
-          echo "=========================================="
+          echo "========================================"
           echo "COPY THE URL ABOVE TO ADMOB"
-          echo "=========================================="
+          echo "========================================"
