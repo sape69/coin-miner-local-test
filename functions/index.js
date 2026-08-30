@@ -29,7 +29,7 @@ const db = getFirestore();
 // SETTINGS
 // ============================================================
 
-// STL-palkinto yhdestä mainoksesta.
+// STL-palkinto yhdestä katsotusta mainoksesta.
 const AD_REWARD = 3;
 
 // Maksimimäärä mainoksia päivässä.
@@ -37,8 +37,7 @@ const MAX_ADS_PER_DAY = 5;
 
 // Mainosten välinen odotusaika.
 // 60 minuuttia.
-const AD_COOLDOWN_MS =
-  60 * 60 * 1000;
+const AD_COOLDOWN_MS = 60 * 60 * 1000;
 
 
 // ============================================================
@@ -100,14 +99,14 @@ async function getAdMobKeys(forceRefresh = false) {
   for (const key of data.keys || []) {
 
     if (key.keyId && key.pem) {
+
       keys[String(key.keyId)] =
         key.pem;
     }
   }
 
-  if (
-    Object.keys(keys).length === 0
-  ) {
+  if (Object.keys(keys).length === 0) {
+
     throw new Error(
       "No AdMob public keys available."
     );
@@ -128,24 +127,22 @@ async function getAdMobKeys(forceRefresh = false) {
 async function verifyAdMobSignature(request) {
 
   const originalUrl =
-    request.originalUrl ||
-    request.url;
+    request.originalUrl || request.url;
 
   const questionMarkIndex =
     originalUrl.indexOf("?");
 
   if (questionMarkIndex === -1) {
+
     throw new Error(
       "Missing query string."
     );
   }
 
-
   const queryString =
     originalUrl.substring(
       questionMarkIndex + 1
     );
-
 
   const signatureMarker =
     "&signature=";
@@ -155,44 +152,39 @@ async function verifyAdMobSignature(request) {
       signatureMarker
     );
 
-
   if (signatureIndex === -1) {
+
     throw new Error(
       "Missing signature."
     );
   }
 
-
-  // Google-signatuurin tarkistettava data.
+  // Kaikki data ennen signature-parametria.
   const dataToVerify =
     queryString.substring(
       0,
       signatureIndex
     );
 
-
   const signatureAndKey =
     queryString.substring(
       signatureIndex + 1
     );
 
-
   const keyMarker =
     "&key_id=";
-
 
   const keyIndex =
     signatureAndKey.indexOf(
       keyMarker
     );
 
-
   if (keyIndex === -1) {
+
     throw new Error(
       "Missing key_id."
     );
   }
-
 
   const signatureValue =
     signatureAndKey.substring(
@@ -200,21 +192,21 @@ async function verifyAdMobSignature(request) {
       keyIndex
     );
 
-
   const keyId =
     signatureAndKey.substring(
       keyIndex +
       keyMarker.length
     );
 
+  // Poistetaan mahdolliset ylimääräiset parametrit.
+  const cleanKeyId =
+    keyId.split("&")[0];
 
   let keys =
     await getAdMobKeys();
 
-
   let publicKey =
-    keys[String(keyId)];
-
+    keys[String(cleanKeyId)];
 
   // Jos Googlen avaimet ovat vaihtuneet,
   // haetaan ne uudelleen.
@@ -224,23 +216,21 @@ async function verifyAdMobSignature(request) {
       await getAdMobKeys(true);
 
     publicKey =
-      keys[String(keyId)];
+      keys[String(cleanKeyId)];
   }
 
-
   if (!publicKey) {
+
     throw new Error(
       "Unknown AdMob key ID."
     );
   }
 
-
-  // URL-safe Base64 -> tavallinen Base64.
+  // URL-safe Base64 -> normaali Base64.
   const normalizedSignature =
     signatureValue
       .replace(/-/g, "+")
       .replace(/_/g, "/");
-
 
   const padding =
     "=".repeat(
@@ -250,19 +240,16 @@ async function verifyAdMobSignature(request) {
       ) % 4
     );
 
-
   const signature =
     Buffer.from(
       normalizedSignature + padding,
       "base64"
     );
 
-
   const verifier =
     crypto.createVerify(
       "SHA256"
     );
-
 
   verifier.update(
     Buffer.from(
@@ -271,9 +258,7 @@ async function verifyAdMobSignature(request) {
     )
   );
 
-
   verifier.end();
-
 
   const valid =
     verifier.verify(
@@ -281,13 +266,12 @@ async function verifyAdMobSignature(request) {
       signature
     );
 
-
   if (!valid) {
+
     throw new Error(
       "Invalid AdMob signature."
     );
   }
-
 
   return true;
 }
@@ -308,38 +292,30 @@ exports.dailyCheckIn =
       );
     }
 
-
     const uid =
       request.auth.uid;
-
 
     const userRef =
       db.collection("users")
         .doc(uid);
 
-
     const now =
       new Date();
-
 
     const today =
       getUtcDateString();
 
-
     const yesterdayDate =
       new Date(now);
-
 
     yesterdayDate.setUTCDate(
       yesterdayDate.getUTCDate() - 1
     );
 
-
     const yesterday =
       yesterdayDate
         .toISOString()
         .substring(0, 10);
-
 
     const result =
       await db.runTransaction(
@@ -350,30 +326,25 @@ exports.dailyCheckIn =
               userRef
             );
 
-
           const data =
             snapshot.exists
               ? snapshot.data()
               : {};
-
 
           const oldBalance =
             Number(
               data.stlBalance || 0
             );
 
-
           const oldStreak =
             Number(
               data.streak || 0
             );
 
-
           const lastDaily =
             data.lastDaily || "";
 
-
-          // Sama päivä.
+          // Käyttäjä on jo saanut palkinnon tänään.
           if (lastDaily === today) {
 
             return {
@@ -384,12 +355,9 @@ exports.dailyCheckIn =
             };
           }
 
-
           let newStreak;
 
-
-          // Streak jatkuu,
-          // jos edellinen check-in oli eilen.
+          // Streak jatkuu, jos check-in tehtiin eilen.
           if (lastDaily === yesterday) {
 
             newStreak =
@@ -400,26 +368,22 @@ exports.dailyCheckIn =
             newStreak = 1;
           }
 
-
-          // Maksimi 7.
+          // Maksimi streak = 7.
           if (newStreak > 7) {
 
             newStreak = 7;
           }
 
-
-          // Päivät 1–6 = 3 STL
-          // Päivä 7 = 7 STL
+          // Päivät 1–6 = 3 STL.
+          // Päivä 7 = 7 STL.
           const reward =
             newStreak >= 7
               ? 7
               : 3;
 
-
           const newBalance =
             oldBalance +
             reward;
-
 
           transaction.set(
             userRef,
@@ -443,7 +407,6 @@ exports.dailyCheckIn =
             }
           );
 
-
           return {
 
             alreadyClaimed: false,
@@ -461,18 +424,12 @@ exports.dailyCheckIn =
         }
       );
 
-
     return result;
   });
 
 
 // ============================================================
-// GET USER REWARD STATUS
-//
-// Flutter voi kutsua tätä tarkistaakseen:
-// - STL-saldon
-// - päivän mainosmäärän
-// - cooldownin
+// GET REWARD STATUS
 // ============================================================
 
 exports.getRewardStatus =
@@ -486,58 +443,45 @@ exports.getRewardStatus =
       );
     }
 
-
     const uid =
       request.auth.uid;
-
 
     const userRef =
       db.collection("users")
         .doc(uid);
 
-
     const snapshot =
       await userRef.get();
-
 
     const data =
       snapshot.exists
         ? snapshot.data()
         : {};
 
-
     const now =
       new Date();
-
 
     const today =
       getUtcDateString();
 
-
     const adDate =
       data.adDate || "";
-
 
     let adsToday =
       Number(
         data.adsToday || 0
       );
 
-
-    // Jos päivä vaihtui,
-    // näytetään 0 mainosta.
+    // Uusi päivä alkaa nollasta.
     if (adDate !== today) {
 
       adsToday = 0;
     }
 
-
     let cooldownRemainingMs = 0;
-
 
     const lastAdTimestamp =
       data.lastAdTimestamp;
-
 
     if (
       lastAdTimestamp &&
@@ -548,11 +492,9 @@ exports.getRewardStatus =
       const lastAdTime =
         lastAdTimestamp.toDate();
 
-
       const elapsed =
         now.getTime() -
         lastAdTime.getTime();
-
 
       cooldownRemainingMs =
         Math.max(
@@ -560,7 +502,6 @@ exports.getRewardStatus =
           AD_COOLDOWN_MS - elapsed
         );
     }
-
 
     return {
 
@@ -580,6 +521,9 @@ exports.getRewardStatus =
       maxAdsPerDay:
         MAX_ADS_PER_DAY,
 
+      adReward:
+        AD_REWARD,
+
       canWatchAd:
         adsToday < MAX_ADS_PER_DAY &&
         cooldownRemainingMs === 0,
@@ -592,24 +536,27 @@ exports.getRewardStatus =
 
 
 // ============================================================
-// ADMOB SERVER-SIDE VERIFICATION CALLBACK
+// ADMOB SERVER-SIDE VERIFICATION
 //
-// TÄTÄ EI KUTSUTA FLUTTERISTA.
+// Google AdMob kutsuu tätä automaattisesti.
 //
-// Google AdMob kutsuu tätä URL:ia,
-// kun mainospalkinto on vahvistettu.
+// Flutter EI kutsu tätä funktiota suoraan.
 // ============================================================
 
 exports.adMobReward =
   onRequest(
+    {
+      region: "us-central1",
+      timeoutSeconds: 60,
+      memory: "256MiB",
+    },
+
     async (request, response) => {
 
       try {
 
         // Vain GET hyväksytään.
-        if (
-          request.method !== "GET"
-        ) {
+        if (request.method !== "GET") {
 
           response
             .status(405)
@@ -620,23 +567,21 @@ exports.adMobReward =
           return;
         }
 
-
-        // ----------------------------------------------------
-        // VERIFY GOOGLE ADMOB SIGNATURE
-        // ----------------------------------------------------
+        // ====================================================
+        // VERIFY ADMOB SIGNATURE
+        // ====================================================
 
         await verifyAdMobSignature(
           request
         );
 
 
-        // ----------------------------------------------------
-        // READ ADMOB PARAMETERS
-        // ----------------------------------------------------
+        // ====================================================
+        // READ PARAMETERS
+        // ====================================================
 
         const userId =
           request.query.user_id;
-
 
         const transactionId =
           request.query.transaction_id;
@@ -660,7 +605,6 @@ exports.adMobReward =
         const uid =
           String(userId);
 
-
         const transactionIdString =
           String(transactionId);
 
@@ -670,6 +614,8 @@ exports.adMobReward =
             .doc(uid);
 
 
+        // Käytetään transaction_id:tä estämään
+        // saman palkinnon maksaminen kahdesti.
         const transactionRef =
           db.collection(
             "adMobTransactions"
@@ -682,26 +628,23 @@ exports.adMobReward =
         const now =
           new Date();
 
-
         const today =
           getUtcDateString();
 
 
-        // ----------------------------------------------------
+        // ====================================================
         // FIRESTORE TRANSACTION
-        // ----------------------------------------------------
+        // ====================================================
 
         const result =
           await db.runTransaction(
             async (transaction) => {
 
-              // Tarkistetaan,
-              // onko transaction jo käsitelty.
+              // Tarkistetaan duplicate callback.
               const existingTransaction =
                 await transaction.get(
                   transactionRef
                 );
-
 
               if (
                 existingTransaction.exists
@@ -751,9 +694,9 @@ exports.adMobReward =
               }
 
 
-              // ------------------------------------------------
+              // =================================================
               // DAILY LIMIT
-              // ------------------------------------------------
+              // =================================================
 
               if (
                 adsToday >=
@@ -773,9 +716,9 @@ exports.adMobReward =
               }
 
 
-              // ------------------------------------------------
+              // =================================================
               // COOLDOWN
-              // ------------------------------------------------
+              // =================================================
 
               const lastAdTimestamp =
                 userData.lastAdTimestamp;
@@ -816,9 +759,9 @@ exports.adMobReward =
               }
 
 
-              // ------------------------------------------------
-              // ADD STL
-              // ------------------------------------------------
+              // =================================================
+              // ADD STL REWARD
+              // =================================================
 
               const oldBalance =
                 Number(
@@ -909,7 +852,7 @@ exports.adMobReward =
         );
 
 
-        // Google tarvitsee onnistuneen HTTP-vastauksen.
+        // Google tarvitsee onnistuneen vastauksen.
         response
           .status(200)
           .json(result);
@@ -921,7 +864,6 @@ exports.adMobReward =
           "AdMob SSV error:",
           error
         );
-
 
         response
           .status(400)
