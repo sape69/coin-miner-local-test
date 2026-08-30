@@ -19,6 +19,10 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Create Google Cloud credentials
+        run: |
+          echo '${{ secrets.GCP_SA_KEY }}' > "$GITHUB_WORKSPACE/gcp-key.json"
+
       - name: Install Functions dependencies
         run: npm install
         working-directory: functions
