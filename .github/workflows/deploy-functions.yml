@@ -9,10 +9,8 @@ on:
 
 jobs:
   deploy-functions:
-    runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
+    runs-on: ubuntu-latest
 
     steps:
 
@@ -51,7 +49,7 @@ jobs:
       - name: Authenticate Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
 
       # ==========================================
@@ -65,12 +63,11 @@ jobs:
 
 
       # ==========================================
-      # CHECK AUTHENTICATION
+      # CHECK GOOGLE PROJECT
       # ==========================================
 
-      - name: Check Google authentication
+      - name: Check Google project
         run: |
-          gcloud auth list
           gcloud config set project stelluriini
           gcloud config get-value project
 
@@ -85,7 +82,7 @@ jobs:
 
 
       # ==========================================
-      # INSTALL FUNCTIONS DEPENDENCIES
+      # INSTALL FUNCTION DEPENDENCIES
       # ==========================================
 
       - name: Install Functions dependencies
@@ -103,12 +100,12 @@ jobs:
           firebase deploy \
             --only functions \
             --project stelluriini \
-            --non-interactive \
-            --force
+            --force \
+            --non-interactive
 
 
       # ==========================================
-      # LIST FUNCTIONS
+      # LIST DEPLOYED FUNCTIONS
       # ==========================================
 
       - name: List deployed Functions
@@ -129,9 +126,10 @@ jobs:
           echo "========================================"
           echo ""
 
-          firebase functions:describe adMobReward \
-            --project stelluriini \
-            --gen 2 \
+          gcloud functions describe adMobReward \
+            --gen2 \
+            --region=us-central1 \
+            --project=stelluriini \
             --format="value(serviceConfig.uri)"
 
           echo ""
