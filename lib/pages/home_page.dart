@@ -19,6 +19,13 @@ import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
 
+const Color backgroundColor = Color(0xFF0B1112);
+const Color cardColor = Color(0xFF151B1C);
+const Color accentColor = Color(0xFF35D0A0);
+
+/// Googlen virallinen Rewarded Ad TEST-ID.
+///
+/// Vaihda tämä myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -61,21 +68,17 @@ class _HomePageState extends State<HomePage> {
 
   Timer? cooldownTimer;
 
-  AppLocalizations get t =>
-      AppLocalizations(widget.languageCode);
+  AppLocalizations get t => AppLocalizations(
+        widget.languageCode,
+      );
 
-  CollectionReference<Map<String, dynamic>>
-      get _users =>
-          FirebaseFirestore.instance
-              .collection('users');
+  CollectionReference<Map<String, dynamic>> get _users =>
+      FirebaseFirestore.instance.collection('users');
 
   String? get _uid =>
-      FirebaseAuth.instance
-          .currentUser
-          ?.uid;
+      FirebaseAuth.instance.currentUser?.uid;
 
-  DocumentReference<Map<String, dynamic>>
-      get _userDoc {
+  DocumentReference<Map<String, dynamic>> get _userDoc {
     final uid = _uid;
 
     if (uid == null) {
@@ -126,8 +129,7 @@ class _HomePageState extends State<HomePage> {
     final currentToday = _dateKey();
 
     try {
-      final snapshot =
-          await _userDoc.get();
+      final snapshot = await _userDoc.get();
 
       Map<String, dynamic> data;
 
@@ -145,33 +147,24 @@ class _HomePageState extends State<HomePage> {
           SetOptions(merge: true),
         );
       } else {
-        data =
-            snapshot.data() ??
-                <String, dynamic>{};
+        data = snapshot.data() ??
+            <String, dynamic>{};
       }
 
       final loadedStl =
-          (data['stlBalance'] as num?)
-                  ?.toInt() ??
-              0;
+          (data['stlBalance'] as num?)?.toInt() ?? 0;
 
       final loadedStreak =
-          (data['streak'] as num?)
-                  ?.toInt() ??
-              0;
+          (data['streak'] as num?)?.toInt() ?? 0;
 
       int loadedAds =
-          (data['adsToday'] as num?)
-                  ?.toInt() ??
-              0;
+          (data['adsToday'] as num?)?.toInt() ?? 0;
 
       final lastDaily =
-          data['lastDaily'] as String? ??
-              '';
+          data['lastDaily'] as String? ?? '';
 
       String adDate =
-          data['adDate'] as String? ??
-              '';
+          data['adDate'] as String? ?? '';
 
       DateTime? loadedLastAdTime;
 
@@ -207,9 +200,7 @@ class _HomePageState extends State<HomePage> {
         lastDailyValue: lastDaily,
         adDateValue: adDate,
         lastAdTimeValue:
-            loadedLastAdTime
-                    ?.toIso8601String() ??
-                '',
+            loadedLastAdTime?.toIso8601String() ?? '',
       );
 
       if (!mounted) return;
@@ -221,8 +212,7 @@ class _HomePageState extends State<HomePage> {
         adsToday = loadedAds;
         dailyClaimed =
             lastDaily == currentToday;
-        lastAdTime =
-            loadedLastAdTime;
+        lastAdTime = loadedLastAdTime;
         loading = false;
       });
     } catch (_) {
@@ -288,12 +278,10 @@ class _HomePageState extends State<HomePage> {
         _dateKey();
 
     int loadedAds =
-        prefs.getInt('ads_today') ??
-            0;
+        prefs.getInt('ads_today') ?? 0;
 
     final savedAdDate =
-        prefs.getString('ad_date') ??
-            '';
+        prefs.getString('ad_date') ?? '';
 
     if (savedAdDate != currentToday) {
       loadedAds = 0;
@@ -310,10 +298,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final lastAdString =
-        prefs.getString(
-              'last_ad_time',
-            ) ??
-            '';
+        prefs.getString('last_ad_time') ?? '';
 
     DateTime? loadedLastAdTime;
 
@@ -330,25 +315,18 @@ class _HomePageState extends State<HomePage> {
       today = currentToday;
 
       stl =
-          prefs.getInt(
-                'stl_balance',
-              ) ??
-              0;
+          prefs.getInt('stl_balance') ?? 0;
 
       streak =
-          prefs.getInt('streak') ??
-              0;
+          prefs.getInt('streak') ?? 0;
 
       adsToday = loadedAds;
 
       dailyClaimed =
-          prefs.getString(
-                'last_daily',
-              ) ==
+          prefs.getString('last_daily') ==
               currentToday;
 
-      lastAdTime =
-          loadedLastAdTime;
+      lastAdTime = loadedLastAdTime;
 
       loading = false;
     });
@@ -362,10 +340,7 @@ class _HomePageState extends State<HomePage> {
     if (dailyLoading) return;
 
     if (dailyClaimed) {
-      _message(
-        t.get('claimed'),
-      );
-
+      _message(t.get('claimed'));
       return;
     }
 
@@ -395,19 +370,15 @@ class _HomePageState extends State<HomePage> {
           data['alreadyClaimed'] == true;
 
       final newBalance =
-          (data['balance'] as num?)
-                  ?.toInt() ??
+          (data['balance'] as num?)?.toInt() ??
               stl;
 
       final newStreak =
-          (data['streak'] as num?)
-                  ?.toInt() ??
+          (data['streak'] as num?)?.toInt() ??
               streak;
 
       final reward =
-          (data['reward'] as num?)
-                  ?.toInt() ??
-              0;
+          (data['reward'] as num?)?.toInt() ?? 0;
 
       final currentToday =
           _dateKey();
@@ -419,9 +390,7 @@ class _HomePageState extends State<HomePage> {
         lastDailyValue: currentToday,
         adDateValue: today,
         lastAdTimeValue:
-            lastAdTime
-                    ?.toIso8601String() ??
-                '',
+            lastAdTime?.toIso8601String() ?? '',
       );
 
       if (!mounted) return;
@@ -433,26 +402,18 @@ class _HomePageState extends State<HomePage> {
       });
 
       if (alreadyClaimed) {
-        _message(
-          t.get('claimed'),
-        );
+        _message(t.get('claimed'));
       } else {
-        _message(
-          '+$reward STL! 🐱',
-        );
+        _message('+$reward STL! 🐱');
       }
-    } on FirebaseFunctionsException catch (
-      error
-    ) {
+    } on FirebaseFunctionsException catch (error) {
       _message(
         error.message ??
-            'Päivittäisen palkinnon '
-                'hakeminen epäonnistui.',
+            'Päivittäisen palkinnon hakeminen epäonnistui.',
       );
     } catch (_) {
       _message(
-        'Päivittäisen palkinnon '
-        'hakeminen epäonnistui.',
+        'Päivittäisen palkinnon hakeminen epäonnistui.',
       );
     } finally {
       if (mounted) {
@@ -464,7 +425,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOAD DAILY REWARD AD
+  // LOAD DAILY REWARDED AD
   // ==========================================================
 
   void _loadDailyRewardedAd() {
@@ -484,8 +445,9 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded:
-            (RewardedAd ad) {
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -496,8 +458,9 @@ class _HomePageState extends State<HomePage> {
             dailyAdLoading = false;
           });
         },
-        onAdFailedToLoad:
-            (LoadAdError error) {
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
           if (!mounted) return;
 
           setState(() {
@@ -522,13 +485,9 @@ class _HomePageState extends State<HomePage> {
   // SHOW DAILY REWARD AD
   // ==========================================================
 
-  Future<void>
-      _showDailyRewardAd() async {
+  Future<void> _showDailyRewardAd() async {
     if (dailyClaimed) {
-      _message(
-        t.get('claimed'),
-      );
-
+      _message(t.get('claimed'));
       return;
     }
 
@@ -539,12 +498,10 @@ class _HomePageState extends State<HomePage> {
 
     if (dailyRewardedAd == null) {
       _message(
-        'Mainosta ladataan. '
-        'Yritä hetken kuluttua.',
+        'Mainosta ladataan. Yritä hetken kuluttua.',
       );
 
       _loadDailyRewardedAd();
-
       return;
     }
 
@@ -559,8 +516,7 @@ class _HomePageState extends State<HomePage> {
     bool earnedReward = false;
 
     ad.fullScreenContentCallback =
-        FullScreenContentCallback<
-            RewardedAd>(
+        FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
           (
         RewardedAd dismissedAd,
@@ -577,15 +533,12 @@ class _HomePageState extends State<HomePage> {
           await _dailyClaim();
         } else {
           _message(
-            'Katso mainos loppuun '
-            'saadaksesi päivittäisen '
-            'palkinnon.',
+            'Katso mainos loppuun saadaksesi päivittäisen palkinnon.',
           );
         }
 
         _loadDailyRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent:
           (
         RewardedAd failedAd,
@@ -628,9 +581,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final nextAdTime =
-        lastAdTime!.add(
-      adCooldown,
-    );
+        lastAdTime!.add(adCooldown);
 
     return !DateTime.now()
         .isBefore(nextAdTime);
@@ -642,9 +593,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final nextAdTime =
-        lastAdTime!.add(
-      adCooldown,
-    );
+        lastAdTime!.add(adCooldown);
 
     final remaining =
         nextAdTime.difference(
@@ -670,8 +619,7 @@ class _HomePageState extends State<HomePage> {
         remaining.inHours;
 
     final minutes =
-        remaining.inMinutes
-            .remainder(60);
+        remaining.inMinutes.remainder(60);
 
     if (hours > 0) {
       return '$hours h $minutes min';
@@ -717,8 +665,9 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded:
-            (RewardedAd ad) {
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -729,9 +678,9 @@ class _HomePageState extends State<HomePage> {
             adLoading = false;
           });
         },
-
-        onAdFailedToLoad:
-            (LoadAdError error) {
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
           if (!mounted) return;
 
           setState(() {
@@ -753,11 +702,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // CLAIM TEST AD REWARD
+  // TEST AD REWARD
   // ==========================================================
 
-  Future<void>
-      _claimTestAdReward() async {
+  Future<void> _claimTestAdReward() async {
     try {
       final callable =
           FirebaseFunctions.instance
@@ -774,19 +722,15 @@ class _HomePageState extends State<HomePage> {
       );
 
       final newBalance =
-          (data['balance'] as num?)
-                  ?.toInt() ??
+          (data['balance'] as num?)?.toInt() ??
               stl;
 
       final newAdsToday =
-          (data['adsToday'] as num?)
-                  ?.toInt() ??
+          (data['adsToday'] as num?)?.toInt() ??
               adsToday;
 
       final reward =
-          (data['reward'] as num?)
-                  ?.toInt() ??
-              0;
+          (data['reward'] as num?)?.toInt() ?? 0;
 
       final now =
           DateTime.now();
@@ -796,9 +740,7 @@ class _HomePageState extends State<HomePage> {
         streakValue: streak,
         adsValue: newAdsToday,
         lastDailyValue:
-            dailyClaimed
-                ? today
-                : '',
+            dailyClaimed ? today : '',
         adDateValue: _dateKey(),
         lastAdTimeValue:
             now.toIso8601String(),
@@ -812,23 +754,17 @@ class _HomePageState extends State<HomePage> {
         lastAdTime = now;
       });
 
-      _message(
-        '+$reward STL! 🐱',
-      );
-    } on FirebaseFunctionsException catch (
-      error
-    ) {
+      _message('+$reward STL! 🐱');
+    } on FirebaseFunctionsException catch (error) {
       _message(
         error.message ??
-            'Palkinnon hakeminen '
-                'epäonnistui.',
+            'Palkinnon hakeminen epäonnistui.',
       );
 
       await _loadData();
     } catch (_) {
       _message(
-        'Palkinnon hakeminen '
-        'epäonnistui.',
+        'Palkinnon hakeminen epäonnistui.',
       );
 
       await _loadData();
@@ -844,7 +780,6 @@ class _HomePageState extends State<HomePage> {
       _message(
         t.get('dailyLimitReached'),
       );
-
       return;
     }
 
@@ -853,22 +788,20 @@ class _HomePageState extends State<HomePage> {
         '${t.get('nextAd')}: '
         '${_remainingAdText()}',
       );
-
       return;
     }
 
     if (rewardedAd == null) {
       _message(
-        'Mainosta ladataan. '
-        'Yritä hetken kuluttua.',
+        'Mainosta ladataan. Yritä hetken kuluttua.',
       );
 
       _loadRewardedAd();
-
       return;
     }
 
-    final ad = rewardedAd!;
+    final ad =
+        rewardedAd!;
 
     setState(() {
       rewardedAd = null;
@@ -877,8 +810,7 @@ class _HomePageState extends State<HomePage> {
     bool earnedReward = false;
 
     ad.fullScreenContentCallback =
-        FullScreenContentCallback<
-            RewardedAd>(
+        FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
           (
         RewardedAd dismissedAd,
@@ -891,7 +823,6 @@ class _HomePageState extends State<HomePage> {
 
         _loadRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent:
           (
         RewardedAd failedAd,
@@ -941,35 +872,34 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _logout() async {
-    await FirebaseAuth.instance
-        .signOut();
+    await FirebaseAuth.instance.signOut();
   }
 
   // ==========================================================
-  // LANGUAGE
+  // LANGUAGE DIALOG
   // ==========================================================
 
   void _openLanguageDialog() {
-    showLanguageDialog(
+    showDialog(
       context: context,
-      currentLanguageCode:
-          widget.languageCode,
-      onLanguageSelected:
-          widget.changeLanguage,
+      builder: (dialogContext) {
+        return LanguageDialog(
+          currentLanguageCode:
+              widget.languageCode,
+          changeLanguage:
+              widget.changeLanguage,
+        );
+      },
     );
   }
 
   // ==========================================================
-  // MENU ACTIONS
+  // COMING SOON
   // ==========================================================
 
-  void _comingSoon(
-    String pageName,
-  ) {
+  void _comingSoon(String pageName) {
     Future.delayed(
-      const Duration(
-        milliseconds: 250,
-      ),
+      const Duration(milliseconds: 250),
       () {
         if (!mounted) return;
 
@@ -989,8 +919,7 @@ class _HomePageState extends State<HomePage> {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child:
-              CircularProgressIndicator(
+          child: CircularProgressIndicator(
             color: accentColor,
           ),
         ),
@@ -1027,10 +956,13 @@ class _HomePageState extends State<HomePage> {
             !dailyAdLoading &&
             dailyRewardedAd != null;
 
+    final nextAdText =
+        '${t.get('nextAd')}: $remainingText';
+
     return Scaffold(
-      // ======================================================
+      // ========================================================
       // DRAWER
-      // ======================================================
+      // ========================================================
 
       drawer: HomeDrawer(
         onLanguagePressed:
@@ -1061,20 +993,18 @@ class _HomePageState extends State<HomePage> {
         },
       ),
 
-      // ======================================================
+      // ========================================================
       // APP BAR
-      // ======================================================
+      // ========================================================
 
       appBar: AppBar(
         title: const Text(
           'STELLURIINI',
           style: TextStyle(
-            fontWeight:
-                FontWeight.bold,
+            fontWeight: FontWeight.bold,
             letterSpacing: 2,
           ),
         ),
-
         actions: [
           IconButton(
             tooltip: 'Vaihda kieli',
@@ -1084,7 +1014,6 @@ class _HomePageState extends State<HomePage> {
             onPressed:
                 _openLanguageDialog,
           ),
-
           IconButton(
             tooltip: 'Kirjaudu ulos',
             icon: const Icon(
@@ -1095,113 +1024,150 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
-      // ======================================================
+      // ========================================================
       // BODY
-      // ======================================================
+      // ========================================================
 
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadData,
-
           child: ListView(
             padding:
                 const EdgeInsets.all(16),
-
             children: [
-              // ==============================================
+              // ==================================================
               // PROFILE
-              // ==============================================
+              // ==================================================
 
               ProfileCard(
-                userEmail:
-                    user?.email ?? '',
-                languageCode:
-                    widget.languageCode,
+                title: t.get('stella'),
+                email: user?.email ?? '',
               ),
 
               const SizedBox(height: 14),
 
-              // ==============================================
+              // ==================================================
               // BALANCE
-              // ==============================================
+              // ==================================================
 
               BalanceCard(
                 stl: stl,
-                languageCode:
-                    widget.languageCode,
+                title:
+                    t.get('yourBalance'),
+                subtitle:
+                    t.get('virtualPoints'),
               ),
 
               const SizedBox(height: 14),
 
-              // ==============================================
+              // ==================================================
               // DAILY REWARD
-              // ==============================================
+              // ==================================================
 
               DailyRewardCard(
-                streak: streak,
-                dailyClaimed:
-                    dailyClaimed,
+                title:
+                    t.get('dailyClaim'),
+
+                streakText:
+                    '${t.get('streak')}: '
+                    '🔥 $streak / 7',
+
                 dailyLoading:
                     dailyLoading,
+
                 dailyAdLoading:
                     dailyAdLoading,
+
+                dailyClaimed:
+                    dailyClaimed,
+
                 adReady:
                     dailyRewardedAd != null,
+
                 onPressed:
                     dailyButtonEnabled
                         ? _showDailyRewardAd
                         : null,
-                languageCode:
-                    widget.languageCode,
               ),
 
               const SizedBox(height: 14),
 
-              // ==============================================
+              // ==================================================
               // WATCH AD
-              // ==============================================
+              // ==================================================
 
               WatchAdCard(
-                adsToday: adsToday,
+                title:
+                    t.get('watchEarn'),
+
+                dailyLimitText:
+                    t.get('dailyLimit'),
+
+                adsToday:
+                    adsToday,
+
                 maxAdsPerDay:
                     maxAdsPerDay,
+
                 canWatch:
                     canWatch,
-                remainingText:
-                    remainingText,
+
+                nextAdText:
+                    nextAdText,
+
                 adLoading:
                     adLoading,
+
                 adReady:
                     rewardedAd != null,
+
+                loadingText:
+                    t.get('adLoading'),
+
+                limitReachedText:
+                    t.get(
+                      'dailyLimitReached',
+                    ),
+
+                unavailableText:
+                    t.get('adUnavailable'),
+
+                watchButtonText:
+                    t.get('watchAd'),
+
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
                         : null,
-                languageCode:
-                    widget.languageCode,
               ),
 
               const SizedBox(height: 14),
 
-              // ==============================================
+              // ==================================================
               // CAT FACT
-              // ==============================================
+              // ==================================================
 
               CatFactCard(
+                title:
+                    t.get('stellaFacts'),
                 fact: fact,
-                languageCode:
-                    widget.languageCode,
               ),
 
               const SizedBox(height: 14),
 
-              // ==============================================
+              // ==================================================
               // INFORMATION
-              // ==============================================
+              // ==================================================
 
               InformationCard(
-                languageCode:
-                    widget.languageCode,
+                title:
+                    t.get('info'),
+
+                solanaTokenText:
+                    t.get('solanaToken'),
+
+                companyText:
+                    t.get('stellaCompany'),
               ),
 
               const SizedBox(height: 30),
