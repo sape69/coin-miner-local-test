@@ -15,7 +15,7 @@ jobs:
     steps:
 
       # ==========================================
-      # CHECKOUT
+      # CHECKOUT REPOSITORY
       # ==========================================
 
       - name: Checkout repository
@@ -23,13 +23,15 @@ jobs:
 
 
       # ==========================================
-      # SETUP NODE
+      # SETUP NODE.JS
       # ==========================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "functions/package-lock.json"
 
 
       # ==========================================
@@ -38,7 +40,10 @@ jobs:
 
       - name: Check Node version
         run: |
+          echo "Node:"
           node --version
+
+          echo "NPM:"
           npm --version
 
 
@@ -58,7 +63,7 @@ jobs:
       - name: Install Functions dependencies
         working-directory: functions
         run: |
-          npm install
+          npm ci
 
 
       # ==========================================
@@ -87,7 +92,10 @@ jobs:
 
       - name: Check Google project
         run: |
+          echo "Current Google Cloud project:"
+
           gcloud config set project stelluriini
+
           gcloud config get-value project
 
 
@@ -105,20 +113,28 @@ jobs:
 
 
       # ==========================================
-      # LIST FUNCTIONS
+      # LIST DEPLOYED FUNCTIONS
       # ==========================================
 
       - name: List deployed Functions
         run: |
+          echo ""
+          echo "========================================"
+          echo "DEPLOYED FIREBASE FUNCTIONS"
+          echo "========================================"
+          echo ""
+
           firebase functions:list \
             --project stelluriini
 
+          echo ""
+
 
       # ==========================================
-      # GET ADMOB REWARD URL
+      # GET ADMOB REWARD FUNCTION URL
       # ==========================================
 
-      - name: Get AdMob Reward URL
+      - name: Get AdMob Reward Function URL
         run: |
           echo ""
           echo "========================================"
@@ -126,12 +142,15 @@ jobs:
           echo "========================================"
           echo ""
 
-          gcloud run services describe admobreward \
+          gcloud functions describe adMobReward \
+            --gen2 \
             --region us-central1 \
             --project stelluriini \
-            --format="value(status.url)"
+            --format="value(serviceConfig.uri)"
 
           echo ""
+
           echo "========================================"
           echo "COPY THE URL ABOVE TO ADMOB"
           echo "========================================"
+          echo ""
