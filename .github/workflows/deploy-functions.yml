@@ -12,6 +12,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
 
       # ==========================================
@@ -43,6 +46,37 @@ jobs:
 
 
       # ==========================================
+      # AUTHENTICATE GOOGLE CLOUD
+      # ==========================================
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+
+      # ==========================================
+      # SETUP GOOGLE CLOUD SDK
+      # ==========================================
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: stelluriini
+
+
+      # ==========================================
+      # CHECK GOOGLE PROJECT
+      # ==========================================
+
+      - name: Check Google authentication
+        run: |
+          gcloud auth list
+          gcloud config set project stelluriini
+          gcloud config get-value project
+
+
+      # ==========================================
       # INSTALL FIREBASE CLI
       # ==========================================
 
@@ -62,26 +96,6 @@ jobs:
 
 
       # ==========================================
-      # AUTHENTICATE GOOGLE CLOUD
-      # ==========================================
-
-      - name: Authenticate Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-
-      # ==========================================
-      # CHECK GOOGLE PROJECT
-      # ==========================================
-
-      - name: Check Google project
-        run: |
-          gcloud config set project stelluriini
-          gcloud config get-value project
-
-
-      # ==========================================
       # DEPLOY FIREBASE FUNCTIONS
       # ==========================================
 
@@ -94,7 +108,7 @@ jobs:
 
 
       # ==========================================
-      # LIST FUNCTIONS
+      # LIST DEPLOYED FUNCTIONS
       # ==========================================
 
       - name: List deployed Functions
