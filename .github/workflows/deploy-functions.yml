@@ -30,8 +30,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: "functions/package-lock.json"
 
 
       # ==========================================
@@ -40,10 +38,11 @@ jobs:
 
       - name: Check Node version
         run: |
-          echo "Node:"
-          node --version
+          echo "========================================"
+          echo "NODE VERSION"
+          echo "========================================"
 
-          echo "NPM:"
+          node --version
           npm --version
 
 
@@ -57,13 +56,31 @@ jobs:
 
 
       # ==========================================
+      # CHECK FUNCTIONS FOLDER
+      # ==========================================
+
+      - name: Check Functions files
+        run: |
+          echo "Repository files:"
+          ls -la
+
+          echo ""
+          echo "Functions folder:"
+          ls -la functions
+
+          echo ""
+          echo "Functions package.json:"
+          cat functions/package.json
+
+
+      # ==========================================
       # INSTALL FUNCTIONS DEPENDENCIES
       # ==========================================
 
       - name: Install Functions dependencies
         working-directory: functions
         run: |
-          npm ci
+          npm install
 
 
       # ==========================================
@@ -92,7 +109,9 @@ jobs:
 
       - name: Check Google project
         run: |
-          echo "Current Google Cloud project:"
+          echo "========================================"
+          echo "GOOGLE CLOUD PROJECT"
+          echo "========================================"
 
           gcloud config set project stelluriini
 
@@ -149,7 +168,6 @@ jobs:
             --format="value(serviceConfig.uri)"
 
           echo ""
-
           echo "========================================"
           echo "COPY THE URL ABOVE TO ADMOB"
           echo "========================================"
