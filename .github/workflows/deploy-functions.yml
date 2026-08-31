@@ -23,7 +23,7 @@ jobs:
 
 
       # ==========================================
-      # SETUP NODE.JS
+      # SETUP NODE
       # ==========================================
 
       - name: Setup Node.js
@@ -43,13 +43,32 @@ jobs:
 
 
       # ==========================================
+      # INSTALL FIREBASE CLI
+      # ==========================================
+
+      - name: Install Firebase CLI
+        run: |
+          npm install -g firebase-tools
+
+
+      # ==========================================
+      # INSTALL FUNCTIONS DEPENDENCIES
+      # ==========================================
+
+      - name: Install Functions dependencies
+        working-directory: functions
+        run: |
+          npm install
+
+
+      # ==========================================
       # AUTHENTICATE GOOGLE CLOUD
       # ==========================================
 
       - name: Authenticate Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
 
       # ==========================================
@@ -73,25 +92,6 @@ jobs:
 
 
       # ==========================================
-      # INSTALL FIREBASE CLI
-      # ==========================================
-
-      - name: Install Firebase CLI
-        run: |
-          npm install -g firebase-tools
-
-
-      # ==========================================
-      # INSTALL FUNCTION DEPENDENCIES
-      # ==========================================
-
-      - name: Install Functions dependencies
-        working-directory: functions
-        run: |
-          npm install
-
-
-      # ==========================================
       # DEPLOY FIREBASE FUNCTIONS
       # ==========================================
 
@@ -100,12 +100,12 @@ jobs:
           firebase deploy \
             --only functions \
             --project stelluriini \
-            --force \
-            --non-interactive
+            --non-interactive \
+            --force
 
 
       # ==========================================
-      # LIST DEPLOYED FUNCTIONS
+      # LIST FUNCTIONS
       # ==========================================
 
       - name: List deployed Functions
@@ -126,11 +126,10 @@ jobs:
           echo "========================================"
           echo ""
 
-          gcloud functions describe adMobReward \
-            --gen2 \
-            --region=us-central1 \
-            --project=stelluriini \
-            --format="value(serviceConfig.uri)"
+          gcloud run services describe admobreward \
+            --region us-central1 \
+            --project stelluriini \
+            --format="value(status.url)"
 
           echo ""
           echo "========================================"
