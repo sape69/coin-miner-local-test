@@ -17,7 +17,7 @@ const crypto = require("crypto");
 
 
 // ============================================================
-// FIREBASE INITIALIZATION
+// FIREBASE
 // ============================================================
 
 initializeApp();
@@ -29,7 +29,7 @@ const db = getFirestore();
 // SETTINGS
 // ============================================================
 
-// STL-palkinto yhdestä katsotusta mainoksesta.
+// STL-palkinto yhdestä mainoksesta.
 const AD_REWARD = 3;
 
 // Maksimimäärä mainoksia päivässä.
@@ -37,8 +37,7 @@ const MAX_ADS_PER_DAY = 5;
 
 // Mainosten välinen odotusaika.
 // 60 minuuttia.
-const AD_COOLDOWN_MS =
-  60 * 60 * 1000;
+const AD_COOLDOWN_MS = 60 * 60 * 1000;
 
 
 // ============================================================
@@ -57,13 +56,48 @@ const KEY_CACHE_TIME =
 
 
 // ============================================================
-// GET UTC DATE
+// UTC DATE
 // ============================================================
 
 function getUtcDateString() {
+
   return new Date()
     .toISOString()
     .substring(0, 10);
+
+}
+
+
+// ============================================================
+// DEBUG LOG FIRESTOREEN
+// ============================================================
+
+async function saveDebugLog(type, data = {}) {
+
+  try {
+
+    await db
+      .collection("adMobDebug")
+      .add({
+
+        type,
+
+        ...data,
+
+        createdAt:
+          FieldValue.serverTimestamp(),
+
+      });
+
+  } catch (error) {
+
+    console.error(
+      "Could not save debug log:",
+      error
+    );
+
+  }
+
 }
 
 
@@ -71,53 +105,73 @@ function getUtcDateString() {
 // DOWNLOAD ADMOB PUBLIC KEYS
 // ============================================================
 
-async function getAdMobKeys(
-  forceRefresh = false,
-) {
+async function getAdMobKeys(forceRefresh = false) {
+
   const now = Date.now();
 
   if (
     !forceRefresh &&
     cachedKeys &&
-    now - keysCachedAt <
-      KEY_CACHE_TIME
+    now - keysCachedAt < KEY_CACHE_TIME
   ) {
+
     return cachedKeys;
+
   }
+
+
+  console.log(
+    "Downloading AdMob public keys"
+  );
+
 
   const response =
     await fetch(ADMOB_KEYS_URL);
 
+
   if (!response.ok) {
+
     throw new Error(
-      "Could not download AdMob public keys.",
+      `Could not download AdMob public keys. HTTP ${response.status}`
     );
+
   }
+
 
   const data =
     await response.json();
 
   const keys = {};
 
+
   for (const key of data.keys || []) {
+
     if (key.keyId && key.pem) {
+
       keys[String(key.keyId)] =
         key.pem;
+
     }
+
   }
 
-  if (
-    Object.keys(keys).length === 0
-  ) {
+
+  if (Object.keys(keys).length === 0) {
+
     throw new Error(
-      "No AdMob public keys available.",
+      "No AdMob public keys available."
     );
+
   }
+
 
   cachedKeys = keys;
+
   keysCachedAt = now;
 
+
   return keys;
+
 }
 
 
@@ -125,25 +179,34 @@ async function getAdMobKeys(
 // VERIFY ADMOB SSV SIGNATURE
 // ============================================================
 
-async function verifyAdMobSignature(
-  request,
-) {
+async function verifyAdMobSignature(request) {
+
   const originalUrl =
-    request.originalUrl ||
-    request.url;
+    request.originalUrl || request.url;
+
+
+  console.log(
+    "Original URL:",
+    originalUrl
+  );
+
 
   const questionMarkIndex =
     originalUrl.indexOf("?");
 
+
   if (questionMarkIndex === -1) {
+
     throw new Error(
-      "Missing query string.",
+      "Missing query string."
     );
+
   }
+
 
   const queryString =
     originalUrl.substring(
-      questionMarkIndex + 1,
+      questionMarkIndex + 1
     );
 
 
@@ -151,108 +214,121 @@ async function verifyAdMobSignature(
   // FIND SIGNATURE
   // ==========================================================
 
-  const signatureIndex =
-    queryString.indexOf(
-      "&signature=",
-    );
+  let signatureStart =
+    queryString.indexOf("&signature=");
 
-  if (signatureIndex === -1) {
+
+  let dataToVerify;
+
+
+  // Jos signature on ensimmäinen parametri.
+  if (
+    signatureStart === -1 &&
+    queryString.startsWith("signature=")
+  ) {
+
+    signatureStart = 0;
+
+    dataToVerify = "";
+
+  } else if (signatureStart !== -1) {
+
+    // Kaikki ennen &signature= on allekirjoitettu data.
+    dataToVerify =
+      queryString.substring(
+        0,
+        signatureStart
+      );
+
+  } else {
+
     throw new Error(
-      "Missing signature.",
-    );
-  }
-
-
-  // Google allekirjoittaa kaiken datan,
-  // joka on ennen signature-parametria.
-  const dataToVerify =
-    queryString.substring(
-      0,
-      signatureIndex,
+      "Missing signature."
     );
 
-
-  const signaturePart =
-    queryString.substring(
-      signatureIndex + 1,
-    );
-
-
-  const keyMarker =
-    "&key_id=";
-
-  const keyIndex =
-    signaturePart.indexOf(
-      keyMarker,
-    );
-
-  if (keyIndex === -1) {
-    throw new Error(
-      "Missing key_id.",
-    );
   }
 
 
   // ==========================================================
-  // READ SIGNATURE
+  // GET SIGNATURE VALUE
   // ==========================================================
+
+  const params =
+    new URLSearchParams(queryString);
+
 
   const signatureValue =
-    signaturePart.substring(
-      "signature=".length,
-      keyIndex,
-    );
-
-
-  const keyIdPart =
-    signaturePart.substring(
-      keyIndex +
-        keyMarker.length,
-    );
-
+    params.get("signature");
 
   const keyId =
-    keyIdPart.split("&")[0];
+    params.get("key_id");
 
 
-  if (!signatureValue || !keyId) {
+  if (!signatureValue) {
+
     throw new Error(
-      "Invalid signature parameters.",
+      "Missing signature value."
     );
+
   }
 
 
+  if (!keyId) {
+
+    throw new Error(
+      "Missing key_id."
+    );
+
+  }
+
+
+  console.log(
+    "AdMob key ID:",
+    keyId
+  );
+
+
   // ==========================================================
-  // GET GOOGLE PUBLIC KEY
+  // GET ADMOB PUBLIC KEY
   // ==========================================================
 
   let keys =
     await getAdMobKeys();
 
+
   let publicKey =
     keys[String(keyId)];
 
 
-  // Jos avain on vaihtunut,
-  // haetaan Googlen avaimet uudelleen.
+  // Google voi vaihtaa avaimen.
   if (!publicKey) {
+
+    console.log(
+      "Key not found in cache. Refreshing keys."
+    );
+
+
     keys =
       await getAdMobKeys(true);
 
+
     publicKey =
       keys[String(keyId)];
+
   }
 
 
   if (!publicKey) {
+
     throw new Error(
-      "Unknown AdMob key ID.",
+      `Unknown AdMob key ID: ${keyId}`
     );
+
   }
 
 
   // ==========================================================
-  // URL-SAFE BASE64 -> NORMAL BASE64
+  // BASE64 URL SAFE -> BASE64
   // ==========================================================
 
   const normalizedSignature =
@@ -265,15 +341,15 @@ async function verifyAdMobSignature(
     "=".repeat(
       (
         4 -
-        (normalizedSignature.length % 4)
-      ) % 4,
+        normalizedSignature.length % 4
+      ) % 4
     );
 
 
   const signature =
     Buffer.from(
       normalizedSignature + padding,
-      "base64",
+      "base64"
     );
 
 
@@ -283,16 +359,17 @@ async function verifyAdMobSignature(
 
   const verifier =
     crypto.createVerify(
-      "SHA256",
+      "SHA256"
     );
 
 
   verifier.update(
     Buffer.from(
       dataToVerify,
-      "utf8",
-    ),
+      "utf8"
+    )
   );
+
 
   verifier.end();
 
@@ -300,17 +377,26 @@ async function verifyAdMobSignature(
   const valid =
     verifier.verify(
       publicKey,
-      signature,
+      signature
     );
 
 
   if (!valid) {
+
     throw new Error(
-      "Invalid AdMob signature.",
+      "Invalid AdMob signature."
     );
+
   }
 
+
+  console.log(
+    "AdMob signature verified successfully"
+  );
+
+
   return true;
+
 }
 
 
@@ -322,31 +408,40 @@ exports.dailyCheckIn =
   onCall(async (request) => {
 
     if (!request.auth) {
+
       throw new HttpsError(
         "unauthenticated",
-        "Käyttäjän täytyy olla kirjautunut.",
+        "Käyttäjän täytyy olla kirjautunut."
       );
+
     }
+
 
     const uid =
       request.auth.uid;
+
 
     const userRef =
       db.collection("users")
         .doc(uid);
 
+
     const now =
       new Date();
+
 
     const today =
       getUtcDateString();
 
+
     const yesterdayDate =
       new Date(now);
 
+
     yesterdayDate.setUTCDate(
-      yesterdayDate.getUTCDate() - 1,
+      yesterdayDate.getUTCDate() - 1
     );
+
 
     const yesterday =
       yesterdayDate
@@ -354,105 +449,127 @@ exports.dailyCheckIn =
         .substring(0, 10);
 
 
-    const result =
-      await db.runTransaction(
-        async (transaction) => {
+    return await db.runTransaction(
+      async (transaction) => {
 
-          const snapshot =
-            await transaction.get(
-              userRef,
-            );
-
-          const data =
-            snapshot.exists
-              ? snapshot.data()
-              : {};
-
-          const oldBalance =
-            Number(
-              data.stlBalance || 0,
-            );
-
-          const oldStreak =
-            Number(
-              data.streak || 0,
-            );
-
-          const lastDaily =
-            data.lastDaily || "";
+        const snapshot =
+          await transaction.get(userRef);
 
 
-          // ALREADY CLAIMED TODAY
-          if (lastDaily === today) {
-            return {
-              alreadyClaimed: true,
-              balance: oldBalance,
-              streak: oldStreak,
-              reward: 0,
-            };
-          }
+        const data =
+          snapshot.exists
+            ? snapshot.data()
+            : {};
 
 
-          // CALCULATE STREAK
-          let newStreak;
-
-          if (lastDaily === yesterday) {
-            newStreak =
-              oldStreak + 1;
-          } else {
-            newStreak = 1;
-          }
-
-
-          if (newStreak > 7) {
-            newStreak = 7;
-          }
-
-
-          // DAYS 1-6 = 3 STL
-          // DAY 7 = 7 STL
-          const reward =
-            newStreak >= 7
-              ? 7
-              : 3;
-
-
-          const newBalance =
-            oldBalance + reward;
-
-
-          transaction.set(
-            userRef,
-            {
-              stlBalance:
-                newBalance,
-
-              streak:
-                newStreak,
-
-              lastDaily:
-                today,
-
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            },
-            {
-              merge: true,
-            },
+        const oldBalance =
+          Number(
+            data.stlBalance || 0
           );
 
 
+        const oldStreak =
+          Number(
+            data.streak || 0
+          );
+
+
+        const lastDaily =
+          data.lastDaily || "";
+
+
+        // Already claimed today.
+        if (lastDaily === today) {
+
           return {
-            alreadyClaimed: false,
-            balance: newBalance,
-            streak: newStreak,
-            reward: reward,
+
+            alreadyClaimed: true,
+
+            balance:
+              oldBalance,
+
+            streak:
+              oldStreak,
+
+            reward: 0,
+
           };
-        },
-      );
+
+        }
 
 
-    return result;
+        let newStreak;
+
+
+        if (lastDaily === yesterday) {
+
+          newStreak =
+            oldStreak + 1;
+
+        } else {
+
+          newStreak = 1;
+
+        }
+
+
+        if (newStreak > 7) {
+
+          newStreak = 7;
+
+        }
+
+
+        const reward =
+          newStreak >= 7
+            ? 7
+            : 3;
+
+
+        const newBalance =
+          oldBalance + reward;
+
+
+        transaction.set(
+          userRef,
+          {
+
+            stlBalance:
+              newBalance,
+
+            streak:
+              newStreak,
+
+            lastDaily:
+              today,
+
+            updatedAt:
+              FieldValue.serverTimestamp(),
+
+          },
+          {
+            merge: true,
+          }
+        );
+
+
+        return {
+
+          alreadyClaimed: false,
+
+          balance:
+            newBalance,
+
+          streak:
+            newStreak,
+
+          reward,
+
+        };
+
+      }
+    );
+
   });
 
 
@@ -464,14 +581,18 @@ exports.getRewardStatus =
   onCall(async (request) => {
 
     if (!request.auth) {
+
       throw new HttpsError(
         "unauthenticated",
-        "Käyttäjän täytyy olla kirjautunut.",
+        "Käyttäjän täytyy olla kirjautunut."
       );
+
     }
+
 
     const uid =
       request.auth.uid;
+
 
     const userRef =
       db.collection("users")
@@ -491,6 +612,7 @@ exports.getRewardStatus =
     const now =
       new Date();
 
+
     const today =
       getUtcDateString();
 
@@ -501,17 +623,17 @@ exports.getRewardStatus =
 
     let adsToday =
       Number(
-        data.adsToday || 0,
+        data.adsToday || 0
       );
 
 
-    // NEW DAY
     if (adDate !== today) {
+
       adsToday = 0;
+
     }
 
 
-    // COOLDOWN
     let cooldownRemainingMs = 0;
 
 
@@ -524,8 +646,10 @@ exports.getRewardStatus =
       typeof lastAdTimestamp.toDate ===
         "function"
     ) {
+
       const lastAdTime =
         lastAdTimestamp.toDate();
+
 
       const elapsed =
         now.getTime() -
@@ -535,24 +659,25 @@ exports.getRewardStatus =
       cooldownRemainingMs =
         Math.max(
           0,
-          AD_COOLDOWN_MS - elapsed,
+          AD_COOLDOWN_MS - elapsed
         );
+
     }
 
 
     return {
+
       balance:
         Number(
-          data.stlBalance || 0,
+          data.stlBalance || 0
         ),
 
       streak:
         Number(
-          data.streak || 0,
+          data.streak || 0
         ),
 
-      adsToday:
-        adsToday,
+      adsToday,
 
       maxAdsPerDay:
         MAX_ADS_PER_DAY,
@@ -564,9 +689,10 @@ exports.getRewardStatus =
         adsToday < MAX_ADS_PER_DAY &&
         cooldownRemainingMs === 0,
 
-      cooldownRemainingMs:
-        cooldownRemainingMs,
+      cooldownRemainingMs,
+
     };
+
   });
 
 
@@ -578,60 +704,147 @@ exports.adMobReward =
   onRequest(
     {
       region: "us-central1",
+
       timeoutSeconds: 60,
+
       memory: "256MiB",
+
     },
 
     async (request, response) => {
 
+      const originalUrl =
+        request.originalUrl || request.url;
+
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "AdMob callback received"
+      );
+
+      console.log(
+        "Method:",
+        request.method
+      );
+
+      console.log(
+        "URL:",
+        originalUrl
+      );
+
+
+      // ======================================================
+      // DEBUG: CALLBACK ARRIVED
+      // ======================================================
+
+      await saveDebugLog(
+        "callback_received",
+        {
+
+          method:
+            request.method,
+
+          // Ei tallenneta signaturea turvallisuussyistä.
+          userId:
+            request.query.user_id
+              ? String(request.query.user_id)
+              : null,
+
+          transactionId:
+            request.query.transaction_id
+              ? String(request.query.transaction_id)
+              : null,
+
+          hasSignature:
+            Boolean(request.query.signature),
+
+          hasKeyId:
+            Boolean(request.query.key_id),
+
+        }
+      );
+
+
       try {
-
-        console.log(
-          "====================================",
-        );
-
-        console.log(
-          "AdMob callback received",
-        );
-
-        console.log(
-          "URL:",
-          request.originalUrl ||
-            request.url,
-        );
-
-        console.log(
-          "====================================",
-        );
-
 
         // ====================================================
         // ONLY GET
         // ====================================================
 
         if (request.method !== "GET") {
+
+          await saveDebugLog(
+            "error_method",
+            {
+              method: request.method,
+            }
+          );
+
+
           response
             .status(405)
-            .send(
-              "Method not allowed",
-            );
+            .send("Method not allowed");
 
           return;
+
         }
 
 
         // ====================================================
-        // VERIFY GOOGLE SIGNATURE
+        // VERIFY SIGNATURE
         // ====================================================
 
-        await verifyAdMobSignature(
-          request,
-        );
+        try {
+
+          await verifyAdMobSignature(
+            request
+          );
 
 
-        console.log(
-          "AdMob signature verified successfully.",
-        );
+          await saveDebugLog(
+            "signature_verified"
+          );
+
+        } catch (signatureError) {
+
+          console.error(
+            "SIGNATURE ERROR:",
+            signatureError
+          );
+
+
+          await saveDebugLog(
+            "signature_error",
+            {
+
+              error:
+                signatureError.message ||
+                String(signatureError),
+
+              userId:
+                request.query.user_id
+                  ? String(request.query.user_id)
+                  : null,
+
+              transactionId:
+                request.query.transaction_id
+                  ? String(request.query.transaction_id)
+                  : null,
+
+            }
+          );
+
+
+          response
+            .status(400)
+            .send("Invalid AdMob signature");
+
+          return;
+
+        }
 
 
         // ====================================================
@@ -641,69 +854,41 @@ exports.adMobReward =
         const userId =
           request.query.user_id;
 
+
         const transactionId =
           request.query.transaction_id;
 
 
-        console.log(
-          "user_id:",
-          userId || "(missing)",
-        );
+        if (!userId || !transactionId) {
 
-        console.log(
-          "transaction_id:",
-          transactionId || "(missing)",
-        );
+          await saveDebugLog(
+            "missing_parameters",
+            {
 
+              hasUserId:
+                Boolean(userId),
 
-        // ====================================================
-        // ADMOB URL VERIFICATION TEST
-        //
-        // AdMob voi lähettää testipyynnön,
-        // jossa user_id puuttuu.
-        //
-        // Allekirjoitus on silti tarkistettu,
-        // joten hyväksymme testin HTTP 200:lla.
-        // ====================================================
+              hasTransactionId:
+                Boolean(transactionId),
 
-        if (!userId) {
-
-          console.log(
-            "No user_id. Accepting AdMob verification request.",
+            }
           );
 
-          response
-            .status(200)
-            .send(
-              "AdMob verification successful",
-            );
-
-          return;
-        }
-
-
-        // ====================================================
-        // REAL REWARD MUST HAVE TRANSACTION ID
-        // ====================================================
-
-        if (!transactionId) {
-
-          console.error(
-            "Missing transaction_id for real reward.",
-          );
 
           response
             .status(400)
             .send(
-              "Missing transaction_id",
+              "Missing user_id or transaction_id"
             );
 
           return;
+
         }
 
 
         const uid =
           String(userId);
+
 
         const transactionIdString =
           String(transactionId);
@@ -711,12 +896,13 @@ exports.adMobReward =
 
         console.log(
           "Processing reward for user:",
-          uid,
+          uid
         );
+
 
         console.log(
           "Transaction:",
-          transactionIdString,
+          transactionIdString
         );
 
 
@@ -727,15 +913,16 @@ exports.adMobReward =
 
         const transactionRef =
           db.collection(
-            "adMobTransactions",
+            "adMobTransactions"
           )
             .doc(
-              transactionIdString,
+              transactionIdString
             );
 
 
         const now =
           new Date();
+
 
         const today =
           getUtcDateString();
@@ -749,40 +936,35 @@ exports.adMobReward =
           await db.runTransaction(
             async (transaction) => {
 
-              // ------------------------------------------------
-              // DUPLICATE PROTECTION
-              // ------------------------------------------------
-
+              // Duplicate protection.
               const existingTransaction =
                 await transaction.get(
-                  transactionRef,
+                  transactionRef
                 );
 
 
               if (
                 existingTransaction.exists
               ) {
-                console.log(
-                  "Duplicate transaction ignored:",
-                  transactionIdString,
-                );
 
                 return {
+
                   success: true,
+
                   duplicate: true,
+
                   message:
                     "Transaction already processed.",
+
                 };
+
               }
 
 
-              // ------------------------------------------------
-              // GET USER DATA
-              // ------------------------------------------------
-
+              // Get user.
               const userSnapshot =
                 await transaction.get(
-                  userRef,
+                  userRef
                 );
 
 
@@ -792,13 +974,13 @@ exports.adMobReward =
                   : {};
 
 
-              // ------------------------------------------------
+              // =================================================
               // ADS TODAY
-              // ------------------------------------------------
+              // =================================================
 
               let adsToday =
                 Number(
-                  userData.adsToday || 0,
+                  userData.adsToday || 0
                 );
 
 
@@ -807,35 +989,37 @@ exports.adMobReward =
 
 
               if (adDate !== today) {
+
                 adsToday = 0;
+
               }
 
 
-              // ------------------------------------------------
+              // =================================================
               // DAILY LIMIT
-              // ------------------------------------------------
+              // =================================================
 
               if (
-                adsToday >=
-                MAX_ADS_PER_DAY
+                adsToday >= MAX_ADS_PER_DAY
               ) {
-                console.log(
-                  "Daily limit reached:",
-                  uid,
-                );
 
                 return {
+
                   success: false,
+
                   limitReached: true,
+
                   message:
                     "Daily ad limit reached.",
+
                 };
+
               }
 
 
-              // ------------------------------------------------
+              // =================================================
               // COOLDOWN
-              // ------------------------------------------------
+              // =================================================
 
               const lastAdTimestamp =
                 userData.lastAdTimestamp;
@@ -846,6 +1030,7 @@ exports.adMobReward =
                 typeof lastAdTimestamp.toDate ===
                   "function"
               ) {
+
                 const lastAdTime =
                   lastAdTimestamp.toDate();
 
@@ -859,33 +1044,31 @@ exports.adMobReward =
                   timeSinceLastAd <
                   AD_COOLDOWN_MS
                 ) {
-                  const remainingMs =
-                    AD_COOLDOWN_MS -
-                    timeSinceLastAd;
-
-
-                  console.log(
-                    "Ad cooldown active:",
-                    remainingMs,
-                  );
 
                   return {
+
                     success: false,
+
                     cooldown: true,
+
                     remainingMs:
-                      remainingMs,
+                      AD_COOLDOWN_MS -
+                      timeSinceLastAd,
+
                   };
+
                 }
+
               }
 
 
-              // ------------------------------------------------
-              // ADD STL REWARD
-              // ------------------------------------------------
+              // =================================================
+              // ADD REWARD
+              // =================================================
 
               const oldBalance =
                 Number(
-                  userData.stlBalance || 0,
+                  userData.stlBalance || 0
                 );
 
 
@@ -898,13 +1081,11 @@ exports.adMobReward =
                 adsToday + 1;
 
 
-              // ------------------------------------------------
-              // UPDATE USER
-              // ------------------------------------------------
-
+              // Update user.
               transaction.set(
                 userRef,
                 {
+
                   stlBalance:
                     newBalance,
 
@@ -919,20 +1100,19 @@ exports.adMobReward =
 
                   updatedAt:
                     FieldValue.serverTimestamp(),
+
                 },
                 {
                   merge: true,
-                },
+                }
               );
 
 
-              // ------------------------------------------------
-              // SAVE TRANSACTION
-              // ------------------------------------------------
-
+              // Save transaction.
               transaction.set(
                 transactionRef,
                 {
+
                   userId:
                     uid,
 
@@ -944,11 +1124,13 @@ exports.adMobReward =
 
                   createdAt:
                     FieldValue.serverTimestamp(),
-                },
+
+                }
               );
 
 
               return {
+
                 success: true,
 
                 duplicate: false,
@@ -961,46 +1143,99 @@ exports.adMobReward =
 
                 adsToday:
                   newAdsToday,
+
               };
-            },
+
+            }
           );
 
 
         console.log(
           "AdMob reward result:",
-          result,
+          result
         );
 
 
         // ====================================================
-        // SUCCESS RESPONSE
+        // SAVE RESULT TO DEBUG
         // ====================================================
+
+        await saveDebugLog(
+          "reward_result",
+          {
+
+            userId: uid,
+
+            transactionId:
+              transactionIdString,
+
+            success:
+              Boolean(result.success),
+
+            duplicate:
+              Boolean(result.duplicate),
+
+            limitReached:
+              Boolean(result.limitReached),
+
+            cooldown:
+              Boolean(result.cooldown),
+
+            reward:
+              result.reward || 0,
+
+            balance:
+              result.balance || null,
+
+            adsToday:
+              result.adsToday || null,
+
+          }
+        );
+
 
         response
           .status(200)
           .json(result);
 
+
       } catch (error) {
 
         console.error(
-          "====================================",
+          "AdMob SSV ERROR:",
+          error
         );
 
-        console.error(
-          "AdMob SSV error:",
-          error,
-        );
 
-        console.error(
-          "====================================",
+        await saveDebugLog(
+          "fatal_error",
+          {
+
+            error:
+              error.message ||
+              String(error),
+
+            userId:
+              request.query.user_id
+                ? String(request.query.user_id)
+                : null,
+
+            transactionId:
+              request.query.transaction_id
+                ? String(request.query.transaction_id)
+                : null,
+
+          }
         );
 
 
         response
-          .status(400)
+          .status(500)
           .send(
-            "Invalid SSV callback",
+            "Internal SSV error"
           );
+
       }
-    },
+
+    }
   );
