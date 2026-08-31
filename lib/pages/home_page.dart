@@ -15,14 +15,19 @@ const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
-/// Googlen virallinen Rewarded Ad TEST-ID.
+/// AdMob Rewarded Ad Unit ID.
 ///
-/// Vaihda tämä myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
+/// TEST-ID:
+/// ca-app-pub-3940256099942544/5224354917
+///
+/// Vaihda myöhemmin omaan oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
+/// Tavallisten mainosten päivittäinen maksimi.
 const int maxAdsPerDay = 5;
 
+/// Mainosten välinen odotusaika.
 const Duration adCooldown =
     Duration(hours: 1);
 
@@ -42,6 +47,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // ==========================================================
+  // USER DATA
+  // ==========================================================
+
   int stl = 0;
   int streak = 0;
   int adsToday = 0;
@@ -49,30 +58,48 @@ class _HomePageState extends State<HomePage> {
   bool dailyClaimed = false;
   bool loading = true;
 
+  // ==========================================================
+  // LOADING STATES
+  // ==========================================================
+
   bool adLoading = false;
   bool dailyLoading = false;
-
   bool dailyAdLoading = false;
 
+  /// True, kun AdMob SSV -palkintoa odotetaan palvelimelta.
   bool waitingForServerReward = false;
 
   String today = '';
 
   DateTime? lastAdTime;
 
-  /// Tavallinen WATCH AD -mainos.
+  // ==========================================================
+  // ADMOB ADS
+  // ==========================================================
+
   RewardedAd? rewardedAd;
 
-  /// Päivittäisen palkinnon mainos.
   RewardedAd? dailyRewardedAd;
+
+  // ==========================================================
+  // TIMERS
+  // ==========================================================
 
   Timer? cooldownTimer;
   Timer? rewardRefreshTimer;
+
+  // ==========================================================
+  // LOCALIZATION
+  // ==========================================================
 
   AppLocalizations get t =>
       AppLocalizations(
         widget.languageCode,
       );
+
+  // ==========================================================
+  // FIRESTORE
+  // ==========================================================
 
   CollectionReference<Map<String, dynamic>>
       get _users =>
@@ -95,20 +122,26 @@ class _HomePageState extends State<HomePage> {
     return _users.doc(uid);
   }
 
+  // ==========================================================
+  // INIT
+  // ==========================================================
+
   @override
   void initState() {
     super.initState();
 
     _loadData();
 
-    // Tavallinen WATCH AD.
     _loadRewardedAd();
 
-    // Päivittäisen palkinnon mainos.
     _loadDailyRewardedAd();
 
     _startCooldownTimer();
   }
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
@@ -136,7 +169,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOAD DATA
+  // LOAD DATA FROM FIRESTORE
   // ==========================================================
 
   Future<void> _loadData() async {
@@ -200,8 +233,7 @@ class _HomePageState extends State<HomePage> {
             timestamp.toDate();
       }
 
-      // Yhteensopivuus vanhan
-      // lastAdTime String -tallennuksen kanssa.
+      // Yhteensopivuus vanhan String-muodon kanssa.
       final oldLastAdTime =
           data['lastAdTime'];
 
@@ -214,7 +246,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      // Uusi päivä.
+      // Uusi päivä -> mainoslaskuri nollaan.
       if (adDate != currentToday) {
         loadedAds = 0;
         adDate = currentToday;
@@ -255,7 +287,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOCAL CACHE SAVE
+  // SAVE LOCAL CACHE
   // ==========================================================
 
   Future<void> _saveLocalCache({
@@ -301,7 +333,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOCAL CACHE LOAD
+  // LOAD LOCAL CACHE
   // ==========================================================
 
   Future<void> _loadLocalCache() async {
@@ -435,7 +467,7 @@ class _HomePageState extends State<HomePage> {
         streakValue: newStreak,
         adsValue: adsToday,
         lastDailyValue: currentToday,
-        adDateValue: today,
+        adDateValue: currentToday,
         lastAdTimeValue:
             lastAdTime
                     ?.toIso8601String() ??
@@ -447,7 +479,12 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         stl = newBalance;
         streak = newStreak;
-        dailyClaimed = true;
+
+        dailyClaimed =
+            alreadyClaimed ||
+                data['lastDaily'] ==
+                    currentToday ||
+                true;
       });
 
       if (alreadyClaimed) {
@@ -578,7 +615,9 @@ class _HomePageState extends State<HomePage> {
         FullScreenContentCallback<
             RewardedAd>(
       onAdDismissedFullScreenContent:
-          (RewardedAd dismissedAd) async {
+          (
+        RewardedAd dismissedAd,
+      ) async {
         dismissedAd.dispose();
 
         if (mounted) {
@@ -709,7 +748,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOAD REWARDED AD
+  // LOAD NORMAL REWARDED AD
   // ==========================================================
 
   void _loadRewardedAd() {
@@ -766,7 +805,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // SERVER-SIDE VERIFICATION
+  // ADMOB SERVER-SIDE VERIFICATION
   // ==========================================================
 
   void _configureServerSideVerification(
@@ -834,6 +873,8 @@ class _HomePageState extends State<HomePage> {
       rewardedAd = null;
     });
 
+    // TÄRKEÄ:
+    // Firebase saa käyttäjän UID:n AdMob SSV -callbackissa.
     _configureServerSideVerification(
       ad,
     );
@@ -844,7 +885,9 @@ class _HomePageState extends State<HomePage> {
         FullScreenContentCallback<
             RewardedAd>(
       onAdDismissedFullScreenContent:
-          (RewardedAd dismissedAd) async {
+          (
+        RewardedAd dismissedAd,
+      ) async {
         dismissedAd.dispose();
 
         if (earnedReward) {
@@ -887,6 +930,13 @@ class _HomePageState extends State<HomePage> {
         AdWithoutView ad,
         RewardItem reward,
       ) {
+        // Tämä EI lisää STL:ää.
+        //
+        // Se kertoo vain, että käyttäjä ansaitsi
+        // palkinnon mainoksen näkökulmasta.
+        //
+        // Oikea STL lisätään Firebase Functionsissa
+        // AdMob SSV -callbackin jälkeen.
         earnedReward = true;
       },
     );
@@ -898,6 +948,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _waitForServerReward() async {
     final oldBalance = stl;
+    final oldAdsToday = adsToday;
 
     int attempts = 0;
 
@@ -926,17 +977,33 @@ class _HomePageState extends State<HomePage> {
           return;
         }
 
-        if (stl > oldBalance) {
+        // ======================================================
+        // SERVER REWARD FOUND
+        // ======================================================
+
+        if (stl > oldBalance ||
+            adsToday > oldAdsToday) {
           timer.cancel();
 
-          setState(() {
-            waitingForServerReward =
-                false;
-          });
+          if (mounted) {
+            setState(() {
+              waitingForServerReward =
+                  false;
+            });
+          }
 
-          _message(
-            '+${stl - oldBalance} STL! 🐱',
-          );
+          final earnedAmount =
+              stl - oldBalance;
+
+          if (earnedAmount > 0) {
+            _message(
+              '+$earnedAmount STL! 🐱',
+            );
+          } else {
+            _message(
+              'Palkinto vahvistettu! 🐱',
+            );
+          }
 
           if (!completer.isCompleted) {
             completer.complete();
@@ -945,13 +1012,19 @@ class _HomePageState extends State<HomePage> {
           return;
         }
 
+        // ======================================================
+        // TIMEOUT
+        // ======================================================
+
         if (attempts >= maxAttempts) {
           timer.cancel();
 
-          setState(() {
-            waitingForServerReward =
-                false;
-          });
+          if (mounted) {
+            setState(() {
+              waitingForServerReward =
+                  false;
+            });
+          }
 
           _message(
             'Palkinnon vahvistus voi kestää '
@@ -1145,6 +1218,10 @@ class _HomePageState extends State<HomePage> {
               16,
             ),
             children: [
+              // =================================================
+              // PROFILE
+              // =================================================
+
               Card(
                 child: Padding(
                   padding:
@@ -1187,6 +1264,10 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(
                 height: 14,
               ),
+
+              // =================================================
+              // BALANCE
+              // =================================================
 
               Card(
                 child: Padding(
@@ -1363,8 +1444,7 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       const Icon(
-                        Icons
-                            .play_circle_outline,
+                        Icons.play_circle_outline,
                         size: 42,
                         color: accentColor,
                       ),
@@ -1397,10 +1477,11 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(
                         height: 8,
                       ),
+
                       if (waitingForServerReward)
                         const Text(
-                          'Palkintoa '
-                          'vahvistetaan...',
+                          'Palkintoa vahvistetaan '
+                          'palvelimella...',
                           style: TextStyle(
                             color:
                                 Colors.orangeAccent,
@@ -1408,6 +1489,7 @@ class _HomePageState extends State<HomePage> {
                                 FontWeight.bold,
                           ),
                         ),
+
                       if (!waitingForServerReward &&
                           adsToday <
                               maxAdsPerDay &&
@@ -1423,9 +1505,11 @@ class _HomePageState extends State<HomePage> {
                                 FontWeight.bold,
                           ),
                         ),
+
                       const SizedBox(
                         height: 15,
                       ),
+
                       SizedBox(
                         width:
                             double.infinity,
@@ -1436,22 +1520,22 @@ class _HomePageState extends State<HomePage> {
                               adButtonEnabled
                                   ? _watchAd
                                   : null,
-                          icon: adLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child:
-                                      CircularProgressIndicator(
-                                    strokeWidth:
-                                        2,
-                                    color:
-                                        Colors
-                                            .black,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.play_arrow,
-                                ),
+                          icon:
+                              adLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child:
+                                          CircularProgressIndicator(
+                                        strokeWidth:
+                                            2,
+                                        color:
+                                            Colors.black,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.play_arrow,
+                                    ),
                           label: Text(
                             waitingForServerReward
                                 ? 'VAHVISTETAAN...'
