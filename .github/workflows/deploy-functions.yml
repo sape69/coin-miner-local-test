@@ -12,13 +12,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
 
       # ==========================================
-      # CHECKOUT
+      # CHECKOUT REPOSITORY
       # ==========================================
 
       - name: Checkout repository
@@ -33,47 +30,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "npm"
+          cache-dependency-path: functions/package-lock.json
 
 
       # ==========================================
-      # SHOW NODE VERSION
+      # CHECK NODE VERSION
       # ==========================================
 
       - name: Check Node version
         run: |
+          echo "Node version:"
           node --version
+
+          echo "NPM version:"
           npm --version
-
-
-      # ==========================================
-      # AUTHENTICATE GOOGLE CLOUD
-      # ==========================================
-
-      - name: Authenticate Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-
-      # ==========================================
-      # SETUP GOOGLE CLOUD SDK
-      # ==========================================
-
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: stelluriini
-
-
-      # ==========================================
-      # CHECK GOOGLE PROJECT
-      # ==========================================
-
-      - name: Check Google authentication
-        run: |
-          gcloud auth list
-          gcloud config set project stelluriini
-          gcloud config get-value project
 
 
       # ==========================================
@@ -92,19 +63,77 @@ jobs:
       - name: Install Functions dependencies
         working-directory: functions
         run: |
-          npm install
+          npm ci
+
+
+      # ==========================================
+      # AUTHENTICATE GOOGLE CLOUD
+      #
+      # GitHub Secret required:
+      # GCP_SERVICE_ACCOUNT
+      # ==========================================
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+
+      # ==========================================
+      # SETUP GOOGLE CLOUD SDK
+      # ==========================================
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+
+      # ==========================================
+      # CHECK GOOGLE PROJECT
+      # ==========================================
+
+      - name: Check Google project
+        run: |
+          gcloud config set project stelluriini
+
+          echo ""
+          echo "========================================"
+          echo "GOOGLE CLOUD PROJECT"
+          echo "========================================"
+
+          gcloud config get-value project
+
+          echo "========================================"
+
+
+      # ==========================================
+      # CHECK FIREBASE PROJECT
+      # ==========================================
+
+      - name: Check Firebase project
+        run: |
+          firebase projects:list
 
 
       # ==========================================
       # DEPLOY FIREBASE FUNCTIONS
+      #
+      # --force automatically creates the Artifact
+      # Registry cleanup policy.
       # ==========================================
 
       - name: Deploy Firebase Functions
         run: |
+          echo ""
+          echo "========================================"
+          echo "DEPLOYING STELLURIINI FUNCTIONS"
+          echo "========================================"
+          echo ""
+
           firebase deploy \
             --only functions \
             --project stelluriini \
-            --non-interactive
+            --non-interactive \
+            --force
 
 
       # ==========================================
@@ -113,6 +142,12 @@ jobs:
 
       - name: List deployed Functions
         run: |
+          echo ""
+          echo "========================================"
+          echo "DEPLOYED FIREBASE FUNCTIONS"
+          echo "========================================"
+          echo ""
+
           firebase functions:list \
             --project stelluriini
 
@@ -135,6 +170,7 @@ jobs:
             --format="value(serviceConfig.uri)"
 
           echo ""
+
           echo "========================================"
           echo "COPY THE URL ABOVE TO ADMOB"
           echo "========================================"
