@@ -874,7 +874,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // MENU
+  // OPEN ABOUT PAGE
+  // ==========================================================
+
+  void _openAboutPage() {
+    Navigator.pop(context);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const AboutStelluriiniPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // COMING SOON
   // ==========================================================
 
   void _comingSoon(String pageName) {
@@ -938,7 +954,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       // ========================================================
-      // ☰ DRAWER MENU
+      // DRAWER MENU
       // ========================================================
 
       drawer: Drawer(
@@ -1007,11 +1023,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text(
                   'About Stelluriini',
                 ),
-                onTap: () {
-                  _comingSoon(
-                    'About Stelluriini',
-                  );
-                },
+                onTap: _openAboutPage,
               ),
 
               // WHITE PAPER
@@ -1485,6 +1497,343 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+// ============================================================
+// ABOUT STELLURIINI PAGE
+// ============================================================
+
+class AboutStelluriiniPage extends StatelessWidget {
+  const AboutStelluriiniPage({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'ABOUT STELLURIINI',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // ==================================================
+            // HEADER
+            // ==================================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const CatAvatar(
+                      size: 120,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    const Text(
+                      'STELLURIINI',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: accentColor,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    const Text(
+                      'STL • Solana',
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: Colors.white60,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ==================================================
+            // WHAT IS STELLURIINI
+            // ==================================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.pets,
+                      size: 45,
+                      color: accentColor,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'What is Stelluriini?',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'Stelluriini is a community-driven token '
+                      'built on the Solana blockchain, inspired '
+                      'by a curious cat. 🐱',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ==================================================
+            // TOKEN INFORMATION
+            // ==================================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.monetization_on_outlined,
+                      size: 42,
+                      color: accentColor,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'Token Information',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const _InfoRow(
+                      icon: Icons.token,
+                      title: 'Token Symbol',
+                      value: 'STL',
+                    ),
+
+                    const Divider(
+                      color: Colors.white12,
+                    ),
+
+                    const _InfoRow(
+                      icon: Icons.account_balance,
+                      title: 'Blockchain',
+                      value: 'Solana',
+                    ),
+
+                    const Divider(
+                      color: Colors.white12,
+                    ),
+
+                    const _InfoRow(
+                      icon: Icons.pie_chart_outline,
+                      title: 'Total Supply',
+                      value: '17 602 539 062 STL',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ==================================================
+            // COMMUNITY
+            // ==================================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.groups_outlined,
+                      size: 45,
+                      color: accentColor,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'Community-Driven',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'Stelluriini is built around its community. '
+                      'The project is inspired by creativity, '
+                      'curiosity and the idea of bringing people '
+                      'together around the STL ecosystem.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ==================================================
+            // FUTURE
+            // ==================================================
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.rocket_launch_outlined,
+                      size: 45,
+                      color: accentColor,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'The Future of Stelluriini',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'The Stelluriini ecosystem is still growing. '
+                      'Future plans include a White Paper, Roadmap '
+                      'and new features for the community.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            const Center(
+              child: Text(
+                'STELLURIINI • STL 🐱',
+                style: TextStyle(
+                  color: accentColor,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// ============================================================
+// INFORMATION ROW WIDGET
+// ============================================================
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(
+        vertical: 12,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: accentColor,
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white60,
+                fontSize: 15,
+              ),
+            ),
+          ),
+
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ],
       ),
     );
   }
