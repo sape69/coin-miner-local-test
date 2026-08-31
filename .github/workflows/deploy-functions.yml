@@ -15,7 +15,7 @@ jobs:
     steps:
 
       # ==========================================
-      # CHECKOUT REPOSITORY
+      # CHECKOUT
       # ==========================================
 
       - name: Checkout repository
@@ -30,8 +30,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: functions/package-lock.json
 
 
       # ==========================================
@@ -40,11 +38,31 @@ jobs:
 
       - name: Check Node version
         run: |
-          echo "Node version:"
+          echo "Node:"
           node --version
 
-          echo "NPM version:"
+          echo "NPM:"
           npm --version
+
+
+      # ==========================================
+      # CHECK PROJECT FILES
+      # ==========================================
+
+      - name: Check project files
+        run: |
+          echo "Repository files:"
+          ls -la
+
+          echo ""
+          echo "Functions directory:"
+
+          if [ -d "functions" ]; then
+            ls -la functions
+          else
+            echo "ERROR: functions directory not found!"
+            exit 1
+          fi
 
 
       # ==========================================
@@ -57,20 +75,17 @@ jobs:
 
 
       # ==========================================
-      # INSTALL FUNCTION DEPENDENCIES
+      # INSTALL FUNCTIONS DEPENDENCIES
       # ==========================================
 
       - name: Install Functions dependencies
         working-directory: functions
         run: |
-          npm ci
+          npm install
 
 
       # ==========================================
       # AUTHENTICATE GOOGLE CLOUD
-      #
-      # GitHub Secret required:
-      # GCP_SERVICE_ACCOUNT
       # ==========================================
 
       - name: Authenticate Google Cloud
@@ -106,19 +121,7 @@ jobs:
 
 
       # ==========================================
-      # CHECK FIREBASE PROJECT
-      # ==========================================
-
-      - name: Check Firebase project
-        run: |
-          firebase projects:list
-
-
-      # ==========================================
-      # DEPLOY FIREBASE FUNCTIONS
-      #
-      # --force automatically creates the Artifact
-      # Registry cleanup policy.
+      # DEPLOY FUNCTIONS
       # ==========================================
 
       - name: Deploy Firebase Functions
@@ -137,14 +140,14 @@ jobs:
 
 
       # ==========================================
-      # LIST DEPLOYED FUNCTIONS
+      # LIST FUNCTIONS
       # ==========================================
 
       - name: List deployed Functions
         run: |
           echo ""
           echo "========================================"
-          echo "DEPLOYED FIREBASE FUNCTIONS"
+          echo "DEPLOYED FUNCTIONS"
           echo "========================================"
           echo ""
 
@@ -172,5 +175,5 @@ jobs:
           echo ""
 
           echo "========================================"
-          echo "COPY THE URL ABOVE TO ADMOB"
+          echo "COPY THE URL ABOVE"
           echo "========================================"
