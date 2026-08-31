@@ -9,8 +9,10 @@ on:
 
 jobs:
   deploy-functions:
-
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
 
     steps:
 
@@ -38,31 +40,39 @@ jobs:
 
       - name: Check Node version
         run: |
-          echo "Node:"
           node --version
-
-          echo "NPM:"
           npm --version
 
 
       # ==========================================
-      # CHECK PROJECT FILES
+      # AUTHENTICATE GOOGLE CLOUD
       # ==========================================
 
-      - name: Check project files
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+
+      # ==========================================
+      # SETUP GOOGLE CLOUD SDK
+      # ==========================================
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: stelluriini
+
+
+      # ==========================================
+      # CHECK AUTHENTICATION
+      # ==========================================
+
+      - name: Check Google authentication
         run: |
-          echo "Repository files:"
-          ls -la
-
-          echo ""
-          echo "Functions directory:"
-
-          if [ -d "functions" ]; then
-            ls -la functions
-          else
-            echo "ERROR: functions directory not found!"
-            exit 1
-          fi
+          gcloud auth list
+          gcloud config set project stelluriini
+          gcloud config get-value project
 
 
       # ==========================================
@@ -85,53 +95,11 @@ jobs:
 
 
       # ==========================================
-      # AUTHENTICATE GOOGLE CLOUD
-      # ==========================================
-
-      - name: Authenticate Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-
-      # ==========================================
-      # SETUP GOOGLE CLOUD SDK
-      # ==========================================
-
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-
-      # ==========================================
-      # CHECK GOOGLE PROJECT
-      # ==========================================
-
-      - name: Check Google project
-        run: |
-          gcloud config set project stelluriini
-
-          echo ""
-          echo "========================================"
-          echo "GOOGLE CLOUD PROJECT"
-          echo "========================================"
-
-          gcloud config get-value project
-
-          echo "========================================"
-
-
-      # ==========================================
-      # DEPLOY FUNCTIONS
+      # DEPLOY FIREBASE FUNCTIONS
       # ==========================================
 
       - name: Deploy Firebase Functions
         run: |
-          echo ""
-          echo "========================================"
-          echo "DEPLOYING STELLURIINI FUNCTIONS"
-          echo "========================================"
-          echo ""
-
           firebase deploy \
             --only functions \
             --project stelluriini \
@@ -145,12 +113,6 @@ jobs:
 
       - name: List deployed Functions
         run: |
-          echo ""
-          echo "========================================"
-          echo "DEPLOYED FUNCTIONS"
-          echo "========================================"
-          echo ""
-
           firebase functions:list \
             --project stelluriini
 
@@ -173,7 +135,6 @@ jobs:
             --format="value(serviceConfig.uri)"
 
           echo ""
-
           echo "========================================"
-          echo "COPY THE URL ABOVE"
+          echo "COPY THE URL ABOVE TO ADMOB"
           echo "========================================"
