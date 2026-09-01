@@ -35,6 +35,10 @@ const AD_REWARD = 3;
 // Maksimimäärä mainoksia päivässä.
 const MAX_ADS_PER_DAY = 5;
 
+// Päivittäisen palkinnon maksimi.
+// Päivä 7 ja kaikki sen jälkeiset päivät = 7 STL.
+const MAX_DAILY_REWARD = 7;
+
 // Mainosten välinen odotusaika.
 // 60 minuuttia.
 const AD_COOLDOWN_MS =
@@ -57,13 +61,13 @@ function getUtcDateString() {
 // ============================================================
 
 function getYesterdayUtcDateString() {
-  const yesterday = new Date();
+  const date = new Date();
 
-  yesterday.setUTCDate(
-    yesterday.getUTCDate() - 1
+  date.setUTCDate(
+    date.getUTCDate() - 1
   );
 
-  return yesterday
+  return date
     .toISOString()
     .substring(0, 10);
 }
@@ -71,26 +75,27 @@ function getYesterdayUtcDateString() {
 
 // ============================================================
 // CALCULATE DAILY REWARD
+// ============================================================
 //
-// Day 1 = 1 STL
-// Day 2 = 2 STL
-// Day 3 = 3 STL
-// Day 4 = 4 STL
-// Day 5 = 5 STL
-// Day 6 = 6 STL
-// Day 7 = 7 STL
+// Päivä 1 = 1 STL
+// Päivä 2 = 2 STL
+// Päivä 3 = 3 STL
+// ...
+// Päivä 7 = 7 STL
+// Päivä 8+ = 7 STL
 //
-// After day 7 = 7 STL every day.
 // ============================================================
 
 function calculateDailyReward(streak) {
-  const safeStreak =
-    Math.max(
-      1,
-      Math.min(7, Number(streak) || 1)
-    );
+  if (streak >= MAX_DAILY_REWARD) {
+    return MAX_DAILY_REWARD;
+  }
 
-  return safeStreak;
+  if (streak <= 0) {
+    return 1;
+  }
+
+  return streak;
 }
 
 
@@ -100,6 +105,10 @@ function calculateDailyReward(streak) {
 
 exports.dailyCheckIn =
   onCall(async (request) => {
+
+    // ========================================================
+    // AUTH CHECK
+    // ========================================================
 
     if (!request.auth) {
       throw new HttpsError(
@@ -122,6 +131,10 @@ exports.dailyCheckIn =
       getYesterdayUtcDateString();
 
 
+    // ========================================================
+    // TRANSACTION
+    // ========================================================
+
     const result =
       await db.runTransaction(
         async (transaction) => {
@@ -138,7 +151,7 @@ exports.dailyCheckIn =
 
 
           // ==================================================
-          // CURRENT USER DATA
+          // CURRENT DATA
           // ==================================================
 
           const oldBalance =
@@ -152,7 +165,9 @@ exports.dailyCheckIn =
             );
 
           const lastDaily =
-            data.lastDaily || "";
+            String(
+              data.lastDaily || ""
+            );
 
 
           // ==================================================
@@ -162,27 +177,23 @@ exports.dailyCheckIn =
           if (lastDaily === today) {
             return {
               alreadyClaimed: true,
-
-              balance:
-                oldBalance,
-
-              streak:
-                oldStreak,
-
-              reward:
-                0,
+              balance: oldBalance,
+              streak: oldStreak,
+              reward: 0,
             };
           }
 
 
           // ==================================================
           // CALCULATE NEW STREAK
+          // ==================================================
           //
-          // If the user claimed yesterday:
-          // continue the streak.
+          // Jos viimeisin palkinto oli eilen:
+          // streak jatkuu.
           //
-          // If one or more days were missed:
-          // restart from day 1.
+          // Jos päivä jäi välistä:
+          // streak alkaa uudestaan päivästä 1.
+          //
           // ==================================================
 
           let newStreak;
@@ -195,26 +206,18 @@ exports.dailyCheckIn =
           }
 
 
-          // ==================================================
-          // MAXIMUM STREAK = 7
-          //
-          // After day 7 the streak stays at 7.
-          // ==================================================
-
-          if (newStreak > 7) {
-            newStreak = 7;
+          // Maksimi streak UI:ta varten on 7.
+          if (
+            newStreak >
+            MAX_DAILY_REWARD
+          ) {
+            newStreak =
+              MAX_DAILY_REWARD;
           }
 
 
           // ==================================================
-          // DAILY REWARD
-          //
-          // The reward equals the streak:
-          //
-          // Day 1 = 1 STL
-          // Day 2 = 2 STL
-          // ...
-          // Day 7 = 7 STL
+          // CALCULATE REWARD
           // ==================================================
 
           const reward =
@@ -228,7 +231,8 @@ exports.dailyCheckIn =
           // ==================================================
 
           const newBalance =
-            oldBalance + reward;
+            oldBalance +
+            reward;
 
 
           // ==================================================
@@ -287,6 +291,10 @@ exports.dailyCheckIn =
 exports.getRewardStatus =
   onCall(async (request) => {
 
+    // ========================================================
+    // AUTH CHECK
+    // ========================================================
+
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -300,6 +308,11 @@ exports.getRewardStatus =
     const userRef =
       db.collection("users")
         .doc(uid);
+
+
+    // ========================================================
+    // LOAD USER
+    // ========================================================
 
     const snapshot =
       await userRef.get();
@@ -321,52 +334,47 @@ exports.getRewardStatus =
 
 
     // ========================================================
-    // CURRENT BALANCE
+    // DAILY REWARD STATUS
     // ========================================================
 
-    const balance =
-      Number(
-        data.stlBalance || 0
+    const lastDaily =
+      String(
+        data.lastDaily || ""
       );
 
-
-    // ========================================================
-    // DAILY STREAK STATUS
-    // ========================================================
-
-    const storedStreak =
+    let streak =
       Number(
         data.streak || 0
       );
 
-    const lastDaily =
-      data.lastDaily || "";
+
+    // Jos päivä jäi välistä, näytetään uusi streak.
+    if (
+      lastDaily !== today &&
+      lastDaily !== yesterday
+    ) {
+      streak = 0;
+    }
 
 
-    let nextDailyStreak;
+    const dailyClaimed =
+      lastDaily === today;
 
-    if (lastDaily === today) {
-      nextDailyStreak =
-        storedStreak;
-    } else if (lastDaily === yesterday) {
-      nextDailyStreak =
-        storedStreak + 1;
+
+    let nextDailyReward;
+
+    if (dailyClaimed) {
+      nextDailyReward =
+        streak >= MAX_DAILY_REWARD
+          ? MAX_DAILY_REWARD
+          : streak;
     } else {
-      nextDailyStreak = 1;
+      nextDailyReward =
+        Math.min(
+          streak + 1,
+          MAX_DAILY_REWARD
+        );
     }
-
-
-    if (nextDailyStreak > 7) {
-      nextDailyStreak = 7;
-    }
-
-
-    const nextDailyReward =
-      lastDaily === today
-        ? 0
-        : calculateDailyReward(
-            nextDailyStreak
-          );
 
 
     // ========================================================
@@ -374,22 +382,22 @@ exports.getRewardStatus =
     // ========================================================
 
     const adDate =
-      data.adDate || "";
+      String(
+        data.adDate || ""
+      );
 
     let adsToday =
       Number(
         data.adsToday || 0
       );
 
-
-    // New UTC day.
     if (adDate !== today) {
       adsToday = 0;
     }
 
 
     // ========================================================
-    // AD COOLDOWN
+    // COOLDOWN
     // ========================================================
 
     let cooldownRemainingMs = 0;
@@ -397,13 +405,11 @@ exports.getRewardStatus =
     const lastAdTimestamp =
       data.lastAdTimestamp;
 
-
     if (
       lastAdTimestamp &&
       typeof lastAdTimestamp.toDate ===
         "function"
     ) {
-
       const lastAdTime =
         lastAdTimestamp.toDate();
 
@@ -414,7 +420,8 @@ exports.getRewardStatus =
       cooldownRemainingMs =
         Math.max(
           0,
-          AD_COOLDOWN_MS - elapsed
+          AD_COOLDOWN_MS -
+            elapsed
         );
     }
 
@@ -425,19 +432,18 @@ exports.getRewardStatus =
 
     return {
       balance:
-        balance,
+        Number(
+          data.stlBalance || 0
+        ),
 
       streak:
-        storedStreak,
+        streak,
 
-      nextDailyStreak:
-        nextDailyStreak,
+      dailyClaimed:
+        dailyClaimed,
 
       nextDailyReward:
         nextDailyReward,
-
-      dailyClaimed:
-        lastDaily === today,
 
       adsToday:
         adsToday,
@@ -449,7 +455,8 @@ exports.getRewardStatus =
         AD_REWARD,
 
       canWatchAd:
-        adsToday < MAX_ADS_PER_DAY &&
+        adsToday <
+          MAX_ADS_PER_DAY &&
         cooldownRemainingMs === 0,
 
       cooldownRemainingMs:
@@ -467,6 +474,10 @@ exports.getRewardStatus =
 
 exports.testAdReward =
   onCall(async (request) => {
+
+    // ========================================================
+    // AUTH CHECK
+    // ========================================================
 
     if (!request.auth) {
       throw new HttpsError(
@@ -489,13 +500,13 @@ exports.testAdReward =
       getUtcDateString();
 
 
+    // ========================================================
+    // TRANSACTION
+    // ========================================================
+
     const result =
       await db.runTransaction(
         async (transaction) => {
-
-          // ==================================================
-          // GET USER DATA
-          // ==================================================
 
           const snapshot =
             await transaction.get(
@@ -528,7 +539,9 @@ exports.testAdReward =
             );
 
           const adDate =
-            data.adDate || "";
+            String(
+              data.adDate || ""
+            );
 
 
           // ==================================================
@@ -567,7 +580,6 @@ exports.testAdReward =
             typeof lastAdTimestamp.toDate ===
               "function"
           ) {
-
             const lastAdTime =
               lastAdTimestamp.toDate();
 
@@ -575,21 +587,22 @@ exports.testAdReward =
               now.getTime() -
               lastAdTime.getTime();
 
-
             if (
               elapsed <
               AD_COOLDOWN_MS
             ) {
-
               const remainingMs =
                 AD_COOLDOWN_MS -
                 elapsed;
 
+              const remainingMinutes =
+                Math.ceil(
+                  remainingMs / 60000
+                );
+
               throw new HttpsError(
                 "failed-precondition",
-                `Odota vielä ${Math.ceil(
-                  remainingMs / 60000
-                )} minuuttia.`
+                `Odota vielä ${remainingMinutes} minuuttia.`
               );
             }
           }
@@ -662,7 +675,7 @@ exports.testAdReward =
 // ============================================================
 // ADMOB SSV
 //
-// This remains for future production use.
+// Future production use.
 // ============================================================
 
 const ADMOB_KEYS_URL =
@@ -677,16 +690,14 @@ const KEY_CACHE_TIME =
 
 
 // ============================================================
-// GET ADMOB PUBLIC KEYS
+// GET ADMOB KEYS
 // ============================================================
 
 async function getAdMobKeys(
   forceRefresh = false
 ) {
-
   const now =
     Date.now();
-
 
   if (
     !forceRefresh &&
@@ -702,7 +713,6 @@ async function getAdMobKeys(
     await fetch(
       ADMOB_KEYS_URL
     );
-
 
   if (!response.ok) {
     throw new Error(
@@ -720,12 +730,10 @@ async function getAdMobKeys(
   for (
     const key of data.keys || []
   ) {
-
     if (
       key.keyId &&
       key.pem
     ) {
-
       keys[
         String(key.keyId)
       ] =
@@ -761,11 +769,9 @@ async function getAdMobKeys(
 async function verifyAdMobSignature(
   request
 ) {
-
   const originalUrl =
     request.originalUrl ||
     request.url;
-
 
   if (!originalUrl) {
     throw new Error(
@@ -776,7 +782,6 @@ async function verifyAdMobSignature(
 
   const questionMarkIndex =
     originalUrl.indexOf("?");
-
 
   if (questionMarkIndex === -1) {
     throw new Error(
@@ -791,7 +796,10 @@ async function verifyAdMobSignature(
     );
 
 
-  // AdMob signature is normally followed by key_id.
+  // ========================================================
+  // FIND SIGNATURE
+  // ========================================================
+
   const signatureMarker =
     "&signature=";
 
@@ -799,7 +807,6 @@ async function verifyAdMobSignature(
     queryString.indexOf(
       signatureMarker
     );
-
 
   if (signatureIndex === -1) {
     throw new Error(
@@ -821,6 +828,10 @@ async function verifyAdMobSignature(
     );
 
 
+  // ========================================================
+  // FIND KEY ID
+  // ========================================================
+
   const keyMarker =
     "&key_id=";
 
@@ -828,7 +839,6 @@ async function verifyAdMobSignature(
     signaturePart.indexOf(
       keyMarker
     );
-
 
   if (keyIndex === -1) {
     throw new Error(
@@ -847,12 +857,13 @@ async function verifyAdMobSignature(
   const keyIdPart =
     signaturePart.substring(
       keyIndex +
-      keyMarker.length
+        keyMarker.length
     );
 
 
   const keyId =
-    keyIdPart.split("&")[0];
+    keyIdPart
+      .split("&")[0];
 
 
   if (
@@ -865,21 +876,28 @@ async function verifyAdMobSignature(
   }
 
 
+  // ========================================================
+  // GET PUBLIC KEY
+  // ========================================================
+
   let keys =
     await getAdMobKeys();
 
   let publicKey =
-    keys[String(keyId)];
+    keys[
+      String(keyId)
+    ];
 
 
   // Refresh keys if necessary.
   if (!publicKey) {
-
     keys =
       await getAdMobKeys(true);
 
     publicKey =
-      keys[String(keyId)];
+      keys[
+        String(keyId)
+      ];
   }
 
 
@@ -890,9 +908,9 @@ async function verifyAdMobSignature(
   }
 
 
-  // ==========================================================
-  // CONVERT BASE64 URL-SAFE SIGNATURE
-  // ==========================================================
+  // ========================================================
+  // BASE64 URL SIGNATURE
+  // ========================================================
 
   const normalizedSignature =
     signatureValue
@@ -912,14 +930,14 @@ async function verifyAdMobSignature(
   const signature =
     Buffer.from(
       normalizedSignature +
-      padding,
+        padding,
       "base64"
     );
 
 
-  // ==========================================================
-  // VERIFY SIGNATURE
-  // ==========================================================
+  // ========================================================
+  // VERIFY
+  // ========================================================
 
   const verifier =
     crypto.createVerify(
@@ -977,13 +995,12 @@ exports.adMobReward =
       try {
 
         // ======================================================
-        // ONLY GET REQUESTS
+        // ONLY GET
         // ======================================================
 
         if (
           request.method !== "GET"
         ) {
-
           response
             .status(405)
             .send(
@@ -1004,7 +1021,7 @@ exports.adMobReward =
 
 
         // ======================================================
-        // GET ADMOB PARAMETERS
+        // GET PARAMETERS
         // ======================================================
 
         const userId =
@@ -1018,7 +1035,6 @@ exports.adMobReward =
           !userId ||
           !transactionId
         ) {
-
           response
             .status(400)
             .send(
@@ -1039,7 +1055,6 @@ exports.adMobReward =
         const userRef =
           db.collection("users")
             .doc(uid);
-
 
         const transactionRef =
           db.collection(
@@ -1074,11 +1089,9 @@ exports.adMobReward =
                   transactionRef
                 );
 
-
               if (
                 existingTransaction.exists
               ) {
-
                 return {
                   success: true,
                   duplicate: true,
@@ -1095,26 +1108,26 @@ exports.adMobReward =
                   userRef
                 );
 
-
               const userData =
                 userSnapshot.exists
                   ? userSnapshot.data()
                   : {};
 
 
-              // ==================================================
-              // ADS TODAY
-              // ==================================================
-
               let adsToday =
                 Number(
                   userData.adsToday || 0
                 );
 
-
               const adDate =
-                userData.adDate || "";
+                String(
+                  userData.adDate || ""
+                );
 
+
+              // ==================================================
+              // NEW DAY
+              // ==================================================
 
               if (
                 adDate !== today
@@ -1131,7 +1144,6 @@ exports.adMobReward =
                 adsToday >=
                 MAX_ADS_PER_DAY
               ) {
-
                 return {
                   success: false,
                   limitReached: true,
@@ -1146,13 +1158,11 @@ exports.adMobReward =
               const lastAdTimestamp =
                 userData.lastAdTimestamp;
 
-
               if (
                 lastAdTimestamp &&
                 typeof lastAdTimestamp.toDate ===
                   "function"
               ) {
-
                 const lastAdTime =
                   lastAdTimestamp.toDate();
 
@@ -1160,12 +1170,10 @@ exports.adMobReward =
                   now.getTime() -
                   lastAdTime.getTime();
 
-
                 if (
                   elapsed <
                   AD_COOLDOWN_MS
                 ) {
-
                   return {
                     success: false,
 
@@ -1173,14 +1181,14 @@ exports.adMobReward =
 
                     remainingMs:
                       AD_COOLDOWN_MS -
-                      elapsed,
+                        elapsed,
                   };
                 }
               }
 
 
               // ==================================================
-              // ADD STL REWARD
+              // ADD REWARD
               // ==================================================
 
               const oldBalance =
@@ -1188,11 +1196,9 @@ exports.adMobReward =
                   userData.stlBalance || 0
                 );
 
-
               const newBalance =
                 oldBalance +
                 AD_REWARD;
-
 
               const newAdsToday =
                 adsToday + 1;
@@ -1248,10 +1254,6 @@ exports.adMobReward =
               );
 
 
-              // ==================================================
-              // SUCCESS
-              // ==================================================
-
               return {
                 success: true,
 
@@ -1270,6 +1272,10 @@ exports.adMobReward =
           );
 
 
+        // ======================================================
+        // RESPONSE
+        // ======================================================
+
         response
           .status(200)
           .json(result);
@@ -1280,7 +1286,6 @@ exports.adMobReward =
           "AdMob SSV error:",
           error
         );
-
 
         response
           .status(400)
