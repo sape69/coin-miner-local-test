@@ -14,7 +14,6 @@ import 'home/balance_card.dart';
 import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
 import 'home/home_drawer.dart';
-import 'home/information_card.dart';
 import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
@@ -29,9 +28,18 @@ const Color accentColor = Color(0xFF35D0A0);
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
+/// Mainosten päivittäinen enimmäismäärä.
 const int maxAdsPerDay = 5;
 
+/// Mainosten välinen odotusaika.
 const Duration adCooldown = Duration(hours: 1);
+
+/// Päivittäinen STL-palkinto.
+///
+/// Tämä arvo näytetään käyttöliittymässä.
+/// Varsinainen palkinto tulee edelleen Firebase Functionista
+/// dailyCheckIn.
+const int dailyRewardAmount = 10;
 
 class HomePage extends StatefulWidget {
   final String languageCode;
@@ -378,7 +386,8 @@ class _HomePageState extends State<HomePage> {
               streak;
 
       final reward =
-          (data['reward'] as num?)?.toInt() ?? 0;
+          (data['reward'] as num?)?.toInt() ??
+              dailyRewardAmount;
 
       final currentToday =
           _dateKey();
@@ -702,7 +711,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // TEST AD REWARD
+  // CLAIM AD REWARD
   // ==========================================================
 
   Future<void> _claimTestAdReward() async {
@@ -772,7 +781,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // WATCH TEST AD
+  // WATCH AD
   // ==========================================================
 
   Future<void> _watchAd() async {
@@ -957,7 +966,9 @@ class _HomePageState extends State<HomePage> {
             dailyRewardedAd != null;
 
     final nextAdText =
-        '${t.get('nextAd')}: $remainingText';
+        remainingText.isEmpty
+            ? t.get('nextAd')
+            : '${t.get('nextAd')}: $remainingText';
 
     return Scaffold(
       // ========================================================
@@ -1005,15 +1016,11 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
+
+        // KIELIPAINIKE ON POISTETTU TÄSTÄ.
+        // Kielen vaihto löytyy nyt vain Drawer-valikosta.
+
         actions: [
-          IconButton(
-            tooltip: 'Vaihda kieli',
-            icon: const Icon(
-              Icons.language,
-            ),
-            onPressed:
-                _openLanguageDialog,
-          ),
           IconButton(
             tooltip: 'Kirjaudu ulos',
             icon: const Icon(
@@ -1070,7 +1077,8 @@ class _HomePageState extends State<HomePage> {
 
                 streakText:
                     '${t.get('streak')}: '
-                    '🔥 $streak / 7',
+                    '🔥 $streak / 7\n\n'
+                    '🎁 $dailyRewardAmount STL / päivä',
 
                 dailyLoading:
                     dailyLoading,
@@ -1153,22 +1161,17 @@ class _HomePageState extends State<HomePage> {
                 fact: fact,
               ),
 
-              const SizedBox(height: 14),
-
               // ==================================================
-              // INFORMATION
+              // INFORMATION CARD
               // ==================================================
-
-              InformationCard(
-                title:
-                    t.get('info'),
-
-                solanaTokenText:
-                    t.get('solanaToken'),
-
-                companyText:
-                    t.get('stellaCompany'),
-              ),
+              //
+              // POISTETTU HOME-SIVULTA.
+              //
+              // Stelluriini-tiedot siirretään seuraavaksi:
+              //
+              // lib/pages/about/
+              //
+              // ==================================================
 
               const SizedBox(height: 30),
             ],
