@@ -22,6 +22,94 @@ class HomeDrawer extends StatelessWidget {
     required this.onRoadmapPressed,
   });
 
+  Widget _menuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    String? badge,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 4,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: accentColor,
+                    size: 23,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                if (badge != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent.withValues(
+                        alpha: 0.15,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      badge,
+                      style: const TextStyle(
+                        color: Colors.orangeAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(width: 4),
+
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white.withValues(alpha: 0.25),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -30,194 +118,238 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             // ==================================================
-            // HEADER
+            // STELLA HEADER
             // ==================================================
 
             Container(
               width: double.infinity,
+              margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 28,
+                horizontal: 20,
+                vertical: 22,
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: cardColor,
-              ),
-              child: const Column(
-                children: [
-                  CatAvatar(
-                    size: 85,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: accentColor.withValues(alpha: 0.30),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    spreadRadius: 2,
                   ),
-                  SizedBox(height: 14),
-                  Text(
+                ],
+              ),
+              child: Column(
+                children: [
+                  // PAWS
+
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(
+                        Icons.pets,
+                        color: accentColor.withValues(alpha: 0.35),
+                        size: 25,
+                      ),
+                      Icon(
+                        Icons.pets,
+                        color: accentColor.withValues(alpha: 0.35),
+                        size: 25,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // STELLA AVATAR
+
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: accentColor,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withValues(
+                            alpha: 0.25,
+                          ),
+                          blurRadius: 18,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const CatAvatar(
+                      size: 100,
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  const Text(
                     'STELLURIINI',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 23,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+                      letterSpacing: 2.5,
                       color: accentColor,
                     ),
                   ),
-                  SizedBox(height: 6),
-                  Text(
-                    'STL • Solana',
-                    style: TextStyle(
-                      color: Colors.white60,
+
+                  const SizedBox(height: 6),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      '🐾 STL • SOLANA 🐾',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 12),
-
             // ==================================================
-            // HOME
+            // MENU
             // ==================================================
 
-            ListTile(
-              leading: const Icon(
-                Icons.home_outlined,
-                color: accentColor,
-              ),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            // ==================================================
-            // ABOUT STELLURIINI
-            // ==================================================
-
-            ListTile(
-              leading: const Icon(
-                Icons.pets_outlined,
-                color: accentColor,
-              ),
-              title: const Text(
-                'About Stelluriini',
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                onAboutPressed();
-              },
-            ),
-
-            // ==================================================
-            // WHITE PAPER
-            // ==================================================
-
-            ListTile(
-              leading: const Icon(
-                Icons.description_outlined,
-                color: accentColor,
-              ),
-              title: const Text(
-                'White Paper',
-              ),
-              trailing: const Text(
-                'SOON',
-                style: TextStyle(
-                  color: Colors.orangeAccent,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.only(
+                  top: 4,
+                  bottom: 8,
                 ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                onWhitePaperPressed();
-              },
-            ),
+                children: [
+                  _menuItem(
+                    icon: Icons.home_outlined,
+                    title: 'Home',
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
 
-            // ==================================================
-            // STL TOKEN
-            // ==================================================
+                  _menuItem(
+                    icon: Icons.pets_outlined,
+                    title: 'About Stelluriini',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onAboutPressed();
+                    },
+                  ),
 
-            ListTile(
-              leading: const Icon(
-                Icons.monetization_on_outlined,
-                color: accentColor,
-              ),
-              title: const Text(
-                'STL Token',
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                onTokenPressed();
-              },
-            ),
+                  _menuItem(
+                    icon: Icons.monetization_on_outlined,
+                    title: 'STL Token',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTokenPressed();
+                    },
+                  ),
 
-            // ==================================================
-            // ROADMAP
-            // ==================================================
+                  _menuItem(
+                    icon: Icons.description_outlined,
+                    title: 'White Paper',
+                    badge: 'SOON',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onWhitePaperPressed();
+                    },
+                  ),
 
-            ListTile(
-              leading: const Icon(
-                Icons.map_outlined,
-                color: accentColor,
-              ),
-              title: const Text(
-                'Roadmap',
-              ),
-              trailing: const Text(
-                'SOON',
-                style: TextStyle(
-                  color: Colors.orangeAccent,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                onRoadmapPressed();
-              },
-            ),
+                  _menuItem(
+                    icon: Icons.map_outlined,
+                    title: 'Roadmap',
+                    badge: 'SOON',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onRoadmapPressed();
+                    },
+                  ),
 
-            const Spacer(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 26,
+                      vertical: 12,
+                    ),
+                    child: Divider(
+                      color: Colors.white24,
+                    ),
+                  ),
 
-            const Divider(
-              color: Colors.white24,
-            ),
-
-            // ==================================================
-            // LANGUAGE
-            // ==================================================
-
-            ListTile(
-              leading: const Icon(
-                Icons.language,
-                color: accentColor,
+                  _menuItem(
+                    icon: Icons.language,
+                    title: 'Language',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onLanguagePressed();
+                    },
+                  ),
+                ],
               ),
-              title: const Text(
-                'Language',
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                onLanguagePressed();
-              },
             ),
 
             // ==================================================
             // FOOTER
             // ==================================================
 
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: accentColor.withValues(alpha: 0.12),
+                ),
+              ),
               child: Column(
                 children: [
-                  Text(
-                    'STELLURIINI • STL',
+                  const Text(
+                    '🐾 STELLURIINI • STL 🐾',
                     style: TextStyle(
-                      color: Colors.white60,
+                      color: accentColor,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
                     ),
                   ),
-                  SizedBox(height: 5),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    '17,602,539,062 STL',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
                   Text(
                     'Community-driven • Solana',
                     style: TextStyle(
-                      color: Colors.white38,
+                      color: Colors.white.withValues(alpha: 0.38),
                       fontSize: 11,
                     ),
                   ),
