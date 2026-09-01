@@ -53,6 +53,48 @@ function getUtcDateString() {
 
 
 // ============================================================
+// GET YESTERDAY UTC DATE
+// ============================================================
+
+function getYesterdayUtcDateString() {
+  const yesterday = new Date();
+
+  yesterday.setUTCDate(
+    yesterday.getUTCDate() - 1
+  );
+
+  return yesterday
+    .toISOString()
+    .substring(0, 10);
+}
+
+
+// ============================================================
+// CALCULATE DAILY REWARD
+//
+// Day 1 = 1 STL
+// Day 2 = 2 STL
+// Day 3 = 3 STL
+// Day 4 = 4 STL
+// Day 5 = 5 STL
+// Day 6 = 6 STL
+// Day 7 = 7 STL
+//
+// After day 7 = 7 STL every day.
+// ============================================================
+
+function calculateDailyReward(streak) {
+  const safeStreak =
+    Math.max(
+      1,
+      Math.min(7, Number(streak) || 1)
+    );
+
+  return safeStreak;
+}
+
+
+// ============================================================
 // DAILY CHECK-IN
 // ============================================================
 
@@ -66,28 +108,19 @@ exports.dailyCheckIn =
       );
     }
 
-    const uid = request.auth.uid;
+    const uid =
+      request.auth.uid;
 
     const userRef =
       db.collection("users")
         .doc(uid);
 
-    const now = new Date();
-
     const today =
       getUtcDateString();
 
-    const yesterdayDate =
-      new Date(now);
-
-    yesterdayDate.setUTCDate(
-      yesterdayDate.getUTCDate() - 1
-    );
-
     const yesterday =
-      yesterdayDate
-        .toISOString()
-        .substring(0, 10);
+      getYesterdayUtcDateString();
+
 
     const result =
       await db.runTransaction(
@@ -103,6 +136,11 @@ exports.dailyCheckIn =
               ? snapshot.data()
               : {};
 
+
+          // ==================================================
+          // CURRENT USER DATA
+          // ==================================================
+
           const oldBalance =
             Number(
               data.stlBalance || 0
@@ -117,18 +155,36 @@ exports.dailyCheckIn =
             data.lastDaily || "";
 
 
-          // Already claimed today.
+          // ==================================================
+          // ALREADY CLAIMED TODAY
+          // ==================================================
+
           if (lastDaily === today) {
             return {
               alreadyClaimed: true,
-              balance: oldBalance,
-              streak: oldStreak,
-              reward: 0,
+
+              balance:
+                oldBalance,
+
+              streak:
+                oldStreak,
+
+              reward:
+                0,
             };
           }
 
 
-          // Calculate streak.
+          // ==================================================
+          // CALCULATE NEW STREAK
+          //
+          // If the user claimed yesterday:
+          // continue the streak.
+          //
+          // If one or more days were missed:
+          // restart from day 1.
+          // ==================================================
+
           let newStreak;
 
           if (lastDaily === yesterday) {
@@ -138,22 +194,47 @@ exports.dailyCheckIn =
             newStreak = 1;
           }
 
+
+          // ==================================================
+          // MAXIMUM STREAK = 7
+          //
+          // After day 7 the streak stays at 7.
+          // ==================================================
+
           if (newStreak > 7) {
             newStreak = 7;
           }
 
 
-          // Calculate reward.
+          // ==================================================
+          // DAILY REWARD
+          //
+          // The reward equals the streak:
+          //
+          // Day 1 = 1 STL
+          // Day 2 = 2 STL
+          // ...
+          // Day 7 = 7 STL
+          // ==================================================
+
           const reward =
-            newStreak >= 7
-              ? 7
-              : 3;
+            calculateDailyReward(
+              newStreak
+            );
+
+
+          // ==================================================
+          // NEW BALANCE
+          // ==================================================
 
           const newBalance =
             oldBalance + reward;
 
 
-          // Update Firestore.
+          // ==================================================
+          // UPDATE FIRESTORE
+          // ==================================================
+
           transaction.set(
             userRef,
             {
@@ -174,14 +255,26 @@ exports.dailyCheckIn =
             }
           );
 
+
+          // ==================================================
+          // RETURN RESULT
+          // ==================================================
+
           return {
             alreadyClaimed: false,
-            balance: newBalance,
-            streak: newStreak,
-            reward: reward,
+
+            balance:
+              newBalance,
+
+            streak:
+              newStreak,
+
+            reward:
+              reward,
           };
         }
       );
+
 
     return result;
   });
@@ -216,11 +309,69 @@ exports.getRewardStatus =
         ? snapshot.data()
         : {};
 
+
     const now =
       new Date();
 
     const today =
       getUtcDateString();
+
+    const yesterday =
+      getYesterdayUtcDateString();
+
+
+    // ========================================================
+    // CURRENT BALANCE
+    // ========================================================
+
+    const balance =
+      Number(
+        data.stlBalance || 0
+      );
+
+
+    // ========================================================
+    // DAILY STREAK STATUS
+    // ========================================================
+
+    const storedStreak =
+      Number(
+        data.streak || 0
+      );
+
+    const lastDaily =
+      data.lastDaily || "";
+
+
+    let nextDailyStreak;
+
+    if (lastDaily === today) {
+      nextDailyStreak =
+        storedStreak;
+    } else if (lastDaily === yesterday) {
+      nextDailyStreak =
+        storedStreak + 1;
+    } else {
+      nextDailyStreak = 1;
+    }
+
+
+    if (nextDailyStreak > 7) {
+      nextDailyStreak = 7;
+    }
+
+
+    const nextDailyReward =
+      lastDaily === today
+        ? 0
+        : calculateDailyReward(
+            nextDailyStreak
+          );
+
+
+    // ========================================================
+    // AD STATUS
+    // ========================================================
 
     const adDate =
       data.adDate || "";
@@ -230,14 +381,22 @@ exports.getRewardStatus =
         data.adsToday || 0
       );
 
+
+    // New UTC day.
     if (adDate !== today) {
       adsToday = 0;
     }
+
+
+    // ========================================================
+    // AD COOLDOWN
+    // ========================================================
 
     let cooldownRemainingMs = 0;
 
     const lastAdTimestamp =
       data.lastAdTimestamp;
+
 
     if (
       lastAdTimestamp &&
@@ -259,16 +418,26 @@ exports.getRewardStatus =
         );
     }
 
+
+    // ========================================================
+    // RETURN STATUS
+    // ========================================================
+
     return {
       balance:
-        Number(
-          data.stlBalance || 0
-        ),
+        balance,
 
       streak:
-        Number(
-          data.streak || 0
-        ),
+        storedStreak,
+
+      nextDailyStreak:
+        nextDailyStreak,
+
+      nextDailyReward:
+        nextDailyReward,
+
+      dailyClaimed:
+        lastDaily === today,
 
       adsToday:
         adsToday,
@@ -324,7 +493,10 @@ exports.testAdReward =
       await db.runTransaction(
         async (transaction) => {
 
-          // Get user data.
+          // ==================================================
+          // GET USER DATA
+          // ==================================================
+
           const snapshot =
             await transaction.get(
               userRef
@@ -336,31 +508,42 @@ exports.testAdReward =
               : {};
 
 
-          // Current balance.
+          // ==================================================
+          // CURRENT BALANCE
+          // ==================================================
+
           const oldBalance =
             Number(
               data.stlBalance || 0
             );
 
 
-          // Current ads.
+          // ==================================================
+          // CURRENT ADS
+          // ==================================================
+
           let adsToday =
             Number(
               data.adsToday || 0
             );
 
-
           const adDate =
             data.adDate || "";
 
 
-          // New UTC day.
+          // ==================================================
+          // NEW UTC DAY
+          // ==================================================
+
           if (adDate !== today) {
             adsToday = 0;
           }
 
 
-          // Daily limit.
+          // ==================================================
+          // DAILY LIMIT
+          // ==================================================
+
           if (
             adsToday >=
             MAX_ADS_PER_DAY
@@ -372,7 +555,10 @@ exports.testAdReward =
           }
 
 
-          // Cooldown check.
+          // ==================================================
+          // COOLDOWN CHECK
+          // ==================================================
+
           const lastAdTimestamp =
             data.lastAdTimestamp;
 
@@ -388,6 +574,7 @@ exports.testAdReward =
             const elapsed =
               now.getTime() -
               lastAdTime.getTime();
+
 
             if (
               elapsed <
@@ -408,7 +595,10 @@ exports.testAdReward =
           }
 
 
-          // Add reward.
+          // ==================================================
+          // ADD REWARD
+          // ==================================================
+
           const newBalance =
             oldBalance +
             AD_REWARD;
@@ -417,7 +607,10 @@ exports.testAdReward =
             adsToday + 1;
 
 
-          // Update user.
+          // ==================================================
+          // UPDATE USER
+          // ==================================================
+
           transaction.set(
             userRef,
             {
@@ -442,6 +635,10 @@ exports.testAdReward =
           );
 
 
+          // ==================================================
+          // RETURN RESULT
+          // ==================================================
+
           return {
             success: true,
 
@@ -456,6 +653,7 @@ exports.testAdReward =
           };
         }
       );
+
 
     return result;
   });
@@ -478,12 +676,17 @@ const KEY_CACHE_TIME =
   24 * 60 * 60 * 1000;
 
 
+// ============================================================
+// GET ADMOB PUBLIC KEYS
+// ============================================================
+
 async function getAdMobKeys(
   forceRefresh = false
 ) {
 
   const now =
     Date.now();
+
 
   if (
     !forceRefresh &&
@@ -494,10 +697,12 @@ async function getAdMobKeys(
     return cachedKeys;
   }
 
+
   const response =
     await fetch(
       ADMOB_KEYS_URL
     );
+
 
   if (!response.ok) {
     throw new Error(
@@ -505,10 +710,12 @@ async function getAdMobKeys(
     );
   }
 
+
   const data =
     await response.json();
 
   const keys = {};
+
 
   for (
     const key of data.keys || []
@@ -526,6 +733,7 @@ async function getAdMobKeys(
     }
   }
 
+
   if (
     Object.keys(keys).length === 0
   ) {
@@ -534,11 +742,13 @@ async function getAdMobKeys(
     );
   }
 
+
   cachedKeys =
     keys;
 
   keysCachedAt =
     now;
+
 
   return keys;
 }
@@ -556,20 +766,24 @@ async function verifyAdMobSignature(
     request.originalUrl ||
     request.url;
 
+
   if (!originalUrl) {
     throw new Error(
       "Missing request URL."
     );
   }
 
+
   const questionMarkIndex =
     originalUrl.indexOf("?");
+
 
   if (questionMarkIndex === -1) {
     throw new Error(
       "Missing query string."
     );
   }
+
 
   const queryString =
     originalUrl.substring(
@@ -585,6 +799,7 @@ async function verifyAdMobSignature(
     queryString.indexOf(
       signatureMarker
     );
+
 
   if (signatureIndex === -1) {
     throw new Error(
@@ -613,6 +828,7 @@ async function verifyAdMobSignature(
     signaturePart.indexOf(
       keyMarker
     );
+
 
   if (keyIndex === -1) {
     throw new Error(
@@ -674,7 +890,10 @@ async function verifyAdMobSignature(
   }
 
 
-  // Convert Base64 URL-safe signature.
+  // ==========================================================
+  // CONVERT BASE64 URL-SAFE SIGNATURE
+  // ==========================================================
+
   const normalizedSignature =
     signatureValue
       .replace(/-/g, "+")
@@ -697,6 +916,10 @@ async function verifyAdMobSignature(
       "base64"
     );
 
+
+  // ==========================================================
+  // VERIFY SIGNATURE
+  // ==========================================================
 
   const verifier =
     crypto.createVerify(
@@ -727,6 +950,7 @@ async function verifyAdMobSignature(
     );
   }
 
+
   return true;
 }
 
@@ -752,6 +976,10 @@ exports.adMobReward =
 
       try {
 
+        // ======================================================
+        // ONLY GET REQUESTS
+        // ======================================================
+
         if (
           request.method !== "GET"
         ) {
@@ -766,11 +994,18 @@ exports.adMobReward =
         }
 
 
-        // Verify Google signature.
+        // ======================================================
+        // VERIFY GOOGLE SIGNATURE
+        // ======================================================
+
         await verifyAdMobSignature(
           request
         );
 
+
+        // ======================================================
+        // GET ADMOB PARAMETERS
+        // ======================================================
 
         const userId =
           request.query.user_id;
@@ -822,15 +1057,23 @@ exports.adMobReward =
           getUtcDateString();
 
 
+        // ======================================================
+        // FIRESTORE TRANSACTION
+        // ======================================================
+
         const result =
           await db.runTransaction(
             async (transaction) => {
 
-              // Duplicate protection.
+              // ==================================================
+              // DUPLICATE PROTECTION
+              // ==================================================
+
               const existingTransaction =
                 await transaction.get(
                   transactionRef
                 );
+
 
               if (
                 existingTransaction.exists
@@ -843,10 +1086,15 @@ exports.adMobReward =
               }
 
 
+              // ==================================================
+              // GET USER DATA
+              // ==================================================
+
               const userSnapshot =
                 await transaction.get(
                   userRef
                 );
+
 
               const userData =
                 userSnapshot.exists
@@ -854,10 +1102,15 @@ exports.adMobReward =
                   : {};
 
 
+              // ==================================================
+              // ADS TODAY
+              // ==================================================
+
               let adsToday =
                 Number(
                   userData.adsToday || 0
                 );
+
 
               const adDate =
                 userData.adDate || "";
@@ -869,6 +1122,10 @@ exports.adMobReward =
                 adsToday = 0;
               }
 
+
+              // ==================================================
+              // DAILY LIMIT
+              // ==================================================
 
               if (
                 adsToday >=
@@ -882,9 +1139,13 @@ exports.adMobReward =
               }
 
 
-              // Cooldown.
+              // ==================================================
+              // COOLDOWN
+              // ==================================================
+
               const lastAdTimestamp =
                 userData.lastAdTimestamp;
+
 
               if (
                 lastAdTimestamp &&
@@ -899,6 +1160,7 @@ exports.adMobReward =
                   now.getTime() -
                   lastAdTime.getTime();
 
+
                 if (
                   elapsed <
                   AD_COOLDOWN_MS
@@ -906,6 +1168,7 @@ exports.adMobReward =
 
                   return {
                     success: false,
+
                     cooldown: true,
 
                     remainingMs:
@@ -916,18 +1179,28 @@ exports.adMobReward =
               }
 
 
+              // ==================================================
+              // ADD STL REWARD
+              // ==================================================
+
               const oldBalance =
                 Number(
                   userData.stlBalance || 0
                 );
 
+
               const newBalance =
                 oldBalance +
                 AD_REWARD;
 
+
               const newAdsToday =
                 adsToday + 1;
 
+
+              // ==================================================
+              // UPDATE USER
+              // ==================================================
 
               transaction.set(
                 userRef,
@@ -953,6 +1226,10 @@ exports.adMobReward =
               );
 
 
+              // ==================================================
+              // SAVE TRANSACTION
+              // ==================================================
+
               transaction.set(
                 transactionRef,
                 {
@@ -971,8 +1248,13 @@ exports.adMobReward =
               );
 
 
+              // ==================================================
+              // SUCCESS
+              // ==================================================
+
               return {
                 success: true,
+
                 duplicate: false,
 
                 reward:
@@ -998,6 +1280,7 @@ exports.adMobReward =
           "AdMob SSV error:",
           error
         );
+
 
         response
           .status(400)
