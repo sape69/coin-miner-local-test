@@ -11,7 +11,6 @@ import '../cat_facts.dart';
 import '../localization.dart';
 
 import 'about/about_page.dart';
-
 import 'home/balance_card.dart';
 import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
@@ -32,12 +31,11 @@ const String rewardedAdUnitId =
 
 const int maxAdsPerDay = 5;
 
-const Duration adCooldown = Duration(hours: 1);
+/// Päivittäisen palkinnon maksimimäärä.
+const int maxDailyReward = 7;
 
-/// Päivittäinen STL-palkinto.
-///
-/// Tämä näkyy nyt käyttäjälle Daily Reward -kortissa.
-const int dailyRewardAmount = 10;
+/// Mainoksen katsomisen cooldown.
+const Duration adCooldown = Duration(hours: 1);
 
 class HomePage extends StatefulWidget {
   final String languageCode;
@@ -127,6 +125,61 @@ class _HomePageState extends State<HomePage> {
         '${now.day.toString().padLeft(2, '0')}';
   }
 
+  DateTime _dateOnly(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    );
+  }
+
+  // ==========================================================
+  // DAILY REWARD
+  // ==========================================================
+
+  /// Laskee seuraavan päivittäisen palkinnon.
+  ///
+  /// Päivä 1 = 1 STL
+  /// Päivä 2 = 2 STL
+  /// ...
+  /// Päivä 7 = 7 STL
+  /// Päivä 8+ = 7 STL
+  int _nextDailyReward() {
+    if (dailyClaimed) {
+      return streak >= maxDailyReward
+          ? maxDailyReward
+          : streak;
+    }
+
+    final nextDay = streak + 1;
+
+    if (nextDay >= maxDailyReward) {
+      return maxDailyReward;
+    }
+
+    return nextDay;
+  }
+
+  /// Näyttää tekstin päivittäisestä palkinnosta.
+  String _dailyRewardText() {
+    final reward = _nextDailyReward();
+
+    return '🎁 Tänään saat $reward STL';
+  }
+
+  /// Näyttää streak-tekstin.
+  String _dailyStreakText() {
+    final nextDay = dailyClaimed
+        ? streak
+        : streak + 1;
+
+    final displayDay = nextDay > maxDailyReward
+        ? maxDailyReward
+        : nextDay;
+
+    return '${t.get('streak')}: 🔥 Päivä $displayDay / 7';
+  }
+
   // ==========================================================
   // LOAD DATA
   // ==========================================================
@@ -160,7 +213,7 @@ class _HomePageState extends State<HomePage> {
       final loadedStl =
           (data['stlBalance'] as num?)?.toInt() ?? 0;
 
-      final loadedStreak =
+      int loadedStreak =
           (data['streak'] as num?)?.toInt() ?? 0;
 
       int loadedAds =
@@ -192,6 +245,34 @@ class _HomePageState extends State<HomePage> {
             DateTime.tryParse(
           oldLastAdTime,
         );
+      }
+
+      // ======================================================
+      // RESET STREAK IF A DAY WAS MISSED
+      // ======================================================
+
+      if (lastDaily.isNotEmpty) {
+        final lastDailyDate =
+            DateTime.tryParse(lastDaily);
+
+        if (lastDailyDate != null) {
+          final difference = _dateOnly(
+            DateTime.now(),
+          ).difference(
+            _dateOnly(lastDailyDate),
+          ).inDays;
+
+          if (difference > 1) {
+            loadedStreak = 0;
+
+            await _userDoc.set(
+              {
+                'streak': 0,
+              },
+              SetOptions(merge: true),
+            );
+          }
+        }
       }
 
       if (adDate != currentToday) {
@@ -286,6 +367,12 @@ class _HomePageState extends State<HomePage> {
     int loadedAds =
         prefs.getInt('ads_today') ?? 0;
 
+    int loadedStreak =
+        prefs.getInt('streak') ?? 0;
+
+    final lastDaily =
+        prefs.getString('last_daily') ?? '';
+
     final savedAdDate =
         prefs.getString('ad_date') ?? '';
 
@@ -301,6 +388,32 @@ class _HomePageState extends State<HomePage> {
         'ad_date',
         currentToday,
       );
+    }
+
+    // ======================================================
+    // RESET STREAK IF A DAY WAS MISSED
+    // ======================================================
+
+    if (lastDaily.isNotEmpty) {
+      final lastDailyDate =
+          DateTime.tryParse(lastDaily);
+
+      if (lastDailyDate != null) {
+        final difference = _dateOnly(
+          DateTime.now(),
+        ).difference(
+          _dateOnly(lastDailyDate),
+        ).inDays;
+
+        if (difference > 1) {
+          loadedStreak = 0;
+
+          await prefs.setInt(
+            'streak',
+            0,
+          );
+        }
+      }
     }
 
     final lastAdString =
@@ -323,14 +436,12 @@ class _HomePageState extends State<HomePage> {
       stl =
           prefs.getInt('stl_balance') ?? 0;
 
-      streak =
-          prefs.getInt('streak') ?? 0;
+      streak = loadedStreak;
 
       adsToday = loadedAds;
 
       dailyClaimed =
-          prefs.getString('last_daily') ==
-              currentToday;
+          lastDaily == currentToday;
 
       lastAdTime = loadedLastAdTime;
 
@@ -384,8 +495,7 @@ class _HomePageState extends State<HomePage> {
               streak;
 
       final reward =
-          (data['reward'] as num?)?.toInt() ??
-              dailyRewardAmount;
+          (data['reward'] as num?)?.toInt() ?? 0;
 
       final currentToday =
           _dateKey();
@@ -901,20 +1011,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // OPEN ABOUT PAGE
-  // ==========================================================
-
-  void _openAboutPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const AboutPage(),
-      ),
-    );
-  }
-
-  // ==========================================================
   // COMING SOON
   // ==========================================================
 
@@ -928,6 +1024,19 @@ class _HomePageState extends State<HomePage> {
           '$pageName – Coming Soon 🚀',
         );
       },
+    );
+  }
+
+  // ==========================================================
+  // OPEN ABOUT PAGE
+  // ==========================================================
+
+  void _openAboutPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const AboutPage(),
+      ),
     );
   }
 
@@ -978,9 +1087,14 @@ class _HomePageState extends State<HomePage> {
             dailyRewardedAd != null;
 
     final nextAdText =
-        '${t.get('nextAd')}: $remainingText';
+        canWatch
+            ? ''
+            : '${t.get('nextAd')}: '
+                '$remainingText';
 
     return Scaffold(
+      backgroundColor: backgroundColor,
+
       // ========================================================
       // DRAWER
       // ========================================================
@@ -1081,11 +1195,10 @@ class _HomePageState extends State<HomePage> {
                     t.get('dailyClaim'),
 
                 rewardText:
-                    '+$dailyRewardAmount STL / päivä',
+                    _dailyRewardText(),
 
                 streakText:
-                    '${t.get('streak')}: '
-                    '🔥 $streak / 7',
+                    _dailyStreakText(),
 
                 dailyLoading:
                     dailyLoading,
@@ -1167,13 +1280,6 @@ class _HomePageState extends State<HomePage> {
                     t.get('stellaFacts'),
                 fact: fact,
               ),
-
-              // ==================================================
-              // INFORMATION CARD REMOVED
-              //
-              // Tiedot Stelluriinistä ovat nyt
-              // About Stelluriini -sivulla.
-              // ==================================================
 
               const SizedBox(height: 30),
             ],
