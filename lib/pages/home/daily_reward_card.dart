@@ -5,6 +5,7 @@ const Color dailyAccentColor = Color(0xFF35D0A0);
 class DailyRewardCard extends StatelessWidget {
   final String title;
   final String streakText;
+  final String rewardText;
 
   final bool dailyLoading;
   final bool dailyAdLoading;
@@ -17,6 +18,7 @@ class DailyRewardCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.streakText,
+    required this.rewardText,
     required this.dailyLoading,
     required this.dailyAdLoading,
     required this.dailyClaimed,
@@ -64,7 +66,30 @@ class DailyRewardCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 16,
+              ),
+              decoration: BoxDecoration(
+                color: dailyAccentColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                rewardText,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: dailyAccentColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
 
             Text(
               streakText,
