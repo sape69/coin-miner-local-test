@@ -18,6 +18,7 @@ import 'home/home_drawer.dart';
 import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
+import 'whitepaper/whitepaper_page.dart';
 
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
@@ -137,8 +138,6 @@ class _HomePageState extends State<HomePage> {
   // DAILY REWARD
   // ==========================================================
 
-  /// Laskee seuraavan päivittäisen palkinnon.
-  ///
   /// Päivä 1 = 1 STL
   /// Päivä 2 = 2 STL
   /// ...
@@ -160,22 +159,21 @@ class _HomePageState extends State<HomePage> {
     return nextDay;
   }
 
-  /// Näyttää tekstin päivittäisestä palkinnosta.
   String _dailyRewardText() {
     final reward = _nextDailyReward();
 
     return '🎁 Tänään saat $reward STL';
   }
 
-  /// Näyttää streak-tekstin.
   String _dailyStreakText() {
     final nextDay = dailyClaimed
         ? streak
         : streak + 1;
 
-    final displayDay = nextDay > maxDailyReward
-        ? maxDailyReward
-        : nextDay;
+    final displayDay =
+        nextDay > maxDailyReward
+            ? maxDailyReward
+            : nextDay;
 
     return '${t.get('streak')}: 🔥 Päivä $displayDay / 7';
   }
@@ -242,9 +240,7 @@ class _HomePageState extends State<HomePage> {
           oldLastAdTime is String &&
           oldLastAdTime.isNotEmpty) {
         loadedLastAdTime =
-            DateTime.tryParse(
-          oldLastAdTime,
-        );
+            DateTime.tryParse(oldLastAdTime);
       }
 
       // ======================================================
@@ -256,9 +252,9 @@ class _HomePageState extends State<HomePage> {
             DateTime.tryParse(lastDaily);
 
         if (lastDailyDate != null) {
-          final difference = _dateOnly(
-            DateTime.now(),
-          ).difference(
+          final difference =
+              _dateOnly(DateTime.now())
+                  .difference(
             _dateOnly(lastDailyDate),
           ).inDays;
 
@@ -390,18 +386,15 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    // ======================================================
-    // RESET STREAK IF A DAY WAS MISSED
-    // ======================================================
-
+    // Reset streak if a day was missed.
     if (lastDaily.isNotEmpty) {
       final lastDailyDate =
           DateTime.tryParse(lastDaily);
 
       if (lastDailyDate != null) {
-        final difference = _dateOnly(
-          DateTime.now(),
-        ).difference(
+        final difference =
+            _dateOnly(DateTime.now())
+                .difference(
           _dateOnly(lastDailyDate),
         ).inDays;
 
@@ -423,9 +416,7 @@ class _HomePageState extends State<HomePage> {
 
     if (lastAdString.isNotEmpty) {
       loadedLastAdTime =
-          DateTime.tryParse(
-        lastAdString,
-      );
+          DateTime.tryParse(lastAdString);
     }
 
     if (!mounted) return;
@@ -437,7 +428,6 @@ class _HomePageState extends State<HomePage> {
           prefs.getInt('stl_balance') ?? 0;
 
       streak = loadedStreak;
-
       adsToday = loadedAds;
 
       dailyClaimed =
@@ -475,12 +465,9 @@ class _HomePageState extends State<HomePage> {
       final result =
           await callable.call();
 
-      final rawData =
-          result.data;
-
       final data =
           Map<String, dynamic>.from(
-        rawData as Map,
+        result.data as Map,
       );
 
       final alreadyClaimed =
@@ -562,9 +549,7 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded: (
-          RewardedAd ad,
-        ) {
+        onAdLoaded: (RewardedAd ad) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -635,9 +620,7 @@ class _HomePageState extends State<HomePage> {
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
-          (
-        RewardedAd dismissedAd,
-      ) async {
+          (RewardedAd dismissedAd) async {
         dismissedAd.dispose();
 
         if (mounted) {
@@ -782,9 +765,7 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded: (
-          RewardedAd ad,
-        ) {
+        onAdLoaded: (RewardedAd ad) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -819,7 +800,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // TEST AD REWARD
+  // CLAIM TEST AD REWARD
   // ==========================================================
 
   Future<void> _claimTestAdReward() async {
@@ -929,9 +910,7 @@ class _HomePageState extends State<HomePage> {
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
-          (
-        RewardedAd dismissedAd,
-      ) async {
+          (RewardedAd dismissedAd) async {
         dismissedAd.dispose();
 
         if (earnedReward) {
@@ -1041,6 +1020,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // OPEN WHITE PAPER PAGE
+  // ==========================================================
+
+  void _openWhitePaperPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const WhitePaperPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
   // BUILD
   // ==========================================================
 
@@ -1048,6 +1040,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
+        backgroundColor: backgroundColor,
         body: Center(
           child: CircularProgressIndicator(
             color: accentColor,
@@ -1106,11 +1099,8 @@ class _HomePageState extends State<HomePage> {
         onAboutPressed:
             _openAboutPage,
 
-        onWhitePaperPressed: () {
-          _comingSoon(
-            'White Paper',
-          );
-        },
+        onWhitePaperPressed:
+            _openWhitePaperPage,
 
         onTokenPressed: () {
           _comingSoon(
@@ -1137,8 +1127,6 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
-
-        // KIELIPAINIKE ON POISTETTU.
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
@@ -1193,25 +1181,18 @@ class _HomePageState extends State<HomePage> {
               DailyRewardCard(
                 title:
                     t.get('dailyClaim'),
-
                 rewardText:
                     _dailyRewardText(),
-
                 streakText:
                     _dailyStreakText(),
-
                 dailyLoading:
                     dailyLoading,
-
                 dailyAdLoading:
                     dailyAdLoading,
-
                 dailyClaimed:
                     dailyClaimed,
-
                 adReady:
                     dailyRewardedAd != null,
-
                 onPressed:
                     dailyButtonEnabled
                         ? _showDailyRewardAd
@@ -1227,42 +1208,30 @@ class _HomePageState extends State<HomePage> {
               WatchAdCard(
                 title:
                     t.get('watchEarn'),
-
                 dailyLimitText:
                     t.get('dailyLimit'),
-
                 adsToday:
                     adsToday,
-
                 maxAdsPerDay:
                     maxAdsPerDay,
-
                 canWatch:
                     canWatch,
-
                 nextAdText:
                     nextAdText,
-
                 adLoading:
                     adLoading,
-
                 adReady:
                     rewardedAd != null,
-
                 loadingText:
                     t.get('adLoading'),
-
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
-
                 unavailableText:
                     t.get('adUnavailable'),
-
                 watchButtonText:
                     t.get('watchAd'),
-
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
