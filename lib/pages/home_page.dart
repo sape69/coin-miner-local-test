@@ -17,13 +17,13 @@ import 'home/home_drawer.dart';
 import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
+import 'token/token_page.dart';
 
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
 /// Googlen virallinen Rewarded Ad TEST-ID.
-///
 /// Vaihda myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
@@ -340,20 +340,9 @@ class _HomePageState extends State<HomePage> {
     final prefs =
         await SharedPreferences.getInstance();
 
-    await prefs.setInt(
-      'stl_balance',
-      stlValue,
-    );
-
-    await prefs.setInt(
-      'streak',
-      streakValue,
-    );
-
-    await prefs.setInt(
-      'ads_today',
-      adsValue,
-    );
+    await prefs.setInt('stl_balance', stlValue);
+    await prefs.setInt('streak', streakValue);
+    await prefs.setInt('ads_today', adsValue);
 
     await prefs.setString(
       'last_daily',
@@ -399,17 +388,14 @@ class _HomePageState extends State<HomePage> {
 
     if (loadedLastDaily.isNotEmpty) {
       final lastDailyDate =
-          DateTime.tryParse(
-        loadedLastDaily,
-      );
+          DateTime.tryParse(loadedLastDaily);
 
       if (lastDailyDate != null) {
         final difference =
             _dateOnly(DateTime.now())
                 .difference(
           _dateOnly(lastDailyDate),
-        )
-                .inDays;
+        ).inDays;
 
         if (difference > 1) {
           loadedStreak = 0;
@@ -424,28 +410,20 @@ class _HomePageState extends State<HomePage> {
 
     if (lastAdString.isNotEmpty) {
       loadedLastAdTime =
-          DateTime.tryParse(
-        lastAdString,
-      );
+          DateTime.tryParse(lastAdString);
     }
 
     if (!mounted) return;
 
     setState(() {
       today = currentToday;
-
-      stl =
-          prefs.getInt('stl_balance') ?? 0;
-
+      stl = prefs.getInt('stl_balance') ?? 0;
       streak = loadedStreak;
       adsToday = loadedAds;
-
       dailyClaimed =
           loadedLastDaily == currentToday;
-
       lastDaily = loadedLastDaily;
       lastAdTime = loadedLastAdTime;
-
       loading = false;
     });
   }
@@ -606,8 +584,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (dailyLoading ||
-        dailyAdLoading) {
+    if (dailyLoading || dailyAdLoading) {
       return;
     }
 
@@ -661,9 +638,7 @@ class _HomePageState extends State<HomePage> {
           dailyAdLoading = false;
         });
 
-        _message(
-          'Mainosta ei voitu näyttää.',
-        );
+        _message('Mainosta ei voitu näyttää.');
 
         _loadDailyRewardedAd();
       },
@@ -727,8 +702,7 @@ class _HomePageState extends State<HomePage> {
       return '';
     }
 
-    final hours =
-        remaining.inHours;
+    final hours = remaining.inHours;
 
     final minutes =
         remaining.inMinutes.remainder(60);
@@ -862,9 +836,7 @@ class _HomePageState extends State<HomePage> {
         lastAdTime = now;
       });
 
-      _message(
-        '+$reward STL! 🐱',
-      );
+      _message('+$reward STL! 🐱');
     } on FirebaseFunctionsException catch (error) {
       _message(
         error.message ??
@@ -890,7 +862,6 @@ class _HomePageState extends State<HomePage> {
       _message(
         t.get('dailyLimitReached'),
       );
-
       return;
     }
 
@@ -899,7 +870,6 @@ class _HomePageState extends State<HomePage> {
         '${t.get('nextAd')}: '
         '${_remainingAdText()}',
       );
-
       return;
     }
 
@@ -1027,6 +997,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // OPEN TOKEN PAGE
+  // ==========================================================
+
+  void _openTokenPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const TokenPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
   // BUILD
   // ==========================================================
 
@@ -1095,11 +1078,8 @@ class _HomePageState extends State<HomePage> {
           );
         },
 
-        onTokenPressed: () {
-          _comingSoon(
-            'STL Token',
-          );
-        },
+        onTokenPressed:
+            _openTokenPage,
 
         onRoadmapPressed: () {
           _comingSoon(
@@ -1120,7 +1100,6 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
-
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
@@ -1174,25 +1153,18 @@ class _HomePageState extends State<HomePage> {
               DailyRewardCard(
                 title:
                     t.get('dailyClaim'),
-
                 rewardText:
                     _dailyRewardText(),
-
                 streakText:
                     _dailyStreakText(),
-
                 dailyLoading:
                     dailyLoading,
-
                 dailyAdLoading:
                     dailyAdLoading,
-
                 dailyClaimed:
                     dailyClaimed,
-
                 adReady:
                     dailyRewardedAd != null,
-
                 onPressed:
                     dailyButtonEnabled
                         ? _showDailyRewardAd
@@ -1208,42 +1180,30 @@ class _HomePageState extends State<HomePage> {
               WatchAdCard(
                 title:
                     t.get('watchEarn'),
-
                 dailyLimitText:
                     t.get('dailyLimit'),
-
                 adsToday:
                     adsToday,
-
                 maxAdsPerDay:
                     maxAdsPerDay,
-
                 canWatch:
                     canWatch,
-
                 nextAdText:
                     nextAdText,
-
                 adLoading:
                     adLoading,
-
                 adReady:
                     rewardedAd != null,
-
                 loadingText:
                     t.get('adLoading'),
-
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
-
                 unavailableText:
                     t.get('adUnavailable'),
-
                 watchButtonText:
                     t.get('watchAd'),
-
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
