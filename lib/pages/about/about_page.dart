@@ -173,7 +173,18 @@ class AboutPage extends StatelessWidget {
                     SizedBox(height: 8),
 
                     Text(
-                      'Total supply: 100,000,000,000 STL',
+                      'Total Supply: 17,602,539,062 STL',
+                      style: TextStyle(
+                        color: aboutAccentColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    SizedBox(height: 8),
+
+                    Text(
+                      'Decimals: 9',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
