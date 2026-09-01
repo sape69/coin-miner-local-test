@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,6 @@ import 'home/home_drawer.dart';
 import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
-import 'whitepaper/whitepaper_page.dart';
 
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
@@ -26,16 +24,17 @@ const Color accentColor = Color(0xFF35D0A0);
 
 /// Googlen virallinen Rewarded Ad TEST-ID.
 ///
-/// Vaihda tämä myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
+/// Vaihda myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
+/// Maksimimäärä mainoksia päivässä.
 const int maxAdsPerDay = 5;
 
-/// Päivittäisen palkinnon maksimimäärä.
+/// Päivittäisen palkinnon maksimi.
 const int maxDailyReward = 7;
 
-/// Mainoksen katsomisen cooldown.
+/// Mainosten välinen odotusaika.
 const Duration adCooldown = Duration(hours: 1);
 
 class HomePage extends StatefulWidget {
@@ -53,69 +52,113 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // ==========================================================
+  // USER DATA
+  // ==========================================================
+
   int stl = 0;
+
   int streak = 0;
+
   int adsToday = 0;
 
   bool dailyClaimed = false;
+
   bool loading = true;
 
+  // ==========================================================
+  // LOADING STATES
+  // ==========================================================
+
   bool adLoading = false;
+
   bool dailyLoading = false;
+
   bool dailyAdLoading = false;
+
+  // ==========================================================
+  // DATE
+  // ==========================================================
 
   String today = '';
 
+  String lastDaily = '';
+
+  // ==========================================================
+  // AD STATUS
+  // ==========================================================
+
   DateTime? lastAdTime;
 
+  // ==========================================================
+  // ADMOB
+  // ==========================================================
+
   RewardedAd? rewardedAd;
+
   RewardedAd? dailyRewardedAd;
+
+  // ==========================================================
+  // TIMER
+  // ==========================================================
 
   Timer? cooldownTimer;
 
-  AppLocalizations get t => AppLocalizations(
-        widget.languageCode,
-      );
+  // ==========================================================
+  // LOCALIZATION
+  // ==========================================================
 
-  CollectionReference<Map<String, dynamic>> get _users =>
-      FirebaseFirestore.instance.collection('users');
+  AppLocalizations get t =>
+      AppLocalizations(widget.languageCode);
+
+  // ==========================================================
+  // FIREBASE FUNCTIONS
+  // ==========================================================
+
+  FirebaseFunctions get functions =>
+      FirebaseFunctions.instance;
+
+  // ==========================================================
+  // USER ID
+  // ==========================================================
 
   String? get _uid =>
       FirebaseAuth.instance.currentUser?.uid;
 
-  DocumentReference<Map<String, dynamic>> get _userDoc {
-    final uid = _uid;
-
-    if (uid == null) {
-      throw StateError(
-        'Käyttäjä ei ole kirjautunut.',
-      );
-    }
-
-    return _users.doc(uid);
-  }
+  // ==========================================================
+  // INIT
+  // ==========================================================
 
   @override
   void initState() {
     super.initState();
 
     _loadData();
+
     _loadRewardedAd();
+
     _loadDailyRewardedAd();
+
     _startCooldownTimer();
   }
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
     rewardedAd?.dispose();
+
     dailyRewardedAd?.dispose();
+
     cooldownTimer?.cancel();
 
     super.dispose();
   }
 
   // ==========================================================
-  // DATE
+  // DATE KEY
   // ==========================================================
 
   String _dateKey() {
@@ -126,6 +169,10 @@ class _HomePageState extends State<HomePage> {
         '${now.day.toString().padLeft(2, '0')}';
   }
 
+  // ==========================================================
+  // DATE ONLY
+  // ==========================================================
+
   DateTime _dateOnly(DateTime date) {
     return DateTime(
       date.year,
@@ -135,19 +182,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // DAILY REWARD
+  // NEXT DAILY REWARD
   // ==========================================================
 
-  /// Päivä 1 = 1 STL
-  /// Päivä 2 = 2 STL
-  /// ...
-  /// Päivä 7 = 7 STL
-  /// Päivä 8+ = 7 STL
   int _nextDailyReward() {
     if (dailyClaimed) {
-      return streak >= maxDailyReward
-          ? maxDailyReward
-          : streak;
+      if (streak >= maxDailyReward) {
+        return maxDailyReward;
+      }
+
+      return streak;
     }
 
     final nextDay = streak + 1;
@@ -159,152 +203,166 @@ class _HomePageState extends State<HomePage> {
     return nextDay;
   }
 
+  // ==========================================================
+  // DAILY REWARD TEXT
+  // ==========================================================
+
   String _dailyRewardText() {
     final reward = _nextDailyReward();
 
     return '🎁 Tänään saat $reward STL';
   }
 
+  // ==========================================================
+  // DAILY STREAK TEXT
+  // ==========================================================
+
   String _dailyStreakText() {
-    final nextDay = dailyClaimed
-        ? streak
-        : streak + 1;
+    final nextDay =
+        dailyClaimed ? streak : streak + 1;
 
     final displayDay =
         nextDay > maxDailyReward
             ? maxDailyReward
             : nextDay;
 
-    return '${t.get('streak')}: 🔥 Päivä $displayDay / 7';
+    return '${t.get('streak')}: 🔥 '
+        'Päivä $displayDay / 7';
   }
 
   // ==========================================================
   // LOAD DATA
+  //
+  // IMPORTANT:
+  //
+  // Flutter does NOT write directly to Firestore.
+  //
+  // Data comes from Cloud Functions.
   // ==========================================================
 
   Future<void> _loadData() async {
-    final currentToday = _dateKey();
+    if (_uid == null) {
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
+
+      return;
+    }
 
     try {
-      final snapshot = await _userDoc.get();
+      final callable =
+          functions.httpsCallable(
+        'getRewardStatus',
+      );
 
-      Map<String, dynamic> data;
+      final result =
+          await callable.call();
 
-      if (!snapshot.exists) {
-        data = {
-          'stlBalance': 0,
-          'streak': 0,
-          'lastDaily': '',
-          'adsToday': 0,
-          'adDate': currentToday,
-        };
+      final data =
+          Map<String, dynamic>.from(
+        result.data as Map,
+      );
 
-        await _userDoc.set(
-          data,
-          SetOptions(merge: true),
-        );
-      } else {
-        data = snapshot.data() ??
-            <String, dynamic>{};
-      }
+      final loadedBalance =
+          (data['balance'] as num?)?.toInt() ?? 0;
 
-      final loadedStl =
-          (data['stlBalance'] as num?)?.toInt() ?? 0;
-
-      int loadedStreak =
+      final loadedStreak =
           (data['streak'] as num?)?.toInt() ?? 0;
 
-      int loadedAds =
+      final loadedAds =
           (data['adsToday'] as num?)?.toInt() ?? 0;
 
-      final lastDaily =
-          data['lastDaily'] as String? ?? '';
+      final loadedDailyClaimed =
+          data['dailyClaimed'] == true;
 
-      String adDate =
-          data['adDate'] as String? ?? '';
+      final cooldownRemainingMs =
+          (data['cooldownRemainingMs'] as num?)
+                  ?.toInt() ??
+              0;
 
       DateTime? loadedLastAdTime;
 
-      final timestamp =
-          data['lastAdTimestamp'];
+      if (cooldownRemainingMs > 0) {
+        final elapsed =
+            adCooldown.inMilliseconds -
+                cooldownRemainingMs;
 
-      if (timestamp is Timestamp) {
         loadedLastAdTime =
-            timestamp.toDate();
+            DateTime.now().subtract(
+          Duration(
+            milliseconds:
+                elapsed.clamp(
+              0,
+              adCooldown.inMilliseconds,
+            ),
+          ),
+        );
       }
 
-      final oldLastAdTime =
-          data['lastAdTime'];
+      final currentToday =
+          _dateKey();
 
-      if (loadedLastAdTime == null &&
-          oldLastAdTime is String &&
-          oldLastAdTime.isNotEmpty) {
-        loadedLastAdTime =
-            DateTime.tryParse(oldLastAdTime);
-      }
+      String loadedLastDaily = '';
 
-      // ======================================================
-      // RESET STREAK IF A DAY WAS MISSED
-      // ======================================================
+      if (loadedDailyClaimed) {
+        loadedLastDaily =
+            currentToday;
+      } else {
+        final prefs =
+            await SharedPreferences.getInstance();
 
-      if (lastDaily.isNotEmpty) {
-        final lastDailyDate =
-            DateTime.tryParse(lastDaily);
-
-        if (lastDailyDate != null) {
-          final difference =
-              _dateOnly(DateTime.now())
-                  .difference(
-            _dateOnly(lastDailyDate),
-          ).inDays;
-
-          if (difference > 1) {
-            loadedStreak = 0;
-
-            await _userDoc.set(
-              {
-                'streak': 0,
-              },
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
-
-      if (adDate != currentToday) {
-        loadedAds = 0;
-        adDate = currentToday;
+        loadedLastDaily =
+            prefs.getString(
+                  'last_daily',
+                ) ??
+                '';
       }
 
       await _saveLocalCache(
-        stlValue: loadedStl,
+        stlValue: loadedBalance,
         streakValue: loadedStreak,
         adsValue: loadedAds,
-        lastDailyValue: lastDaily,
-        adDateValue: adDate,
+        lastDailyValue: loadedLastDaily,
+        adDateValue: currentToday,
         lastAdTimeValue:
-            loadedLastAdTime?.toIso8601String() ?? '',
+            loadedLastAdTime
+                    ?.toIso8601String() ??
+                '',
       );
 
       if (!mounted) return;
 
       setState(() {
         today = currentToday;
-        stl = loadedStl;
+
+        stl = loadedBalance;
+
         streak = loadedStreak;
+
         adsToday = loadedAds;
+
         dailyClaimed =
-            lastDaily == currentToday;
-        lastAdTime = loadedLastAdTime;
+            loadedDailyClaimed;
+
+        lastDaily =
+            loadedLastDaily;
+
+        lastAdTime =
+            loadedLastAdTime;
+
         loading = false;
       });
+    } on FirebaseFunctionsException catch (_) {
+      await _loadLocalCache();
     } catch (_) {
       await _loadLocalCache();
     }
   }
 
   // ==========================================================
-  // LOCAL CACHE SAVE
+  // SAVE LOCAL CACHE
   // ==========================================================
 
   Future<void> _saveLocalCache({
@@ -350,7 +408,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOCAL CACHE LOAD
+  // LOAD LOCAL CACHE
+  //
+  // Used when internet/server is temporarily unavailable.
   // ==========================================================
 
   Future<void> _loadLocalCache() async {
@@ -366,7 +426,7 @@ class _HomePageState extends State<HomePage> {
     int loadedStreak =
         prefs.getInt('streak') ?? 0;
 
-    final lastDaily =
+    final loadedLastDaily =
         prefs.getString('last_daily') ?? '';
 
     final savedAdDate =
@@ -374,49 +434,42 @@ class _HomePageState extends State<HomePage> {
 
     if (savedAdDate != currentToday) {
       loadedAds = 0;
-
-      await prefs.setInt(
-        'ads_today',
-        0,
-      );
-
-      await prefs.setString(
-        'ad_date',
-        currentToday,
-      );
     }
 
-    // Reset streak if a day was missed.
-    if (lastDaily.isNotEmpty) {
+    // Reset local streak display if needed.
+    if (loadedLastDaily.isNotEmpty) {
       final lastDailyDate =
-          DateTime.tryParse(lastDaily);
+          DateTime.tryParse(
+        loadedLastDaily,
+      );
 
       if (lastDailyDate != null) {
         final difference =
             _dateOnly(DateTime.now())
                 .difference(
           _dateOnly(lastDailyDate),
-        ).inDays;
+        )
+                .inDays;
 
         if (difference > 1) {
           loadedStreak = 0;
-
-          await prefs.setInt(
-            'streak',
-            0,
-          );
         }
       }
     }
 
     final lastAdString =
-        prefs.getString('last_ad_time') ?? '';
+        prefs.getString(
+              'last_ad_time',
+            ) ??
+            '';
 
     DateTime? loadedLastAdTime;
 
     if (lastAdString.isNotEmpty) {
       loadedLastAdTime =
-          DateTime.tryParse(lastAdString);
+          DateTime.tryParse(
+        lastAdString,
+      );
     }
 
     if (!mounted) return;
@@ -425,15 +478,23 @@ class _HomePageState extends State<HomePage> {
       today = currentToday;
 
       stl =
-          prefs.getInt('stl_balance') ?? 0;
+          prefs.getInt(
+            'stl_balance',
+          ) ??
+              0;
 
       streak = loadedStreak;
+
       adsToday = loadedAds;
 
       dailyClaimed =
-          lastDaily == currentToday;
+          loadedLastDaily == currentToday;
 
-      lastAdTime = loadedLastAdTime;
+      lastDaily =
+          loadedLastDaily;
+
+      lastAdTime =
+          loadedLastAdTime;
 
       loading = false;
     });
@@ -441,6 +502,8 @@ class _HomePageState extends State<HomePage> {
 
   // ==========================================================
   // DAILY CHECK-IN
+  //
+  // Balance is updated ONLY by Cloud Functions.
   // ==========================================================
 
   Future<void> _dailyClaim() async {
@@ -457,8 +520,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final callable =
-          FirebaseFunctions.instance
-              .httpsCallable(
+          functions.httpsCallable(
         'dailyCheckIn',
       );
 
@@ -487,22 +549,34 @@ class _HomePageState extends State<HomePage> {
       final currentToday =
           _dateKey();
 
+      final newLastDaily =
+          alreadyClaimed
+              ? lastDaily
+              : currentToday;
+
       await _saveLocalCache(
         stlValue: newBalance,
         streakValue: newStreak,
         adsValue: adsToday,
-        lastDailyValue: currentToday,
+        lastDailyValue: newLastDaily,
         adDateValue: today,
         lastAdTimeValue:
-            lastAdTime?.toIso8601String() ?? '',
+            lastAdTime
+                    ?.toIso8601String() ??
+                '',
       );
 
       if (!mounted) return;
 
       setState(() {
         stl = newBalance;
+
         streak = newStreak;
+
         dailyClaimed = true;
+
+        lastDaily =
+            newLastDaily;
       });
 
       if (alreadyClaimed) {
@@ -513,11 +587,13 @@ class _HomePageState extends State<HomePage> {
     } on FirebaseFunctionsException catch (error) {
       _message(
         error.message ??
-            'Päivittäisen palkinnon hakeminen epäonnistui.',
+            'Päivittäisen palkinnon '
+                'hakeminen epäonnistui.',
       );
     } catch (_) {
       _message(
-        'Päivittäisen palkinnon hakeminen epäonnistui.',
+        'Päivittäisen palkinnon '
+        'hakeminen epäonnistui.',
       );
     } finally {
       if (mounted) {
@@ -549,7 +625,9 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -557,6 +635,7 @@ class _HomePageState extends State<HomePage> {
 
           setState(() {
             dailyRewardedAd = ad;
+
             dailyAdLoading = false;
           });
         },
@@ -567,6 +646,7 @@ class _HomePageState extends State<HomePage> {
 
           setState(() {
             dailyRewardedAd = null;
+
             dailyAdLoading = false;
           });
 
@@ -600,10 +680,12 @@ class _HomePageState extends State<HomePage> {
 
     if (dailyRewardedAd == null) {
       _message(
-        'Mainosta ladataan. Yritä hetken kuluttua.',
+        'Mainosta ladataan. '
+        'Yritä hetken kuluttua.',
       );
 
       _loadDailyRewardedAd();
+
       return;
     }
 
@@ -612,6 +694,7 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       dailyRewardedAd = null;
+
       dailyAdLoading = true;
     });
 
@@ -620,7 +703,9 @@ class _HomePageState extends State<HomePage> {
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
-          (RewardedAd dismissedAd) async {
+          (
+        RewardedAd dismissedAd,
+      ) async {
         dismissedAd.dispose();
 
         if (mounted) {
@@ -633,12 +718,14 @@ class _HomePageState extends State<HomePage> {
           await _dailyClaim();
         } else {
           _message(
-            'Katso mainos loppuun saadaksesi päivittäisen palkinnon.',
+            'Katso mainos loppuun '
+            'saadaksesi päivittäisen palkinnon.',
           );
         }
 
         _loadDailyRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent:
           (
         RewardedAd failedAd,
@@ -672,7 +759,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // AD COOLDOWN
+  // CAN WATCH AD
   // ==========================================================
 
   bool _canWatchAd() {
@@ -681,11 +768,17 @@ class _HomePageState extends State<HomePage> {
     }
 
     final nextAdTime =
-        lastAdTime!.add(adCooldown);
+        lastAdTime!.add(
+      adCooldown,
+    );
 
     return !DateTime.now()
         .isBefore(nextAdTime);
   }
+
+  // ==========================================================
+  // REMAINING AD TIME
+  // ==========================================================
 
   Duration _remainingAdTime() {
     if (lastAdTime == null) {
@@ -693,7 +786,9 @@ class _HomePageState extends State<HomePage> {
     }
 
     final nextAdTime =
-        lastAdTime!.add(adCooldown);
+        lastAdTime!.add(
+      adCooldown,
+    );
 
     final remaining =
         nextAdTime.difference(
@@ -706,6 +801,10 @@ class _HomePageState extends State<HomePage> {
 
     return remaining;
   }
+
+  // ==========================================================
+  // REMAINING AD TEXT
+  // ==========================================================
 
   String _remainingAdText() {
     final remaining =
@@ -732,6 +831,10 @@ class _HomePageState extends State<HomePage> {
     return 'alle 1 min';
   }
 
+  // ==========================================================
+  // COOLDOWN TIMER
+  // ==========================================================
+
   void _startCooldownTimer() {
     cooldownTimer =
         Timer.periodic(
@@ -745,7 +848,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LOAD REWARDED AD
+  // LOAD NORMAL REWARDED AD
   // ==========================================================
 
   void _loadRewardedAd() {
@@ -765,7 +868,9 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -773,9 +878,11 @@ class _HomePageState extends State<HomePage> {
 
           setState(() {
             rewardedAd = ad;
+
             adLoading = false;
           });
         },
+
         onAdFailedToLoad: (
           LoadAdError error,
         ) {
@@ -783,6 +890,7 @@ class _HomePageState extends State<HomePage> {
 
           setState(() {
             rewardedAd = null;
+
             adLoading = false;
           });
 
@@ -801,13 +909,14 @@ class _HomePageState extends State<HomePage> {
 
   // ==========================================================
   // CLAIM TEST AD REWARD
+  //
+  // Cloud Function updates the balance.
   // ==========================================================
 
   Future<void> _claimTestAdReward() async {
     try {
       final callable =
-          FirebaseFunctions.instance
-              .httpsCallable(
+          functions.httpsCallable(
         'testAdReward',
       );
 
@@ -837,8 +946,7 @@ class _HomePageState extends State<HomePage> {
         stlValue: newBalance,
         streakValue: streak,
         adsValue: newAdsToday,
-        lastDailyValue:
-            dailyClaimed ? today : '',
+        lastDailyValue: lastDaily,
         adDateValue: _dateKey(),
         lastAdTimeValue:
             now.toIso8601String(),
@@ -848,11 +956,15 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         stl = newBalance;
+
         adsToday = newAdsToday;
+
         lastAdTime = now;
       });
 
-      _message('+$reward STL! 🐱');
+      _message(
+        '+$reward STL! 🐱',
+      );
     } on FirebaseFunctionsException catch (error) {
       _message(
         error.message ??
@@ -878,6 +990,7 @@ class _HomePageState extends State<HomePage> {
       _message(
         t.get('dailyLimitReached'),
       );
+
       return;
     }
 
@@ -886,15 +999,18 @@ class _HomePageState extends State<HomePage> {
         '${t.get('nextAd')}: '
         '${_remainingAdText()}',
       );
+
       return;
     }
 
     if (rewardedAd == null) {
       _message(
-        'Mainosta ladataan. Yritä hetken kuluttua.',
+        'Mainosta ladataan. '
+        'Yritä hetken kuluttua.',
       );
 
       _loadRewardedAd();
+
       return;
     }
 
@@ -910,7 +1026,9 @@ class _HomePageState extends State<HomePage> {
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
-          (RewardedAd dismissedAd) async {
+          (
+        RewardedAd dismissedAd,
+      ) async {
         dismissedAd.dispose();
 
         if (earnedReward) {
@@ -919,6 +1037,7 @@ class _HomePageState extends State<HomePage> {
 
         _loadRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent:
           (
         RewardedAd failedAd,
@@ -1020,19 +1139,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // OPEN WHITE PAPER PAGE
-  // ==========================================================
-
-  void _openWhitePaperPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            const WhitePaperPage(),
-      ),
-    );
-  }
-
-  // ==========================================================
   // BUILD
   // ==========================================================
 
@@ -1088,9 +1194,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: backgroundColor,
 
-      // ========================================================
+      // ======================================================
       // DRAWER
-      // ========================================================
+      // ======================================================
 
       drawer: HomeDrawer(
         onLanguagePressed:
@@ -1099,8 +1205,11 @@ class _HomePageState extends State<HomePage> {
         onAboutPressed:
             _openAboutPage,
 
-        onWhitePaperPressed:
-            _openWhitePaperPage,
+        onWhitePaperPressed: () {
+          _comingSoon(
+            'White Paper',
+          );
+        },
 
         onTokenPressed: () {
           _comingSoon(
@@ -1115,9 +1224,9 @@ class _HomePageState extends State<HomePage> {
         },
       ),
 
-      // ========================================================
+      // ======================================================
       // APP BAR
-      // ========================================================
+      // ======================================================
 
       appBar: AppBar(
         title: const Text(
@@ -1127,6 +1236,7 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
+
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
@@ -1138,9 +1248,9 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
-      // ========================================================
+      // ======================================================
       // BODY
-      // ========================================================
+      // ======================================================
 
       body: SafeArea(
         child: RefreshIndicator(
@@ -1149,9 +1259,7 @@ class _HomePageState extends State<HomePage> {
             padding:
                 const EdgeInsets.all(16),
             children: [
-              // ==================================================
               // PROFILE
-              // ==================================================
 
               ProfileCard(
                 title: t.get('stella'),
@@ -1160,9 +1268,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // BALANCE
-              // ==================================================
 
               BalanceCard(
                 stl: stl,
@@ -1174,25 +1280,30 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // DAILY REWARD
-              // ==================================================
 
               DailyRewardCard(
                 title:
                     t.get('dailyClaim'),
+
                 rewardText:
                     _dailyRewardText(),
+
                 streakText:
                     _dailyStreakText(),
+
                 dailyLoading:
                     dailyLoading,
+
                 dailyAdLoading:
                     dailyAdLoading,
+
                 dailyClaimed:
                     dailyClaimed,
+
                 adReady:
                     dailyRewardedAd != null,
+
                 onPressed:
                     dailyButtonEnabled
                         ? _showDailyRewardAd
@@ -1201,37 +1312,47 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // WATCH AD
-              // ==================================================
 
               WatchAdCard(
                 title:
                     t.get('watchEarn'),
+
                 dailyLimitText:
                     t.get('dailyLimit'),
+
                 adsToday:
                     adsToday,
+
                 maxAdsPerDay:
                     maxAdsPerDay,
+
                 canWatch:
                     canWatch,
+
                 nextAdText:
                     nextAdText,
+
                 adLoading:
                     adLoading,
+
                 adReady:
                     rewardedAd != null,
+
                 loadingText:
                     t.get('adLoading'),
+
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
+
                 unavailableText:
                     t.get('adUnavailable'),
+
                 watchButtonText:
                     t.get('watchAd'),
+
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
@@ -1240,9 +1361,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
-              // ==================================================
               // CAT FACT
-              // ==================================================
 
               CatFactCard(
                 title:
