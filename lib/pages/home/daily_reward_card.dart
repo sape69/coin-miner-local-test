@@ -37,27 +37,11 @@ class DailyRewardCard extends StatelessWidget {
       return 'CLAIMING...';
     }
 
-    if (dailyAdLoading) {
+    if (dailyAdLoading || !adReady) {
       return 'LOADING AD...';
     }
 
-    if (!adReady) {
-      return 'LOADING AD...';
-    }
-
-    return 'WATCH AD & CLAIM';
-  }
-
-  IconData get _buttonIcon {
-    if (dailyClaimed) {
-      return Icons.check_circle;
-    }
-
-    if (dailyLoading || dailyAdLoading || !adReady) {
-      return Icons.hourglass_top;
-    }
-
-    return Icons.play_circle_fill;
+    return 'CLAIM REWARD';
   }
 
   @override
@@ -68,6 +52,9 @@ class DailyRewardCard extends StatelessWidget {
         dailyAdLoading ||
         !adReady ||
         onPressed == null;
+
+    final isLoading =
+        dailyLoading || dailyAdLoading;
 
     return Container(
       width: double.infinity,
@@ -97,17 +84,17 @@ class DailyRewardCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Center(
                   child: Text(
-                    '🎁',
+                    '🐱',
                     style: TextStyle(
-                      fontSize: 25,
+                      fontSize: 30,
                     ),
                   ),
                 ),
@@ -146,10 +133,11 @@ class DailyRewardCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.stars_rounded,
-                  color: accentColor,
-                  size: 26,
+                const Text(
+                  '✨',
+                  style: TextStyle(
+                    fontSize: 25,
+                  ),
                 ),
 
                 const SizedBox(width: 10),
@@ -164,11 +152,18 @@ class DailyRewardCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                const Text(
+                  '🐾',
+                  style: TextStyle(
+                    fontSize: 24,
+                  ),
+                ),
               ],
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // ==================================================
           // STREAK
@@ -176,10 +171,11 @@ class DailyRewardCard extends StatelessWidget {
 
           Row(
             children: [
-              const Icon(
-                Icons.local_fire_department,
-                color: Colors.orange,
-                size: 22,
+              const Text(
+                '🔥',
+                style: TextStyle(
+                  fontSize: 20,
+                ),
               ),
 
               const SizedBox(width: 8),
@@ -197,47 +193,81 @@ class DailyRewardCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 22),
 
           // ==================================================
-          // BUTTON
+          // CAT PAW BUTTON
           // ==================================================
 
           SizedBox(
             width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: isDisabled ? null : onPressed,
-              icon: dailyLoading || dailyAdLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Icon(
-                      _buttonIcon,
-                      size: 22,
-                    ),
-              label: Text(
-                _buttonText,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: backgroundColor,
-                disabledBackgroundColor:
-                    Colors.grey.withValues(alpha: 0.25),
-                disabledForegroundColor:
-                    Colors.white.withValues(alpha: 0.45),
-                elevation: isDisabled ? 0 : 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            height: 72,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isDisabled ? null : onPressed,
+                borderRadius: BorderRadius.circular(36),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(36),
+                    color: isDisabled
+                        ? Colors.grey.withValues(alpha: 0.20)
+                        : accentColor,
+                    boxShadow: isDisabled
+                        ? []
+                        : [
+                            BoxShadow(
+                              color:
+                                  accentColor.withValues(alpha: 0.30),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                  ),
+                  child: Center(
+                    child: isLoading
+                        ? const CircularProgressIndicator(
+                            color: backgroundColor,
+                            strokeWidth: 3,
+                          )
+                        : Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                dailyClaimed ? '😺' : '🐾',
+                                style: const TextStyle(
+                                  fontSize: 34,
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Text(
+                                _buttonText,
+                                style: TextStyle(
+                                  color: isDisabled
+                                      ? Colors.white.withValues(
+                                          alpha: 0.45,
+                                        )
+                                      : backgroundColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Text(
+                                dailyClaimed ? '🐾' : '🐱',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -248,16 +278,16 @@ class DailyRewardCard extends StatelessWidget {
           // ==================================================
 
           if (dailyClaimed) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
             Center(
               child: Text(
-                'Come back tomorrow for your next reward! 🐱',
+                'Stella is happy! Come back tomorrow 🐱💚',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: accentColor.withValues(alpha: 0.80),
+                  color: accentColor.withValues(alpha: 0.85),
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
