@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../cat_facts.dart';
 import '../localization.dart';
 
+import 'about/about_page.dart';
+
 import 'home/balance_card.dart';
 import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
@@ -28,17 +30,13 @@ const Color accentColor = Color(0xFF35D0A0);
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
-/// Mainosten päivittäinen enimmäismäärä.
 const int maxAdsPerDay = 5;
 
-/// Mainosten välinen odotusaika.
 const Duration adCooldown = Duration(hours: 1);
 
 /// Päivittäinen STL-palkinto.
 ///
-/// Tämä arvo näytetään käyttöliittymässä.
-/// Varsinainen palkinto tulee edelleen Firebase Functionista
-/// dailyCheckIn.
+/// Tämä näkyy nyt käyttäjälle Daily Reward -kortissa.
 const int dailyRewardAmount = 10;
 
 class HomePage extends StatefulWidget {
@@ -711,7 +709,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // CLAIM AD REWARD
+  // TEST AD REWARD
   // ==========================================================
 
   Future<void> _claimTestAdReward() async {
@@ -903,6 +901,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // OPEN ABOUT PAGE
+  // ==========================================================
+
+  void _openAboutPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const AboutPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
   // COMING SOON
   // ==========================================================
 
@@ -966,9 +978,7 @@ class _HomePageState extends State<HomePage> {
             dailyRewardedAd != null;
 
     final nextAdText =
-        remainingText.isEmpty
-            ? t.get('nextAd')
-            : '${t.get('nextAd')}: $remainingText';
+        '${t.get('nextAd')}: $remainingText';
 
     return Scaffold(
       // ========================================================
@@ -979,11 +989,8 @@ class _HomePageState extends State<HomePage> {
         onLanguagePressed:
             _openLanguageDialog,
 
-        onAboutPressed: () {
-          _comingSoon(
-            'About Stelluriini',
-          );
-        },
+        onAboutPressed:
+            _openAboutPage,
 
         onWhitePaperPressed: () {
           _comingSoon(
@@ -1017,9 +1024,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        // KIELIPAINIKE ON POISTETTU TÄSTÄ.
-        // Kielen vaihto löytyy nyt vain Drawer-valikosta.
-
+        // KIELIPAINIKE ON POISTETTU.
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
@@ -1075,10 +1080,12 @@ class _HomePageState extends State<HomePage> {
                 title:
                     t.get('dailyClaim'),
 
+                rewardText:
+                    '+$dailyRewardAmount STL / päivä',
+
                 streakText:
                     '${t.get('streak')}: '
-                    '🔥 $streak / 7\n\n'
-                    '🎁 $dailyRewardAmount STL / päivä',
+                    '🔥 $streak / 7',
 
                 dailyLoading:
                     dailyLoading,
@@ -1162,15 +1169,10 @@ class _HomePageState extends State<HomePage> {
               ),
 
               // ==================================================
-              // INFORMATION CARD
-              // ==================================================
+              // INFORMATION CARD REMOVED
               //
-              // POISTETTU HOME-SIVULTA.
-              //
-              // Stelluriini-tiedot siirretään seuraavaksi:
-              //
-              // lib/pages/about/
-              //
+              // Tiedot Stelluriinistä ovat nyt
+              // About Stelluriini -sivulla.
               // ==================================================
 
               const SizedBox(height: 30),
