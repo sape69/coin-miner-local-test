@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/cat_avatar.dart';
 
@@ -6,10 +8,69 @@ const Color tokenBackgroundColor = Color(0xFF0B1112);
 const Color tokenCardColor = Color(0xFF151B1C);
 const Color tokenAccentColor = Color(0xFF35D0A0);
 
+/// Stelluriini official Solana Mint Address.
+const String stlMintAddress =
+    'AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas';
+
 class StlTokenPage extends StatelessWidget {
   const StlTokenPage({
     super.key,
   });
+
+  // ==========================================================
+  // COPY MINT ADDRESS
+  // ==========================================================
+
+  Future<void> _copyAddress(BuildContext context) async {
+    await Clipboard.setData(
+      const ClipboardData(
+        text: stlMintAddress,
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Mint Address copied! 🐱',
+          ),
+        ),
+      );
+  }
+
+  // ==========================================================
+  // OPEN SOLANA EXPLORER
+  // ==========================================================
+
+  Future<void> _openExplorer(BuildContext context) async {
+    final uri = Uri.parse(
+      'https://explorer.solana.com/address/$stlMintAddress',
+    );
+
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not open Solana Explorer.',
+            ),
+          ),
+        );
+    }
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +277,7 @@ class StlTokenPage extends StatelessWidget {
                   const SizedBox(height: 18),
 
                   Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: tokenAccentColor.withValues(
@@ -234,8 +296,7 @@ class StlTokenPage extends StatelessWidget {
 
                         Expanded(
                           child: Text(
-                            'Fixed total supply: '
-                            '17 602 539 062 STL',
+                            'Total supply: 17 602 539 062 STL',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -253,62 +314,18 @@ class StlTokenPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // ==================================================
-            // TOKENOMICS
-            // ==================================================
-
-            _SectionCard(
-              title: 'Tokenomics',
-              icon: Icons.pie_chart_outline,
-              child: Column(
-                children: [
-                  _TokenomicsRow(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'Total Supply',
-                    value: '17 602 539 062 STL',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _TokenomicsRow(
-                    icon: Icons.lock_outline,
-                    title: 'Supply Type',
-                    value: 'Fixed',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _TokenomicsRow(
-                    icon: Icons.account_tree_outlined,
-                    title: 'Network',
-                    value: 'Solana',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _TokenomicsRow(
-                    icon: Icons.numbers,
-                    title: 'Decimals',
-                    value: '9',
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ==================================================
             // TOKEN ADDRESS
             // ==================================================
 
             _SectionCard(
-              title: 'Token Address',
+              title: 'Official Mint Address',
               icon: Icons.vpn_key_outlined,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'The official STL token mint address will '
-                    'appear here when it is available.',
+                    'This is the official public Mint Address '
+                    'for the Stelluriini token on Solana.',
                     style: TextStyle(
                       color: Colors.white.withValues(
                         alpha: 0.65,
@@ -325,35 +342,129 @@ class StlTokenPage extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(
-                        alpha: 0.20,
+                        alpha: 0.22,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.orangeAccent.withValues(
-                          alpha: 0.30,
+                        color: tokenAccentColor.withValues(
+                          alpha: 0.25,
                         ),
                       ),
                     ),
-                    child: const Column(
-                      children: [
-                        Icon(
-                          Icons.hourglass_top,
-                          color: Colors.orangeAccent,
-                          size: 28,
-                        ),
-
-                        SizedBox(height: 10),
-
-                        Text(
-                          'COMING SOON',
-                          style: TextStyle(
-                            color: Colors.orangeAccent,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ],
+                    child: const SelectableText(
+                      stlMintAddress,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: tokenAccentColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _copyAddress(context);
+                      },
+                      icon: const Icon(
+                        Icons.copy_outlined,
+                      ),
+                      label: const Text(
+                        'COPY MINT ADDRESS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: tokenAccentColor,
+                        foregroundColor: tokenBackgroundColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        _openExplorer(context);
+                      },
+                      icon: const Icon(
+                        Icons.open_in_new,
+                      ),
+                      label: const Text(
+                        'OPEN SOLANA EXPLORER',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: tokenAccentColor,
+                        side: const BorderSide(
+                          color: tokenAccentColor,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ==================================================
+            // TOKENOMICS
+            // ==================================================
+
+            _SectionCard(
+              title: 'Tokenomics',
+              icon: Icons.pie_chart_outline,
+              child: const Column(
+                children: [
+                  _TokenomicsRow(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'Total Supply',
+                    value: '17 602 539 062 STL',
+                  ),
+
+                  SizedBox(height: 12),
+
+                  _TokenomicsRow(
+                    icon: Icons.account_tree_outlined,
+                    title: 'Network',
+                    value: 'Solana',
+                  ),
+
+                  SizedBox(height: 12),
+
+                  _TokenomicsRow(
+                    icon: Icons.numbers,
+                    title: 'Decimals',
+                    value: '9',
+                  ),
+
+                  SizedBox(height: 12),
+
+                  _TokenomicsRow(
+                    icon: Icons.token_outlined,
+                    title: 'Symbol',
+                    value: 'STL',
                   ),
                 ],
               ),
@@ -490,12 +601,15 @@ class _TokenInfoRow extends StatelessWidget {
           ),
         ),
 
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
