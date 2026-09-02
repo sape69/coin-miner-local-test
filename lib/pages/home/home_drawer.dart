@@ -144,8 +144,6 @@ class HomeDrawer extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // PAWS
-
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
@@ -165,8 +163,6 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // STELLA AVATAR
-
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -177,9 +173,7 @@ class HomeDrawer extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: accentColor.withValues(
-                            alpha: 0.25,
-                          ),
+                          color: accentColor.withValues(alpha: 0.25),
                           blurRadius: 18,
                           spreadRadius: 2,
                         ),
@@ -264,20 +258,22 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
+                  // WHITE PAPER - NOW AVAILABLE
+
                   _menuItem(
                     icon: Icons.description_outlined,
                     title: 'White Paper',
-                    badge: 'SOON',
                     onTap: () {
                       Navigator.pop(context);
                       onWhitePaperPressed();
                     },
                   ),
 
+                  // ROADMAP - NOW AVAILABLE
+
                   _menuItem(
                     icon: Icons.map_outlined,
                     title: 'Roadmap',
-                    badge: 'SOON',
                     onTap: () {
                       Navigator.pop(context);
                       onRoadmapPressed();
