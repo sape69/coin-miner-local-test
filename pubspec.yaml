@@ -15,6 +15,9 @@ dependencies:
   # Local storage
   shared_preferences: ^2.5.3
 
+  # Open links and Solana Explorer
+  url_launcher: ^6.3.1
+
   # Google AdMob
   google_mobile_ads: ^6.0.0
 
@@ -44,7 +47,6 @@ flutter_launcher_icons:
   android: true
   ios: false
 
-  # Stelluriini logo app icon
   image_path: "assets/images/stelluriini_logo.png"
 
   adaptive_icon_background: "#0B1112"
