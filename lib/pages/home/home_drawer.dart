@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/cat_avatar.dart';
 
+// ============================================================
+// COLORS
+// ============================================================
+
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
+
+// ============================================================
+// HOME DRAWER
+// ============================================================
 
 class HomeDrawer extends StatelessWidget {
   final VoidCallback onLanguagePressed;
@@ -52,6 +60,7 @@ class HomeDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
+                // ICON
                 Container(
                   width: 44,
                   height: 44,
@@ -70,6 +79,7 @@ class HomeDrawer extends StatelessWidget {
 
                 const SizedBox(width: 14),
 
+                // TITLE
                 Expanded(
                   child: Text(
                     title,
@@ -81,6 +91,7 @@ class HomeDrawer extends StatelessWidget {
                   ),
                 ),
 
+                // OPTIONAL BADGE
                 if (badge != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -132,7 +143,7 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             // ==================================================
-            // STELLA HEADER
+            // STELLURIINI HEADER
             // ==================================================
 
             Container(
@@ -162,6 +173,8 @@ class HomeDrawer extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  // TOP PAWS
+
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
@@ -184,6 +197,8 @@ class HomeDrawer extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 8),
+
+                  // CAT AVATAR
 
                   Container(
                     padding: const EdgeInsets.all(4),
@@ -210,6 +225,8 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
+                  // TITLE
+
                   const Text(
                     'STELLURIINI',
                     style: TextStyle(
@@ -222,6 +239,8 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
+                  // SOLANA BADGE
+
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -231,7 +250,9 @@ class HomeDrawer extends StatelessWidget {
                       color: accentColor.withValues(
                         alpha: 0.10,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ),
                     ),
                     child: const Text(
                       '🐾 STL • SOLANA 🐾',
@@ -307,7 +328,6 @@ class HomeDrawer extends StatelessWidget {
                       Navigator.pop(context);
                       onTokenomicsPressed();
                     },
-                    badge: 'NEW',
                   ),
 
                   // ============================================
@@ -335,6 +355,10 @@ class HomeDrawer extends StatelessWidget {
                       onRoadmapPressed();
                     },
                   ),
+
+                  // ============================================
+                  // DIVIDER
+                  // ============================================
 
                   const Padding(
                     padding: EdgeInsets.symmetric(
