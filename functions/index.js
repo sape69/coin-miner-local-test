@@ -46,6 +46,14 @@ const AD_COOLDOWN_MS =
 
 
 // ============================================================
+// TRANSACTION HISTORY SETTINGS
+// ============================================================
+
+// Kuinka monta viimeisintä tapahtumaa palautetaan.
+const MAX_TRANSACTION_HISTORY = 50;
+
+
+// ============================================================
 // GET UTC DATE
 // ============================================================
 
@@ -100,6 +108,18 @@ function calculateDailyReward(streak) {
 
 
 // ============================================================
+// GET USER TRANSACTIONS COLLECTION
+// ============================================================
+
+function getTransactionsCollection(uid) {
+  return db
+    .collection("users")
+    .doc(uid)
+    .collection("transactions");
+}
+
+
+// ============================================================
 // DAILY CHECK-IN
 // ============================================================
 
@@ -130,9 +150,15 @@ exports.dailyCheckIn =
     const yesterday =
       getYesterdayUtcDateString();
 
+    // Päivittäiselle palkinnolle käytetään
+    // samaa ID:tä per päivä.
+    const transactionRef =
+      getTransactionsCollection(uid)
+        .doc(`daily_${today}`);
+
 
     // ========================================================
-    // TRANSACTION
+    // FIRESTORE TRANSACTION
     // ========================================================
 
     const result =
@@ -186,15 +212,7 @@ exports.dailyCheckIn =
 
           // ==================================================
           // CALCULATE NEW STREAK
-          // ==================================================
-          //
-          // Jos viimeisin palkinto oli eilen:
-          // streak jatkuu.
-          //
-          // Jos päivä jäi välistä:
-          // streak alkaa uudestaan päivästä 1.
-          //
-          // ==================================================
+          // ========================================================
 
           let newStreak;
 
@@ -206,7 +224,6 @@ exports.dailyCheckIn =
           }
 
 
-          // Maksimi streak UI:ta varten on 7.
           if (
             newStreak >
             MAX_DAILY_REWARD
@@ -236,7 +253,7 @@ exports.dailyCheckIn =
 
 
           // ==================================================
-          // UPDATE FIRESTORE
+          // UPDATE USER
           // ==================================================
 
           transaction.set(
@@ -256,6 +273,40 @@ exports.dailyCheckIn =
             },
             {
               merge: true,
+            }
+          );
+
+
+          // ==================================================
+          // SAVE TRANSACTION HISTORY
+          // ==================================================
+
+          transaction.set(
+            transactionRef,
+            {
+              type:
+                "daily_reward",
+
+              title:
+                "Daily Reward",
+
+              amount:
+                reward,
+
+              balanceAfter:
+                newBalance,
+
+              streak:
+                newStreak,
+
+              source:
+                "daily_check_in",
+
+              date:
+                today,
+
+              createdAt:
+                FieldValue.serverTimestamp(),
             }
           );
 
@@ -348,7 +399,6 @@ exports.getRewardStatus =
       );
 
 
-    // Jos päivä jäi välistä, näytetään uusi streak.
     if (
       lastDaily !== today &&
       lastDaily !== yesterday
@@ -466,10 +516,135 @@ exports.getRewardStatus =
 
 
 // ============================================================
+// GET TRANSACTION HISTORY
+// ============================================================
+//
+// Palauttaa käyttäjän viimeisimmät STL-tapahtumat.
+//
+// ============================================================
+
+exports.getTransactionHistory =
+  onCall(async (request) => {
+
+    // ========================================================
+    // AUTH CHECK
+    // ========================================================
+
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Käyttäjän täytyy olla kirjautunut."
+      );
+    }
+
+    const uid =
+      request.auth.uid;
+
+
+    // ========================================================
+    // LOAD TRANSACTIONS
+    // ========================================================
+
+    const snapshot =
+      await getTransactionsCollection(uid)
+        .orderBy(
+          "createdAt",
+          "desc"
+        )
+        .limit(
+          MAX_TRANSACTION_HISTORY
+        )
+        .get();
+
+
+    // ========================================================
+    // FORMAT TRANSACTIONS
+    // ========================================================
+
+    const transactions =
+      snapshot.docs.map(
+        (doc) => {
+
+          const data =
+            doc.data();
+
+          let createdAt = null;
+
+          if (
+            data.createdAt &&
+            typeof data.createdAt.toDate ===
+              "function"
+          ) {
+            createdAt =
+              data.createdAt
+                .toDate()
+                .toISOString();
+          }
+
+
+          return {
+            id:
+              doc.id,
+
+            type:
+              String(
+                data.type || ""
+              ),
+
+            title:
+              String(
+                data.title || ""
+              ),
+
+            amount:
+              Number(
+                data.amount || 0
+              ),
+
+            balanceAfter:
+              Number(
+                data.balanceAfter || 0
+              ),
+
+            source:
+              String(
+                data.source || ""
+              ),
+
+            date:
+              String(
+                data.date || ""
+              ),
+
+            streak:
+              Number(
+                data.streak || 0
+              ),
+
+            createdAt:
+              createdAt,
+          };
+        }
+      );
+
+
+    // ========================================================
+    // RETURN
+    // ========================================================
+
+    return {
+      transactions:
+        transactions,
+    };
+  });
+
+
+// ============================================================
 // TEST AD REWARD
 //
 // DEVELOPMENT ONLY!
 // Used with Google's test rewarded ad.
+//
 // ============================================================
 
 exports.testAdReward =
@@ -499,9 +674,14 @@ exports.testAdReward =
     const today =
       getUtcDateString();
 
+    // Luodaan uusi tapahtuma-ID.
+    const transactionRef =
+      getTransactionsCollection(uid)
+        .doc();
+
 
     // ========================================================
-    // TRANSACTION
+    // FIRESTORE TRANSACTION
     // ========================================================
 
     const result =
@@ -649,6 +829,37 @@ exports.testAdReward =
 
 
           // ==================================================
+          // SAVE TRANSACTION HISTORY
+          // ==================================================
+
+          transaction.set(
+            transactionRef,
+            {
+              type:
+                "ad_reward",
+
+              title:
+                "Watch Ad Reward",
+
+              amount:
+                AD_REWARD,
+
+              balanceAfter:
+                newBalance,
+
+              source:
+                "test_ad",
+
+              date:
+                today,
+
+              createdAt:
+                FieldValue.serverTimestamp(),
+            }
+          );
+
+
+          // ==================================================
           // RETURN RESULT
           // ==================================================
 
@@ -676,6 +887,7 @@ exports.testAdReward =
 // ADMOB SSV
 //
 // Future production use.
+//
 // ============================================================
 
 const ADMOB_KEYS_URL =
@@ -1064,6 +1276,13 @@ exports.adMobReward =
               transactionIdString
             );
 
+        // Käyttäjän oma tapahtumahistoria.
+        const historyRef =
+          getTransactionsCollection(uid)
+            .doc(
+              `admob_${transactionIdString}`
+            );
+
 
         const now =
           new Date();
@@ -1233,7 +1452,7 @@ exports.adMobReward =
 
 
               // ==================================================
-              // SAVE TRANSACTION
+              // SAVE ADMOB TRANSACTION
               // ==================================================
 
               transaction.set(
@@ -1247,6 +1466,40 @@ exports.adMobReward =
 
                   reward:
                     AD_REWARD,
+
+                  createdAt:
+                    FieldValue.serverTimestamp(),
+                }
+              );
+
+
+              // ==================================================
+              // SAVE USER HISTORY
+              // ==================================================
+
+              transaction.set(
+                historyRef,
+                {
+                  type:
+                    "ad_reward",
+
+                  title:
+                    "Ad Reward",
+
+                  amount:
+                    AD_REWARD,
+
+                  balanceAfter:
+                    newBalance,
+
+                  source:
+                    "admob_ssv",
+
+                  date:
+                    today,
+
+                  adMobTransactionId:
+                    transactionIdString,
 
                   createdAt:
                     FieldValue.serverTimestamp(),
