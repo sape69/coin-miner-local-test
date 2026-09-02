@@ -10,6 +10,8 @@ import '../cat_facts.dart';
 import '../localization.dart';
 
 import 'about/about_page.dart';
+import 'token/stl_token_page.dart';
+
 import 'home/balance_card.dart';
 import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
@@ -17,14 +19,12 @@ import 'home/home_drawer.dart';
 import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
-import 'token/stl_token_page.dart';
 
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
 /// Googlen virallinen Rewarded Ad TEST-ID.
-/// Vaihda myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -451,7 +451,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // DAILY CHECK-IN
+  // DAILY CLAIM
   // ==========================================================
 
   Future<void> _dailyClaim() async {
@@ -553,8 +553,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (!mounted) return;
-
     setState(() {
       dailyAdLoading = true;
     });
@@ -606,8 +604,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (dailyLoading ||
-        dailyAdLoading) {
+    if (dailyLoading || dailyAdLoading) {
       return;
     }
 
@@ -689,8 +686,7 @@ class _HomePageState extends State<HomePage> {
     final nextAdTime =
         lastAdTime!.add(adCooldown);
 
-    return !DateTime.now()
-        .isBefore(nextAdTime);
+    return !DateTime.now().isBefore(nextAdTime);
   }
 
   // ==========================================================
@@ -769,8 +765,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (!mounted) return;
-
     setState(() {
       adLoading = true;
     });
@@ -813,7 +807,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // CLAIM AD REWARD
+  // CLAIM TEST AD REWARD
   // ==========================================================
 
   Future<void> _claimTestAdReward() async {
@@ -1030,7 +1024,7 @@ class _HomePageState extends State<HomePage> {
   // OPEN STL TOKEN PAGE
   // ==========================================================
 
-  void _openStlTokenPage() {
+  void _openTokenPage() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) =>
@@ -1057,8 +1051,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final factIndex =
-        DateTime.now().day %
-            catFacts.length;
+        DateTime.now().day % catFacts.length;
 
     final fact =
         catFacts[factIndex].text(
@@ -1110,7 +1103,7 @@ class _HomePageState extends State<HomePage> {
 
         // STL TOKEN PAGE
         onTokenPressed:
-            _openStlTokenPage,
+            _openTokenPage,
 
         onRoadmapPressed: () {
           _comingSoon(
@@ -1153,19 +1146,11 @@ class _HomePageState extends State<HomePage> {
             padding:
                 const EdgeInsets.all(16),
             children: [
-              // ==================================================
-              // PROFILE
-              // ==================================================
-
               ProfileCard(
                 title: t.get('stella'),
               ),
 
               const SizedBox(height: 14),
-
-              // ==================================================
-              // BALANCE
-              // ==================================================
 
               BalanceCard(
                 stl: stl,
@@ -1176,10 +1161,6 @@ class _HomePageState extends State<HomePage> {
               ),
 
               const SizedBox(height: 14),
-
-              // ==================================================
-              // DAILY REWARD
-              // ==================================================
 
               DailyRewardCard(
                 title:
@@ -1203,10 +1184,6 @@ class _HomePageState extends State<HomePage> {
               ),
 
               const SizedBox(height: 14),
-
-              // ==================================================
-              // WATCH AD
-              // ==================================================
 
               WatchAdCard(
                 title:
@@ -1242,10 +1219,6 @@ class _HomePageState extends State<HomePage> {
               ),
 
               const SizedBox(height: 14),
-
-              // ==================================================
-              // CAT FACT
-              // ==================================================
 
               CatFactCard(
                 title:
