@@ -10,8 +10,6 @@ import '../cat_facts.dart';
 import '../localization.dart';
 
 import 'about/about_page.dart';
-import 'token/stl_token_page.dart';
-
 import 'home/balance_card.dart';
 import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
@@ -19,14 +17,30 @@ import 'home/home_drawer.dart';
 import 'home/language_dialog.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
+import 'roadmap/roadmap_page.dart';
+import 'token/stl_token_page.dart';
+
+// ============================================================
+// COLORS
+// ============================================================
 
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
+// ============================================================
+// ADMOB
+// ============================================================
+
 /// Googlen virallinen Rewarded Ad TEST-ID.
+///
+/// Vaihda myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
+
+// ============================================================
+// REWARD SETTINGS
+// ============================================================
 
 /// Maksimimäärä mainoksia päivässä.
 const int maxAdsPerDay = 5;
@@ -36,6 +50,10 @@ const int maxDailyReward = 7;
 
 /// Mainosten välinen odotusaika.
 const Duration adCooldown = Duration(hours: 1);
+
+// ============================================================
+// HOME PAGE
+// ============================================================
 
 class HomePage extends StatefulWidget {
   final String languageCode;
@@ -50,6 +68,10 @@ class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
 }
+
+// ============================================================
+// HOME PAGE STATE
+// ============================================================
 
 class _HomePageState extends State<HomePage> {
   // ==========================================================
@@ -234,16 +256,13 @@ class _HomePageState extends State<HomePage> {
     }
 
     try {
-      final callable =
-          functions.httpsCallable(
+      final callable = functions.httpsCallable(
         'getRewardStatus',
       );
 
-      final result =
-          await callable.call();
+      final result = await callable.call();
 
-      final data =
-          Map<String, dynamic>.from(
+      final data = Map<String, dynamic>.from(
         result.data as Map,
       );
 
@@ -318,7 +337,7 @@ class _HomePageState extends State<HomePage> {
         lastAdTime = loadedLastAdTime;
         loading = false;
       });
-    } on FirebaseFunctionsException catch (_) {
+    } on FirebaseFunctionsException {
       await _loadLocalCache();
     } catch (_) {
       await _loadLocalCache();
@@ -424,9 +443,7 @@ class _HomePageState extends State<HomePage> {
 
     if (lastAdString.isNotEmpty) {
       loadedLastAdTime =
-          DateTime.tryParse(
-        lastAdString,
-      );
+          DateTime.tryParse(lastAdString);
     }
 
     if (!mounted) return;
@@ -451,7 +468,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // DAILY CLAIM
+  // DAILY CHECK-IN
   // ==========================================================
 
   Future<void> _dailyClaim() async {
@@ -553,6 +570,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    if (!mounted) return;
+
     setState(() {
       dailyAdLoading = true;
     });
@@ -573,7 +592,9 @@ class _HomePageState extends State<HomePage> {
             dailyAdLoading = false;
           });
         },
-        onAdFailedToLoad: (LoadAdError error) {
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
           if (!mounted) return;
 
           setState(() {
@@ -642,14 +663,19 @@ class _HomePageState extends State<HomePage> {
           await _dailyClaim();
         } else {
           _message(
-            'Katso mainos loppuun saadaksesi päivittäisen palkinnon.',
+            'Katso mainos loppuun saadaksesi '
+            'päivittäisen palkinnon.',
           );
         }
 
         _loadDailyRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent:
-          (RewardedAd failedAd, AdError error) {
+          (
+        RewardedAd failedAd,
+        AdError error,
+      ) {
         failedAd.dispose();
 
         if (!mounted) return;
@@ -668,7 +694,10 @@ class _HomePageState extends State<HomePage> {
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
+          (
+        AdWithoutView ad,
+        RewardItem reward,
+      ) {
         earnedReward = true;
       },
     );
@@ -686,7 +715,8 @@ class _HomePageState extends State<HomePage> {
     final nextAdTime =
         lastAdTime!.add(adCooldown);
 
-    return !DateTime.now().isBefore(nextAdTime);
+    return !DateTime.now()
+        .isBefore(nextAdTime);
   }
 
   // ==========================================================
@@ -702,7 +732,9 @@ class _HomePageState extends State<HomePage> {
         lastAdTime!.add(adCooldown);
 
     final remaining =
-        nextAdTime.difference(DateTime.now());
+        nextAdTime.difference(
+      DateTime.now(),
+    );
 
     if (remaining.isNegative) {
       return Duration.zero;
@@ -765,6 +797,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    if (!mounted) return;
+
     setState(() {
       adLoading = true;
     });
@@ -774,7 +808,9 @@ class _HomePageState extends State<HomePage> {
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
           if (!mounted) {
             ad.dispose();
             return;
@@ -785,7 +821,10 @@ class _HomePageState extends State<HomePage> {
             adLoading = false;
           });
         },
-        onAdFailedToLoad: (LoadAdError error) {
+
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
           if (!mounted) return;
 
           setState(() {
@@ -807,10 +846,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // CLAIM TEST AD REWARD
+  // CLAIM AD REWARD
   // ==========================================================
 
-  Future<void> _claimTestAdReward() async {
+  Future<void> _claimAdReward() async {
     try {
       final callable =
           functions.httpsCallable(
@@ -899,7 +938,8 @@ class _HomePageState extends State<HomePage> {
 
     if (rewardedAd == null) {
       _message(
-        'Mainosta ladataan. Yritä hetken kuluttua.',
+        'Mainosta ladataan. '
+        'Yritä hetken kuluttua.',
       );
 
       _loadRewardedAd();
@@ -917,17 +957,23 @@ class _HomePageState extends State<HomePage> {
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent:
-          (RewardedAd dismissedAd) async {
+          (
+        RewardedAd dismissedAd,
+      ) async {
         dismissedAd.dispose();
 
         if (earnedReward) {
-          await _claimTestAdReward();
+          await _claimAdReward();
         }
 
         _loadRewardedAd();
       },
+
       onAdFailedToShowFullScreenContent:
-          (RewardedAd failedAd, AdError error) {
+          (
+        RewardedAd failedAd,
+        AdError error,
+      ) {
         failedAd.dispose();
 
         if (!mounted) return;
@@ -942,7 +988,10 @@ class _HomePageState extends State<HomePage> {
 
     ad.show(
       onUserEarnedReward:
-          (AdWithoutView ad, RewardItem reward) {
+          (
+        AdWithoutView ad,
+        RewardItem reward,
+      ) {
         earnedReward = true;
       },
     );
@@ -973,7 +1022,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // LANGUAGE DIALOG
+  // LANGUAGE
   // ==========================================================
 
   void _openLanguageDialog() {
@@ -987,6 +1036,45 @@ class _HomePageState extends State<HomePage> {
               widget.changeLanguage,
         );
       },
+    );
+  }
+
+  // ==========================================================
+  // ABOUT PAGE
+  // ==========================================================
+
+  void _openAboutPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const AboutPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // STL TOKEN PAGE
+  // ==========================================================
+
+  void _openTokenPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const StlTokenPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // ROADMAP PAGE
+  // ==========================================================
+
+  void _openRoadmapPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const RoadmapPage(),
+      ),
     );
   }
 
@@ -1008,32 +1096,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // OPEN ABOUT PAGE
-  // ==========================================================
-
-  void _openAboutPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            const AboutPage(),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // OPEN STL TOKEN PAGE
-  // ==========================================================
-
-  void _openTokenPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            const StlTokenPage(),
-      ),
-    );
-  }
-
-  // ==========================================================
   // BUILD
   // ==========================================================
 
@@ -1051,7 +1113,8 @@ class _HomePageState extends State<HomePage> {
     }
 
     final factIndex =
-        DateTime.now().day % catFacts.length;
+        DateTime.now().day %
+            catFacts.length;
 
     final fact =
         catFacts[factIndex].text(
@@ -1101,15 +1164,11 @@ class _HomePageState extends State<HomePage> {
           );
         },
 
-        // STL TOKEN PAGE
         onTokenPressed:
             _openTokenPage,
 
-        onRoadmapPressed: () {
-          _comingSoon(
-            'Roadmap',
-          );
-        },
+        onRoadmapPressed:
+            _openRoadmapPage,
       ),
 
       // ======================================================
@@ -1124,6 +1183,7 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
+
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
@@ -1146,11 +1206,19 @@ class _HomePageState extends State<HomePage> {
             padding:
                 const EdgeInsets.all(16),
             children: [
+              // ==============================================
+              // PROFILE
+              // ==============================================
+
               ProfileCard(
                 title: t.get('stella'),
               ),
 
               const SizedBox(height: 14),
+
+              // ==============================================
+              // BALANCE
+              // ==============================================
 
               BalanceCard(
                 stl: stl,
@@ -1162,21 +1230,32 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
+              // ==============================================
+              // DAILY REWARD
+              // ==============================================
+
               DailyRewardCard(
                 title:
                     t.get('dailyClaim'),
+
                 rewardText:
                     _dailyRewardText(),
+
                 streakText:
                     _dailyStreakText(),
+
                 dailyLoading:
                     dailyLoading,
+
                 dailyAdLoading:
                     dailyAdLoading,
+
                 dailyClaimed:
                     dailyClaimed,
+
                 adReady:
                     dailyRewardedAd != null,
+
                 onPressed:
                     dailyButtonEnabled
                         ? _showDailyRewardAd
@@ -1185,33 +1264,49 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
+              // ==============================================
+              // WATCH AD
+              // ==============================================
+
               WatchAdCard(
                 title:
                     t.get('watchEarn'),
+
                 dailyLimitText:
                     t.get('dailyLimit'),
+
                 adsToday:
                     adsToday,
+
                 maxAdsPerDay:
                     maxAdsPerDay,
+
                 canWatch:
                     canWatch,
+
                 nextAdText:
                     nextAdText,
+
                 adLoading:
                     adLoading,
+
                 adReady:
                     rewardedAd != null,
+
                 loadingText:
                     t.get('adLoading'),
+
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
+
                 unavailableText:
                     t.get('adUnavailable'),
+
                 watchButtonText:
                     t.get('watchAd'),
+
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
@@ -1219,6 +1314,10 @@ class _HomePageState extends State<HomePage> {
               ),
 
               const SizedBox(height: 14),
+
+              // ==============================================
+              // CAT FACT
+              // ==============================================
 
               CatFactCard(
                 title:
