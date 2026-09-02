@@ -2,15 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/cat_avatar.dart';
 
+// ============================================================
+// COLORS
+// ============================================================
+
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
+
+// ============================================================
+// HOME DRAWER
+// ============================================================
 
 class HomeDrawer extends StatelessWidget {
   final VoidCallback onLanguagePressed;
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onTokenPressed;
+  final VoidCallback onTokenomicsPressed;
   final VoidCallback onRoadmapPressed;
 
   const HomeDrawer({
@@ -19,8 +28,13 @@ class HomeDrawer extends StatelessWidget {
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
     required this.onTokenPressed,
+    required this.onTokenomicsPressed,
     required this.onRoadmapPressed,
   });
+
+  // ==========================================================
+  // MENU ITEM
+  // ==========================================================
 
   Widget _menuItem({
     required IconData icon,
@@ -80,15 +94,15 @@ class HomeDrawer extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.orangeAccent.withValues(
-                        alpha: 0.15,
+                      color: accentColor.withValues(
+                        alpha: 0.12,
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       badge,
                       style: const TextStyle(
-                        color: Colors.orangeAccent,
+                        color: accentColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -100,7 +114,9 @@ class HomeDrawer extends StatelessWidget {
 
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: Colors.white.withValues(alpha: 0.25),
+                  color: Colors.white.withValues(
+                    alpha: 0.25,
+                  ),
                 ),
               ],
             ),
@@ -110,10 +126,15 @@ class HomeDrawer extends StatelessWidget {
     );
   }
 
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: backgroundColor,
+
       child: SafeArea(
         child: Column(
           children: [
@@ -150,12 +171,16 @@ class HomeDrawer extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.pets,
-                        color: accentColor.withValues(alpha: 0.35),
+                        color: accentColor.withValues(
+                          alpha: 0.35,
+                        ),
                         size: 25,
                       ),
                       Icon(
                         Icons.pets,
-                        color: accentColor.withValues(alpha: 0.35),
+                        color: accentColor.withValues(
+                          alpha: 0.35,
+                        ),
                         size: 25,
                       ),
                     ],
@@ -173,7 +198,9 @@ class HomeDrawer extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: accentColor.withValues(alpha: 0.25),
+                          color: accentColor.withValues(
+                            alpha: 0.25,
+                          ),
                           blurRadius: 18,
                           spreadRadius: 2,
                         ),
@@ -204,7 +231,9 @@ class HomeDrawer extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.10),
+                      color: accentColor.withValues(
+                        alpha: 0.10,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -232,6 +261,10 @@ class HomeDrawer extends StatelessWidget {
                   bottom: 8,
                 ),
                 children: [
+                  // ==============================================
+                  // HOME
+                  // ==============================================
+
                   _menuItem(
                     icon: Icons.home_outlined,
                     title: 'Home',
@@ -239,6 +272,10 @@ class HomeDrawer extends StatelessWidget {
                       Navigator.pop(context);
                     },
                   ),
+
+                  // ==============================================
+                  // ABOUT
+                  // ==============================================
 
                   _menuItem(
                     icon: Icons.pets_outlined,
@@ -249,6 +286,10 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
+                  // ==============================================
+                  // STL TOKEN
+                  // ==============================================
+
                   _menuItem(
                     icon: Icons.monetization_on_outlined,
                     title: 'STL Token',
@@ -258,7 +299,23 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // WHITE PAPER - NOW AVAILABLE
+                  // ==============================================
+                  // TOKENOMICS
+                  // ==============================================
+
+                  _menuItem(
+                    icon: Icons.pie_chart_outline_rounded,
+                    title: 'Tokenomics',
+                    badge: 'NEW',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTokenomicsPressed();
+                    },
+                  ),
+
+                  // ==============================================
+                  // WHITE PAPER
+                  // ==============================================
 
                   _menuItem(
                     icon: Icons.description_outlined,
@@ -269,7 +326,9 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ROADMAP - NOW AVAILABLE
+                  // ==============================================
+                  // ROADMAP
+                  // ==============================================
 
                   _menuItem(
                     icon: Icons.map_outlined,
@@ -289,6 +348,10 @@ class HomeDrawer extends StatelessWidget {
                       color: Colors.white24,
                     ),
                   ),
+
+                  // ==============================================
+                  // LANGUAGE
+                  // ==============================================
 
                   _menuItem(
                     icon: Icons.language,
@@ -331,10 +394,10 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  Text(
-                    '17,602,539,062 STL',
+                  const Text(
+                    '17 602 539 062 STL',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -345,7 +408,9 @@ class HomeDrawer extends StatelessWidget {
                   Text(
                     'Community-driven • Solana',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.38),
+                      color: Colors.white.withValues(
+                        alpha: 0.38,
+                      ),
                       fontSize: 11,
                     ),
                   ),
