@@ -2,17 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/cat_avatar.dart';
 
-// ============================================================
-// COLORS
-// ============================================================
-
 const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
-
-// ============================================================
-// HOME DRAWER
-// ============================================================
 
 class HomeDrawer extends StatelessWidget {
   final VoidCallback onLanguagePressed;
@@ -64,7 +56,9 @@ class HomeDrawer extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
+                    color: accentColor.withValues(
+                      alpha: 0.12,
+                    ),
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(
@@ -94,15 +88,15 @@ class HomeDrawer extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: accentColor.withValues(
-                        alpha: 0.12,
+                      color: Colors.orangeAccent.withValues(
+                        alpha: 0.15,
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       badge,
                       style: const TextStyle(
-                        color: accentColor,
+                        color: Colors.orangeAccent,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -134,7 +128,6 @@ class HomeDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: backgroundColor,
-
       child: SafeArea(
         child: Column(
           children: [
@@ -153,11 +146,15 @@ class HomeDrawer extends StatelessWidget {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: accentColor.withValues(alpha: 0.30),
+                  color: accentColor.withValues(
+                    alpha: 0.30,
+                  ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: accentColor.withValues(alpha: 0.08),
+                    color: accentColor.withValues(
+                      alpha: 0.08,
+                    ),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -261,9 +258,9 @@ class HomeDrawer extends StatelessWidget {
                   bottom: 8,
                 ),
                 children: [
-                  // ==============================================
+                  // ============================================
                   // HOME
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.home_outlined,
@@ -273,9 +270,9 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ==============================================
+                  // ============================================
                   // ABOUT
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.pets_outlined,
@@ -286,9 +283,9 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ==============================================
+                  // ============================================
                   // STL TOKEN
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.monetization_on_outlined,
@@ -299,23 +296,23 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ==============================================
+                  // ============================================
                   // TOKENOMICS
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.pie_chart_outline_rounded,
                     title: 'Tokenomics',
-                    badge: 'NEW',
                     onTap: () {
                       Navigator.pop(context);
                       onTokenomicsPressed();
                     },
+                    badge: 'NEW',
                   ),
 
-                  // ==============================================
+                  // ============================================
                   // WHITE PAPER
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.description_outlined,
@@ -326,9 +323,9 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ==============================================
+                  // ============================================
                   // ROADMAP
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.map_outlined,
@@ -349,9 +346,9 @@ class HomeDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // ==============================================
+                  // ============================================
                   // LANGUAGE
-                  // ==============================================
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.language,
@@ -377,7 +374,9 @@ class HomeDrawer extends StatelessWidget {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: accentColor.withValues(alpha: 0.12),
+                  color: accentColor.withValues(
+                    alpha: 0.12,
+                  ),
                 ),
               ),
               child: Column(
@@ -394,10 +393,12 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  const Text(
+                  Text(
                     '17 602 539 062 STL',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.white.withValues(
+                        alpha: 0.75,
+                      ),
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
