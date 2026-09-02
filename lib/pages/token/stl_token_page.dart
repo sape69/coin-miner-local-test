@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/cat_avatar.dart';
 
@@ -14,6 +15,10 @@ class StlTokenPage extends StatelessWidget {
   const StlTokenPage({
     super.key,
   });
+
+  // ============================================================
+  // COPY TOKEN ADDRESS
+  // ============================================================
 
   void _copyAddress(BuildContext context) {
     Clipboard.setData(
@@ -31,6 +36,50 @@ class StlTokenPage extends StatelessWidget {
           ),
         ),
       );
+  }
+
+  // ============================================================
+  // OPEN SOLANA EXPLORER
+  // ============================================================
+
+  Future<void> _openSolanaExplorer(
+    BuildContext context,
+  ) async {
+    final Uri explorerUrl = Uri.parse(
+      'https://explorer.solana.com/address/'
+      '$stlMintAddress',
+    );
+
+    try {
+      final launched = await launchUrl(
+        explorerUrl,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Could not open Solana Explorer.',
+              ),
+            ),
+          );
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not open Solana Explorer.',
+            ),
+          ),
+        );
+    }
   }
 
   @override
@@ -351,11 +400,16 @@ class StlTokenPage extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
+                    // ==========================================
+                    // COPY ADDRESS BUTTON
+                    // ==========================================
+
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: () => _copyAddress(context),
+                        onPressed: () =>
+                            _copyAddress(context),
                         icon: const Icon(
                           Icons.copy_outlined,
                         ),
@@ -367,10 +421,52 @@ class StlTokenPage extends StatelessWidget {
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tokenAccentColor,
-                          foregroundColor: tokenBackgroundColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                          backgroundColor:
+                              tokenAccentColor,
+                          foregroundColor:
+                              tokenBackgroundColor,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // ==========================================
+                    // SOLANA EXPLORER BUTTON
+                    // ==========================================
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            _openSolanaExplorer(context),
+                        icon: const Icon(
+                          Icons.open_in_new,
+                        ),
+                        label: const Text(
+                          'OPEN IN SOLANA EXPLORER',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor:
+                              tokenAccentColor,
+                          side: BorderSide(
+                            color: tokenAccentColor
+                                .withValues(alpha: 0.70),
+                          ),
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(16),
                           ),
                         ),
                       ),
@@ -391,7 +487,8 @@ class StlTokenPage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
@@ -414,10 +511,11 @@ class StlTokenPage extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     Text(
-                      'STL shown inside the Stelluriini application '
-                      'currently represents virtual in-app points. '
-                      'These points are not automatically connected '
-                      'to a withdrawable cryptocurrency balance.',
+                      'STL shown inside the Stelluriini '
+                      'application currently represents virtual '
+                      'in-app points. These points are not '
+                      'automatically connected to a withdrawable '
+                      'cryptocurrency balance.',
                       style: TextStyle(
                         color: Colors.white.withValues(
                           alpha: 0.60,
