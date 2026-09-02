@@ -22,6 +22,9 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onTokenomicsPressed;
   final VoidCallback onRoadmapPressed;
 
+  // NEW
+  final VoidCallback onTransactionHistoryPressed;
+
   const HomeDrawer({
     super.key,
     required this.onLanguagePressed,
@@ -30,6 +33,9 @@ class HomeDrawer extends StatelessWidget {
     required this.onTokenPressed,
     required this.onTokenomicsPressed,
     required this.onRoadmapPressed,
+
+    // NEW
+    required this.onTransactionHistoryPressed,
   });
 
   // ==========================================================
@@ -60,7 +66,6 @@ class HomeDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // ICON
                 Container(
                   width: 44,
                   height: 44,
@@ -79,7 +84,6 @@ class HomeDrawer extends StatelessWidget {
 
                 const SizedBox(width: 14),
 
-                // TITLE
                 Expanded(
                   child: Text(
                     title,
@@ -91,7 +95,6 @@ class HomeDrawer extends StatelessWidget {
                   ),
                 ),
 
-                // OPTIONAL BADGE
                 if (badge != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -173,8 +176,6 @@ class HomeDrawer extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // TOP PAWS
-
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
@@ -197,8 +198,6 @@ class HomeDrawer extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 8),
-
-                  // CAT AVATAR
 
                   Container(
                     padding: const EdgeInsets.all(4),
@@ -225,8 +224,6 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  // TITLE
-
                   const Text(
                     'STELLURIINI',
                     style: TextStyle(
@@ -239,8 +236,6 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
-                  // SOLANA BADGE
-
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -250,9 +245,8 @@ class HomeDrawer extends StatelessWidget {
                       color: accentColor.withValues(
                         alpha: 0.10,
                       ),
-                      borderRadius: BorderRadius.circular(
-                        20,
-                      ),
+                      borderRadius:
+                          BorderRadius.circular(20),
                     ),
                     child: const Text(
                       '🐾 STL • SOLANA 🐾',
@@ -279,10 +273,6 @@ class HomeDrawer extends StatelessWidget {
                   bottom: 8,
                 ),
                 children: [
-                  // ============================================
-                  // HOME
-                  // ============================================
-
                   _menuItem(
                     icon: Icons.home_outlined,
                     title: 'Home',
@@ -291,9 +281,14 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ============================================
-                  // ABOUT
-                  // ============================================
+                  _menuItem(
+                    icon: Icons.history_rounded,
+                    title: 'Transaction History',
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTransactionHistoryPressed();
+                    },
+                  ),
 
                   _menuItem(
                     icon: Icons.pets_outlined,
@@ -304,12 +299,9 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ============================================
-                  // STL TOKEN
-                  // ============================================
-
                   _menuItem(
-                    icon: Icons.monetization_on_outlined,
+                    icon:
+                        Icons.monetization_on_outlined,
                     title: 'STL Token',
                     onTap: () {
                       Navigator.pop(context);
@@ -317,22 +309,15 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ============================================
-                  // TOKENOMICS
-                  // ============================================
-
                   _menuItem(
-                    icon: Icons.pie_chart_outline_rounded,
+                    icon:
+                        Icons.pie_chart_outline_rounded,
                     title: 'Tokenomics',
                     onTap: () {
                       Navigator.pop(context);
                       onTokenomicsPressed();
                     },
                   ),
-
-                  // ============================================
-                  // WHITE PAPER
-                  // ============================================
 
                   _menuItem(
                     icon: Icons.description_outlined,
@@ -343,10 +328,6 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // ============================================
-                  // ROADMAP
-                  // ============================================
-
                   _menuItem(
                     icon: Icons.map_outlined,
                     title: 'Roadmap',
@@ -355,10 +336,6 @@ class HomeDrawer extends StatelessWidget {
                       onRoadmapPressed();
                     },
                   ),
-
-                  // ============================================
-                  // DIVIDER
-                  // ============================================
 
                   const Padding(
                     padding: EdgeInsets.symmetric(
@@ -369,10 +346,6 @@ class HomeDrawer extends StatelessWidget {
                       color: Colors.white24,
                     ),
                   ),
-
-                  // ============================================
-                  // LANGUAGE
-                  // ============================================
 
                   _menuItem(
                     icon: Icons.language,
