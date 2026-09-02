@@ -7,6 +7,10 @@ const Color accentColor = Color(0xFF35D0A0);
 class WhitePaperPage extends StatelessWidget {
   const WhitePaperPage({super.key});
 
+  // ============================================================
+  // SECTION
+  // ============================================================
+
   Widget _section({
     required IconData icon,
     required String title,
@@ -60,6 +64,10 @@ class WhitePaperPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // PARAGRAPH
+  // ============================================================
+
   Widget _paragraph(String text) {
     return Text(
       text,
@@ -71,6 +79,10 @@ class WhitePaperPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // BULLET
+  // ============================================================
+
   Widget _bullet(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -78,11 +90,11 @@ class WhitePaperPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.only(top: 5),
+            padding: EdgeInsets.only(top: 4),
             child: Icon(
-              Icons.pets,
+              Icons.check_circle_rounded,
               color: accentColor,
-              size: 16,
+              size: 17,
             ),
           ),
           const SizedBox(width: 10),
@@ -101,13 +113,18 @@ class WhitePaperPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // TOKEN INFORMATION ROW
+  // ============================================================
+
   Widget _tokenRow(
     String title,
     String value,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Text(
@@ -118,12 +135,16 @@ class WhitePaperPage extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: accentColor,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: accentColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -131,10 +152,29 @@ class WhitePaperPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // DIVIDER
+  // ============================================================
+
+  Widget _divider() {
+    return Divider(
+      color: Colors.white.withValues(alpha: 0.08),
+      height: 1,
+    );
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
+
+      // ========================================================
+      // APP BAR
+      // ========================================================
 
       appBar: AppBar(
         backgroundColor: cardColor,
@@ -153,16 +193,20 @@ class WhitePaperPage extends StatelessWidget {
         ),
       ),
 
+      // ========================================================
+      // BODY
+      // ========================================================
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ==========================================
+
+              // ==================================================
               // HEADER
-              // ==========================================
+              // ==================================================
 
               Container(
                 width: double.infinity,
@@ -212,7 +256,7 @@ class WhitePaperPage extends StatelessWidget {
                     const SizedBox(height: 8),
 
                     Text(
-                      'White Paper • STL • Solana',
+                      'Official White Paper • STL • Solana',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 14,
@@ -244,44 +288,66 @@ class WhitePaperPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // ==========================================
-              // INTRODUCTION
-              // ==========================================
+              // ==================================================
+              // EXECUTIVE SUMMARY
+              // ==================================================
+
+              _section(
+                icon: Icons.article_rounded,
+                title: 'Executive Summary',
+                child: _paragraph(
+                  'Stelluriini (STL) is a community-focused digital token '
+                  'built on the Solana blockchain. The project combines a '
+                  'recognizable cat-themed identity with the goal of building '
+                  'a growing digital ecosystem and an engaged community.',
+                ),
+              ),
+
+              // ==================================================
+              // WHAT IS STELLURIINI
+              // ==================================================
 
               _section(
                 icon: Icons.pets_rounded,
                 title: 'What is Stelluriini?',
                 child: _paragraph(
-                  'Stelluriini (STL) is a community-driven token built on '
-                  'the Solana blockchain. The project is inspired by Stella, '
-                  'a curious cat and the heart of the Stelluriini community.',
+                  'Stelluriini is a community-driven token created on the '
+                  'Solana blockchain. The project is inspired by Stella, '
+                  'a curious cat whose identity represents the playful, '
+                  'friendly and community-oriented spirit of the project.',
                 ),
               ),
 
-              // ==========================================
+              // ==================================================
               // VISION
-              // ==========================================
+              // ==================================================
 
               _section(
                 icon: Icons.visibility_rounded,
-                title: 'Our Vision',
+                title: 'Vision',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'The vision of Stelluriini is to create a fun, friendly '
-                      'and community-focused digital ecosystem around STL.',
+                      'The long-term vision of Stelluriini is to develop '
+                      'a recognizable digital ecosystem where community, '
+                      'technology and entertainment can come together.',
                     ),
+
                     const SizedBox(height: 16),
+
                     _bullet(
-                      'Build a welcoming community around Stelluriini.',
+                      'Build a strong and welcoming Stelluriini community.',
                     ),
+
                     _bullet(
-                      'Develop useful and entertaining digital experiences.',
+                      'Develop useful digital applications and experiences.',
                     ),
+
                     _bullet(
-                      'Create a recognizable identity around Stella.',
+                      'Create entertaining projects and games.',
                     ),
+
                     _bullet(
                       'Explore future opportunities within the Solana ecosystem.',
                     ),
@@ -289,13 +355,13 @@ class WhitePaperPage extends StatelessWidget {
                 ),
               ),
 
-              // ==========================================
-              // TOKEN
-              // ==========================================
+              // ==================================================
+              // TOKEN INFORMATION
+              // ==================================================
 
               _section(
                 icon: Icons.monetization_on_rounded,
-                title: 'STL Token',
+                title: 'Token Information',
                 child: Column(
                   children: [
                     _tokenRow(
@@ -303,39 +369,108 @@ class WhitePaperPage extends StatelessWidget {
                       'Stelluriini',
                     ),
 
-                    Divider(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
+                    _divider(),
 
                     _tokenRow(
                       'Symbol',
                       'STL',
                     ),
 
-                    Divider(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
+                    _divider(),
 
                     _tokenRow(
                       'Blockchain',
                       'Solana',
                     ),
 
-                    Divider(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
+                    _divider(),
 
                     _tokenRow(
-                      'Type',
+                      'Token Type',
                       'Community Token',
+                    ),
+
+                    _divider(),
+
+                    _tokenRow(
+                      'Total Supply',
+                      '17,602,539,062 STL',
                     ),
                   ],
                 ),
               ),
 
-              // ==========================================
+              // ==================================================
+              // TOKEN SUPPLY
+              // ==================================================
+
+              _section(
+                icon: Icons.account_balance_wallet_rounded,
+                title: 'Token Supply',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _paragraph(
+                      'The total supply of Stelluriini is fixed at '
+                      '17,602,539,062 STL tokens.',
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: accentColor.withValues(alpha: 0.20),
+                        ),
+                      ),
+                      child: const Column(
+                        children: [
+                          Text(
+                            'TOTAL SUPPLY',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+
+                          SizedBox(height: 12),
+
+                          Text(
+                            '17,602,539,062',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 27,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          SizedBox(height: 5),
+
+                          Text(
+                            'STL',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ==================================================
               // COMMUNITY
-              // ==========================================
+              // ==================================================
 
               _section(
                 icon: Icons.groups_rounded,
@@ -344,17 +479,21 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'The Stelluriini project is built around the idea that '
-                      'a strong community is an important part of every '
-                      'successful ecosystem.',
+                      'Community participation is an important part of the '
+                      'Stelluriini ecosystem. The project aims to develop '
+                      'through community interest, feedback and participation.',
                     ),
+
                     const SizedBox(height: 16),
+
                     _bullet(
                       'Community participation and feedback.',
                     ),
+
                     _bullet(
-                      'A friendly and recognizable cat-themed identity.',
+                      'A friendly and recognizable project identity.',
                     ),
+
                     _bullet(
                       'Future development based on community interest.',
                     ),
@@ -362,9 +501,9 @@ class WhitePaperPage extends StatelessWidget {
                 ),
               ),
 
-              // ==========================================
+              // ==================================================
               // STELLA
-              // ==========================================
+              // ==================================================
 
               _section(
                 icon: Icons.favorite_rounded,
@@ -374,10 +513,12 @@ class WhitePaperPage extends StatelessWidget {
                   children: [
                     _paragraph(
                       'Stella is the inspiration behind Stelluriini. '
-                      'Her curious personality and cat-themed identity '
-                      'represent the playful spirit of the project.',
+                      'Her curious personality represents exploration, '
+                      'playfulness and the unique identity of the project.',
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 18),
+
                     Center(
                       child: Text(
                         '🐱 🐾 STELLA 🐾 🐱',
@@ -393,33 +534,95 @@ class WhitePaperPage extends StatelessWidget {
                 ),
               ),
 
-              // ==========================================
-              // FUTURE
-              // ==========================================
+              // ==================================================
+              // FUTURE ECOSYSTEM
+              // ==================================================
 
               _section(
-                icon: Icons.rocket_launch_rounded,
-                title: 'The Future',
+                icon: Icons.hub_rounded,
+                title: 'Future Ecosystem',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'Stelluriini is designed as a growing project. '
-                      'Future development may include new community features, '
-                      'applications, games and other digital experiences.',
+                      'The Stelluriini project is designed with the potential '
+                      'to expand into a broader digital ecosystem over time.',
                     ),
+
                     const SizedBox(height: 16),
-                    _bullet('Community growth.'),
-                    _bullet('Application development.'),
-                    _bullet('Games and digital experiences.'),
-                    _bullet('Expansion of the Stelluriini ecosystem.'),
+
+                    _bullet(
+                      'Community-focused features.',
+                    ),
+
+                    _bullet(
+                      'Mobile applications.',
+                    ),
+
+                    _bullet(
+                      'Games and digital experiences.',
+                    ),
+
+                    _bullet(
+                      'Additional ecosystem integrations.',
+                    ),
+
+                    _bullet(
+                      'Future development based on resources and community interest.',
+                    ),
                   ],
                 ),
               ),
 
-              // ==========================================
+              // ==================================================
+              // DEVELOPMENT DIRECTION
+              // ==================================================
+
+              _section(
+                icon: Icons.rocket_launch_rounded,
+                title: 'Development Direction',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _paragraph(
+                      'Stelluriini is intended to develop gradually. '
+                      'Future milestones may evolve depending on technical '
+                      'development, community growth and available resources.',
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _bullet('Community development.'),
+
+                    _bullet('Expansion of the digital ecosystem.'),
+
+                    _bullet('Development of applications and games.'),
+
+                    _bullet(
+                      'Exploration of new opportunities on Solana.',
+                    ),
+                  ],
+                ),
+              ),
+
+              // ==================================================
+              // TRANSPARENCY
+              // ==================================================
+
+              _section(
+                icon: Icons.verified_rounded,
+                title: 'Transparency',
+                child: _paragraph(
+                  'Stelluriini aims to communicate important project '
+                  'developments clearly to its community. Future information '
+                  'and updates may be published through the official '
+                  'communication channels of the project.',
+                ),
+              ),
+
+              // ==================================================
               // DISCLAIMER
-              // ==========================================
+              // ==================================================
 
               Container(
                 width: double.infinity,
@@ -454,9 +657,9 @@ class WhitePaperPage extends StatelessWidget {
 
                     Text(
                       'This White Paper is provided for informational '
-                      'purposes only. Nothing in this document should be '
-                      'considered financial or investment advice. '
-                      'Cryptocurrency involves risk.',
+                      'purposes only. Nothing in this document constitutes '
+                      'financial, investment, legal or tax advice. '
+                      'Cryptocurrencies and digital assets involve risk.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.65),
