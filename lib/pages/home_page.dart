@@ -19,6 +19,7 @@ import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
 import 'roadmap/roadmap_page.dart';
 import 'token/stl_token_page.dart';
+import 'whitepaper/whitepaper_page.dart';
 
 // ============================================================
 // COLORS
@@ -33,7 +34,6 @@ const Color accentColor = Color(0xFF35D0A0);
 // ============================================================
 
 /// Googlen virallinen Rewarded Ad TEST-ID.
-///
 /// Vaihda myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
@@ -450,10 +450,7 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       today = currentToday;
-
-      stl =
-          prefs.getInt('stl_balance') ?? 0;
-
+      stl = prefs.getInt('stl_balance') ?? 0;
       streak = loadedStreak;
       adsToday = loadedAds;
 
@@ -1053,6 +1050,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // WHITE PAPER PAGE
+  // ==========================================================
+
+  void _openWhitePaperPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const WhitePaperPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
   // STL TOKEN PAGE
   // ==========================================================
 
@@ -1075,23 +1085,6 @@ class _HomePageState extends State<HomePage> {
         builder: (context) =>
             const RoadmapPage(),
       ),
-    );
-  }
-
-  // ==========================================================
-  // COMING SOON
-  // ==========================================================
-
-  void _comingSoon(String pageName) {
-    Future.delayed(
-      const Duration(milliseconds: 250),
-      () {
-        if (!mounted) return;
-
-        _message(
-          '$pageName – Coming Soon 🚀',
-        );
-      },
     );
   }
 
@@ -1158,11 +1151,8 @@ class _HomePageState extends State<HomePage> {
         onAboutPressed:
             _openAboutPage,
 
-        onWhitePaperPressed: () {
-          _comingSoon(
-            'White Paper',
-          );
-        },
+        onWhitePaperPressed:
+            _openWhitePaperPage,
 
         onTokenPressed:
             _openTokenPage,
