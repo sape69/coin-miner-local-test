@@ -80,8 +80,7 @@ class AboutPage extends StatelessWidget {
               child: const Padding(
                 padding: EdgeInsets.all(20),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -104,90 +103,13 @@ class AboutPage extends StatelessWidget {
                     SizedBox(height: 16),
 
                     Text(
-                      'Stelluriini is a community-driven '
-                      'token built around a curious cat and '
-                      'an ambitious community.',
+                      'Stelluriini is a community-driven project '
+                      'built around a curious cat and an ambitious '
+                      'community.',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
                         height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ==================================================
-            // STL TOKEN
-            // ==================================================
-
-            Card(
-              color: aboutCardColor,
-              child: const Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.monetization_on_outlined,
-                          color: aboutAccentColor,
-                          size: 30,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'STL Token',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 16),
-
-                    Text(
-                      'Symbol: STL',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    Text(
-                      'Blockchain: Solana',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    Text(
-                      'Total Supply: 17,602,539,062 STL',
-                      style: TextStyle(
-                        color: aboutAccentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    Text(
-                      'Decimals: 9',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
                       ),
                     ),
                   ],
@@ -206,8 +128,7 @@ class AboutPage extends StatelessWidget {
               child: const Padding(
                 padding: EdgeInsets.all(20),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -230,10 +151,9 @@ class AboutPage extends StatelessWidget {
                     SizedBox(height: 16),
 
                     Text(
-                      'Stelluriini is designed to grow '
-                      'together with its community. '
-                      'The project focuses on community, '
-                      'fun and the future of STL.',
+                      'Stelluriini is designed to grow together '
+                      'with its community. The project focuses on '
+                      'community, fun and the future of STL.',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
@@ -256,8 +176,7 @@ class AboutPage extends StatelessWidget {
               child: const Padding(
                 padding: EdgeInsets.all(20),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -280,10 +199,10 @@ class AboutPage extends StatelessWidget {
                     SizedBox(height: 16),
 
                     Text(
-                      'STL shown inside this application '
-                      'currently represents virtual in-app '
-                      'points and is not automatically a '
-                      'withdrawable cryptocurrency balance.',
+                      'STL shown inside this application currently '
+                      'represents virtual in-app points and is not '
+                      'automatically a withdrawable cryptocurrency '
+                      'balance.',
                       style: TextStyle(
                         color: Colors.white60,
                         fontSize: 15,
