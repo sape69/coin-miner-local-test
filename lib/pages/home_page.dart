@@ -19,6 +19,7 @@ import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
 import 'roadmap/roadmap_page.dart';
 import 'token/stl_token_page.dart';
+import 'tokenomics/tokenomics_page.dart';
 import 'whitepaper/whitepaper_page.dart';
 
 // ============================================================
@@ -453,13 +454,10 @@ class _HomePageState extends State<HomePage> {
       stl = prefs.getInt('stl_balance') ?? 0;
       streak = loadedStreak;
       adsToday = loadedAds;
-
       dailyClaimed =
           loadedLastDaily == currentToday;
-
       lastDaily = loadedLastDaily;
       lastAdTime = loadedLastAdTime;
-
       loading = false;
     });
   }
@@ -667,7 +665,6 @@ class _HomePageState extends State<HomePage> {
 
         _loadDailyRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent:
           (
         RewardedAd failedAd,
@@ -752,9 +749,7 @@ class _HomePageState extends State<HomePage> {
       return '';
     }
 
-    final hours =
-        remaining.inHours;
-
+    final hours = remaining.inHours;
     final minutes =
         remaining.inMinutes.remainder(60);
 
@@ -818,7 +813,6 @@ class _HomePageState extends State<HomePage> {
             adLoading = false;
           });
         },
-
         onAdFailedToLoad: (
           LoadAdError error,
         ) {
@@ -965,7 +959,6 @@ class _HomePageState extends State<HomePage> {
 
         _loadRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent:
           (
         RewardedAd failedAd,
@@ -1076,6 +1069,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // TOKENOMICS PAGE
+  // ==========================================================
+
+  void _openTokenomicsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const TokenomicsPage(),
+      ),
+    );
+  }
+
+  // ==========================================================
   // ROADMAP PAGE
   // ==========================================================
 
@@ -1157,6 +1163,9 @@ class _HomePageState extends State<HomePage> {
         onTokenPressed:
             _openTokenPage,
 
+        onTokenomicsPressed:
+            _openTokenomicsPage,
+
         onRoadmapPressed:
             _openRoadmapPage,
       ),
@@ -1173,7 +1182,6 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
-
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
@@ -1227,25 +1235,18 @@ class _HomePageState extends State<HomePage> {
               DailyRewardCard(
                 title:
                     t.get('dailyClaim'),
-
                 rewardText:
                     _dailyRewardText(),
-
                 streakText:
                     _dailyStreakText(),
-
                 dailyLoading:
                     dailyLoading,
-
                 dailyAdLoading:
                     dailyAdLoading,
-
                 dailyClaimed:
                     dailyClaimed,
-
                 adReady:
                     dailyRewardedAd != null,
-
                 onPressed:
                     dailyButtonEnabled
                         ? _showDailyRewardAd
@@ -1261,42 +1262,30 @@ class _HomePageState extends State<HomePage> {
               WatchAdCard(
                 title:
                     t.get('watchEarn'),
-
                 dailyLimitText:
                     t.get('dailyLimit'),
-
                 adsToday:
                     adsToday,
-
                 maxAdsPerDay:
                     maxAdsPerDay,
-
                 canWatch:
                     canWatch,
-
                 nextAdText:
                     nextAdText,
-
                 adLoading:
                     adLoading,
-
                 adReady:
                     rewardedAd != null,
-
                 loadingText:
                     t.get('adLoading'),
-
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
-
                 unavailableText:
                     t.get('adUnavailable'),
-
                 watchButtonText:
                     t.get('watchAd'),
-
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
