@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 // COLORS
 // ============================================================
 
+const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color balanceAccentColor = Color(0xFF35D0A0);
 
@@ -14,20 +15,19 @@ const Color balanceAccentColor = Color(0xFF35D0A0);
 class BalanceCard extends StatelessWidget {
   final String title;
 
-  /// Kokonaismäärä:
-  /// Mining Balance + Unclaimed Mining
+  /// Kokonaismäärä tällä hetkellä.
   final double estimatedTotal;
 
-  /// Firestoreen jo tallennettu louhittu määrä.
+  /// Jo louhittu ja tallennettu määrä.
   final double miningBalance;
 
-  /// Tällä hetkellä louhittu mutta vielä claimamatta oleva määrä.
+  /// Vielä lunastamaton louhinta.
   final double unclaimedMining;
 
-  /// Käyttäjän nykyinen Hash Rate.
+  /// Nykyinen Hash Rate.
   final double hashRate;
 
-  /// Louhintanopeus tunnissa.
+  /// Louhinta tunnissa.
   final double miningPerHour;
 
   const BalanceCard({
@@ -44,11 +44,16 @@ class BalanceCard extends StatelessWidget {
   // NUMBER FORMAT
   // ==========================================================
 
-  String _formatNumber(
-    double value, {
-    int decimals = 2,
-  }) {
-    return value.toStringAsFixed(decimals);
+  String _formatNumber(double value) {
+    if (value >= 1000000) {
+      return value.toStringAsFixed(0);
+    }
+
+    if (value >= 1000) {
+      return value.toStringAsFixed(1);
+    }
+
+    return value.toStringAsFixed(2);
   }
 
   // ==========================================================
@@ -60,17 +65,14 @@ class BalanceCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
-
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(24),
-
         border: Border.all(
           color: balanceAccentColor.withValues(
-            alpha: 0.25,
+            alpha: 0.28,
           ),
         ),
-
         boxShadow: [
           BoxShadow(
             color: balanceAccentColor.withValues(
@@ -82,7 +84,6 @@ class BalanceCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
         children: [
           // ==================================================
@@ -90,14 +91,11 @@ class BalanceCard extends StatelessWidget {
           // ==================================================
 
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
                 '🐱',
-                style: TextStyle(
-                  fontSize: 28,
-                ),
+                style: TextStyle(fontSize: 26),
               ),
 
               const SizedBox(width: 10),
@@ -108,7 +106,7 @@ class BalanceCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(
-                      alpha: 0.70,
+                      alpha: 0.72,
                     ),
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -121,9 +119,7 @@ class BalanceCard extends StatelessWidget {
 
               const Text(
                 '⛏️',
-                style: TextStyle(
-                  fontSize: 24,
-                ),
+                style: TextStyle(fontSize: 24),
               ),
             ],
           ),
@@ -137,38 +133,31 @@ class BalanceCard extends StatelessWidget {
           Container(
             width: 86,
             height: 86,
-
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-
               color: balanceAccentColor.withValues(
                 alpha: 0.15,
               ),
-
               border: Border.all(
                 color: balanceAccentColor.withValues(
-                  alpha: 0.40,
+                  alpha: 0.42,
                 ),
                 width: 2,
               ),
-
               boxShadow: [
                 BoxShadow(
                   color: balanceAccentColor.withValues(
-                    alpha: 0.20,
+                    alpha: 0.18,
                   ),
-                  blurRadius: 20,
+                  blurRadius: 22,
                   spreadRadius: 2,
                 ),
               ],
             ),
-
             child: const Center(
               child: Text(
                 '⛏️',
-                style: TextStyle(
-                  fontSize: 40,
-                ),
+                style: TextStyle(fontSize: 38),
               ),
             ),
           ),
@@ -180,15 +169,9 @@ class BalanceCard extends StatelessWidget {
           // ==================================================
 
           Text(
-            _formatNumber(
-              estimatedTotal,
-              decimals: 2,
-            ),
-
-            textAlign: TextAlign.center,
-
+            _formatNumber(estimatedTotal),
             style: const TextStyle(
-              fontSize: 48,
+              fontSize: 46,
               height: 1,
               fontWeight: FontWeight.bold,
               color: balanceAccentColor,
@@ -199,7 +182,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 8),
 
           // ==================================================
-          // ESTIMATED STL LABEL
+          // STL LABEL
           // ==================================================
 
           Container(
@@ -207,34 +190,29 @@ class BalanceCard extends StatelessWidget {
               horizontal: 18,
               vertical: 7,
             ),
-
             decoration: BoxDecoration(
               color: balanceAccentColor.withValues(
                 alpha: 0.14,
               ),
-
-              borderRadius:
-                  BorderRadius.circular(20),
-
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: balanceAccentColor.withValues(
                   alpha: 0.25,
                 ),
               ),
             ),
-
             child: const Text(
               'ESTIMATED STL',
               style: TextStyle(
                 color: balanceAccentColor,
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
           // ==================================================
           // DIVIDER
@@ -254,9 +232,9 @@ class BalanceCard extends StatelessWidget {
           // MINING BALANCE
           // ==================================================
 
-          _StatRow(
+          _MiningInfoRow(
             icon: Icons.account_balance_wallet_outlined,
-            label: 'Mining Balance',
+            label: 'Louhittu saldo',
             value:
                 '${_formatNumber(miningBalance)} STL',
           ),
@@ -267,9 +245,9 @@ class BalanceCard extends StatelessWidget {
           // UNCLAIMED MINING
           // ==================================================
 
-          _StatRow(
+          _MiningInfoRow(
             icon: Icons.inventory_2_outlined,
-            label: 'Unclaimed Mining',
+            label: 'Valmiina louhittavaksi',
             value:
                 '${_formatNumber(unclaimedMining)} STL',
             highlight: true,
@@ -281,7 +259,7 @@ class BalanceCard extends StatelessWidget {
           // HASH RATE
           // ==================================================
 
-          _StatRow(
+          _MiningInfoRow(
             icon: Icons.bolt,
             label: 'Hash Rate',
             value:
@@ -294,64 +272,49 @@ class BalanceCard extends StatelessWidget {
           // MINING SPEED
           // ==================================================
 
-          _StatRow(
+          _MiningInfoRow(
             icon: Icons.trending_up,
-            label: 'Mining Speed',
+            label: 'Louhinta nopeus',
             value:
-                '${_formatNumber(miningPerHour)} STL/h',
+                '${_formatNumber(miningPerHour)} STL / h',
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
           // ==================================================
-          // MINING ACTIVE STATUS
+          // STATUS
           // ==================================================
 
           Container(
             width: double.infinity,
-
             padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
             ),
-
             decoration: BoxDecoration(
               color: balanceAccentColor.withValues(
                 alpha: 0.08,
               ),
-
-              borderRadius:
-                  BorderRadius.circular(16),
-
-              border: Border.all(
-                color: balanceAccentColor.withValues(
-                  alpha: 0.18,
-                ),
-              ),
+              borderRadius: BorderRadius.circular(16),
             ),
-
             child: const Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.circle,
-                  color: balanceAccentColor,
                   size: 10,
+                  color: balanceAccentColor,
                 ),
 
                 SizedBox(width: 8),
 
-                Flexible(
-                  child: Text(
-                    'STELLA MINING ACTIVE 🐱⛏️',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: balanceAccentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
+                Text(
+                  'STELLA MINING ACTIVE 🐱⛏️',
+                  style: TextStyle(
+                    color: balanceAccentColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
                   ),
                 ),
               ],
@@ -364,16 +327,16 @@ class BalanceCard extends StatelessWidget {
 }
 
 // ============================================================
-// STAT ROW
+// MINING INFO ROW
 // ============================================================
 
-class _StatRow extends StatelessWidget {
+class _MiningInfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
   final bool highlight;
 
-  const _StatRow({
+  const _MiningInfoRow({
     required this.icon,
     required this.label,
     required this.value,
@@ -389,60 +352,42 @@ class _StatRow extends StatelessWidget {
 
     return Row(
       children: [
-        // ====================================================
-        // ICON
-        // ====================================================
-
         Container(
-          width: 38,
-          height: 38,
-
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: balanceAccentColor.withValues(
               alpha: 0.10,
             ),
-
-            borderRadius:
-                BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12),
           ),
-
           child: Icon(
             icon,
             color: balanceAccentColor,
-            size: 20,
+            size: 21,
           ),
         ),
 
         const SizedBox(width: 12),
 
-        // ====================================================
-        // LABEL
-        // ====================================================
-
         Expanded(
           child: Text(
             label,
-
             style: TextStyle(
               color: Colors.white.withValues(
-                alpha: 0.65,
+                alpha: 0.62,
               ),
-              fontSize: 14,
+              fontSize: 13,
             ),
           ),
         ),
 
-        const SizedBox(width: 8),
-
-        // ====================================================
-        // VALUE
-        // ====================================================
+        const SizedBox(width: 10),
 
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
-
             style: TextStyle(
               color: valueColor,
               fontSize: 14,
