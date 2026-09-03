@@ -2,6 +2,7 @@
 
 const {
   onCall,
+  onRequest,
   HttpsError,
 } = require("firebase-functions/v2/https");
 
@@ -25,6 +26,7 @@ const {
 const {
   getUserRef,
   getHistoryCollection,
+  getAdMobRewardRef,
 } = require("../utils/userUtils");
 
 const {
@@ -33,31 +35,43 @@ const {
   getMiningEndTime,
 } = require("../utils/miningUtils");
 
-
-// ============================================================
-// 📺 STELLA AD FUNCTIONS
-// ============================================================
-//
-// Testivaiheen mainosjärjestelmä.
-//
-// 📺 Mainoksen katsominen:
-// +5 Hash Rate
-//
-// 🐱 Jos Stella ei louhi:
-// Mainospalkinto käynnistää 24h Miningin.
-//
-// ============================================================
+const {
+  verifyAdMobCallback,
+} = require("../utils/admobVerifier");
 
 
 // ============================================================
-// 📺 TEST AD REWARD
+// 🐱 STELLA AD FUNCTIONS
+// ============================================================
+//
+// 📺 Stella Power Boost
+//
+// Mainoksen katsominen:
+//
+// ⚡ + Hash Rate
+// 🐱 Stella saa lisää Mining Poweria
+// ⛏️ Voi käynnistää uuden 24h Mining-jakson
+//
+// ============================================================
+
+
+// ============================================================
+// 🧪 TEST AD REWARD
+// ============================================================
+//
+// Käytetään kehityksen aikana.
+//
+// Flutter näyttää Google AdMob testimainoksen.
+// Kun mainos on katsottu onnistuneesti,
+// Flutter kutsuu tätä Firebase Functionia.
+//
 // ============================================================
 
 const testAdReward =
   onCall(async (request) => {
 
     // ========================================================
-    // AUTHENTICATION
+    // 🔐 AUTHENTICATION
     // ========================================================
 
     if (!request.auth) {
@@ -71,31 +85,35 @@ const testAdReward =
     const uid =
       request.auth.uid;
 
+
     const userRef =
       getUserRef(uid);
 
+
     const now =
       new Date();
+
 
     const today =
       getUtcDateString();
 
 
     // ========================================================
-    // FIRESTORE TRANSACTION
+    // 🔥 FIRESTORE TRANSACTION
     // ========================================================
 
     return await db.runTransaction(
       async (transaction) => {
 
         // ====================================================
-        // GET USER
+        // 👤 GET USER
         // ====================================================
 
         const snapshot =
           await transaction.get(
             userRef
           );
+
 
         const data =
           snapshot.exists
@@ -104,13 +122,14 @@ const testAdReward =
 
 
         // ====================================================
-        // ADS TODAY
+        // 📺 ADS TODAY
         // ====================================================
 
         let adsToday =
           Number(
             data.adsToday || 0
           );
+
 
         const adDate =
           String(
@@ -119,7 +138,7 @@ const testAdReward =
 
 
         // ====================================================
-        // NEW UTC DAY
+        // 📅 NEW DAY RESET
         // ====================================================
 
         if (adDate !== today) {
@@ -128,7 +147,7 @@ const testAdReward =
 
 
         // ====================================================
-        // DAILY LIMIT
+        // 🚫 DAILY LIMIT
         // ====================================================
 
         if (
@@ -143,20 +162,21 @@ const testAdReward =
 
 
         // ====================================================
-        // COOLDOWN
+        // ⏳ COOLDOWN
         // ====================================================
 
         const lastAdTimestamp =
           data.lastAdTimestamp;
+
 
         if (
           lastAdTimestamp &&
           typeof lastAdTimestamp.toDate ===
             "function"
         ) {
-
           const lastAdTime =
             lastAdTimestamp.toDate();
+
 
           const elapsed =
             now.getTime() -
@@ -167,7 +187,6 @@ const testAdReward =
             elapsed <
             AD_COOLDOWN_MS
           ) {
-
             const remainingMinutes =
               Math.ceil(
                 (
@@ -179,14 +198,14 @@ const testAdReward =
 
             throw new HttpsError(
               "failed-precondition",
-              `🐱 Stella lepää vielä ${remainingMinutes} minuuttia ennen seuraavaa Power Boostia.`
+              `🐱⏳ Stella lepää vielä ${remainingMinutes} minuuttia ennen seuraavaa Power Boostia.`
             );
           }
         }
 
 
         // ====================================================
-        // CURRENT HASH RATE
+        // ⚡ CURRENT HASH RATE
         // ====================================================
 
         const oldHashRate =
@@ -197,16 +216,20 @@ const testAdReward =
 
 
         // ====================================================
-        // NEW HASH RATE
+        // 🐱 STELLA POWER BOOST
         // ====================================================
 
-        const newHashRate =
-          oldHashRate +
+        const bonus =
           AD_HASH_RATE_BONUS;
 
 
+        const newHashRate =
+          oldHashRate +
+          bonus;
+
+
         // ====================================================
-        // NEW AD COUNT
+        // 📺 NEW AD COUNT
         // ====================================================
 
         const newAdsToday =
@@ -214,7 +237,7 @@ const testAdReward =
 
 
         // ====================================================
-        // MINING STATUS
+        // ⛏️ CURRENT MINING STATUS
         // ====================================================
 
         const miningStatus =
@@ -227,19 +250,21 @@ const testAdReward =
         let miningStartedAt =
           getMiningStartTime(data);
 
+
         let miningEndsAt =
           getMiningEndTime(data);
+
 
         let miningRestarted =
           false;
 
 
         // ====================================================
-        // 🐱 START MINING
+        // 🐱 START MINING IF NOT ACTIVE
         // ====================================================
         //
-        // Jos Stella ei tällä hetkellä louhi,
-        // mainospalkinto käynnistää uuden 24h jakson.
+        // Jos Stella ei louhi tällä hetkellä,
+        // mainos käynnistää uuden 24h louhinnan.
         //
         // ====================================================
 
@@ -248,11 +273,13 @@ const testAdReward =
           miningStartedAt =
             now;
 
+
           miningEndsAt =
             new Date(
               now.getTime() +
               MINING_DURATION_MS
             );
+
 
           miningRestarted =
             true;
@@ -260,40 +287,40 @@ const testAdReward =
 
 
         // ====================================================
-        // UPDATE USER
+        // 💾 UPDATE USER
         // ====================================================
 
         transaction.set(
           userRef,
           {
 
-            // ⚡ HASH RATE
-
+            // ⚡ New Hash Rate
             hashRate:
               newHashRate,
 
 
-            // 📺 ADS
-
+            // 📺 Ads today
             adsToday:
               newAdsToday,
 
+
+            // 📅 Ad date
             adDate:
               today,
 
+
+            // ⏱️ Last ad timestamp
             lastAdTimestamp:
               FieldValue.serverTimestamp(),
 
 
-            // ⛏️ MINING
-
+            // ⛏️ Mining cycle
             miningStartedAt,
 
             miningEndsAt,
 
 
-            // 🕒 UPDATE TIME
-
+            // ⏱️ Updated
             updatedAt:
               FieldValue.serverTimestamp(),
 
@@ -305,7 +332,7 @@ const testAdReward =
 
 
         // ====================================================
-        // HISTORY
+        // 📜 STELLA HISTORY
         // ====================================================
 
         const historyRef =
@@ -320,19 +347,25 @@ const testAdReward =
             type:
               "ad_hashrate",
 
+
             title:
               "Stella Power Boost 📺🐱⚡",
 
+
             amount:
-              AD_HASH_RATE_BONUS,
+              bonus,
+
 
             hashRateAfter:
               newHashRate,
 
+
             adsToday:
               newAdsToday,
 
+
             miningRestarted,
+
 
             createdAt:
               FieldValue.serverTimestamp(),
@@ -342,31 +375,36 @@ const testAdReward =
 
 
         // ====================================================
-        // RESPONSE
+        // 🐱 SUCCESS RESPONSE
         // ====================================================
 
         return {
 
           success: true,
 
-          bonus:
-            AD_HASH_RATE_BONUS,
+
+          bonus,
+
 
           hashRate:
             newHashRate,
 
+
           adsToday:
             newAdsToday,
+
 
           maxAdsPerDay:
             MAX_ADS_PER_DAY,
 
+
           miningRestarted,
+
 
           message:
             miningRestarted
-              ? "🐱📺⚡ Stella sai Power Boostin ja aloitti 24h louhinnan!"
-              : "🐱📺⚡ Stella sai +5 Hash Rate Power Boostin!",
+              ? `🐱📺⚡ Stella sai +${bonus} Hash Rate ja aloitti 24 tunnin louhinnan!`
+              : `🐱📺⚡ Stella sai +${bonus} Hash Rate! Louhinta jatkuu entistä nopeampana.`,
 
         };
       }
@@ -375,11 +413,539 @@ const testAdReward =
 
 
 // ============================================================
-// EXPORTS
+// 📺 ADMOB SERVER-SIDE REWARD
+// ============================================================
+//
+// Google AdMob kutsuu tätä endpointia,
+// kun käyttäjä on ansainnut palkinnon.
+//
+// 🔐 Google signature tarkistetaan
+// 🛡️ Duplicate transaction estetään
+// ⚡ Stella saa Power Boostin
+//
+// ============================================================
+
+const adMobReward =
+  onRequest(
+    {
+      region: "us-central1",
+    },
+
+    async (req, res) => {
+
+      try {
+
+        // ====================================================
+        // 🌐 ONLY GET
+        // ====================================================
+
+        if (
+          req.method !== "GET"
+        ) {
+          res
+            .status(405)
+            .send("Method Not Allowed");
+
+          return;
+        }
+
+
+        // ====================================================
+        // 🔐 VERIFY ADMOB SIGNATURE
+        // ====================================================
+
+        await verifyAdMobCallback(
+          req
+        );
+
+
+        // ====================================================
+        // 📥 PARAMETERS
+        // ====================================================
+
+        const uid =
+          String(
+            req.query.user_id || ""
+          );
+
+
+        const transactionId =
+          String(
+            req.query.transaction_id || ""
+          );
+
+
+        // ====================================================
+        // 🚫 VALIDATE USER
+        // ====================================================
+
+        if (!uid) {
+          res
+            .status(400)
+            .send("Missing user_id");
+
+          return;
+        }
+
+
+        // ====================================================
+        // 🚫 VALIDATE TRANSACTION
+        // ====================================================
+
+        if (!transactionId) {
+          res
+            .status(400)
+            .send("Missing transaction_id");
+
+          return;
+        }
+
+
+        // ====================================================
+        // 📁 FIRESTORE REFERENCES
+        // ====================================================
+
+        const userRef =
+          getUserRef(uid);
+
+
+        const rewardRef =
+          getAdMobRewardRef(
+            transactionId
+          );
+
+
+        const now =
+          new Date();
+
+
+        const today =
+          getUtcDateString();
+
+
+        // ====================================================
+        // 🔥 FIRESTORE TRANSACTION
+        // ====================================================
+
+        const result =
+          await db.runTransaction(
+            async (transaction) => {
+
+              // ==============================================
+              // 🛡️ DUPLICATE CHECK
+              // ==============================================
+
+              const rewardSnapshot =
+                await transaction.get(
+                  rewardRef
+                );
+
+
+              if (rewardSnapshot.exists) {
+
+                return {
+                  duplicate: true,
+                };
+              }
+
+
+              // ==============================================
+              // 👤 GET USER
+              // ==============================================
+
+              const userSnapshot =
+                await transaction.get(
+                  userRef
+                );
+
+
+              const data =
+                userSnapshot.exists
+                  ? userSnapshot.data()
+                  : {};
+
+
+              // ==============================================
+              // 📺 ADS TODAY
+              // ==============================================
+
+              let adsToday =
+                Number(
+                  data.adsToday || 0
+                );
+
+
+              const adDate =
+                String(
+                  data.adDate || ""
+                );
+
+
+              if (adDate !== today) {
+                adsToday = 0;
+              }
+
+
+              // ==============================================
+              // 🚫 DAILY LIMIT
+              // ==============================================
+
+              if (
+                adsToday >=
+                MAX_ADS_PER_DAY
+              ) {
+
+                return {
+                  rejected: true,
+                  reason:
+                    "daily_limit",
+                };
+              }
+
+
+              // ==============================================
+              // ⏳ COOLDOWN
+              // ==============================================
+
+              const lastAdTimestamp =
+                data.lastAdTimestamp;
+
+
+              if (
+                lastAdTimestamp &&
+                typeof lastAdTimestamp.toDate ===
+                  "function"
+              ) {
+
+                const lastAdTime =
+                  lastAdTimestamp.toDate();
+
+
+                const elapsed =
+                  now.getTime() -
+                  lastAdTime.getTime();
+
+
+                if (
+                  elapsed <
+                  AD_COOLDOWN_MS
+                ) {
+
+                  return {
+                    rejected: true,
+                    reason:
+                      "cooldown",
+                  };
+                }
+              }
+
+
+              // ==============================================
+              // ⚡ CURRENT HASH RATE
+              // ==============================================
+
+              const oldHashRate =
+                Number(
+                  data.hashRate ||
+                  DEFAULT_HASH_RATE
+                );
+
+
+              // ==============================================
+              // 🐱 STELLA POWER BOOST
+              // ==============================================
+
+              const bonus =
+                AD_HASH_RATE_BONUS;
+
+
+              const newHashRate =
+                oldHashRate +
+                bonus;
+
+
+              // ==============================================
+              // 📺 NEW AD COUNT
+              // ==============================================
+
+              const newAdsToday =
+                adsToday + 1;
+
+
+              // ==============================================
+              // ⛏️ MINING STATUS
+              // ==============================================
+
+              const miningStatus =
+                calculateMiningStatus(
+                  data,
+                  now
+                );
+
+
+              let miningStartedAt =
+                getMiningStartTime(data);
+
+
+              let miningEndsAt =
+                getMiningEndTime(data);
+
+
+              let miningRestarted =
+                false;
+
+
+              // ==============================================
+              // 🐱 START 24H MINING
+              // ==============================================
+
+              if (!miningStatus.miningActive) {
+
+                miningStartedAt =
+                  now;
+
+
+                miningEndsAt =
+                  new Date(
+                    now.getTime() +
+                    MINING_DURATION_MS
+                  );
+
+
+                miningRestarted =
+                  true;
+              }
+
+
+              // ==============================================
+              // 💾 UPDATE USER
+              // ==============================================
+
+              transaction.set(
+                userRef,
+                {
+
+                  hashRate:
+                    newHashRate,
+
+
+                  adsToday:
+                    newAdsToday,
+
+
+                  adDate:
+                    today,
+
+
+                  lastAdTimestamp:
+                    FieldValue.serverTimestamp(),
+
+
+                  miningStartedAt,
+
+                  miningEndsAt,
+
+
+                  updatedAt:
+                    FieldValue.serverTimestamp(),
+
+                },
+                {
+                  merge: true,
+                }
+              );
+
+
+              // ==============================================
+              // 💾 SAVE ADMOB TRANSACTION
+              // ==============================================
+
+              transaction.set(
+                rewardRef,
+                {
+
+                  uid,
+
+                  transactionId,
+
+
+                  adUnit:
+                    String(
+                      req.query.ad_unit || ""
+                    ),
+
+
+                  adNetwork:
+                    String(
+                      req.query.ad_network || ""
+                    ),
+
+
+                  rewardAmount:
+                    String(
+                      req.query.reward_amount || ""
+                    ),
+
+
+                  rewardItem:
+                    String(
+                      req.query.reward_item || ""
+                    ),
+
+
+                  timestamp:
+                    String(
+                      req.query.timestamp || ""
+                    ),
+
+
+                  createdAt:
+                    FieldValue.serverTimestamp(),
+
+                }
+              );
+
+
+              // ==============================================
+              // 📜 HISTORY
+              // ==============================================
+
+              const historyRef =
+                getHistoryCollection(uid)
+                  .doc();
+
+
+              transaction.set(
+                historyRef,
+                {
+
+                  type:
+                    "ad_hashrate",
+
+
+                  title:
+                    "Stella Power Boost 📺🐱⚡",
+
+
+                  amount:
+                    bonus,
+
+
+                  hashRateAfter:
+                    newHashRate,
+
+
+                  adsToday:
+                    newAdsToday,
+
+
+                  miningRestarted,
+
+
+                  admobTransactionId:
+                    transactionId,
+
+
+                  createdAt:
+                    FieldValue.serverTimestamp(),
+
+                }
+              );
+
+
+              // ==============================================
+              // 🐱 SUCCESS
+              // ==============================================
+
+              return {
+
+                success: true,
+
+
+                bonus,
+
+
+                hashRate:
+                  newHashRate,
+
+
+                adsToday:
+                  newAdsToday,
+
+
+                miningRestarted,
+
+              };
+            }
+          );
+
+
+        // ====================================================
+        // 🛡️ DUPLICATE RESPONSE
+        // ====================================================
+
+        if (result.duplicate) {
+
+          res
+            .status(200)
+            .send("Duplicate ignored");
+
+          return;
+        }
+
+
+        // ====================================================
+        // 🚫 REJECTED RESPONSE
+        // ====================================================
+
+        if (result.rejected) {
+
+          res
+            .status(200)
+            .send(
+              `Reward rejected: ${result.reason}`
+            );
+
+          return;
+        }
+
+
+        // ====================================================
+        // 🐱 SUCCESS RESPONSE
+        // ====================================================
+
+        res
+          .status(200)
+          .send(
+            "🐱 Stella Power Boost processed successfully!"
+          );
+
+      } catch (error) {
+
+        console.error(
+          "🐱 AdMob reward error:",
+          error
+        );
+
+
+        res
+          .status(400)
+          .send(
+            "Invalid reward callback"
+          );
+      }
+    }
+  );
+
+
+// ============================================================
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
 
   testAdReward,
+
+  adMobReward,
 
 };
