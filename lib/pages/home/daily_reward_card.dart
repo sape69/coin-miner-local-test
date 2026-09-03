@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color accentColor = Color(0xFF35D0A0);
+// ============================================================
+// COLORS
+// ============================================================
+
+const Color dailyCardColor = Color(0xFF151B1C);
+const Color dailyAccentColor = Color(0xFF35D0A0);
+
+// ============================================================
+// DAILY REWARD CARD
+// ============================================================
 
 class DailyRewardCard extends StatelessWidget {
   final String title;
@@ -28,58 +35,42 @@ class DailyRewardCard extends StatelessWidget {
     required this.onPressed,
   });
 
-  String get _buttonText {
-    if (dailyClaimed) {
-      return '✓ CLAIMED';
-    }
-
-    if (dailyLoading) {
-      return 'CLAIMING...';
-    }
-
-    if (dailyAdLoading || !adReady) {
-      return 'LOADING AD...';
-    }
-
-    return 'CLAIM REWARD';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isDisabled =
-        dailyClaimed ||
-        dailyLoading ||
-        dailyAdLoading ||
-        !adReady ||
-        onPressed == null;
-
     final isLoading =
         dailyLoading || dailyAdLoading;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(22),
+        color: dailyCardColor,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.20),
-          width: 1,
+          color: dailyAccentColor.withValues(
+            alpha: 0.25,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.20),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: dailyAccentColor.withValues(
+              alpha: 0.06,
+            ),
+            blurRadius: 20,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
+
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.stretch,
         children: [
-          // ==================================================
+
+          // ================================================
           // HEADER
-          // ==================================================
+          // ================================================
 
           Row(
             children: [
@@ -87,14 +78,21 @@ class DailyRewardCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
+                  shape: BoxShape.circle,
+                  color: dailyAccentColor.withValues(
+                    alpha: 0.15,
+                  ),
+                  border: Border.all(
+                    color: dailyAccentColor.withValues(
+                      alpha: 0.35,
+                    ),
+                  ),
                 ),
                 child: const Center(
                   child: Text(
-                    '🐱',
+                    '⚡',
                     style: TextStyle(
-                      fontSize: 30,
+                      fontSize: 26,
                     ),
                   ),
                 ),
@@ -103,40 +101,139 @@ class DailyRewardCard extends StatelessWidget {
               const SizedBox(width: 14),
 
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+
+                    Text(
+                      title.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      'Boost Stella’s mining power 🐱⛏️',
+                      style: TextStyle(
+                        color: Colors.white.withValues(
+                          alpha: 0.55,
+                        ),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
+              // ============================================
+              // CLAIMED STATUS
+              // ============================================
+
+              if (dailyClaimed)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: dailyAccentColor.withValues(
+                      alpha: 0.15,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    '✓ DONE',
+                    style: TextStyle(
+                      color: dailyAccentColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
-          // ==================================================
-          // REWARD
-          // ==================================================
+          // ================================================
+          // REWARD BOX
+          // ================================================
 
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.black.withValues(
+                alpha: 0.18,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withValues(
+                  alpha: 0.06,
+                ),
+              ),
             ),
+
             child: Row(
               children: [
+
                 const Text(
-                  '✨',
+                  '🎁',
                   style: TextStyle(
-                    fontSize: 25,
+                    fontSize: 28,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: Text(
+                    rewardText,
+                    style: const TextStyle(
+                      color: dailyAccentColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ================================================
+          // STREAK
+          // ================================================
+
+          Container(
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(
+                alpha: 0.035,
+              ),
+              borderRadius:
+                  BorderRadius.circular(16),
+            ),
+
+            child: Row(
+              children: [
+
+                const Text(
+                  '🔥',
+                  style: TextStyle(
+                    fontSize: 20,
                   ),
                 ),
 
@@ -144,154 +241,133 @@ class DailyRewardCard extends StatelessWidget {
 
                 Expanded(
                   child: Text(
-                    rewardText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
+                    streakText,
+                    style: TextStyle(
+                      color: Colors.white.withValues(
+                        alpha: 0.75,
+                      ),
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
-                  ),
-                ),
-
-                const Text(
-                  '🐾',
-                  style: TextStyle(
-                    fontSize: 24,
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
 
-          // ==================================================
-          // STREAK
-          // ==================================================
+          // ================================================
+          // CLAIM BUTTON
+          // ================================================
+
+          SizedBox(
+            width: double.infinity,
+
+            child: ElevatedButton.icon(
+              onPressed:
+                  isLoading || dailyClaimed
+                      ? null
+                      : onPressed,
+
+              icon:
+                  isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : Icon(
+                          dailyClaimed
+                              ? Icons.check_circle
+                              : Icons.bolt,
+                        ),
+
+              label: Text(
+                isLoading
+                    ? 'LOADING...'
+                    : dailyClaimed
+                        ? 'CLAIMED TODAY'
+                        : 'CLAIM + HASH RATE',
+              ),
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    dailyAccentColor,
+
+                foregroundColor:
+                    Colors.black,
+
+                disabledBackgroundColor:
+                    Colors.white.withValues(
+                  alpha: 0.08,
+                ),
+
+                disabledForegroundColor:
+                    Colors.white.withValues(
+                  alpha: 0.35,
+                ),
+
+                padding:
+                    const EdgeInsets.symmetric(
+                  vertical: 15,
+                ),
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ================================================
+          // INFO
+          // ================================================
 
           Row(
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
-              const Text(
-                '🔥',
-                style: TextStyle(
-                  fontSize: 20,
+
+              Icon(
+                Icons.info_outline,
+                size: 14,
+                color: Colors.white.withValues(
+                  alpha: 0.35,
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
 
-              Expanded(
+              Flexible(
                 child: Text(
-                  streakText,
+                  dailyClaimed
+                      ? 'Come back tomorrow for another boost 🐱'
+                      : 'Claim once every day to grow your Hash Rate',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(
+                      alpha: 0.38,
+                    ),
+                    fontSize: 11,
                   ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 22),
-
-          // ==================================================
-          // CAT PAW BUTTON
-          // ==================================================
-
-          SizedBox(
-            width: double.infinity,
-            height: 72,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: isDisabled ? null : onPressed,
-                borderRadius: BorderRadius.circular(36),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(36),
-                    color: isDisabled
-                        ? Colors.grey.withValues(alpha: 0.20)
-                        : accentColor,
-                    boxShadow: isDisabled
-                        ? []
-                        : [
-                            BoxShadow(
-                              color:
-                                  accentColor.withValues(alpha: 0.30),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                  ),
-                  child: Center(
-                    child: isLoading
-                        ? const CircularProgressIndicator(
-                            color: backgroundColor,
-                            strokeWidth: 3,
-                          )
-                        : Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                dailyClaimed ? '😺' : '🐾',
-                                style: const TextStyle(
-                                  fontSize: 34,
-                                ),
-                              ),
-
-                              const SizedBox(width: 12),
-
-                              Text(
-                                _buttonText,
-                                style: TextStyle(
-                                  color: isDisabled
-                                      ? Colors.white.withValues(
-                                          alpha: 0.45,
-                                        )
-                                      : backgroundColor,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-
-                              const SizedBox(width: 12),
-
-                              Text(
-                                dailyClaimed ? '🐾' : '🐱',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // ==================================================
-          // CLAIMED MESSAGE
-          // ==================================================
-
-          if (dailyClaimed) ...[
-            const SizedBox(height: 14),
-
-            Center(
-              child: Text(
-                'Stella is happy! Come back tomorrow 🐱💚',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: accentColor.withValues(alpha: 0.85),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
