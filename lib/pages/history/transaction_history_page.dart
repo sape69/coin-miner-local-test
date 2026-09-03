@@ -23,6 +23,10 @@ class TransactionHistoryPage extends StatefulWidget {
       _TransactionHistoryPageState();
 }
 
+// ============================================================
+// STATE
+// ============================================================
+
 class _TransactionHistoryPageState
     extends State<TransactionHistoryPage> {
   // ==========================================================
@@ -441,6 +445,10 @@ class _TransactionHistoryPageState
       );
     }
 
+    // ========================================================
+    // ERROR
+    // ========================================================
+
     if (errorMessage != null) {
       return ListView(
         physics:
@@ -486,6 +494,10 @@ class _TransactionHistoryPageState
       );
     }
 
+    // ========================================================
+    // EMPTY
+    // ========================================================
+
     if (transactions.isEmpty) {
       return ListView(
         physics:
@@ -528,6 +540,10 @@ class _TransactionHistoryPageState
         ],
       );
     }
+
+    // ========================================================
+    // TRANSACTION LIST
+    // ========================================================
 
     return ListView(
       physics:
