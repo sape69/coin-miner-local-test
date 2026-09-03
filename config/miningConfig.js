@@ -2,13 +2,15 @@
 
 
 // ============================================================
-// 🐱 STELLURIINI STELLA MINING CONFIG
+// 🐱 STELLURIINI — STELLA MINING CONFIG
 // ============================================================
 //
-// Kaikki Stella Mining -järjestelmän tärkeät asetukset
-// ovat tässä yhdessä tiedostossa.
+// Kaikki Stella Mining Backendin tärkeät asetukset.
 //
-// Tämä tekee backendistä helposti säädettävän.
+// ⛏️ Mining
+// 🎁 Daily Bonus
+// 📺 Ad Power Boost
+// 📜 Transaction History
 //
 // ============================================================
 
@@ -17,7 +19,7 @@
 // 🐱 DEFAULT HASH RATE
 // ============================================================
 //
-// Uusi pelaaja aloittaa tällä Hash Rate -määrällä.
+// Uusi Stella-pelaaja aloittaa tällä Hash Rate -määrällä.
 //
 
 const DEFAULT_HASH_RATE = 1;
@@ -37,8 +39,7 @@ const DAILY_HASH_RATE_BONUS = 1;
 // 📺 STELLA POWER BOOST
 // ============================================================
 //
-// Testimainoksen katsominen antaa tämän verran
-// lisää Hash Ratea.
+// Mainospalkinto kasvattaa Hash Ratea.
 //
 
 const AD_HASH_RATE_BONUS = 5;
@@ -48,8 +49,8 @@ const AD_HASH_RATE_BONUS = 5;
 // 📺 MAX ADS PER DAY
 // ============================================================
 //
-// Kuinka monta Power Boost -mainosta
-// käyttäjä voi saada yhden UTC-päivän aikana.
+// Kuinka monta Stella Power Boostia käyttäjä voi saada
+// yhden UTC-päivän aikana.
 //
 
 const MAX_ADS_PER_DAY = 5;
@@ -59,7 +60,7 @@ const MAX_ADS_PER_DAY = 5;
 // ⏳ AD COOLDOWN
 // ============================================================
 //
-// Mainosten välinen odotusaika.
+// Mainospalkintojen välinen odotusaika.
 //
 // 60 minuuttia.
 //
@@ -87,21 +88,18 @@ const MINING_DURATION_MS =
 //
 // Kuinka paljon STL:ää syntyy:
 //
-// per 1 Hash Rate
-// per tunti.
-//
-// Esimerkki:
-//
 // 1 Hash Rate
 // = 0.10 STL / tunti
 //
-// 10 Hash Rate
-// = 1.00 STL / tunti
-//
-// 24 tunnissa:
+// Esimerkkejä:
 //
 // 1 Hash Rate
-// = 2.40 STL
+// = 0.10 STL / tunti
+// = 2.40 STL / 24 tuntia
+//
+// 10 Hash Rate
+// = 1.00 STL / tunti
+// = 24.00 STL / 24 tuntia
 //
 
 const MINING_PER_HASH_PER_HOUR =
@@ -126,17 +124,17 @@ const MAX_TRANSACTION_HISTORY =
 
 module.exports = {
 
-  // 🐱 Hash Rate
+  // 🐱 Stella Hash Rate
 
   DEFAULT_HASH_RATE,
 
 
-  // 🎁 Daily Bonus
+  // 🎁 Stella Daily
 
   DAILY_HASH_RATE_BONUS,
 
 
-  // 📺 Ad Power Boost
+  // 📺 Stella Power Boost
 
   AD_HASH_RATE_BONUS,
 
@@ -145,14 +143,14 @@ module.exports = {
   AD_COOLDOWN_MS,
 
 
-  // ⛏️ Mining
+  // ⛏️ Stella Mining
 
   MINING_DURATION_MS,
 
   MINING_PER_HASH_PER_HOUR,
 
 
-  // 📜 History
+  // 📜 Stella History
 
   MAX_TRANSACTION_HISTORY,
 
