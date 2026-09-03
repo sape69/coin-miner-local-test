@@ -21,8 +21,6 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onTokenPressed;
   final VoidCallback onTokenomicsPressed;
   final VoidCallback onRoadmapPressed;
-
-  // NEW
   final VoidCallback onTransactionHistoryPressed;
 
   const HomeDrawer({
@@ -33,8 +31,6 @@ class HomeDrawer extends StatelessWidget {
     required this.onTokenPressed,
     required this.onTokenomicsPressed,
     required this.onRoadmapPressed,
-
-    // NEW
     required this.onTransactionHistoryPressed,
   });
 
@@ -146,7 +142,7 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             // ==================================================
-            // STELLURIINI HEADER
+            // HEADER
             // ==================================================
 
             Container(
@@ -280,6 +276,10 @@ class HomeDrawer extends StatelessWidget {
                       Navigator.pop(context);
                     },
                   ),
+
+                  // ============================================
+                  // TRANSACTION HISTORY
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.history_rounded,
