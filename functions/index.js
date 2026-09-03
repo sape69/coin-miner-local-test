@@ -193,8 +193,7 @@ function getMiningStartTime(data) {
 
   if (
     timestamp &&
-    typeof timestamp.toDate ===
-      "function"
+    typeof timestamp.toDate === "function"
   ) {
     return timestamp.toDate();
   }
@@ -213,8 +212,7 @@ function getMiningEndTime(data) {
 
   if (
     timestamp &&
-    typeof timestamp.toDate ===
-      "function"
+    typeof timestamp.toDate === "function"
   ) {
     return timestamp.toDate();
   }
@@ -224,22 +222,48 @@ function getMiningEndTime(data) {
 
 
 // ============================================================
-// ⛏️ GET CURRENT MINING STATUS
+// ⚡ GET CYCLE HASH RATE
 // ============================================================
 //
-// Tämä laskee aktiivisen Stella Mining -jakson
-// tilanteen palvelimen ajan perusteella.
+// Louhintasyklin Hash Rate tallennetaan erikseen.
 //
+// Näin kesken louhinnan saatu uusi Power Boost
+// ei muuta jo käynnissä olevaa sykliä.
+//
+
+function getMiningCycleHashRate(data) {
+  const cycleHashRate =
+    Number(
+      data.miningHashRate || 0
+    );
+
+  if (cycleHashRate > 0) {
+    return cycleHashRate;
+  }
+
+  return Number(
+    data.hashRate ||
+    DEFAULT_HASH_RATE
+  );
+}
+
+
+// ============================================================
+// ⛏️ GET CURRENT MINING STATUS
+// ============================================================
 
 function calculateMiningStatus(
   data,
   now
 ) {
-  const hashRate =
+  const currentHashRate =
     Number(
       data.hashRate ||
       DEFAULT_HASH_RATE
     );
+
+  const miningHashRate =
+    getMiningCycleHashRate(data);
 
   const miningStartedAt =
     getMiningStartTime(data);
@@ -265,7 +289,9 @@ function calculateMiningStatus(
 
       minedAmount: 0,
 
-      hashRate,
+      currentHashRate,
+
+      miningHashRate,
     };
   }
 
@@ -301,11 +327,13 @@ function calculateMiningStatus(
 
       minedAmount:
         calculateMining(
-          hashRate,
+          miningHashRate,
           totalElapsed
         ),
 
-      hashRate,
+      currentHashRate,
+
+      miningHashRate,
     };
   }
 
@@ -337,86 +365,13 @@ function calculateMiningStatus(
 
     minedAmount:
       calculateMining(
-        hashRate,
+        miningHashRate,
         elapsedMs
       ),
 
-    hashRate,
-  };
-}
+    currentHashRate,
 
-
-// ============================================================
-// 🐱 FINALIZE FINISHED MINING
-// ============================================================
-//
-// Kun 24 tuntia on kulunut,
-// louhittu STL siirretään Mining Balanceen.
-//
-
-function buildFinishedMiningUpdate(
-  data,
-  now
-) {
-  const miningStatus =
-    calculateMiningStatus(
-      data,
-      now
-    );
-
-  const oldBalance =
-    Number(
-      data.miningBalance || 0
-    );
-
-
-  if (miningStatus.miningActive) {
-    return {
-      finished: false,
-
-      miningStatus,
-
-      newBalance:
-        oldBalance,
-    };
-  }
-
-
-  const miningStartedAt =
-    getMiningStartTime(data);
-
-  const miningEndsAt =
-    getMiningEndTime(data);
-
-
-  // Ei koskaan ollut aktiivista louhintaa.
-  if (
-    !miningStartedAt ||
-    !miningEndsAt
-  ) {
-    return {
-      finished: false,
-
-      miningStatus,
-
-      newBalance:
-        oldBalance,
-    };
-  }
-
-
-  const minedAmount =
-    miningStatus.minedAmount;
-
-
-  return {
-    finished: true,
-
-    miningStatus,
-
-    newBalance:
-      oldBalance +
-      minedAmount,
+    miningHashRate,
   };
 }
 
@@ -426,7 +381,8 @@ function buildFinishedMiningUpdate(
 // ============================================================
 
 async function getAdMobPublicKeys() {
-  const now = Date.now();
+  const now =
+    Date.now();
 
   if (
     cachedAdMobKeys &&
@@ -459,7 +415,8 @@ async function getAdMobPublicKeys() {
     );
   }
 
-  const keys = new Map();
+  const keys =
+    new Map();
 
   for (const key of data.keys) {
     if (
@@ -474,9 +431,11 @@ async function getAdMobPublicKeys() {
     }
   }
 
-  cachedAdMobKeys = keys;
+  cachedAdMobKeys =
+    keys;
 
-  adMobKeysCachedAt = now;
+  adMobKeysCachedAt =
+    now;
 
   return keys;
 }
@@ -591,7 +550,9 @@ async function verifyAdMobCallback(req) {
     );
 
   const signatureBuffer =
-    base64UrlDecode(signature);
+    base64UrlDecode(
+      signature
+    );
 
   const verifier =
     crypto.createVerify(
@@ -673,7 +634,7 @@ exports.getMiningStatus =
 
 
     // ========================================================
-    // ACTIVE MINING
+    // MINING STATUS
     // ========================================================
 
     const miningStatus =
@@ -681,14 +642,6 @@ exports.getMiningStatus =
         data,
         now
       );
-
-
-    // ========================================================
-    // UNCLAIMED STL
-    // ========================================================
-
-    const unclaimedMining =
-      miningStatus.minedAmount;
 
 
     // ========================================================
@@ -773,23 +726,12 @@ exports.getMiningStatus =
     // ========================================================
 
     return {
-      // ------------------------------------------------------
-      // 🐱 HASH RATE
-      // ------------------------------------------------------
-
       hashRate,
 
-
-      // ------------------------------------------------------
-      // 💰 STL BALANCE
-      // ------------------------------------------------------
+      miningHashRate:
+        miningStatus.miningHashRate,
 
       miningBalance,
-
-
-      // ------------------------------------------------------
-      // ⛏️ CURRENT MINING
-      // ------------------------------------------------------
 
       miningActive:
         miningStatus.miningActive,
@@ -797,30 +739,27 @@ exports.getMiningStatus =
       miningRemainingMs:
         miningStatus.miningRemainingMs,
 
-      unclaimedMining,
+      miningElapsedMs:
+        miningStatus.elapsedMs,
 
-
-      // ------------------------------------------------------
-      // ✨ TOTAL
-      // ------------------------------------------------------
+      unclaimedMining:
+        miningStatus.minedAmount,
 
       estimatedTotal:
         miningBalance +
-        unclaimedMining,
-
-
-      // ------------------------------------------------------
-      // ⚡ SPEED
-      // ------------------------------------------------------
+        miningStatus.minedAmount,
 
       miningPerHour:
-        hashRate *
+        miningStatus.miningHashRate *
         MINING_PER_HASH_PER_HOUR,
 
+      currentMiningPerHour:
+        miningStatus.miningHashRate *
+        MINING_PER_HASH_PER_HOUR,
 
-      // ------------------------------------------------------
-      // 🎁 DAILY
-      // ------------------------------------------------------
+      nextCycleMiningPerHour:
+        hashRate *
+        MINING_PER_HASH_PER_HOUR,
 
       dailyClaimed:
         lastDaily === today,
@@ -829,11 +768,6 @@ exports.getMiningStatus =
 
       dailyHashRateBonus:
         DAILY_HASH_RATE_BONUS,
-
-
-      // ------------------------------------------------------
-      // 📺 ADS
-      // ------------------------------------------------------
 
       adsToday,
 
@@ -849,6 +783,12 @@ exports.getMiningStatus =
         cooldownRemainingMs === 0,
 
       cooldownRemainingMs,
+
+      miningDurationMs:
+        MINING_DURATION_MS,
+
+      serverTimeMs:
+        now.getTime(),
     };
   });
 
@@ -857,17 +797,15 @@ exports.getMiningStatus =
 // ⛏️ START / COLLECT STELLA MINING
 // ============================================================
 //
-// Painike toimii näin:
-//
 // 🐱 Ei aktiivista louhintaa
-// → käynnistää 24h louhinnan
+// → Käynnistää uuden 24h syklin.
 //
 // 🐱 Louhinta aktiivinen
-// → palauttaa nykyisen tilanteen
+// → Stella louhii edelleen.
 //
-// 🐱 Louhinta päättynyt
-// → lisää STL:n Balanceen
-// → aloittaa uuden 24h louhinnan
+// 🐱 Louhinta valmis
+// → Kerää STL Balanceen
+// → Käynnistää uuden 24h syklin.
 //
 
 exports.claimMining =
@@ -901,10 +839,6 @@ exports.claimMining =
             ? snapshot.data()
             : {};
 
-
-        // ====================================================
-        // USER SETTINGS
-        // ====================================================
 
         const hashRate =
           Number(
@@ -950,7 +884,7 @@ exports.claimMining =
 
 
         // ====================================================
-        // CHECK IF PREVIOUS CYCLE EXISTS
+        // PREVIOUS CYCLE
         // ====================================================
 
         const previousStart =
@@ -968,13 +902,18 @@ exports.claimMining =
 
 
         // ====================================================
-        // FINISH PREVIOUS 24H CYCLE
+        // COLLECT FINISHED CYCLE
         // ====================================================
 
         if (
           previousStart &&
           previousEnd
         ) {
+          const cycleHashRate =
+            getMiningCycleHashRate(
+              data
+            );
+
           const fullDuration =
             Math.max(
               0,
@@ -984,7 +923,7 @@ exports.claimMining =
 
           collected =
             calculateMining(
-              hashRate,
+              cycleHashRate,
               fullDuration
             );
 
@@ -1019,6 +958,11 @@ exports.claimMining =
             miningEndsAt:
               newEndTime,
 
+            // Uusi sykli käyttää nykyistä
+            // kokonaista Hash Ratea.
+            miningHashRate:
+              hashRate,
+
             updatedAt:
               FieldValue.serverTimestamp(),
           },
@@ -1029,7 +973,7 @@ exports.claimMining =
 
 
         // ====================================================
-        // HISTORY FOR COLLECTED CYCLE
+        // HISTORY: COMPLETED CYCLE
         // ====================================================
 
         if (collected > 0) {
@@ -1052,7 +996,10 @@ exports.claimMining =
               balanceAfter:
                 newBalance,
 
-              hashRate,
+              hashRate:
+                getMiningCycleHashRate(
+                  data
+                ),
 
               createdAt:
                 FieldValue.serverTimestamp(),
@@ -1062,7 +1009,7 @@ exports.claimMining =
 
 
         // ====================================================
-        // HISTORY FOR NEW CYCLE
+        // HISTORY: NEW CYCLE
         // ====================================================
 
         const startHistoryRef =
@@ -1101,6 +1048,9 @@ exports.claimMining =
 
           hashRate,
 
+          miningHashRate:
+            hashRate,
+
           miningActive: true,
 
           miningDurationMs:
@@ -1108,8 +1058,8 @@ exports.claimMining =
 
           message:
             collected > 0
-              ? "🐱✨ Stella Mining collected and restarted!"
-              : "🐱⛏️ Stella Mining started!",
+              ? "🐱✨ Stella keräsi STL:n ja aloitti uuden louhinnan!"
+              : "🐱⛏️ Stella Mining alkoi!",
         };
       }
     );
@@ -1292,7 +1242,10 @@ exports.dailyCheckIn =
 //
 // Käytössä kehityksen aikana.
 //
-// Flutter käyttää Google AdMob TEST ID:tä.
+// Flutter näyttää Google AdMob TEST MAINOKSEN.
+//
+// Kun käyttäjä on katsonut mainoksen,
+// Flutter kutsuu tätä funktiota.
 //
 
 exports.testAdReward =
@@ -1416,60 +1369,23 @@ exports.testAdReward =
           oldHashRate +
           AD_HASH_RATE_BONUS;
 
-
-        // ====================================================
-        // AD COUNT
-        // ====================================================
-
         const newAdsToday =
           adsToday + 1;
 
 
         // ====================================================
-        // CURRENT MINING STATUS
-        // ====================================================
-
-        const miningStatus =
-          calculateMiningStatus(
-            data,
-            now
-          );
-
-
-        let miningStartedAt =
-          getMiningStartTime(data);
-
-        let miningEndsAt =
-          getMiningEndTime(data);
-
-        let miningRestarted =
-          false;
-
-
-        // ====================================================
-        // START MINING IF NOT ACTIVE
-        // ====================================================
-        //
-        // Mainos voi käynnistää uuden
-        // Stella Mining -jakson.
-        //
-
-        if (!miningStatus.miningActive) {
-          miningStartedAt = now;
-
-          miningEndsAt =
-            new Date(
-              now.getTime() +
-                MINING_DURATION_MS
-            );
-
-          miningRestarted = true;
-        }
-
-
-        // ====================================================
         // UPDATE USER
         // ====================================================
+        //
+        // Tärkeää:
+        //
+        // Mainos nostaa käyttäjän Hash Ratea.
+        //
+        // Jos 24h louhinta on käynnissä,
+        // sen miningHashRate pysyy samana.
+        //
+        // Uusi Power Boost vaikuttaa seuraavaan sykliin.
+        //
 
         transaction.set(
           userRef,
@@ -1485,10 +1401,6 @@ exports.testAdReward =
 
             lastAdTimestamp:
               FieldValue.serverTimestamp(),
-
-            miningStartedAt,
-
-            miningEndsAt,
 
             updatedAt:
               FieldValue.serverTimestamp(),
@@ -1525,8 +1437,6 @@ exports.testAdReward =
             adsToday:
               newAdsToday,
 
-            miningRestarted,
-
             createdAt:
               FieldValue.serverTimestamp(),
           }
@@ -1549,7 +1459,8 @@ exports.testAdReward =
           adsToday:
             newAdsToday,
 
-          miningRestarted,
+          message:
+            "🐱⚡ Stella sai Power Boostin!",
         };
       }
     );
@@ -1562,8 +1473,9 @@ exports.testAdReward =
 //
 // Tämä on valmiina oikeita AdMob-mainoksia varten.
 //
-// Testivaiheessa Flutter käyttää edelleen
-// testAdReward-funktiota.
+// Kehitysvaiheessa Flutter käyttää edelleen:
+//
+// testAdReward
 //
 
 exports.adMobReward =
@@ -1647,7 +1559,7 @@ exports.adMobReward =
 
 
         // ====================================================
-        // TRANSACTION
+        // FIRESTORE TRANSACTION
         // ====================================================
 
         const result =
@@ -1670,7 +1582,7 @@ exports.adMobReward =
 
 
               // ==============================================
-              // USER
+              // USER DATA
               // ==============================================
 
               const userSnapshot =
@@ -1769,38 +1681,6 @@ exports.adMobReward =
 
 
               // ==============================================
-              // MINING
-              // ==============================================
-
-              const miningStatus =
-                calculateMiningStatus(
-                  data,
-                  now
-                );
-
-              let miningStartedAt =
-                getMiningStartTime(data);
-
-              let miningEndsAt =
-                getMiningEndTime(data);
-
-              let miningRestarted =
-                false;
-
-              if (!miningStatus.miningActive) {
-                miningStartedAt = now;
-
-                miningEndsAt =
-                  new Date(
-                    now.getTime() +
-                      MINING_DURATION_MS
-                  );
-
-                miningRestarted = true;
-              }
-
-
-              // ==============================================
               // UPDATE USER
               // ==============================================
 
@@ -1818,10 +1698,6 @@ exports.adMobReward =
 
                   lastAdTimestamp:
                     FieldValue.serverTimestamp(),
-
-                  miningStartedAt,
-
-                  miningEndsAt,
 
                   updatedAt:
                     FieldValue.serverTimestamp(),
@@ -1900,8 +1776,6 @@ exports.adMobReward =
                   adsToday:
                     newAdsToday,
 
-                  miningRestarted,
-
                   admobTransactionId:
                     transactionId,
 
@@ -1922,8 +1796,6 @@ exports.adMobReward =
 
                 adsToday:
                   newAdsToday,
-
-                miningRestarted,
               };
             }
           );
@@ -2007,7 +1879,8 @@ exports.getTransactionHistory =
           const data =
             doc.data();
 
-          let createdAt = null;
+          let createdAt =
+            null;
 
           if (
             data.createdAt &&
@@ -2064,9 +1937,6 @@ exports.getTransactionHistory =
               Number(
                 data.adsToday || 0
               ),
-
-            miningRestarted:
-              data.miningRestarted === true,
 
             createdAt,
           };
