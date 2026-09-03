@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 
-const Color backgroundColor = Color(0xFF0B1112);
+// ============================================================
+// COLORS
+// ============================================================
+
 const Color cardColor = Color(0xFF151B1C);
 const Color balanceAccentColor = Color(0xFF35D0A0);
 
+// ============================================================
+// BALANCE CARD
+// ============================================================
+
 class BalanceCard extends StatelessWidget {
-  final int stl;
+  final double stl;
   final String title;
   final String subtitle;
 
@@ -16,8 +23,26 @@ class BalanceCard extends StatelessWidget {
     required this.subtitle,
   });
 
+  // ==========================================================
+  // FORMAT BALANCE
+  // ==========================================================
+
+  String _formatBalance() {
+    if (stl >= 1000000) {
+      return stl.toStringAsFixed(0);
+    }
+
+    if (stl >= 1000) {
+      return stl.toStringAsFixed(2);
+    }
+
+    return stl.toStringAsFixed(4);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final balanceText = _formatBalance();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -42,41 +67,44 @@ class BalanceCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ================================================
+          // ==================================================
           // HEADER
-          // ================================================
+          // ==================================================
 
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.center,
             children: [
               const Text(
-                '🐱',
+                '⛏️',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 26,
                 ),
               ),
 
               const SizedBox(width: 10),
 
-              Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.70,
+              Flexible(
+                child: Text(
+                  title.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(
+                      alpha: 0.70,
+                    ),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
                   ),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
                 ),
               ),
 
               const SizedBox(width: 10),
 
               const Text(
-                '🐾',
+                '🐱',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 26,
                 ),
               ),
             ],
@@ -84,9 +112,9 @@ class BalanceCard extends StatelessWidget {
 
           const SizedBox(height: 22),
 
-          // ================================================
-          // BALANCE ICON
-          // ================================================
+          // ==================================================
+          // MINING ICON
+          // ==================================================
 
           Container(
             width: 86,
@@ -113,37 +141,39 @@ class BalanceCard extends StatelessWidget {
               ],
             ),
             child: const Center(
-              child: Text(
-                '🐾',
-                style: TextStyle(
-                  fontSize: 42,
-                ),
+              child: Icon(
+                Icons.precision_manufacturing,
+                color: balanceAccentColor,
+                size: 42,
               ),
             ),
           ),
 
           const SizedBox(height: 18),
 
-          // ================================================
-          // STL BALANCE
-          // ================================================
+          // ==================================================
+          // MINING BALANCE
+          // ==================================================
 
-          Text(
-            '$stl',
-            style: const TextStyle(
-              fontSize: 58,
-              height: 1,
-              fontWeight: FontWeight.bold,
-              color: balanceAccentColor,
-              letterSpacing: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              balanceText,
+              style: const TextStyle(
+                fontSize: 52,
+                height: 1,
+                fontWeight: FontWeight.bold,
+                color: balanceAccentColor,
+                letterSpacing: 1,
+              ),
             ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
-          // ================================================
+          // ==================================================
           // STL LABEL
-          // ================================================
+          // ==================================================
 
           Container(
             padding: const EdgeInsets.symmetric(
@@ -174,9 +204,9 @@ class BalanceCard extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          // ================================================
+          // ==================================================
           // DIVIDER
-          // ================================================
+          // ==================================================
 
           Container(
             width: double.infinity,
@@ -188,18 +218,18 @@ class BalanceCard extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ================================================
-          // SUBTITLE
-          // ================================================
+          // ==================================================
+          // MINING INFO
+          // ==================================================
 
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.info_outline,
-                color: Colors.white54,
-                size: 17,
+                Icons.bolt,
+                color: balanceAccentColor,
+                size: 18,
               ),
 
               const SizedBox(width: 7),
@@ -210,7 +240,7 @@ class BalanceCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(
-                      alpha: 0.55,
+                      alpha: 0.65,
                     ),
                     fontSize: 13,
                   ),
@@ -219,10 +249,14 @@ class BalanceCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // ==================================================
+          // STELLA MESSAGE
+          // ==================================================
 
           Text(
-            'Stella is collecting her treasures 🐱✨',
+            'Stella is mining treasures 🐱⛏️✨',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: balanceAccentColor.withValues(
