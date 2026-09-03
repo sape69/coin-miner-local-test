@@ -27,19 +27,21 @@ import 'whitepaper/whitepaper_page.dart';
 // ============================================================
 
 const Color backgroundColor = Color(0xFF0B1112);
+
 const Color accentColor = Color(0xFF35D0A0);
-const Color stellaGoldColor = Color(0xFFFFC857);
+
 const Color cardColor = Color(0xFF151B1C);
+
+const Color stellaGold = Color(0xFFFFD166);
 
 // ============================================================
 // 📺 ADMOB TEST REWARDED AD
 // ============================================================
-//
-// Google TEST Rewarded Ad Unit ID.
-//
-// Pidetään testimainokset käytössä kehityksen aikana.
-// Oikea AdMob ID lisätään myöhemmin.
-//
+
+/// Google test Rewarded Ad.
+///
+/// Pidämme tämän käytössä kehityksen aikana.
+/// Vaihdetaan myöhemmin oikeaan AdMob Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -49,6 +51,7 @@ const String rewardedAdUnitId =
 
 class HomePage extends StatefulWidget {
   final String languageCode;
+
   final Future<void> Function(String) changeLanguage;
 
   const HomePage({
@@ -58,16 +61,19 @@ class HomePage extends StatefulWidget {
   });
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() =>
+      _HomePageState();
 }
 
 // ============================================================
 // 🐱 HOME PAGE STATE
 // ============================================================
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState
+    extends State<HomePage>
+    with WidgetsBindingObserver {
   // ==========================================================
-  // ⛏️ MINING DATA
+  // 🐱 MINING DATA
   // ==========================================================
 
   double miningBalance = 0;
@@ -80,23 +86,22 @@ class _HomePageState extends State<HomePage> {
 
   double miningPerHour = 0;
 
-  // ==========================================================
-  // 🐱 24H MINING SESSION
-  // ==========================================================
+  int streak = 0;
 
   bool miningActive = false;
 
-  DateTime? miningStartedAt;
+  int miningRemainingMs = 0;
 
-  DateTime? miningEndsAt;
+  int miningDurationMs =
+      const Duration(hours: 24).inMilliseconds;
 
-  Duration miningRemaining = Duration.zero;
+  DateTime? lastMiningServerTime;
+
+  DateTime? miningEndTime;
 
   // ==========================================================
   // 🎁 DAILY DATA
   // ==========================================================
-
-  int streak = 0;
 
   bool dailyClaimed = false;
 
@@ -110,28 +115,22 @@ class _HomePageState extends State<HomePage> {
 
   bool canWatchAd = false;
 
-  Duration cooldownRemaining = Duration.zero;
+  Duration cooldownRemaining =
+      Duration.zero;
 
   // ==========================================================
-  // UI STATES
+  // 🔄 LOADING STATES
   // ==========================================================
 
   bool loading = true;
+
+  bool loadDataRunning = false;
 
   bool dailyLoading = false;
 
   bool miningLoading = false;
 
   bool adClaimLoading = false;
-
-  // ==========================================================
-  // 🔒 LOAD DATA PROTECTION
-  // ==========================================================
-  //
-  // Estää tilanteen, jossa useampi Firebase-kutsu
-  // on käynnissä samanaikaisesti.
-  //
-  bool _loadingData = false;
 
   // ==========================================================
   // 📺 ADMOB
@@ -147,32 +146,42 @@ class _HomePageState extends State<HomePage> {
 
   Timer? refreshTimer;
 
-  Timer? liveMiningTimer;
+  Timer? realtimeTimer;
+
+  Timer? cooldownTimer;
 
   // ==========================================================
-  // 🐱 LOCALIZATION
+  // 🌍 LOCALIZATION
   // ==========================================================
 
   AppLocalizations get t =>
-      AppLocalizations(widget.languageCode);
+      AppLocalizations(
+        widget.languageCode,
+      );
 
   // ==========================================================
-  // FIREBASE
+  // 🔥 FIREBASE
   // ==========================================================
 
   FirebaseFunctions get functions =>
       FirebaseFunctions.instance;
 
   String? get uid =>
-      FirebaseAuth.instance.currentUser?.uid;
+      FirebaseAuth
+          .instance
+          .currentUser
+          ?.uid;
 
   // ==========================================================
-  // INIT
+  // 🚀 INIT
   // ==========================================================
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance
+        .addObserver(this);
 
     _loadData();
 
@@ -180,18 +189,39 @@ class _HomePageState extends State<HomePage> {
 
     _startRefreshTimer();
 
-    _startLiveMiningTimer();
+    _startRealtimeTimer();
+
+    _startCooldownTimer();
   }
 
   // ==========================================================
-  // DISPOSE
+  // 📱 APP LIFECYCLE
+  // ==========================================================
+
+  @override
+  void didChangeAppLifecycleState(
+    AppLifecycleState state,
+  ) {
+    if (state ==
+        AppLifecycleState.resumed) {
+      _loadData();
+    }
+  }
+
+  // ==========================================================
+  // 🗑️ DISPOSE
   // ==========================================================
 
   @override
   void dispose() {
+    WidgetsBinding.instance
+        .removeObserver(this);
+
     refreshTimer?.cancel();
 
-    liveMiningTimer?.cancel();
+    realtimeTimer?.cancel();
+
+    cooldownTimer?.cancel();
 
     rewardedAd?.dispose();
 
@@ -200,97 +230,69 @@ class _HomePageState extends State<HomePage> {
 
   // ==========================================================
   // 🔒 LOAD DATA
+  //
+  // Tämä suojaa päällekkäisiltä Firebase-kutsuilta.
   // ==========================================================
 
   Future<void> _loadData() async {
-    // ========================================================
-    // PREVENT OVERLAPPING REQUESTS
-    // ========================================================
-
-    if (_loadingData) {
+    if (loadDataRunning) {
       return;
     }
 
-    _loadingData = true;
-
-    try {
-      // ======================================================
-      // AUTH CHECK
-      // ======================================================
-
-      if (uid == null) {
-        if (!mounted) return;
-
-        setState(() {
-          loading = false;
-        });
-
+    if (uid == null) {
+      if (!mounted) {
         return;
       }
 
-      // ======================================================
-      // FIREBASE CALL
-      // ======================================================
+      setState(() {
+        loading = false;
+      });
 
+      return;
+    }
+
+    loadDataRunning = true;
+
+    try {
       final result =
           await functions
-              .httpsCallable('getMiningStatus')
+              .httpsCallable(
+                'getMiningStatus',
+              )
               .call();
 
-      final rawData =
+      final data =
           Map<String, dynamic>.from(
         result.data as Map,
       );
 
-      if (!mounted) return;
-
-      // ======================================================
-      // PARSE MINING SESSION
-      // ======================================================
-
-      DateTime? parsedStartedAt;
-
-      DateTime? parsedEndsAt;
-
-      final startedAtValue =
-          rawData['miningStartedAt'];
-
-      final endsAtValue =
-          rawData['miningEndsAt'];
-
-      if (startedAtValue is String &&
-          startedAtValue.isNotEmpty) {
-        parsedStartedAt =
-            DateTime.tryParse(startedAtValue);
+      if (!mounted) {
+        return;
       }
-
-      if (endsAtValue is String &&
-          endsAtValue.isNotEmpty) {
-        parsedEndsAt =
-            DateTime.tryParse(endsAtValue);
-      }
-
-      // ======================================================
-      // MINING REMAINING
-      // ======================================================
-
-      final remainingMs =
-          (rawData['miningRemainingMs'] as num?)
-                  ?.toInt() ??
-              0;
-
-      // ======================================================
-      // AD COOLDOWN
-      // ======================================================
 
       final cooldownMs =
-          (rawData['cooldownRemainingMs'] as num?)
+          (data['cooldownRemainingMs']
+                      as num?)
                   ?.toInt() ??
               0;
 
-      // ======================================================
-      // UPDATE STATE
-      // ======================================================
+      final serverRemainingMs =
+          (data['miningRemainingMs']
+                      as num?)
+                  ?.toInt() ??
+              0;
+
+      final serverDurationMs =
+          (data['miningDurationMs']
+                      as num?)
+                  ?.toInt() ??
+              const Duration(hours: 24)
+                  .inMilliseconds;
+
+      final active =
+          data['miningActive'] == true;
+
+      final now = DateTime.now();
 
       setState(() {
         // ====================================================
@@ -298,84 +300,102 @@ class _HomePageState extends State<HomePage> {
         // ====================================================
 
         hashRate =
-            (rawData['hashRate'] as num?)
+            (data['hashRate'] as num?)
                     ?.toDouble() ??
                 1;
 
         miningBalance =
-            (rawData['miningBalance'] as num?)
+            (data['miningBalance'] as num?)
                     ?.toDouble() ??
                 0;
 
         unclaimedMining =
-            (rawData['unclaimedMining'] as num?)
+            (data['unclaimedMining']
+                        as num?)
                     ?.toDouble() ??
                 0;
 
         estimatedTotal =
-            (rawData['estimatedTotal'] as num?)
+            (data['estimatedTotal']
+                        as num?)
                     ?.toDouble() ??
-                miningBalance;
+                miningBalance +
+                    unclaimedMining;
 
         miningPerHour =
-            (rawData['miningPerHour'] as num?)
+            (data['miningPerHour']
+                        as num?)
                     ?.toDouble() ??
                 0;
 
-        // ====================================================
-        // 🐱 SESSION
-        // ====================================================
+        miningActive = active;
 
-        miningActive =
-            rawData['miningActive'] == true;
+        miningRemainingMs =
+            serverRemainingMs;
 
-        miningStartedAt =
-            parsedStartedAt;
+        miningDurationMs =
+            serverDurationMs;
 
-        miningEndsAt =
-            parsedEndsAt;
+        if (
+            miningActive &&
+            miningRemainingMs > 0) {
+          miningEndTime =
+              now.add(
+            Duration(
+              milliseconds:
+                  miningRemainingMs,
+            ),
+          );
+        } else {
+          miningEndTime = null;
+        }
 
-        miningRemaining = Duration(
-          milliseconds: remainingMs,
-        );
+        lastMiningServerTime = now;
 
         // ====================================================
         // 🎁 DAILY
         // ====================================================
 
         streak =
-            (rawData['streak'] as num?)
+            (data['streak'] as num?)
                     ?.toInt() ??
                 0;
 
         dailyClaimed =
-            rawData['dailyClaimed'] == true;
+            data['dailyClaimed'] == true;
 
         // ====================================================
         // 📺 ADS
         // ====================================================
 
         adsToday =
-            (rawData['adsToday'] as num?)
+            (data['adsToday'] as num?)
                     ?.toInt() ??
                 0;
 
         maxAdsPerDay =
-            (rawData['maxAdsPerDay'] as num?)
+            (data['maxAdsPerDay']
+                        as num?)
                     ?.toInt() ??
                 5;
 
         canWatchAd =
-            rawData['canWatchAd'] == true;
+            data['canWatchAd'] == true;
 
-        cooldownRemaining = Duration(
-          milliseconds: cooldownMs,
+        cooldownRemaining =
+            Duration(
+          milliseconds:
+              cooldownMs,
         );
 
         loading = false;
       });
-    } on FirebaseFunctionsException catch (error) {
-      if (!mounted) return;
+    } on FirebaseFunctionsException catch (
+      error,
+    ) {
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         loading = false;
@@ -386,7 +406,9 @@ class _HomePageState extends State<HomePage> {
             '🐱 Stella-yhteys epäonnistui.',
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         loading = false;
@@ -396,11 +418,7 @@ class _HomePageState extends State<HomePage> {
         '🐱 Stella-yhteys epäonnistui.',
       );
     } finally {
-      // ======================================================
-      // 🔓 RELEASE REQUEST LOCK
-      // ======================================================
-
-      _loadingData = false;
+      loadDataRunning = false;
     }
   }
 
@@ -411,114 +429,150 @@ class _HomePageState extends State<HomePage> {
   void _startRefreshTimer() {
     refreshTimer?.cancel();
 
-    refreshTimer = Timer.periodic(
+    refreshTimer =
+        Timer.periodic(
       const Duration(seconds: 30),
       (_) {
-        if (!mounted) return;
-
-        _loadData();
+        if (
+            mounted &&
+            !loading &&
+            !loadDataRunning) {
+          _loadData();
+        }
       },
     );
   }
 
   // ==========================================================
-  // ⏱️ LIVE MINING TIMER
+  // ⚡ REALTIME STL TIMER
+  //
+  // Päivittää näytöllä juoksevan STL-määrän.
   // ==========================================================
-  //
-  // Päivittää:
-  //
-  // 📈 STL juoksevan määrän
-  // ⏳ Mining countdownin
-  // 📺 Ad cooldownin
-  //
-  void _startLiveMiningTimer() {
-    liveMiningTimer?.cancel();
 
-    liveMiningTimer = Timer.periodic(
+  void _startRealtimeTimer() {
+    realtimeTimer?.cancel();
+
+    realtimeTimer =
+        Timer.periodic(
       const Duration(seconds: 1),
       (_) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
-        bool changed = false;
+        if (
+            !miningActive ||
+            miningEndTime == null) {
+          return;
+        }
 
-        // ====================================================
-        // 🐱 MINING COUNTDOWN
-        // ====================================================
+        final now =
+            DateTime.now();
 
-        if (miningActive) {
-          if (miningRemaining >
-              Duration.zero) {
-            miningRemaining -=
-                const Duration(seconds: 1);
+        final remaining =
+            miningEndTime!
+                .difference(now);
 
-            changed = true;
-
-            // ================================================
-            // 📈 LIVE STL COUNTER
-            // ================================================
-
-            final miningPerSecond =
-                miningPerHour / 3600;
-
-            if (miningPerSecond > 0) {
-              unclaimedMining +=
-                  miningPerSecond;
-
-              estimatedTotal =
-                  miningBalance +
-                      unclaimedMining;
-
-              changed = true;
-            }
-          } else {
-            miningRemaining = Duration.zero;
+        if (
+            remaining <= Duration.zero) {
+          setState(() {
+            miningRemainingMs = 0;
 
             miningActive = false;
 
-            changed = true;
-          }
+            miningEndTime = null;
+          });
+
+          _loadData();
+
+          return;
         }
 
         // ====================================================
-        // 📺 AD COOLDOWN
+        // REALTIME MINING
         // ====================================================
 
-        if (cooldownRemaining >
-            Duration.zero) {
-          cooldownRemaining -=
-              const Duration(seconds: 1);
+        final elapsedSinceServer =
+            lastMiningServerTime == null
+                ? Duration.zero
+                : now.difference(
+                    lastMiningServerTime!,
+                  );
 
-          changed = true;
+        final additionalMining =
+            miningPerHour *
+                elapsedSinceServer
+                    .inMilliseconds /
+                const Duration(hours: 1)
+                    .inMilliseconds;
 
-          if (cooldownRemaining <=
-              Duration.zero) {
-            cooldownRemaining =
-                Duration.zero;
+        setState(() {
+          miningRemainingMs =
+              remaining.inMilliseconds;
 
-            if (adsToday <
-                maxAdsPerDay) {
-              canWatchAd = true;
+          estimatedTotal =
+              miningBalance +
+                  unclaimedMining +
+                  additionalMining;
+        });
+      },
+    );
+  }
+
+  // ==========================================================
+  // ⏱️ COOLDOWN TIMER
+  // ==========================================================
+
+  void _startCooldownTimer() {
+    cooldownTimer?.cancel();
+
+    cooldownTimer =
+        Timer.periodic(
+      const Duration(seconds: 1),
+      (_) {
+        if (!mounted) {
+          return;
+        }
+
+        if (
+            cooldownRemaining >
+                Duration.zero) {
+          setState(() {
+            cooldownRemaining -=
+                const Duration(seconds: 1);
+
+            if (
+                cooldownRemaining <=
+                    Duration.zero) {
+              cooldownRemaining =
+                  Duration.zero;
+
+              if (
+                  adsToday <
+                      maxAdsPerDay) {
+                canWatchAd = true;
+              }
             }
-          }
-        }
-
-        // ====================================================
-        // UPDATE UI
-        // ====================================================
-
-        if (changed && mounted) {
-          setState(() {});
+          });
         }
       },
     );
   }
 
   // ==========================================================
-  // ⛏️ START / CLAIM MINING
+  // ⛏️ START MINING
   // ==========================================================
 
-  Future<void> _claimMining() async {
+  Future<void> _startMining() async {
     if (miningLoading) {
+      return;
+    }
+
+    if (miningActive) {
+      _message(
+        '🐱⛏️ Stella Mining on jo käynnissä!',
+      );
+
       return;
     }
 
@@ -529,7 +583,9 @@ class _HomePageState extends State<HomePage> {
     try {
       final result =
           await functions
-              .httpsCallable('claimMining')
+              .httpsCallable(
+                'startMining',
+              )
               .call();
 
       final data =
@@ -537,42 +593,35 @@ class _HomePageState extends State<HomePage> {
         result.data as Map,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      final message =
-          data['message'];
+      final alreadyActive =
+          data['alreadyActive'] == true;
 
-      final claimed =
-          (data['claimed'] as num?)
-                  ?.toDouble() ??
-              0;
-
-      // ======================================================
-      // 🐱 MESSAGE
-      // ======================================================
-
-      if (message is String &&
-          message.isNotEmpty) {
-        _message('🐱 $message');
-      } else if (claimed > 0) {
+      if (alreadyActive) {
         _message(
-          '🐱⛏️ ${claimed.toStringAsFixed(4)} STL lisätty!',
+          '🐱⛏️ Stella Mining on jo käynnissä!',
         );
       } else {
         _message(
-          '🐱⛏️ Stella aloitti louhinnan!',
+          '🐱✨ Stella Mining käynnistyi! '
+          'STL juoksee seuraavat 24 tuntia ⛏️⚡',
         );
       }
 
       await _loadData();
-    } on FirebaseFunctionsException catch (error) {
+    } on FirebaseFunctionsException catch (
+      error,
+    ) {
       _message(
         error.message ??
-            '🐱 Louhinta epäonnistui.',
+            '🐱 Louhinnan käynnistäminen epäonnistui.',
       );
     } catch (_) {
       _message(
-        '🐱 Louhinta epäonnistui.',
+        '🐱 Louhinnan käynnistäminen epäonnistui.',
       );
     } finally {
       if (mounted) {
@@ -594,7 +643,7 @@ class _HomePageState extends State<HomePage> {
 
     if (dailyClaimed) {
       _message(
-        '🐱 ${t.get('claimed')}',
+        '🐱 Stella-bonus on jo kerätty tänään!',
       );
 
       return;
@@ -607,7 +656,9 @@ class _HomePageState extends State<HomePage> {
     try {
       final result =
           await functions
-              .httpsCallable('dailyCheckIn')
+              .httpsCallable(
+                'dailyCheckIn',
+              )
               .call();
 
       final data =
@@ -623,28 +674,31 @@ class _HomePageState extends State<HomePage> {
                   ?.toDouble() ??
               0;
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       if (alreadyClaimed) {
         _message(
-          '🐱 ${t.get('claimed')}',
+          '🎁 Stella-bonus on jo kerätty!',
         );
       } else {
         _message(
-          '🐱🎁 +${bonus.toStringAsFixed(0)} '
-          'Hash Rate! ⚡',
+          '🐱⚡ Stella antoi +${bonus.toStringAsFixed(0)} Hash Rate!',
         );
       }
 
       await _loadData();
-    } on FirebaseFunctionsException catch (error) {
+    } on FirebaseFunctionsException catch (
+      error,
+    ) {
       _message(
         error.message ??
-            '🐱 Päivittäinen bonus epäonnistui.',
+            '🐱 Päivittäinen Stella-bonus epäonnistui.',
       );
     } catch (_) {
       _message(
-        '🐱 Päivittäinen bonus epäonnistui.',
+        '🐱 Päivittäinen Stella-bonus epäonnistui.',
       );
     } finally {
       if (mounted) {
@@ -660,7 +714,8 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   void _loadRewardedAd() {
-    if (rewardedAdLoading ||
+    if (
+        rewardedAdLoading ||
         rewardedAd != null) {
       return;
     }
@@ -668,9 +723,10 @@ class _HomePageState extends State<HomePage> {
     rewardedAdLoading = true;
 
     RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
-      request: const AdRequest(),
-
+      adUnitId:
+          rewardedAdUnitId,
+      request:
+          const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -686,8 +742,9 @@ class _HomePageState extends State<HomePage> {
             rewardedAd = ad;
           });
         },
-
-        onAdFailedToLoad: (error) {
+        onAdFailedToLoad: (
+          error,
+        ) {
           rewardedAdLoading = false;
 
           if (!mounted) {
@@ -712,33 +769,30 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _watchAd() async {
-    // ========================================================
-    // CHECK AD LIMIT
-    // ========================================================
+    if (adClaimLoading) {
+      return;
+    }
 
     if (!canWatchAd) {
-      if (cooldownRemaining >
-          Duration.zero) {
+      if (
+          cooldownRemaining >
+              Duration.zero) {
         _message(
-          '🐱 ${t.get('nextAd')}: '
+          '🐱 Stella lepää vielä '
           '${_remainingAdText()}',
         );
       } else {
         _message(
-          '🐱 ${t.get('dailyLimitReached')}',
+          '📺 Päivän Stella-mainosraja on saavutettu.',
         );
       }
 
       return;
     }
 
-    // ========================================================
-    // CHECK LOADED AD
-    // ========================================================
-
     if (rewardedAd == null) {
       _message(
-        '🐱 ${t.get('adLoading')}',
+        '🐱📺 Stella valmistaa mainosta...',
       );
 
       _loadRewardedAd();
@@ -746,7 +800,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final ad = rewardedAd!;
+    final ad =
+        rewardedAd!;
 
     setState(() {
       rewardedAd = null;
@@ -754,27 +809,19 @@ class _HomePageState extends State<HomePage> {
 
     bool earnedReward = false;
 
-    // ========================================================
-    // FULL SCREEN CALLBACK
-    // ========================================================
-
     ad.fullScreenContentCallback =
-        FullScreenContentCallback<RewardedAd>(
+        FullScreenContentCallback<
+            RewardedAd>(
       onAdDismissedFullScreenContent:
           (dismissedAd) async {
         dismissedAd.dispose();
 
-        // ================================================
-        // 🐱 STELLA POWER BOOST
-        // ================================================
-
         if (earnedReward) {
-          await _claimAdReward();
+          await _claimTestAdReward();
         }
 
         _loadRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent:
           (failedAd, error) {
         failedAd.dispose();
@@ -787,10 +834,6 @@ class _HomePageState extends State<HomePage> {
       },
     );
 
-    // ========================================================
-    // SHOW AD
-    // ========================================================
-
     ad.show(
       onUserEarnedReward:
           (ad, reward) {
@@ -800,10 +843,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // ⚡ CLAIM TEST AD REWARD
+  // 🧪 TEST AD REWARD
+  //
+  // Käytössä kehityksen aikana.
   // ==========================================================
 
-  Future<void> _claimAdReward() async {
+  Future<void> _claimTestAdReward() async {
     if (adClaimLoading) {
       return;
     }
@@ -815,7 +860,9 @@ class _HomePageState extends State<HomePage> {
     try {
       final result =
           await functions
-              .httpsCallable('testAdReward')
+              .httpsCallable(
+                'testAdReward',
+              )
               .call();
 
       final data =
@@ -828,24 +875,28 @@ class _HomePageState extends State<HomePage> {
                   ?.toDouble() ??
               0;
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _message(
-        '🐱⚡ Stella Power Boost! '
+        '📺🐱⚡ Stella Power Boost! '
         '+${bonus.toStringAsFixed(0)} Hash Rate!',
       );
 
       await _loadData();
-    } on FirebaseFunctionsException catch (error) {
+    } on FirebaseFunctionsException catch (
+      error,
+    ) {
       _message(
         error.message ??
-            '🐱 Stella Power Boost epäonnistui.',
+            '🐱 Mainospalkinnon hakeminen epäonnistui.',
       );
 
       await _loadData();
     } catch (_) {
       _message(
-        '🐱 Stella Power Boost epäonnistui.',
+        '🐱 Mainospalkinnon hakeminen epäonnistui.',
       );
 
       await _loadData();
@@ -859,41 +910,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // ⏳ FORMAT MINING TIME
-  // ==========================================================
-
-  String _remainingMiningText() {
-    if (miningRemaining <=
-        Duration.zero) {
-      return '00:00:00';
-    }
-
-    final hours =
-        miningRemaining.inHours;
-
-    final minutes =
-        miningRemaining.inMinutes
-            .remainder(60);
-
-    final seconds =
-        miningRemaining.inSeconds
-            .remainder(60);
-
-    String twoDigits(int value) =>
-        value.toString().padLeft(2, '0');
-
-    return '${twoDigits(hours)}:'
-        '${twoDigits(minutes)}:'
-        '${twoDigits(seconds)}';
-  }
-
-  // ==========================================================
-  // ⏳ FORMAT AD TIME
+  // ⏱️ REMAINING AD TEXT
   // ==========================================================
 
   String _remainingAdText() {
-    if (cooldownRemaining <=
-        Duration.zero) {
+    if (
+        cooldownRemaining <=
+            Duration.zero) {
       return '';
     }
 
@@ -920,15 +943,46 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
+  // ⛏️ MINING TIME TEXT
+  // ==========================================================
+
+  String _miningTimeText() {
+    if (!miningActive) {
+      return 'VALMIS ALOITTAMAAN';
+    }
+
+    final duration =
+        Duration(
+      milliseconds:
+          miningRemainingMs,
+    );
+
+    final hours =
+        duration.inHours;
+
+    final minutes =
+        duration.inMinutes
+            .remainder(60);
+
+    final seconds =
+        duration.inSeconds
+            .remainder(60);
+
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  // ==========================================================
   // 🎁 DAILY REWARD TEXT
   // ==========================================================
 
   String _dailyRewardText() {
     if (dailyClaimed) {
-      return '🎁 ${t.get('claimed')}';
+      return '🎁 KERÄTTY TÄNÄÄN';
     }
 
-    return '🐱🎁 +1 Hash Rate';
+    return '🎁 +1 HASH RATE';
   }
 
   // ==========================================================
@@ -936,15 +990,17 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   String _dailyStreakText() {
-    return '${t.get('streak')}: '
-        '🔥 Stella Day $streak';
+    return '🔥 Stella Streak: '
+        '$streak päivää';
   }
 
   // ==========================================================
-  // 🐱 MESSAGE
+  // 💬 MESSAGE
   // ==========================================================
 
-  void _message(String message) {
+  void _message(
+    String message,
+  ) {
     if (!mounted) {
       return;
     }
@@ -953,19 +1009,12 @@ class _HomePageState extends State<HomePage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
+          content:
+              Text(message),
+          backgroundColor:
+              cardColor,
           behavior:
               SnackBarBehavior.floating,
-
-          backgroundColor:
-              const Color(0xFF1A2425),
-
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(16),
-          ),
-
-          content: Text(message),
         ),
       );
   }
@@ -975,7 +1024,8 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
+    await FirebaseAuth.instance
+        .signOut();
   }
 
   // ==========================================================
@@ -989,7 +1039,6 @@ class _HomePageState extends State<HomePage> {
         return LanguageDialog(
           currentLanguageCode:
               widget.languageCode,
-
           changeLanguage:
               widget.changeLanguage,
         );
@@ -1060,16 +1109,13 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   @override
-  Widget build(BuildContext context) {
-    // ========================================================
-    // LOADING
-    // ========================================================
-
+  Widget build(
+    BuildContext context,
+  ) {
     if (loading) {
       return const Scaffold(
         backgroundColor:
             backgroundColor,
-
         body: Center(
           child:
               CircularProgressIndicator(
@@ -1078,10 +1124,6 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
-
-    // ========================================================
-    // 🐱 DAILY CAT FACT
-    // ========================================================
 
     final factIndex =
         DateTime.now().day %
@@ -1092,113 +1134,69 @@ class _HomePageState extends State<HomePage> {
       widget.languageCode,
     );
 
-    // ========================================================
-    // 📺 AD BUTTON
-    // ========================================================
-
     final adButtonEnabled =
         canWatchAd &&
             rewardedAd != null &&
             !adClaimLoading;
 
-    // ========================================================
-    // 🎁 DAILY BUTTON
-    // ========================================================
-
     final dailyButtonEnabled =
         !dailyClaimed &&
             !dailyLoading;
 
-    // ========================================================
-    // 📺 NEXT AD TEXT
-    // ========================================================
-
     final nextAdText =
         cooldownRemaining >
                 Duration.zero
-            ? '${t.get('nextAd')}: '
+            ? '🐱 Seuraava Stella-mainos: '
                 '${_remainingAdText()}'
             : '';
-
-    // ========================================================
-    // 🐱 SCAFFOLD
-    // ========================================================
 
     return Scaffold(
       backgroundColor:
           backgroundColor,
 
       // ======================================================
-      // DRAWER
+      // 🐱 DRAWER
       // ======================================================
 
       drawer: HomeDrawer(
         onLanguagePressed:
             _openLanguageDialog,
-
         onAboutPressed:
             _openAboutPage,
-
         onWhitePaperPressed:
             _openWhitePaperPage,
-
         onTokenPressed:
             _openTokenPage,
-
         onTokenomicsPressed:
             _openTokenomicsPage,
-
         onRoadmapPressed:
             _openRoadmapPage,
-
         onTransactionHistoryPressed:
             _openTransactionHistoryPage,
       ),
 
       // ======================================================
-      // APP BAR
+      // 🐱 APP BAR
       // ======================================================
 
       appBar: AppBar(
-        backgroundColor:
-            backgroundColor,
-
-        elevation: 0,
-
-        title: const Row(
-          mainAxisSize:
-              MainAxisSize.min,
-
-          children: [
-            Text(
-              '🐱',
-              style:
-                  TextStyle(fontSize: 22),
-            ),
-
-            SizedBox(width: 8),
-
-            Text(
-              'STELLURIINI',
-              style: TextStyle(
-                fontWeight:
-                    FontWeight.bold,
-
-                letterSpacing: 2,
-              ),
-            ),
-          ],
+        title: const Text(
+          '🐱 STELLURIINI',
+          style: TextStyle(
+            fontWeight:
+                FontWeight.bold,
+            letterSpacing: 2,
+          ),
         ),
-
         actions: [
           IconButton(
             tooltip:
                 'Kirjaudu ulos',
-
-            icon:
-                const Icon(Icons.logout),
-
-            onPressed: _logout,
+            icon: const Icon(
+              Icons.logout,
+            ),
+            onPressed:
+                _logout,
           ),
         ],
       ),
@@ -1209,88 +1207,154 @@ class _HomePageState extends State<HomePage> {
 
       body: SafeArea(
         child: RefreshIndicator(
-          color: accentColor,
-
-          onRefresh: _loadData,
-
+          color:
+              accentColor,
+          onRefresh:
+              _loadData,
           child: ListView(
             physics:
                 const AlwaysScrollableScrollPhysics(),
-
             padding:
                 const EdgeInsets.all(16),
-
             children: [
               // ==============================================
-              // 🐱 STELLA PROFILE
+              // 🐱 PROFILE
               // ==============================================
 
               ProfileCard(
-                title: t.get('stella'),
+                title:
+                    t.get('stella'),
               ),
 
-              const SizedBox(height: 14),
-
-              // ==============================================
-              // ⛏️ STELLA MINING SESSION
-              // ==============================================
-
-              _MiningSessionCard(
-                miningActive:
-                    miningActive,
-
-                remainingText:
-                    _remainingMiningText(),
-
-                hashRate:
-                    hashRate,
-
-                miningPerHour:
-                    miningPerHour,
+              const SizedBox(
+                height: 14,
               ),
 
-              const SizedBox(height: 14),
-
               // ==============================================
-              // 💰 BALANCE
+              // ⛏️ BALANCE
               // ==============================================
 
               BalanceCard(
                 title:
                     t.get('yourBalance'),
-
                 estimatedTotal:
                     estimatedTotal,
-
                 miningBalance:
                     miningBalance,
-
                 unclaimedMining:
                     unclaimedMining,
-
                 hashRate:
                     hashRate,
-
                 miningPerHour:
                     miningPerHour,
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(
+                height: 14,
+              ),
 
               // ==============================================
-              // ⛏️ START / MINING BUTTON
+              // ⏱️ 24H STELLA MINING STATUS
+              // ==============================================
+
+              Container(
+                padding:
+                    const EdgeInsets.all(18),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      cardColor,
+                  borderRadius:
+                      BorderRadius.circular(
+                    20,
+                  ),
+                  border:
+                      Border.all(
+                    color: miningActive
+                        ? accentColor
+                            .withValues(
+                            alpha: 0.45,
+                          )
+                        : Colors.white
+                            .withValues(
+                            alpha: 0.08,
+                          ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      miningActive
+                          ? '🐱⛏️ STELLA MINING ACTIVE'
+                          : '🐱⛏️ STELLA MINING READY',
+                      style: TextStyle(
+                        color: miningActive
+                            ? accentColor
+                            : Colors.white
+                                .withValues(
+                                alpha: 0.75,
+                              ),
+                        fontWeight:
+                            FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                    Text(
+                      _miningTimeText(),
+                      style: TextStyle(
+                        color: miningActive
+                            ? accentColor
+                            : stellaGold,
+                        fontSize: 30,
+                        fontWeight:
+                            FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
+                    Text(
+                      miningActive
+                          ? 'STL juoksee reaaliajassa ⚡🐱'
+                          : 'Aloita uusi 24h Stella Mining ⛏️',
+                      style: TextStyle(
+                        color: Colors.white
+                            .withValues(
+                          alpha: 0.60,
+                        ),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(
+                height: 14,
+              ),
+
+              // ==============================================
+              // ⛏️ START MINING
               // ==============================================
 
               SizedBox(
-                width: double.infinity,
-
+                width:
+                    double.infinity,
                 child:
                     ElevatedButton.icon(
                   onPressed:
-                      miningLoading
+                      miningLoading ||
+                              miningActive
                           ? null
-                          : _claimMining,
-
+                          : _startMining,
                   icon: miningLoading
                       ? const SizedBox(
                           width: 20,
@@ -1298,37 +1362,44 @@ class _HomePageState extends State<HomePage> {
                           child:
                               CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.black,
+                            color:
+                                Colors.black,
                           ),
                         )
                       : Icon(
                           miningActive
-                              ? Icons.pets
+                              ? Icons
+                                  .bolt
                               : Icons
                                   .precision_manufacturing,
                         ),
-
                   label: Text(
                     miningLoading
-                        ? '🐱 STELLA VALMISTAUTUU...'
+                        ? '🐱 STELLA VALMISTELEE...'
                         : miningActive
-                            ? '🐱⛏️ STELLA IS MINING'
-                            : '🐱⛏️ START STELLA MINING',
+                            ? '⚡ STELLA MINING ACTIVE'
+                            : '🐱⛏️ START 24H MINING',
                   ),
-
                   style:
                       ElevatedButton.styleFrom(
                     backgroundColor:
                         accentColor,
-
                     foregroundColor:
                         Colors.black,
-
+                    disabledBackgroundColor:
+                        accentColor
+                            .withValues(
+                      alpha: 0.25,
+                    ),
+                    disabledForegroundColor:
+                        Colors.white
+                            .withValues(
+                      alpha: 0.45,
+                    ),
                     padding:
                         const EdgeInsets.symmetric(
                       vertical: 18,
                     ),
-
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
@@ -1336,107 +1407,89 @@ class _HomePageState extends State<HomePage> {
                         18,
                       ),
                     ),
-
                     textStyle:
                         const TextStyle(
-                      fontSize: 14,
-
+                      fontSize: 15,
                       fontWeight:
                           FontWeight.bold,
-
                       letterSpacing: 1,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(
+                height: 14,
+              ),
 
               // ==============================================
-              // 🎁 DAILY BONUS
+              // 🎁 DAILY STELLA BONUS
               // ==============================================
 
               DailyRewardCard(
                 title:
                     t.get('dailyClaim'),
-
                 rewardText:
                     _dailyRewardText(),
-
                 streakText:
                     _dailyStreakText(),
-
                 dailyLoading:
                     dailyLoading,
-
                 dailyAdLoading:
                     false,
-
                 dailyClaimed:
                     dailyClaimed,
-
                 adReady:
                     true,
-
                 onPressed:
                     dailyButtonEnabled
                         ? _dailyClaim
                         : null,
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(
+                height: 14,
+              ),
 
               // ==============================================
-              // 📺 STELLA POWER BOOST
+              // 📺 WATCH AD
               // ==============================================
 
               WatchAdCard(
                 title:
                     '🐱⚡ STELLA POWER BOOST',
-
                 dailyLimitText:
-                    t.get('dailyLimit'),
-
+                    'Päivän Stella-mainokset',
                 adsToday:
                     adsToday,
-
                 maxAdsPerDay:
                     maxAdsPerDay,
-
                 canWatch:
                     canWatchAd,
-
                 nextAdText:
                     nextAdText,
-
                 adLoading:
                     adClaimLoading ||
                         rewardedAdLoading,
-
                 adReady:
                     rewardedAd != null,
-
                 loadingText:
-                    '🐱 Stella hakee mainosta...',
-
+                    '🐱📺 Stella valmistaa mainosta...',
                 limitReachedText:
-                    '🐱 Stella on saanut '
-                    'päivän kaikki boostit!',
-
+                    '🐱 Päivän Stella-mainosraja saavutettu.',
                 unavailableText:
-                    '🐱 Power Boost ei ole '
-                    'vielä saatavilla.',
-
+                    '📺 Mainos ei ole vielä valmis.',
                 watchButtonText:
-                    '📺 WATCH & BOOST STELLA ⚡',
-
+                    '📺 WATCH & POWER UP ⚡',
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
                         : null,
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(
+                height: 14,
+              ),
 
               // ==============================================
               // 🐱 STELLA FACT
@@ -1445,320 +1498,16 @@ class _HomePageState extends State<HomePage> {
               CatFactCard(
                 title:
                     '🐱 ${t.get('stellaFacts')}',
-
-                fact: fact,
+                fact:
+                    fact,
               ),
 
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// 🐱 STELLA MINING SESSION CARD
-// ============================================================
-
-class _MiningSessionCard
-    extends StatelessWidget {
-  final bool miningActive;
-
-  final String remainingText;
-
-  final double hashRate;
-
-  final double miningPerHour;
-
-  const _MiningSessionCard({
-    required this.miningActive,
-    required this.remainingText,
-    required this.hashRate,
-    required this.miningPerHour,
-  });
-
-  String _format(double value) {
-    if (value >= 1000) {
-      return value.toStringAsFixed(0);
-    }
-
-    if (value >= 10) {
-      return value.toStringAsFixed(1);
-    }
-
-    return value.toStringAsFixed(2);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor =
-        miningActive
-            ? accentColor
-            : Colors.white54;
-
-    return Container(
-      width: double.infinity,
-
-      padding:
-          const EdgeInsets.all(20),
-
-      decoration: BoxDecoration(
-        color: cardColor,
-
-        borderRadius:
-            BorderRadius.circular(24),
-
-        border: Border.all(
-          color:
-              accentColor.withValues(
-            alpha: miningActive
-                ? 0.45
-                : 0.15,
-          ),
-        ),
-
-        boxShadow: miningActive
-            ? [
-                BoxShadow(
-                  color:
-                      accentColor.withValues(
-                    alpha: 0.08,
-                  ),
-
-                  blurRadius: 24,
-
-                  spreadRadius: 1,
-                ),
-              ]
-            : [],
-      ),
-
-      child: Column(
-        children: [
-          const Text(
-            '🐱⛏️',
-            style: TextStyle(
-              fontSize: 38,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            miningActive
-                ? 'STELLA IS MINING'
-                : 'STELLA IS RESTING',
-            style: TextStyle(
-              color: statusColor,
-
-              fontWeight:
-                  FontWeight.bold,
-
-              letterSpacing: 2,
-
-              fontSize: 14,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Container(
-            width: double.infinity,
-
-            padding:
-                const EdgeInsets.symmetric(
-              vertical: 16,
-            ),
-
-            decoration: BoxDecoration(
-              color:
-                  accentColor.withValues(
-                alpha: 0.08,
-              ),
-
-              borderRadius:
-                  BorderRadius.circular(18),
-            ),
-
-            child: Column(
-              children: [
-                const Text(
-                  '⏳ MINING TIME REMAINING',
-                  style: TextStyle(
-                    color: Colors.white54,
-
-                    fontSize: 11,
-
-                    fontWeight:
-                        FontWeight.bold,
-
-                    letterSpacing: 1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  miningActive
-                      ? remainingText
-                      : 'READY',
-
-                  style: TextStyle(
-                    color: statusColor,
-
-                    fontSize: 30,
-
-                    fontWeight:
-                        FontWeight.bold,
-
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child:
-                    _SessionStat(
-                  icon: Icons.bolt,
-
-                  label: 'HASH RATE',
-
-                  value:
-                      '${_format(hashRate)} HR',
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child:
-                    _SessionStat(
-                  icon:
-                      Icons.trending_up,
-
-                  label: 'MINING SPEED',
-
-                  value:
-                      '${_format(miningPerHour)} STL/h',
-                ),
+              const SizedBox(
+                height: 30,
               ),
             ],
           ),
-
-          const SizedBox(height: 14),
-
-          Text(
-            miningActive
-                ? '🐱 Stella louhii STL:ää juuri nyt... ⛏️✨'
-                : '🐱 Paina START ja anna Stellan aloittaa!',
-            textAlign:
-                TextAlign.center,
-
-            style: TextStyle(
-              color:
-                  Colors.white.withValues(
-                alpha: 0.55,
-              ),
-
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// 📊 SESSION STAT
-// ============================================================
-
-class _SessionStat
-    extends StatelessWidget {
-  final IconData icon;
-
-  final String label;
-
-  final String value;
-
-  const _SessionStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding:
-          const EdgeInsets.all(12),
-
-      decoration: BoxDecoration(
-        color:
-            Colors.white.withValues(
-          alpha: 0.04,
         ),
-
-        borderRadius:
-            BorderRadius.circular(16),
-      ),
-
-      child: Column(
-        children: [
-          Icon(
-            icon,
-
-            color: accentColor,
-
-            size: 20,
-          ),
-
-          const SizedBox(height: 7),
-
-          Text(
-            label,
-
-            textAlign:
-                TextAlign.center,
-
-            style: const TextStyle(
-              color: Colors.white54,
-
-              fontSize: 10,
-
-              fontWeight:
-                  FontWeight.bold,
-
-              letterSpacing: 1,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            value,
-
-            textAlign:
-                TextAlign.center,
-
-            style: const TextStyle(
-              color: Colors.white,
-
-              fontSize: 13,
-
-              fontWeight:
-                  FontWeight.bold,
-            ),
-          ),
-        ],
       ),
     );
   }
