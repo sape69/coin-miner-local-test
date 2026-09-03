@@ -10,6 +10,7 @@ import '../cat_facts.dart';
 import '../localization.dart';
 
 import 'about/about_page.dart';
+import 'history/transaction_history_page.dart';
 import 'home/balance_card.dart';
 import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
@@ -27,13 +28,14 @@ import 'whitepaper/whitepaper_page.dart';
 // ============================================================
 
 const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
 const Color accentColor = Color(0xFF35D0A0);
 
 // ============================================================
 // ADMOB
 // ============================================================
 
+/// Googlen virallinen Rewarded Ad TEST-ID.
+/// Vaihda myöhemmin oikeaan AdMob Rewarded Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -41,10 +43,13 @@ const String rewardedAdUnitId =
 // REWARD SETTINGS
 // ============================================================
 
+/// Maksimimäärä mainoksia päivässä.
 const int maxAdsPerDay = 5;
 
+/// Päivittäisen palkinnon maksimi.
 const int maxDailyReward = 7;
 
+/// Mainosten välinen odotusaika.
 const Duration adCooldown = Duration(hours: 1);
 
 // ============================================================
@@ -530,7 +535,7 @@ class _HomePageState extends State<HomePage> {
       if (alreadyClaimed) {
         _message(t.get('claimed'));
       } else {
-        _message('+$reward STL! 🐱🐾');
+        _message('+$reward STL! 🐱');
       }
     } on FirebaseFunctionsException catch (error) {
       _message(
@@ -883,7 +888,7 @@ class _HomePageState extends State<HomePage> {
       });
 
       _message(
-        '+$reward STL! 🐱🐾',
+        '+$reward STL! 🐱',
       );
     } on FirebaseFunctionsException catch (error) {
       _message(
@@ -984,19 +989,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // TRANSACTION HISTORY
-  // ==========================================================
-
-  Future<void> _openTransactionHistory() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            const TransactionHistoryPage(),
-      ),
-    );
-  }
-
-  // ==========================================================
   // MESSAGE
   // ==========================================================
 
@@ -1035,6 +1027,19 @@ class _HomePageState extends State<HomePage> {
               widget.changeLanguage,
         );
       },
+    );
+  }
+
+  // ==========================================================
+  // TRANSACTION HISTORY PAGE
+  // ==========================================================
+
+  void _openTransactionHistoryPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const TransactionHistoryPage(),
+      ),
     );
   }
 
@@ -1177,6 +1182,13 @@ class _HomePageState extends State<HomePage> {
 
         onRoadmapPressed:
             _openRoadmapPage,
+
+        // ====================================================
+        // TRANSACTION HISTORY
+        // ====================================================
+
+        onTransactionHistoryPressed:
+            _openTransactionHistoryPage,
       ),
 
       // ======================================================
@@ -1193,14 +1205,6 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Transaction History',
-            icon: const Icon(
-              Icons.receipt_long_outlined,
-            ),
-            onPressed:
-                _openTransactionHistory,
-          ),
-          IconButton(
             tooltip: 'Kirjaudu ulos',
             icon: const Icon(
               Icons.logout,
@@ -1216,8 +1220,11 @@ class _HomePageState extends State<HomePage> {
 
       body: SafeArea(
         child: RefreshIndicator(
+          color: accentColor,
           onRefresh: _loadData,
           child: ListView(
+            physics:
+                const AlwaysScrollableScrollPhysics(),
             padding:
                 const EdgeInsets.all(16),
             children: [
@@ -1312,17 +1319,6 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 14),
 
               // ==============================================
-              // TRANSACTION HISTORY BUTTON
-              // ==============================================
-
-              _TransactionHistoryCard(
-                onPressed:
-                    _openTransactionHistory,
-              ),
-
-              const SizedBox(height: 14),
-
-              // ==============================================
               // CAT FACT
               // ==============================================
 
@@ -1335,641 +1331,6 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 30),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// TRANSACTION HISTORY CARD
-// ============================================================
-
-class _TransactionHistoryCard
-    extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _TransactionHistoryCard({
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: cardColor,
-      child: InkWell(
-        borderRadius:
-            BorderRadius.circular(16),
-        onTap: onPressed,
-        child: Padding(
-          padding:
-              const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(
-                    alpha: 0.12,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.receipt_long_outlined,
-                  color: accentColor,
-                  size: 28,
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Transaction History',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      'Katso Stella STL -tapahtumasi 🐱🐾',
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: accentColor,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// TRANSACTION HISTORY PAGE
-// ============================================================
-
-class TransactionHistoryPage
-    extends StatefulWidget {
-  const TransactionHistoryPage({
-    super.key,
-  });
-
-  @override
-  State<TransactionHistoryPage>
-      createState() =>
-          _TransactionHistoryPageState();
-}
-
-// ============================================================
-// TRANSACTION HISTORY STATE
-// ============================================================
-
-class _TransactionHistoryPageState
-    extends State<TransactionHistoryPage> {
-  final FirebaseFunctions functions =
-      FirebaseFunctions.instance;
-
-  bool loading = true;
-
-  String? errorMessage;
-
-  List<Map<String, dynamic>>
-      transactions = [];
-
-  // ==========================================================
-  // INIT
-  // ==========================================================
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadTransactions();
-  }
-
-  // ==========================================================
-  // LOAD TRANSACTIONS
-  // ==========================================================
-
-  Future<void> _loadTransactions() async {
-    if (mounted) {
-      setState(() {
-        loading = true;
-        errorMessage = null;
-      });
-    }
-
-    try {
-      final callable =
-          functions.httpsCallable(
-        'getTransactionHistory',
-      );
-
-      final result =
-          await callable.call();
-
-      final data =
-          Map<String, dynamic>.from(
-        result.data as Map,
-      );
-
-      final rawTransactions =
-          data['transactions'];
-
-      final List<Map<String, dynamic>>
-          loadedTransactions = [];
-
-      if (rawTransactions is List) {
-        for (final item
-            in rawTransactions) {
-          if (item is Map) {
-            loadedTransactions.add(
-              Map<String, dynamic>.from(
-                item,
-              ),
-            );
-          }
-        }
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        transactions =
-            loadedTransactions;
-        loading = false;
-      });
-    } on FirebaseFunctionsException
-        catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage =
-            error.message ??
-                'Tapahtumahistorian lataaminen epäonnistui.';
-        loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage =
-            'Tapahtumahistorian lataaminen epäonnistui.';
-        loading = false;
-      });
-    }
-  }
-
-  // ==========================================================
-  // FORMAT DATE
-  // ==========================================================
-
-  String _formatDate(
-    Map<String, dynamic> transaction,
-  ) {
-    final createdAt =
-        transaction['createdAt'];
-
-    if (createdAt is String &&
-        createdAt.isNotEmpty) {
-      final date =
-          DateTime.tryParse(createdAt);
-
-      if (date != null) {
-        final local =
-            date.toLocal();
-
-        return '${local.day.toString().padLeft(2, '0')}.'
-            '${local.month.toString().padLeft(2, '0')}.'
-            '${local.year} '
-            '${local.hour.toString().padLeft(2, '0')}:'
-            '${local.minute.toString().padLeft(2, '0')}';
-      }
-    }
-
-    final date =
-        transaction['date'];
-
-    if (date is String &&
-        date.isNotEmpty) {
-      return date;
-    }
-
-    return 'Unknown date';
-  }
-
-  // ==========================================================
-  // TRANSACTION ICON
-  // ==========================================================
-
-  IconData _transactionIcon(
-    String type,
-  ) {
-    switch (type) {
-      case 'daily_reward':
-        return Icons.card_giftcard_rounded;
-
-      case 'ad_reward':
-        return Icons.play_circle_outline_rounded;
-
-      default:
-        return Icons.receipt_long_rounded;
-    }
-  }
-
-  // ==========================================================
-  // TRANSACTION TITLE
-  // ==========================================================
-
-  String _transactionTitle(
-    Map<String, dynamic> transaction,
-  ) {
-    final title =
-        String(
-      transaction['title'] ?? '',
-    );
-
-    if (title.isNotEmpty) {
-      return title;
-    }
-
-    final type =
-        String(
-      transaction['type'] ?? '',
-    );
-
-    switch (type) {
-      case 'daily_reward':
-        return 'Daily Reward';
-
-      case 'ad_reward':
-        return 'Ad Reward';
-
-      default:
-        return 'STL Transaction';
-    }
-  }
-
-  // ==========================================================
-  // BUILD
-  // ==========================================================
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: backgroundColor,
-
-      appBar: AppBar(
-        title: const Text(
-          'TRANSACTION HISTORY',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.4,
-            fontSize: 16,
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(
-              Icons.refresh_rounded,
-            ),
-            onPressed:
-                loading
-                    ? null
-                    : _loadTransactions,
-          ),
-        ],
-      ),
-
-      body: _buildBody(),
-    );
-  }
-
-  // ==========================================================
-  // BODY
-  // ==========================================================
-
-  Widget _buildBody() {
-    if (loading) {
-      return const Center(
-        child:
-            CircularProgressIndicator(
-          color: accentColor,
-        ),
-      );
-    }
-
-    if (errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding:
-              const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.cloud_off_rounded,
-                color: Colors.white54,
-                size: 56,
-              ),
-
-              const SizedBox(height: 16),
-
-              Text(
-                errorMessage!,
-                textAlign:
-                    TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              ElevatedButton.icon(
-                onPressed:
-                    _loadTransactions,
-                icon: const Icon(
-                  Icons.refresh,
-                ),
-                label: const Text(
-                  'Yritä uudelleen',
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (transactions.isEmpty) {
-      return Center(
-        child: Padding(
-          padding:
-              const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(
-                    alpha: 0.10,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.pets_rounded,
-                  color: accentColor,
-                  size: 45,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              const Text(
-                'Ei vielä tapahtumia',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              const Text(
-                'Stella odottaa ensimmäistä '
-                'STL-tapahtumaasi 🐱🐾',
-                textAlign:
-                    TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white60,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh:
-          _loadTransactions,
-      child: ListView.builder(
-        padding:
-            const EdgeInsets.all(16),
-
-        itemCount:
-            transactions.length,
-
-        itemBuilder:
-            (context, index) {
-          final transaction =
-              transactions[index];
-
-          return _TransactionItem(
-            transaction: transaction,
-            icon: _transactionIcon(
-              String(
-                transaction['type'] ?? '',
-              ),
-            ),
-            title:
-                _transactionTitle(
-              transaction,
-            ),
-            date:
-                _formatDate(
-              transaction,
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ============================================================
-// TRANSACTION ITEM
-// ============================================================
-
-class _TransactionItem
-    extends StatelessWidget {
-  final Map<String, dynamic>
-      transaction;
-
-  final IconData icon;
-  final String title;
-  final String date;
-
-  const _TransactionItem({
-    required this.transaction,
-    required this.icon,
-    required this.title,
-    required this.date,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final amount =
-        (transaction['amount'] as num?)
-                ?.toInt() ??
-            0;
-
-    final balanceAfter =
-        (transaction['balanceAfter']
-                    as num?)
-                ?.toInt() ??
-            0;
-
-    final type =
-        String(
-      transaction['type'] ?? '',
-    );
-
-    final isDaily =
-        type == 'daily_reward';
-
-    return Card(
-      margin:
-          const EdgeInsets.only(
-        bottom: 12,
-      ),
-      color: cardColor,
-      child: Padding(
-        padding:
-            const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // ==================================================
-            // ICON
-            // ==================================================
-
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(
-                  alpha: 0.12,
-                ),
-                borderRadius:
-                    BorderRadius.circular(15),
-              ),
-              child: Icon(
-                icon,
-                color: accentColor,
-                size: 26,
-              ),
-            ),
-
-            const SizedBox(width: 14),
-
-            // ==================================================
-            // DETAILS
-            // ==================================================
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isDaily
-                        ? '🎁 $title'
-                        : '🐾 $title',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 12,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    'Balance: $balanceAfter STL',
-                    style: TextStyle(
-                      color: accentColor.withValues(
-                        alpha: 0.75,
-                      ),
-                      fontSize: 12,
-                      fontWeight:
-                          FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ==================================================
-            // AMOUNT
-            // ==================================================
-
-            Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '+$amount STL',
-                  style: const TextStyle(
-                    color: accentColor,
-                    fontSize: 17,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 5),
-
-                const Text(
-                  'STELLA 🐱',
-                  style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 9,
-                    fontWeight:
-                        FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
