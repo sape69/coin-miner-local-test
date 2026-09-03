@@ -15,17 +15,16 @@ const {
 
 
 // ============================================================
-// 📜 STELLA HISTORY FUNCTIONS
+// 🐱 STELLA HISTORY FUNCTIONS
 // ============================================================
 //
-// Hakee käyttäjän Stella Mining -historian.
+// 📜 Stella Mining History
 //
-// Historia sisältää:
+// Näyttää käyttäjän viimeisimmät:
 //
-// 🐱 Stella Mining
-// ⛏️ Mining Complete
-// 🎁 Daily Bonus
-// 📺 Power Boost
+// ⛏️ Stella Mining -tapahtumat
+// 🎁 Stella Daily Bonus
+// 📺 Stella Power Boost
 //
 // ============================================================
 
@@ -38,14 +37,13 @@ const getTransactionHistory =
   onCall(async (request) => {
 
     // ========================================================
-    // AUTHENTICATION
+    // 🔐 AUTHENTICATION
     // ========================================================
 
     if (!request.auth) {
-
       throw new HttpsError(
         "unauthenticated",
-        "🐱 Kirjaudu sisään nähdäksesi Stella-historian."
+        "🐱 Kirjaudu sisään nähdäksesi Stella Historian."
       );
     }
 
@@ -55,11 +53,19 @@ const getTransactionHistory =
 
 
     // ========================================================
-    // GET HISTORY
+    // 📁 HISTORY COLLECTION
+    // ========================================================
+
+    const historyCollection =
+      getHistoryCollection(uid);
+
+
+    // ========================================================
+    // 📜 GET LATEST TRANSACTIONS
     // ========================================================
 
     const snapshot =
-      await getHistoryCollection(uid)
+      await historyCollection
         .orderBy(
           "createdAt",
           "desc"
@@ -71,7 +77,7 @@ const getTransactionHistory =
 
 
     // ========================================================
-    // FORMAT HISTORY
+    // 🐱 FORMAT TRANSACTIONS
     // ========================================================
 
     const transactions =
@@ -83,7 +89,7 @@ const getTransactionHistory =
 
 
           // ==================================================
-          // DATE
+          // ⏱️ CREATED AT
           // ==================================================
 
           let createdAt =
@@ -104,107 +110,85 @@ const getTransactionHistory =
 
 
           // ==================================================
-          // TRANSACTION
+          // 📜 RETURN TRANSACTION
           // ==================================================
 
           return {
 
+            // Unique transaction ID
             id:
               doc.id,
 
 
-            // ----------------------------------------------
-            // TYPE
-            // ----------------------------------------------
-
+            // Transaction type
             type:
               String(
                 data.type || ""
               ),
 
 
-            // ----------------------------------------------
-            // TITLE
-            // ----------------------------------------------
-
+            // Stella themed title
             title:
               String(
                 data.title || ""
               ),
 
 
-            // ----------------------------------------------
-            // AMOUNT
-            // ----------------------------------------------
-
+            // STL amount or Hash Rate bonus
             amount:
               Number(
                 data.amount || 0
               ),
 
 
-            // ----------------------------------------------
-            // BALANCE
-            // ----------------------------------------------
-
+            // STL balance after transaction
             balanceAfter:
               Number(
                 data.balanceAfter || 0
               ),
 
 
-            // ----------------------------------------------
-            // HASH RATE AFTER
-            // ----------------------------------------------
-
+            // Hash Rate after transaction
             hashRateAfter:
               Number(
                 data.hashRateAfter || 0
               ),
 
 
-            // ----------------------------------------------
-            // HASH RATE
-            // ----------------------------------------------
-
+            // Hash Rate used for mining
             hashRate:
               Number(
                 data.hashRate || 0
               ),
 
 
-            // ----------------------------------------------
-            // STREAK
-            // ----------------------------------------------
-
+            // Daily streak
             streak:
               Number(
                 data.streak || 0
               ),
 
 
-            // ----------------------------------------------
-            // ADS
-            // ----------------------------------------------
-
+            // Ads watched today
             adsToday:
               Number(
                 data.adsToday || 0
               ),
 
 
-            // ----------------------------------------------
-            // MINING RESTARTED
-            // ----------------------------------------------
-
+            // Did ad restart Stella Mining?
             miningRestarted:
               data.miningRestarted === true,
 
 
-            // ----------------------------------------------
-            // DATE
-            // ----------------------------------------------
+            // AdMob transaction ID
+            admobTransactionId:
+              String(
+                data.admobTransactionId || ""
+              ),
 
+
+            // Timestamp
             createdAt,
 
           };
@@ -213,13 +197,15 @@ const getTransactionHistory =
 
 
     // ========================================================
-    // RESPONSE
+    // 🐱 RESPONSE
     // ========================================================
 
     return {
 
-      success:
-        true,
+      success: true,
+
+      count:
+        transactions.length,
 
       transactions,
 
@@ -228,7 +214,7 @@ const getTransactionHistory =
 
 
 // ============================================================
-// EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
