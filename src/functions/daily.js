@@ -1,5 +1,31 @@
 "use strict";
 
+const {
+  onCall,
+  HttpsError,
+} = require("firebase-functions/v2/https");
+
+const {
+  db,
+  FieldValue,
+} = require("../firebase/firebase");
+
+const {
+  DEFAULT_HASH_RATE,
+  DAILY_HASH_RATE_BONUS,
+} = require("../config/miningConfig");
+
+const {
+  getUtcDateString,
+  getYesterdayUtcDateString,
+} = require("../utils/dateUtils");
+
+const {
+  getUserRef,
+  getHistoryCollection,
+} = require("../utils/userUtils");
+
+
 // ============================================================
 // 🐱 STELLA DAILY BONUS
 // ============================================================
@@ -12,76 +38,6 @@
 // 📜 Bonus-historiasta
 //
 // ============================================================
-
-
-// ============================================================
-// FIREBASE FUNCTIONS
-// ============================================================
-
-const {
-  onCall,
-  HttpsError,
-} = require(
-  "firebase-functions/v2/https"
-);
-
-
-// ============================================================
-// FIRESTORE
-// ============================================================
-
-const {
-  FieldValue,
-} = require(
-  "firebase-admin/firestore"
-);
-
-
-// ============================================================
-// FIREBASE
-// ============================================================
-
-const {
-  db,
-  getUserRef,
-} = require(
-  "../firebase/firebase"
-);
-
-
-// ============================================================
-// STELLA CONFIG
-// ============================================================
-
-const {
-  DEFAULT_HASH_RATE,
-  DAILY_HASH_RATE_BONUS,
-} = require(
-  "../config/miningConfig"
-);
-
-
-// ============================================================
-// DATE UTILITIES
-// ============================================================
-
-const {
-  getUtcDateString,
-  getYesterdayUtcDateString,
-} = require(
-  "../utils/dateUtils"
-);
-
-
-// ============================================================
-// HISTORY SERVICE
-// ============================================================
-
-const {
-  createDailyHistoryRef,
-} = require(
-  "../services/historyService"
-);
 
 
 // ============================================================
@@ -108,7 +64,7 @@ const dailyCheckIn =
 
       throw new HttpsError(
         "unauthenticated",
-        "Kirjaudu sisään jatkaaksesi."
+        "🐱 Kirjaudu sisään saadaksesi Stella Daily Bonuksen."
       );
 
     }
@@ -121,6 +77,7 @@ const dailyCheckIn =
     const uid =
       request.auth.uid;
 
+
     const userRef =
       getUserRef(uid);
 
@@ -131,6 +88,7 @@ const dailyCheckIn =
 
     const today =
       getUtcDateString();
+
 
     const yesterday =
       getYesterdayUtcDateString();
@@ -153,6 +111,7 @@ const dailyCheckIn =
             userRef
           );
 
+
         const data =
           snapshot.exists
             ? snapshot.data()
@@ -165,7 +124,7 @@ const dailyCheckIn =
 
         const oldHashRate =
           Number(
-            data.hashRate ||
+            data.hashRate ??
             DEFAULT_HASH_RATE
           );
 
@@ -176,7 +135,7 @@ const dailyCheckIn =
 
         const oldStreak =
           Number(
-            data.streak || 0
+            data.streak ?? 0
           );
 
 
@@ -203,17 +162,22 @@ const dailyCheckIn =
             success:
               true,
 
+
             alreadyClaimed:
               true,
+
+
+            bonus:
+              0,
+
 
             hashRate:
               oldHashRate,
 
+
             streak:
               oldStreak,
 
-            bonus:
-              0,
 
             message:
               "🐱🎁 Stella on jo antanut tämän päivän bonuksen!",
@@ -264,33 +228,25 @@ const dailyCheckIn =
           userRef,
           {
 
-            // ------------------------------------------------
-            // ⚡ HASH RATE
-            // ------------------------------------------------
+            // ⚡ Hash Rate
 
             hashRate:
               newHashRate,
 
 
-            // ------------------------------------------------
-            // 🔥 STREAK
-            // ------------------------------------------------
+            // 🔥 Streak
 
             streak:
               newStreak,
 
 
-            // ------------------------------------------------
-            // 🗓️ DAILY DATE
-            // ------------------------------------------------
+            // 🗓️ Daily claim date
 
             lastDaily:
               today,
 
 
-            // ------------------------------------------------
-            // 🕒 UPDATED
-            // ------------------------------------------------
+            // ⏱️ Updated
 
             updatedAt:
               FieldValue.serverTimestamp(),
@@ -307,10 +263,8 @@ const dailyCheckIn =
         // ====================================================
 
         const historyRef =
-          createDailyHistoryRef(
-            uid,
-            today
-          );
+          getHistoryCollection(uid)
+            .doc();
 
 
         transaction.set(
@@ -358,6 +312,14 @@ const dailyCheckIn =
 
 
             // ------------------------------------------------
+            // DATE
+            // ------------------------------------------------
+
+            date:
+              today,
+
+
+            // ------------------------------------------------
             // TIME
             // ------------------------------------------------
 
@@ -369,7 +331,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // 🐱 RESPONSE
+        // 🐱 SUCCESS RESPONSE
         // ====================================================
 
         return {
@@ -377,36 +339,21 @@ const dailyCheckIn =
           success:
             true,
 
+
           alreadyClaimed:
             false,
 
 
-          // --------------------------------------------------
-          // ⚡ BONUS
-          // --------------------------------------------------
-
           bonus,
 
-
-          // --------------------------------------------------
-          // ⚡ NEW HASH RATE
-          // --------------------------------------------------
 
           hashRate:
             newHashRate,
 
 
-          // --------------------------------------------------
-          // 🔥 NEW STREAK
-          // --------------------------------------------------
-
           streak:
             newStreak,
 
-
-          // --------------------------------------------------
-          // 🐱 STELLA MESSAGE
-          // --------------------------------------------------
 
           message:
             `🐱🎁 Stella antoi +${bonus} Hash Rate! 🔥 ${newStreak} päivän streak!`,
@@ -420,7 +367,7 @@ const dailyCheckIn =
 
 
 // ============================================================
-// EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
