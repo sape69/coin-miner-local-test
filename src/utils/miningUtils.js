@@ -1,33 +1,201 @@
 "use strict";
 
+
+// ============================================================
+// 🐱 STELLA MINING UTILITIES
+// ============================================================
+//
+// Vastaa:
+//
+// ⛏️ Louhinnan STL-laskennasta
+// ⏱️ Mining-ajan käsittelystä
+// 📅 Firestore Timestamp / Date -muunnoksista
+// 🐱 Stella Mining -tilan laskemisesta
+//
+// ============================================================
+
+
+// ============================================================
+// CONFIG
+// ============================================================
+
 const {
-
   DEFAULT_HASH_RATE,
-
   MINING_PER_HASH_PER_HOUR,
-
 } = require(
   "../config/miningConfig"
 );
 
 
 // ============================================================
+// 🔢 SAFE NUMBER
+// ============================================================
+//
+// Varmistaa, että arvo on kelvollinen numero.
+//
+// ============================================================
+
+function getSafeNumber(
+  value,
+  fallback = 0
+) {
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
+
+
+// ============================================================
+// ⚡ GET HASH RATE
+// ============================================================
+
+function getHashRate(data) {
+  const hashRate =
+    getSafeNumber(
+      data?.hashRate,
+      DEFAULT_HASH_RATE
+    );
+
+  return hashRate > 0
+    ? hashRate
+    : DEFAULT_HASH_RATE;
+}
+
+
+// ============================================================
+// 📅 CONVERT TO DATE
+// ============================================================
+//
+// Tukee:
+//
+// • Firestore Timestamp
+// • JavaScript Date
+//
+// ============================================================
+
+function toDate(value) {
+
+  if (!value) {
+    return null;
+  }
+
+
+  // ==========================================================
+  // FIRESTORE TIMESTAMP
+  // ==========================================================
+
+  if (
+    typeof value.toDate ===
+    "function"
+  ) {
+
+    const date =
+      value.toDate();
+
+    return (
+      date instanceof Date &&
+      !Number.isNaN(date.getTime())
+    )
+      ? date
+      : null;
+  }
+
+
+  // ==========================================================
+  // JAVASCRIPT DATE
+  // ==========================================================
+
+  if (
+    value instanceof Date
+  ) {
+
+    return Number.isNaN(
+      value.getTime()
+    )
+      ? null
+      : value;
+  }
+
+
+  // ==========================================================
+  // STRING / NUMBER DATE
+  // ==========================================================
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+
+    const date =
+      new Date(value);
+
+    return Number.isNaN(
+      date.getTime()
+    )
+      ? null
+      : date;
+  }
+
+
+  return null;
+}
+
+
+// ============================================================
 // ⛏️ CALCULATE MINING
+// ============================================================
+//
+// Laskee syntyneen STL-määrän.
+//
+// Formula:
+//
+// Hash Rate
+// × STL / Hash / Hour
+// × Elapsed Hours
+//
 // ============================================================
 
 function calculateMining(
   hashRate,
   elapsedMilliseconds
 ) {
+
+  const safeHashRate =
+    getSafeNumber(
+      hashRate,
+      DEFAULT_HASH_RATE
+    );
+
+
+  const safeElapsedMilliseconds =
+    Math.max(
+      0,
+      getSafeNumber(
+        elapsedMilliseconds,
+        0
+      )
+    );
+
+
   const hours =
-    elapsedMilliseconds /
+    safeElapsedMilliseconds /
     (1000 * 60 * 60);
 
-  return (
-    hashRate *
+
+  const minedAmount =
+    safeHashRate *
     MINING_PER_HASH_PER_HOUR *
-    hours
-  );
+    hours;
+
+
+  return Number.isFinite(
+    minedAmount
+  )
+    ? minedAmount
+    : 0;
 }
 
 
@@ -36,18 +204,10 @@ function calculateMining(
 // ============================================================
 
 function getMiningStartTime(data) {
-  const timestamp =
-    data.miningStartedAt;
 
-  if (
-    timestamp &&
-    typeof timestamp.toDate ===
-      "function"
-  ) {
-    return timestamp.toDate();
-  }
-
-  return null;
+  return toDate(
+    data?.miningStartedAt
+  );
 }
 
 
@@ -56,50 +216,70 @@ function getMiningStartTime(data) {
 // ============================================================
 
 function getMiningEndTime(data) {
-  const timestamp =
-    data.miningEndsAt;
 
-  if (
-    timestamp &&
-    typeof timestamp.toDate ===
-      "function"
-  ) {
-    return timestamp.toDate();
-  }
-
-  return null;
+  return toDate(
+    data?.miningEndsAt
+  );
 }
 
 
 // ============================================================
 // 🐱 CALCULATE STELLA MINING STATUS
 // ============================================================
+//
+// Palauttaa:
+//
+// • miningActive
+// • elapsedMs
+// • miningRemainingMs
+// • minedAmount
+// • hashRate
+//
+// ============================================================
 
 function calculateMiningStatus(
-  data,
-  now
+  data = {},
+  now = new Date()
 ) {
+
+  // ==========================================================
+  // ⚡ HASH RATE
+  // ==========================================================
+
   const hashRate =
-    Number(
-      data.hashRate ||
-      DEFAULT_HASH_RATE
-    );
+    getHashRate(data);
+
+
+  // ==========================================================
+  // ⏱️ MINING TIMES
+  // ==========================================================
 
   const miningStartedAt =
     getMiningStartTime(data);
+
 
   const miningEndsAt =
     getMiningEndTime(data);
 
 
   // ==========================================================
-  // NO ACTIVE MINING
+  // 📅 CURRENT TIME
+  // ==========================================================
+
+  const currentTime =
+    toDate(now) ||
+    new Date();
+
+
+  // ==========================================================
+  // ❌ NO MINING CYCLE
   // ==========================================================
 
   if (
     !miningStartedAt ||
     !miningEndsAt
   ) {
+
     return {
 
       miningActive:
@@ -121,28 +301,96 @@ function calculateMiningStatus(
 
 
   const nowMs =
-    now.getTime();
+    currentTime.getTime();
+
 
   const startMs =
     miningStartedAt.getTime();
+
 
   const endMs =
     miningEndsAt.getTime();
 
 
   // ==========================================================
-  // MINING COMPLETE
+  // 🚫 INVALID MINING PERIOD
+  // ==========================================================
+
+  if (
+    endMs <= startMs
+  ) {
+
+    return {
+
+      miningActive:
+        false,
+
+      elapsedMs:
+        0,
+
+      miningRemainingMs:
+        0,
+
+      minedAmount:
+        0,
+
+      hashRate,
+
+    };
+  }
+
+
+  // ==========================================================
+  // ⏳ MINING HAS NOT STARTED YET
+  // ==========================================================
+
+  if (
+    nowMs < startMs
+  ) {
+
+    return {
+
+      miningActive:
+        true,
+
+      elapsedMs:
+        0,
+
+      miningRemainingMs:
+        endMs -
+        startMs,
+
+      minedAmount:
+        0,
+
+      hashRate,
+
+    };
+  }
+
+
+  // ==========================================================
+  // ✨ MINING COMPLETE
   // ==========================================================
 
   if (
     nowMs >= endMs
   ) {
+
     const totalElapsed =
       Math.max(
         0,
         endMs -
-          startMs
+        startMs
       );
+
+
+    const minedAmount =
+      calculateMining(
+        hashRate,
+        totalElapsed
+      );
+
 
     return {
 
@@ -155,11 +403,7 @@ function calculateMiningStatus(
       miningRemainingMs:
         0,
 
-      minedAmount:
-        calculateMining(
-          hashRate,
-          totalElapsed
-        ),
+      minedAmount,
 
       hashRate,
 
@@ -168,21 +412,29 @@ function calculateMiningStatus(
 
 
   // ==========================================================
-  // MINING ACTIVE
+  // ⛏️ MINING ACTIVE
   // ==========================================================
 
   const elapsedMs =
     Math.max(
       0,
       nowMs -
-        startMs
+      startMs
     );
 
-  const remainingMs =
+
+  const miningRemainingMs =
     Math.max(
       0,
       endMs -
-        nowMs
+      nowMs
+    );
+
+
+  const minedAmount =
+    calculateMining(
+      hashRate,
+      elapsedMs
     );
 
 
@@ -193,14 +445,9 @@ function calculateMiningStatus(
 
     elapsedMs,
 
-    miningRemainingMs:
-      remainingMs,
+    miningRemainingMs,
 
-    minedAmount:
-      calculateMining(
-        hashRate,
-        elapsedMs
-      ),
+    minedAmount,
 
     hashRate,
 
@@ -209,10 +456,16 @@ function calculateMiningStatus(
 
 
 // ============================================================
-// EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
+
+  getSafeNumber,
+
+  getHashRate,
+
+  toDate,
 
   calculateMining,
 
