@@ -15,7 +15,6 @@ import 'home/cat_fact_card.dart';
 import 'home/daily_reward_card.dart';
 import 'home/home_drawer.dart';
 import 'home/language_dialog.dart';
-import 'home/mining_claim_card.dart';
 import 'home/profile_card.dart';
 import 'home/watch_ad_card.dart';
 import 'roadmap/roadmap_page.dart';
@@ -35,7 +34,7 @@ const Color accentColor = Color(0xFF35D0A0);
 // ============================================================
 
 /// Google Rewarded Ad TEST ID.
-/// Vaihda tuotannossa omaan AdMob Ad Unit ID:hen.
+/// Vaihda myöhemmin omaan AdMob Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -93,7 +92,6 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   bool loading = true;
-
   bool dailyLoading = false;
   bool miningLoading = false;
   bool adClaimLoading = false;
@@ -194,22 +192,13 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         // ====================================================
-        // HASH RATE
+        // MINING
         // ====================================================
 
         hashRate =
             (data['hashRate'] as num?)
                     ?.toDouble() ??
                 1;
-
-        miningPerHour =
-            (data['miningPerHour'] as num?)
-                    ?.toDouble() ??
-                0;
-
-        // ====================================================
-        // MINING BALANCE
-        // ====================================================
 
         miningBalance =
             (data['miningBalance'] as num?)
@@ -225,6 +214,11 @@ class _HomePageState extends State<HomePage> {
             (data['estimatedTotal'] as num?)
                     ?.toDouble() ??
                 miningBalance;
+
+        miningPerHour =
+            (data['miningPerHour'] as num?)
+                    ?.toDouble() ??
+                0;
 
         // ====================================================
         // DAILY
@@ -286,16 +280,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // AUTO REFRESH MINING
+  // AUTO REFRESH
   // ==========================================================
 
   void _startRefreshTimer() {
+    refreshTimer?.cancel();
+
     refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) {
-        if (!mounted || loading) return;
-
-        _loadData();
+        if (mounted && !loading) {
+          _loadData();
+        }
       },
     );
   }
@@ -305,27 +301,27 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   void _startCooldownTimer() {
+    cooldownTimer?.cancel();
+
     cooldownTimer = Timer.periodic(
       const Duration(seconds: 1),
       (_) {
         if (!mounted) return;
 
-        if (cooldownRemaining <= Duration.zero) {
-          return;
-        }
+        if (cooldownRemaining > Duration.zero) {
+          setState(() {
+            cooldownRemaining -=
+                const Duration(seconds: 1);
 
-        setState(() {
-          cooldownRemaining -=
-              const Duration(seconds: 1);
+            if (cooldownRemaining <= Duration.zero) {
+              cooldownRemaining = Duration.zero;
 
-          if (cooldownRemaining <= Duration.zero) {
-            cooldownRemaining = Duration.zero;
-
-            if (adsToday < maxAdsPerDay) {
-              canWatchAd = true;
+              if (adsToday < maxAdsPerDay) {
+                canWatchAd = true;
+              }
             }
-          }
-        });
+          });
+        }
       },
     );
   }
@@ -361,14 +357,11 @@ class _HomePageState extends State<HomePage> {
 
       if (claimed > 0) {
         _message(
-          '⛏️ +${claimed.toStringAsFixed(4)} STL louhittu! 🐱',
+          '⛏️ +${claimed.toStringAsFixed(2)} STL louhittu! 🐱✨',
         );
       } else {
-        final message =
-            data['message']?.toString();
-
         _message(
-          message ??
+          data['message'] ??
               'Stella Mining käynnistyi! 🐱⛏️',
         );
       }
@@ -430,9 +423,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
 
       if (alreadyClaimed) {
-        _message(
-          t.get('claimed'),
-        );
+        _message(t.get('claimed'));
       } else {
         _message(
           '🐱 +${bonus.toStringAsFixed(0)} Hash Rate! ⚡',
@@ -472,9 +463,7 @@ class _HomePageState extends State<HomePage> {
 
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
-
       request: const AdRequest(),
-
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -513,12 +502,6 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _watchAd() async {
-    if (adClaimLoading) return;
-
-    // ========================================================
-    // DAILY LIMIT / COOLDOWN
-    // ========================================================
-
     if (!canWatchAd) {
       if (cooldownRemaining > Duration.zero) {
         _message(
@@ -534,14 +517,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // ========================================================
-    // AD NOT READY
-    // ========================================================
-
     if (rewardedAd == null) {
-      _message(
-        t.get('adLoading'),
-      );
+      _message(t.get('adLoading'));
 
       _loadRewardedAd();
 
@@ -555,10 +532,6 @@ class _HomePageState extends State<HomePage> {
     });
 
     bool earnedReward = false;
-
-    // ========================================================
-    // FULL SCREEN CALLBACK
-    // ========================================================
 
     ad.fullScreenContentCallback =
         FullScreenContentCallback<RewardedAd>(
@@ -584,10 +557,6 @@ class _HomePageState extends State<HomePage> {
         _loadRewardedAd();
       },
     );
-
-    // ========================================================
-    // SHOW AD
-    // ========================================================
 
     ad.show(
       onUserEarnedReward:
@@ -624,25 +593,7 @@ class _HomePageState extends State<HomePage> {
                   ?.toDouble() ??
               0;
 
-      final newHashRate =
-          (data['hashRate'] as num?)
-                  ?.toDouble();
-
-      final newAdsToday =
-          (data['adsToday'] as num?)
-                  ?.toInt();
-
       if (!mounted) return;
-
-      setState(() {
-        if (newHashRate != null) {
-          hashRate = newHashRate;
-        }
-
-        if (newAdsToday != null) {
-          adsToday = newAdsToday;
-        }
-      });
 
       _message(
         '📺 +${bonus.toStringAsFixed(0)} Hash Rate! 🐱⚡',
@@ -711,7 +662,7 @@ class _HomePageState extends State<HomePage> {
       return '🎁 ${t.get('claimed')}';
     }
 
-    return '🎁 +1 Hash Rate ⚡';
+    return '🎁 +1 Hash Rate';
   }
 
   // ==========================================================
@@ -719,10 +670,6 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   String _dailyStreakText() {
-    if (streak <= 0) {
-      return '${t.get('streak')}: 🔥 Start your streak!';
-    }
-
     return '${t.get('streak')}: '
         '🔥 Päivä $streak';
   }
@@ -762,7 +709,6 @@ class _HomePageState extends State<HomePage> {
         return LanguageDialog(
           currentLanguageCode:
               widget.languageCode,
-
           changeLanguage:
               widget.changeLanguage,
         );
@@ -834,14 +780,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // ========================================================
-    // LOADING
-    // ========================================================
-
     if (loading) {
       return const Scaffold(
         backgroundColor: backgroundColor,
-
         body: Center(
           child: CircularProgressIndicator(
             color: accentColor,
@@ -849,10 +790,6 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
-
-    // ========================================================
-    // CAT FACT
-    // ========================================================
 
     final factIndex =
         DateTime.now().day %
@@ -863,29 +800,20 @@ class _HomePageState extends State<HomePage> {
       widget.languageCode,
     );
 
-    // ========================================================
-    // BUTTON STATES
-    // ========================================================
-
     final adButtonEnabled =
         canWatchAd &&
-        rewardedAd != null &&
-        !adClaimLoading &&
-        !rewardedAdLoading;
+            rewardedAd != null &&
+            !adClaimLoading;
 
     final dailyButtonEnabled =
         !dailyClaimed &&
-        !dailyLoading;
+            !dailyLoading;
 
     final nextAdText =
         cooldownRemaining > Duration.zero
             ? '${t.get('nextAd')}: '
                 '${_remainingAdText()}'
             : '';
-
-    // ========================================================
-    // PAGE
-    // ========================================================
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -924,7 +852,6 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text(
           'STELLURIINI',
-
           style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 2,
@@ -932,14 +859,11 @@ class _HomePageState extends State<HomePage> {
         ),
 
         actions: [
-
           IconButton(
             tooltip: 'Kirjaudu ulos',
-
             icon: const Icon(
               Icons.logout,
             ),
-
             onPressed: _logout,
           ),
         ],
@@ -952,7 +876,6 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: RefreshIndicator(
           color: accentColor,
-
           onRefresh: _loadData,
 
           child: ListView(
@@ -963,7 +886,6 @@ class _HomePageState extends State<HomePage> {
                 const EdgeInsets.all(16),
 
             children: [
-
               // ==============================================
               // STELLA PROFILE
               // ==============================================
@@ -975,26 +897,16 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 14),
 
               // ==============================================
-              // MINING DASHBOARD
+              // STELLA MINING DASHBOARD
               // ==============================================
 
               BalanceCard(
                 title: t.get('yourBalance'),
-
-                estimatedTotal:
-                    estimatedTotal,
-
-                miningBalance:
-                    miningBalance,
-
-                unclaimedMining:
-                    unclaimedMining,
-
-                hashRate:
-                    hashRate,
-
-                miningPerHour:
-                    miningPerHour,
+                estimatedTotal: estimatedTotal,
+                miningBalance: miningBalance,
+                unclaimedMining: unclaimedMining,
+                hashRate: hashRate,
+                miningPerHour: miningPerHour,
               ),
 
               const SizedBox(height: 14),
@@ -1003,24 +915,61 @@ class _HomePageState extends State<HomePage> {
               // CLAIM MINING
               // ==============================================
 
-              MiningClaimCard(
-                unclaimedMining:
-                    unclaimedMining,
+              SizedBox(
+                width: double.infinity,
 
-                miningBalance:
-                    miningBalance,
+                child: ElevatedButton.icon(
+                  onPressed:
+                      miningLoading
+                          ? null
+                          : _claimMining,
 
-                hashRate:
-                    hashRate,
+                  icon: miningLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.precision_manufacturing,
+                        ),
 
-                miningPerHour:
-                    miningPerHour,
+                  label: Text(
+                    miningLoading
+                        ? 'LOUHITAAN...'
+                        : '⛏️ CLAIM MINING',
+                  ),
 
-                loading:
-                    miningLoading,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        accentColor,
 
-                onPressed:
-                    _claimMining,
+                    foregroundColor:
+                        Colors.black,
+
+                    padding:
+                        const EdgeInsets.symmetric(
+                      vertical: 18,
+                    ),
+
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(18),
+                    ),
+
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight:
+                          FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -1030,8 +979,7 @@ class _HomePageState extends State<HomePage> {
               // ==============================================
 
               DailyRewardCard(
-                title:
-                    t.get('dailyClaim'),
+                title: t.get('dailyClaim'),
 
                 rewardText:
                     _dailyRewardText(),
@@ -1042,14 +990,12 @@ class _HomePageState extends State<HomePage> {
                 dailyLoading:
                     dailyLoading,
 
-                dailyAdLoading:
-                    false,
+                dailyAdLoading: false,
 
                 dailyClaimed:
                     dailyClaimed,
 
-                adReady:
-                    true,
+                adReady: true,
 
                 onPressed:
                     dailyButtonEnabled
@@ -1060,18 +1006,16 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 14),
 
               // ==============================================
-              // WATCH AD / HASH RATE BOOST
+              // WATCH AD
               // ==============================================
 
               WatchAdCard(
-                title:
-                    t.get('watchEarn'),
+                title: t.get('watchEarn'),
 
                 dailyLimitText:
                     t.get('dailyLimit'),
 
-                adsToday:
-                    adsToday,
+                adsToday: adsToday,
 
                 maxAdsPerDay:
                     maxAdsPerDay,
@@ -1112,15 +1056,14 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 14),
 
               // ==============================================
-              // STELLA CAT FACT
+              // STELLA FACT
               // ==============================================
 
               CatFactCard(
                 title:
                     t.get('stellaFacts'),
 
-                fact:
-                    fact,
+                fact: fact,
               ),
 
               const SizedBox(height: 30),
