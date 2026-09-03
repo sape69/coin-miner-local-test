@@ -8,7 +8,7 @@ const Color dailyCardColor = Color(0xFF151B1C);
 const Color dailyAccentColor = Color(0xFF35D0A0);
 
 // ============================================================
-// DAILY REWARD CARD
+// DAILY HASH RATE CARD
 // ============================================================
 
 class DailyRewardCard extends StatelessWidget {
@@ -17,9 +17,7 @@ class DailyRewardCard extends StatelessWidget {
   final String streakText;
 
   final bool dailyLoading;
-  final bool dailyAdLoading;
   final bool dailyClaimed;
-  final bool adReady;
 
   final VoidCallback? onPressed;
 
@@ -29,17 +27,12 @@ class DailyRewardCard extends StatelessWidget {
     required this.rewardText,
     required this.streakText,
     required this.dailyLoading,
-    required this.dailyAdLoading,
     required this.dailyClaimed,
-    required this.adReady,
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isLoading =
-        dailyLoading || dailyAdLoading;
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -62,12 +55,9 @@ class DailyRewardCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // ================================================
           // HEADER
           // ================================================
@@ -100,12 +90,15 @@ class DailyRewardCard extends StatelessWidget {
 
               const SizedBox(width: 14),
 
+              // ============================================
+              // TITLE
+              // ============================================
+
               Expanded(
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-
                     Text(
                       title.toUpperCase(),
                       style: const TextStyle(
@@ -148,6 +141,11 @@ class DailyRewardCard extends StatelessWidget {
                     ),
                     borderRadius:
                         BorderRadius.circular(20),
+                    border: Border.all(
+                      color: dailyAccentColor.withValues(
+                        alpha: 0.25,
+                      ),
+                    ),
                   ),
                   child: const Text(
                     '✓ DONE',
@@ -164,7 +162,7 @@ class DailyRewardCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ================================================
-          // REWARD BOX
+          // HASH RATE REWARD
           // ================================================
 
           Container(
@@ -180,27 +178,54 @@ class DailyRewardCard extends StatelessWidget {
                 ),
               ),
             ),
-
             child: Row(
               children: [
-
-                const Text(
-                  '🎁',
-                  style: TextStyle(
-                    fontSize: 28,
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dailyAccentColor.withValues(
+                      alpha: 0.12,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.bolt,
+                      color: dailyAccentColor,
+                      size: 26,
+                    ),
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
 
                 Expanded(
-                  child: Text(
-                    rewardText,
-                    style: const TextStyle(
-                      color: dailyAccentColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rewardText,
+                        style: const TextStyle(
+                          color: dailyAccentColor,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 3),
+
+                      Text(
+                        'Daily mining power boost',
+                        style: TextStyle(
+                          color: Colors.white.withValues(
+                            alpha: 0.45,
+                          ),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -225,11 +250,14 @@ class DailyRewardCard extends StatelessWidget {
               ),
               borderRadius:
                   BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(
+                  alpha: 0.04,
+                ),
+              ),
             ),
-
             child: Row(
               children: [
-
                 const Text(
                   '🔥',
                   style: TextStyle(
@@ -263,36 +291,34 @@ class DailyRewardCard extends StatelessWidget {
 
           SizedBox(
             width: double.infinity,
-
             child: ElevatedButton.icon(
               onPressed:
-                  isLoading || dailyClaimed
+                  dailyLoading || dailyClaimed
                       ? null
                       : onPressed,
 
-              icon:
-                  isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : Icon(
-                          dailyClaimed
-                              ? Icons.check_circle
-                              : Icons.bolt,
-                        ),
+              icon: dailyLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child:
+                          CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : Icon(
+                      dailyClaimed
+                          ? Icons.check_circle
+                          : Icons.bolt,
+                    ),
 
               label: Text(
-                isLoading
-                    ? 'LOADING...'
+                dailyLoading
+                    ? 'CLAIMING...'
                     : dailyClaimed
                         ? 'CLAIMED TODAY'
-                        : 'CLAIM + HASH RATE',
+                        : 'CLAIM +1 HASH RATE',
               ),
 
               style: ElevatedButton.styleFrom(
@@ -341,7 +367,6 @@ class DailyRewardCard extends StatelessWidget {
             mainAxisAlignment:
                 MainAxisAlignment.center,
             children: [
-
               Icon(
                 Icons.info_outline,
                 size: 14,
@@ -355,8 +380,8 @@ class DailyRewardCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   dailyClaimed
-                      ? 'Come back tomorrow for another boost 🐱'
-                      : 'Claim once every day to grow your Hash Rate',
+                      ? 'Come back tomorrow for another Hash Rate boost 🐱'
+                      : 'Claim your daily bonus to increase mining power',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(
