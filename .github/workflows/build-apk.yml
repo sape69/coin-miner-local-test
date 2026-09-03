@@ -2,6 +2,7 @@ name: Build Stelluriini APK
 
 on:
   workflow_dispatch:
+
   push:
     branches:
       - main
@@ -50,6 +51,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+
       - name: Install Android SDK
         run: |
           sdkmanager "platform-tools"
@@ -76,6 +78,21 @@ jobs:
 
 
       # ==========================================
+      # VERIFY STELLURIINI LOGO
+      # ==========================================
+
+      - name: Check Stelluriini logo
+        run: |
+          echo "Checking logo..."
+
+          test -f assets/images/stelluriini_logo.png
+
+          echo "========================================"
+          echo "STELLURIINI LOGO FOUND"
+          echo "========================================"
+
+
+      # ==========================================
       # VERIFY ANDROID PROJECT
       # ==========================================
 
@@ -87,65 +104,10 @@ jobs:
           echo "===== app/build.gradle ====="
           cat android/app/build.gradle
 
-          echo "===== google-services.json ====="
+          echo "===== Firebase ====="
           test -f android/app/google-services.json
 
           echo "Android project OK."
-
-
-      # ==========================================
-      # CHECK ICON
-      # ==========================================
-
-      - name: Check Stelluriini icon
-        run: |
-          test -f stelluriini_icon.png
-          echo "Stelluriini icon found."
-
-
-      # ==========================================
-      # INSTALL IMAGEMAGICK
-      # ==========================================
-
-      - name: Install ImageMagick
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
-
-
-      # ==========================================
-      # CREATE ANDROID ICONS
-      # ==========================================
-
-      - name: Create Android launcher icons
-        run: |
-          mkdir -p android/app/src/main/res/mipmap-mdpi
-          mkdir -p android/app/src/main/res/mipmap-hdpi
-          mkdir -p android/app/src/main/res/mipmap-xhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-
-          convert stelluriini_icon.png \
-            -resize 48x48 \
-            android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-
-          convert stelluriini_icon.png \
-            -resize 72x72 \
-            android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-
-          convert stelluriini_icon.png \
-            -resize 96x96 \
-            android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-
-          convert stelluriini_icon.png \
-            -resize 144x144 \
-            android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-
-          convert stelluriini_icon.png \
-            -resize 192x192 \
-            android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
-          echo "Launcher icons created."
 
 
       # ==========================================
@@ -162,10 +124,10 @@ jobs:
 
 
       # ==========================================
-      # DISABLE JETIFIER
+      # ANDROIDX
       # ==========================================
 
-      - name: Configure AndroidX and Jetifier
+      - name: Configure AndroidX
         run: |
           touch android/gradle.properties
 
@@ -201,6 +163,19 @@ jobs:
       - name: Flutter pub get
         run: |
           flutter pub get
+
+
+      # ==========================================
+      # GENERATE APP ICON
+      # ==========================================
+
+      - name: Generate Stelluriini app icon
+        run: |
+          dart run flutter_launcher_icons
+
+          echo "========================================"
+          echo "STELLURIINI APP ICON GENERATED"
+          echo "========================================"
 
 
       # ==========================================
