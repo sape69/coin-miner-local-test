@@ -4,9 +4,12 @@
 // 🐱 STELLURIINI FIREBASE FUNCTIONS
 // ============================================================
 //
-// Stella Mining System
-// Modular architecture
+// Stella Mining -järjestelmän pääsisäänkäynti.
 //
+// Kaikki suuremmat järjestelmät on jaettu
+// omiin tiedostoihinsa.
+//
+// 🐱⛏️ Stella pitää projektin siistinä!
 // ============================================================
 
 
@@ -17,39 +20,39 @@
 const {
   getMiningStatus,
   claimMining,
-} = require("./src/functions/mining");
+} = require("./functions/miningFunctions");
 
 
 // ============================================================
-// 🎁 DAILY STELLA BONUS
+// 🎁 DAILY
 // ============================================================
 
 const {
   dailyCheckIn,
-} = require("./src/functions/daily");
+} = require("./functions/dailyFunctions");
 
 
 // ============================================================
-// 📺 STELLA POWER BOOST
+// 📺 ADS
 // ============================================================
 
 const {
   testAdReward,
   adMobReward,
-} = require("./src/functions/ads");
+} = require("./functions/adFunctions");
 
 
 // ============================================================
-// 📜 STELLA HISTORY
+// 📜 HISTORY
 // ============================================================
 
 const {
   getTransactionHistory,
-} = require("./src/functions/history");
+} = require("./functions/historyFunctions");
 
 
 // ============================================================
-// 🚀 EXPORT FUNCTIONS
+// EXPORT FUNCTIONS
 // ============================================================
 
 exports.getMiningStatus =
