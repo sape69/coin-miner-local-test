@@ -1,48 +1,38 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// COLORS
-// ============================================================
-
+const Color backgroundColor = Color(0xFF0B1112);
 const Color cardColor = Color(0xFF151B1C);
 const Color balanceAccentColor = Color(0xFF35D0A0);
 
-// ============================================================
-// BALANCE CARD
-// ============================================================
-
 class BalanceCard extends StatelessWidget {
-  final double stl;
+  final double miningBalance;
+  final double unclaimedMining;
+  final double hashRate;
+  final double miningPerHour;
+
   final String title;
   final String subtitle;
 
+  final bool claimLoading;
+  final VoidCallback? onClaimPressed;
+
   const BalanceCard({
     super.key,
-    required this.stl,
+    required this.miningBalance,
+    required this.unclaimedMining,
+    required this.hashRate,
+    required this.miningPerHour,
     required this.title,
     required this.subtitle,
+    required this.claimLoading,
+    required this.onClaimPressed,
   });
 
-  // ==========================================================
-  // FORMAT BALANCE
-  // ==========================================================
-
-  String _formatBalance() {
-    if (stl >= 1000000) {
-      return stl.toStringAsFixed(0);
-    }
-
-    if (stl >= 1000) {
-      return stl.toStringAsFixed(2);
-    }
-
-    return stl.toStringAsFixed(4);
-  }
+  double get totalBalance =>
+      miningBalance + unclaimedMining;
 
   @override
   Widget build(BuildContext context) {
-    final balanceText = _formatBalance();
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -67,44 +57,42 @@ class BalanceCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ==================================================
+
+          // ================================================
           // HEADER
-          // ==================================================
+          // ================================================
 
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.center,
             children: [
               const Text(
-                '⛏️',
+                '🐱',
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 28,
                 ),
               ),
 
               const SizedBox(width: 10),
 
-              Flexible(
-                child: Text(
-                  title.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(
-                      alpha: 0.70,
-                    ),
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
+              Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white.withValues(
+                    alpha: 0.70,
                   ),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
                 ),
               ),
 
               const SizedBox(width: 10),
 
               const Text(
-                '🐱',
+                '⛏️',
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 24,
                 ),
               ),
             ],
@@ -112,9 +100,9 @@ class BalanceCard extends StatelessWidget {
 
           const SizedBox(height: 22),
 
-          // ==================================================
+          // ================================================
           // MINING ICON
-          // ==================================================
+          // ================================================
 
           Container(
             width: 86,
@@ -141,39 +129,33 @@ class BalanceCard extends StatelessWidget {
               ],
             ),
             child: const Center(
-              child: Icon(
-                Icons.precision_manufacturing,
-                color: balanceAccentColor,
-                size: 42,
+              child: Text(
+                '⛏️',
+                style: TextStyle(
+                  fontSize: 38,
+                ),
               ),
             ),
           ),
 
           const SizedBox(height: 18),
 
-          // ==================================================
-          // MINING BALANCE
-          // ==================================================
+          // ================================================
+          // TOTAL BALANCE
+          // ================================================
 
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              balanceText,
-              style: const TextStyle(
-                fontSize: 52,
-                height: 1,
-                fontWeight: FontWeight.bold,
-                color: balanceAccentColor,
-                letterSpacing: 1,
-              ),
+          Text(
+            totalBalance.toStringAsFixed(2),
+            style: const TextStyle(
+              fontSize: 52,
+              height: 1,
+              fontWeight: FontWeight.bold,
+              color: balanceAccentColor,
+              letterSpacing: 1,
             ),
           ),
 
-          const SizedBox(height: 10),
-
-          // ==================================================
-          // STL LABEL
-          // ==================================================
+          const SizedBox(height: 8),
 
           Container(
             padding: const EdgeInsets.symmetric(
@@ -192,21 +174,21 @@ class BalanceCard extends StatelessWidget {
               ),
             ),
             child: const Text(
-              'STL',
+              'STL MINING',
               style: TextStyle(
                 color: balanceAccentColor,
-                fontSize: 17,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 4,
+                letterSpacing: 2,
               ),
             ),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 22),
 
-          // ==================================================
+          // ================================================
           // DIVIDER
-          // ==================================================
+          // ================================================
 
           Container(
             width: double.infinity,
@@ -216,20 +198,118 @@ class BalanceCard extends StatelessWidget {
             ),
           ),
 
+          const SizedBox(height: 18),
+
+          // ================================================
+          // HASH RATE
+          // ================================================
+
+          _StatRow(
+            icon: '⚡',
+            label: 'Hash Rate',
+            value: hashRate.toStringAsFixed(1),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ================================================
+          // MINING SPEED
+          // ================================================
+
+          _StatRow(
+            icon: '⛏️',
+            label: 'Mining / hour',
+            value:
+                '${miningPerHour.toStringAsFixed(2)} STL',
+          ),
+
+          const SizedBox(height: 12),
+
+          // ================================================
+          // UNCLAIMED
+          // ================================================
+
+          _StatRow(
+            icon: '💰',
+            label: 'Ready to claim',
+            value:
+                '${unclaimedMining.toStringAsFixed(2)} STL',
+          ),
+
+          const SizedBox(height: 22),
+
+          // ================================================
+          // CLAIM BUTTON
+          // ================================================
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed:
+                  claimLoading
+                      ? null
+                      : onClaimPressed,
+
+              icon:
+                  claimLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.account_balance_wallet,
+                        ),
+
+              label: Text(
+                claimLoading
+                    ? 'CLAIMING...'
+                    : 'CLAIM MINING',
+              ),
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    balanceAccentColor,
+                foregroundColor:
+                    Colors.black,
+
+                padding:
+                    const EdgeInsets.symmetric(
+                  vertical: 15,
+                ),
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ),
+
           const SizedBox(height: 16),
 
-          // ==================================================
-          // MINING INFO
-          // ==================================================
+          // ================================================
+          // SUBTITLE
+          // ================================================
 
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.bolt,
-                color: balanceAccentColor,
-                size: 18,
+                Icons.info_outline,
+                color: Colors.white54,
+                size: 17,
               ),
 
               const SizedBox(width: 7),
@@ -240,7 +320,7 @@ class BalanceCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(
-                      alpha: 0.65,
+                      alpha: 0.55,
                     ),
                     fontSize: 13,
                   ),
@@ -249,11 +329,7 @@ class BalanceCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
-
-          // ==================================================
-          // STELLA MESSAGE
-          // ==================================================
+          const SizedBox(height: 8),
 
           Text(
             'Stella is mining treasures 🐱⛏️✨',
@@ -268,6 +344,61 @@ class BalanceCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+// ============================================================
+// STAT ROW
+// ============================================================
+
+class _StatRow extends StatelessWidget {
+  final String icon;
+  final String label;
+  final String value;
+
+  const _StatRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+
+        Text(
+          icon,
+          style: const TextStyle(
+            fontSize: 20,
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(
+                alpha: 0.65,
+              ),
+              fontSize: 14,
+            ),
+          ),
+        ),
+
+        Text(
+          value,
+          style: const TextStyle(
+            color: balanceAccentColor,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }
