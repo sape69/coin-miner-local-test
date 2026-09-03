@@ -33,6 +33,8 @@ const Color accentColor = Color(0xFF35D0A0);
 // ADMOB
 // ============================================================
 
+/// Google Rewarded Ad TEST ID.
+/// Vaihda tuotannossa omaan AdMob Ad Unit ID:hen.
 const String rewardedAdUnitId =
     'ca-app-pub-3940256099942544/5224354917';
 
@@ -761,6 +763,10 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: backgroundColor,
 
+      // ======================================================
+      // DRAWER
+      // ======================================================
+
       drawer: HomeDrawer(
         onLanguagePressed:
             _openLanguageDialog,
@@ -777,6 +783,10 @@ class _HomePageState extends State<HomePage> {
         onTransactionHistoryPressed:
             _openTransactionHistoryPage,
       ),
+
+      // ======================================================
+      // APP BAR
+      // ======================================================
 
       appBar: AppBar(
         title: const Text(
@@ -795,16 +805,27 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
+      // ======================================================
+      // BODY
+      // ======================================================
+
       body: SafeArea(
         child: RefreshIndicator(
           color: accentColor,
           onRefresh: _loadData,
+
           child: ListView(
             physics:
                 const AlwaysScrollableScrollPhysics(),
+
             padding:
                 const EdgeInsets.all(16),
+
             children: [
+              // ==============================================
+              // STELLA PROFILE
+              // ==============================================
+
               ProfileCard(
                 title: t.get('stella'),
               ),
@@ -812,16 +833,16 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 14),
 
               // ==============================================
-              // MINING BALANCE
+              // STELLA MINING DASHBOARD
               // ==============================================
 
               BalanceCard(
-                stl: estimatedTotal.round(),
                 title: t.get('yourBalance'),
-                subtitle:
-                    '⛏️ ${unclaimedMining.toStringAsFixed(2)} STL valmiina louhittavaksi\n'
-                    '⚡ ${hashRate.toStringAsFixed(0)} Hash Rate\n'
-                    '📈 ${miningPerHour.toStringAsFixed(2)} STL / tunti',
+                estimatedTotal: estimatedTotal,
+                miningBalance: miningBalance,
+                unclaimedMining: unclaimedMining,
+                hashRate: hashRate,
+                miningPerHour: miningPerHour,
               ),
 
               const SizedBox(height: 12),
@@ -837,6 +858,7 @@ class _HomePageState extends State<HomePage> {
                       miningLoading
                           ? null
                           : _claimMining,
+
                   icon: miningLoading
                       ? const SizedBox(
                           width: 20,
@@ -849,6 +871,7 @@ class _HomePageState extends State<HomePage> {
                       : const Icon(
                           Icons.precision_manufacturing,
                         ),
+
                   label: Text(
                     miningLoading
                         ? 'LOUHITAAN...'
@@ -865,12 +888,25 @@ class _HomePageState extends State<HomePage> {
 
               DailyRewardCard(
                 title: t.get('dailyClaim'),
-                rewardText: _dailyRewardText(),
-                streakText: _dailyStreakText(),
-                dailyLoading: dailyLoading,
-                dailyAdLoading: false,
-                dailyClaimed: dailyClaimed,
-                adReady: true,
+
+                rewardText:
+                    _dailyRewardText(),
+
+                streakText:
+                    _dailyStreakText(),
+
+                dailyLoading:
+                    dailyLoading,
+
+                dailyAdLoading:
+                    false,
+
+                dailyClaimed:
+                    dailyClaimed,
+
+                adReady:
+                    true,
+
                 onPressed:
                     dailyButtonEnabled
                         ? _dailyClaim
@@ -884,27 +920,47 @@ class _HomePageState extends State<HomePage> {
               // ==============================================
 
               WatchAdCard(
-                title: t.get('watchEarn'),
-                dailyLimitText: t.get('dailyLimit'),
-                adsToday: adsToday,
-                maxAdsPerDay: maxAdsPerDay,
-                canWatch: canWatchAd,
-                nextAdText: nextAdText,
+                title:
+                    t.get('watchEarn'),
+
+                dailyLimitText:
+                    t.get('dailyLimit'),
+
+                adsToday:
+                    adsToday,
+
+                maxAdsPerDay:
+                    maxAdsPerDay,
+
+                canWatch:
+                    canWatchAd,
+
+                nextAdText:
+                    nextAdText,
+
                 adLoading:
                     adClaimLoading ||
                         rewardedAdLoading,
+
                 adReady:
                     rewardedAd != null,
+
                 loadingText:
                     t.get('adLoading'),
+
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
+
                 unavailableText:
-                    t.get('adUnavailable'),
+                    t.get(
+                      'adUnavailable',
+                    ),
+
                 watchButtonText:
                     t.get('watchAd'),
+
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
@@ -913,9 +969,16 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 14),
 
+              // ==============================================
+              // STELLA FACT
+              // ==============================================
+
               CatFactCard(
-                title: t.get('stellaFacts'),
-                fact: fact,
+                title:
+                    t.get('stellaFacts'),
+
+                fact:
+                    fact,
               ),
 
               const SizedBox(height: 30),
