@@ -30,10 +30,10 @@ const {
 // 🐱 STELLA DAILY FUNCTIONS
 // ============================================================
 //
-// Stella Daily Check-In:
+// Stella Daily Check-In
 //
-// 🎁 Pelaaja saa päivittäisen Hash Rate -bonuksen
-// 🔥 Streak kasvaa peräkkäisistä päivistä
+// 🎁 Päivittäinen Hash Rate -bonus
+// 🔥 Streak peräkkäisistä päivistä
 // ⚡ Bonus kasvattaa Stella Mining -nopeutta
 //
 // ============================================================
@@ -47,7 +47,7 @@ const dailyCheckIn =
   onCall(async (request) => {
 
     // ========================================================
-    // AUTHENTICATION
+    // 🔐 AUTHENTICATION
     // ========================================================
 
     if (!request.auth) {
@@ -61,36 +61,39 @@ const dailyCheckIn =
     const uid =
       request.auth.uid;
 
+
     const userRef =
       getUserRef(uid);
 
 
     // ========================================================
-    // DATES
+    // 📅 CURRENT DATES
     // ========================================================
 
     const today =
       getUtcDateString();
+
 
     const yesterday =
       getYesterdayUtcDateString();
 
 
     // ========================================================
-    // FIRESTORE TRANSACTION
+    // 🔥 FIRESTORE TRANSACTION
     // ========================================================
 
     return await db.runTransaction(
       async (transaction) => {
 
         // ====================================================
-        // GET USER
+        // 👤 GET USER DATA
         // ====================================================
 
         const snapshot =
           await transaction.get(
             userRef
           );
+
 
         const data =
           snapshot.exists
@@ -99,7 +102,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // CURRENT HASH RATE
+        // ⚡ CURRENT HASH RATE
         // ====================================================
 
         const oldHashRate =
@@ -110,7 +113,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // CURRENT STREAK
+        // 🔥 CURRENT STREAK
         // ====================================================
 
         const oldStreak =
@@ -120,7 +123,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // LAST DAILY
+        // 📅 LAST DAILY CHECK-IN
         // ====================================================
 
         const lastDaily =
@@ -130,7 +133,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // ALREADY CLAIMED
+        // 🐱 CHECK IF ALREADY CLAIMED TODAY
         // ====================================================
 
         if (lastDaily === today) {
@@ -141,22 +144,33 @@ const dailyCheckIn =
 
             alreadyClaimed: true,
 
+            bonus: 0,
+
             hashRate:
               oldHashRate,
 
             streak:
               oldStreak,
 
-            bonus: 0,
-
             message:
               "🐱🎁 Stella Daily Bonus on jo kerätty tänään!",
+
           };
         }
 
 
         // ====================================================
-        // CALCULATE STREAK
+        // 🔥 CALCULATE STREAK
+        // ====================================================
+        //
+        // Jos käyttäjä kävi myös eilen:
+        //
+        // 🔥 streak +1
+        //
+        // Muuten:
+        //
+        // 🐱 uusi streak alkaa numerosta 1
+        //
         // ====================================================
 
         const newStreak =
@@ -166,11 +180,16 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // DAILY BONUS
+        // 🎁 STELLA DAILY BONUS
         // ====================================================
 
         const bonus =
           DAILY_HASH_RATE_BONUS;
+
+
+        // ====================================================
+        // ⚡ NEW HASH RATE
+        // ====================================================
 
         const newHashRate =
           oldHashRate +
@@ -178,22 +197,29 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // UPDATE USER
+        // 💾 UPDATE USER
         // ====================================================
 
         transaction.set(
           userRef,
           {
 
+            // ⚡ Stella Mining Power
             hashRate:
               newHashRate,
 
+
+            // 🔥 Daily streak
             streak:
               newStreak,
 
+
+            // 📅 Today's claim date
             lastDaily:
               today,
 
+
+            // ⏱️ Last update
             updatedAt:
               FieldValue.serverTimestamp(),
 
@@ -205,7 +231,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // HISTORY
+        // 📜 STELLA HISTORY
         // ====================================================
 
         const historyRef =
@@ -220,18 +246,27 @@ const dailyCheckIn =
             type:
               "daily_hashrate",
 
+
             title:
               "Stella Daily Bonus 🐱🎁⚡",
 
+
+            // Hash Rate bonus
             amount:
               bonus,
 
+
+            // New total Hash Rate
             hashRateAfter:
               newHashRate,
 
+
+            // Current streak
             streak:
               newStreak,
 
+
+            // Server timestamp
             createdAt:
               FieldValue.serverTimestamp(),
 
@@ -240,7 +275,7 @@ const dailyCheckIn =
 
 
         // ====================================================
-        // RESPONSE
+        // 🐱 SUCCESS RESPONSE
         // ====================================================
 
         return {
@@ -249,16 +284,23 @@ const dailyCheckIn =
 
           alreadyClaimed: false,
 
+
+          // 🎁 Bonus received
           bonus,
 
+
+          // ⚡ New mining power
           hashRate:
             newHashRate,
 
+
+          // 🔥 Current streak
           streak:
             newStreak,
 
+
           message:
-            `🐱🎁 Stella toi sinulle +${bonus} Hash Rate!`,
+            `🐱🎁 Stella toi sinulle +${bonus} Hash Rate! 🔥 Streak: ${newStreak} päivä${newStreak === 1 ? "" : "ä"}.`,
 
         };
       }
@@ -267,7 +309,7 @@ const dailyCheckIn =
 
 
 // ============================================================
-// EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
