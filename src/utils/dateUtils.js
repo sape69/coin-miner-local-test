@@ -2,12 +2,29 @@
 
 
 // ============================================================
-// 🗓️ STELLA DATE UTILITIES
+// 🐱 STELLA DATE UTILITIES
+// ============================================================
+//
+// Yhteiset päivämääräfunktiot Stella Backendille.
+//
+// Kaikki Daily- ja Ad-järjestelmien päivät
+// käsitellään UTC-ajassa.
+//
 // ============================================================
 
 
 // ============================================================
-// TODAY UTC
+// 🗓️ GET UTC DATE STRING
+// ============================================================
+//
+// Palauttaa tämän päivän muodossa:
+//
+// YYYY-MM-DD
+//
+// Esimerkki:
+//
+// 2026-09-03
+//
 // ============================================================
 
 function getUtcDateString() {
@@ -18,7 +35,13 @@ function getUtcDateString() {
 
 
 // ============================================================
-// YESTERDAY UTC
+// 🗓️ GET YESTERDAY UTC DATE STRING
+// ============================================================
+//
+// Palauttaa eilisen UTC-päivän muodossa:
+//
+// YYYY-MM-DD
+//
 // ============================================================
 
 function getYesterdayUtcDateString() {
@@ -36,7 +59,7 @@ function getYesterdayUtcDateString() {
 
 
 // ============================================================
-// EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
