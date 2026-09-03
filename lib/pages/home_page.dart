@@ -92,6 +92,10 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   bool loading = true;
+
+  /// Estää usean getMiningStatus-kutsun samanaikaisesti.
+  bool dataLoading = false;
+
   bool dailyLoading = false;
   bool miningLoading = false;
   bool adClaimLoading = false;
@@ -162,17 +166,33 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
 
   Future<void> _loadData() async {
-    if (uid == null) {
-      if (!mounted) return;
+    // ========================================================
+    // PREVENT OVERLAPPING FIREBASE REQUESTS
+    // ========================================================
 
-      setState(() {
-        loading = false;
-      });
+    if (dataLoading) return;
 
-      return;
-    }
+    dataLoading = true;
 
     try {
+      // ======================================================
+      // USER CHECK
+      // ======================================================
+
+      if (uid == null) {
+        if (mounted) {
+          setState(() {
+            loading = false;
+          });
+        }
+
+        return;
+      }
+
+      // ======================================================
+      // FIREBASE CALL
+      // ======================================================
+
       final result =
           await functions
               .httpsCallable('getMiningStatus')
@@ -276,6 +296,12 @@ class _HomePageState extends State<HomePage> {
       _message(
         'STELLA-yhteys epäonnistui.',
       );
+    } finally {
+      // ======================================================
+      // ALWAYS RELEASE REQUEST LOCK
+      // ======================================================
+
+      dataLoading = false;
     }
   }
 
@@ -478,7 +504,6 @@ class _HomePageState extends State<HomePage> {
             rewardedAd = ad;
           });
         },
-
         onAdFailedToLoad: (error) {
           rewardedAdLoading = false;
 
@@ -545,7 +570,6 @@ class _HomePageState extends State<HomePage> {
 
         _loadRewardedAd();
       },
-
       onAdFailedToShowFullScreenContent:
           (failedAd, error) {
         failedAd.dispose();
@@ -825,22 +849,16 @@ class _HomePageState extends State<HomePage> {
       drawer: HomeDrawer(
         onLanguagePressed:
             _openLanguageDialog,
-
         onAboutPressed:
             _openAboutPage,
-
         onWhitePaperPressed:
             _openWhitePaperPage,
-
         onTokenPressed:
             _openTokenPage,
-
         onTokenomicsPressed:
             _openTokenomicsPage,
-
         onRoadmapPressed:
             _openRoadmapPage,
-
         onTransactionHistoryPressed:
             _openTransactionHistoryPage,
       ),
@@ -857,13 +875,10 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: 2,
           ),
         ),
-
         actions: [
           IconButton(
             tooltip: 'Kirjaudu ulos',
-            icon: const Icon(
-              Icons.logout,
-            ),
+            icon: const Icon(Icons.logout),
             onPressed: _logout,
           ),
         ],
@@ -877,14 +892,11 @@ class _HomePageState extends State<HomePage> {
         child: RefreshIndicator(
           color: accentColor,
           onRefresh: _loadData,
-
           child: ListView(
             physics:
                 const AlwaysScrollableScrollPhysics(),
-
             padding:
                 const EdgeInsets.all(16),
-
             children: [
               // ==============================================
               // STELLA PROFILE
@@ -917,13 +929,11 @@ class _HomePageState extends State<HomePage> {
 
               SizedBox(
                 width: double.infinity,
-
                 child: ElevatedButton.icon(
                   onPressed:
                       miningLoading
                           ? null
                           : _claimMining,
-
                   icon: miningLoading
                       ? const SizedBox(
                           width: 20,
@@ -937,31 +947,23 @@ class _HomePageState extends State<HomePage> {
                       : const Icon(
                           Icons.precision_manufacturing,
                         ),
-
                   label: Text(
                     miningLoading
                         ? 'LOUHITAAN...'
                         : '⛏️ CLAIM MINING',
                   ),
-
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        accentColor,
-
-                    foregroundColor:
-                        Colors.black,
-
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.black,
                     padding:
                         const EdgeInsets.symmetric(
                       vertical: 18,
                     ),
-
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
                           BorderRadius.circular(18),
                     ),
-
                     textStyle: const TextStyle(
                       fontSize: 15,
                       fontWeight:
@@ -980,23 +982,12 @@ class _HomePageState extends State<HomePage> {
 
               DailyRewardCard(
                 title: t.get('dailyClaim'),
-
-                rewardText:
-                    _dailyRewardText(),
-
-                streakText:
-                    _dailyStreakText(),
-
-                dailyLoading:
-                    dailyLoading,
-
+                rewardText: _dailyRewardText(),
+                streakText: _dailyStreakText(),
+                dailyLoading: dailyLoading,
                 dailyAdLoading: false,
-
-                dailyClaimed:
-                    dailyClaimed,
-
+                dailyClaimed: dailyClaimed,
                 adReady: true,
-
                 onPressed:
                     dailyButtonEnabled
                         ? _dailyClaim
@@ -1011,42 +1002,27 @@ class _HomePageState extends State<HomePage> {
 
               WatchAdCard(
                 title: t.get('watchEarn'),
-
                 dailyLimitText:
                     t.get('dailyLimit'),
-
                 adsToday: adsToday,
-
-                maxAdsPerDay:
-                    maxAdsPerDay,
-
-                canWatch:
-                    canWatchAd,
-
-                nextAdText:
-                    nextAdText,
-
+                maxAdsPerDay: maxAdsPerDay,
+                canWatch: canWatchAd,
+                nextAdText: nextAdText,
                 adLoading:
                     adClaimLoading ||
                         rewardedAdLoading,
-
                 adReady:
                     rewardedAd != null,
-
                 loadingText:
                     t.get('adLoading'),
-
                 limitReachedText:
                     t.get(
                       'dailyLimitReached',
                     ),
-
                 unavailableText:
                     t.get('adUnavailable'),
-
                 watchButtonText:
                     t.get('watchAd'),
-
                 onPressed:
                     adButtonEnabled
                         ? _watchAd
@@ -1060,9 +1036,7 @@ class _HomePageState extends State<HomePage> {
               // ==============================================
 
               CatFactCard(
-                title:
-                    t.get('stellaFacts'),
-
+                title: t.get('stellaFacts'),
                 fact: fact,
               ),
 
