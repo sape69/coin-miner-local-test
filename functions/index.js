@@ -15,12 +15,11 @@ const {
 const {
   getFirestore,
   FieldValue,
-  Timestamp,
 } = require("firebase-admin/firestore");
 
 
 // ============================================================
-// 🔥 FIREBASE
+// 🐱 STELLA FIREBASE
 // ============================================================
 
 initializeApp();
@@ -29,57 +28,38 @@ const db = getFirestore();
 
 
 // ============================================================
-// 🐱 STELLA MINING SETTINGS
+// 🐱 STELLA SETTINGS
 // ============================================================
 
-// Aloitus Mining Power.
 const DEFAULT_HASH_RATE = 1;
-
-
-// ============================================================
-// 🎁 DAILY STELLA BONUS
-// ============================================================
 
 const DAILY_HASH_RATE_BONUS = 1;
 
-
-// ============================================================
-// 📺 STELLA POWER BOOST
-// ============================================================
-
-// Mainoksen katsomisesta saatava Mining Power.
 const AD_HASH_RATE_BONUS = 5;
 
-// Mainosten maksimimäärä päivässä.
+
+// ============================================================
+// 📺 STELLA AD SETTINGS
+// ============================================================
+
 const MAX_ADS_PER_DAY = 5;
 
-// Mainosten välinen odotusaika.
 const AD_COOLDOWN_MS =
   60 * 60 * 1000;
 
 
 // ============================================================
-// ⛏️ STELLA 24H MINING SESSION
+// ⛏️ STELLA 24H MINING SETTINGS
 // ============================================================
 
-// Louhinnan kesto.
-const MINING_SESSION_MS =
+const MINING_DURATION_MS =
   24 * 60 * 60 * 1000;
 
 
 // ============================================================
-// ⚡ MINING SPEED
+// 💰 STL MINING SPEED
 // ============================================================
 
-// Kuinka paljon STL-simulaatiota syntyy
-// yhdellä Hash Rate -yksiköllä tunnissa.
-//
-// Esimerkki:
-//
-// Hash Rate 10
-// = 10 × 0.10 STL/h
-// = 1.00 STL/h
-//
 const MINING_PER_HASH_PER_HOUR = 0.10;
 
 
@@ -139,7 +119,7 @@ function getYesterdayUtcDateString() {
 
 
 // ============================================================
-// 📁 USER REFERENCE
+// 📁 USER
 // ============================================================
 
 function getUserRef(uid) {
@@ -150,7 +130,7 @@ function getUserRef(uid) {
 
 
 // ============================================================
-// 📜 HISTORY COLLECTION
+// 📜 TRANSACTION HISTORY
 // ============================================================
 
 function getHistoryCollection(uid) {
@@ -160,7 +140,7 @@ function getHistoryCollection(uid) {
 
 
 // ============================================================
-// 📺 ADMOB REWARD COLLECTION
+// 📺 ADMOB REWARDS
 // ============================================================
 
 function getAdMobRewardRef(transactionId) {
@@ -171,19 +151,60 @@ function getAdMobRewardRef(transactionId) {
 
 
 // ============================================================
-// 🐱 NUMBER HELPERS
+// 🔢 SAFE NUMBER
 // ============================================================
 
-function getHashRate(data) {
-  return Number(
-    data.hashRate ||
-    DEFAULT_HASH_RATE
+function safeNumber(value, fallback = 0) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+
+  return number;
+}
+
+
+// ============================================================
+// ⏱️ GET TIMESTAMP DATE
+// ============================================================
+
+function timestampToDate(value) {
+  if (
+    value &&
+    typeof value.toDate === "function"
+  ) {
+    return value.toDate();
+  }
+
+  return null;
+}
+
+
+// ============================================================
+// ⛏️ GET MINING START
+// ============================================================
+
+function getMiningStartTime(data) {
+  return timestampToDate(
+    data.miningStartedAt
   );
 }
 
 
 // ============================================================
-// ⛏️ CALCULATE MINING
+// ⏱️ GET MINING END
+// ============================================================
+
+function getMiningEndTime(data) {
+  return timestampToDate(
+    data.miningEndsAt
+  );
+}
+
+
+// ============================================================
+// 💰 CALCULATE STL MINING
 // ============================================================
 
 function calculateMining(
@@ -203,69 +224,37 @@ function calculateMining(
 
 
 // ============================================================
-// ⏱️ GET TIMESTAMP DATE
+// ⏳ GET CURRENT MINING STATUS
 // ============================================================
 
-function getTimestampDate(timestamp) {
-  if (
-    timestamp &&
-    typeof timestamp.toDate === "function"
-  ) {
-    return timestamp.toDate();
-  }
-
-  return null;
-}
-
-
-// ============================================================
-// 🐱 GET MINING SESSION START
-// ============================================================
-
-function getMiningSessionStart(data) {
-  return getTimestampDate(
-    data.miningSessionStartedAt
-  );
-}
-
-
-// ============================================================
-// 🐱 GET MINING SESSION END
-// ============================================================
-
-function getMiningSessionEnd(data) {
-  return getTimestampDate(
-    data.miningSessionEndsAt
-  );
-}
-
-
-// ============================================================
-// ⏱️ GET SESSION STATUS
-// ============================================================
-
-function getMiningSessionStatus(
+function getMiningStatusFromData(
   data,
-  now
+  now = new Date()
 ) {
-  const startedAt =
-    getMiningSessionStart(data);
+  const miningStartedAt =
+    getMiningStartTime(data);
 
-  const endsAt =
-    getMiningSessionEnd(data);
+  const miningEndsAt =
+    getMiningEndTime(data);
 
-  if (!startedAt || !endsAt) {
+  // ==========================================================
+  // NO ACTIVE MINING
+  // ==========================================================
+
+  if (
+    !miningStartedAt ||
+    !miningEndsAt
+  ) {
     return {
-      active: false,
-      completed: false,
+      miningActive: false,
 
-      startedAt: null,
-      endsAt: null,
+      miningStartedAt: null,
+
+      miningEndsAt: null,
+
+      miningRemainingMs: 0,
 
       elapsedMs: 0,
-      remainingMs: 0,
-
-      progress: 0,
     };
   }
 
@@ -273,77 +262,206 @@ function getMiningSessionStatus(
     now.getTime();
 
   const startMs =
-    startedAt.getTime();
+    miningStartedAt.getTime();
 
   const endMs =
-    endsAt.getTime();
+    miningEndsAt.getTime();
 
+  // ==========================================================
+  // NOT STARTED
+  // ==========================================================
 
   if (nowMs < startMs) {
     return {
-      active: false,
-      completed: false,
+      miningActive: false,
 
-      startedAt,
-      endsAt,
+      miningStartedAt,
+
+      miningEndsAt,
+
+      miningRemainingMs:
+        Math.max(
+          0,
+          endMs - nowMs
+        ),
 
       elapsedMs: 0,
-
-      remainingMs:
-        endMs - nowMs,
-
-      progress: 0,
     };
   }
 
+  // ==========================================================
+  // ACTIVE
+  // ==========================================================
 
-  const elapsedMs =
-    Math.max(
-      0,
-      Math.min(
+  if (nowMs < endMs) {
+    return {
+      miningActive: true,
+
+      miningStartedAt,
+
+      miningEndsAt,
+
+      miningRemainingMs:
+        endMs - nowMs,
+
+      elapsedMs:
         nowMs - startMs,
-        MINING_SESSION_MS
-      )
-    );
+    };
+  }
 
-
-  const remainingMs =
-    Math.max(
-      0,
-      endMs - nowMs
-    );
-
-
-  const completed =
-    nowMs >= endMs;
-
-
-  const progress =
-    Math.max(
-      0,
-      Math.min(
-        1,
-        elapsedMs /
-          MINING_SESSION_MS
-      )
-    );
-
+  // ==========================================================
+  // FINISHED
+  // ==========================================================
 
   return {
-    active:
-      !completed,
+    miningActive: false,
 
-    completed,
+    miningStartedAt,
 
-    startedAt,
+    miningEndsAt,
 
-    endsAt,
+    miningRemainingMs: 0,
 
-    elapsedMs,
+    elapsedMs:
+      Math.max(
+        0,
+        endMs - startMs
+      ),
+  };
+}
 
-    remainingMs,
 
-    progress,
+// ============================================================
+// 💰 CALCULATE CURRENT UNCLAIMED STL
+// ============================================================
+
+function getCurrentMiningAmount(
+  data,
+  now = new Date()
+) {
+  const hashRate =
+    safeNumber(
+      data.hashRate,
+      DEFAULT_HASH_RATE
+    );
+
+  const status =
+    getMiningStatusFromData(
+      data,
+      now
+    );
+
+  if (
+    !status.miningStartedAt ||
+    !status.miningEndsAt
+  ) {
+    return {
+      status,
+
+      amount: 0,
+    };
+  }
+
+  const amount =
+    calculateMining(
+      hashRate,
+      status.elapsedMs
+    );
+
+  return {
+    status,
+
+    amount,
+  };
+}
+
+
+// ============================================================
+// 🐱 DAILY STREAK
+// ============================================================
+
+function getCurrentStreak(data) {
+  const today =
+    getUtcDateString();
+
+  const yesterday =
+    getYesterdayUtcDateString();
+
+  const lastDaily =
+    String(
+      data.lastDaily || ""
+    );
+
+  let streak =
+    safeNumber(
+      data.streak,
+      0
+    );
+
+  if (
+    lastDaily !== today &&
+    lastDaily !== yesterday
+  ) {
+    streak = 0;
+  }
+
+  return streak;
+}
+
+
+// ============================================================
+// 📺 GET AD STATUS
+// ============================================================
+
+function getAdStatus(
+  data,
+  now = new Date()
+) {
+  const today =
+    getUtcDateString();
+
+  let adsToday =
+    safeNumber(
+      data.adsToday,
+      0
+    );
+
+  const adDate =
+    String(
+      data.adDate || ""
+    );
+
+  if (adDate !== today) {
+    adsToday = 0;
+  }
+
+  let cooldownRemainingMs = 0;
+
+  const lastAdTimestamp =
+    timestampToDate(
+      data.lastAdTimestamp
+    );
+
+  if (lastAdTimestamp) {
+    const elapsed =
+      now.getTime() -
+      lastAdTimestamp.getTime();
+
+    cooldownRemainingMs =
+      Math.max(
+        0,
+        AD_COOLDOWN_MS - elapsed
+      );
+  }
+
+  return {
+    adsToday,
+
+    cooldownRemainingMs,
+
+    canWatchAd:
+      adsToday < MAX_ADS_PER_DAY &&
+      cooldownRemainingMs === 0,
   };
 }
 
@@ -353,8 +471,8 @@ function getMiningSessionStatus(
 // ============================================================
 
 async function getAdMobPublicKeys() {
-
-  const now = Date.now();
+  const now =
+    Date.now();
 
   if (
     cachedAdMobKeys &&
@@ -387,10 +505,10 @@ async function getAdMobPublicKeys() {
     );
   }
 
-  const keys = new Map();
+  const keys =
+    new Map();
 
   for (const key of data.keys) {
-
     if (
       key &&
       key.keyId !== undefined &&
@@ -403,9 +521,11 @@ async function getAdMobPublicKeys() {
     }
   }
 
-  cachedAdMobKeys = keys;
+  cachedAdMobKeys =
+    keys;
 
-  adMobKeysCachedAt = now;
+  adMobKeysCachedAt =
+    now;
 
   return keys;
 }
@@ -416,7 +536,6 @@ async function getAdMobPublicKeys() {
 // ============================================================
 
 function base64UrlDecode(value) {
-
   let base64 =
     String(value)
       .replace(/-/g, "+")
@@ -436,7 +555,7 @@ function base64UrlDecode(value) {
 
 
 // ============================================================
-// 🔐 BUILD ADMOB SIGNED DATA
+// 🔐 BUILD ADMOB SIGNED QUERY
 // ============================================================
 
 function buildSignedQueryString(
@@ -464,7 +583,6 @@ function buildSignedQueryString(
   const signedParts = [];
 
   for (const part of parts) {
-
     if (
       part.startsWith("signature=") ||
       part.startsWith("key_id=")
@@ -487,7 +605,6 @@ function buildSignedQueryString(
 // ============================================================
 
 async function verifyAdMobCallback(req) {
-
   const signature =
     req.query.signature;
 
@@ -523,7 +640,9 @@ async function verifyAdMobCallback(req) {
     );
 
   const signatureBuffer =
-    base64UrlDecode(signature);
+    base64UrlDecode(
+      signature
+    );
 
   const verifier =
     crypto.createVerify(
@@ -558,7 +677,6 @@ async function verifyAdMobCallback(req) {
 
 exports.getMiningStatus =
   onCall(async (request) => {
-
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -583,205 +701,118 @@ exports.getMiningStatus =
     const now =
       new Date();
 
-
     // ========================================================
     // ⚡ HASH RATE
     // ========================================================
 
     const hashRate =
-      getHashRate(data);
-
+      safeNumber(
+        data.hashRate,
+        DEFAULT_HASH_RATE
+      );
 
     // ========================================================
-    // 💰 STORED BALANCE
+    // 💰 SAVED STL
     // ========================================================
 
     const miningBalance =
-      Number(
-        data.miningBalance || 0
+      safeNumber(
+        data.miningBalance,
+        0
       );
 
-
     // ========================================================
-    // ⛏️ SESSION STATUS
+    // ⛏️ CURRENT 24H MINING
     // ========================================================
 
-    const session =
-      getMiningSessionStatus(
+    const mining =
+      getCurrentMiningAmount(
         data,
         now
       );
 
+    const status =
+      mining.status;
 
-    // ========================================================
-    // 🐱 LIVE SESSION MINING
-    // ========================================================
-
-    let liveMining = 0;
-
-    if (
-      session.active ||
-      session.completed
-    ) {
-      liveMining =
-        calculateMining(
-          hashRate,
-          session.elapsedMs
-        );
-    }
-
-
-    // ========================================================
-    // 🎯 SESSION TOTAL
-    // ========================================================
+    const unclaimedMining =
+      mining.amount;
 
     const estimatedTotal =
       miningBalance +
-      liveMining;
-
+      unclaimedMining;
 
     // ========================================================
-    // 📺 AD STATUS
+    // 📺 ADS
     // ========================================================
+
+    const adStatus =
+      getAdStatus(
+        data,
+        now
+      );
+
+    // ========================================================
+    // 🔥 STREAK
+    // ========================================================
+
+    const streak =
+      getCurrentStreak(data);
 
     const today =
       getUtcDateString();
-
-    let adsToday =
-      Number(
-        data.adsToday || 0
-      );
-
-    const adDate =
-      String(
-        data.adDate || ""
-      );
-
-    if (adDate !== today) {
-      adsToday = 0;
-    }
-
-
-    // ========================================================
-    // ⏱️ AD COOLDOWN
-    // ========================================================
-
-    let cooldownRemainingMs = 0;
-
-    const lastAdTimestamp =
-      getTimestampDate(
-        data.lastAdTimestamp
-      );
-
-    if (lastAdTimestamp) {
-
-      const elapsed =
-        now.getTime() -
-        lastAdTimestamp.getTime();
-
-      cooldownRemainingMs =
-        Math.max(
-          0,
-          AD_COOLDOWN_MS - elapsed
-        );
-    }
-
-
-    // ========================================================
-    // 🎁 DAILY STATUS
-    // ========================================================
 
     const lastDaily =
       String(
         data.lastDaily || ""
       );
 
-    let streak =
-      Number(
-        data.streak || 0
-      );
-
-    const yesterday =
-      getYesterdayUtcDateString();
-
-    if (
-      lastDaily !== today &&
-      lastDaily !== yesterday
-    ) {
-      streak = 0;
-    }
-
-
-    // ========================================================
-    // 🐱 RESPONSE
-    // ========================================================
-
     return {
-
-      // ==============================================
-      // ⚡ POWER
-      // ==============================================
+      // ======================================================
+      // ⚡ HASH RATE
+      // ======================================================
 
       hashRate,
-
-
-      // ==============================================
-      // 💰 BALANCE
-      // ==============================================
-
-      miningBalance,
-
-      unclaimedMining:
-        liveMining,
-
-      estimatedTotal,
-
-
-      // ==============================================
-      // ⛏️ SESSION
-      // ==============================================
-
-      miningActive:
-        session.active,
-
-      miningCompleted:
-        session.completed,
-
-      miningStartedAt:
-        session.startedAt
-          ? session.startedAt.toISOString()
-          : null,
-
-      miningEndsAt:
-        session.endsAt
-          ? session.endsAt.toISOString()
-          : null,
-
-      miningElapsedMs:
-        session.elapsedMs,
-
-      miningRemainingMs:
-        session.remainingMs,
-
-      miningProgress:
-        session.progress,
-
-      miningSessionDurationMs:
-        MINING_SESSION_MS,
-
-
-      // ==============================================
-      // ⚡ SPEED
-      // ==============================================
 
       miningPerHour:
         hashRate *
         MINING_PER_HASH_PER_HOUR,
 
+      // ======================================================
+      // 💰 STL
+      // ======================================================
 
-      // ==============================================
+      miningBalance,
+
+      unclaimedMining,
+
+      estimatedTotal,
+
+      // ======================================================
+      // ⛏️ 24H MINING
+      // ======================================================
+
+      miningActive:
+        status.miningActive,
+
+      miningRemainingMs:
+        status.miningRemainingMs,
+
+      miningStartedAt:
+        status.miningStartedAt
+          ? status.miningStartedAt.toISOString()
+          : null,
+
+      miningEndsAt:
+        status.miningEndsAt
+          ? status.miningEndsAt.toISOString()
+          : null,
+
+      miningDurationMs:
+        MINING_DURATION_MS,
+
+      // ======================================================
       // 🎁 DAILY
-      // ==============================================
+      // ======================================================
 
       dailyClaimed:
         lastDaily === today,
@@ -791,12 +822,12 @@ exports.getMiningStatus =
       dailyHashRateBonus:
         DAILY_HASH_RATE_BONUS,
 
-
-      // ==============================================
+      // ======================================================
       // 📺 ADS
-      // ==============================================
+      // ======================================================
 
-      adsToday,
+      adsToday:
+        adStatus.adsToday,
 
       maxAdsPerDay:
         MAX_ADS_PER_DAY,
@@ -805,22 +836,20 @@ exports.getMiningStatus =
         AD_HASH_RATE_BONUS,
 
       canWatchAd:
-        adsToday <
-          MAX_ADS_PER_DAY &&
-        cooldownRemainingMs === 0,
+        adStatus.canWatchAd,
 
-      cooldownRemainingMs,
+      cooldownRemainingMs:
+        adStatus.cooldownRemainingMs,
     };
   });
 
 
 // ============================================================
-// ⛏️ START STELLA MINING
+// ⛏️ START / FINISH STELLA MINING
 // ============================================================
 
-exports.startMining =
+exports.claimMining =
   onCall(async (request) => {
-
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -837,16 +866,8 @@ exports.startMining =
     const now =
       new Date();
 
-    const endTime =
-      new Date(
-        now.getTime() +
-          MINING_SESSION_MS
-      );
-
-
     return await db.runTransaction(
       async (transaction) => {
-
         const snapshot =
           await transaction.get(
             userRef
@@ -857,97 +878,105 @@ exports.startMining =
             ? snapshot.data()
             : {};
 
+        // ====================================================
+        // ⚡ HASH RATE
+        // ====================================================
+
+        const hashRate =
+          safeNumber(
+            data.hashRate,
+            DEFAULT_HASH_RATE
+          );
 
         // ====================================================
-        // CURRENT SESSION
+        // 💰 SAVED BALANCE
         // ====================================================
 
-        const currentSession =
-          getMiningSessionStatus(
+        const oldBalance =
+          safeNumber(
+            data.miningBalance,
+            0
+          );
+
+        // ====================================================
+        // ⛏️ CURRENT MINING
+        // ====================================================
+
+        const mining =
+          getCurrentMiningAmount(
             data,
             now
           );
 
+        const status =
+          mining.status;
 
         // ====================================================
-        // ALREADY ACTIVE
+        // 🐱 MINING ALREADY ACTIVE
         // ====================================================
 
-        if (
-          currentSession.active
-        ) {
-          throw new HttpsError(
-            "failed-precondition",
-            "Stella louhii jo! 🐱⛏️"
-          );
+        if (status.miningActive) {
+          return {
+            success: false,
+
+            miningActive: true,
+
+            message:
+              "🐱⛏️ Stella louhii jo!",
+          };
         }
 
-
         // ====================================================
-        // HASH RATE
-        // ====================================================
-
-        const hashRate =
-          getHashRate(data);
-
-
-        // ====================================================
-        // PREVIOUS BALANCE
+        // 💰 FINISH PREVIOUS 24H MINING
         // ====================================================
 
-        let miningBalance =
-          Number(
-            data.miningBalance || 0
-          );
+        let newBalance =
+          oldBalance;
 
+        let completedMining =
+          0;
 
-        // ====================================================
-        // FINISH PREVIOUS SESSION
-        // ====================================================
+        const hadMiningSession =
+          status.miningStartedAt &&
+          status.miningEndsAt;
 
-        if (
-          currentSession.completed &&
-          !data.lastCompletedSessionId
-        ) {
-          // Tämä kohta on vain varmistus.
-          // Varsinainen session tulos
-          // tallennetaan finishMining-funktiossa.
+        if (hadMiningSession) {
+          completedMining =
+            mining.amount;
+
+          if (completedMining > 0) {
+            newBalance =
+              oldBalance +
+              completedMining;
+          }
         }
 
-
         // ====================================================
-        // CREATE SESSION ID
+        // 🐱 START NEW 24H MINING
         // ====================================================
 
-        const sessionId =
-          `stella_${Date.now()}`;
+        const newStart =
+          now;
 
-
-        // ====================================================
-        // START NEW SESSION
-        // ====================================================
+        const newEnd =
+          new Date(
+            now.getTime() +
+              MINING_DURATION_MS
+          );
 
         transaction.set(
           userRef,
           {
             hashRate,
 
-            miningBalance,
+            miningBalance:
+              newBalance,
 
-            miningSessionId:
-              sessionId,
+            miningStartedAt:
+              newStart,
 
-            miningSessionStartedAt:
-              Timestamp.fromDate(now),
-
-            miningSessionEndsAt:
-              Timestamp.fromDate(endTime),
-
-            miningSessionHashRate:
-              hashRate,
-
-            miningSessionCompleted:
-              false,
+            miningEndsAt:
+              newEnd,
 
             updatedAt:
               FieldValue.serverTimestamp(),
@@ -957,276 +986,86 @@ exports.startMining =
           }
         );
 
+        // ====================================================
+        // 📜 HISTORY FOR COMPLETED SESSION
+        // ====================================================
+
+        if (completedMining > 0) {
+          const historyRef =
+            getHistoryCollection(uid)
+              .doc();
+
+          transaction.set(
+            historyRef,
+            {
+              type:
+                "mining_complete",
+
+              title:
+                "Stella Mining Complete 🐱⛏️✨",
+
+              amount:
+                completedMining,
+
+              balanceAfter:
+                newBalance,
+
+              hashRate,
+
+              createdAt:
+                FieldValue.serverTimestamp(),
+            }
+          );
+        }
 
         // ====================================================
-        // HISTORY
+        // 📜 HISTORY FOR NEW SESSION
         // ====================================================
 
-        const historyRef =
+        const startHistoryRef =
           getHistoryCollection(uid)
             .doc();
 
         transaction.set(
-          historyRef,
+          startHistoryRef,
           {
             type:
-              "mining_started",
+              "mining_start",
 
             title:
-              "Stella Mining Started 🐱⛏️",
+              "Stella 24H Mining Started 🐱⛏️",
+
+            amount: 0,
 
             hashRate,
 
-            sessionId,
+            miningEndsAt:
+              newEnd.toISOString(),
 
             createdAt:
               FieldValue.serverTimestamp(),
           }
         );
-
 
         return {
           success: true,
 
           miningActive: true,
 
-          sessionId,
-
-          hashRate,
-
-          startedAt:
-            now.toISOString(),
-
-          endsAt:
-            endTime.toISOString(),
-
-          durationMs:
-            MINING_SESSION_MS,
-
-          message:
-            "Stella aloitti 24 tunnin louhinnan! 🐱⛏️✨",
-        };
-      }
-    );
-  });
-
-
-// ============================================================
-// 🐱 FINISH STELLA MINING
-// ============================================================
-
-exports.finishMining =
-  onCall(async (request) => {
-
-    if (!request.auth) {
-      throw new HttpsError(
-        "unauthenticated",
-        "Kirjaudu sisään jatkaaksesi."
-      );
-    }
-
-    const uid =
-      request.auth.uid;
-
-    const userRef =
-      getUserRef(uid);
-
-    const now =
-      new Date();
-
-
-    return await db.runTransaction(
-      async (transaction) => {
-
-        const snapshot =
-          await transaction.get(
-            userRef
-          );
-
-        const data =
-          snapshot.exists
-            ? snapshot.data()
-            : {};
-
-
-        // ====================================================
-        // SESSION TIMES
-        // ====================================================
-
-        const startedAt =
-          getMiningSessionStart(
-            data
-          );
-
-        const endsAt =
-          getMiningSessionEnd(
-            data
-          );
-
-
-        if (
-          !startedAt ||
-          !endsAt
-        ) {
-          throw new HttpsError(
-            "failed-precondition",
-            "Stella Miningia ei ole käynnissä. 🐱"
-          );
-        }
-
-
-        // ====================================================
-        // NOT FINISHED YET
-        // ====================================================
-
-        if (
-          now.getTime() <
-          endsAt.getTime()
-        ) {
-          const remaining =
-            endsAt.getTime() -
-            now.getTime();
-
-          throw new HttpsError(
-            "failed-precondition",
-            `Stella louhii vielä! ⏱️ ${Math.ceil(
-              remaining / 60000
-            )} min jäljellä 🐱`
-          );
-        }
-
-
-        // ====================================================
-        // ALREADY COMPLETED
-        // ====================================================
-
-        if (
-          data.miningSessionCompleted ===
-          true
-        ) {
-          return {
-            success: true,
-
-            alreadyCompleted: true,
-
-            balance:
-              Number(
-                data.miningBalance || 0
-              ),
-          };
-        }
-
-
-        // ====================================================
-        // SESSION HASH RATE
-        // ====================================================
-
-        const sessionHashRate =
-          Number(
-            data.miningSessionHashRate ||
-            getHashRate(data)
-          );
-
-
-        // ====================================================
-        // SESSION REWARD
-        // ====================================================
-
-        const mined =
-          calculateMining(
-            sessionHashRate,
-            MINING_SESSION_MS
-          );
-
-
-        // ====================================================
-        // BALANCE
-        // ====================================================
-
-        const oldBalance =
-          Number(
-            data.miningBalance || 0
-          );
-
-        const newBalance =
-          oldBalance +
-          mined;
-
-
-        // ====================================================
-        // COMPLETE SESSION
-        // ====================================================
-
-        transaction.set(
-          userRef,
-          {
-            miningBalance:
-              newBalance,
-
-            miningSessionCompleted:
-              true,
-
-            miningSessionFinishedAt:
-              FieldValue.serverTimestamp(),
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          },
-          {
-            merge: true,
-          }
-        );
-
-
-        // ====================================================
-        // HISTORY
-        // ====================================================
-
-        const historyRef =
-          getHistoryCollection(uid)
-            .doc();
-
-        transaction.set(
-          historyRef,
-          {
-            type:
-              "mining_completed",
-
-            title:
-              "Stella Mining Complete! 🐱✨⛏️",
-
-            amount:
-              mined,
-
-            balanceAfter:
-              newBalance,
-
-            hashRate:
-              sessionHashRate,
-
-            sessionId:
-              String(
-                data.miningSessionId || ""
-              ),
-
-            createdAt:
-              FieldValue.serverTimestamp(),
-          }
-        );
-
-
-        return {
-          success: true,
-
-          alreadyCompleted: false,
-
-          mined,
+          completedMining,
 
           balance:
             newBalance,
 
+          hashRate,
+
+          miningEndsAt:
+            newEnd.toISOString(),
+
           message:
-            "Stella sai 24h louhinnan valmiiksi! 🐱✨⛏️",
+            completedMining > 0
+              ? "🐱⛏️ Uusi 24h Stella Mining alkoi!"
+              : "🐱⛏️ Stella Mining käynnistyi 24 tunniksi!",
         };
       }
     );
@@ -1234,12 +1073,11 @@ exports.finishMining =
 
 
 // ============================================================
-// 🎁 DAILY STELLA CHECK-IN
+// 🎁 STELLA DAILY CHECK-IN
 // ============================================================
 
 exports.dailyCheckIn =
   onCall(async (request) => {
-
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -1259,10 +1097,8 @@ exports.dailyCheckIn =
     const yesterday =
       getYesterdayUtcDateString();
 
-
     return await db.runTransaction(
       async (transaction) => {
-
         const snapshot =
           await transaction.get(
             userRef
@@ -1273,13 +1109,16 @@ exports.dailyCheckIn =
             ? snapshot.data()
             : {};
 
-
         const oldHashRate =
-          getHashRate(data);
+          safeNumber(
+            data.hashRate,
+            DEFAULT_HASH_RATE
+          );
 
         const oldStreak =
-          Number(
-            data.streak || 0
+          safeNumber(
+            data.streak,
+            0
           );
 
         const lastDaily =
@@ -1287,14 +1126,11 @@ exports.dailyCheckIn =
             data.lastDaily || ""
           );
 
-
         // ====================================================
         // ALREADY CLAIMED
         // ====================================================
 
-        if (
-          lastDaily === today
-        ) {
+        if (lastDaily === today) {
           return {
             alreadyClaimed: true,
 
@@ -1308,9 +1144,8 @@ exports.dailyCheckIn =
           };
         }
 
-
         // ====================================================
-        // STREAK
+        // 🔥 STREAK
         // ====================================================
 
         const newStreak =
@@ -1318,9 +1153,8 @@ exports.dailyCheckIn =
             ? oldStreak + 1
             : 1;
 
-
         // ====================================================
-        // BONUS
+        // ⚡ BONUS
         // ====================================================
 
         const bonus =
@@ -1330,6 +1164,9 @@ exports.dailyCheckIn =
           oldHashRate +
           bonus;
 
+        // ====================================================
+        // UPDATE
+        // ====================================================
 
         transaction.set(
           userRef,
@@ -1351,11 +1188,13 @@ exports.dailyCheckIn =
           }
         );
 
+        // ====================================================
+        // 📜 HISTORY
+        // ====================================================
 
         const historyRef =
           getHistoryCollection(uid)
             .doc(`daily_${today}`);
-
 
         transaction.set(
           historyRef,
@@ -1364,7 +1203,7 @@ exports.dailyCheckIn =
               "daily_hashrate",
 
             title:
-              "Stella Daily Bonus 🐱🎁",
+              "Stella Daily Bonus 🐱⚡",
 
             amount:
               bonus,
@@ -1379,7 +1218,6 @@ exports.dailyCheckIn =
               FieldValue.serverTimestamp(),
           }
         );
-
 
         return {
           alreadyClaimed: false,
@@ -1398,18 +1236,13 @@ exports.dailyCheckIn =
 
 
 // ============================================================
-// 🧪 TEST AD REWARD
-// ============================================================
+// 📺 TEST AD REWARD
 //
-// Käytetään Flutterissa Google TEST Rewarded Adien kanssa.
-//
-// Oikeassa tuotantoversiossa voidaan vaihtaa
-// AdMob SSV -vahvistukseen.
+// DEVELOPMENT ONLY
 // ============================================================
 
 exports.testAdReward =
   onCall(async (request) => {
-
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -1429,10 +1262,8 @@ exports.testAdReward =
     const today =
       getUtcDateString();
 
-
     return await db.runTransaction(
       async (transaction) => {
-
         const snapshot =
           await transaction.get(
             userRef
@@ -1443,27 +1274,18 @@ exports.testAdReward =
             ? snapshot.data()
             : {};
 
+        // ====================================================
+        // 📺 CURRENT AD STATUS
+        // ====================================================
 
-        // ====================================================
-        // ADS TODAY
-        // ====================================================
+        const adStatus =
+          getAdStatus(
+            data,
+            now
+          );
 
         let adsToday =
-          Number(
-            data.adsToday || 0
-          );
-
-        const adDate =
-          String(
-            data.adDate || ""
-          );
-
-        if (
-          adDate !== today
-        ) {
-          adsToday = 0;
-        }
-
+          adStatus.adsToday;
 
         // ====================================================
         // DAILY LIMIT
@@ -1475,66 +1297,49 @@ exports.testAdReward =
         ) {
           throw new HttpsError(
             "resource-exhausted",
-            "Päivän Stella-mainosraja on saavutettu. 🐱"
+            "🐱 Päivän Stella-mainosraja saavutettu."
           );
         }
-
 
         // ====================================================
         // COOLDOWN
         // ====================================================
 
-        const lastAdTime =
-          getTimestampDate(
-            data.lastAdTimestamp
-          );
-
-        if (lastAdTime) {
-
-          const elapsed =
-            now.getTime() -
-            lastAdTime.getTime();
-
-          if (
-            elapsed <
-            AD_COOLDOWN_MS
-          ) {
-            const remainingMinutes =
-              Math.ceil(
-                (
-                  AD_COOLDOWN_MS -
-                  elapsed
-                ) / 60000
-              );
-
-            throw new HttpsError(
-              "failed-precondition",
-              `Stella lepää vielä ${remainingMinutes} minuuttia 🐱💤`
+        if (
+          adStatus.cooldownRemainingMs >
+          0
+        ) {
+          const minutes =
+            Math.ceil(
+              adStatus.cooldownRemainingMs /
+                60000
             );
-          }
+
+          throw new HttpsError(
+            "failed-precondition",
+            `🐱 Stella lepää vielä ${minutes} minuuttia.`
+          );
         }
 
-
         // ====================================================
-        // HASH RATE
+        // ⚡ HASH RATE
         // ====================================================
 
         const oldHashRate =
-          getHashRate(data);
-
-        const bonus =
-          AD_HASH_RATE_BONUS;
+          safeNumber(
+            data.hashRate,
+            DEFAULT_HASH_RATE
+          );
 
         const newHashRate =
           oldHashRate +
-          bonus;
+          AD_HASH_RATE_BONUS;
 
         const newAdsToday =
           adsToday + 1;
 
-
         // ====================================================
-        // UPDATE
+        // UPDATE USER
         // ====================================================
 
         transaction.set(
@@ -1560,9 +1365,8 @@ exports.testAdReward =
           }
         );
 
-
         // ====================================================
-        // HISTORY
+        // 📜 HISTORY
         // ====================================================
 
         const historyRef =
@@ -1579,7 +1383,7 @@ exports.testAdReward =
               "Stella Power Boost 📺🐱⚡",
 
             amount:
-              bonus,
+              AD_HASH_RATE_BONUS,
 
             hashRateAfter:
               newHashRate,
@@ -1592,11 +1396,11 @@ exports.testAdReward =
           }
         );
 
-
         return {
           success: true,
 
-          bonus,
+          bonus:
+            AD_HASH_RATE_BONUS,
 
           hashRate:
             newHashRate,
@@ -1611,6 +1415,8 @@ exports.testAdReward =
 
 // ============================================================
 // 📺 ADMOB SERVER-SIDE REWARD
+//
+// FUTURE PRODUCTION USE
 // ============================================================
 
 exports.adMobReward =
@@ -1620,12 +1426,12 @@ exports.adMobReward =
     },
 
     async (req, res) => {
-
       try {
+        // ====================================================
+        // ONLY GET
+        // ====================================================
 
-        if (
-          req.method !== "GET"
-        ) {
+        if (req.method !== "GET") {
           res
             .status(405)
             .send("Method Not Allowed");
@@ -1633,11 +1439,17 @@ exports.adMobReward =
           return;
         }
 
+        // ====================================================
+        // VERIFY ADMOB
+        // ====================================================
 
         await verifyAdMobCallback(
           req
         );
 
+        // ====================================================
+        // PARAMETERS
+        // ====================================================
 
         const uid =
           String(
@@ -1649,7 +1461,6 @@ exports.adMobReward =
             req.query.transaction_id || ""
           );
 
-
         if (!uid) {
           res
             .status(400)
@@ -1658,7 +1469,6 @@ exports.adMobReward =
           return;
         }
 
-
         if (!transactionId) {
           res
             .status(400)
@@ -1666,7 +1476,6 @@ exports.adMobReward =
 
           return;
         }
-
 
         const userRef =
           getUserRef(uid);
@@ -1682,25 +1491,31 @@ exports.adMobReward =
         const today =
           getUtcDateString();
 
+        // ====================================================
+        // FIRESTORE TRANSACTION
+        // ====================================================
 
         const result =
           await db.runTransaction(
             async (transaction) => {
+              // ==============================================
+              // DUPLICATE
+              // ==============================================
 
-              // Duplicate protection.
               const rewardSnapshot =
                 await transaction.get(
                   rewardRef
                 );
 
-              if (
-                rewardSnapshot.exists
-              ) {
+              if (rewardSnapshot.exists) {
                 return {
                   duplicate: true,
                 };
               }
 
+              // ==============================================
+              // USER
+              // ==============================================
 
               const userSnapshot =
                 await transaction.get(
@@ -1712,26 +1527,18 @@ exports.adMobReward =
                   ? userSnapshot.data()
                   : {};
 
+              // ==============================================
+              // AD STATUS
+              // ==============================================
 
-              let adsToday =
-                Number(
-                  data.adsToday || 0
-                );
-
-              const adDate =
-                String(
-                  data.adDate || ""
+              const adStatus =
+                getAdStatus(
+                  data,
+                  now
                 );
 
               if (
-                adDate !== today
-              ) {
-                adsToday = 0;
-              }
-
-
-              if (
-                adsToday >=
+                adStatus.adsToday >=
                 MAX_ADS_PER_DAY
               ) {
                 return {
@@ -1741,41 +1548,38 @@ exports.adMobReward =
                 };
               }
 
-
-              const lastAdTime =
-                getTimestampDate(
-                  data.lastAdTimestamp
-                );
-
-              if (lastAdTime) {
-
-                const elapsed =
-                  now.getTime() -
-                  lastAdTime.getTime();
-
-                if (
-                  elapsed <
-                  AD_COOLDOWN_MS
-                ) {
-                  return {
-                    rejected: true,
-                    reason:
-                      "cooldown",
-                  };
-                }
+              if (
+                adStatus.cooldownRemainingMs >
+                0
+              ) {
+                return {
+                  rejected: true,
+                  reason:
+                    "cooldown",
+                };
               }
 
+              // ==============================================
+              // HASH RATE
+              // ==============================================
 
               const oldHashRate =
-                getHashRate(data);
+                safeNumber(
+                  data.hashRate,
+                  DEFAULT_HASH_RATE
+                );
 
               const newHashRate =
                 oldHashRate +
                 AD_HASH_RATE_BONUS;
 
               const newAdsToday =
-                adsToday + 1;
+                adStatus.adsToday +
+                1;
 
+              // ==============================================
+              // UPDATE USER
+              // ==============================================
 
               transaction.set(
                 userRef,
@@ -1800,6 +1604,9 @@ exports.adMobReward =
                 }
               );
 
+              // ==============================================
+              // SAVE ADMOB REWARD
+              // ==============================================
 
               transaction.set(
                 rewardRef,
@@ -1838,6 +1645,9 @@ exports.adMobReward =
                 }
               );
 
+              // ==============================================
+              // HISTORY
+              // ==============================================
 
               const historyRef =
                 getHistoryCollection(uid)
@@ -1869,17 +1679,17 @@ exports.adMobReward =
                 }
               );
 
-
               return {
                 success: true,
               };
             }
           );
 
+        // ====================================================
+        // RESPONSE
+        // ====================================================
 
-        if (
-          result.duplicate
-        ) {
+        if (result.duplicate) {
           res
             .status(200)
             .send("Duplicate ignored");
@@ -1887,10 +1697,7 @@ exports.adMobReward =
           return;
         }
 
-
-        if (
-          result.rejected
-        ) {
+        if (result.rejected) {
           res
             .status(200)
             .send(
@@ -1900,13 +1707,10 @@ exports.adMobReward =
           return;
         }
 
-
         res
           .status(200)
-          .send("Stella reward processed 🐱⚡");
-
+          .send("Reward processed");
       } catch (error) {
-
         console.error(
           "AdMob reward error:",
           error
@@ -1914,9 +1718,7 @@ exports.adMobReward =
 
         res
           .status(400)
-          .send(
-            "Invalid reward callback"
-          );
+          .send("Invalid reward callback");
       }
     }
   );
@@ -1928,7 +1730,6 @@ exports.adMobReward =
 
 exports.getTransactionHistory =
   onCall(async (request) => {
-
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -1938,7 +1739,6 @@ exports.getTransactionHistory =
 
     const uid =
       request.auth.uid;
-
 
     const snapshot =
       await getHistoryCollection(uid)
@@ -1951,72 +1751,72 @@ exports.getTransactionHistory =
         )
         .get();
 
-
     const transactions =
-      snapshot.docs.map(
-        (doc) => {
+      snapshot.docs.map((doc) => {
+        const data =
+          doc.data();
 
-          const data =
-            doc.data();
+        let createdAt =
+          null;
 
-          let createdAt = null;
-
-          if (
-            data.createdAt &&
-            typeof data.createdAt.toDate ===
-              "function"
-          ) {
-            createdAt =
-              data.createdAt
-                .toDate()
-                .toISOString();
-          }
-
-
-          return {
-            id:
-              doc.id,
-
-            type:
-              String(
-                data.type || ""
-              ),
-
-            title:
-              String(
-                data.title || ""
-              ),
-
-            amount:
-              Number(
-                data.amount || 0
-              ),
-
-            balanceAfter:
-              Number(
-                data.balanceAfter || 0
-              ),
-
-            hashRateAfter:
-              Number(
-                data.hashRateAfter || 0
-              ),
-
-            hashRate:
-              Number(
-                data.hashRate || 0
-              ),
-
-            streak:
-              Number(
-                data.streak || 0
-              ),
-
-            createdAt,
-          };
+        if (
+          data.createdAt &&
+          typeof data.createdAt.toDate ===
+            "function"
+        ) {
+          createdAt =
+            data.createdAt
+              .toDate()
+              .toISOString();
         }
-      );
 
+        return {
+          id:
+            doc.id,
+
+          type:
+            String(
+              data.type || ""
+            ),
+
+          title:
+            String(
+              data.title || ""
+            ),
+
+          amount:
+            safeNumber(
+              data.amount,
+              0
+            ),
+
+          balanceAfter:
+            safeNumber(
+              data.balanceAfter,
+              0
+            ),
+
+          hashRateAfter:
+            safeNumber(
+              data.hashRateAfter,
+              0
+            ),
+
+          hashRate:
+            safeNumber(
+              data.hashRate,
+              0
+            ),
+
+          streak:
+            safeNumber(
+              data.streak,
+              0
+            ),
+
+          createdAt,
+        };
+      });
 
     return {
       transactions,
