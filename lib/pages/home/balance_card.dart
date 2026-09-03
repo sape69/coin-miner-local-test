@@ -12,26 +12,36 @@ const Color balanceAccentColor = Color(0xFF35D0A0);
 // ============================================================
 
 class BalanceCard extends StatelessWidget {
-  final double estimatedTotal;
-  final double miningBalance;
-  final double unclaimedMining;
-  final double hashRate;
-  final double miningPerHour;
-
   final String title;
+
+  /// Kokonaismäärä:
+  /// Mining Balance + Unclaimed Mining
+  final double estimatedTotal;
+
+  /// Firestoreen jo tallennettu louhittu määrä.
+  final double miningBalance;
+
+  /// Tällä hetkellä louhittu mutta vielä claimamatta oleva määrä.
+  final double unclaimedMining;
+
+  /// Käyttäjän nykyinen Hash Rate.
+  final double hashRate;
+
+  /// Louhintanopeus tunnissa.
+  final double miningPerHour;
 
   const BalanceCard({
     super.key,
+    required this.title,
     required this.estimatedTotal,
     required this.miningBalance,
     required this.unclaimedMining,
     required this.hashRate,
     required this.miningPerHour,
-    required this.title,
   });
 
   // ==========================================================
-  // VALUE FORMAT
+  // NUMBER FORMAT
   // ==========================================================
 
   String _formatNumber(
@@ -92,15 +102,18 @@ class BalanceCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.70,
+              Flexible(
+                child: Text(
+                  title.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(
+                      alpha: 0.70,
+                    ),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
                   ),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
                 ),
               ),
 
@@ -163,7 +176,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ==================================================
-          // TOTAL BALANCE
+          // ESTIMATED TOTAL
           // ==================================================
 
           Text(
@@ -171,6 +184,8 @@ class BalanceCard extends StatelessWidget {
               estimatedTotal,
               decimals: 2,
             ),
+
+            textAlign: TextAlign.center,
 
             style: const TextStyle(
               fontSize: 48,
@@ -182,6 +197,10 @@ class BalanceCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 8),
+
+          // ==================================================
+          // ESTIMATED STL LABEL
+          // ==================================================
 
           Container(
             padding: const EdgeInsets.symmetric(
@@ -232,7 +251,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ==================================================
-          // MINING STATS
+          // MINING BALANCE
           // ==================================================
 
           _StatRow(
@@ -244,6 +263,10 @@ class BalanceCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
+          // ==================================================
+          // UNCLAIMED MINING
+          // ==================================================
+
           _StatRow(
             icon: Icons.inventory_2_outlined,
             label: 'Unclaimed Mining',
@@ -254,6 +277,10 @@ class BalanceCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
+          // ==================================================
+          // HASH RATE
+          // ==================================================
+
           _StatRow(
             icon: Icons.bolt,
             label: 'Hash Rate',
@@ -262,6 +289,10 @@ class BalanceCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 14),
+
+          // ==================================================
+          // MINING SPEED
+          // ==================================================
 
           _StatRow(
             icon: Icons.trending_up,
@@ -273,7 +304,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ==================================================
-          // MINING STATUS
+          // MINING ACTIVE STATUS
           // ==================================================
 
           Container(
@@ -311,13 +342,16 @@ class BalanceCard extends StatelessWidget {
 
                 SizedBox(width: 8),
 
-                Text(
-                  'STELLA MINING ACTIVE 🐱⛏️',
-                  style: TextStyle(
-                    color: balanceAccentColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
+                Flexible(
+                  child: Text(
+                    'STELLA MINING ACTIVE 🐱⛏️',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: balanceAccentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ],
@@ -355,6 +389,10 @@ class _StatRow extends StatelessWidget {
 
     return Row(
       children: [
+        // ====================================================
+        // ICON
+        // ====================================================
+
         Container(
           width: 38,
           height: 38,
@@ -377,9 +415,14 @@ class _StatRow extends StatelessWidget {
 
         const SizedBox(width: 12),
 
+        // ====================================================
+        // LABEL
+        // ====================================================
+
         Expanded(
           child: Text(
             label,
+
             style: TextStyle(
               color: Colors.white.withValues(
                 alpha: 0.65,
@@ -389,12 +432,22 @@ class _StatRow extends StatelessWidget {
           ),
         ),
 
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 8),
+
+        // ====================================================
+        // VALUE
+        // ====================================================
+
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
