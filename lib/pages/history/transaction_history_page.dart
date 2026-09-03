@@ -66,16 +66,13 @@ class _TransactionHistoryPageState
     }
 
     try {
-      final callable =
-          functions.httpsCallable(
+      final callable = functions.httpsCallable(
         'getTransactionHistory',
       );
 
-      final result =
-          await callable.call();
+      final result = await callable.call();
 
-      final data =
-          Map<String, dynamic>.from(
+      final data = Map<String, dynamic>.from(
         result.data as Map,
       );
 
@@ -98,14 +95,10 @@ class _TransactionHistoryPageState
       if (!mounted) return;
 
       setState(() {
-        transactions =
-            loadedTransactions;
-
+        transactions = loadedTransactions;
         loading = false;
       });
-    } on FirebaseFunctionsException catch (
-      error,
-    ) {
+    } on FirebaseFunctionsException catch (error) {
       if (!mounted) return;
 
       setState(() {
@@ -115,7 +108,7 @@ class _TransactionHistoryPageState
 
         loading = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
 
       setState(() {
@@ -375,7 +368,7 @@ class _TransactionHistoryPageState
             children: [
               Text(
                 '+$amount STL',
-                style: TextStyle(
+                style: const TextStyle(
                   color: accentColor,
                   fontSize: 16,
                   fontWeight:
@@ -450,6 +443,8 @@ class _TransactionHistoryPageState
 
     if (errorMessage != null) {
       return ListView(
+        physics:
+            const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 100),
@@ -493,6 +488,8 @@ class _TransactionHistoryPageState
 
     if (transactions.isEmpty) {
       return ListView(
+        physics:
+            const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 100),
