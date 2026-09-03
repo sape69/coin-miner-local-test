@@ -1,20 +1,29 @@
 "use strict";
 
+
 // ============================================================
-// 🐱 STELLURIINI FIREBASE FUNCTIONS
+// 🐱 STELLURIINI FIREBASE CLOUD FUNCTIONS
 // ============================================================
 //
-// Stella Mining -järjestelmän pääsisäänkäynti.
+// Stella Mining Backend
 //
-// Kaikki suuremmat järjestelmät on jaettu
-// omiin tiedostoihinsa.
+// Tämä tiedosto toimii backendin pääsisäänkäyntinä.
 //
-// 🐱⛏️ Stella pitää projektin siistinä!
+// Varsinainen logiikka on jaettu:
+//
+// 📁 config/
+// 📁 firebase/
+// 📁 utils/
+// 📁 services/
+// 📁 functions/
+//
+// Näin index.js pysyy kevyenä ja helposti ylläpidettävänä.
+//
 // ============================================================
 
 
 // ============================================================
-// ⛏️ MINING
+// ⛏️ STELLA MINING FUNCTIONS
 // ============================================================
 
 const {
@@ -24,7 +33,7 @@ const {
 
 
 // ============================================================
-// 🎁 DAILY
+// 🎁 STELLA DAILY FUNCTIONS
 // ============================================================
 
 const {
@@ -33,17 +42,16 @@ const {
 
 
 // ============================================================
-// 📺 ADS
+// 📺 STELLA AD FUNCTIONS
 // ============================================================
 
 const {
   testAdReward,
-  adMobReward,
 } = require("./functions/adFunctions");
 
 
 // ============================================================
-// 📜 HISTORY
+// 📜 STELLA HISTORY FUNCTIONS
 // ============================================================
 
 const {
@@ -52,7 +60,16 @@ const {
 
 
 // ============================================================
-// EXPORT FUNCTIONS
+// 🌟 EXPORT STELLA FUNCTIONS
+// ============================================================
+//
+// Firebase löytää nämä funktiot tästä tiedostosta.
+//
+// ============================================================
+
+
+// ============================================================
+// 🐱⛏️ MINING
 // ============================================================
 
 exports.getMiningStatus =
@@ -61,14 +78,31 @@ exports.getMiningStatus =
 exports.claimMining =
   claimMining;
 
+
+// ============================================================
+// 🐱🎁 DAILY
+// ============================================================
+
 exports.dailyCheckIn =
   dailyCheckIn;
+
+
+// ============================================================
+// 🐱📺 TEST AD
+// ============================================================
+//
+// Käytetään kehitysvaiheessa.
+//
+// Flutter käyttää edelleen Google AdMob TEST MAINOKSIA.
+//
 
 exports.testAdReward =
   testAdReward;
 
-exports.adMobReward =
-  adMobReward;
+
+// ============================================================
+// 🐱📜 HISTORY
+// ============================================================
 
 exports.getTransactionHistory =
   getTransactionHistory;
