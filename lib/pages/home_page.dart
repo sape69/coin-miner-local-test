@@ -22,7 +22,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   // ============================================================
-  // 🔥 FIREBASE
+  // 🐱 FIREBASE
   // ============================================================
 
   final FirebaseAuth _auth =
@@ -162,11 +162,15 @@ class _HomePageState extends State<HomePage>
           _loading = false;
         });
       }
+
+      _showMessage(
+        '🐱 Stella ei saanut yhteyttä palvelimeen.',
+      );
     }
   }
 
   // ============================================================
-  // 🔐 AUTH
+  // AUTH
   // ============================================================
 
   Future<void> _ensureSignedIn() async {
@@ -178,7 +182,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // ⏱️ TIMERS
+  // TIMERS
   // ============================================================
 
   void _startTimers() {
@@ -192,13 +196,10 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          // ====================================================
-          // ⛏️ MINING TIMER
-          // ====================================================
-
           if (
               _miningActive &&
-              _miningRemainingMs > 0) {
+              _miningRemainingMs > 0
+          ) {
             _miningRemainingMs -= 1000;
 
             if (_miningRemainingMs <= 0) {
@@ -207,10 +208,6 @@ class _HomePageState extends State<HomePage>
               _miningActive = false;
             }
           }
-
-          // ====================================================
-          // 📺 POWER BOOST COOLDOWN
-          // ====================================================
 
           if (_cooldownRemainingMs > 0) {
             _cooldownRemainingMs -= 1000;
@@ -223,10 +220,6 @@ class _HomePageState extends State<HomePage>
             }
           }
 
-          // ====================================================
-          // ✨ LIVE MINING
-          // ====================================================
-
           _updateLiveMiningAmount();
         });
       },
@@ -237,27 +230,17 @@ class _HomePageState extends State<HomePage>
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) async {
-        if (!mounted) {
-          return;
-        }
-
-        await _loadMiningStatus(
-          showError: false,
-        );
+        await _loadMiningStatus();
       },
     );
   }
 
   // ============================================================
-  // ✨ LIVE MINING
+  // LIVE MINING
   // ============================================================
 
   void _updateLiveMiningAmount() {
     if (!_miningActive) {
-      return;
-    }
-
-    if (_miningPerHour <= 0) {
       return;
     }
 
@@ -272,12 +255,10 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🧮 LOAD MINING STATUS
+  // LOAD MINING STATUS
   // ============================================================
 
-  Future<void> _loadMiningStatus({
-    bool showError = true,
-  }) async {
+  Future<void> _loadMiningStatus() async {
     try {
       final callable =
           _functions.httpsCallable(
@@ -297,10 +278,6 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
-        // ======================================================
-        // ⚡ HASH RATE
-        // ======================================================
-
         _hashRate =
             _toDouble(
           data['hashRate'],
@@ -309,10 +286,6 @@ class _HomePageState extends State<HomePage>
         if (_hashRate <= 0) {
           _hashRate = 1;
         }
-
-        // ======================================================
-        // 💰 BALANCE
-        // ======================================================
 
         _miningBalance =
             _toDouble(
@@ -328,10 +301,6 @@ class _HomePageState extends State<HomePage>
             _toDouble(
           data['estimatedTotal'],
         );
-
-        // ======================================================
-        // ⛏️ MINING
-        // ======================================================
 
         _miningPerHour =
             _toDouble(
@@ -357,7 +326,7 @@ class _HomePageState extends State<HomePage>
         }
 
         // ======================================================
-        // 🎁 DAILY
+        // 🎁 DAILY BONUS
         // ======================================================
 
         _dailyClaimed =
@@ -426,12 +395,6 @@ class _HomePageState extends State<HomePage>
       setState(() {
         _loading = false;
       });
-
-      if (showError) {
-        _showMessage(
-          '🐱 Stella ei saanut yhteyttä louhintapalvelimeen.',
-        );
-      }
     }
   }
 
@@ -439,13 +402,8 @@ class _HomePageState extends State<HomePage>
   // ⛏️ START MINING
   // ============================================================
   //
-  // Käyttäjä painaa:
-  //
-  // 📺 Mainos
-  // ↓
-  // ⛏️ claimMining()
-  // ↓
-  // 🐱 Stella aloittaa 24h louhinnan
+  // 📺 Mainos ensin
+  // ⛏️ Mainoksen jälkeen 24h louhinta alkaa
   //
   // ============================================================
 
@@ -464,7 +422,8 @@ class _HomePageState extends State<HomePage>
 
     if (
         _rewardedAd == null ||
-        !_adReady) {
+        !_adReady
+    ) {
       _showMessage(
         '📺 Stella valmistelee mainosta...',
       );
@@ -530,44 +489,43 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      // ======================================================
-      // 💰 BACKEND RETURNS "collected"
-      // ======================================================
+      final bool started =
+          data['started'] == true;
+
+      final bool alreadyMining =
+          data['miningActive'] == true &&
+              started == false;
 
       final double collected =
           _toDouble(
         data['collected'],
       );
 
-      final bool started =
-          data['started'] == true;
-
-      if (started) {
-        if (collected > 0) {
-          _showMessage(
-            '🐱✨ Stella keräsi '
-            '${_formatStl(collected)} STL '
-            'ja aloitti uuden 24h louhinnan! ⛏️',
-          );
-        } else {
-          _showMessage(
-            '🐱⛏️📺 Mainos katsottu! '
-            'Stella aloitti 24 tunnin louhinnan!',
-          );
-        }
+      if (alreadyMining) {
+        _showMessage(
+          '🐱⛏️ Stella louhii jo STL:ää!',
+        );
+      } else if (collected > 0) {
+        _showMessage(
+          '🐱✨ Stella keräsi '
+          '${_formatStl(collected)} STL '
+          'ja aloitti uuden 24h louhinnan! ⛏️',
+        );
+      } else if (started) {
+        _showMessage(
+          '🐱⛏️📺 Mainos katsottu! '
+          'Stella aloitti 24 tunnin louhinnan!',
+        );
       } else {
         _showMessage(
-          data['message']?.toString() ??
-              '🐱⛏️ Stella louhii jo STL:ää!',
+          '🐱 Louhinnan käynnistäminen epäonnistui.',
         );
       }
 
-      await _loadMiningStatus(
-        showError: false,
-      );
+      await _loadMiningStatus();
     } catch (error) {
       debugPrint(
-        'Start mining error: $error',
+        'Start mining after ad error: $error',
       );
 
       _showMessage(
@@ -590,14 +548,6 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _dailyCheckIn() async {
     if (_actionLoading) {
-      return;
-    }
-
-    if (_dailyClaimed) {
-      _showMessage(
-        '🐱 Stella Daily Bonus on jo kerätty tänään!',
-      );
-
       return;
     }
 
@@ -647,12 +597,10 @@ class _HomePageState extends State<HomePage>
         );
       }
 
-      await _loadMiningStatus(
-        showError: false,
-      );
+      await _loadMiningStatus();
     } catch (error) {
       debugPrint(
-        'Daily bonus error: $error',
+        'Daily error: $error',
       );
 
       _showMessage(
@@ -676,8 +624,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd != null &&
-        _adReady) {
+    if (_rewardedAd != null) {
       return;
     }
 
@@ -699,26 +646,21 @@ class _HomePageState extends State<HomePage>
 
           ad.fullScreenContentCallback =
               FullScreenContentCallback(
-            onAdShowedFullScreenContent:
-                (RewardedAd ad) {
-              debugPrint(
-                'Rewarded ad opened',
-              );
-            },
-
             onAdDismissedFullScreenContent:
-                (RewardedAd ad) {
+                (
+              RewardedAd ad,
+            ) {
               ad.dispose();
 
               _rewardedAd = null;
 
               _adReady = false;
 
+              _loadRewardedAd();
+
               if (mounted) {
                 setState(() {});
               }
-
-              _loadRewardedAd();
             },
 
             onAdFailedToShowFullScreenContent:
@@ -736,11 +678,11 @@ class _HomePageState extends State<HomePage>
 
               _adReady = false;
 
+              _loadRewardedAd();
+
               if (mounted) {
                 setState(() {});
               }
-
-              _loadRewardedAd();
             },
           );
 
@@ -791,12 +733,12 @@ class _HomePageState extends State<HomePage>
     if (!_canWatchAd) {
       if (_cooldownRemainingMs > 0) {
         _showMessage(
-          '🐱 Stella Power Boost on käytettävissä '
-          '${_formatDuration(_cooldownRemainingMs)} kuluttua.',
+          '🐱 Stella lepää vielä '
+          '${_formatDuration(_cooldownRemainingMs)}.',
         );
       } else {
         _showMessage(
-          '🐱 Päivän Power Boost -raja on saavutettu.',
+          '🐱 Päivän mainosraja on saavutettu.',
         );
       }
 
@@ -805,7 +747,8 @@ class _HomePageState extends State<HomePage>
 
     if (
         _rewardedAd == null ||
-        !_adReady) {
+        !_adReady
+    ) {
       _showMessage(
         '📺 Stella valmistelee mainosta...',
       );
@@ -841,7 +784,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🎁 APPLY POWER BOOST REWARD
+  // 🎁 POWER BOOST REWARD
   // ============================================================
 
   Future<void> _giveTestAdReward() async {
@@ -882,39 +825,27 @@ class _HomePageState extends State<HomePage>
         data['bonus'],
       );
 
-      final double newHashRate =
-          _toDouble(
-        data['hashRate'],
-      );
-
-      if (duplicate) {
+      if (rewarded) {
         _showMessage(
-          '🐱📺 Tämä mainospalkinto on jo käsitelty.',
+          '🐱⚡ Stella sai '
+          '+${bonus.toStringAsFixed(0)} '
+          'Hash Rate Power Boostin!',
         );
-      } else if (rewarded) {
+      } else if (duplicate) {
         _showMessage(
-          '🐱📺⚡ Stella sai '
-          '+${bonus.toStringAsFixed(0)} Hash Rate! '
-          'Uusi nopeus: '
-          '${newHashRate.toStringAsFixed(0)} H/s',
+          '🐱📺 Mainospalkinto on jo käsitelty.',
         );
       } else {
         _showMessage(
           data['message']?.toString() ??
-              '🐱 Power Boostia ei voitu käyttää.',
+              '🐱 Power Boost epäonnistui.',
         );
       }
 
-      // ======================================================
-      // 🔄 REFRESH SERVER STATUS
-      // ======================================================
-
-      await _loadMiningStatus(
-        showError: false,
-      );
+      await _loadMiningStatus();
     } catch (error) {
       debugPrint(
-        'Power boost error: $error',
+        'Test ad reward error: $error',
       );
 
       _showMessage(
@@ -932,7 +863,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🧮 HELPERS
+  // 🔢 HELPERS
   // ============================================================
 
   double _toDouble(dynamic value) {
@@ -988,7 +919,9 @@ class _HomePageState extends State<HomePage>
     return '$hours:$minutes:$seconds';
   }
 
-  void _showMessage(String message) {
+  void _showMessage(
+    String message,
+  ) {
     if (!mounted) {
       return;
     }
@@ -1005,7 +938,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🗑️ DISPOSE
+  // DISPOSE
   // ============================================================
 
   @override
@@ -1022,11 +955,13 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🏗️ BUILD
+  // BUILD
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       backgroundColor:
           const Color(0xFF120B24),
@@ -1085,7 +1020,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 HEADER
+  // HEADER
   // ============================================================
 
   Widget _buildHeader() {
@@ -1138,7 +1073,9 @@ class _HomePageState extends State<HomePage>
                   letterSpacing: 1.2,
                 ),
               ),
+
               SizedBox(height: 3),
+
               Text(
                 'Stella Mining ⛏️✨',
                 style: TextStyle(
@@ -1152,9 +1089,8 @@ class _HomePageState extends State<HomePage>
         ),
 
         IconButton(
-          onPressed: () {
-            _loadMiningStatus();
-          },
+          onPressed:
+              _loadMiningStatus,
           icon: const Icon(
             Icons.refresh_rounded,
             color: Colors.white,
@@ -1440,21 +1376,28 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // ⏳ MINING PROGRESS
+  // 📈 MINING PROGRESS
   // ============================================================
 
   Widget _buildMiningProgress() {
     double progress = 0;
 
-    if (_miningActive &&
-        _miningDurationMs > 0) {
+    if (
+        _miningActive &&
+        _miningDurationMs > 0
+    ) {
       progress =
           1 -
-              (_miningRemainingMs /
-                  _miningDurationMs);
+              (
+                _miningRemainingMs /
+                    _miningDurationMs
+              );
 
       progress =
-          progress.clamp(0.0, 1.0);
+          progress.clamp(
+        0.0,
+        1.0,
+      );
     }
 
     return Container(
@@ -1588,15 +1531,12 @@ class _HomePageState extends State<HomePage>
             onPressed,
         icon:
             Icon(icon),
-        label:
-            Text(
+        label: Text(
           text,
-          style:
-              const TextStyle(
+          style: const TextStyle(
             fontWeight:
                 FontWeight.bold,
-            letterSpacing:
-                0.5,
+            letterSpacing: 0.5,
           ),
         ),
         style:
@@ -1683,7 +1623,9 @@ class _HomePageState extends State<HomePage>
                             FontWeight.bold,
                       ),
                     ),
+
                     SizedBox(height: 3),
+
                     Text(
                       'Katso mainos ja auta Stellaa ⚡',
                       style: TextStyle(
@@ -1711,8 +1653,7 @@ class _HomePageState extends State<HomePage>
                   OutlinedButton.styleFrom(
                 foregroundColor:
                     const Color(0xFFFFB7E8),
-                side:
-                    const BorderSide(
+                side: const BorderSide(
                   color:
                       Color(0xFFFFB7E8),
                 ),
@@ -1738,10 +1679,8 @@ class _HomePageState extends State<HomePage>
 
           Text(
             '$_adsToday / $_maxAdsPerDay Power Boosts today',
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF8D7BA8),
+            style: const TextStyle(
+              color: Color(0xFF8D7BA8),
               fontSize: 11,
             ),
           ),
@@ -1794,10 +1733,8 @@ class _HomePageState extends State<HomePage>
 
           Text(
             '+${_dailyHashRateBonus.toStringAsFixed(0)} Hash Rate • 🔥 $_streak day streak',
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFFCFC2E8),
+            style: const TextStyle(
+              color: Color(0xFFCFC2E8),
             ),
           ),
 
@@ -1833,8 +1770,7 @@ class _HomePageState extends State<HomePage>
                 _dailyClaimed
                     ? '🐱 BONUS CLAIMED TODAY'
                     : '🎁 CLAIM DAILY BONUS',
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   fontWeight:
                       FontWeight.bold,
                 ),
@@ -1866,8 +1802,7 @@ class _HomePageState extends State<HomePage>
           Text(
             'Stella is mining the future.',
             style: TextStyle(
-              color:
-                  Color(0xFF8D7BA8),
+              color: Color(0xFF8D7BA8),
               fontStyle:
                   FontStyle.italic,
             ),
@@ -1878,8 +1813,7 @@ class _HomePageState extends State<HomePage>
           Text(
             'STELLURIINI • STL',
             style: TextStyle(
-              color:
-                  Color(0xFF5F4D70),
+              color: Color(0xFF5F4D70),
               fontSize: 11,
               letterSpacing: 2,
             ),
