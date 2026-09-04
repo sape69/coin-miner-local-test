@@ -2,21 +2,21 @@
 
 
 // ============================================================
-// 🐱 STELLA DAILY BONUS
+// 🐱 STELLA DAILY FUNCTIONS
 // ============================================================
 //
-// Vastaa:
+// Stella Daily Check-In
 //
-// 🎁 Päivittäisestä Stella-bonuksesta
-// 🔥 Streak-järjestelmästä
-// ⚡ Hash Rate -bonuksesta
-// 📜 Bonus-historiasta
+// 🎁 Päivittäinen Hash Rate -bonus
+// 🔥 Streak peräkkäisistä päivistä
+// ⚡ Bonus kasvattaa Stella Mining -nopeutta
+// 📜 Tapahtuma tallennetaan historiaan
 //
 // ============================================================
 
 
 // ============================================================
-// FIREBASE FUNCTIONS
+// 🔥 FIREBASE FUNCTIONS
 // ============================================================
 
 const {
@@ -28,30 +28,19 @@ const {
 
 
 // ============================================================
-// FIRESTORE
-// ============================================================
-
-const {
-  FieldValue,
-} = require(
-  "firebase-admin/firestore"
-);
-
-
-// ============================================================
-// FIREBASE
+// 🔥 FIREBASE
 // ============================================================
 
 const {
   db,
-  getUserRef,
+  FieldValue,
 } = require(
   "../firebase/firebase"
 );
 
 
 // ============================================================
-// STELLA CONFIG
+// ⚙️ MINING CONFIG
 // ============================================================
 
 const {
@@ -63,7 +52,7 @@ const {
 
 
 // ============================================================
-// DATE UTILITIES
+// 📅 DATE UTILITIES
 // ============================================================
 
 const {
@@ -75,18 +64,38 @@ const {
 
 
 // ============================================================
-// HISTORY SERVICE
+// 👤 USER UTILITIES
 // ============================================================
 
 const {
-  createDailyHistoryRef,
+  getUserRef,
+  getHistoryCollection,
 } = require(
-  "../services/historyService"
+  "../utils/userUtils"
 );
 
 
 // ============================================================
-// 🐱 DAILY STELLA CHECK-IN
+// 🧮 SAFE NUMBER
+// ============================================================
+
+function getSafeNumber(
+  value,
+  fallback = 0
+) {
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+
+}
+
+
+// ============================================================
+// 🐱 DAILY CHECK-IN
 // ============================================================
 
 const dailyCheckIn =
@@ -119,7 +128,7 @@ const dailyCheckIn =
 
 
     // ========================================================
-    // 🗓️ DATE
+    // 📅 DATES
     // ========================================================
 
     const today =
@@ -159,9 +168,12 @@ const dailyCheckIn =
         // ====================================================
 
         const oldHashRate =
-          Number(
-            data.hashRate ??
-            DEFAULT_HASH_RATE
+          Math.max(
+            0,
+            getSafeNumber(
+              data.hashRate,
+              DEFAULT_HASH_RATE
+            )
           );
 
 
@@ -170,41 +182,58 @@ const dailyCheckIn =
         // ====================================================
 
         const oldStreak =
-          Number(
-            data.streak ?? 0
+          Math.max(
+            0,
+            Math.floor(
+              getSafeNumber(
+                data.streak,
+                0
+              )
+            )
           );
 
 
         // ====================================================
-        // 🗓️ LAST DAILY CLAIM
+        // 📅 LAST DAILY CLAIM
         // ====================================================
 
-        const lastDaily =
-          String(
-            data.lastDaily || ""
-          );
+        const lastDailyDate =
+          typeof data.lastDailyDate ===
+                  "string"
+              ? data.lastDailyDate
+              : (
+                  typeof data.lastDaily ===
+                          "string"
+                      ? data.lastDaily
+                      : ""
+                );
 
 
         // ====================================================
         // 🐱 ALREADY CLAIMED TODAY
         // ====================================================
 
-        if (lastDaily === today) {
+        if (lastDailyDate === today) {
 
           return {
 
-            success: true,
+            success:
+              true,
 
-            alreadyClaimed: true,
+            alreadyClaimed:
+              true,
 
-            bonus: 0,
+            bonus:
+              0,
 
-            hashRate: oldHashRate,
+            hashRate:
+              oldHashRate,
 
-            streak: oldStreak,
+            streak:
+              oldStreak,
 
             message:
-              "🐱🎁 Stella on jo antanut tämän päivän bonuksen!",
+              "🐱🎁 Stella Daily Bonus on jo kerätty tänään!",
 
           };
 
@@ -216,18 +245,28 @@ const dailyCheckIn =
         // ====================================================
 
         const newStreak =
-          lastDaily === yesterday
+          lastDailyDate === yesterday
             ? oldStreak + 1
             : 1;
 
 
         // ====================================================
-        // ⚡ STELLA DAILY BONUS
+        // 🎁 DAILY BONUS
         // ====================================================
 
         const bonus =
-          DAILY_HASH_RATE_BONUS;
+          Math.max(
+            0,
+            getSafeNumber(
+              DAILY_HASH_RATE_BONUS,
+              1
+            )
+          );
 
+
+        // ====================================================
+        // ⚡ NEW HASH RATE
+        // ====================================================
 
         const newHashRate =
           oldHashRate +
@@ -242,21 +281,45 @@ const dailyCheckIn =
           userRef,
           {
 
+            // ⚡ Stella Mining Power
+
             hashRate:
               newHashRate,
+
+
+            // 🔥 Daily Streak
 
             streak:
               newStreak,
 
+
+            // 📅 Daily Claim
+
+            lastDailyDate:
+              today,
+
+
+            // Yhteensopivuus vanhan datan kanssa.
+
             lastDaily:
               today,
+
+
+            // 🎁 Daily Bonus UI
+
+            dailyHashRateBonus:
+              bonus,
+
+
+            // ⏱️ Metadata
 
             updatedAt:
               FieldValue.serverTimestamp(),
 
           },
           {
-            merge: true,
+            merge:
+              true,
           }
         );
 
@@ -266,10 +329,10 @@ const dailyCheckIn =
         // ====================================================
 
         const historyRef =
-          createDailyHistoryRef(
-            uid,
-            today
-          );
+          getHistoryCollection(uid)
+            .doc(
+              `daily_${today}`
+            );
 
 
         transaction.set(
@@ -279,20 +342,36 @@ const dailyCheckIn =
             type:
               "daily_hashrate",
 
+
             title:
               "Stella Daily Bonus 🐱🎁⚡",
+
+
+            // 🎁 Bonus
 
             amount:
               bonus,
 
+
+            // ⚡ New Hash Rate
+
             hashRateAfter:
               newHashRate,
+
+
+            // 🔥 Streak
 
             streak:
               newStreak,
 
+
+            // 📅 Date
+
             date:
               today,
+
+
+            // ⏱️ Timestamp
 
             createdAt:
               FieldValue.serverTimestamp(),
@@ -307,20 +386,33 @@ const dailyCheckIn =
 
         return {
 
-          success: true,
+          success:
+            true,
 
-          alreadyClaimed: false,
+
+          alreadyClaimed:
+            false,
+
+
+          // 🎁 Bonus
 
           bonus,
+
+
+          // ⚡ New Mining Power
 
           hashRate:
             newHashRate,
 
+
+          // 🔥 Streak
+
           streak:
             newStreak,
 
+
           message:
-            `🐱🎁 Stella antoi +${bonus} Hash Rate! 🔥 ${newStreak} päivän streak!`,
+            `🐱🎁 Stella antoi +${bonus} Hash Rate! 🔥 Streak: ${newStreak} päivä${newStreak === 1 ? "" : "ä"}.`,
 
         };
 
