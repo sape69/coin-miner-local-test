@@ -106,6 +106,7 @@ function getSafeNumber(
   const number =
     Number(value);
 
+
   return Number.isFinite(number)
     ? number
     : fallback;
@@ -125,12 +126,16 @@ function getSafePositiveNumber(
   const number =
     Number(value);
 
+
   if (
     Number.isFinite(number) &&
     number > 0
   ) {
+
     return number;
+
   }
+
 
   return fallback;
 
@@ -147,11 +152,19 @@ function getAdStatus(
   today
 ) {
 
+  // ==========================================================
+  // 📅 STORED DATE
+  // ==========================================================
+
   const storedDate =
     typeof data.lastAdDate === "string"
       ? data.lastAdDate
-      : null;
+      : "";
 
+
+  // ==========================================================
+  // 🔢 ADS TODAY
+  // ==========================================================
 
   const adsToday =
     storedDate === today
@@ -166,6 +179,10 @@ function getAdStatus(
         )
       : 0;
 
+
+  // ==========================================================
+  // ⏳ LAST AD REWARD
+  // ==========================================================
 
   const lastAdRewardAt =
     data.lastAdRewardAt;
@@ -193,8 +210,33 @@ function getAdStatus(
     lastAdRewardMs =
       lastAdRewardAt.getTime();
 
+  } else if (
+    typeof lastAdRewardAt === "string"
+  ) {
+
+    const parsedDate =
+      new Date(
+        lastAdRewardAt
+      );
+
+
+    if (
+      !Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+
+      lastAdRewardMs =
+        parsedDate.getTime();
+
+    }
+
   }
 
+
+  // ==========================================================
+  // ⏳ COOLDOWN
+  // ==========================================================
 
   const cooldownRemainingMs =
     lastAdRewardMs > 0
@@ -209,9 +251,13 @@ function getAdStatus(
       : 0;
 
 
+  // ==========================================================
+  // 📺 CAN WATCH
+  // ==========================================================
+
   const canWatchAd =
     adsToday < MAX_ADS_PER_DAY &&
-    cooldownRemainingMs <= 0;
+    cooldownRemainingMs === 0;
 
 
   return {
@@ -239,21 +285,31 @@ function getDailyStatus(
   today
 ) {
 
+  // ==========================================================
+  // 📅 LAST DAILY DATE
+  // ==========================================================
+
   const lastDailyDate =
     typeof data.lastDailyDate === "string"
       ? data.lastDailyDate
       : "";
 
 
+  // ==========================================================
+  // 🎁 CLAIMED TODAY
+  // ==========================================================
+
   const dailyClaimed =
     lastDailyDate === today;
 
 
   // ==========================================================
-  // DAILY STREAK
+  // 🔥 DAILY STREAK
   //
-  // Uusi dailyFunctions.js käyttää dailyStreak.
-  // Tuetaan myös vanhaa streak-kenttää.
+  // Tuetaan:
+  //
+  // • dailyStreak (uusi)
+  // • streak (vanha)
   //
   // ==========================================================
 
@@ -276,7 +332,7 @@ function getDailyStatus(
 
 
   // ==========================================================
-  // DAILY BONUS
+  // ⚡ DAILY HASH RATE BONUS
   // ==========================================================
 
   const dailyHashRateBonus =
@@ -295,6 +351,33 @@ function getDailyStatus(
     dailyHashRateBonus,
 
   };
+
+}
+
+
+// ============================================================
+// ⛏️ GET MINING HASH RATE
+// ============================================================
+//
+// Louhinnan aikana käytetään miningHashRate-arvoa.
+//
+// Tämä estää tilanteen, jossa:
+//
+// 1. Stella aloittaa louhinnan Hash Rate 10
+// 2. Käyttäjä saa +5 Power Boostin
+// 3. Vanha louhinta laskettaisiin virheellisesti Hash Rate 15:llä
+//
+// ============================================================
+
+function getMiningHashRate(
+  data,
+  fallbackHashRate
+) {
+
+  return getSafePositiveNumber(
+    data.miningHashRate,
+    fallbackHashRate
+  );
 
 }
 
@@ -365,7 +448,7 @@ const getMiningStatus =
 
 
         // ====================================================
-        // ⚡ HASH RATE
+        // ⚡ CURRENT HASH RATE
         // ====================================================
 
         const hashRate =
@@ -375,6 +458,20 @@ const getMiningStatus =
               data.hashRate,
               DEFAULT_HASH_RATE
             )
+          );
+
+
+        // ====================================================
+        // ⛏️ MINING HASH RATE
+        //
+        // Käytetään aktiivisen louhintajakson laskentaan.
+        //
+        // ====================================================
+
+        const miningHashRate =
+          getMiningHashRate(
+            data,
+            hashRate
           );
 
 
@@ -398,10 +495,19 @@ const getMiningStatus =
 
         const miningStatus =
           calculateMiningStatus(
-            data,
+            {
+              ...data,
+
+              hashRate:
+                miningHashRate,
+            },
             now
           );
 
+
+        // ====================================================
+        // ✨ UNCLAIMED MINING
+        // ====================================================
 
         const unclaimedMining =
           Math.max(
@@ -413,6 +519,10 @@ const getMiningStatus =
           );
 
 
+        // ====================================================
+        // 💎 ESTIMATED TOTAL
+        // ====================================================
+
         const estimatedTotal =
           miningBalance +
           unclaimedMining;
@@ -423,11 +533,15 @@ const getMiningStatus =
         // ====================================================
 
         const miningStartedAt =
-          getMiningStartTime(data);
+          getMiningStartTime(
+            data
+          );
 
 
         const miningEndsAt =
-          getMiningEndTime(data);
+          getMiningEndTime(
+            data
+          );
 
 
         // ====================================================
@@ -454,11 +568,24 @@ const getMiningStatus =
 
 
         // ====================================================
-        // ⚡ MINING SPEED
+        // ⚡ CURRENT MINING SPEED
+        //
+        // UI näyttää nykyisen Hash Raten perusteella
+        // tulevan louhinnan nopeuden.
+        //
         // ====================================================
 
         const miningPerHour =
           hashRate *
+          MINING_PER_HASH_PER_HOUR;
+
+
+        // ====================================================
+        // ⛏️ ACTIVE CYCLE SPEED
+        // ====================================================
+
+        const activeMiningPerHour =
+          miningHashRate *
           MINING_PER_HASH_PER_HOUR;
 
 
@@ -468,7 +595,8 @@ const getMiningStatus =
 
         return {
 
-          success: true,
+          success:
+            true,
 
 
           message:
@@ -479,27 +607,44 @@ const getMiningStatus =
                   : "🐱 Stella odottaa seuraavaa louhintaa.",
 
 
-          // ⚡ HASH RATE
+          // ==================================================
+          // ⚡ CURRENT HASH RATE
+          // ==================================================
 
           hashRate,
 
 
+          // ==================================================
+          // ⛏️ ACTIVE MINING HASH RATE
+          // ==================================================
+
+          miningHashRate,
+
+
+          // ==================================================
           // 💰 BALANCE
+          // ==================================================
 
           miningBalance,
 
 
+          // ==================================================
           // ✨ UNCLAIMED
+          // ==================================================
 
           unclaimedMining,
 
 
+          // ==================================================
           // 💎 TOTAL
+          // ==================================================
 
           estimatedTotal,
 
 
+          // ==================================================
           // ⛏️ STATUS
+          // ==================================================
 
           miningActive:
             miningStatus.miningActive === true,
@@ -509,7 +654,9 @@ const getMiningStatus =
             miningStatus.miningFinished === true,
 
 
+          // ==================================================
           // ⏱️ TIME
+          // ==================================================
 
           miningRemainingMs:
             Math.max(
@@ -535,7 +682,9 @@ const getMiningStatus =
             MINING_DURATION_MS,
 
 
+          // ==================================================
           // 🕒 START / END
+          // ==================================================
 
           miningStartedAt:
             miningStartedAt
@@ -549,7 +698,9 @@ const getMiningStatus =
               : null,
 
 
+          // ==================================================
           // ⚡ SPEED
+          // ==================================================
 
           miningPerHour,
 
@@ -562,7 +713,16 @@ const getMiningStatus =
             miningPerHour / 3600,
 
 
+          // ==================================================
+          // ⛏️ ACTIVE CYCLE SPEED
+          // ==================================================
+
+          activeMiningPerHour,
+
+
+          // ==================================================
           // 🎁 DAILY BONUS
+          // ==================================================
 
           dailyClaimed:
             dailyStatus.dailyClaimed,
@@ -580,7 +740,9 @@ const getMiningStatus =
             dailyStatus.dailyHashRateBonus,
 
 
+          // ==================================================
           // 📺 POWER BOOST
+          // ==================================================
 
           adsToday:
             adStatus.adsToday,
@@ -612,7 +774,9 @@ const getMiningStatus =
 
 
         if (error instanceof HttpsError) {
+
           throw error;
+
         }
 
 
@@ -704,13 +868,24 @@ const claimMining =
 
 
             // ==================================================
-            // ⚡ HASH RATE
+            // ⚡ CURRENT HASH RATE
             // ==================================================
 
             const hashRate =
               getSafePositiveNumber(
                 data.hashRate,
                 DEFAULT_HASH_RATE
+              );
+
+
+            // ==================================================
+            // ⛏️ ACTIVE CYCLE HASH RATE
+            // ==================================================
+
+            const miningHashRate =
+              getMiningHashRate(
+                data,
+                hashRate
               );
 
 
@@ -734,7 +909,12 @@ const claimMining =
 
             const miningStatus =
               calculateMiningStatus(
-                data,
+                {
+                  ...data,
+
+                  hashRate:
+                    miningHashRate,
+                },
                 now
               );
 
@@ -743,19 +923,33 @@ const claimMining =
             // 🐱 ALREADY MINING
             // ==================================================
 
-            if (miningStatus.miningActive) {
+            if (
+              miningStatus.miningActive
+            ) {
 
               return {
 
-                success: true,
+                success:
+                  true,
 
-                started: false,
 
-                collected: 0,
+                started:
+                  false,
 
-                miningActive: true,
+
+                collected:
+                  0,
+
+
+                miningActive:
+                  true,
+
 
                 hashRate,
+
+
+                miningHashRate,
+
 
                 unclaimedMining:
                   Math.max(
@@ -766,6 +960,7 @@ const claimMining =
                     )
                   ),
 
+
                 miningRemainingMs:
                   Math.max(
                     0,
@@ -774,6 +969,7 @@ const claimMining =
                       0
                     )
                   ),
+
 
                 message:
                   "🐱⛏️ Stella louhii jo STL:ää!",
@@ -788,11 +984,15 @@ const claimMining =
             // ==================================================
 
             const previousStart =
-              getMiningStartTime(data);
+              getMiningStartTime(
+                data
+              );
 
 
             const previousEnd =
-              getMiningEndTime(data);
+              getMiningEndTime(
+                data
+              );
 
 
             let newBalance =
@@ -814,8 +1014,13 @@ const claimMining =
             if (
               previousStart &&
               previousEnd &&
-              previousEnd.getTime() <= now.getTime()
+              previousEnd.getTime() <=
+                now.getTime()
             ) {
+
+              // ================================================
+              // ⏱️ PREVIOUS DURATION
+              // ================================================
 
               const previousDuration =
                 Math.max(
@@ -825,12 +1030,17 @@ const claimMining =
                 );
 
 
+              // ================================================
+              // 💰 CALCULATE USING THE HASH RATE
+              // THAT WAS SAVED WHEN MINING STARTED
+              // ================================================
+
               collected =
                 Math.max(
                   0,
                   getSafeNumber(
                     calculateMining(
-                      hashRate,
+                      miningHashRate,
                       previousDuration
                     ),
                     0
@@ -838,7 +1048,9 @@ const claimMining =
                 );
 
 
-              if (collected > 0) {
+              if (
+                collected > 0
+              ) {
 
                 newBalance =
                   oldBalance +
@@ -869,6 +1081,17 @@ const claimMining =
 
 
             // ==================================================
+            // ⚡ NEW CYCLE HASH RATE
+            //
+            // Uusi louhinta käyttää tämänhetkistä Hash Ratea.
+            //
+            // ==================================================
+
+            const newMiningHashRate =
+              hashRate;
+
+
+            // ==================================================
             // 👤 UPDATE USER
             // ==================================================
 
@@ -876,12 +1099,32 @@ const claimMining =
               userRef,
               {
 
+                // ==============================================
+                // ⚡ CURRENT HASH RATE
+                // ==============================================
+
                 hashRate,
 
+
+                // ==============================================
+                // ⛏️ HASH RATE LOCKED FOR THIS MINING CYCLE
+                // ==============================================
+
+                miningHashRate:
+                  newMiningHashRate,
+
+
+                // ==============================================
+                // 💰 BALANCE
+                // ==============================================
 
                 miningBalance:
                   newBalance,
 
+
+                // ==============================================
+                // ⛏️ MINING TIME
+                // ==============================================
 
                 miningStartedAt:
                   newMiningStartedAt,
@@ -891,12 +1134,17 @@ const claimMining =
                   newMiningEndsAt,
 
 
+                // ==============================================
+                // 🕒 METADATA
+                // ==============================================
+
                 updatedAt:
                   FieldValue.serverTimestamp(),
 
               },
               {
-                merge: true,
+                merge:
+                  true,
               }
             );
 
@@ -905,7 +1153,9 @@ const claimMining =
             // 📜 HISTORY: COMPLETED MINING
             // ==================================================
 
-            if (completedPreviousCycle) {
+            if (
+              completedPreviousCycle
+            ) {
 
               const completeHistoryRef =
                 getHistoryCollection(uid)
@@ -932,7 +1182,8 @@ const claimMining =
                     newBalance,
 
 
-                  hashRate,
+                  hashRate:
+                    miningHashRate,
 
 
                   createdAt:
@@ -969,7 +1220,8 @@ const claimMining =
                   0,
 
 
-                hashRate,
+                hashRate:
+                  newMiningHashRate,
 
 
                 miningDurationMs:
@@ -989,13 +1241,16 @@ const claimMining =
 
             return {
 
-              success: true,
+              success:
+                true,
 
 
-              started: true,
+              started:
+                true,
 
 
-              miningActive: true,
+              miningActive:
+                true,
 
 
               collected,
@@ -1009,6 +1264,10 @@ const claimMining =
 
 
               hashRate,
+
+
+              miningHashRate:
+                newMiningHashRate,
 
 
               miningDurationMs:
@@ -1047,8 +1306,12 @@ const claimMining =
         );
 
 
-        if (error instanceof HttpsError) {
+        if (
+          error instanceof HttpsError
+        ) {
+
           throw error;
+
         }
 
 
