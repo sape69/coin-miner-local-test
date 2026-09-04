@@ -20,16 +20,17 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Firebase Authenticationin tila latautuu.
-        if (snapshot.connectionState ==
-            ConnectionState.waiting) {
+        // Firebase Authentication latautuu.
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const LoadingPage();
         }
 
         // Käyttäjä on kirjautunut sisään.
-        if (snapshot.hasData &&
-            snapshot.data != null) {
-          return const HomePage();
+        if (snapshot.hasData && snapshot.data != null) {
+          return HomePage(
+            languageCode: languageCode,
+            changeLanguage: changeLanguage,
+          );
         }
 
         // Käyttäjä ei ole kirjautunut sisään.
