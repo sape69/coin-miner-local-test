@@ -5,7 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import 'home_drawer.dart';
+import '../widgets/home_drawer.dart';
+
+// ============================================================
+// 🐱 STELLURIINI HOME PAGE
+// ============================================================
 
 class HomePage extends StatefulWidget {
   final String languageCode;
@@ -62,8 +66,7 @@ class _HomePageState extends State<HomePage>
 
   int _miningRemainingMs = 0;
 
-  int _miningDurationMs =
-      24 * 60 * 60 * 1000;
+  int _miningDurationMs = 24 * 60 * 60 * 1000;
 
   // ============================================================
   // 🎁 DAILY BONUS
@@ -111,9 +114,7 @@ class _HomePageState extends State<HomePage>
 
     _catController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        seconds: 2,
-      ),
+      duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
     _catAnimation = Tween<double>(
@@ -186,8 +187,7 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          if (_miningActive &&
-              _miningRemainingMs > 0) {
+          if (_miningActive && _miningRemainingMs > 0) {
             _miningRemainingMs -= 1000;
 
             if (_miningRemainingMs <= 0) {
@@ -202,8 +202,7 @@ class _HomePageState extends State<HomePage>
             if (_cooldownRemainingMs <= 0) {
               _cooldownRemainingMs = 0;
 
-              _canWatchAd =
-                  _adsToday < _maxAdsPerDay;
+              _canWatchAd = _adsToday < _maxAdsPerDay;
             }
           }
 
@@ -231,13 +230,11 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final double perSecond =
-        _miningPerHour / 3600;
+    final double perSecond = _miningPerHour / 3600;
 
     _unclaimedMining += perSecond;
 
-    _estimatedTotal =
-        _miningBalance + _unclaimedMining;
+    _estimatedTotal = _miningBalance + _unclaimedMining;
   }
 
   // ============================================================
@@ -285,8 +282,7 @@ class _HomePageState extends State<HomePage>
           data['miningPerHour'],
         );
 
-        _miningActive =
-            data['miningActive'] == true;
+        _miningActive = data['miningActive'] == true;
 
         _miningRemainingMs = _toInt(
           data['miningRemainingMs'],
@@ -297,14 +293,12 @@ class _HomePageState extends State<HomePage>
         );
 
         if (_miningDurationMs <= 0) {
-          _miningDurationMs =
-              24 * 60 * 60 * 1000;
+          _miningDurationMs = 24 * 60 * 60 * 1000;
         }
 
         // 🎁 DAILY BONUS
 
-        _dailyClaimed =
-            data['dailyClaimed'] == true;
+        _dailyClaimed = data['dailyClaimed'] == true;
 
         _streak = _toInt(
           data['streak'],
@@ -340,8 +334,7 @@ class _HomePageState extends State<HomePage>
           _adHashRateBonus = 5;
         }
 
-        _canWatchAd =
-            data['canWatchAd'] == true;
+        _canWatchAd = data['canWatchAd'] == true;
 
         _cooldownRemainingMs = _toInt(
           data['cooldownRemainingMs'],
@@ -381,8 +374,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd == null ||
-        !_adReady) {
+    if (_rewardedAd == null || !_adReady) {
       _showMessage(
         '📺 Stella valmistelee mainosta...',
       );
@@ -443,12 +435,10 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      final bool started =
-          data['started'] == true;
+      final bool started = data['started'] == true;
 
       final bool alreadyMining =
-          data['miningActive'] == true &&
-              started == false;
+          data['miningActive'] == true && started == false;
 
       final double collected = _toDouble(
         data['collected'],
@@ -581,8 +571,7 @@ class _HomePageState extends State<HomePage>
     await RewardedAd.load(
       adUnitId: _rewardedAdUnitId,
       request: const AdRequest(),
-      rewardedAdLoadCallback:
-          RewardedAdLoadCallback(
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (
           RewardedAd ad,
         ) {
@@ -684,8 +673,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd == null ||
-        !_adReady) {
+    if (_rewardedAd == null || !_adReady) {
       _showMessage(
         '📺 Stella valmistelee mainosta...',
       );
@@ -746,11 +734,9 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      final bool rewarded =
-          data['rewarded'] == true;
+      final bool rewarded = data['rewarded'] == true;
 
-      final bool duplicate =
-          data['duplicate'] == true;
+      final bool duplicate = data['duplicate'] == true;
 
       final double bonus = _toDouble(
         data['bonus'],
@@ -802,8 +788,7 @@ class _HomePageState extends State<HomePage>
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor:
-              const Color(0xFF21113B),
+          backgroundColor: const Color(0xFF21113B),
           title: const Text(
             '🐱 Choose Language',
             style: TextStyle(
@@ -837,8 +822,7 @@ class _HomePageState extends State<HomePage>
     required String code,
     required String title,
   }) {
-    final bool selected =
-        widget.languageCode == code;
+    final bool selected = widget.languageCode == code;
 
     return SizedBox(
       width: double.infinity,
@@ -909,24 +893,20 @@ class _HomePageState extends State<HomePage>
 
   String _formatDuration(int milliseconds) {
     final Duration duration = Duration(
-      milliseconds:
-          milliseconds < 0 ? 0 : milliseconds,
+      milliseconds: milliseconds < 0 ? 0 : milliseconds,
     );
 
-    final String hours =
-        duration.inHours
-            .toString()
-            .padLeft(2, '0');
+    final String hours = duration.inHours
+        .toString()
+        .padLeft(2, '0');
 
-    final String minutes =
-        (duration.inMinutes % 60)
-            .toString()
-            .padLeft(2, '0');
+    final String minutes = (duration.inMinutes % 60)
+        .toString()
+        .padLeft(2, '0');
 
-    final String seconds =
-        (duration.inSeconds % 60)
-            .toString()
-            .padLeft(2, '0');
+    final String seconds = (duration.inSeconds % 60)
+        .toString()
+        .padLeft(2, '0');
 
     return '$hours:$minutes:$seconds';
   }
@@ -973,16 +953,14 @@ class _HomePageState extends State<HomePage>
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFF120B24),
+      backgroundColor: const Color(0xFF120B24),
 
       // ========================================================
       // 🐱 STELLA DRAWER
       // ========================================================
 
       drawer: HomeDrawer(
-        onLanguagePressed:
-            _showLanguageDialog,
+        onLanguagePressed: _showLanguageDialog,
 
         onAboutPressed: () {
           _showStellaPageMessage(
@@ -1024,19 +1002,16 @@ class _HomePageState extends State<HomePage>
       body: SafeArea(
         child: _loading
             ? const Center(
-                child:
-                    CircularProgressIndicator(
+                child: CircularProgressIndicator(
                   color: Color(0xFFB58CFF),
                 ),
               )
             : RefreshIndicator(
-                onRefresh:
-                    _loadMiningStatus,
+                onRefresh: _loadMiningStatus,
                 child: ListView(
                   physics:
                       const AlwaysScrollableScrollPhysics(),
-                  padding:
-                      const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   children: [
                     _buildHeader(),
 
@@ -1083,10 +1058,6 @@ class _HomePageState extends State<HomePage>
   Widget _buildHeader() {
     return Row(
       children: [
-        // ======================================================
-        // ☰ STELLA MENU BUTTON
-        // ======================================================
-
         Builder(
           builder: (context) {
             return Container(
@@ -1094,8 +1065,7 @@ class _HomePageState extends State<HomePage>
               height: 52,
               decoration: BoxDecoration(
                 color: const Color(0xFF21113B),
-                borderRadius:
-                    BorderRadius.circular(17),
+                borderRadius: BorderRadius.circular(17),
                 border: Border.all(
                   color: const Color(0xFFB58CFF)
                       .withValues(alpha: 0.45),
@@ -1118,16 +1088,11 @@ class _HomePageState extends State<HomePage>
 
         const SizedBox(width: 12),
 
-        // ======================================================
-        // 🐱 STELLA ICON
-        // ======================================================
-
         Container(
           width: 58,
           height: 58,
           decoration: BoxDecoration(
-            borderRadius:
-                BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(18),
             gradient: const LinearGradient(
               colors: [
                 Color(0xFFFFB7E8),
@@ -1155,16 +1120,14 @@ class _HomePageState extends State<HomePage>
 
         const Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'STELLURIINI',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -1181,8 +1144,7 @@ class _HomePageState extends State<HomePage>
         ),
 
         IconButton(
-          onPressed:
-              _loadMiningStatus,
+          onPressed: _loadMiningStatus,
           icon: const Icon(
             Icons.refresh_rounded,
             color: Colors.white,
@@ -1198,17 +1160,13 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildStellaMiningCard() {
     final bool completed =
-        !_miningActive &&
-            _unclaimedMining > 0;
+        !_miningActive && _unclaimedMining > 0;
 
     return Container(
-      padding:
-          const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(30),
-        gradient:
-            const LinearGradient(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -1249,9 +1207,8 @@ class _HomePageState extends State<HomePage>
               height: 110,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(
-                  0xFFB58CFF,
-                ).withValues(alpha: 0.15),
+                color: const Color(0xFFB58CFF)
+                    .withValues(alpha: 0.15),
               ),
               child: const Center(
                 child: Text(
@@ -1275,8 +1232,7 @@ class _HomePageState extends State<HomePage>
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
               letterSpacing: 1,
             ),
           ),
@@ -1289,8 +1245,7 @@ class _HomePageState extends State<HomePage>
                 : completed
                     ? '🐱✨ STL on valmis kerättäväksi!'
                     : '🐱 Stella odottaa seuraavaa louhintaa',
-            textAlign:
-                TextAlign.center,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFFCFC2E8),
               fontSize: 14,
@@ -1306,8 +1261,7 @@ class _HomePageState extends State<HomePage>
             style: const TextStyle(
               color: Color(0xFFFFD166),
               fontSize: 38,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
@@ -1326,18 +1280,15 @@ class _HomePageState extends State<HomePage>
 
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               vertical: 15,
               horizontal: 20,
             ),
             decoration: BoxDecoration(
-              color:
-                  Colors.black.withValues(
+              color: Colors.black.withValues(
                 alpha: 0.2,
               ),
-              borderRadius:
-                  BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
               children: [
@@ -1352,8 +1303,7 @@ class _HomePageState extends State<HomePage>
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
@@ -1399,8 +1349,7 @@ class _HomePageState extends State<HomePage>
 
         Expanded(
           child: _buildStatCard(
-            icon:
-                Icons.currency_bitcoin_rounded,
+            icon: Icons.currency_bitcoin_rounded,
             title: 'TOTAL STL',
             value:
                 '${_formatStl(_estimatedTotal)} STL',
@@ -1416,15 +1365,12 @@ class _HomePageState extends State<HomePage>
     required String value,
   }) {
     return Container(
-      padding:
-          const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF21113B),
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color:
-              Colors.white.withValues(
+          color: Colors.white.withValues(
             alpha: 0.06,
           ),
         ),
@@ -1435,8 +1381,7 @@ class _HomePageState extends State<HomePage>
         children: [
           Icon(
             icon,
-            color:
-                const Color(0xFFFFB7E8),
+            color: const Color(0xFFFFB7E8),
           ),
 
           const SizedBox(height: 12),
@@ -1455,13 +1400,11 @@ class _HomePageState extends State<HomePage>
           Text(
             value,
             maxLines: 1,
-            overflow:
-                TextOverflow.ellipsis,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -1476,27 +1419,20 @@ class _HomePageState extends State<HomePage>
   Widget _buildMiningProgress() {
     double progress = 0;
 
-    if (_miningActive &&
-        _miningDurationMs > 0) {
+    if (_miningActive && _miningDurationMs > 0) {
       progress = 1 -
-          (
-            _miningRemainingMs /
-                _miningDurationMs
-          );
+          (_miningRemainingMs / _miningDurationMs);
 
-      progress = progress.clamp(
-        0.0,
-        1.0,
-      );
+      progress = progress
+          .clamp(0.0, 1.0)
+          .toDouble();
     }
 
     return Container(
-      padding:
-          const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF21113B),
-        borderRadius:
-            BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment:
@@ -1508,8 +1444,7 @@ class _HomePageState extends State<HomePage>
                 '⛏️ STELLA MINING PROGRESS',
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
@@ -1519,8 +1454,7 @@ class _HomePageState extends State<HomePage>
                 '${(progress * 100).toStringAsFixed(1)}%',
                 style: const TextStyle(
                   color: Color(0xFFFFD166),
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -1529,10 +1463,8 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 14),
 
           ClipRRect(
-            borderRadius:
-                BorderRadius.circular(20),
-            child:
-                LinearProgressIndicator(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
               value: progress,
               minHeight: 12,
               backgroundColor:
@@ -1563,8 +1495,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildMiningButton() {
     final bool completed =
-        !_miningActive &&
-            _unclaimedMining > 0;
+        !_miningActive && _unclaimedMining > 0;
 
     String text;
     IconData icon;
@@ -1572,8 +1503,7 @@ class _HomePageState extends State<HomePage>
 
     if (_actionLoading) {
       text = 'STELLA IS WORKING...';
-      icon =
-          Icons.hourglass_top_rounded;
+      icon = Icons.hourglass_top_rounded;
       onPressed = null;
     } else if (_miningActive) {
       text = '🐱 STELLA IS MINING';
@@ -1585,16 +1515,12 @@ class _HomePageState extends State<HomePage>
         );
       };
     } else if (completed) {
-      text =
-          '📺 WATCH AD • COLLECT & RESTART';
-      icon =
-          Icons.inventory_2_rounded;
+      text = '📺 WATCH AD • COLLECT & RESTART';
+      icon = Icons.inventory_2_rounded;
       onPressed = _startMining;
     } else {
-      text =
-          '📺 WATCH AD • START MINING';
-      icon =
-          Icons.play_arrow_rounded;
+      text = '📺 WATCH AD • START MINING';
+      icon = Icons.play_arrow_rounded;
       onPressed = _startMining;
     }
 
@@ -1607,22 +1533,18 @@ class _HomePageState extends State<HomePage>
         label: Text(
           text,
           style: const TextStyle(
-            fontWeight:
-                FontWeight.bold,
+            fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
         ),
-        style:
-            ElevatedButton.styleFrom(
+        style: ElevatedButton.styleFrom(
           backgroundColor:
               const Color(0xFFB58CFF),
           foregroundColor: Colors.white,
           disabledBackgroundColor:
               const Color(0xFF4A315F),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
       ),
@@ -1656,12 +1578,10 @@ class _HomePageState extends State<HomePage>
     }
 
     return Container(
-      padding:
-          const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFF21113B),
-        borderRadius:
-            BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: const Color(0xFFFFB7E8)
               .withValues(alpha: 0.3),
@@ -1697,8 +1617,7 @@ class _HomePageState extends State<HomePage>
                     Text(
                       'Katso mainos ja auta Stellaa ⚡',
                       style: TextStyle(
-                        color:
-                            Color(0xFFBFAEDB),
+                        color: Color(0xFFBFAEDB),
                         fontSize: 12,
                       ),
                     ),
@@ -1715,8 +1634,7 @@ class _HomePageState extends State<HomePage>
             child: OutlinedButton(
               onPressed:
                   canUse ? _watchAd : null,
-              style:
-                  OutlinedButton.styleFrom(
+              style: OutlinedButton.styleFrom(
                 foregroundColor:
                     const Color(0xFFFFB7E8),
                 side: const BorderSide(
@@ -1726,16 +1644,14 @@ class _HomePageState extends State<HomePage>
                     const EdgeInsets.symmetric(
                   vertical: 15,
                 ),
-                shape:
-                    RoundedRectangleBorder(
+                shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(16),
                 ),
               ),
               child: Text(
                 'WATCH AD • $subtitle',
-                textAlign:
-                    TextAlign.center,
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -1760,13 +1676,10 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildDailyBonusCard() {
     return Container(
-      padding:
-          const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(22),
-        gradient:
-            const LinearGradient(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
           colors: [
             Color(0xFF3A1D5A),
             Color(0xFF25113F),
@@ -1789,8 +1702,7 @@ class _HomePageState extends State<HomePage>
             style: TextStyle(
               color: Colors.white,
               fontSize: 17,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
@@ -1813,16 +1725,14 @@ class _HomePageState extends State<HomePage>
                           _actionLoading
                       ? null
                       : _dailyCheckIn,
-              style:
-                  ElevatedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                 backgroundColor:
                     const Color(0xFFFFD166),
                 foregroundColor:
                     const Color(0xFF24132F),
                 disabledBackgroundColor:
                     const Color(0xFF5A4A64),
-                shape:
-                    RoundedRectangleBorder(
+                shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(16),
                 ),
@@ -1836,8 +1746,7 @@ class _HomePageState extends State<HomePage>
                     ? '🐱 BONUS CLAIMED TODAY'
                     : '🎁 CLAIM DAILY BONUS',
                 style: const TextStyle(
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -1868,8 +1777,7 @@ class _HomePageState extends State<HomePage>
             'Stella is mining the future.',
             style: TextStyle(
               color: Color(0xFF8D7BA8),
-              fontStyle:
-                  FontStyle.italic,
+              fontStyle: FontStyle.italic,
             ),
           ),
 
