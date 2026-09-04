@@ -114,13 +114,6 @@ function getSafeNumber(
 // ============================================================
 // 📺 GET AD STATUS
 // ============================================================
-//
-// Tarkistaa:
-//
-// • Päivittäisen mainosmäärän
-// • Cooldownin
-//
-// ============================================================
 
 function getAdStatus(
   data,
@@ -206,12 +199,6 @@ function getAdStatus(
 // ============================================================
 // 🎁 APPLY AD REWARD
 // ============================================================
-//
-// Yhteinen toiminto, joka lisää:
-//
-// +5 Hash Rate
-//
-// ============================================================
 
 async function applyAdReward(
   uid,
@@ -244,28 +231,25 @@ async function applyAdReward(
   return await db.runTransaction(
     async (transaction) => {
 
-      // ======================================================
-      // 🔐 CHECK REWARD ID
-      // ======================================================
-
       const rewardSnapshot =
         await transaction.get(
           rewardRef
         );
 
 
+      // ======================================================
+      // 🔐 DUPLICATE CHECK
+      // ======================================================
+
       if (rewardSnapshot.exists) {
 
         return {
 
-          success:
-            true,
+          success: true,
 
-          rewarded:
-            false,
+          rewarded: false,
 
-          duplicate:
-            true,
+          duplicate: true,
 
           message:
             "🐱📺 Tämä mainospalkinto on jo käsitelty.",
@@ -291,10 +275,6 @@ async function applyAdReward(
           : {};
 
 
-      // ======================================================
-      // 📺 AD STATUS
-      // ======================================================
-
       const adStatus =
         getAdStatus(
           data,
@@ -314,14 +294,11 @@ async function applyAdReward(
 
         return {
 
-          success:
-            false,
+          success: false,
 
-          rewarded:
-            false,
+          rewarded: false,
 
-          reason:
-            "daily_limit",
+          reason: "daily_limit",
 
           adsToday:
             adStatus.adsToday,
@@ -347,14 +324,11 @@ async function applyAdReward(
 
         return {
 
-          success:
-            false,
+          success: false,
 
-          rewarded:
-            false,
+          rewarded: false,
 
-          reason:
-            "cooldown",
+          reason: "cooldown",
 
           cooldownRemainingMs:
             adStatus.cooldownRemainingMs,
@@ -420,8 +394,7 @@ async function applyAdReward(
 
         },
         {
-          merge:
-            true,
+          merge: true,
         }
       );
 
@@ -492,20 +465,13 @@ async function applyAdReward(
       );
 
 
-      // ======================================================
-      // 📤 RESPONSE
-      // ======================================================
-
       return {
 
-        success:
-          true,
+        success: true,
 
-        rewarded:
-          true,
+        rewarded: true,
 
-        duplicate:
-          false,
+        duplicate: false,
 
         bonus,
 
@@ -541,7 +507,7 @@ async function applyAdReward(
 //
 // Vain testausta varten.
 //
-// Flutter voi kutsua:
+// Flutter kutsuu:
 //
 // testAdReward()
 //
@@ -560,4 +526,136 @@ const testAdReward =
     }
 
 
-   
+    const uid =
+      request.auth.uid;
+
+
+    const transactionId =
+      `test_${uid}_${Date.now()}`;
+
+
+    return await applyAdReward(
+      uid,
+      transactionId,
+      "test"
+    );
+
+  });
+
+
+// ============================================================
+// 🔐 ADMOB REWARD CALLBACK
+// ============================================================
+//
+// Google AdMob kutsuu tätä HTTP-endpointia,
+// kun käyttäjä on ansainnut mainospalkinnon.
+//
+// ============================================================
+
+const adMobReward =
+  onRequest(async (req, res) => {
+
+    try {
+
+      // ======================================================
+      // 🔐 VERIFY GOOGLE SIGNATURE
+      // ======================================================
+
+      await verifyAdMobCallback(
+        req
+      );
+
+
+      // ======================================================
+      // 👤 GET USER ID
+      // ======================================================
+
+      const uid =
+        typeof req.query.user_id === "string"
+          ? req.query.user_id
+          : null;
+
+
+      // ======================================================
+      // 🔐 GET TRANSACTION ID
+      // ======================================================
+
+      const transactionId =
+        typeof req.query.transaction_id === "string"
+          ? req.query.transaction_id
+          : null;
+
+
+      // ======================================================
+      // 🛡️ VALIDATE
+      // ======================================================
+
+      if (
+        !uid ||
+        !transactionId
+      ) {
+
+        res.status(400).send(
+          "Missing user_id or transaction_id."
+        );
+
+        return;
+
+      }
+
+
+      // ======================================================
+      // 🎁 APPLY REWARD
+      // ======================================================
+
+      const result =
+        await applyAdReward(
+          uid,
+          transactionId,
+          "admob"
+        );
+
+
+      // ======================================================
+      // 📤 SUCCESS
+      // ======================================================
+
+      res.status(200).json(
+        result
+      );
+
+    } catch (error) {
+
+      console.error(
+        "AdMob reward verification failed:",
+        error
+      );
+
+
+      res.status(400).json({
+
+        success: false,
+
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error",
+
+      });
+
+    }
+
+  });
+
+
+// ============================================================
+// 📦 EXPORTS
+// ============================================================
+
+module.exports = {
+
+  testAdReward,
+
+  adMobReward,
+
+};
