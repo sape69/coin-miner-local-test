@@ -1,40 +1,30 @@
 "use strict";
 
-
 // ============================================================
-// 🐱 STELLA HISTORY UTILITIES
+// 🐱 STELLA HISTORY SERVICE
 // ============================================================
 //
 // Vastaa:
 //
-// 📜 Transaction History -dokumenttien
-// Firestore-referenceista.
+// 📜 Käyttäjän tapahtumahistorian referensseistä
+// 📅 Daily-tapahtumien referensseistä
 //
 // ============================================================
 
 
 // ============================================================
-// 👤 USER UTILITIES
+// USER UTILITIES
 // ============================================================
 
 const {
   getHistoryCollection,
 } = require(
-  "./userUtils"
+  "../utils/userUtils"
 );
 
 
 // ============================================================
 // 🐱 CREATE STELLA HISTORY ENTRY
-// ============================================================
-//
-// Luo uuden automaattisen Transaction History
-// -dokumenttireferenssin.
-//
-// Firestore:
-//
-// users/{uid}/transactions/{transactionId}
-//
 // ============================================================
 
 function createHistoryRef(uid) {
@@ -47,14 +37,6 @@ function createHistoryRef(uid) {
 
 // ============================================================
 // 📅 DAILY HISTORY
-// ============================================================
-//
-// Luo deterministisen Daily History -referenssin.
-//
-// Firestore:
-//
-// users/{uid}/transactions/daily_YYYY-MM-DD
-//
 // ============================================================
 
 function createDailyHistoryRef(
