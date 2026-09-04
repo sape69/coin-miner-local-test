@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/cat_avatar.dart';
+import 'cat_avatar.dart';
 
 // ============================================================
-// COLORS
+// 🐱 STELLA COLORS
 // ============================================================
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color accentColor = Color(0xFF35D0A0);
+const Color backgroundColor = Color(0xFF120B24);
+const Color cardColor = Color(0xFF21113B);
+
+const Color stellaPurple = Color(0xFFB58CFF);
+const Color stellaPink = Color(0xFFFFB7E8);
+const Color stellaGold = Color(0xFFFFD166);
+const Color stellaTextSoft = Color(0xFFBFAEDB);
 
 // ============================================================
-// HOME DRAWER
+// 🐱 HOME DRAWER
 // ============================================================
 
 class HomeDrawer extends StatelessWidget {
@@ -35,7 +39,7 @@ class HomeDrawer extends StatelessWidget {
   });
 
   // ==========================================================
-  // MENU ITEM
+  // 🐱 MENU ITEM
   // ==========================================================
 
   Widget _menuItem({
@@ -54,75 +58,122 @@ class HomeDrawer extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
+          splashColor: stellaPurple.withValues(
+            alpha: 0.12,
+          ),
+          highlightColor: stellaPink.withValues(
+            alpha: 0.05,
+          ),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 13,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(
+                  alpha: 0.035,
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(
-                      alpha: 0.12,
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: accentColor,
-                    size: 23,
-                  ),
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 13,
+              ),
+              child: Row(
+                children: [
+                  // ============================================
+                  // ICON
+                  // ============================================
 
-                const SizedBox(width: 14),
-
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-                if (badge != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 5,
-                    ),
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.orangeAccent.withValues(
-                        alpha: 0.15,
+                      gradient: LinearGradient(
+                        colors: [
+                          stellaPurple.withValues(
+                            alpha: 0.22,
+                          ),
+                          stellaPink.withValues(
+                            alpha: 0.12,
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(
+                        color: stellaPurple.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
                     ),
+                    child: Icon(
+                      icon,
+                      color: stellaPink,
+                      size: 23,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // ============================================
+                  // TITLE
+                  // ============================================
+
+                  Expanded(
                     child: Text(
-                      badge,
+                      title,
                       style: const TextStyle(
-                        color: Colors.orangeAccent,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
 
-                const SizedBox(width: 4),
+                  // ============================================
+                  // BADGE
+                  // ============================================
 
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white.withValues(
-                    alpha: 0.25,
+                  if (badge != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: stellaGold.withValues(
+                          alpha: 0.15,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          20,
+                        ),
+                        border: Border.all(
+                          color: stellaGold.withValues(
+                            alpha: 0.25,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        badge,
+                        style: const TextStyle(
+                          color: stellaGold,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(width: 4),
+
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white.withValues(
+                      alpha: 0.25,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -131,7 +182,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // BUILD
+  // 🐱 BUILD
   // ==========================================================
 
   @override
@@ -142,7 +193,7 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             // ==================================================
-            // HEADER
+            // 🐱 STELLA HEADER
             // ==================================================
 
             Container(
@@ -153,40 +204,51 @@ class HomeDrawer extends StatelessWidget {
                 vertical: 22,
               ),
               decoration: BoxDecoration(
-                color: cardColor,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF2D174D),
+                    Color(0xFF1B1033),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: accentColor.withValues(
-                    alpha: 0.30,
+                  color: stellaPurple.withValues(
+                    alpha: 0.45,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: accentColor.withValues(
-                      alpha: 0.08,
+                    color: stellaPurple.withValues(
+                      alpha: 0.14,
                     ),
-                    blurRadius: 20,
+                    blurRadius: 25,
                     spreadRadius: 2,
                   ),
                 ],
               ),
               child: Column(
                 children: [
+                  // ============================================
+                  // PAWS
+                  // ============================================
+
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
                     children: [
                       Icon(
                         Icons.pets,
-                        color: accentColor.withValues(
-                          alpha: 0.35,
+                        color: stellaPink.withValues(
+                          alpha: 0.40,
                         ),
                         size: 25,
                       ),
                       Icon(
                         Icons.pets,
-                        color: accentColor.withValues(
-                          alpha: 0.35,
+                        color: stellaPink.withValues(
+                          alpha: 0.40,
                         ),
                         size: 25,
                       ),
@@ -195,21 +257,25 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
+                  // ============================================
+                  // CAT AVATAR
+                  // ============================================
+
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: accentColor,
+                        color: stellaPink,
                         width: 3,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: accentColor.withValues(
-                            alpha: 0.25,
+                          color: stellaPurple.withValues(
+                            alpha: 0.30,
                           ),
-                          blurRadius: 18,
-                          spreadRadius: 2,
+                          blurRadius: 22,
+                          spreadRadius: 3,
                         ),
                       ],
                     ),
@@ -220,29 +286,53 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
+                  // ============================================
+                  // TITLE
+                  // ============================================
+
                   const Text(
                     'STELLURIINI',
                     style: TextStyle(
                       fontSize: 23,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2.5,
-                      color: accentColor,
+                      color: stellaPink,
                     ),
                   ),
 
                   const SizedBox(height: 6),
 
+                  const Text(
+                    '🐱 Stella Mining the Future ✨',
+                    style: TextStyle(
+                      color: stellaTextSoft,
+                      fontSize: 12,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ============================================
+                  // TOKEN BADGE
+                  // ============================================
+
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
-                      vertical: 6,
+                      vertical: 7,
                     ),
                     decoration: BoxDecoration(
-                      color: accentColor.withValues(
-                        alpha: 0.10,
+                      color: stellaPurple.withValues(
+                        alpha: 0.15,
                       ),
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ),
+                      border: Border.all(
+                        color: stellaPurple.withValues(
+                          alpha: 0.28,
+                        ),
+                      ),
                     ),
                     child: const Text(
                       '🐾 STL • SOLANA 🐾',
@@ -259,7 +349,7 @@ class HomeDrawer extends StatelessWidget {
             ),
 
             // ==================================================
-            // MENU
+            // 🐱 MENU
             // ==================================================
 
             Expanded(
@@ -270,7 +360,7 @@ class HomeDrawer extends StatelessWidget {
                 ),
                 children: [
                   _menuItem(
-                    icon: Icons.home_outlined,
+                    icon: Icons.home_rounded,
                     title: 'Home',
                     onTap: () {
                       Navigator.pop(context);
@@ -290,6 +380,10 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
+                  // ============================================
+                  // ABOUT
+                  // ============================================
+
                   _menuItem(
                     icon: Icons.pets_outlined,
                     title: 'About Stelluriini',
@@ -299,9 +393,12 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
+                  // ============================================
+                  // TOKEN
+                  // ============================================
+
                   _menuItem(
-                    icon:
-                        Icons.monetization_on_outlined,
+                    icon: Icons.monetization_on_outlined,
                     title: 'STL Token',
                     onTap: () {
                       Navigator.pop(context);
@@ -309,15 +406,22 @@ class HomeDrawer extends StatelessWidget {
                     },
                   ),
 
+                  // ============================================
+                  // TOKENOMICS
+                  // ============================================
+
                   _menuItem(
-                    icon:
-                        Icons.pie_chart_outline_rounded,
+                    icon: Icons.pie_chart_outline_rounded,
                     title: 'Tokenomics',
                     onTap: () {
                       Navigator.pop(context);
                       onTokenomicsPressed();
                     },
                   ),
+
+                  // ============================================
+                  // WHITE PAPER
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.description_outlined,
@@ -327,6 +431,10 @@ class HomeDrawer extends StatelessWidget {
                       onWhitePaperPressed();
                     },
                   ),
+
+                  // ============================================
+                  // ROADMAP
+                  // ============================================
 
                   _menuItem(
                     icon: Icons.map_outlined,
@@ -343,12 +451,16 @@ class HomeDrawer extends StatelessWidget {
                       vertical: 12,
                     ),
                     child: Divider(
-                      color: Colors.white24,
+                      color: Color(0x335F4D70),
                     ),
                   ),
 
+                  // ============================================
+                  // LANGUAGE
+                  // ============================================
+
                   _menuItem(
-                    icon: Icons.language,
+                    icon: Icons.language_rounded,
                     title: 'Language',
                     onTap: () {
                       Navigator.pop(context);
@@ -360,7 +472,7 @@ class HomeDrawer extends StatelessWidget {
             ),
 
             // ==================================================
-            // FOOTER
+            // 🐱 STELLA FOOTER
             // ==================================================
 
             Container(
@@ -371,17 +483,17 @@ class HomeDrawer extends StatelessWidget {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: accentColor.withValues(
-                    alpha: 0.12,
+                  color: stellaPurple.withValues(
+                    alpha: 0.20,
                   ),
                 ),
               ),
               child: Column(
                 children: [
                   const Text(
-                    '🐾 STELLURIINI • STL 🐾',
+                    '🐱 STELLURIINI • STL 🐾',
                     style: TextStyle(
-                      color: accentColor,
+                      color: stellaPink,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
@@ -394,7 +506,7 @@ class HomeDrawer extends StatelessWidget {
                     '17 602 539 062 STL',
                     style: TextStyle(
                       color: Colors.white.withValues(
-                        alpha: 0.75,
+                        alpha: 0.78,
                       ),
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -403,13 +515,24 @@ class HomeDrawer extends StatelessWidget {
 
                   const SizedBox(height: 5),
 
+                  const Text(
+                    '🐾 Community-driven • Solana 🐾',
+                    style: TextStyle(
+                      color: Color(0xFF8D7BA8),
+                      fontSize: 11,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
                   Text(
-                    'Community-driven • Solana',
+                    'Stella is mining the future. ✨',
                     style: TextStyle(
                       color: Colors.white.withValues(
-                        alpha: 0.38,
+                        alpha: 0.32,
                       ),
-                      fontSize: 11,
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
