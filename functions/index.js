@@ -22,7 +22,9 @@
 const {
   getMiningStatus,
   claimMining,
-} = require("./miningFunctions");
+} = require(
+  "./src/functions/miningFunctions"
+);
 
 
 // ============================================================
@@ -31,7 +33,9 @@ const {
 
 const {
   dailyCheckIn,
-} = require("./dailyFunctions");
+} = require(
+  "./src/functions/dailyFunctions"
+);
 
 
 // ============================================================
@@ -41,7 +45,9 @@ const {
 const {
   testAdReward,
   adMobReward,
-} = require("./adFunctions");
+} = require(
+  "./src/functions/adFunctions"
+);
 
 
 // ============================================================
@@ -50,7 +56,9 @@ const {
 
 const {
   getTransactionHistory,
-} = require("./historyFunctions");
+} = require(
+  "./src/functions/historyFunctions"
+);
 
 
 // ============================================================
@@ -60,17 +68,22 @@ const {
 exports.getMiningStatus =
   getMiningStatus;
 
+
 exports.claimMining =
   claimMining;
+
 
 exports.dailyCheckIn =
   dailyCheckIn;
 
+
 exports.testAdReward =
   testAdReward;
 
+
 exports.adMobReward =
   adMobReward;
+
 
 exports.getTransactionHistory =
   getTransactionHistory;
