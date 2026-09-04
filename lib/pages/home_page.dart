@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'home_drawer.dart';
+
 class HomePage extends StatefulWidget {
   final String languageCode;
   final Future<void> Function(String) changeLanguage;
@@ -41,7 +43,6 @@ class _HomePageState extends State<HomePage>
   RewardedAd? _rewardedAd;
 
   bool _adReady = false;
-
   bool _adLoading = false;
 
   // ============================================================
@@ -49,31 +50,26 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   bool _loading = true;
-
   bool _actionLoading = false;
 
   bool _miningActive = false;
 
   double _hashRate = 1;
-
   double _miningBalance = 0;
-
   double _unclaimedMining = 0;
-
   double _estimatedTotal = 0;
-
   double _miningPerHour = 0;
 
   int _miningRemainingMs = 0;
 
-  int _miningDurationMs = 24 * 60 * 60 * 1000;
+  int _miningDurationMs =
+      24 * 60 * 60 * 1000;
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
   bool _dailyClaimed = false;
-
   int _streak = 0;
 
   double _dailyHashRateBonus = 1;
@@ -83,7 +79,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   int _adsToday = 0;
-
   int _maxAdsPerDay = 5;
 
   double _adHashRateBonus = 5;
@@ -97,15 +92,13 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Timer? _uiTimer;
-
   Timer? _refreshTimer;
 
   // ============================================================
-  // 🐱 ANIMATION
+  // 🐱 STELLA ANIMATION
   // ============================================================
 
   late AnimationController _catController;
-
   late Animation<double> _catAnimation;
 
   // ============================================================
@@ -193,12 +186,12 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          if (_miningActive && _miningRemainingMs > 0) {
+          if (_miningActive &&
+              _miningRemainingMs > 0) {
             _miningRemainingMs -= 1000;
 
             if (_miningRemainingMs <= 0) {
               _miningRemainingMs = 0;
-
               _miningActive = false;
             }
           }
@@ -209,7 +202,8 @@ class _HomePageState extends State<HomePage>
             if (_cooldownRemainingMs <= 0) {
               _cooldownRemainingMs = 0;
 
-              _canWatchAd = _adsToday < _maxAdsPerDay;
+              _canWatchAd =
+                  _adsToday < _maxAdsPerDay;
             }
           }
 
@@ -237,11 +231,13 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final double perSecond = _miningPerHour / 3600;
+    final double perSecond =
+        _miningPerHour / 3600;
 
     _unclaimedMining += perSecond;
 
-    _estimatedTotal = _miningBalance + _unclaimedMining;
+    _estimatedTotal =
+        _miningBalance + _unclaimedMining;
   }
 
   // ============================================================
@@ -289,7 +285,8 @@ class _HomePageState extends State<HomePage>
           data['miningPerHour'],
         );
 
-        _miningActive = data['miningActive'] == true;
+        _miningActive =
+            data['miningActive'] == true;
 
         _miningRemainingMs = _toInt(
           data['miningRemainingMs'],
@@ -300,14 +297,14 @@ class _HomePageState extends State<HomePage>
         );
 
         if (_miningDurationMs <= 0) {
-          _miningDurationMs = 24 * 60 * 60 * 1000;
+          _miningDurationMs =
+              24 * 60 * 60 * 1000;
         }
 
-        // ======================================================
         // 🎁 DAILY BONUS
-        // ======================================================
 
-        _dailyClaimed = data['dailyClaimed'] == true;
+        _dailyClaimed =
+            data['dailyClaimed'] == true;
 
         _streak = _toInt(
           data['streak'],
@@ -321,9 +318,7 @@ class _HomePageState extends State<HomePage>
           _dailyHashRateBonus = 1;
         }
 
-        // ======================================================
         // 📺 POWER BOOST
-        // ======================================================
 
         _adsToday = _toInt(
           data['adsToday'],
@@ -345,7 +340,8 @@ class _HomePageState extends State<HomePage>
           _adHashRateBonus = 5;
         }
 
-        _canWatchAd = data['canWatchAd'] == true;
+        _canWatchAd =
+            data['canWatchAd'] == true;
 
         _cooldownRemainingMs = _toInt(
           data['cooldownRemainingMs'],
@@ -385,7 +381,8 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd == null || !_adReady) {
+    if (_rewardedAd == null ||
+        !_adReady) {
       _showMessage(
         '📺 Stella valmistelee mainosta...',
       );
@@ -398,7 +395,6 @@ class _HomePageState extends State<HomePage>
     final RewardedAd ad = _rewardedAd!;
 
     _rewardedAd = null;
-
     _adReady = false;
 
     bool rewardEarned = false;
@@ -447,10 +443,12 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      final bool started = data['started'] == true;
+      final bool started =
+          data['started'] == true;
 
       final bool alreadyMining =
-          data['miningActive'] == true && started == false;
+          data['miningActive'] == true &&
+              started == false;
 
       final double collected = _toDouble(
         data['collected'],
@@ -583,14 +581,14 @@ class _HomePageState extends State<HomePage>
     await RewardedAd.load(
       adUnitId: _rewardedAdUnitId,
       request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
+      rewardedAdLoadCallback:
+          RewardedAdLoadCallback(
         onAdLoaded: (
           RewardedAd ad,
         ) {
           _rewardedAd = ad;
 
           _adReady = true;
-
           _adLoading = false;
 
           ad.fullScreenContentCallback =
@@ -601,7 +599,6 @@ class _HomePageState extends State<HomePage>
               ad.dispose();
 
               _rewardedAd = null;
-
               _adReady = false;
 
               _loadRewardedAd();
@@ -621,7 +618,6 @@ class _HomePageState extends State<HomePage>
               ad.dispose();
 
               _rewardedAd = null;
-
               _adReady = false;
 
               _loadRewardedAd();
@@ -644,9 +640,7 @@ class _HomePageState extends State<HomePage>
           );
 
           _rewardedAd = null;
-
           _adReady = false;
-
           _adLoading = false;
 
           if (mounted) {
@@ -690,7 +684,8 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd == null || !_adReady) {
+    if (_rewardedAd == null ||
+        !_adReady) {
       _showMessage(
         '📺 Stella valmistelee mainosta...',
       );
@@ -703,7 +698,6 @@ class _HomePageState extends State<HomePage>
     final RewardedAd ad = _rewardedAd!;
 
     _rewardedAd = null;
-
     _adReady = false;
 
     bool rewardProcessed = false;
@@ -752,9 +746,11 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      final bool rewarded = data['rewarded'] == true;
+      final bool rewarded =
+          data['rewarded'] == true;
 
-      final bool duplicate = data['duplicate'] == true;
+      final bool duplicate =
+          data['duplicate'] == true;
 
       final double bonus = _toDouble(
         data['bonus'],
@@ -798,6 +794,90 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 🌍 LANGUAGE
+  // ============================================================
+
+  Future<void> _showLanguageDialog() async {
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor:
+              const Color(0xFF21113B),
+          title: const Text(
+            '🐱 Choose Language',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _languageButton(
+                context: dialogContext,
+                code: 'fi',
+                title: '🇫🇮 Suomi',
+              ),
+              const SizedBox(height: 10),
+              _languageButton(
+                context: dialogContext,
+                code: 'en',
+                title: '🇬🇧 English',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _languageButton({
+    required BuildContext context,
+    required String code,
+    required String title,
+  }) {
+    final bool selected =
+        widget.languageCode == code;
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () async {
+          Navigator.pop(context);
+
+          await widget.changeLanguage(code);
+
+          if (mounted) {
+            _showMessage(
+              '🐱 Stella vaihtoi kielen!',
+            );
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: selected
+              ? const Color(0xFFB58CFF)
+              : const Color(0xFF35204F),
+          foregroundColor: Colors.white,
+        ),
+        child: Text(title),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 🐱 DRAWER PAGES
+  // ============================================================
+
+  void _showStellaPageMessage(
+    String title,
+  ) {
+    _showMessage(
+      '🐱✨ $title tulee Stella-teemalla pian!',
+    );
+  }
+
+  // ============================================================
   // 🔢 HELPERS
   // ============================================================
 
@@ -833,17 +913,20 @@ class _HomePageState extends State<HomePage>
           milliseconds < 0 ? 0 : milliseconds,
     );
 
-    final String hours = duration.inHours
-        .toString()
-        .padLeft(2, '0');
+    final String hours =
+        duration.inHours
+            .toString()
+            .padLeft(2, '0');
 
-    final String minutes = (duration.inMinutes % 60)
-        .toString()
-        .padLeft(2, '0');
+    final String minutes =
+        (duration.inMinutes % 60)
+            .toString()
+            .padLeft(2, '0');
 
-    final String seconds = (duration.inSeconds % 60)
-        .toString()
-        .padLeft(2, '0');
+    final String seconds =
+        (duration.inSeconds % 60)
+            .toString()
+            .padLeft(2, '0');
 
     return '$hours:$minutes:$seconds';
   }
@@ -872,7 +955,6 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _uiTimer?.cancel();
-
     _refreshTimer?.cancel();
 
     _rewardedAd?.dispose();
@@ -891,34 +973,101 @@ class _HomePageState extends State<HomePage>
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor: const Color(0xFF120B24),
+      backgroundColor:
+          const Color(0xFF120B24),
+
+      // ========================================================
+      // 🐱 STELLA DRAWER
+      // ========================================================
+
+      drawer: HomeDrawer(
+        onLanguagePressed:
+            _showLanguageDialog,
+
+        onAboutPressed: () {
+          _showStellaPageMessage(
+            'About Stelluriini',
+          );
+        },
+
+        onWhitePaperPressed: () {
+          _showStellaPageMessage(
+            'White Paper',
+          );
+        },
+
+        onTokenPressed: () {
+          _showStellaPageMessage(
+            'STL Token',
+          );
+        },
+
+        onTokenomicsPressed: () {
+          _showStellaPageMessage(
+            'Tokenomics',
+          );
+        },
+
+        onRoadmapPressed: () {
+          _showStellaPageMessage(
+            'Roadmap',
+          );
+        },
+
+        onTransactionHistoryPressed: () {
+          _showStellaPageMessage(
+            'Transaction History',
+          );
+        },
+      ),
+
       body: SafeArea(
         child: _loading
             ? const Center(
-                child: CircularProgressIndicator(),
+                child:
+                    CircularProgressIndicator(
+                  color: Color(0xFFB58CFF),
+                ),
               )
             : RefreshIndicator(
-                onRefresh: _loadMiningStatus,
+                onRefresh:
+                    _loadMiningStatus,
                 child: ListView(
                   physics:
                       const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
+                  padding:
+                      const EdgeInsets.all(20),
                   children: [
                     _buildHeader(),
+
                     const SizedBox(height: 24),
+
                     _buildStellaMiningCard(),
+
                     const SizedBox(height: 20),
+
                     _buildStatsRow(),
+
                     const SizedBox(height: 20),
+
                     _buildMiningProgress(),
+
                     const SizedBox(height: 24),
+
                     _buildMiningButton(),
+
                     const SizedBox(height: 16),
+
                     _buildAdButton(),
+
                     const SizedBox(height: 24),
+
                     _buildDailyBonusCard(),
+
                     const SizedBox(height: 24),
+
                     _buildStellaFooter(),
+
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -928,17 +1077,57 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // HEADER
+  // 🐱 HEADER
   // ============================================================
 
   Widget _buildHeader() {
     return Row(
       children: [
+        // ======================================================
+        // ☰ STELLA MENU BUTTON
+        // ======================================================
+
+        Builder(
+          builder: (context) {
+            return Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFF21113B),
+                borderRadius:
+                    BorderRadius.circular(17),
+                border: Border.all(
+                  color: const Color(0xFFB58CFF)
+                      .withValues(alpha: 0.45),
+                ),
+              ),
+              child: IconButton(
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: Color(0xFFFFB7E8),
+                  size: 29,
+                ),
+                tooltip: 'Stella Menu',
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(width: 12),
+
+        // ======================================================
+        // 🐱 STELLA ICON
+        // ======================================================
+
         Container(
           width: 58,
           height: 58,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius:
+                BorderRadius.circular(18),
             gradient: const LinearGradient(
               colors: [
                 Color(0xFFFFB7E8),
@@ -961,7 +1150,9 @@ class _HomePageState extends State<HomePage>
             ),
           ),
         ),
+
         const SizedBox(width: 14),
+
         const Expanded(
           child: Column(
             crossAxisAlignment:
@@ -972,7 +1163,8 @@ class _HomePageState extends State<HomePage>
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -987,8 +1179,10 @@ class _HomePageState extends State<HomePage>
             ],
           ),
         ),
+
         IconButton(
-          onPressed: _loadMiningStatus,
+          onPressed:
+              _loadMiningStatus,
           icon: const Icon(
             Icons.refresh_rounded,
             color: Colors.white,
@@ -1004,13 +1198,17 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildStellaMiningCard() {
     final bool completed =
-        !_miningActive && _unclaimedMining > 0;
+        !_miningActive &&
+            _unclaimedMining > 0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding:
+          const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
+        borderRadius:
+            BorderRadius.circular(30),
+        gradient:
+            const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -1051,8 +1249,9 @@ class _HomePageState extends State<HomePage>
               height: 110,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFB58CFF)
-                    .withValues(alpha: 0.15),
+                color: const Color(
+                  0xFFB58CFF,
+                ).withValues(alpha: 0.15),
               ),
               child: const Center(
                 child: Text(
@@ -1064,7 +1263,9 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
+
           const SizedBox(height: 18),
+
           Text(
             _miningActive
                 ? 'STELLA IS MINING'
@@ -1074,24 +1275,30 @@ class _HomePageState extends State<HomePage>
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               letterSpacing: 1,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
             _miningActive
                 ? '🐾 Stella louhii STL:ää juuri nyt'
                 : completed
                     ? '🐱✨ STL on valmis kerättäväksi!'
                     : '🐱 Stella odottaa seuraavaa louhintaa',
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: const TextStyle(
               color: Color(0xFFCFC2E8),
               fontSize: 14,
             ),
           ),
+
           const SizedBox(height: 24),
+
           Text(
             _formatStl(
               _unclaimedMining,
@@ -1099,10 +1306,13 @@ class _HomePageState extends State<HomePage>
             style: const TextStyle(
               color: Color(0xFFFFD166),
               fontSize: 38,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
+
           const SizedBox(height: 4),
+
           const Text(
             'STL MINED',
             style: TextStyle(
@@ -1111,16 +1321,23 @@ class _HomePageState extends State<HomePage>
               fontSize: 12,
             ),
           ),
+
           const SizedBox(height: 24),
+
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               vertical: 15,
               horizontal: 20,
             ),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(18),
+              color:
+                  Colors.black.withValues(
+                alpha: 0.2,
+              ),
+              borderRadius:
+                  BorderRadius.circular(18),
             ),
             child: Column(
               children: [
@@ -1135,10 +1352,13 @@ class _HomePageState extends State<HomePage>
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 5),
+
                 Text(
                   _miningActive
                       ? 'TIME REMAINING'
@@ -1174,10 +1394,13 @@ class _HomePageState extends State<HomePage>
                 '${_hashRate.toStringAsFixed(0)} H/s',
           ),
         ),
+
         const SizedBox(width: 12),
+
         Expanded(
           child: _buildStatCard(
-            icon: Icons.currency_bitcoin_rounded,
+            icon:
+                Icons.currency_bitcoin_rounded,
             title: 'TOTAL STL',
             value:
                 '${_formatStl(_estimatedTotal)} STL',
@@ -1193,12 +1416,17 @@ class _HomePageState extends State<HomePage>
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding:
+          const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF21113B),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
+          color:
+              Colors.white.withValues(
+            alpha: 0.06,
+          ),
         ),
       ),
       child: Column(
@@ -1207,9 +1435,12 @@ class _HomePageState extends State<HomePage>
         children: [
           Icon(
             icon,
-            color: const Color(0xFFFFB7E8),
+            color:
+                const Color(0xFFFFB7E8),
           ),
+
           const SizedBox(height: 12),
+
           Text(
             title,
             style: const TextStyle(
@@ -1218,15 +1449,19 @@ class _HomePageState extends State<HomePage>
               letterSpacing: 1,
             ),
           ),
+
           const SizedBox(height: 5),
+
           Text(
             value,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            overflow:
+                TextOverflow.ellipsis,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
         ],
@@ -1241,7 +1476,8 @@ class _HomePageState extends State<HomePage>
   Widget _buildMiningProgress() {
     double progress = 0;
 
-    if (_miningActive && _miningDurationMs > 0) {
+    if (_miningActive &&
+        _miningDurationMs > 0) {
       progress = 1 -
           (
             _miningRemainingMs /
@@ -1255,10 +1491,12 @@ class _HomePageState extends State<HomePage>
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding:
+          const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF21113B),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment:
@@ -1270,23 +1508,31 @@ class _HomePageState extends State<HomePage>
                 '⛏️ STELLA MINING PROGRESS',
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
+
               const Spacer(),
+
               Text(
                 '${(progress * 100).toStringAsFixed(1)}%',
                 style: const TextStyle(
                   color: Color(0xFFFFD166),
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 14),
+
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
+            borderRadius:
+                BorderRadius.circular(20),
+            child:
+                LinearProgressIndicator(
               value: progress,
               minHeight: 12,
               backgroundColor:
@@ -1297,7 +1543,9 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
+
           const SizedBox(height: 12),
+
           Text(
             '⚡ ${_miningPerHour.toStringAsFixed(2)} STL / hour',
             style: const TextStyle(
@@ -1315,23 +1563,20 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildMiningButton() {
     final bool completed =
-        !_miningActive && _unclaimedMining > 0;
+        !_miningActive &&
+            _unclaimedMining > 0;
 
     String text;
-
     IconData icon;
-
     VoidCallback? onPressed;
 
     if (_actionLoading) {
       text = 'STELLA IS WORKING...';
-
-      icon = Icons.hourglass_top_rounded;
-
+      icon =
+          Icons.hourglass_top_rounded;
       onPressed = null;
     } else if (_miningActive) {
       text = '🐱 STELLA IS MINING';
-
       icon = Icons.lock_rounded;
 
       onPressed = () {
@@ -1340,16 +1585,16 @@ class _HomePageState extends State<HomePage>
         );
       };
     } else if (completed) {
-      text = '📺 WATCH AD • COLLECT & RESTART';
-
-      icon = Icons.inventory_2_rounded;
-
+      text =
+          '📺 WATCH AD • COLLECT & RESTART';
+      icon =
+          Icons.inventory_2_rounded;
       onPressed = _startMining;
     } else {
-      text = '📺 WATCH AD • START MINING';
-
-      icon = Icons.play_arrow_rounded;
-
+      text =
+          '📺 WATCH AD • START MINING';
+      icon =
+          Icons.play_arrow_rounded;
       onPressed = _startMining;
     }
 
@@ -1362,18 +1607,22 @@ class _HomePageState extends State<HomePage>
         label: Text(
           text,
           style: const TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
             letterSpacing: 0.5,
           ),
         ),
-        style: ElevatedButton.styleFrom(
+        style:
+            ElevatedButton.styleFrom(
           backgroundColor:
               const Color(0xFFB58CFF),
           foregroundColor: Colors.white,
           disabledBackgroundColor:
               const Color(0xFF4A315F),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(20),
           ),
         ),
       ),
@@ -1407,10 +1656,12 @@ class _HomePageState extends State<HomePage>
     }
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding:
+          const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFF21113B),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color: const Color(0xFFFFB7E8)
               .withValues(alpha: 0.3),
@@ -1426,7 +1677,9 @@ class _HomePageState extends State<HomePage>
                   fontSize: 28,
                 ),
               ),
+
               const SizedBox(width: 12),
+
               const Expanded(
                 child: Column(
                   crossAxisAlignment:
@@ -1444,7 +1697,8 @@ class _HomePageState extends State<HomePage>
                     Text(
                       'Katso mainos ja auta Stellaa ⚡',
                       style: TextStyle(
-                        color: Color(0xFFBFAEDB),
+                        color:
+                            Color(0xFFBFAEDB),
                         fontSize: 12,
                       ),
                     ),
@@ -1453,7 +1707,9 @@ class _HomePageState extends State<HomePage>
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -1478,11 +1734,14 @@ class _HomePageState extends State<HomePage>
               ),
               child: Text(
                 'WATCH AD • $subtitle',
-                textAlign: TextAlign.center,
+                textAlign:
+                    TextAlign.center,
               ),
             ),
           ),
+
           const SizedBox(height: 10),
+
           Text(
             '$_adsToday / $_maxAdsPerDay Power Boosts today',
             style: const TextStyle(
@@ -1501,10 +1760,13 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildDailyBonusCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding:
+          const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
+        borderRadius:
+            BorderRadius.circular(22),
+        gradient:
+            const LinearGradient(
           colors: [
             Color(0xFF3A1D5A),
             Color(0xFF25113F),
@@ -1519,28 +1781,36 @@ class _HomePageState extends State<HomePage>
               fontSize: 40,
             ),
           ),
+
           const SizedBox(height: 8),
+
           const Text(
             'STELLA DAILY BONUS',
             style: TextStyle(
               color: Colors.white,
               fontSize: 17,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
+
           const SizedBox(height: 6),
+
           Text(
             '+${_dailyHashRateBonus.toStringAsFixed(0)} Hash Rate • 🔥 $_streak day streak',
             style: const TextStyle(
               color: Color(0xFFCFC2E8),
             ),
           ),
+
           const SizedBox(height: 16),
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed:
-                  _dailyClaimed || _actionLoading
+                  _dailyClaimed ||
+                          _actionLoading
                       ? null
                       : _dailyCheckIn,
               style:
@@ -1566,7 +1836,8 @@ class _HomePageState extends State<HomePage>
                     ? '🐱 BONUS CLAIMED TODAY'
                     : '🎁 CLAIM DAILY BONUS',
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ),
@@ -1577,7 +1848,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 FOOTER
+  // 🐱 STELLA FOOTER
   // ============================================================
 
   Widget _buildStellaFooter() {
@@ -1590,15 +1861,20 @@ class _HomePageState extends State<HomePage>
               fontSize: 28,
             ),
           ),
+
           SizedBox(height: 8),
+
           Text(
             'Stella is mining the future.',
             style: TextStyle(
               color: Color(0xFF8D7BA8),
-              fontStyle: FontStyle.italic,
+              fontStyle:
+                  FontStyle.italic,
             ),
           ),
+
           SizedBox(height: 4),
+
           Text(
             'STELLURIINI • STL',
             style: TextStyle(
