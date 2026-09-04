@@ -6,7 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String languageCode;
+  final Future<void> Function(String) changeLanguage;
+
+  const HomePage({
+    super.key,
+    required this.languageCode,
+    required this.changeLanguage,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -29,9 +36,6 @@ class _HomePageState extends State<HomePage>
   // 📺 ADMOB TEST AD
   // ============================================================
 
-  // Google Rewarded Test Ad Unit ID.
-  //
-  // Käytetään kehityksen aikana.
   static const String _rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
@@ -56,8 +60,6 @@ class _HomePageState extends State<HomePage>
   double _miningBalance = 0;
 
   double _unclaimedMining = 0;
-
-  double _estimatedTotal = 0;
 
   double _miningPerHour = 0;
 
@@ -225,10 +227,6 @@ class _HomePageState extends State<HomePage>
         _miningPerHour / 3600;
 
     _unclaimedMining += perSecond;
-
-    _estimatedTotal =
-        _miningBalance +
-            _unclaimedMining;
   }
 
   // ============================================================
@@ -263,9 +261,6 @@ class _HomePageState extends State<HomePage>
 
         _unclaimedMining =
             _toDouble(data['unclaimedMining']);
-
-        _estimatedTotal =
-            _toDouble(data['estimatedTotal']);
 
         _miningPerHour =
             _toDouble(data['miningPerHour']);
@@ -588,8 +583,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    bool rewardEarned = false;
-
     final RewardedAd ad =
         _rewardedAd!;
 
@@ -602,15 +595,9 @@ class _HomePageState extends State<HomePage>
         AdWithoutView ad,
         RewardItem reward,
       ) async {
-        rewardEarned = true;
-
         await _giveTestAdReward();
       },
     );
-
-    if (!rewardEarned) {
-      _loadRewardedAd();
-    }
   }
 
   // ============================================================
@@ -946,7 +933,7 @@ class _HomePageState extends State<HomePage>
         border: Border.all(
           color:
               const Color(0xFFB58CFF)
-                  .withOpacity(0.4),
+                  .withValues(alpha: 0.4),
         ),
 
         boxShadow: const [
@@ -981,7 +968,7 @@ class _HomePageState extends State<HomePage>
                 shape: BoxShape.circle,
                 color:
                     const Color(0xFFB58CFF)
-                        .withOpacity(0.15),
+                        .withValues(alpha: 0.15),
               ),
               child: const Center(
                 child: Text(
@@ -1063,7 +1050,7 @@ class _HomePageState extends State<HomePage>
             ),
             decoration: BoxDecoration(
               color:
-                  Colors.black.withOpacity(0.2),
+                  Colors.black.withValues(alpha: 0.2),
               borderRadius:
                   BorderRadius.circular(18),
             ),
@@ -1156,7 +1143,7 @@ class _HomePageState extends State<HomePage>
 
         border: Border.all(
           color:
-              Colors.white.withOpacity(0.06),
+              Colors.white.withValues(alpha: 0.06),
         ),
       ),
 
@@ -1406,7 +1393,7 @@ class _HomePageState extends State<HomePage>
         border: Border.all(
           color:
               const Color(0xFFFFB7E8)
-                  .withOpacity(0.3),
+                  .withValues(alpha: 0.3),
         ),
       ),
 
