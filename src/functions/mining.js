@@ -1,33 +1,5 @@
 "use strict";
 
-const {
-  onCall,
-  HttpsError,
-} = require("firebase-functions/v2/https");
-
-const {
-  db,
-  FieldValue,
-} = require("../firebase/firebase");
-
-const {
-  DEFAULT_HASH_RATE,
-  MINING_DURATION_MS,
-  MINING_PER_HASH_PER_HOUR,
-} = require("../config/miningConfig");
-
-const {
-  calculateMining,
-  getMiningStartTime,
-  getMiningEndTime,
-  calculateMiningStatus,
-} = require("../utils/miningUtils");
-
-const {
-  getUserRef,
-  getHistoryCollection,
-} = require("../utils/userUtils");
-
 
 // ============================================================
 // 🐱 STELLA MINING FUNCTIONS
@@ -40,21 +12,245 @@ const {
 // 💰 Reaaliaikaisesta STL-laskennasta
 // ✨ Valmiin Mining-jakson keräämisestä
 // 🔄 Uuden Mining-jakson käynnistämisestä
+// 🎁 Daily Bonus -tilasta
+// 📺 Stella Power Boost -tilasta
 //
 // ============================================================
+
+
+// ============================================================
+// 🔥 FIREBASE FUNCTIONS
+// ============================================================
+
+const {
+  onCall,
+  HttpsError,
+} = require(
+  "firebase-functions/v2/https"
+);
+
+
+// ============================================================
+// 🔥 FIREBASE
+// ============================================================
+
+const {
+  db,
+  FieldValue,
+} = require(
+  "../firebase/firebase"
+);
+
+
+// ============================================================
+// ⚙️ CONFIG
+// ============================================================
+
+const {
+  DEFAULT_HASH_RATE,
+  MINING_DURATION_MS,
+  MINING_PER_HASH_PER_HOUR,
+  AD_HASH_RATE_BONUS,
+  MAX_ADS_PER_DAY,
+  AD_COOLDOWN_MS,
+} = require(
+  "../config/miningConfig"
+);
+
+
+// ============================================================
+// 📅 DATE UTILITIES
+// ============================================================
+
+const {
+  getUtcDateString,
+} = require(
+  "../utils/dateUtils"
+);
+
+
+// ============================================================
+// 👤 USER UTILITIES
+// ============================================================
+
+const {
+  getUserRef,
+  getHistoryCollection,
+} = require(
+  "../utils/userUtils"
+);
+
+
+// ============================================================
+// ⛏️ MINING UTILITIES
+// ============================================================
+
+const {
+  calculateMining,
+  getMiningStartTime,
+  getMiningEndTime,
+  calculateMiningStatus,
+} = require(
+  "../utils/miningUtils"
+);
+
+
+// ============================================================
+// 🧮 SAFE NUMBER
+// ============================================================
+
+function getSafeNumber(
+  value,
+  fallback = 0
+) {
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+
+}
+
+
+// ============================================================
+// 📺 GET AD STATUS
+// ============================================================
+
+function getAdStatus(
+  data,
+  nowMs,
+  today
+) {
+
+  const storedDate =
+    typeof data.lastAdDate === "string"
+      ? data.lastAdDate
+      : null;
+
+
+  const adsToday =
+    storedDate === today
+      ? Math.max(
+          0,
+          Math.floor(
+            getSafeNumber(
+              data.adsToday,
+              0
+            )
+          )
+        )
+      : 0;
+
+
+  const lastAdRewardAt =
+    data.lastAdRewardAt;
+
+
+  let lastAdRewardMs =
+    0;
+
+
+  if (
+    lastAdRewardAt &&
+    typeof lastAdRewardAt.toDate ===
+      "function"
+  ) {
+
+    lastAdRewardMs =
+      lastAdRewardAt
+        .toDate()
+        .getTime();
+
+  } else if (
+    lastAdRewardAt instanceof Date
+  ) {
+
+    lastAdRewardMs =
+      lastAdRewardAt.getTime();
+
+  }
+
+
+  const cooldownRemainingMs =
+    Math.max(
+      0,
+      (
+        lastAdRewardMs +
+        AD_COOLDOWN_MS
+      ) -
+      nowMs
+    );
+
+
+  const canWatchAd =
+    adsToday < MAX_ADS_PER_DAY &&
+    cooldownRemainingMs === 0;
+
+
+  return {
+
+    adsToday,
+
+    maxAdsPerDay:
+      MAX_ADS_PER_DAY,
+
+    cooldownRemainingMs,
+
+    canWatchAd,
+
+  };
+
+}
+
+
+// ============================================================
+// 🎁 GET DAILY STATUS
+// ============================================================
+
+function getDailyStatus(
+  data,
+  today
+) {
+
+  const lastDailyDate =
+    typeof data.lastDailyDate === "string"
+      ? data.lastDailyDate
+      : typeof data.lastDaily === "string"
+          ? data.lastDaily
+          : "";
+
+
+  const dailyClaimed =
+    lastDailyDate === today;
+
+
+  const streak =
+    Math.max(
+      0,
+      Math.floor(
+        getSafeNumber(
+          data.streak,
+          0
+        )
+      )
+    );
+
+
+  return {
+
+    dailyClaimed,
+
+    streak,
+
+  };
+
+}
 
 
 // ============================================================
 // 🐱 GET MINING STATUS
-// ============================================================
-//
-// Flutter kutsuu tätä saadakseen:
-//
-// ⛏️ Onko Stella louhimassa
-// ⏱️ Kuinka paljon aikaa on jäljellä
-// 💰 Kuinka paljon STL:ää on syntynyt
-// ⚡ Nykyinen Hash Rate
-//
 // ============================================================
 
 const getMiningStatus =
@@ -73,10 +269,6 @@ const getMiningStatus =
 
     }
 
-
-    // ========================================================
-    // 👤 USER
-    // ========================================================
 
     const uid =
       request.auth.uid;
@@ -108,14 +300,25 @@ const getMiningStatus =
       new Date();
 
 
+    const nowMs =
+      now.getTime();
+
+
+    const today =
+      getUtcDateString();
+
+
     // ========================================================
     // ⚡ HASH RATE
     // ========================================================
 
     const hashRate =
-      Number(
-        data.hashRate ??
-        DEFAULT_HASH_RATE
+      Math.max(
+        0,
+        getSafeNumber(
+          data.hashRate,
+          DEFAULT_HASH_RATE
+        )
       );
 
 
@@ -124,8 +327,12 @@ const getMiningStatus =
     // ========================================================
 
     const miningBalance =
-      Number(
-        data.miningBalance ?? 0
+      Math.max(
+        0,
+        getSafeNumber(
+          data.miningBalance,
+          0
+        )
       );
 
 
@@ -140,19 +347,15 @@ const getMiningStatus =
       );
 
 
-    // ========================================================
-    // ✨ UNCLAIMED MINING
-    // ========================================================
-
     const unclaimedMining =
-      Number(
-        miningStatus.minedAmount ?? 0
+      Math.max(
+        0,
+        getSafeNumber(
+          miningStatus.minedAmount,
+          0
+        )
       );
 
-
-    // ========================================================
-    // 💎 ESTIMATED TOTAL
-    // ========================================================
 
     const estimatedTotal =
       miningBalance +
@@ -160,7 +363,7 @@ const getMiningStatus =
 
 
     // ========================================================
-    // ⛏️ MINING TIMES
+    // ⏱️ MINING TIMES
     // ========================================================
 
     const miningStartedAt =
@@ -169,6 +372,29 @@ const getMiningStatus =
 
     const miningEndsAt =
       getMiningEndTime(data);
+
+
+    // ========================================================
+    // 📺 AD STATUS
+    // ========================================================
+
+    const adStatus =
+      getAdStatus(
+        data,
+        nowMs,
+        today
+      );
+
+
+    // ========================================================
+    // 🎁 DAILY STATUS
+    // ========================================================
+
+    const dailyStatus =
+      getDailyStatus(
+        data,
+        today
+      );
 
 
     // ========================================================
@@ -181,57 +407,79 @@ const getMiningStatus =
         true,
 
 
-      // ------------------------------------------------------
-      // 🐱 STELLA STATUS
-      // ------------------------------------------------------
+      // ======================================================
+      // 🐱 STATUS
+      // ======================================================
 
-      miningActive:
-        Boolean(
-          miningStatus.miningActive
-        ),
+      message:
+        miningStatus.miningActive
+          ? "🐱⛏️ Stella louhii STL:ää!"
+          : miningStatus.miningFinished
+              ? "🐱✨ Stella on valmis keräämään STL:t!"
+              : "🐱 Stella odottaa seuraavaa louhintaa.",
 
 
-      // ------------------------------------------------------
+      // ======================================================
       // ⚡ HASH RATE
-      // ------------------------------------------------------
+      // ======================================================
 
       hashRate,
 
 
-      // ------------------------------------------------------
-      // 💰 SAVED STL
-      // ------------------------------------------------------
+      // ======================================================
+      // 💰 STL BALANCE
+      // ======================================================
 
       miningBalance,
 
 
-      // ------------------------------------------------------
-      // ✨ REAL-TIME UNCLAIMED STL
-      // ------------------------------------------------------
+      // ======================================================
+      // ✨ CURRENTLY MINED
+      // ======================================================
 
       unclaimedMining,
 
 
-      // ------------------------------------------------------
-      // 💎 ESTIMATED TOTAL
-      // ------------------------------------------------------
+      // ======================================================
+      // 💎 TOTAL
+      // ======================================================
 
       estimatedTotal,
 
 
-      // ------------------------------------------------------
+      // ======================================================
+      // ⛏️ MINING STATUS
+      // ======================================================
+
+      miningActive:
+        miningStatus.miningActive === true,
+
+
+      miningFinished:
+        miningStatus.miningFinished === true,
+
+
+      // ======================================================
       // ⏱️ MINING TIME
-      // ------------------------------------------------------
+      // ======================================================
 
       miningRemainingMs:
-        Number(
-          miningStatus.miningRemainingMs ?? 0
+        Math.max(
+          0,
+          getSafeNumber(
+            miningStatus.miningRemainingMs,
+            0
+          )
         ),
 
 
       elapsedMs:
-        Number(
-          miningStatus.elapsedMs ?? 0
+        Math.max(
+          0,
+          getSafeNumber(
+            miningStatus.elapsedMs,
+            0
+          )
         ),
 
 
@@ -239,9 +487,9 @@ const getMiningStatus =
         MINING_DURATION_MS,
 
 
-      // ------------------------------------------------------
-      // 📅 MINING DATES
-      // ------------------------------------------------------
+      // ======================================================
+      // 🕒 START / END
+      // ======================================================
 
       miningStartedAt:
         miningStartedAt
@@ -255,23 +503,67 @@ const getMiningStatus =
           : null,
 
 
-      // ------------------------------------------------------
-      // ⛏️ MINING SPEED
-      // ------------------------------------------------------
+      // ======================================================
+      // ⚡ STL SPEED
+      // ======================================================
 
       miningPerHour:
         hashRate *
         MINING_PER_HASH_PER_HOUR,
 
 
-      // ------------------------------------------------------
-      // 🐱 STELLA MESSAGE
-      // ------------------------------------------------------
+      miningPerMinute:
+        (
+          hashRate *
+          MINING_PER_HASH_PER_HOUR
+        ) / 60,
 
-      message:
-        miningStatus.miningActive
-          ? "🐱⛏️ Stella louhii STL:ää!"
-          : "🐱✨ Stella odottaa seuraavaa louhintaa.",
+
+      miningPerSecond:
+        (
+          hashRate *
+          MINING_PER_HASH_PER_HOUR
+        ) / 3600,
+
+
+      // ======================================================
+      // 🎁 DAILY BONUS
+      // ======================================================
+
+      dailyClaimed:
+        dailyStatus.dailyClaimed,
+
+
+      streak:
+        dailyStatus.streak,
+
+
+      dailyHashRateBonus:
+        1,
+
+
+      // ======================================================
+      // 📺 STELLA POWER BOOST
+      // ======================================================
+
+      adsToday:
+        adStatus.adsToday,
+
+
+      maxAdsPerDay:
+        adStatus.maxAdsPerDay,
+
+
+      adHashRateBonus:
+        AD_HASH_RATE_BONUS,
+
+
+      canWatchAd:
+        adStatus.canWatchAd,
+
+
+      cooldownRemainingMs:
+        adStatus.cooldownRemainingMs,
 
     };
 
@@ -280,20 +572,6 @@ const getMiningStatus =
 
 // ============================================================
 // ⛏️ CLAIM / START STELLA MINING
-// ============================================================
-//
-// Painikkeen toiminta:
-//
-// 🐱 Ei aktiivista Miningia
-// → aloita uusi 24h Mining
-//
-// ⛏️ Mining aktiivinen
-// → ei käynnistetä uutta
-//
-// ✨ Mining valmis
-// → kerää STL Balanceen
-// → aloita uusi 24h Mining
-//
 // ============================================================
 
 const claimMining =
@@ -313,10 +591,6 @@ const claimMining =
     }
 
 
-    // ========================================================
-    // 👤 USER
-    // ========================================================
-
     const uid =
       request.auth.uid;
 
@@ -324,10 +598,6 @@ const claimMining =
     const userRef =
       getUserRef(uid);
 
-
-    // ========================================================
-    // ⏱️ SERVER TIME
-    // ========================================================
 
     const now =
       new Date();
@@ -339,7 +609,6 @@ const claimMining =
 
     return await db.runTransaction(
       async (transaction) => {
-
 
         // ====================================================
         // 👤 GET USER
@@ -362,19 +631,26 @@ const claimMining =
         // ====================================================
 
         const hashRate =
-          Number(
-            data.hashRate ??
-            DEFAULT_HASH_RATE
+          Math.max(
+            0,
+            getSafeNumber(
+              data.hashRate,
+              DEFAULT_HASH_RATE
+            )
           );
 
 
         // ====================================================
-        // 💰 OLD STL BALANCE
+        // 💰 CURRENT BALANCE
         // ====================================================
 
         const oldBalance =
-          Number(
-            data.miningBalance ?? 0
+          Math.max(
+            0,
+            getSafeNumber(
+              data.miningBalance,
+              0
+            )
           );
 
 
@@ -390,47 +666,50 @@ const claimMining =
 
 
         // ====================================================
-        // 🐱 STELLA IS ALREADY MINING
+        // 🐱 ALREADY MINING
         // ====================================================
 
-        if (
-          miningStatus.miningActive
-        ) {
+        if (miningStatus.miningActive) {
 
           return {
 
             success:
               true,
 
-
             started:
               false,
-
 
             collected:
               0,
 
-
             completedCycle:
               false,
-
 
             miningActive:
               true,
 
-
-            balance:
+            miningBalance:
               oldBalance,
-
 
             hashRate,
 
-
-            miningRemainingMs:
-              Number(
-                miningStatus.miningRemainingMs ?? 0
+            unclaimedMining:
+              Math.max(
+                0,
+                getSafeNumber(
+                  miningStatus.minedAmount,
+                  0
+                )
               ),
 
+            miningRemainingMs:
+              Math.max(
+                0,
+                getSafeNumber(
+                  miningStatus.miningRemainingMs,
+                  0
+                )
+              ),
 
             message:
               "🐱⛏️ Stella louhii jo STL:ää!",
@@ -452,10 +731,6 @@ const claimMining =
           getMiningEndTime(data);
 
 
-        // ====================================================
-        // 💰 NEW VALUES
-        // ====================================================
-
         let newBalance =
           oldBalance;
 
@@ -469,12 +744,7 @@ const claimMining =
 
 
         // ====================================================
-        // ✨ COMPLETE PREVIOUS MINING CYCLE
-        // ====================================================
-        //
-        // Jos aiempi 24h Mining-jakso on valmis,
-        // sen ansaitsema STL lisätään pysyvään balanceen.
-        //
+        // 💰 COLLECT COMPLETED MINING
         // ====================================================
 
         if (
@@ -487,14 +757,17 @@ const claimMining =
             Math.max(
               0,
               previousEnd.getTime() -
-              previousStart.getTime()
+                previousStart.getTime()
             );
 
 
           collected =
-            calculateMining(
-              hashRate,
-              fullDuration
+            Math.max(
+              0,
+              calculateMining(
+                hashRate,
+                fullDuration
+              )
             );
 
 
@@ -504,7 +777,7 @@ const claimMining =
 
 
           completedCycle =
-            true;
+            collected > 0;
 
         }
 
@@ -532,32 +805,22 @@ const claimMining =
           userRef,
           {
 
-            // ⚡ Hash Rate
-
             hashRate,
-
-
-            // 💰 STL Balance
 
             miningBalance:
               newBalance,
 
-
-            // ⛏️ New Mining Cycle
-
             miningStartedAt,
 
             miningEndsAt,
-
-
-            // ⏱️ Updated
 
             updatedAt:
               FieldValue.serverTimestamp(),
 
           },
           {
-            merge: true,
+            merge:
+              true,
           }
         );
 
@@ -567,37 +830,31 @@ const claimMining =
         // ====================================================
 
         if (
-          completedCycle &&
-          collected > 0
+          completedCycle
         ) {
 
-          const historyRef =
+          const completeHistoryRef =
             getHistoryCollection(uid)
               .doc();
 
 
           transaction.set(
-            historyRef,
+            completeHistoryRef,
             {
 
               type:
                 "mining_complete",
 
-
               title:
                 "Stella Mining Complete 🐱⛏️✨",
-
 
               amount:
                 collected,
 
-
               balanceAfter:
                 newBalance,
 
-
               hashRate,
-
 
               createdAt:
                 FieldValue.serverTimestamp(),
@@ -609,7 +866,7 @@ const claimMining =
 
 
         // ====================================================
-        // 📜 HISTORY: NEW MINING STARTED
+        // 📜 HISTORY: NEW MINING
         // ====================================================
 
         const startHistoryRef =
@@ -624,23 +881,20 @@ const claimMining =
             type:
               "mining_started",
 
-
             title:
               "Stella Mining Started 🐱⛏️",
-
 
             amount:
               0,
 
-
             hashRate,
 
+            miningDurationMs:
+              MINING_DURATION_MS,
 
             miningStartedAt,
 
-
             miningEndsAt,
-
 
             createdAt:
               FieldValue.serverTimestamp(),
@@ -650,7 +904,7 @@ const claimMining =
 
 
         // ====================================================
-        // 🐱 SUCCESS RESPONSE
+        // 🐱 RESPONSE
         // ====================================================
 
         return {
@@ -658,68 +912,34 @@ const claimMining =
           success:
             true,
 
-
-          // --------------------------------------------------
-          // ⛏️ MINING
-          // --------------------------------------------------
-
           started:
             true,
-
 
           miningActive:
             true,
 
-
-          // --------------------------------------------------
-          // ✨ COLLECTED STL
-          // --------------------------------------------------
-
           collected,
-
 
           completedCycle,
 
-
-          // --------------------------------------------------
-          // 💰 BALANCE
-          // --------------------------------------------------
-
-          balance:
+          miningBalance:
             newBalance,
 
-
-          // --------------------------------------------------
-          // ⚡ HASH RATE
-          // --------------------------------------------------
-
           hashRate,
-
-
-          // --------------------------------------------------
-          // ⏱️ NEW MINING CYCLE
-          // --------------------------------------------------
 
           miningDurationMs:
             MINING_DURATION_MS,
 
-
           miningStartedAt:
             miningStartedAt.toISOString(),
-
 
           miningEndsAt:
             miningEndsAt.toISOString(),
 
-
-          // --------------------------------------------------
-          // 🐱 STELLA MESSAGE
-          // --------------------------------------------------
-
           message:
             completedCycle
-              ? `🐱✨ Stella keräsi ${collected} STL ja aloitti uuden louhinnan!`
-              : "🐱⛏️ Stella Mining käynnistyi!",
+              ? "🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan!"
+              : "🐱⛏️ Stella aloitti 24 tunnin STL-louhinnan!",
 
         };
 
