@@ -17,20 +17,22 @@
 // 🗓️ GET UTC DATE STRING
 // ============================================================
 //
-// Palauttaa tämän päivän muodossa:
+// Palauttaa tämän päivän UTC-muodossa:
 //
 // YYYY-MM-DD
 //
 // Esimerkki:
 //
-// 2026-09-03
+// 2026-09-04
 //
 // ============================================================
 
 function getUtcDateString() {
+
   return new Date()
     .toISOString()
     .substring(0, 10);
+
 }
 
 
@@ -45,6 +47,7 @@ function getUtcDateString() {
 // ============================================================
 
 function getYesterdayUtcDateString() {
+
   const date =
     new Date();
 
@@ -55,6 +58,7 @@ function getYesterdayUtcDateString() {
   return date
     .toISOString()
     .substring(0, 10);
+
 }
 
 
