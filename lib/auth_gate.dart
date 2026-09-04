@@ -29,10 +29,7 @@ class AuthGate extends StatelessWidget {
         // Käyttäjä on kirjautunut sisään.
         if (snapshot.hasData &&
             snapshot.data != null) {
-          return HomePage(
-            languageCode: languageCode,
-            changeLanguage: changeLanguage,
-          );
+          return const HomePage();
         }
 
         // Käyttäjä ei ole kirjautunut sisään.
