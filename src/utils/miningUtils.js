@@ -16,7 +16,7 @@
 
 
 // ============================================================
-// CONFIG
+// ⚙️ CONFIG
 // ============================================================
 
 const {
@@ -39,20 +39,27 @@ function getSafeNumber(
   value,
   fallback = 0
 ) {
+
   const number =
     Number(value);
 
   return Number.isFinite(number)
     ? number
     : fallback;
+
 }
 
 
 // ============================================================
 // ⚡ GET HASH RATE
 // ============================================================
+//
+// Palauttaa aina positiivisen Hash Rate -arvon.
+//
+// ============================================================
 
-function getHashRate(data) {
+function getHashRate(data = {}) {
+
   const hashRate =
     getSafeNumber(
       data?.hashRate,
@@ -62,6 +69,7 @@ function getHashRate(data) {
   return hashRate > 0
     ? hashRate
     : DEFAULT_HASH_RATE;
+
 }
 
 
@@ -73,6 +81,8 @@ function getHashRate(data) {
 //
 // • Firestore Timestamp
 // • JavaScript Date
+// • ISO Date String
+// • Unix Timestamp
 //
 // ============================================================
 
@@ -97,10 +107,13 @@ function toDate(value) {
 
     return (
       date instanceof Date &&
-      !Number.isNaN(date.getTime())
+      !Number.isNaN(
+        date.getTime()
+      )
     )
       ? date
       : null;
+
   }
 
 
@@ -117,6 +130,7 @@ function toDate(value) {
     )
       ? null
       : value;
+
   }
 
 
@@ -137,10 +151,12 @@ function toDate(value) {
     )
       ? null
       : date;
+
   }
 
 
   return null;
+
 }
 
 
@@ -170,6 +186,12 @@ function calculateMining(
     );
 
 
+  const validHashRate =
+    safeHashRate > 0
+      ? safeHashRate
+      : DEFAULT_HASH_RATE;
+
+
   const safeElapsedMilliseconds =
     Math.max(
       0,
@@ -186,7 +208,7 @@ function calculateMining(
 
 
   const minedAmount =
-    safeHashRate *
+    validHashRate *
     MINING_PER_HASH_PER_HOUR *
     hours;
 
@@ -196,6 +218,7 @@ function calculateMining(
   )
     ? minedAmount
     : 0;
+
 }
 
 
@@ -203,11 +226,14 @@ function calculateMining(
 // ⏱️ GET MINING START
 // ============================================================
 
-function getMiningStartTime(data) {
+function getMiningStartTime(
+  data = {}
+) {
 
   return toDate(
     data?.miningStartedAt
   );
+
 }
 
 
@@ -215,11 +241,14 @@ function getMiningStartTime(data) {
 // ⏱️ GET MINING END
 // ============================================================
 
-function getMiningEndTime(data) {
+function getMiningEndTime(
+  data = {}
+) {
 
   return toDate(
     data?.miningEndsAt
   );
+
 }
 
 
@@ -297,6 +326,7 @@ function calculateMiningStatus(
       hashRate,
 
     };
+
   }
 
 
@@ -337,6 +367,7 @@ function calculateMiningStatus(
       hashRate,
 
     };
+
   }
 
 
@@ -366,6 +397,7 @@ function calculateMiningStatus(
       hashRate,
 
     };
+
   }
 
 
@@ -408,6 +440,7 @@ function calculateMiningStatus(
       hashRate,
 
     };
+
   }
 
 
@@ -452,6 +485,7 @@ function calculateMiningStatus(
     hashRate,
 
   };
+
 }
 
 
