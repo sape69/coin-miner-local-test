@@ -1,17 +1,14 @@
 "use strict";
 
-
 // ============================================================
 // 🐱 STELLA DAILY FUNCTIONS
 // ============================================================
 //
-// Tämä tiedosto hallitsee:
-//
 // 🎁 Stella Daily Check-In
-// 📅 Päivittäisen bonuksen
-// ⚡ Hash Rate -kasvun
-// 🛡️ Saman päivän tuplabonuksen estämisen
-// 📜 Daily-tapahtumahistorian
+// 📅 Päivittäinen bonus
+// ⚡ Hash Rate -kasvu
+// 🛡️ Tuplabonuksen esto
+// 📜 Daily-tapahtumahistoria
 //
 // Kaikki päivät käsitellään UTC-ajassa.
 //
@@ -91,343 +88,338 @@ const {
 // ============================================================
 // 🎁 DAILY CHECK-IN
 // ============================================================
-//
-// Flutter kutsuu:
-//
-// dailyCheckIn()
-//
-// Pelaaja voi saada Daily Bonus -palkinnon
-// kerran yhden UTC-päivän aikana.
-//
-// ============================================================
 
 const dailyCheckIn =
-  onCall(async (request) => {
+  onCall(
+    {
+      region: "us-central1",
+    },
+    async (request) => {
 
-    // ========================================================
-    // 🔐 AUTHENTICATION
-    // ========================================================
+      // ======================================================
+      // 🔐 AUTHENTICATION
+      // ======================================================
 
-    if (!request.auth) {
+      if (!request.auth) {
 
-      throw new HttpsError(
-        "unauthenticated",
-        "🐱 Kirjaudu sisään saadaksesi Daily Bonus -palkinnon."
-      );
+        throw new HttpsError(
+          "unauthenticated",
+          "🐱 Kirjaudu sisään saadaksesi Daily Bonus -palkinnon."
+        );
 
-    }
-
-
-    const uid =
-      request.auth.uid;
-
-
-    const userRef =
-      getUserRef(uid);
+      }
 
 
-    // ========================================================
-    // 📅 CURRENT DATE
-    // ========================================================
-
-    const today =
-      getUtcDateString();
+      const uid =
+        request.auth.uid;
 
 
-    const yesterday =
-      getYesterdayUtcDateString();
+      const userRef =
+        getUserRef(uid);
 
 
-    // ========================================================
-    // 🔥 FIRESTORE TRANSACTION
-    // ========================================================
+      // ======================================================
+      // 📅 CURRENT DATE
+      // ======================================================
 
-    return await db.runTransaction(
-      async (transaction) => {
-
-        // ====================================================
-        // 👤 GET USER
-        // ====================================================
-
-        const snapshot =
-          await transaction.get(
-            userRef
-          );
+      const today =
+        getUtcDateString();
 
 
-        const data =
-          snapshot.exists
-            ? snapshot.data()
-            : {};
+      const yesterday =
+        getYesterdayUtcDateString();
 
+
+      try {
 
         // ====================================================
-        // 📅 LAST DAILY DATE
+        // 🔥 FIRESTORE TRANSACTION
         // ====================================================
 
-        const lastDailyDate =
-          typeof data.lastDailyDate === "string"
-            ? data.lastDailyDate
-            : null;
+        return await db.runTransaction(
+          async (transaction) => {
+
+            // ==================================================
+            // 👤 GET USER
+            // ==================================================
+
+            const snapshot =
+              await transaction.get(
+                userRef
+              );
 
 
-        // ====================================================
-        // 🛡️ ALREADY CLAIMED TODAY
-        // ====================================================
-
-        if (
-          lastDailyDate === today
-        ) {
-
-          return {
-
-            success:
-              true,
+            const data =
+              snapshot.exists
+                ? snapshot.data() || {}
+                : {};
 
 
-            claimed:
-              false,
+            // ==================================================
+            // 📅 LAST DAILY DATE
+            // ==================================================
+
+            const lastDailyDate =
+              typeof data.lastDailyDate === "string"
+                ? data.lastDailyDate
+                : null;
 
 
-            alreadyClaimed:
-              true,
+            // ==================================================
+            // ⚡ CURRENT HASH RATE
+            // ==================================================
+
+            const savedHashRate =
+              Number(data.hashRate);
 
 
-            date:
-              today,
+            const currentHashRate =
+              Number.isFinite(savedHashRate) &&
+                      savedHashRate >= 0
+                  ? savedHashRate
+                  : DEFAULT_HASH_RATE;
 
 
-            hashRate:
-              Number(
-                data.hashRate ||
-                DEFAULT_HASH_RATE
-              ),
+            // ==================================================
+            // 🔥 CURRENT STREAK
+            // ==================================================
+
+            const savedStreak =
+              Number(data.dailyStreak);
 
 
-            dailyStreak:
-              Math.max(
-                0,
-                Number(
-                  data.dailyStreak || 0
-                )
-              ),
+            const currentStreak =
+              Number.isFinite(savedStreak) &&
+                      savedStreak >= 0
+                  ? Math.floor(savedStreak)
+                  : 0;
 
 
-            message:
-              "🐱🎁 Stella Daily Bonus on jo kerätty tänään!",
+            // ==================================================
+            // 🛡️ ALREADY CLAIMED TODAY
+            // ==================================================
 
-          };
+            if (lastDailyDate === today) {
 
+              return {
+
+                success: true,
+
+                claimed: false,
+
+                alreadyClaimed: true,
+
+                dailyClaimed: true,
+
+                date: today,
+
+                bonus: 0,
+
+                hashRate: currentHashRate,
+
+                // Flutter-yhteensopivuus
+                streak: currentStreak,
+
+                // Backend-yhteensopivuus
+                dailyStreak: currentStreak,
+
+                message:
+                  "🐱🎁 Stella Daily Bonus on jo kerätty tänään!",
+
+              };
+
+            }
+
+
+            // ==================================================
+            // 🎁 DAILY BONUS
+            // ==================================================
+
+            const configuredBonus =
+              Number(DAILY_HASH_RATE_BONUS);
+
+
+            const bonus =
+              Number.isFinite(configuredBonus) &&
+                      configuredBonus > 0
+                  ? configuredBonus
+                  : 1;
+
+
+            const newHashRate =
+              currentHashRate +
+              bonus;
+
+
+            // ==================================================
+            // 🔥 DAILY STREAK
+            // ==================================================
+
+            const newDailyStreak =
+              lastDailyDate === yesterday
+                ? currentStreak + 1
+                : 1;
+
+
+            // ==================================================
+            // 📜 DAILY HISTORY REFERENCE
+            // ==================================================
+
+            const dailyHistoryRef =
+              createDailyHistoryRef(
+                uid,
+                today
+              );
+
+
+            // ==================================================
+            // 👤 UPDATE USER
+            // ==================================================
+
+            transaction.set(
+              userRef,
+              {
+
+                // ⚡ HASH RATE
+
+                hashRate:
+                  newHashRate,
+
+
+                // 📅 DAILY
+
+                lastDailyDate:
+                  today,
+
+
+                dailyStreak:
+                  newDailyStreak,
+
+
+                // 🕒 METADATA
+
+                updatedAt:
+                  FieldValue.serverTimestamp(),
+
+              },
+              {
+                merge: true,
+              }
+            );
+
+
+            // ==================================================
+            // 📜 SAVE DAILY HISTORY
+            // ==================================================
+
+            transaction.set(
+              dailyHistoryRef,
+              {
+
+                type:
+                  "dailyCheckIn",
+
+
+                bonusType:
+                  "hashRate",
+
+
+                bonus:
+                  bonus,
+
+
+                previousHashRate:
+                  currentHashRate,
+
+
+                newHashRate:
+                  newHashRate,
+
+
+                // Flutter + backend compatibility
+
+                streak:
+                  newDailyStreak,
+
+
+                dailyStreak:
+                  newDailyStreak,
+
+
+                date:
+                  today,
+
+
+                uid:
+                  uid,
+
+
+                createdAt:
+                  FieldValue.serverTimestamp(),
+
+              },
+              {
+                merge: true,
+              }
+            );
+
+
+            // ==================================================
+            // ✅ SUCCESS RESPONSE
+            // ==================================================
+
+            return {
+
+              success: true,
+
+              claimed: true,
+
+              alreadyClaimed: false,
+
+              dailyClaimed: true,
+
+              date: today,
+
+              bonus: bonus,
+
+              hashRate: newHashRate,
+
+              // Flutter odottaa tätä
+              streak: newDailyStreak,
+
+              // Säilytetään myös tämä
+              dailyStreak: newDailyStreak,
+
+              message:
+                "🐱🎁 Daily Bonus kerätty! Hash Rate kasvoi.",
+
+            };
+
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "dailyCheckIn error:",
+          error
+        );
+
+
+        if (error instanceof HttpsError) {
+          throw error;
         }
 
 
-        // ====================================================
-        // ⚡ CURRENT HASH RATE
-        // ====================================================
-
-        const currentHashRate =
-          Math.max(
-            0,
-            Number(
-              data.hashRate ||
-              DEFAULT_HASH_RATE
-            )
-          );
-
-
-        // ====================================================
-        // 🎁 DAILY BONUS
-        // ====================================================
-
-        const bonus =
-          DAILY_HASH_RATE_BONUS;
-
-
-        const newHashRate =
-          currentHashRate +
-          bonus;
-
-
-        // ====================================================
-        // 🔥 DAILY STREAK
-        // ====================================================
-        //
-        // Jos käyttäjä teki Daily Check-Inin eilen,
-        // streak jatkuu.
-        //
-        // Muuten streak alkaa uudestaan numerosta 1.
-        //
-        // ====================================================
-
-        const previousStreak =
-          Math.max(
-            0,
-            Number(
-              data.dailyStreak || 0
-            )
-          );
-
-
-        const newDailyStreak =
-          lastDailyDate === yesterday
-            ? previousStreak + 1
-            : 1;
-
-
-        // ====================================================
-        // 📜 DAILY HISTORY REFERENCE
-        // ====================================================
-
-        const dailyHistoryRef =
-          createDailyHistoryRef(
-            uid,
-            today
-          );
-
-
-        // ====================================================
-        // 👤 UPDATE USER
-        // ====================================================
-
-        transaction.set(
-          userRef,
-          {
-
-            // ⚡ HASH RATE
-
-            hashRate:
-              newHashRate,
-
-
-            // 📅 DAILY
-
-            lastDailyDate:
-              today,
-
-
-            dailyStreak:
-              newDailyStreak,
-
-
-            // 🕒 METADATA
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-
-          },
-          {
-
-            merge:
-              true,
-
-          }
+        throw new HttpsError(
+          "internal",
+          "Daily Bonus -palkinnon käsittely epäonnistui."
         );
-
-
-        // ====================================================
-        // 📜 SAVE DAILY HISTORY
-        // ====================================================
-
-        transaction.set(
-          dailyHistoryRef,
-          {
-
-            // 🏷️ EVENT TYPE
-
-            type:
-              "dailyCheckIn",
-
-
-            // 🎁 BONUS
-
-            bonusType:
-              "hashRate",
-
-
-            bonus:
-              bonus,
-
-
-            // ⚡ HASH RATE
-
-            previousHashRate:
-              currentHashRate,
-
-
-            newHashRate:
-              newHashRate,
-
-
-            // 🔥 STREAK
-
-            dailyStreak:
-              newDailyStreak,
-
-
-            // 📅 DATE
-
-            date:
-              today,
-
-
-            // 🕒 TIMESTAMP
-
-            createdAt:
-              FieldValue.serverTimestamp(),
-
-          },
-          {
-
-            merge:
-              true,
-
-          }
-        );
-
-
-        // ====================================================
-        // ✅ SUCCESS RESPONSE
-        // ====================================================
-
-        return {
-
-          success:
-            true,
-
-
-          claimed:
-            true,
-
-
-          alreadyClaimed:
-            false,
-
-
-          date:
-            today,
-
-
-          bonus:
-            bonus,
-
-
-          hashRate:
-            newHashRate,
-
-
-          dailyStreak:
-            newDailyStreak,
-
-
-          message:
-            "🐱🎁 Daily Bonus kerätty! Hash Rate kasvoi.",
-
-        };
 
       }
-    );
 
-  });
+    }
+  );
 
 
 // ============================================================
