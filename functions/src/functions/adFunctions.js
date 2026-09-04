@@ -104,6 +104,7 @@ function getSafeNumber(
   const number =
     Number(value);
 
+
   return Number.isFinite(number)
     ? number
     : fallback;
@@ -113,6 +114,14 @@ function getSafeNumber(
 
 // ============================================================
 // 📺 GET AD STATUS
+// ============================================================
+//
+// Tarkistaa:
+//
+// • Päivittäisen mainosmäärän
+// • Cooldownin
+// • Voiko käyttäjä katsoa mainoksen
+//
 // ============================================================
 
 function getAdStatus(
@@ -124,8 +133,12 @@ function getAdStatus(
   const storedDate =
     typeof data.lastAdDate === "string"
       ? data.lastAdDate
-      : null;
+      : "";
 
+
+  // ==========================================================
+  // 🔢 ADS TODAY
+  // ==========================================================
 
   const adsToday =
     storedDate === today
@@ -140,6 +153,10 @@ function getAdStatus(
         )
       : 0;
 
+
+  // ==========================================================
+  // ⏳ LAST REWARD
+  // ==========================================================
 
   const lastAdRewardAt =
     data.lastAdRewardAt;
@@ -167,8 +184,31 @@ function getAdStatus(
     lastAdRewardMs =
       lastAdRewardAt.getTime();
 
+  } else if (
+    typeof lastAdRewardAt === "string"
+  ) {
+
+    const parsedDate =
+      new Date(lastAdRewardAt);
+
+
+    if (
+      !Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+
+      lastAdRewardMs =
+        parsedDate.getTime();
+
+    }
+
   }
 
+
+  // ==========================================================
+  // ⏳ COOLDOWN
+  // ==========================================================
 
   const cooldownRemainingMs =
     Math.max(
@@ -181,15 +221,25 @@ function getAdStatus(
     );
 
 
+  // ==========================================================
+  // 📺 CAN WATCH
+  // ==========================================================
+
+  const canWatchAd =
+    adsToday < MAX_ADS_PER_DAY &&
+    cooldownRemainingMs === 0;
+
+
   return {
 
     adsToday,
 
+    maxAdsPerDay:
+      MAX_ADS_PER_DAY,
+
     cooldownRemainingMs,
 
-    canWatchAd:
-      adsToday < MAX_ADS_PER_DAY &&
-      cooldownRemainingMs === 0,
+    canWatchAd,
 
   };
 
@@ -199,6 +249,18 @@ function getAdStatus(
 // ============================================================
 // 🎁 APPLY AD REWARD
 // ============================================================
+//
+// Lisää käyttäjälle:
+//
+// ⚡ AD_HASH_RATE_BONUS
+//
+// Estää:
+//
+// 🔐 Saman transactionId:n käytön uudelleen
+// 🚫 Päivittäisen rajan ylittämisen
+// ⏳ Cooldownin ohittamisen
+//
+// ============================================================
 
 async function applyAdReward(
   uid,
@@ -206,15 +268,27 @@ async function applyAdReward(
   rewardType
 ) {
 
+  // ==========================================================
+  // 👤 USER
+  // ==========================================================
+
   const userRef =
     getUserRef(uid);
 
+
+  // ==========================================================
+  // 🔐 REWARD
+  // ==========================================================
 
   const rewardRef =
     getAdMobRewardRef(
       transactionId
     );
 
+
+  // ==========================================================
+  // 🕒 TIME
+  // ==========================================================
 
   const now =
     new Date();
@@ -228,8 +302,16 @@ async function applyAdReward(
     getUtcDateString();
 
 
+  // ==========================================================
+  // 🔥 TRANSACTION
+  // ==========================================================
+
   return await db.runTransaction(
     async (transaction) => {
+
+      // ======================================================
+      // 🔐 DUPLICATE CHECK
+      // ======================================================
 
       const rewardSnapshot =
         await transaction.get(
@@ -237,19 +319,21 @@ async function applyAdReward(
         );
 
 
-      // ======================================================
-      // 🔐 DUPLICATE CHECK
-      // ======================================================
-
       if (rewardSnapshot.exists) {
 
         return {
 
-          success: true,
+          success:
+            true,
 
-          rewarded: false,
+          rewarded:
+            false,
 
-          duplicate: true,
+          duplicate:
+            true,
+
+          reason:
+            "duplicate",
 
           message:
             "🐱📺 Tämä mainospalkinto on jo käsitelty.",
@@ -275,6 +359,10 @@ async function applyAdReward(
           : {};
 
 
+      // ======================================================
+      // 📺 AD STATUS
+      // ======================================================
+
       const adStatus =
         getAdStatus(
           data,
@@ -294,17 +382,26 @@ async function applyAdReward(
 
         return {
 
-          success: false,
+          success:
+            false,
 
-          rewarded: false,
+          rewarded:
+            false,
 
-          reason: "daily_limit",
+          duplicate:
+            false,
+
+          reason:
+            "daily_limit",
 
           adsToday:
             adStatus.adsToday,
 
           maxAdsPerDay:
             MAX_ADS_PER_DAY,
+
+          canWatchAd:
+            false,
 
           message:
             "🐱📺 Päivän Stella Power Boost -raja on saavutettu.",
@@ -324,14 +421,29 @@ async function applyAdReward(
 
         return {
 
-          success: false,
+          success:
+            false,
 
-          rewarded: false,
+          rewarded:
+            false,
 
-          reason: "cooldown",
+          duplicate:
+            false,
+
+          reason:
+            "cooldown",
+
+          adsToday:
+            adStatus.adsToday,
+
+          maxAdsPerDay:
+            MAX_ADS_PER_DAY,
 
           cooldownRemainingMs:
             adStatus.cooldownRemainingMs,
+
+          canWatchAd:
+            false,
 
           message:
             "🐱⏳ Stella Power Boost on vielä cooldownissa.",
@@ -342,7 +454,7 @@ async function applyAdReward(
 
 
       // ======================================================
-      // ⚡ HASH RATE
+      // ⚡ CURRENT HASH RATE
       // ======================================================
 
       const currentHashRate =
@@ -355,14 +467,28 @@ async function applyAdReward(
         );
 
 
+      // ======================================================
+      // 🎁 BONUS
+      // ======================================================
+
       const bonus =
-        AD_HASH_RATE_BONUS;
+        Math.max(
+          0,
+          getSafeNumber(
+            AD_HASH_RATE_BONUS,
+            0
+          )
+        );
 
 
       const newHashRate =
         currentHashRate +
         bonus;
 
+
+      // ======================================================
+      // 🔢 NEW AD COUNT
+      // ======================================================
 
       const newAdsToday =
         adStatus.adsToday +
@@ -377,24 +503,37 @@ async function applyAdReward(
         userRef,
         {
 
+          // ⚡ HASH RATE
+
           hashRate:
             newHashRate,
+
+
+          // 📺 DAILY AD COUNT
 
           lastAdDate:
             today,
 
+
           adsToday:
             newAdsToday,
 
+
+          // ⏳ COOLDOWN
+
           lastAdRewardAt:
             now,
+
+
+          // 🕒 METADATA
 
           updatedAt:
             FieldValue.serverTimestamp(),
 
         },
         {
-          merge: true,
+          merge:
+            true,
         }
       );
 
@@ -465,13 +604,23 @@ async function applyAdReward(
       );
 
 
+      // ======================================================
+      // 📤 SUCCESS RESPONSE
+      // ======================================================
+
       return {
 
-        success: true,
+        success:
+          true,
 
-        rewarded: true,
+        rewarded:
+          true,
 
-        duplicate: false,
+        duplicate:
+          false,
+
+        reason:
+          null,
 
         bonus,
 
@@ -487,8 +636,14 @@ async function applyAdReward(
         maxAdsPerDay:
           MAX_ADS_PER_DAY,
 
+        cooldownRemainingMs:
+          AD_COOLDOWN_MS,
+
         cooldownMs:
           AD_COOLDOWN_MS,
+
+        canWatchAd:
+          false,
 
         message:
           `🐱📺⚡ Stella sai +${bonus} Hash Rate Power Boostin!`,
@@ -505,16 +660,20 @@ async function applyAdReward(
 // 🧪 TEST AD REWARD
 // ============================================================
 //
-// Vain testausta varten.
-//
 // Flutter kutsuu:
 //
 // testAdReward()
+//
+// Tämä käytetään testimainoksen jälkeen.
 //
 // ============================================================
 
 const testAdReward =
   onCall(async (request) => {
+
+    // ========================================================
+    // 🔐 AUTH
+    // ========================================================
 
     if (!request.auth) {
 
@@ -530,9 +689,19 @@ const testAdReward =
       request.auth.uid;
 
 
-    const transactionId =
-      `test_${uid}_${Date.now()}`;
+    // ========================================================
+    // 🔐 UNIQUE TEST TRANSACTION
+    // ========================================================
 
+    const transactionId =
+      `test_${uid}_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 10)}`;
+
+
+    // ========================================================
+    // 🎁 APPLY REWARD
+    // ========================================================
 
     return await applyAdReward(
       uid,
@@ -547,8 +716,7 @@ const testAdReward =
 // 🔐 ADMOB REWARD CALLBACK
 // ============================================================
 //
-// Google AdMob kutsuu tätä HTTP-endpointia,
-// kun käyttäjä on ansainnut mainospalkinnon.
+// Google AdMob SSV kutsuu tätä endpointia.
 //
 // ============================================================
 
@@ -558,7 +726,7 @@ const adMobReward =
     try {
 
       // ======================================================
-      // 🔐 VERIFY GOOGLE SIGNATURE
+      // 🔐 VERIFY GOOGLE CALLBACK
       // ======================================================
 
       await verifyAdMobCallback(
@@ -567,21 +735,23 @@ const adMobReward =
 
 
       // ======================================================
-      // 👤 GET USER ID
+      // 👤 USER ID
       // ======================================================
 
       const uid =
-        typeof req.query.user_id === "string"
+        typeof req.query.user_id ===
+        "string"
           ? req.query.user_id
           : null;
 
 
       // ======================================================
-      // 🔐 GET TRANSACTION ID
+      // 🔐 TRANSACTION ID
       // ======================================================
 
       const transactionId =
-        typeof req.query.transaction_id === "string"
+        typeof req.query.transaction_id ===
+        "string"
           ? req.query.transaction_id
           : null;
 
@@ -595,9 +765,15 @@ const adMobReward =
         !transactionId
       ) {
 
-        res.status(400).send(
-          "Missing user_id or transaction_id."
-        );
+        res.status(400).json({
+
+          success:
+            false,
+
+          error:
+            "Missing user_id or transaction_id.",
+
+        });
 
         return;
 
@@ -617,7 +793,7 @@ const adMobReward =
 
 
       // ======================================================
-      // 📤 SUCCESS
+      // 📤 RESPONSE
       // ======================================================
 
       res.status(200).json(
@@ -634,7 +810,8 @@ const adMobReward =
 
       res.status(400).json({
 
-        success: false,
+        success:
+          false,
 
         error:
           error instanceof Error
