@@ -204,6 +204,15 @@ const dailyCheckIn =
               ),
 
 
+            dailyStreak:
+              Math.max(
+                0,
+                Number(
+                  data.dailyStreak || 0
+                )
+              ),
+
+
             message:
               "🐱🎁 Stella Daily Bonus on jo kerätty tänään!",
 
@@ -306,3 +315,127 @@ const dailyCheckIn =
               FieldValue.serverTimestamp(),
 
           },
+          {
+
+            merge:
+              true,
+
+          }
+        );
+
+
+        // ====================================================
+        // 📜 SAVE DAILY HISTORY
+        // ====================================================
+
+        transaction.set(
+          dailyHistoryRef,
+          {
+
+            // 🏷️ EVENT TYPE
+
+            type:
+              "dailyCheckIn",
+
+
+            // 🎁 BONUS
+
+            bonusType:
+              "hashRate",
+
+
+            bonus:
+              bonus,
+
+
+            // ⚡ HASH RATE
+
+            previousHashRate:
+              currentHashRate,
+
+
+            newHashRate:
+              newHashRate,
+
+
+            // 🔥 STREAK
+
+            dailyStreak:
+              newDailyStreak,
+
+
+            // 📅 DATE
+
+            date:
+              today,
+
+
+            // 🕒 TIMESTAMP
+
+            createdAt:
+              FieldValue.serverTimestamp(),
+
+          },
+          {
+
+            merge:
+              true,
+
+          }
+        );
+
+
+        // ====================================================
+        // ✅ SUCCESS RESPONSE
+        // ====================================================
+
+        return {
+
+          success:
+            true,
+
+
+          claimed:
+            true,
+
+
+          alreadyClaimed:
+            false,
+
+
+          date:
+            today,
+
+
+          bonus:
+            bonus,
+
+
+          hashRate:
+            newHashRate,
+
+
+          dailyStreak:
+            newDailyStreak,
+
+
+          message:
+            "🐱🎁 Daily Bonus kerätty! Hash Rate kasvoi.",
+
+        };
+
+      }
+    );
+
+  });
+
+
+// ============================================================
+// 📦 EXPORTS
+// ============================================================
+
+module.exports = {
+
+  dailyCheckIn,
+
+};
