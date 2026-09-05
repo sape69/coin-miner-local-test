@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// COLORS
+// 🐱 STELLURIINI COLORS
 // ============================================================
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color balanceAccentColor = Color(0xFF35D0A0);
+const Color backgroundColor = Color(0xFF120B24);
+const Color cardColor = Color(0xFF21113B);
+
+const Color balanceAccentColor = Color(0xFFB58CFF);
+const Color balancePinkColor = Color(0xFFFFB7E8);
+const Color balanceGoldColor = Color(0xFFFFD166);
 
 // ============================================================
-// BALANCE CARD
+// 🐱 STELLA BALANCE CARD
 // ============================================================
 
 class BalanceCard extends StatelessWidget {
@@ -41,7 +44,7 @@ class BalanceCard extends StatelessWidget {
   });
 
   // ==========================================================
-  // NUMBER FORMAT
+  // 🔢 NUMBER FORMAT
   // ==========================================================
 
   String _formatNumber(double value) {
@@ -70,13 +73,13 @@ class BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: balanceAccentColor.withValues(
-            alpha: 0.28,
+            alpha: 0.32,
           ),
         ),
         boxShadow: [
           BoxShadow(
             color: balanceAccentColor.withValues(
-              alpha: 0.08,
+              alpha: 0.10,
             ),
             blurRadius: 24,
             spreadRadius: 1,
@@ -87,7 +90,7 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         children: [
           // ==================================================
-          // HEADER
+          // 🐱 HEADER
           // ==================================================
 
           Row(
@@ -95,7 +98,9 @@ class BalanceCard extends StatelessWidget {
             children: [
               const Text(
                 '🐱',
-                style: TextStyle(fontSize: 26),
+                style: TextStyle(
+                  fontSize: 26,
+                ),
               ),
 
               const SizedBox(width: 10),
@@ -106,7 +111,7 @@ class BalanceCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(
-                      alpha: 0.72,
+                      alpha: 0.78,
                     ),
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -119,7 +124,9 @@ class BalanceCard extends StatelessWidget {
 
               const Text(
                 '⛏️',
-                style: TextStyle(fontSize: 24),
+                style: TextStyle(
+                  fontSize: 24,
+                ),
               ),
             ],
           ),
@@ -127,7 +134,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 22),
 
           // ==================================================
-          // MINING ICON
+          // ⛏️ MINING ICON
           // ==================================================
 
           Container(
@@ -139,7 +146,7 @@ class BalanceCard extends StatelessWidget {
                 alpha: 0.15,
               ),
               border: Border.all(
-                color: balanceAccentColor.withValues(
+                color: balancePinkColor.withValues(
                   alpha: 0.42,
                 ),
                 width: 2,
@@ -157,7 +164,9 @@ class BalanceCard extends StatelessWidget {
             child: const Center(
               child: Text(
                 '⛏️',
-                style: TextStyle(fontSize: 38),
+                style: TextStyle(
+                  fontSize: 38,
+                ),
               ),
             ),
           ),
@@ -165,7 +174,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ==================================================
-          // ESTIMATED TOTAL
+          // 💜 ESTIMATED TOTAL
           // ==================================================
 
           Text(
@@ -182,7 +191,7 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 8),
 
           // ==================================================
-          // STL LABEL
+          // 🪙 STL LABEL
           // ==================================================
 
           Container(
@@ -196,15 +205,15 @@ class BalanceCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: balanceAccentColor.withValues(
-                  alpha: 0.25,
+                color: balancePinkColor.withValues(
+                  alpha: 0.30,
                 ),
               ),
             ),
             child: const Text(
               'ESTIMATED STL',
               style: TextStyle(
-                color: balanceAccentColor,
+                color: balancePinkColor,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
@@ -229,60 +238,56 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ==================================================
-          // MINING BALANCE
+          // 💰 MINING BALANCE
           // ==================================================
 
           _MiningInfoRow(
             icon: Icons.account_balance_wallet_outlined,
             label: 'Louhittu saldo',
-            value:
-                '${_formatNumber(miningBalance)} STL',
+            value: '${_formatNumber(miningBalance)} STL',
           ),
 
           const SizedBox(height: 14),
 
           // ==================================================
-          // UNCLAIMED MINING
+          // 📦 UNCLAIMED MINING
           // ==================================================
 
           _MiningInfoRow(
             icon: Icons.inventory_2_outlined,
             label: 'Valmiina louhittavaksi',
-            value:
-                '${_formatNumber(unclaimedMining)} STL',
+            value: '${_formatNumber(unclaimedMining)} STL',
             highlight: true,
           ),
 
           const SizedBox(height: 14),
 
           // ==================================================
-          // HASH RATE
+          // ⚡ HASH RATE
           // ==================================================
 
           _MiningInfoRow(
             icon: Icons.bolt,
             label: 'Hash Rate',
-            value:
-                '${_formatNumber(hashRate)} HR',
+            value: '${_formatNumber(hashRate)} HR',
           ),
 
           const SizedBox(height: 14),
 
           // ==================================================
-          // MINING SPEED
+          // 📈 MINING SPEED
           // ==================================================
 
           _MiningInfoRow(
             icon: Icons.trending_up,
             label: 'Louhinta nopeus',
-            value:
-                '${_formatNumber(miningPerHour)} STL / h',
+            value: '${_formatNumber(miningPerHour)} STL / h',
           ),
 
           const SizedBox(height: 22),
 
           // ==================================================
-          // STATUS
+          // 🐱 STATUS
           // ==================================================
 
           Container(
@@ -296,6 +301,11 @@ class BalanceCard extends StatelessWidget {
                 alpha: 0.08,
               ),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: balanceAccentColor.withValues(
+                  alpha: 0.12,
+                ),
+              ),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -327,7 +337,7 @@ class BalanceCard extends StatelessWidget {
 }
 
 // ============================================================
-// MINING INFO ROW
+// 📊 MINING INFO ROW
 // ============================================================
 
 class _MiningInfoRow extends StatelessWidget {
@@ -345,10 +355,8 @@ class _MiningInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final valueColor =
-        highlight
-            ? balanceAccentColor
-            : Colors.white;
+    final Color valueColor =
+        highlight ? balancePinkColor : Colors.white;
 
     return Row(
       children: [
@@ -360,6 +368,11 @@ class _MiningInfoRow extends StatelessWidget {
               alpha: 0.10,
             ),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: balanceAccentColor.withValues(
+                alpha: 0.08,
+              ),
+            ),
           ),
           child: Icon(
             icon,
