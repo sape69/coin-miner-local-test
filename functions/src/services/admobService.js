@@ -2,9 +2,8 @@
 
 const crypto = require("crypto");
 
-
 // ============================================================
-// 🔐 ADMOB SERVER-SIDE VERIFICATION SERVICE
+// 🐱 STELLA ADMOB SERVER-SIDE VERIFICATION SERVICE
 // ============================================================
 //
 // Tämä palvelu tarkistaa Google AdMob SSV callbackin.
@@ -29,6 +28,10 @@ const ADMOB_KEY_URL =
 //
 // Avaimia ei tarvitse hakea jokaisella callbackilla.
 //
+// Välimuisti on 1 tunti.
+// Google suosittelee, ettei avaimia välimuistita
+// yli 24 tunnin ajan.
+// ============================================================
 
 const ADMOB_KEY_CACHE_MS =
   60 * 60 * 1000;
@@ -131,6 +134,20 @@ async function getAdMobPublicKeys() {
 
 
   // ==========================================================
+  // PROTECT AGAINST EMPTY KEY SET
+  // ==========================================================
+
+  if (
+    keys.size === 0
+  ) {
+
+    throw new Error(
+      "No AdMob public keys are available."
+    );
+  }
+
+
+  // ==========================================================
   // SAVE CACHE
   // ==========================================================
 
@@ -147,6 +164,10 @@ async function getAdMobPublicKeys() {
 
 // ============================================================
 // 🔓 BASE64 URL DECODE
+// ============================================================
+//
+// AdMob käyttää base64url-muotoista allekirjoitusta.
+//
 // ============================================================
 
 function base64UrlDecode(value) {
@@ -175,10 +196,32 @@ function base64UrlDecode(value) {
 // ============================================================
 // 🧾 BUILD SIGNED QUERY STRING
 // ============================================================
+//
+// Google AdMob SSV:
+//
+// 1. Allekirjoitettava sisältö alkaa ?-merkin jälkeen.
+// 2. Parametrien järjestystä EI saa muuttaa.
+// 3. signature on toiseksi viimeinen parametri.
+// 4. key_id on viimeinen parametri.
+//
+// Otetaan siis allekirjoitettava sisältö täsmälleen
+// ennen "&signature="-osuutta.
+//
+// ============================================================
 
 function buildSignedQueryString(
   originalUrl
 ) {
+
+  if (
+    typeof originalUrl !== "string"
+  ) {
+
+    throw new Error(
+      "Invalid AdMob callback URL."
+    );
+  }
+
 
   const questionMarkIndex =
     originalUrl.indexOf("?");
@@ -200,33 +243,59 @@ function buildSignedQueryString(
     );
 
 
-  const parts =
-    queryString.split("&");
+  // ==========================================================
+  // FIND SIGNATURE
+  // ==========================================================
+
+  const signatureMarker =
+    "&signature=";
 
 
-  const signedParts =
-    [];
+  const signatureIndex =
+    queryString.indexOf(
+      signatureMarker
+    );
 
 
-  for (
-    const part of parts
+  if (
+    signatureIndex === -1
   ) {
 
-    if (
-      part.startsWith("signature=") ||
-      part.startsWith("key_id=")
-    ) {
-
-      continue;
-    }
+    throw new Error(
+      "Missing AdMob signature parameter."
+    );
+  }
 
 
-    signedParts.push(part);
+  // ==========================================================
+  // SIGNED CONTENT
+  // ==========================================================
+  //
+  // Otetaan kaikki ennen signature-parametria.
+  //
+  // Parametrien alkuperäinen järjestys säilyy.
+  //
+  // ==========================================================
+
+  const signedQuery =
+    queryString.substring(
+      0,
+      signatureIndex
+    );
+
+
+  if (
+    signedQuery.length === 0
+  ) {
+
+    throw new Error(
+      "Missing AdMob signed query content."
+    );
   }
 
 
   return Buffer.from(
-    signedParts.join("&"),
+    signedQuery,
     "utf8"
   );
 }
@@ -238,27 +307,52 @@ function buildSignedQueryString(
 
 async function verifyAdMobCallback(req) {
 
-  const signature =
-    req.query.signature;
-
-  const keyId =
-    req.query.key_id;
-
-
   if (
-    !signature ||
-    !keyId
+    !req ||
+    typeof req.originalUrl !== "string"
   ) {
 
     throw new Error(
-      "Missing AdMob signature."
+      "Invalid AdMob callback request."
     );
   }
 
 
+  const signature =
+    req.query?.signature;
+
+  const keyId =
+    req.query?.key_id;
+
+
+  // ==========================================================
+  // VALIDATE PARAMETERS
+  // ==========================================================
+
+  if (
+    typeof signature !== "string" ||
+    typeof keyId !== "string" ||
+    signature.length === 0 ||
+    keyId.length === 0
+  ) {
+
+    throw new Error(
+      "Missing AdMob signature or key ID."
+    );
+  }
+
+
+  // ==========================================================
+  // GET PUBLIC KEYS
+  // ==========================================================
+
   const publicKeys =
     await getAdMobPublicKeys();
 
+
+  // ==========================================================
+  // FIND KEY
+  // ==========================================================
 
   const pem =
     publicKeys.get(
@@ -274,17 +368,39 @@ async function verifyAdMobCallback(req) {
   }
 
 
+  // ==========================================================
+  // GET SIGNED DATA
+  // ==========================================================
+
   const signedData =
     buildSignedQueryString(
       req.originalUrl
     );
 
 
+  // ==========================================================
+  // DECODE SIGNATURE
+  // ==========================================================
+
   const signatureBuffer =
     base64UrlDecode(
       signature
     );
 
+
+  if (
+    signatureBuffer.length === 0
+  ) {
+
+    throw new Error(
+      "Invalid AdMob signature encoding."
+    );
+  }
+
+
+  // ==========================================================
+  // VERIFY ECDSA SHA-256
+  // ==========================================================
 
   const verifier =
     crypto.createVerify(
@@ -296,6 +412,7 @@ async function verifyAdMobCallback(req) {
     signedData
   );
 
+
   verifier.end();
 
 
@@ -305,6 +422,10 @@ async function verifyAdMobCallback(req) {
       signatureBuffer
     );
 
+
+  // ==========================================================
+  // RESULT
+  // ==========================================================
 
   if (!valid) {
 
