@@ -1,6 +1,5 @@
 "use strict";
 
-
 // ============================================================
 // 🐱 STELLA DATE UTILITIES
 // ============================================================
@@ -12,9 +11,9 @@
 // 📅 Daily Check-In
 // 📺 Ad Rewards
 // ⏱️ Cooldownien tarkistamiseen
+// ⛏️ Stella Mining
 //
-// Kaikki päivämäärät käsitellään turvallisesti
-// palvelimen ajalla.
+// Kaikki päivämääräavaimet käsitellään UTC-ajassa.
 //
 // ============================================================
 
@@ -29,21 +28,25 @@
 //
 // Esimerkiksi:
 //
-// 2026-09-04
+// 2026-09-05
 //
 // ============================================================
 
 function getDateKey(
   date = new Date()
 ) {
+  const safeDate =
+    getDateFromValue(date) ||
+    new Date();
+
 
   const year =
-    date.getUTCFullYear();
+    safeDate.getUTCFullYear();
 
 
   const month =
     String(
-      date.getUTCMonth() + 1
+      safeDate.getUTCMonth() + 1
     ).padStart(
       2,
       "0"
@@ -52,7 +55,7 @@ function getDateKey(
 
   const day =
     String(
-      date.getUTCDate()
+      safeDate.getUTCDate()
     ).padStart(
       2,
       "0"
@@ -60,7 +63,56 @@ function getDateKey(
 
 
   return `${year}-${month}-${day}`;
+}
 
+
+// ============================================================
+// 📅 GET UTC DATE STRING
+// ============================================================
+//
+// Palauttaa tämänhetkisen UTC-päivän:
+//
+// YYYY-MM-DD
+//
+// Tätä käyttävät:
+//
+// 🎁 Daily Bonus
+// 📺 Ad Rewards
+//
+// ============================================================
+
+function getUtcDateString() {
+  return getDateKey(
+    new Date()
+  );
+}
+
+
+// ============================================================
+// 📅 GET YESTERDAY UTC DATE STRING
+// ============================================================
+//
+// Palauttaa eilisen UTC-päivän:
+//
+// YYYY-MM-DD
+//
+// Käytetään erityisesti Daily Streakin laskentaan.
+//
+// ============================================================
+
+function getYesterdayUtcDateString() {
+  const yesterday =
+    new Date();
+
+
+  yesterday.setUTCDate(
+    yesterday.getUTCDate() - 1
+  );
+
+
+  return getDateKey(
+    yesterday
+  );
 }
 
 
@@ -75,17 +127,19 @@ function getDateKey(
 // 🔥 Firestore Timestamp
 // 📅 JavaScript Date
 // 🔢 Milliseconds
+// 📝 Date-string
 //
 // ============================================================
 
 function getDateFromValue(
   value
 ) {
-
-  if (!value) {
-
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
     return null;
-
   }
 
 
@@ -97,17 +151,21 @@ function getDateFromValue(
     typeof value.toDate ===
     "function"
   ) {
-
     const date =
       value.toDate();
 
 
-    return isNaN(
-      date.getTime()
-    )
-      ? null
-      : date;
+    if (
+      date instanceof Date &&
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return date;
+    }
 
+
+    return null;
   }
 
 
@@ -118,13 +176,11 @@ function getDateFromValue(
   if (
     value instanceof Date
   ) {
-
-    return isNaN(
+    return Number.isNaN(
       value.getTime()
     )
       ? null
       : value;
-
   }
 
 
@@ -136,12 +192,11 @@ function getDateFromValue(
     new Date(value);
 
 
-  return isNaN(
+  return Number.isNaN(
     date.getTime()
   )
     ? null
     : date;
-
 }
 
 
@@ -157,36 +212,50 @@ function getElapsedMilliseconds(
   startDate,
   now = new Date()
 ) {
-
   const start =
     getDateFromValue(
       startDate
     );
 
 
-  if (!start) {
+  const current =
+    getDateFromValue(
+      now
+    );
 
+
+  if (
+    !start ||
+    !current
+  ) {
     return 0;
-
   }
 
 
   return Math.max(
     0,
-    now.getTime() -
+    current.getTime() -
       start.getTime()
   );
-
 }
 
 
 // ============================================================
-// 📤 EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
 
+  // 📅 DATE
+
   getDateKey,
+
+  getUtcDateString,
+
+  getYesterdayUtcDateString,
+
+
+  // ⏱️ TIME
 
   getDateFromValue,
 
