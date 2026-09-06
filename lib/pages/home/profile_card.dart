@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/cat_avatar.dart';
 
-const Color profileAccentColor = Color(0xFF35D0A0);
-const Color profileCardColor = Color(0xFF151B1C);
+// ============================================================
+// 🐱 STELLURIINI COLORS
+// ============================================================
+
+const Color profileAccentColor = Color(0xFFB58CFF);
+const Color profilePinkColor = Color(0xFFFFB7E8);
+const Color profileCardColor = Color(0xFF21113B);
+
+// ============================================================
+// 🐱 STELLA PROFILE CARD
+// ============================================================
 
 class ProfileCard extends StatelessWidget {
   final String title;
@@ -22,11 +31,15 @@ class ProfileCard extends StatelessWidget {
         color: profileCardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: profileAccentColor.withValues(alpha: 0.30),
+          color: profileAccentColor.withValues(
+            alpha: 0.32,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: profileAccentColor.withValues(alpha: 0.08),
+            color: profileAccentColor.withValues(
+              alpha: 0.10,
+            ),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -34,18 +47,25 @@ class ProfileCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // ==================================================
           // 🐾 TOP PAWS
+          // ==================================================
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(
                 Icons.pets,
-                color: profileAccentColor.withValues(alpha: 0.35),
+                color: profilePinkColor.withValues(
+                  alpha: 0.45,
+                ),
                 size: 28,
               ),
               Icon(
                 Icons.pets,
-                color: profileAccentColor.withValues(alpha: 0.35),
+                color: profilePinkColor.withValues(
+                  alpha: 0.45,
+                ),
                 size: 28,
               ),
             ],
@@ -53,18 +73,23 @@ class ProfileCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
+          // ==================================================
           // 🐱 STELLA IMAGE
+          // ==================================================
+
           Container(
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: profileAccentColor,
+                color: profilePinkColor,
                 width: 3,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: profileAccentColor.withValues(alpha: 0.25),
+                  color: profileAccentColor.withValues(
+                    alpha: 0.25,
+                  ),
                   blurRadius: 18,
                   spreadRadius: 2,
                 ),
@@ -77,9 +102,13 @@ class ProfileCard extends StatelessWidget {
 
           const SizedBox(height: 16),
 
+          // ==================================================
           // 🐱 NAME
+          // ==================================================
+
           Text(
             title,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -90,20 +119,30 @@ class ProfileCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // STELLA LABEL
+          // ==================================================
+          // 🐾 STELLA LABEL
+          // ==================================================
+
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 7,
             ),
             decoration: BoxDecoration(
-              color: profileAccentColor.withValues(alpha: 0.12),
+              color: profileAccentColor.withValues(
+                alpha: 0.12,
+              ),
               borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: profilePinkColor.withValues(
+                  alpha: 0.18,
+                ),
+              ),
             ),
             child: const Text(
               '🐾 STELLURIINI CAT 🐾',
               style: TextStyle(
-                color: profileAccentColor,
+                color: profilePinkColor,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
@@ -117,7 +156,9 @@ class ProfileCard extends StatelessWidget {
             'Earn STL treats with Stella! 🐱',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.60),
+              color: Colors.white.withValues(
+                alpha: 0.60,
+              ),
               fontSize: 14,
             ),
           ),
