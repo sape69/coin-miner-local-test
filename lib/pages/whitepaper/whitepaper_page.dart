@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color accentColor = Color(0xFF35D0A0);
+import '../../widgets/cat_avatar.dart';
+import '../../widgets/stelluriini_logo.dart';
+
+const Color whitePaperBackgroundColor = Color(0xFF120B24);
+const Color whitePaperCardColor = Color(0xFF21113B);
+const Color whitePaperAccentColor = Color(0xFFB58CFF);
+const Color whitePaperPinkColor = Color(0xFFFFB7E8);
+const Color whitePaperGoldColor = Color(0xFFFFD166);
 
 class WhitePaperPage extends StatelessWidget {
   const WhitePaperPage({super.key});
@@ -15,15 +20,19 @@ class WhitePaperPage extends StatelessWidget {
     required IconData icon,
     required String title,
     required Widget child,
+    Color? accent,
   }) {
+    final Color sectionAccent =
+        accent ?? whitePaperAccentColor;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: whitePaperCardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.18),
+          color: sectionAccent.withValues(alpha: 0.18),
         ),
       ),
       child: Column(
@@ -35,12 +44,12 @@ class WhitePaperPage extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
+                  color: sectionAccent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   icon,
-                  color: accentColor,
+                  color: sectionAccent,
                   size: 25,
                 ),
               ),
@@ -71,8 +80,8 @@ class WhitePaperPage extends StatelessWidget {
   Widget _paragraph(String text) {
     return Text(
       text,
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.72),
+      style: const TextStyle(
+        color: Colors.white70,
         fontSize: 15,
         height: 1.6,
       ),
@@ -83,17 +92,20 @@ class WhitePaperPage extends StatelessWidget {
   // BULLET
   // ============================================================
 
-  Widget _bullet(String text) {
+  Widget _bullet(
+    String text, {
+    Color accent = whitePaperAccentColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 4),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
             child: Icon(
               Icons.check_circle_rounded,
-              color: accentColor,
+              color: accent,
               size: 17,
             ),
           ),
@@ -101,8 +113,8 @@ class WhitePaperPage extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.72),
+              style: const TextStyle(
+                color: Colors.white70,
                 fontSize: 15,
                 height: 1.45,
               ),
@@ -119,8 +131,9 @@ class WhitePaperPage extends StatelessWidget {
 
   Widget _tokenRow(
     String title,
-    String value,
-  ) {
+    String value, {
+    Color accent = whitePaperAccentColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -129,8 +142,8 @@ class WhitePaperPage extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
+              style: const TextStyle(
+                color: Colors.white54,
                 fontSize: 14,
               ),
             ),
@@ -140,8 +153,8 @@ class WhitePaperPage extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: accentColor,
+              style: TextStyle(
+                color: accent,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -170,19 +183,17 @@ class WhitePaperPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: whitePaperBackgroundColor,
 
       // ========================================================
       // APP BAR
       // ========================================================
 
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: whitePaperBackgroundColor,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-        ),
         title: const Text(
           'WHITE PAPER',
           style: TextStyle(
@@ -199,46 +210,51 @@ class WhitePaperPage extends StatelessWidget {
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ==================================================
-              // HEADER
+              // STELLA HEADER
               // ==================================================
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  28,
+                  24,
+                  26,
+                ),
                 decoration: BoxDecoration(
-                  color: cardColor,
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF21113B),
+                      Color(0xFF2A1648),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(
-                    color: accentColor.withValues(alpha: 0.30),
+                    color: whitePaperAccentColor.withValues(
+                      alpha: 0.30,
+                    ),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: accentColor.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      spreadRadius: 2,
+                      color: whitePaperAccentColor.withValues(
+                        alpha: 0.10,
+                      ),
+                      blurRadius: 24,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.description_rounded,
-                        color: accentColor,
-                        size: 42,
-                      ),
+                    const CatAvatar(
+                      size: 110,
                     ),
 
                     const SizedBox(height: 18),
@@ -246,7 +262,7 @@ class WhitePaperPage extends StatelessWidget {
                     const Text(
                       'STELLURIINI',
                       style: TextStyle(
-                        color: accentColor,
+                        color: whitePaperPinkColor,
                         fontSize: 27,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 3,
@@ -255,11 +271,23 @@ class WhitePaperPage extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    Text(
-                      'Official White Paper • STL • Solana',
+                    const Text(
+                      'Official White Paper',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: Colors.white70,
+                        fontSize: 15,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    const Text(
+                      'STL • SOLANA',
+                      style: TextStyle(
+                        color: whitePaperAccentColor,
                         fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
                       ),
                     ),
 
@@ -271,13 +299,21 @@ class WhitePaperPage extends StatelessWidget {
                         vertical: 9,
                       ),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.10),
+                        color: whitePaperPinkColor.withValues(
+                          alpha: 0.10,
+                        ),
                         borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: whitePaperPinkColor.withValues(
+                            alpha: 0.20,
+                          ),
+                        ),
                       ),
                       child: const Text(
-                        '🐾 Community-driven token 🐾',
+                        '🐾 Stella • Community • Solana 🐾',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: accentColor,
+                          color: whitePaperPinkColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -296,11 +332,11 @@ class WhitePaperPage extends StatelessWidget {
                 icon: Icons.article_rounded,
                 title: 'Executive Summary',
                 child: _paragraph(
-                  'Stelluriini (STL) is a community-focused digital token '
-                  'built on the Solana blockchain. The project combines a '
-                  'recognizable cat-themed identity with the goal of building '
-                  'a growing digital ecosystem and an engaged community.',
-                ),
+                  'Stelluriini (STL) is a community-focused digital '
+                  'token project built around a recognizable cat-themed '
+                  'identity and the Solana ecosystem. The project aims '
+                  'to combine community participation, entertainment '
+                  'and future digital applications into one ecosystem.',
               ),
 
               // ==================================================
@@ -310,11 +346,54 @@ class WhitePaperPage extends StatelessWidget {
               _section(
                 icon: Icons.pets_rounded,
                 title: 'What is Stelluriini?',
+                accent: whitePaperPinkColor,
                 child: _paragraph(
-                  'Stelluriini is a community-driven token created on the '
-                  'Solana blockchain. The project is inspired by Stella, '
-                  'a curious cat whose identity represents the playful, '
-                  'friendly and community-oriented spirit of the project.',
+                  'Stelluriini is a community-driven project inspired '
+                  'by Stella, a curious cat representing the playful, '
+                  'friendly and exploratory spirit of the project. '
+                  'STL is the token associated with the Stelluriini '
+                  'ecosystem on Solana.',
+                ),
+              ),
+
+              // ==================================================
+              // STELLA
+              // ==================================================
+
+              _section(
+                icon: Icons.favorite_rounded,
+                title: 'Meet Stella',
+                accent: whitePaperPinkColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child: StelluriiniLogo(
+                        size: 80,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      '🐱 Stella is the heart of Stelluriini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: whitePaperPinkColor,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    _paragraph(
+                      'Stella represents curiosity, community and '
+                      'the fun side of the Stelluriini ecosystem. '
+                      'Her identity is used throughout the application '
+                      'to make the project recognizable and welcoming.',
+                    ),
+                  ],
                 ),
               ),
 
@@ -362,11 +441,13 @@ class WhitePaperPage extends StatelessWidget {
               _section(
                 icon: Icons.monetization_on_rounded,
                 title: 'Token Information',
+                accent: whitePaperGoldColor,
                 child: Column(
                   children: [
                     _tokenRow(
                       'Token Name',
                       'Stelluriini',
+                      accent: whitePaperPinkColor,
                     ),
 
                     _divider(),
@@ -374,6 +455,7 @@ class WhitePaperPage extends StatelessWidget {
                     _tokenRow(
                       'Symbol',
                       'STL',
+                      accent: whitePaperPinkColor,
                     ),
 
                     _divider(),
@@ -381,6 +463,7 @@ class WhitePaperPage extends StatelessWidget {
                     _tokenRow(
                       'Blockchain',
                       'Solana',
+                      accent: whitePaperAccentColor,
                     ),
 
                     _divider(),
@@ -388,6 +471,7 @@ class WhitePaperPage extends StatelessWidget {
                     _tokenRow(
                       'Token Type',
                       'Community Token',
+                      accent: whitePaperAccentColor,
                     ),
 
                     _divider(),
@@ -395,6 +479,7 @@ class WhitePaperPage extends StatelessWidget {
                     _tokenRow(
                       'Total Supply',
                       '17,602,539,062 STL',
+                      accent: whitePaperGoldColor,
                     ),
                   ],
                 ),
@@ -407,11 +492,12 @@ class WhitePaperPage extends StatelessWidget {
               _section(
                 icon: Icons.account_balance_wallet_rounded,
                 title: 'Token Supply',
+                accent: whitePaperGoldColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'The total supply of Stelluriini is fixed at '
+                      'The total supply of Stelluriini is '
                       '17,602,539,062 STL tokens.',
                     ),
 
@@ -421,10 +507,14 @@ class WhitePaperPage extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.08),
+                        color: whitePaperGoldColor.withValues(
+                          alpha: 0.07,
+                        ),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: accentColor.withValues(alpha: 0.20),
+                          color: whitePaperGoldColor.withValues(
+                            alpha: 0.20,
+                          ),
                         ),
                       ),
                       child: const Column(
@@ -445,7 +535,7 @@ class WhitePaperPage extends StatelessWidget {
                             '17,602,539,062',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: accentColor,
+                              color: whitePaperGoldColor,
                               fontSize: 27,
                               fontWeight: FontWeight.bold,
                             ),
@@ -479,9 +569,10 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'Community participation is an important part of the '
-                      'Stelluriini ecosystem. The project aims to develop '
-                      'through community interest, feedback and participation.',
+                      'Community participation is an important part '
+                      'of the Stelluriini ecosystem. The project aims '
+                      'to develop through community interest, feedback '
+                      'and participation.',
                     ),
 
                     const SizedBox(height: 16),
@@ -502,39 +593,6 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // STELLA
-              // ==================================================
-
-              _section(
-                icon: Icons.favorite_rounded,
-                title: 'Meet Stella',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _paragraph(
-                      'Stella is the inspiration behind Stelluriini. '
-                      'Her curious personality represents exploration, '
-                      'playfulness and the unique identity of the project.',
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    Center(
-                      child: Text(
-                        '🐱 🐾 STELLA 🐾 🐱',
-                        style: TextStyle(
-                          color: accentColor.withValues(alpha: 0.85),
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ==================================================
               // FUTURE ECOSYSTEM
               // ==================================================
 
@@ -545,8 +603,9 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'The Stelluriini project is designed with the potential '
-                      'to expand into a broader digital ecosystem over time.',
+                      'The Stelluriini project is designed with the '
+                      'potential to expand into a broader digital '
+                      'ecosystem over time.',
                     ),
 
                     const SizedBox(height: 16),
@@ -575,31 +634,43 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // DEVELOPMENT DIRECTION
+              // DEVELOPMENT ROADMAP
               // ==================================================
 
               _section(
                 icon: Icons.rocket_launch_rounded,
                 title: 'Development Direction',
+                accent: whitePaperPinkColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
                       'Stelluriini is intended to develop gradually. '
-                      'Future milestones may evolve depending on technical '
-                      'development, community growth and available resources.',
+                      'Future milestones may evolve depending on '
+                      'technical development, community growth and '
+                      'available resources.',
                     ),
 
                     const SizedBox(height: 16),
 
-                    _bullet('Community development.'),
+                    _bullet(
+                      'Community development.',
+                      accent: whitePaperPinkColor,
+                    ),
 
-                    _bullet('Expansion of the digital ecosystem.'),
+                    _bullet(
+                      'Expansion of the digital ecosystem.',
+                      accent: whitePaperPinkColor,
+                    ),
 
-                    _bullet('Development of applications and games.'),
+                    _bullet(
+                      'Development of applications and games.',
+                      accent: whitePaperPinkColor,
+                    ),
 
                     _bullet(
                       'Exploration of new opportunities on Solana.',
+                      accent: whitePaperPinkColor,
                     ),
                   ],
                 ),
@@ -614,9 +685,9 @@ class WhitePaperPage extends StatelessWidget {
                 title: 'Transparency',
                 child: _paragraph(
                   'Stelluriini aims to communicate important project '
-                  'developments clearly to its community. Future information '
-                  'and updates may be published through the official '
-                  'communication channels of the project.',
+                  'developments clearly to its community. Future '
+                  'information and updates may be published through '
+                  'the official communication channels of the project.',
                 ),
               ),
 
@@ -626,12 +697,17 @@ class WhitePaperPage extends StatelessWidget {
 
               Container(
                 width: double.infinity,
+                margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.orangeAccent.withValues(alpha: 0.08),
+                  color: Colors.orangeAccent.withValues(
+                    alpha: 0.07,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.orangeAccent.withValues(alpha: 0.25),
+                    color: Colors.orangeAccent.withValues(
+                      alpha: 0.22,
+                    ),
                   ),
                 ),
                 child: Column(
@@ -655,14 +731,14 @@ class WhitePaperPage extends StatelessWidget {
 
                     const SizedBox(height: 10),
 
-                    Text(
+                    const Text(
                       'This White Paper is provided for informational '
                       'purposes only. Nothing in this document constitutes '
                       'financial, investment, legal or tax advice. '
                       'Cryptocurrencies and digital assets involve risk.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: Colors.white60,
                         fontSize: 13,
                         height: 1.5,
                       ),
@@ -671,21 +747,47 @@ class WhitePaperPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 28),
 
-              Center(
-                child: Text(
-                  '🐾 STELLURIINI • STL • SOLANA 🐾',
-                  style: TextStyle(
-                    color: accentColor.withValues(alpha: 0.75),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
+              // ==================================================
+              // FOOTER
+              // ==================================================
+
+              const Text(
+                '🐾 STELLA • STELLURIINI • STL • SOLANA 🐾',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: whitePaperPinkColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 8),
+
+              const Text(
+                'Community-driven • Inspired by Stella',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              const Text(
+                '17 602 539 062 STL',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: whitePaperGoldColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
