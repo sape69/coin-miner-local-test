@@ -112,14 +112,14 @@ class AppLocalizations {
       'streak': 'Päiväputki',
       'stellaDailyBonus': 'STELLAN PÄIVÄBONUS',
       'dailyBonusDescription':
-          '+{amount} Hash Rate • 🔥 {streak} päivän putki',
+          'Daily Hash Rate: {amount} HR • 🔥 {streak} päivän putki',
       'claimDailyBonus': '🎁 LUNASTA PÄIVÄBONUS',
       'bonusClaimedToday':
           '🐱 BONUS LUNASTETTU TÄNÄÄN',
       'dailyBonusAlreadyClaimed':
           '🐱 Stella Daily Bonus on jo kerätty tänään!',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} Hash Rate! Putki: {streak} 🔥',
+          '🐱🎁 Daily Hash Rate: {amount} HR! Putki: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Daily Bonus epäonnistui.',
 
@@ -247,14 +247,14 @@ class AppLocalizations {
       'streak': 'Daily streak',
       'stellaDailyBonus': 'STELLA DAILY BONUS',
       'dailyBonusDescription':
-          '+{amount} Hash Rate • 🔥 {streak} day streak',
+          'Daily Hash Rate: {amount} HR • 🔥 {streak} day streak',
       'claimDailyBonus': '🎁 CLAIM DAILY BONUS',
       'bonusClaimedToday':
           '🐱 BONUS CLAIMED TODAY',
       'dailyBonusAlreadyClaimed':
           '🐱 Stella Daily Bonus has already been claimed today!',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} Hash Rate! Streak: {streak} 🔥',
+          '🐱🎁 Daily Hash Rate: {amount} HR! Streak: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Daily Bonus failed.',
 
@@ -377,14 +377,14 @@ class AppLocalizations {
       'streak': 'Tagesserie',
       'stellaDailyBonus': 'STELLAS TAGESBONUS',
       'dailyBonusDescription':
-          '+{amount} Hash Rate • 🔥 {streak} Tage Serie',
+          'Tägliche Hash Rate: {amount} HR • 🔥 {streak} Tage Serie',
       'claimDailyBonus': '🎁 TAGESBONUS ABHOLEN',
       'bonusClaimedToday':
           '🐱 BONUS HEUTE ABGEHOLT',
       'dailyBonusAlreadyClaimed':
           '🐱 Stellas Tagesbonus wurde heute bereits abgeholt!',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} Hash Rate! Serie: {streak} 🔥',
+          '🐱🎁 Tägliche Hash Rate: {amount} HR! Serie: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Tagesbonus fehlgeschlagen.',
 
@@ -504,14 +504,14 @@ class AppLocalizations {
       'streak': 'Racha diaria',
       'stellaDailyBonus': 'BONO DIARIO DE STELLA',
       'dailyBonusDescription':
-          '+{amount} Hash Rate • 🔥 racha de {streak} días',
+          'Hash Rate diario: {amount} HR • 🔥 racha de {streak} días',
       'claimDailyBonus': '🎁 RECLAMAR BONO DIARIO',
       'bonusClaimedToday':
           '🐱 BONO RECLAMADO HOY',
       'dailyBonusAlreadyClaimed':
           '🐱 ¡El bono diario de Stella ya fue reclamado hoy!',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} Hash Rate! Racha: {streak} 🔥',
+          '🐱🎁 Hash Rate diario: {amount} HR! Racha: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 El bono diario falló.',
 
@@ -632,14 +632,14 @@ class AppLocalizations {
       'streak': 'Série quotidienne',
       'stellaDailyBonus': 'BONUS QUOTIDIEN DE STELLA',
       'dailyBonusDescription':
-          '+{amount} Hash Rate • 🔥 série de {streak} jours',
+          'Hash Rate quotidien : {amount} HR • 🔥 série de {streak} jours',
       'claimDailyBonus': '🎁 RÉCLAMER LE BONUS QUOTIDIEN',
       'bonusClaimedToday':
           '🐱 BONUS RÉCLAMÉ AUJOURD’HUI',
       'dailyBonusAlreadyClaimed':
           '🐱 Le bonus quotidien de Stella a déjà été réclamé aujourd’hui !',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} Hash Rate ! Série : {streak} 🔥',
+          '🐱🎁 Hash Rate quotidien : {amount} HR ! Série : {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Échec du bonus quotidien.',
 
@@ -760,14 +760,14 @@ class AppLocalizations {
       'streak': '连续签到',
       'stellaDailyBonus': 'STELLA 每日奖励',
       'dailyBonusDescription':
-          '+{amount} 算力 • 🔥 连续 {streak} 天',
+          '每日算力：{amount} HR • 🔥 连续 {streak} 天',
       'claimDailyBonus': '🎁 领取每日奖励',
       'bonusClaimedToday':
           '🐱 今天已领取奖励',
       'dailyBonusAlreadyClaimed':
           '🐱 Stella 的每日奖励今天已经领取过了！',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} 算力！连续签到：{streak} 🔥',
+          '🐱🎁 每日算力：{amount} HR！连续签到：{streak} 🔥',
       'dailyBonusFailed':
           '🐱 每日奖励失败。',
 
@@ -887,7 +887,7 @@ class AppLocalizations {
       'streak': 'Chuỗi ngày liên tiếp',
       'stellaDailyBonus': 'THƯỞNG HÀNG NGÀY CỦA STELLA',
       'dailyBonusDescription':
-          '+{amount} Hash Rate • 🔥 chuỗi {streak} ngày',
+          'Hash Rate hàng ngày: {amount} HR • 🔥 chuỗi {streak} ngày',
       'claimDailyBonus':
           '🎁 NHẬN THƯỞNG HÀNG NGÀY',
       'bonusClaimedToday':
@@ -895,7 +895,7 @@ class AppLocalizations {
       'dailyBonusAlreadyClaimed':
           '🐱 Phần thưởng hàng ngày của Stella đã được nhận hôm nay!',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} Hash Rate! Chuỗi: {streak} 🔥',
+          '🐱🎁 Hash Rate hàng ngày: {amount} HR! Chuỗi: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Nhận thưởng hàng ngày thất bại.',
 
@@ -1016,7 +1016,7 @@ class AppLocalizations {
       'streak': '連続記録',
       'stellaDailyBonus': 'STELLA デイリーボーナス',
       'dailyBonusDescription':
-          '+{amount} ハッシュレート • 🔥 {streak}日連続',
+          '毎日のハッシュレート: {amount} HR • 🔥 {streak}日連続',
       'claimDailyBonus':
           '🎁 デイリーボーナスを受け取る',
       'bonusClaimedToday':
@@ -1024,7 +1024,7 @@ class AppLocalizations {
       'dailyBonusAlreadyClaimed':
           '🐱 Stella のデイリーボーナスは本日すでに受け取っています！',
       'dailyBonusSuccess':
-          '🐱🎁 +{amount} ハッシュレート！連続記録：{streak} 🔥',
+          '🐱🎁 毎日のハッシュレート: {amount} HR！連続記録：{streak} 🔥',
       'dailyBonusFailed':
           '🐱 デイリーボーナスに失敗しました。',
 
