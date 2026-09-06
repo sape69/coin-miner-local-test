@@ -87,9 +87,7 @@ class WhitePaperPage extends StatelessWidget {
                   size: 23,
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment:
@@ -104,9 +102,7 @@ class WhitePaperPage extends StatelessWidget {
                         letterSpacing: 1.4,
                       ),
                     ),
-
                     const SizedBox(height: 2),
-
                     Text(
                       title,
                       style: const TextStyle(
@@ -120,9 +116,7 @@ class WhitePaperPage extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           child,
         ],
       ),
@@ -173,9 +167,7 @@ class WhitePaperPage extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-
           const SizedBox(width: 10),
-
           Expanded(
             child: Text(
               text,
@@ -224,9 +216,7 @@ class WhitePaperPage extends StatelessWidget {
               size: 21,
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -240,9 +230,7 @@ class WhitePaperPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
                   description,
                   style: const TextStyle(
@@ -285,9 +273,7 @@ class WhitePaperPage extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(width: 12),
-
           Flexible(
             flex: 2,
             child: Text(
@@ -341,9 +327,7 @@ class WhitePaperPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(5),
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -357,20 +341,22 @@ class WhitePaperPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 3),
-
                 Text(
                   amount,
                   style: const TextStyle(
-                    color: Colors.white50,
+                    color: Color.fromRGBO(
+                      255,
+                      255,
+                      255,
+                      0.50,
+                    ),
                     fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
-
           Text(
             percentage,
             style: TextStyle(
@@ -440,9 +426,7 @@ class WhitePaperPage extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(width: 13),
-
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -460,7 +444,6 @@ class WhitePaperPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     Container(
                       padding:
                           const EdgeInsets.symmetric(
@@ -485,9 +468,7 @@ class WhitePaperPage extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 7),
-
                 Text(
                   description,
                   style: const TextStyle(
@@ -597,9 +578,7 @@ class WhitePaperPage extends StatelessWidget {
                     const CatAvatar(
                       size: 125,
                     ),
-
                     const SizedBox(height: 20),
-
                     const Text(
                       'STELLURIINI',
                       textAlign: TextAlign.center,
@@ -610,9 +589,7 @@ class WhitePaperPage extends StatelessWidget {
                         letterSpacing: 3.2,
                       ),
                     ),
-
                     const SizedBox(height: 7),
-
                     const Text(
                       'STL',
                       style: TextStyle(
@@ -622,9 +599,7 @@ class WhitePaperPage extends StatelessWidget {
                         letterSpacing: 4,
                       ),
                     ),
-
                     const SizedBox(height: 13),
-
                     Container(
                       padding:
                           const EdgeInsets.symmetric(
@@ -657,9 +632,7 @@ class WhitePaperPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
                     const Text(
                       'WHITE PAPER',
                       style: TextStyle(
@@ -669,9 +642,7 @@ class WhitePaperPage extends StatelessWidget {
                         letterSpacing: 2,
                       ),
                     ),
-
                     const SizedBox(height: 5),
-
                     const Text(
                       'Version 1.0',
                       style: TextStyle(
@@ -724,29 +695,23 @@ class WhitePaperPage extends StatelessWidget {
                       'ecosystem where Stella is at the center of '
                       'the experience.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _bullet(
                       'Build a strong and recognizable Stella identity.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _bullet(
                       'Create engaging applications and digital experiences.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _bullet(
                       'Grow an active and welcoming community.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _bullet(
                       'Develop useful and entertaining STL ecosystem features.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _bullet(
                       'Explore games, applications and future Solana integrations.',
                       accent: whitePaperPinkColor,
@@ -772,9 +737,7 @@ class WhitePaperPage extends StatelessWidget {
                       'It is a project identity built around Stella '
                       'and a community-oriented digital experience.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _featureRow(
                       icon: Icons.pets_rounded,
                       title: 'Stella',
@@ -782,7 +745,6 @@ class WhitePaperPage extends StatelessWidget {
                           'The visual mascot and recognizable identity of the project.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _featureRow(
                       icon: Icons.currency_bitcoin_rounded,
                       title: 'STL',
@@ -790,7 +752,6 @@ class WhitePaperPage extends StatelessWidget {
                           'The Stelluriini token associated with the Solana ecosystem.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _featureRow(
                       icon: Icons.phone_android_rounded,
                       title: 'Application',
@@ -798,7 +759,6 @@ class WhitePaperPage extends StatelessWidget {
                           'A mobile experience containing mining-style rewards, daily activities and project information.',
                       accent: whitePaperAccentColor,
                     ),
-
                     _featureRow(
                       icon: Icons.groups_rounded,
                       title: 'Community',
@@ -824,9 +784,7 @@ class WhitePaperPage extends StatelessWidget {
                     const StelluriiniLogo(
                       size: 80,
                     ),
-
                     const SizedBox(height: 14),
-
                     const Text(
                       'Stella is the heart of Stelluriini.',
                       textAlign: TextAlign.center,
@@ -836,9 +794,7 @@ class WhitePaperPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
                     _paragraph(
                       'Stella represents curiosity, friendliness '
                       'and exploration. Her role is to make the '
@@ -866,31 +822,25 @@ class WhitePaperPage extends StatelessWidget {
                       tokenName,
                       accent: whitePaperPinkColor,
                     ),
-
                     _tokenInfoRow(
                       'Symbol',
                       tokenSymbol,
                       accent: whitePaperPinkColor,
                     ),
-
                     _tokenInfoRow(
                       'Blockchain',
                       blockchain,
                     ),
-
                     _tokenInfoRow(
                       'Total Supply',
                       totalSupply,
                       accent: whitePaperGoldColor,
                     ),
-
                     _tokenInfoRow(
                       'Decimals',
                       decimals,
                     ),
-
                     const SizedBox(height: 5),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(15),
@@ -920,9 +870,7 @@ class WhitePaperPage extends StatelessWidget {
                               fontSize: 11,
                             ),
                           ),
-
                           const SizedBox(height: 8),
-
                           const SelectableText(
                             mintAddress,
                             style: TextStyle(
@@ -957,46 +905,38 @@ class WhitePaperPage extends StatelessWidget {
                       'to support community rewards, liquidity, '
                       'ecosystem growth, development and marketing.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _allocationRow(
                       title: 'Community & Rewards',
                       percentage: '40%',
                       amount: '7 041 015 625 STL',
                       color: whitePaperAccentColor,
                     ),
-
                     _allocationRow(
                       title: 'Liquidity',
                       percentage: '20%',
                       amount: '3 520 507 812 STL',
                       color: const Color(0xFF72B7FF),
                     ),
-
                     _allocationRow(
                       title: 'Ecosystem',
                       percentage: '15%',
                       amount: '2 640 380 859 STL',
                       color: const Color(0xFFC084FC),
                     ),
-
                     _allocationRow(
                       title: 'Development',
                       percentage: '15%',
                       amount: '2 640 380 859 STL',
                       color: whitePaperGoldColor,
                     ),
-
                     _allocationRow(
                       title: 'Marketing',
                       percentage: '10%',
                       amount: '1 760 253 907 STL',
                       color: whitePaperPinkColor,
                     ),
-
                     const SizedBox(height: 6),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
@@ -1048,30 +988,25 @@ class WhitePaperPage extends StatelessWidget {
                       'where users accumulate virtual STL points '
                       'over a mining cycle.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _featureRow(
                       icon: Icons.speed_rounded,
                       title: 'Hash Rate',
                       description:
                           'A user hash rate determines the rate at which virtual mining points accumulate.',
                     ),
-
                     _featureRow(
                       icon: Icons.timer_rounded,
                       title: 'Mining Cycle',
                       description:
                           'A mining cycle runs for a defined period before its accumulated reward can be claimed.',
                     ),
-
                     _featureRow(
                       icon: Icons.calculate_rounded,
                       title: 'Reward Calculation',
                       description:
                           'The virtual reward is calculated from hash rate and elapsed mining time.',
                     ),
-
                     _featureRow(
                       icon: Icons.lock_clock_rounded,
                       title: 'Locked Mining Rate',
@@ -1102,19 +1037,15 @@ class WhitePaperPage extends StatelessWidget {
                       'user hash rate and contribute to a consecutive '
                       'daily streak.',
                     ),
-
                     const SizedBox(height: 16),
-
                     _bullet(
                       'Daily check-in is limited to one successful claim per day.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _bullet(
                       'A consecutive streak can be maintained by returning on following days.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _bullet(
                       'The bonus affects the user hash rate used for future mining cycles.',
                       accent: whitePaperGoldColor,
@@ -1143,9 +1074,7 @@ class WhitePaperPage extends StatelessWidget {
                       'contains limits and cooldown rules to help '
                       'prevent abuse.',
                     ),
-
                     const SizedBox(height: 16),
-
                     _featureRow(
                       icon: Icons.ondemand_video_rounded,
                       title: 'Rewarded Ads',
@@ -1153,7 +1082,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Users can receive an in-app hash-rate bonus after a qualifying rewarded advertisement.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _featureRow(
                       icon: Icons.av_timer_rounded,
                       title: 'Cooldown',
@@ -1161,7 +1089,6 @@ class WhitePaperPage extends StatelessWidget {
                           'A cooldown period limits how frequently an ad reward can be claimed.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _featureRow(
                       icon: Icons.today_rounded,
                       title: 'Daily Limit',
@@ -1191,9 +1118,7 @@ class WhitePaperPage extends StatelessWidget {
                       'services that handle authenticated reward '
                       'operations and transaction history.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _architectureBox(
                       icon: Icons.phone_android_rounded,
                       title: 'Flutter Application',
@@ -1201,9 +1126,7 @@ class WhitePaperPage extends StatelessWidget {
                           'User interface, Stella experience, mining dashboard and project information.',
                       color: whitePaperPinkColor,
                     ),
-
                     _architectureArrow(),
-
                     _architectureBox(
                       icon: Icons.cloud_rounded,
                       title: 'Firebase Services',
@@ -1211,9 +1134,7 @@ class WhitePaperPage extends StatelessWidget {
                           'Authentication, Firestore data and server-side Cloud Functions.',
                       color: whitePaperAccentColor,
                     ),
-
                     _architectureArrow(),
-
                     _architectureBox(
                       icon: Icons.security_rounded,
                       title: 'Server-Side Validation',
@@ -1221,9 +1142,7 @@ class WhitePaperPage extends StatelessWidget {
                           'Reward limits, cooldowns, duplicate protection and authenticated operations.',
                       color: whitePaperGoldColor,
                     ),
-
                     _architectureArrow(),
-
                     _architectureBox(
                       icon: Icons.link_rounded,
                       title: 'Solana / STL',
@@ -1252,25 +1171,19 @@ class WhitePaperPage extends StatelessWidget {
                       'history view where recorded reward activity '
                       'can be displayed to the user.',
                     ),
-
                     const SizedBox(height: 16),
-
                     _bullet(
                       'Mining reward activity.',
                     ),
-
                     _bullet(
                       'Daily reward activity.',
                     ),
-
                     _bullet(
                       'Rewarded advertisement activity.',
                     ),
-
                     _bullet(
                       'Balance after a recorded reward.',
                     ),
-
                     _bullet(
                       'Transaction date and activity type.',
                     ),
@@ -1298,9 +1211,7 @@ class WhitePaperPage extends StatelessWidget {
                       'to protect the integrity of the application '
                       'and its reward system.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _featureRow(
                       icon: Icons.verified_user_rounded,
                       title: 'Authentication',
@@ -1308,7 +1219,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Reward operations require an authenticated user session.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _featureRow(
                       icon: Icons.block_rounded,
                       title: 'Duplicate Protection',
@@ -1316,7 +1226,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Reward transactions can be protected against repeated processing.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _featureRow(
                       icon: Icons.speed_rounded,
                       title: 'Rate Limits',
@@ -1324,7 +1233,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Daily limits and cooldown periods help reduce automated abuse.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _featureRow(
                       icon: Icons.verified_rounded,
                       title: 'Reward Validation',
@@ -1356,19 +1264,15 @@ class WhitePaperPage extends StatelessWidget {
                       'can follow progress, provide feedback and '
                       'participate in future ecosystem activities.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _bullet(
                       'Community feedback can influence future development.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _bullet(
                       'Future community features may expand the role of STL.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _bullet(
                       'Transparency is intended to remain an important project principle.',
                       accent: whitePaperPinkColor,
@@ -1397,9 +1301,7 @@ class WhitePaperPage extends StatelessWidget {
                       'games, applications, community features and '
                       'additional Solana integrations.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _featureRow(
                       icon: Icons.sports_esports_rounded,
                       title: 'Stella Games',
@@ -1407,7 +1309,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Explore games and interactive experiences featuring Stella.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _featureRow(
                       icon: Icons.apps_rounded,
                       title: 'New Applications',
@@ -1415,7 +1316,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Develop additional digital products and services around the Stelluriini identity.',
                       accent: whitePaperAccentColor,
                     ),
-
                     _featureRow(
                       icon: Icons.link_rounded,
                       title: 'STL Integrations',
@@ -1423,7 +1323,6 @@ class WhitePaperPage extends StatelessWidget {
                           'Explore useful integrations involving STL and the Solana ecosystem.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _featureRow(
                       icon: Icons.emoji_events_rounded,
                       title: 'Community Activities',
@@ -1455,7 +1354,6 @@ class WhitePaperPage extends StatelessWidget {
                           'application and prepare STL information.',
                       accent: whitePaperPinkColor,
                     ),
-
                     _phaseRow(
                       phase: '02',
                       title: 'Community',
@@ -1466,7 +1364,6 @@ class WhitePaperPage extends StatelessWidget {
                           'community features.',
                       accent: whitePaperAccentColor,
                     ),
-
                     _phaseRow(
                       phase: '03',
                       title: 'STL Ecosystem',
@@ -1477,7 +1374,6 @@ class WhitePaperPage extends StatelessWidget {
                           'additional Stelluriini features.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _phaseRow(
                       phase: '04',
                       title: 'The Future',
@@ -1513,24 +1409,19 @@ class WhitePaperPage extends StatelessWidget {
                       'and its planned direction as accurately as '
                       'possible.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _bullet(
                       'The STL total supply is documented.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _bullet(
                       'The token allocation structure is documented.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _bullet(
                       'The current application functionality is described separately from future plans.',
                       accent: whitePaperGoldColor,
                     ),
-
                     _bullet(
                       'Roadmap priorities may change as development continues.',
                       accent: whitePaperGoldColor,
@@ -1559,34 +1450,27 @@ class WhitePaperPage extends StatelessWidget {
                       'before interacting with any blockchain-based '
                       'asset or application.',
                     ),
-
                     const SizedBox(height: 18),
-
                     _bullet(
                       'Cryptocurrency markets can be highly volatile.',
                       accent: Colors.orangeAccent,
                     ),
-
                     _bullet(
                       'Blockchain transactions may involve irreversible actions.',
                       accent: Colors.orangeAccent,
                     ),
-
                     _bullet(
                       'Software may contain bugs or technical limitations.',
                       accent: Colors.orangeAccent,
                     ),
-
                     _bullet(
                       'Blockchain and regulatory environments may change.',
                       accent: Colors.orangeAccent,
                     ),
-
                     _bullet(
                       'Future roadmap items are not guaranteed.',
                       accent: Colors.orangeAccent,
                     ),
-
                     _bullet(
                       'In-app virtual rewards should not be interpreted as guaranteed financial returns.',
                       accent: Colors.orangeAccent,
@@ -1624,9 +1508,7 @@ class WhitePaperPage extends StatelessWidget {
                       color: Colors.orangeAccent,
                       size: 32,
                     ),
-
                     const SizedBox(height: 12),
-
                     const Text(
                       '18 • DISCLAIMER',
                       textAlign: TextAlign.center,
@@ -1637,9 +1519,7 @@ class WhitePaperPage extends StatelessWidget {
                         letterSpacing: 1,
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
                     const Text(
                       'Stelluriini and STL are presented as a '
                       'community-driven digital project. Information '
@@ -1653,9 +1533,7 @@ class WhitePaperPage extends StatelessWidget {
                         height: 1.55,
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
                     const Text(
                       'Virtual points displayed in the application '
                       'should not be interpreted as guaranteed '
@@ -1692,9 +1570,7 @@ class WhitePaperPage extends StatelessWidget {
                       'information. Always verify token addresses '
                       'before interacting with blockchain assets.',
                     ),
-
                     const SizedBox(height: 18),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(15),
@@ -1728,9 +1604,7 @@ class WhitePaperPage extends StatelessWidget {
                               letterSpacing: 1,
                             ),
                           ),
-
                           const SizedBox(height: 8),
-
                           const SelectableText(
                             mintAddress,
                             style: TextStyle(
@@ -1781,9 +1655,7 @@ class WhitePaperPage extends StatelessWidget {
                     const CatAvatar(
                       size: 82,
                     ),
-
                     const SizedBox(height: 14),
-
                     const Text(
                       '🐱 Stella is just getting started.',
                       textAlign: TextAlign.center,
@@ -1793,9 +1665,7 @@ class WhitePaperPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     const Text(
                       'Community • Curiosity • Creativity • Solana',
                       textAlign: TextAlign.center,
@@ -1824,9 +1694,7 @@ class WhitePaperPage extends StatelessWidget {
                   letterSpacing: 1,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               const Text(
                 '17 602 539 062 STL',
                 textAlign: TextAlign.center,
@@ -1836,9 +1704,7 @@ class WhitePaperPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               const Text(
                 'WHITE PAPER v1.0',
                 textAlign: TextAlign.center,
@@ -1848,7 +1714,6 @@ class WhitePaperPage extends StatelessWidget {
                   letterSpacing: 1.2,
                 ),
               ),
-
               const SizedBox(height: 18),
             ],
           ),
@@ -1900,9 +1765,7 @@ class WhitePaperPage extends StatelessWidget {
               size: 21,
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -1916,9 +1779,7 @@ class WhitePaperPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
                   description,
                   style: const TextStyle(
