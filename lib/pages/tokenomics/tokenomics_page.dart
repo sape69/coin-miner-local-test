@@ -204,7 +204,12 @@ class TokenomicsPage extends StatelessWidget {
                     Text(
                       '${_formatNumber(amount)} STL',
                       style: const TextStyle(
-                        color: Colors.white60,
+                        color: Color.fromRGBO(
+                          255,
+                          255,
+                          255,
+                          0.60,
+                        ),
                         fontSize: 13,
                       ),
                     ),
@@ -248,7 +253,12 @@ class TokenomicsPage extends StatelessWidget {
           Text(
             description,
             style: const TextStyle(
-              color: Colors.white65,
+              color: Color.fromRGBO(
+                255,
+                255,
+                255,
+                0.65,
+              ),
               fontSize: 14,
               height: 1.5,
             ),
@@ -397,7 +407,12 @@ class TokenomicsPage extends StatelessWidget {
               Text(
                 description,
                 style: const TextStyle(
-                  color: Colors.white60,
+                  color: Color.fromRGBO(
+                    255,
+                    255,
+                    255,
+                    0.60,
+                  ),
                   fontSize: 13,
                   height: 1.45,
                 ),
@@ -691,7 +706,12 @@ class TokenomicsPage extends StatelessWidget {
                     const Text(
                       'STL TOKENS',
                       style: TextStyle(
-                        color: Colors.white50,
+                        color: Color.fromRGBO(
+                          255,
+                          255,
+                          255,
+                          0.50,
+                        ),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
