@@ -250,35 +250,6 @@ class HomeDrawer extends StatelessWidget {
                       letterSpacing: 1,
                     ),
                   ),
-
-                  const SizedBox(height: 14),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(
-                        alpha: 0.10,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: accentColor.withValues(
-                          alpha: 0.18,
-                        ),
-                      ),
-                    ),
-                    child: const Text(
-                      '17 602 539 062 STL',
-                      style: TextStyle(
-                        color: accentColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
