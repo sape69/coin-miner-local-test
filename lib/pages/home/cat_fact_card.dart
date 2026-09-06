@@ -1,14 +1,32 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// 🐱 STELLURIINI COLORS
+// 🐱 STELLURIINI / STELLA CAT FACT CARD
+// ============================================================
+//
+// Päivittäinen kissafakta Stelluriini-sovelluksessa.
+//
+// Tämä widget:
+// - toimii kaikilla 8 tuetulla kielellä
+// - ei sisällä kovakoodattua käännöstekstiä
+// - käyttää Stelluriinin violetti/pinkki-teemaa
+// - mukautuu pitkiin käännöksiin
+// - toimii myös pienillä Android-näytöillä
+//
+// Lokalisaatio hoidetaan HomePagessa.
+// Tälle widgetille annetaan valmis title + fact.
 // ============================================================
 
-const Color backgroundColor = Color(0xFF120B24);
-const Color cardColor = Color(0xFF21113B);
+// ============================================================
+// 🎨 STELLURIINI COLORS
+// ============================================================
 
-const Color catFactAccentColor = Color(0xFFB58CFF);
-const Color catFactPinkColor = Color(0xFFFFB7E8);
+const Color catFactBackgroundColor = Color(0xFF120B24);
+const Color catFactCardColor = Color(0xFF21113B);
+
+const Color catFactPurple = Color(0xFFB58CFF);
+const Color catFactPink = Color(0xFFFFB7E8);
+const Color catFactGold = Color(0xFFFFD166);
 
 // ============================================================
 // 🐱 STELLA CAT FACT CARD
@@ -30,44 +48,55 @@ class CatFactCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(22),
+        color: catFactCardColor,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: catFactAccentColor.withValues(
-            alpha: 0.28,
-          ),
+          color: catFactPurple.withValues(alpha: 0.30),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.20,
-            ),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 18,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ==================================================
           // 🐱 HEADER
           // ==================================================
 
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Stella icon
               Container(
-                width: 52,
-                height: 52,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: catFactAccentColor.withValues(
-                    alpha: 0.15,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      catFactPurple.withValues(alpha: 0.24),
+                      catFactPink.withValues(alpha: 0.12),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: catFactPinkColor.withValues(
-                      alpha: 0.18,
-                    ),
+                    color: catFactPink.withValues(alpha: 0.25),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: catFactPurple.withValues(alpha: 0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: const Center(
                   child: Text(
@@ -81,27 +110,54 @@ class CatFactCard extends StatelessWidget {
 
               const SizedBox(width: 14),
 
+              // Title
               Expanded(
                 child: Text(
                   title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 19,
-                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
 
+              const SizedBox(width: 8),
+
+              // Paw
               const Text(
                 '🐾',
                 style: TextStyle(
-                  fontSize: 25,
+                  fontSize: 24,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+
+          // ==================================================
+          // ✨ DIVIDER
+          // ==================================================
+
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  catFactPurple.withValues(alpha: 0.35),
+                  catFactPink.withValues(alpha: 0.35),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 18),
 
           // ==================================================
           // 💬 FACT BUBBLE
@@ -109,38 +165,53 @@ class CatFactCard extends StatelessWidget {
 
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.fromLTRB(
+              18,
+              20,
+              18,
+              20,
+            ),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(
-                alpha: 0.20,
-              ),
-              borderRadius: BorderRadius.circular(18),
+              color: catFactBackgroundColor.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: catFactAccentColor.withValues(
-                  alpha: 0.16,
-                ),
+                color: catFactPurple.withValues(alpha: 0.18),
               ),
             ),
             child: Column(
               children: [
-                const Text(
-                  '💬',
-                  style: TextStyle(
-                    fontSize: 30,
+                // Speech bubble icon
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: catFactPurple.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: catFactGold.withValues(alpha: 0.20),
+                    ),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '💬',
+                      style: TextStyle(
+                        fontSize: 27,
+                      ),
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
+                // Daily fact
                 Text(
                   fact,
                   textAlign: TextAlign.center,
                   style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.88),
                     fontSize: 16,
-                    height: 1.5,
-                    color: Colors.white.withValues(
-                      alpha: 0.80,
-                    ),
+                    height: 1.55,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -150,38 +221,43 @@ class CatFactCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ==================================================
-          // 🐾 STELLA FOOTER
+          // 🐾 STELLA SIGNATURE
           // ==================================================
 
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 '🐾',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
+                  color: catFactPink.withValues(alpha: 0.90),
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
+
+              Flexible(
+                child: Text(
+                  'STELLA • STELLURIINI',
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: catFactPink.withValues(alpha: 0.90),
+                    fontSize: 12,
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 7),
 
               Text(
-                'A little fact from Stella 🐱',
-                style: TextStyle(
-                  color: catFactPinkColor.withValues(
-                    alpha: 0.88,
-                  ),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              const Text(
                 '🐾',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
+                  color: catFactPink.withValues(alpha: 0.90),
                 ),
               ),
             ],
