@@ -18,16 +18,16 @@ class MiningClaimCard extends StatelessWidget {
   final double unclaimedMining;
   final double miningBalance;
 
-  // Daily / locked mining Hash Rate.
+  // Daily / base Hash Rate.
   final double hashRate;
 
-  // Normal mining speed.
+  // Effective mining speed supplied by backend.
   final double miningPerHour;
 
-  // Active 4 hour advertisement boost.
+  // Temporary 4-hour advertisement boost.
   final double adBoostHashRate;
 
-  // Effective Hash Rate while the boost is active.
+  // Effective Hash Rate while boost is active.
   final double effectiveHashRate;
 
   // Remaining time of the active ad boost.
@@ -44,7 +44,7 @@ class MiningClaimCard extends StatelessWidget {
     required this.miningBalance,
     required this.hashRate,
     required this.miningPerHour,
-    this.adBoostHashRate = 0,
+    this.adBoostHashRate = 0.5833,
     this.effectiveHashRate = 0,
     this.adBoostRemainingMs = 0,
     this.adBoostActive = false,
@@ -78,22 +78,55 @@ class MiningClaimCard extends StatelessWidget {
         '${seconds.toString().padLeft(2, '0')}';
   }
 
+  // ==========================================================
+  // ⚡ EFFECTIVE HASH RATE
+  // ==========================================================
+
+  double _displayedEffectiveHashRate() {
+    if (effectiveHashRate > 0) {
+      return effectiveHashRate;
+    }
+
+    if (adBoostActive &&
+        adBoostHashRate > 0) {
+      return hashRate +
+          adBoostHashRate;
+    }
+
+    return hashRate;
+  }
+
+  // ==========================================================
+  // 📈 EFFECTIVE MINING RATE
+  // ==========================================================
+
+  double _displayedMiningPerHour() {
+    if (miningPerHour > 0) {
+      return miningPerHour;
+    }
+
+    // Fallback only if backend did not provide a value.
+    //
+    // Stelluriini mining rate:
+    // 0.10 STL / HR / hour.
+    return _displayedEffectiveHashRate() *
+        0.10;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasMining =
         unclaimedMining > 0.000001;
 
     final double displayedEffectiveHashRate =
-        effectiveHashRate > 0
-            ? effectiveHashRate
-            : hashRate +
-                (adBoostActive
-                    ? adBoostHashRate
-                    : 0);
+        _displayedEffectiveHashRate();
 
     final double displayedMiningPerHour =
-        displayedEffectiveHashRate *
-        0.10;
+        _displayedMiningPerHour();
+
+    final bool boostActuallyActive =
+        adBoostActive &&
+            adBoostRemainingMs > 0;
 
     return Container(
       width: double.infinity,
@@ -102,9 +135,13 @@ class MiningClaimCard extends StatelessWidget {
         color: miningCardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: miningAccentColor.withValues(
-            alpha: 0.30,
-          ),
+          color: boostActuallyActive
+              ? miningGoldColor.withValues(
+                  alpha: 0.38,
+                )
+              : miningAccentColor.withValues(
+                  alpha: 0.30,
+                ),
         ),
         boxShadow: [
           BoxShadow(
@@ -121,7 +158,6 @@ class MiningClaimCard extends StatelessWidget {
         crossAxisAlignment:
             CrossAxisAlignment.stretch,
         children: [
-
           // ==================================================
           // 🐱 HEADER
           // ==================================================
@@ -145,10 +181,12 @@ class MiningClaimCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    '⛏️',
-                    style: TextStyle(
+                    boostActuallyActive
+                        ? '⚡'
+                        : '⛏️',
+                    style: const TextStyle(
                       fontSize: 30,
                     ),
                   ),
@@ -178,7 +216,9 @@ class MiningClaimCard extends StatelessWidget {
                     Text(
                       hasMining
                           ? 'Mining rewards are ready 🐱'
-                          : 'Stella is mining... ⛏️🐱',
+                          : boostActuallyActive
+                              ? 'Power Boost is active ⚡🐱'
+                              : 'Stella is mining... ⛏️🐱',
                       style: TextStyle(
                         color:
                             Colors.white.withValues(
@@ -192,7 +232,7 @@ class MiningClaimCard extends StatelessWidget {
               ),
 
               // ==============================================
-              // LIVE BADGE
+              // STATUS BADGE
               // ==============================================
 
               Container(
@@ -202,24 +242,34 @@ class MiningClaimCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      miningAccentColor.withValues(
-                    alpha: 0.14,
-                  ),
+                  color: boostActuallyActive
+                      ? miningGoldColor.withValues(
+                          alpha: 0.12,
+                        )
+                      : miningAccentColor.withValues(
+                          alpha: 0.14,
+                        ),
                   borderRadius:
                       BorderRadius.circular(20),
                   border: Border.all(
-                    color:
-                        miningPinkColor.withValues(
-                      alpha: 0.25,
-                    ),
+                    color: boostActuallyActive
+                        ? miningGoldColor.withValues(
+                            alpha: 0.30,
+                          )
+                        : miningPinkColor.withValues(
+                            alpha: 0.25,
+                          ),
                   ),
                 ),
-                child: const Text(
-                  '● LIVE',
+                child: Text(
+                  boostActuallyActive
+                      ? '⚡ BOOST'
+                      : '● LIVE',
                   style: TextStyle(
-                    color: miningPinkColor,
-                    fontSize: 11,
+                    color: boostActuallyActive
+                        ? miningGoldColor
+                        : miningPinkColor,
+                    fontSize: 10,
                     fontWeight:
                         FontWeight.bold,
                   ),
@@ -303,7 +353,7 @@ class MiningClaimCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // ==================================================
-          // ⚡ HASH RATE
+          // 📊 DAILY HR / MINING RATE
           // ==================================================
 
           Row(
@@ -313,7 +363,7 @@ class MiningClaimCard extends StatelessWidget {
                   emoji: '🐱',
                   label: 'DAILY HR',
                   value:
-                      hashRate.toStringAsFixed(2),
+                      '${hashRate.toStringAsFixed(1)} HR',
                 ),
               ),
 
@@ -324,7 +374,7 @@ class MiningClaimCard extends StatelessWidget {
                   emoji: '📈',
                   label: 'PER HOUR',
                   value:
-                      '${displayedMiningPerHour.toStringAsFixed(3)} STL',
+                      '${displayedMiningPerHour.toStringAsFixed(4)} STL',
                 ),
               ),
             ],
@@ -334,7 +384,7 @@ class MiningClaimCard extends StatelessWidget {
           // 📺 ACTIVE AD BOOST
           // ==================================================
 
-          if (adBoostActive) ...[
+          if (boostActuallyActive) ...[
             const SizedBox(height: 14),
 
             Container(
@@ -373,7 +423,7 @@ class MiningClaimCard extends StatelessWidget {
                     ),
                     child: const Center(
                       child: Text(
-                        '📺',
+                        '⚡',
                         style:
                             TextStyle(
                           fontSize: 22,
@@ -516,13 +566,82 @@ class MiningClaimCard extends StatelessWidget {
                   ),
 
                   Text(
-                    displayedEffectiveHashRate
-                        .toStringAsFixed(4),
+                    '${displayedEffectiveHashRate.toStringAsFixed(4)} HR',
                     style:
                         const TextStyle(
                       color:
                           miningAccentColor,
                       fontSize: 15,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // ==================================================
+            // 💰 BOOSTED MINING RATE
+            // ==================================================
+
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    miningGoldColor
+                        .withValues(
+                  alpha: 0.05,
+                ),
+                borderRadius:
+                    BorderRadius.circular(
+                  14,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Text(
+                    '📈',
+                    style:
+                        TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Expanded(
+                    child: Text(
+                      'BOOSTED MINING RATE',
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white
+                                .withValues(
+                          alpha: 0.48,
+                        ),
+                        fontSize: 9,
+                        fontWeight:
+                            FontWeight.bold,
+                        letterSpacing:
+                            0.7,
+                      ),
+                    ),
+                  ),
+
+                  Text(
+                    '${displayedMiningPerHour.toStringAsFixed(4)} STL/h',
+                    style:
+                        const TextStyle(
+                      color:
+                          miningGoldColor,
+                      fontSize: 12,
                       fontWeight:
                           FontWeight.bold,
                     ),
@@ -603,9 +722,12 @@ class MiningClaimCard extends StatelessWidget {
                                 MainAxisAlignment
                                     .center,
                             children: [
-                              const Icon(
-                                Icons
-                                    .download_rounded,
+                              Icon(
+                                hasMining
+                                    ? Icons
+                                        .download_rounded
+                                    : Icons
+                                        .play_arrow_rounded,
                                 color:
                                     miningBackgroundColor,
                               ),
@@ -665,7 +787,7 @@ class MiningClaimCard extends StatelessWidget {
           Center(
             child: Text(
               'Mining Balance: '
-              '${miningBalance.toStringAsFixed(2)} STL',
+              '${miningBalance.toStringAsFixed(4)} STL',
               textAlign:
                   TextAlign.center,
               style: TextStyle(
@@ -725,7 +847,8 @@ class _StatBox extends StatelessWidget {
           ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         children: [
           Text(
             emoji,
@@ -765,7 +888,8 @@ class _StatBox extends StatelessWidget {
             value,
             textAlign:
                 TextAlign.center,
-            maxLines: 1,
+            maxLines:
+                1,
             overflow:
                 TextOverflow.ellipsis,
             style:
