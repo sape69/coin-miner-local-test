@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/cat_avatar.dart';
-import '../widgets/stelluriini_logo.dart';
+import '../../widgets/cat_avatar.dart';
+import '../../widgets/stelluriini_logo.dart';
 
 // ============================================================
 // STELLA THEME COLORS
@@ -487,7 +487,8 @@ class _RoadmapStep extends StatelessWidget {
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -504,15 +505,25 @@ class _RoadmapStep extends StatelessWidget {
                     const Spacer(),
 
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding:
+                          const EdgeInsets.symmetric(
                         horizontal: 9,
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
+                        color:
+                            accent.withValues(
+                          alpha: 0.12,
+                        ),
+                        borderRadius:
+                            BorderRadius.circular(
+                          10,
+                        ),
                         border: Border.all(
-                          color: accent.withValues(alpha: 0.15),
+                          color:
+                              accent.withValues(
+                            alpha: 0.15,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -520,7 +531,8 @@ class _RoadmapStep extends StatelessWidget {
                         style: TextStyle(
                           color: accent,
                           fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
                     ),
@@ -575,8 +587,12 @@ class _RoadmapLine extends StatelessWidget {
       width: 2,
       height: 35,
       decoration: BoxDecoration(
-        color: roadmapAccentColor.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(2),
+        color:
+            roadmapAccentColor.withValues(
+          alpha: 0.25,
+        ),
+        borderRadius:
+            BorderRadius.circular(2),
       ),
     );
   }
@@ -608,11 +624,15 @@ class _RoadmapInfoCard extends StatelessWidget {
         color: roadmapCardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accent.withValues(alpha: 0.18),
+          color:
+              accent.withValues(
+            alpha: 0.18,
+          ),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -620,8 +640,12 @@ class _RoadmapInfoCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.11),
-                  borderRadius: BorderRadius.circular(14),
+                  color:
+                      accent.withValues(
+                    alpha: 0.11,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(14),
                 ),
                 child: Icon(
                   icon,
@@ -635,10 +659,12 @@ class _RoadmapInfoCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
               ),
@@ -672,7 +698,8 @@ class _PrincipleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         const Icon(
           Icons.check_circle_rounded,
@@ -684,14 +711,17 @@ class _PrincipleRow extends StatelessWidget {
 
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   color: Colors.white,
                   fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
 
@@ -699,7 +729,8 @@ class _PrincipleRow extends StatelessWidget {
 
               Text(
                 text,
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   color: Colors.white60,
                   fontSize: 13,
                   height: 1.45,
