@@ -1,7 +1,9 @@
 // ============================================================
 // 🐱 STELLURIINI / STELLA DAILY CAT FACTS
 //
-// 60 päivittäistä kissafaktaa × 8 kieltä.
+// 100 päivittäistä kissafaktaa × 8 kieltä.
+//
+// Yhteensä 800 lokalisoitua kissafaktaa.
 //
 // Sama UTC-päivä näyttää saman faktan kaikille käyttäjille.
 // Kieli määräytyy sovelluksen nykyisen kielikoodin mukaan.
@@ -85,6 +87,47 @@ class CatFacts {
     'Kissat voivat vaihtaa nopeasti levon ja aktiivisen leikin välillä.',
     'Kissat voivat pitää tietyistä nukkumapaikoista pitkään.',
     'Auringonpaisteinen paikka on monen kissan suosikki lepopaikka.',
+
+    'Kissoilla on viisi varvasta kummassakin etutassussa ja yleensä neljä kummassakin takatassussa.',
+    'Kissan takajalat ovat voimakkaat ja auttavat sitä hyppäämisessä.',
+    'Kissat voivat käyttää kynsiään kiipeämiseen.',
+    'Kissan häntä auttaa joissakin tilanteissa kehon liikkeiden hallinnassa.',
+    'Kissat voivat säätää korviensa asentoa tarkasti.',
+    'Kissan silmissä on rakenne, joka auttaa sitä hyödyntämään vähäistä valoa.',
+    'Kissan nenässä on paljon hajureseptoreita.',
+    'Kissat käyttävät hajua myös tuttujen paikkojen tunnistamiseen.',
+    'Kissan viikset voivat liikkua hieman ympäristön ärsykkeiden mukaan.',
+    'Kissan kuuloalue ulottuu ihmistä korkeammille taajuuksille.',
+    'Kissat voivat kuulla pieniä ääniä, joita ihminen ei huomaa.',
+    'Kissa voi käyttää kehon asentoa viestiessään toiselle kissalle.',
+    'Kissan korvien asento voi antaa vihjeitä sen tunnetilasta.',
+    'Kissan pupillit voivat olla kirkkaassa valossa hyvin kapeat.',
+    'Kissan silmien väri voi vaihdella yksilön mukaan.',
+    'Kissan turkin paksuus vaihtelee rodun ja yksilön mukaan.',
+    'Jotkut kissat vaihtavat karvaa erityisesti vuodenaikojen mukaan.',
+    'Kissan turkin nuoleminen auttaa myös levittämään ihon omia öljyjä.',
+    'Kissa voi käyttää tassujaan esineen tutkimiseen.',
+    'Kissat voivat oppia avaamaan joitakin yksinkertaisia ovia tai laatikoita.',
+    'Kissat voivat muistaa tuttuja paikkoja ja reittejä.',
+    'Kissan päivä voi sisältää paljon lyhyitä lepojaksoja.',
+    'Kissat voivat tehdä nopeita suunnanmuutoksia juostessaan.',
+    'Kissan selkäranka on hyvin joustava.',
+    'Joustava selkäranka auttaa kissaa tekemään nopeita liikkeitä.',
+    'Kissat voivat venyttää vartaloaan herättyään.',
+    'Kissan tasapainoaisti auttaa sitä liikkumaan kapeilla pinnoilla.',
+    'Kissat voivat käyttää näköä, kuuloa ja hajua yhdessä ympäristön tutkimiseen.',
+    'Kissa voi pysähtyä tarkkailemaan ympäristöä ennen liikkumista.',
+    'Kissat voivat oppia ennakoimaan tuttuja päivittäisiä tapahtumia.',
+    'Kissa voi tunnistaa tutun ihmisen tämän liikkeistä tai äänestä.',
+    'Kissat voivat näyttää kiinnostusta nostamalla korviaan kohti ääntä.',
+    'Kissan leikki voi sisältää vaanimista, jahtaamista ja hyppäämistä.',
+    'Kissat voivat innostua nopeasti liikkuvasta esineestä.',
+    'Kissan raapiminen jättää sekä näkyviä että tuoksuun liittyviä merkkejä.',
+    'Kissat voivat hieroa päätään tuttuun ihmiseen.',
+    'Kissa voi osoittaa rentoutumista makoilemalla kyljellään.',
+    'Kissat voivat vaihtaa nukkumapaikkaansa ympäristön lämpötilan mukaan.',
+    'Kissat voivat hakeutua lämpimiin paikkoihin lepäämään.',
+    'Monet kissat nauttivat rauhallisista rutiineista.',
   ];
 
   // ==========================================================
@@ -152,6 +195,47 @@ class CatFacts {
     'Cats can quickly switch between resting and active play.',
     'Cats may prefer certain sleeping spots for a long time.',
     'A sunny spot is a favorite resting place for many cats.',
+
+    'Cats usually have five toes on each front paw and four on each back paw.',
+    'A cat’s powerful hind legs help it jump.',
+    'Cats can use their claws when climbing.',
+    'A cat’s tail can help control body movement in certain situations.',
+    'Cats can adjust the position of their ears very precisely.',
+    'A structure in a cat’s eyes helps it make better use of available light.',
+    'A cat’s nose contains many scent receptors.',
+    'Cats can use scent to recognize familiar places.',
+    'A cat’s whiskers can move in response to its surroundings.',
+    'A cat’s hearing extends to higher frequencies than human hearing.',
+    'Cats can hear small sounds that humans may not notice.',
+    'Cats can use body posture to communicate with other cats.',
+    'The position of a cat’s ears can provide clues about its mood.',
+    'A cat’s pupils can become very narrow in bright light.',
+    'Cat eye colors vary between individual cats.',
+    'The thickness of a cat’s coat varies by breed and individual.',
+    'Some cats shed more during seasonal changes.',
+    'Grooming also helps spread natural oils through a cat’s coat.',
+    'A cat can use its paws to investigate an object.',
+    'Some cats can learn to open simple doors or drawers.',
+    'Cats can remember familiar places and routes.',
+    'A cat’s day can contain many short periods of rest.',
+    'Cats can make very quick changes of direction while running.',
+    'A cat’s spine is highly flexible.',
+    'A flexible spine helps a cat make quick movements.',
+    'Cats may stretch their bodies after waking up.',
+    'A cat’s sense of balance helps it move along narrow surfaces.',
+    'Cats can use sight, hearing, and smell together to explore their surroundings.',
+    'A cat may stop and observe its surroundings before moving.',
+    'Cats can learn to anticipate familiar daily events.',
+    'A cat may recognize a familiar person by their voice or movements.',
+    'Cats may show interest by pointing their ears toward a sound.',
+    'Cat play can include stalking, chasing, and jumping.',
+    'Cats can become excited by a quickly moving object.',
+    'Scratching leaves both visible and scent-related marks.',
+    'Cats can rub their heads against familiar people.',
+    'A cat may show relaxation by lying comfortably on its side.',
+    'Cats may change sleeping places depending on temperature.',
+    'Cats often seek warm places for resting.',
+    'Many cats enjoy calm and predictable routines.',
   ];
 
   // ==========================================================
@@ -219,6 +303,47 @@ class CatFacts {
     'Katzen können schnell zwischen Ruhe und aktivem Spielen wechseln.',
     'Katzen können bestimmte Schlafplätze lange bevorzugen.',
     'Ein sonniger Platz ist für viele Katzen ein beliebter Ruheplatz.',
+
+    'Katzen haben normalerweise fünf Zehen an jeder Vorderpfote und vier an jeder Hinterpfote.',
+    'Die kräftigen Hinterbeine einer Katze helfen ihr beim Springen.',
+    'Katzen können ihre Krallen beim Klettern einsetzen.',
+    'Der Schwanz kann einer Katze bei bestimmten Bewegungen helfen, ihren Körper zu kontrollieren.',
+    'Katzen können die Position ihrer Ohren sehr genau verändern.',
+    'Eine Struktur in den Augen hilft Katzen, vorhandenes Licht besser zu nutzen.',
+    'Die Nase einer Katze enthält viele Geruchsrezeptoren.',
+    'Katzen können vertraute Orte auch anhand von Gerüchen erkennen.',
+    'Die Schnurrhaare einer Katze können auf Reize aus der Umgebung reagieren.',
+    'Das Gehör einer Katze reicht zu höheren Frequenzen als das menschliche Gehör.',
+    'Katzen können kleine Geräusche hören, die Menschen möglicherweise nicht bemerken.',
+    'Katzen können Körperhaltungen zur Kommunikation mit anderen Katzen verwenden.',
+    'Die Stellung der Ohren kann Hinweise auf die Stimmung einer Katze geben.',
+    'Die Pupillen einer Katze können bei hellem Licht sehr schmal werden.',
+    'Die Augenfarbe kann sich von Katze zu Katze unterscheiden.',
+    'Die Dichte des Katzenfells unterscheidet sich je nach Rasse und Individuum.',
+    'Manche Katzen verlieren bei saisonalen Veränderungen mehr Fell.',
+    'Fellpflege hilft auch dabei, natürliche Hautöle im Fell zu verteilen.',
+    'Eine Katze kann ihre Pfoten benutzen, um einen Gegenstand zu untersuchen.',
+    'Manche Katzen können lernen, einfache Türen oder Schubladen zu öffnen.',
+    'Katzen können sich an vertraute Orte und Wege erinnern.',
+    'Der Tagesablauf einer Katze kann viele kurze Ruhephasen enthalten.',
+    'Katzen können beim Laufen sehr schnell die Richtung ändern.',
+    'Die Wirbelsäule einer Katze ist sehr beweglich.',
+    'Eine flexible Wirbelsäule hilft einer Katze bei schnellen Bewegungen.',
+    'Katzen strecken ihren Körper oft nach dem Aufwachen.',
+    'Der Gleichgewichtssinn hilft einer Katze, sich auf schmalen Flächen zu bewegen.',
+    'Katzen können Sehen, Hören und Riechen gemeinsam zur Erkundung nutzen.',
+    'Eine Katze kann anhalten und ihre Umgebung beobachten, bevor sie weitergeht.',
+    'Katzen können lernen, vertraute tägliche Ereignisse vorherzusehen.',
+    'Eine Katze kann einen vertrauten Menschen an Stimme oder Bewegungen erkennen.',
+    'Katzen können Interesse zeigen, indem sie ihre Ohren auf ein Geräusch richten.',
+    'Zum Spielen einer Katze können Anschleichen, Jagen und Springen gehören.',
+    'Katzen können sich für schnell bewegende Gegenstände begeistern.',
+    'Kratzen hinterlässt sichtbare und geruchsbezogene Markierungen.',
+    'Katzen können vertraute Menschen sanft mit dem Kopf berühren.',
+    'Eine Katze kann Entspannung zeigen, indem sie bequem auf der Seite liegt.',
+    'Katzen können ihren Schlafplatz je nach Temperatur wechseln.',
+    'Katzen suchen zum Ruhen oft warme Plätze auf.',
+    'Viele Katzen mögen ruhige und vorhersehbare Routinen.',
   ];
 
   // ==========================================================
@@ -286,6 +411,47 @@ class CatFacts {
     'Los gatos pueden cambiar rápidamente entre descansar y jugar activamente.',
     'Los gatos pueden preferir ciertos lugares para dormir durante mucho tiempo.',
     'Un lugar soleado es un sitio favorito para descansar de muchos gatos.',
+
+    'Los gatos suelen tener cinco dedos en cada pata delantera y cuatro en cada pata trasera.',
+    'Las fuertes patas traseras ayudan al gato a saltar.',
+    'Los gatos pueden utilizar sus garras para trepar.',
+    'La cola puede ayudar al gato a controlar sus movimientos corporales en determinadas situaciones.',
+    'Los gatos pueden ajustar con precisión la posición de sus orejas.',
+    'Una estructura de los ojos del gato le ayuda a aprovechar mejor la luz disponible.',
+    'La nariz de un gato contiene muchos receptores olfativos.',
+    'Los gatos pueden utilizar los olores para reconocer lugares familiares.',
+    'Los bigotes de un gato pueden moverse en respuesta a su entorno.',
+    'El oído de los gatos alcanza frecuencias más altas que el oído humano.',
+    'Los gatos pueden oír pequeños sonidos que las personas quizá no perciban.',
+    'Los gatos pueden utilizar la postura corporal para comunicarse con otros gatos.',
+    'La posición de las orejas puede dar pistas sobre el estado de ánimo de un gato.',
+    'Las pupilas de un gato pueden volverse muy estrechas con mucha luz.',
+    'El color de los ojos puede variar entre diferentes gatos.',
+    'El grosor del pelaje puede variar según la raza y el individuo.',
+    'Algunos gatos mudan más pelo durante los cambios de estación.',
+    'El acicalamiento también ayuda a distribuir los aceites naturales por el pelaje.',
+    'Un gato puede utilizar sus patas para investigar un objeto.',
+    'Algunos gatos pueden aprender a abrir puertas o cajones sencillos.',
+    'Los gatos pueden recordar lugares y rutas familiares.',
+    'El día de un gato puede incluir muchos períodos cortos de descanso.',
+    'Los gatos pueden cambiar rápidamente de dirección cuando corren.',
+    'La columna vertebral de un gato es muy flexible.',
+    'Una columna flexible ayuda al gato a realizar movimientos rápidos.',
+    'Los gatos pueden estirar el cuerpo después de despertarse.',
+    'El sentido del equilibrio ayuda al gato a moverse por superficies estrechas.',
+    'Los gatos pueden utilizar la vista, el oído y el olfato juntos para explorar.',
+    'Un gato puede detenerse y observar su entorno antes de continuar.',
+    'Los gatos pueden aprender a anticipar acontecimientos diarios conocidos.',
+    'Un gato puede reconocer a una persona familiar por su voz o sus movimientos.',
+    'Los gatos pueden mostrar interés orientando las orejas hacia un sonido.',
+    'El juego de un gato puede incluir acechar, perseguir y saltar.',
+    'Los gatos pueden entusiasmarse con objetos que se mueven rápidamente.',
+    'Rascar deja marcas visibles y también marcas relacionadas con el olor.',
+    'Los gatos pueden frotar suavemente la cabeza contra personas conocidas.',
+    'Un gato puede mostrar relajación tumbándose cómodamente de lado.',
+    'Los gatos pueden cambiar de lugar para dormir según la temperatura.',
+    'Los gatos suelen buscar lugares cálidos para descansar.',
+    'A muchos gatos les gustan las rutinas tranquilas y predecibles.',
   ];
 
   // ==========================================================
@@ -353,6 +519,47 @@ class CatFacts {
     'Les chats peuvent passer rapidement du repos au jeu actif.',
     'Les chats peuvent préférer certains endroits pour dormir pendant longtemps.',
     'Un endroit ensoleillé est un lieu de repos préféré de nombreux chats.',
+
+    'Les chats ont généralement cinq doigts à chaque patte avant et quatre à chaque patte arrière.',
+    'Les puissantes pattes arrière d’un chat l’aident à sauter.',
+    'Les chats peuvent utiliser leurs griffes pour grimper.',
+    'La queue peut aider un chat à contrôler certains mouvements de son corps.',
+    'Les chats peuvent ajuster très précisément la position de leurs oreilles.',
+    'Une structure des yeux aide les chats à mieux utiliser la lumière disponible.',
+    'Le nez d’un chat contient de nombreux récepteurs olfactifs.',
+    'Les chats peuvent utiliser les odeurs pour reconnaître des endroits familiers.',
+    'Les moustaches d’un chat peuvent bouger en réponse à son environnement.',
+    'L’ouïe des chats atteint des fréquences plus élevées que celle des humains.',
+    'Les chats peuvent entendre de petits sons que les humains ne remarquent pas.',
+    'Les chats peuvent utiliser leur posture pour communiquer avec d’autres chats.',
+    'La position des oreilles peut donner des indices sur l’humeur d’un chat.',
+    'Les pupilles d’un chat peuvent devenir très étroites en pleine lumière.',
+    'La couleur des yeux varie selon les chats.',
+    'L’épaisseur du pelage varie selon la race et l’individu.',
+    'Certains chats perdent davantage de poils lors des changements de saison.',
+    'Le toilettage aide aussi à répartir les huiles naturelles dans le pelage.',
+    'Un chat peut utiliser ses pattes pour examiner un objet.',
+    'Certains chats peuvent apprendre à ouvrir des portes ou des tiroirs simples.',
+    'Les chats peuvent se souvenir de lieux et de chemins familiers.',
+    'La journée d’un chat peut contenir de nombreuses courtes périodes de repos.',
+    'Les chats peuvent changer très rapidement de direction lorsqu’ils courent.',
+    'La colonne vertébrale d’un chat est très flexible.',
+    'Une colonne flexible aide le chat à effectuer des mouvements rapides.',
+    'Les chats peuvent étirer leur corps après leur réveil.',
+    'Le sens de l’équilibre aide un chat à se déplacer sur des surfaces étroites.',
+    'Les chats peuvent utiliser ensemble la vue, l’ouïe et l’odorat pour explorer.',
+    'Un chat peut s’arrêter pour observer son environnement avant de continuer.',
+    'Les chats peuvent apprendre à anticiper des événements quotidiens familiers.',
+    'Un chat peut reconnaître une personne familière à sa voix ou à ses mouvements.',
+    'Les chats peuvent montrer leur intérêt en orientant leurs oreilles vers un son.',
+    'Le jeu d’un chat peut comprendre la traque, la poursuite et les sauts.',
+    'Les chats peuvent être attirés par les objets qui se déplacent rapidement.',
+    'Faire ses griffes laisse des marques visibles et olfactives.',
+    'Les chats peuvent frotter doucement leur tête contre des personnes familières.',
+    'Un chat peut montrer sa détente en étant confortablement couché sur le côté.',
+    'Les chats peuvent changer de lieu de sommeil selon la température.',
+    'Les chats recherchent souvent des endroits chauds pour se reposer.',
+    'Beaucoup de chats apprécient les routines calmes et prévisibles.',
   ];
 
   // ==========================================================
@@ -420,6 +627,47 @@ class CatFacts {
     '猫可以迅速在休息和活跃玩耍之间切换。',
     '猫可能会长期喜欢某些特定的睡觉地点。',
     '阳光充足的地方是许多猫喜欢休息的地点。',
+
+    '猫通常前爪各有五个脚趾，后爪各有四个脚趾。',
+    '猫强壮的后腿帮助它跳跃。',
+    '猫可以利用爪子帮助自己攀爬。',
+    '在某些情况下，猫的尾巴可以帮助控制身体动作。',
+    '猫可以非常精确地调整耳朵的位置。',
+    '猫眼睛中的一种结构可以帮助它更好地利用环境中的光线。',
+    '猫的鼻子含有许多嗅觉受体。',
+    '猫可以利用气味识别熟悉的地方。',
+    '猫的胡须会根据周围环境产生轻微的移动。',
+    '猫的听觉可以感知比人类更高的频率。',
+    '猫可以听到人类可能注意不到的小声音。',
+    '猫可以利用身体姿势与其他猫交流。',
+    '猫耳朵的位置可以透露它的情绪。',
+    '在明亮的环境中，猫的瞳孔可以变得非常细。',
+    '不同猫咪的眼睛颜色可能不同。',
+    '猫咪毛发的厚度会因品种和个体而不同。',
+    '一些猫在季节变化时会掉更多的毛。',
+    '舔毛也可以帮助猫把天然油脂分布到毛发上。',
+    '猫可以用爪子探索一个物体。',
+    '一些猫可以学会打开简单的门或抽屉。',
+    '猫可以记住熟悉的地方和路线。',
+    '猫一天中可能有很多短暂的休息时间。',
+    '猫奔跑时可以非常快速地改变方向。',
+    '猫的脊柱非常灵活。',
+    '灵活的脊柱帮助猫完成快速动作。',
+    '猫醒来后可能会伸展身体。',
+    '猫的平衡感帮助它在狭窄的表面上移动。',
+    '猫可以结合视觉、听觉和嗅觉探索周围环境。',
+    '猫在移动之前可能会停下来观察周围。',
+    '猫可以学会预判熟悉的日常事件。',
+    '猫可能通过人的声音或动作认出熟悉的人。',
+    '猫可能会把耳朵朝向声音来表示兴趣。',
+    '猫的玩耍可能包括潜伏、追逐和跳跃。',
+    '快速移动的物体可能会吸引猫的注意。',
+    '抓挠会留下可见的痕迹，也会留下气味标记。',
+    '猫可以用头轻轻蹭熟悉的人。',
+    '猫舒服地侧躺时可能是在表现放松。',
+    '猫可能会根据温度改变睡觉地点。',
+    '猫经常会寻找温暖的地方休息。',
+    '许多猫喜欢安静而规律的生活。',
   ];
 
   // ==========================================================
@@ -487,6 +735,47 @@ class CatFacts {
     'Mèo có thể nhanh chóng chuyển từ nghỉ ngơi sang chơi đùa năng động.',
     'Mèo có thể thích một số chỗ ngủ nhất định trong thời gian dài.',
     'Một nơi có ánh nắng là chỗ nghỉ yêu thích của nhiều con mèo.',
+
+    'Mèo thường có năm ngón ở mỗi chân trước và bốn ngón ở mỗi chân sau.',
+    'Hai chân sau khỏe giúp mèo nhảy.',
+    'Mèo có thể sử dụng móng vuốt để leo trèo.',
+    'Trong một số tình huống, đuôi giúp mèo kiểm soát chuyển động của cơ thể.',
+    'Mèo có thể điều chỉnh vị trí của tai rất chính xác.',
+    'Một cấu trúc trong mắt giúp mèo tận dụng ánh sáng sẵn có tốt hơn.',
+    'Mũi mèo có rất nhiều thụ thể khứu giác.',
+    'Mèo có thể dùng mùi để nhận biết những nơi quen thuộc.',
+    'Ria mèo có thể chuyển động để phản ứng với môi trường xung quanh.',
+    'Thính giác của mèo có thể cảm nhận những tần số cao hơn con người.',
+    'Mèo có thể nghe thấy những âm thanh nhỏ mà con người không nhận ra.',
+    'Mèo có thể dùng tư thế cơ thể để giao tiếp với những con mèo khác.',
+    'Vị trí của tai có thể cho biết một phần tâm trạng của mèo.',
+    'Đồng tử của mèo có thể trở nên rất nhỏ dưới ánh sáng mạnh.',
+    'Màu mắt có thể khác nhau giữa các con mèo.',
+    'Độ dày của bộ lông thay đổi tùy theo giống và từng cá thể.',
+    'Một số mèo rụng nhiều lông hơn khi mùa thay đổi.',
+    'Việc chải chuốt giúp phân bố dầu tự nhiên trên bộ lông.',
+    'Mèo có thể dùng bàn chân để khám phá một đồ vật.',
+    'Một số mèo có thể học cách mở những cánh cửa hoặc ngăn kéo đơn giản.',
+    'Mèo có thể ghi nhớ những nơi và tuyến đường quen thuộc.',
+    'Một ngày của mèo có thể có nhiều khoảng nghỉ ngắn.',
+    'Mèo có thể đổi hướng rất nhanh khi chạy.',
+    'Cột sống của mèo rất linh hoạt.',
+    'Cột sống linh hoạt giúp mèo thực hiện những chuyển động nhanh.',
+    'Mèo có thể duỗi người sau khi thức dậy.',
+    'Khả năng giữ thăng bằng giúp mèo di chuyển trên những bề mặt hẹp.',
+    'Mèo có thể kết hợp thị giác, thính giác và khứu giác để khám phá môi trường.',
+    'Mèo có thể dừng lại quan sát xung quanh trước khi di chuyển.',
+    'Mèo có thể học cách dự đoán những sự kiện quen thuộc hằng ngày.',
+    'Mèo có thể nhận ra người quen qua giọng nói hoặc chuyển động.',
+    'Mèo có thể hướng tai về phía âm thanh khi cảm thấy tò mò.',
+    'Trò chơi của mèo có thể bao gồm rình, đuổi theo và nhảy.',
+    'Mèo có thể bị thu hút bởi những vật chuyển động nhanh.',
+    'Việc cào để lại dấu vết nhìn thấy được và dấu hiệu mùi.',
+    'Mèo có thể nhẹ nhàng cọ đầu vào người quen.',
+    'Mèo nằm nghiêng thoải mái có thể là dấu hiệu của sự thư giãn.',
+    'Mèo có thể thay đổi chỗ ngủ tùy theo nhiệt độ.',
+    'Mèo thường tìm những nơi ấm áp để nghỉ ngơi.',
+    'Nhiều con mèo thích những thói quen yên tĩnh và dễ đoán.',
   ];
 
   // ==========================================================
@@ -554,6 +843,47 @@ class CatFacts {
     '猫は休息と活発な遊びを素早く切り替えることができます。',
     '猫は特定の寝場所を長く好むことがあります。',
     '日当たりの良い場所は多くの猫のお気に入りの休憩場所です。',
+
+    '猫は通常、前足に5本、後ろ足に4本の指があります。',
+    '猫の強い後ろ足はジャンプするのに役立ちます。',
+    '猫は爪を使って木などに登ることができます。',
+    '猫の尻尾は状況によって体の動きを調整するのに役立ちます。',
+    '猫は耳の位置を細かく調整することができます。',
+    '猫の目には利用できる光を効率よく使うための構造があります。',
+    '猫の鼻には多くの嗅覚受容体があります。',
+    '猫はにおいを使って慣れた場所を認識することがあります。',
+    '猫のひげは周囲の刺激に反応して動くことがあります。',
+    '猫の聴覚は人間より高い周波数まで感じ取ることができます。',
+    '猫は人間が気づかない小さな音を聞くことがあります。',
+    '猫は体の姿勢を使って他の猫とコミュニケーションできます。',
+    '猫の耳の位置は気分を知る手がかりになることがあります。',
+    '明るい場所では猫の瞳孔はとても細くなることがあります。',
+    '猫の目の色は個体によって異なります。',
+    '猫の毛の厚さは品種や個体によって異なります。',
+    '季節の変化によって毛が多く抜ける猫もいます。',
+    '毛づくろいは被毛に自然な油分を広げるのにも役立ちます。',
+    '猫は前足を使って物を調べることがあります。',
+    '簡単なドアや引き出しの開け方を覚える猫もいます。',
+    '猫は慣れた場所や道を覚えることができます。',
+    '猫の一日には短い休息時間が何度もあります。',
+    '猫は走りながら素早く方向を変えることができます。',
+    '猫の背骨はとても柔軟です。',
+    '柔軟な背骨は猫の素早い動きを助けます。',
+    '猫は起きた後に体を伸ばすことがあります。',
+    '猫の平衡感覚は狭い場所を歩くのに役立ちます。',
+    '猫は視覚、聴覚、嗅覚を組み合わせて周囲を探索できます。',
+    '猫は動く前に立ち止まって周囲を観察することがあります。',
+    '猫は慣れた日常の出来事を予測することを学べます。',
+    '猫は人の声や動きから知っている人を認識することがあります。',
+    '猫は音の方向に耳を向けて興味を示すことがあります。',
+    '猫の遊びには忍び寄る、追いかける、跳ぶなどの行動があります。',
+    '猫は素早く動く物体に興味を示すことがあります。',
+    '爪とぎは目に見える跡とにおいによる印の両方を残します。',
+    '猫は慣れた人に頭を優しくこすりつけることがあります。',
+    '猫が横になってリラックスしていることがあります。',
+    '猫は温度に応じて寝る場所を変えることがあります。',
+    '猫は暖かい場所を探して休むことがあります。',
+    '多くの猫は静かで予測しやすい生活リズムを好みます。',
   ];
 
   // ==========================================================
@@ -564,16 +894,13 @@ class CatFacts {
     required String languageCode,
     DateTime? date,
   }) {
-    // Käytetään aina UTC-päivää.
-    //
-    // Näin esimerkiksi Suomessa ja Japanissa oleva käyttäjä
-    // saa saman faktan saman UTC-päivän aikana.
-    final DateTime inputDate = date ?? DateTime.now().toUtc();
+    final DateTime inputDate =
+        (date ?? DateTime.now()).toUtc();
 
     final DateTime utcDay = DateTime.utc(
-      inputDate.toUtc().year,
-      inputDate.toUtc().month,
-      inputDate.toUtc().day,
+      inputDate.year,
+      inputDate.month,
+      inputDate.day,
     );
 
     final DateTime startDay = DateTime.utc(
@@ -582,15 +909,16 @@ class CatFacts {
       1,
     );
 
-    final int dayIndex = utcDay.difference(startDay).inDays;
+    final int dayIndex =
+        utcDay.difference(startDay).inDays;
 
-    final List<String> facts = _factsForLanguage(languageCode);
+    final List<String> facts =
+        _factsForLanguage(languageCode);
 
     if (facts.isEmpty) {
       return '';
     }
 
-    // Toimii myös ennen 1.1.2026.
     final int index =
         ((dayIndex % facts.length) + facts.length) %
             facts.length;
@@ -605,11 +933,6 @@ class CatFacts {
   static List<String> _factsForLanguage(
     String languageCode,
   ) {
-    // Tukee myös koodeja kuten:
-    // en-US
-    // fi-FI
-    // de-DE
-    // jne.
     final String normalizedCode =
         languageCode.trim().toLowerCase().split('-').first;
 
@@ -639,7 +962,6 @@ class CatFacts {
         return ja;
 
       default:
-        // Turvallinen oletuskieli.
         return en;
     }
   }
