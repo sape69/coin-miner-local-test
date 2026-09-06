@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../data/cat_facts.dart';
+import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
 import 'cat_fact_card.dart';
 
@@ -878,6 +879,9 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _showLanguageDialog() async {
+    final AppLocalizations localization =
+        AppLocalizations(widget.languageCode);
+
     await showDialog(
       context: context,
       builder: (dialogContext) {
@@ -887,28 +891,38 @@ class _HomePageState extends State<HomePage>
             borderRadius:
                 BorderRadius.circular(24),
           ),
-          title: const Text(
-            '🐱 Choose Language',
-            style: TextStyle(
+          title: Text(
+            '🐱 ${localization.get('selectLanguage')}',
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _languageButton(
-                context: dialogContext,
-                code: 'fi',
-                title: '🇫🇮 Suomi',
-              ),
-              const SizedBox(height: 10),
-              _languageButton(
-                context: dialogContext,
-                code: 'en',
-                title: '🇬🇧 English',
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children:
+                  AppLocalizations
+                      .supportedLanguages
+                      .entries
+                      .map(
+                (entry) {
+                  return Padding(
+                    padding:
+                        const EdgeInsets.only(
+                      bottom: 10,
+                    ),
+                    child:
+                        _languageButton(
+                      context:
+                          dialogContext,
+                      code: entry.key,
+                      title: entry.value,
+                    ),
+                  );
+                },
+              ).toList(),
+            ),
           ),
         );
       },
@@ -937,12 +951,16 @@ class _HomePageState extends State<HomePage>
             );
           }
         },
-        style: ElevatedButton.styleFrom(
+        style:
+            ElevatedButton.styleFrom(
           backgroundColor:
               selected
                   ? accentColor
-                  : const Color(0xFF35204F),
-          foregroundColor: Colors.white,
+                  : const Color(
+                      0xFF35204F,
+                    ),
+          foregroundColor:
+              Colors.white,
           padding:
               const EdgeInsets.symmetric(
             vertical: 14,
@@ -953,7 +971,30 @@ class _HomePageState extends State<HomePage>
                 BorderRadius.circular(14),
           ),
         ),
-        child: Text(title),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                textAlign:
+                    TextAlign.center,
+                style: TextStyle(
+                  fontWeight:
+                      selected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (selected)
+              const Icon(
+                Icons
+                    .check_circle_rounded,
+                color: goldColor,
+                size: 20,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -968,6 +1009,52 @@ class _HomePageState extends State<HomePage>
     _showMessage(
       '🐱✨ $title tulee Stella-teemalla pian!',
     );
+  }
+
+  // ============================================================
+  // 🐱 DAILY CAT FACT
+  // ============================================================
+
+  Widget _buildDailyCatFact() {
+    final String fact =
+        CatFacts.getDailyFact(
+      languageCode:
+          widget.languageCode,
+    );
+
+    return CatFactCard(
+      title: _catFactTitle(),
+      fact: fact,
+    );
+  }
+
+  String _catFactTitle() {
+    switch (widget.languageCode) {
+      case 'fi':
+        return '🐱 Stella-kissan päivän fakta';
+
+      case 'de':
+        return '🐱 Stellas Katzenfakt des Tages';
+
+      case 'es':
+        return '🐱 Dato felino del día de Stella';
+
+      case 'fr':
+        return '🐱 Le fait félin du jour de Stella';
+
+      case 'zh':
+        return '🐱 Stella 今日猫咪知识';
+
+      case 'vi':
+        return '🐱 Sự thật về mèo của Stella hôm nay';
+
+      case 'ja':
+        return '🐱 Stella 今日の猫豆知識';
+
+      case 'en':
+      default:
+        return '🐱 Stella Cat Fact of the Day';
+    }
   }
 
   // ============================================================
@@ -1030,52 +1117,6 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 DAILY CAT FACT
-  // ============================================================
-
-  Widget _buildDailyCatFact() {
-    final String fact =
-        CatFacts.getDailyFact(
-      languageCode:
-          widget.languageCode,
-    );
-
-    return CatFactCard(
-      title: _catFactTitle(),
-      fact: fact,
-    );
-  }
-
-  String _catFactTitle() {
-    switch (widget.languageCode) {
-      case 'fi':
-        return '🐱 Stella-kissan päivän fakta';
-
-      case 'de':
-        return '🐱 Stellas Katzenfakt des Tages';
-
-      case 'es':
-        return '🐱 Dato felino del día de Stella';
-
-      case 'fr':
-        return '🐱 Le fait félin du jour de Stella';
-
-      case 'zh':
-        return '🐱 Stella 今日猫咪知识';
-
-      case 'vi':
-        return '🐱 Sự thật về mèo của Stella hôm nay';
-
-      case 'ja':
-        return '🐱 Stella 今日の猫豆知識';
-
-      case 'en':
-      default:
-        return '🐱 Stella Cat Fact of the Day';
-    }
-  }
-
-  // ============================================================
   // 💬 MESSAGE
   // ============================================================
 
@@ -1131,7 +1172,8 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor:
+          backgroundColor,
 
       // ========================================================
       // 🐱 STELLA DRAWER
@@ -1275,13 +1317,16 @@ class _HomePageState extends State<HomePage>
             return Container(
               width: 52,
               height: 52,
-              decoration: BoxDecoration(
+              decoration:
+                  BoxDecoration(
                 color: cardColor,
                 borderRadius:
-                    BorderRadius.circular(17),
+                    BorderRadius.circular(
+                  17,
+                ),
                 border: Border.all(
-                  color: accentColor
-                      .withValues(
+                  color:
+                      accentColor.withValues(
                     alpha: 0.45,
                   ),
                 ),
@@ -1296,20 +1341,26 @@ class _HomePageState extends State<HomePage>
                   color: pinkColor,
                   size: 29,
                 ),
-                tooltip: 'Stella Menu',
+                tooltip:
+                    'Stella Menu',
               ),
             );
           },
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(
+          width: 12,
+        ),
 
         Container(
           width: 58,
           height: 58,
-          decoration: BoxDecoration(
+          decoration:
+              BoxDecoration(
             borderRadius:
-                BorderRadius.circular(18),
+                BorderRadius.circular(
+              18,
+            ),
             gradient:
                 const LinearGradient(
               colors: [
@@ -1319,7 +1370,8 @@ class _HomePageState extends State<HomePage>
             ),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x663C1B63),
+                color:
+                    Color(0x663C1B63),
                 blurRadius: 20,
               ),
             ],
@@ -1334,7 +1386,9 @@ class _HomePageState extends State<HomePage>
           ),
         ),
 
-        const SizedBox(width: 14),
+        const SizedBox(
+          width: 14,
+        ),
 
         const Expanded(
           child: Column(
@@ -1344,18 +1398,22 @@ class _HomePageState extends State<HomePage>
               Text(
                 'STELLURIINI',
                 style: TextStyle(
-                  color: Colors.white,
+                  color:
+                      Colors.white,
                   fontSize: 22,
                   fontWeight:
                       FontWeight.bold,
                   letterSpacing: 1.2,
                 ),
               ),
-              SizedBox(height: 3),
+              SizedBox(
+                height: 3,
+              ),
               Text(
                 'Stella Mining ⛏️✨',
                 style: TextStyle(
-                  color: pinkColor,
+                  color:
+                      pinkColor,
                   fontSize: 14,
                 ),
               ),
@@ -1386,44 +1444,54 @@ class _HomePageState extends State<HomePage>
             _unclaimedMining > 0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      padding:
+          const EdgeInsets.all(24),
+      decoration:
+          BoxDecoration(
         borderRadius:
             BorderRadius.circular(30),
         gradient:
             const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin:
+              Alignment.topLeft,
+          end:
+              Alignment.bottomRight,
           colors: [
             Color(0xFF2D174D),
             Color(0xFF1B1033),
           ],
         ),
         border: Border.all(
-          color: accentColor.withValues(
+          color:
+              accentColor.withValues(
             alpha: 0.4,
           ),
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x55000000),
+            color:
+                Color(0x55000000),
             blurRadius: 25,
-            offset: Offset(0, 10),
+            offset:
+                Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         children: [
           AnimatedBuilder(
-            animation: _catAnimation,
+            animation:
+                _catAnimation,
             builder: (
               context,
               child,
             ) {
               return Transform.translate(
-                offset: Offset(
+                offset:
+                    Offset(
                   0,
-                  -_catAnimation.value,
+                  -_catAnimation
+                      .value,
                 ),
                 child: child,
               );
@@ -1435,15 +1503,18 @@ class _HomePageState extends State<HomePage>
                   BoxDecoration(
                 shape:
                     BoxShape.circle,
-                color: accentColor
-                    .withValues(
+                color:
+                    accentColor
+                        .withValues(
                   alpha: 0.15,
                 ),
               ),
-              child: const Center(
+              child:
+                  const Center(
                 child: Text(
                   '🐱⛏️',
-                  style: TextStyle(
+                  style:
+                      TextStyle(
                     fontSize: 55,
                   ),
                 ),
@@ -1451,7 +1522,9 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(
+            height: 18,
+          ),
 
           Text(
             _miningActive
@@ -1459,8 +1532,10 @@ class _HomePageState extends State<HomePage>
                 : completed
                     ? 'MINING COMPLETE!'
                     : 'STELLA IS RESTING',
-            style: const TextStyle(
-              color: Colors.white,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white,
               fontSize: 20,
               fontWeight:
                   FontWeight.bold,
@@ -1468,7 +1543,9 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(
+            height: 8,
+          ),
 
           Text(
             _miningActive
@@ -1478,41 +1555,54 @@ class _HomePageState extends State<HomePage>
                     : '🐱 Stella odottaa seuraavaa louhintaa',
             textAlign:
                 TextAlign.center,
-            style: const TextStyle(
-              color: secondaryTextColor,
+            style:
+                const TextStyle(
+              color:
+                  secondaryTextColor,
               fontSize: 14,
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(
+            height: 24,
+          ),
 
           Text(
             _formatStl(
               _unclaimedMining,
             ),
-            style: const TextStyle(
-              color: goldColor,
+            style:
+                const TextStyle(
+              color:
+                  goldColor,
               fontSize: 38,
               fontWeight:
                   FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(
+            height: 4,
+          ),
 
           const Text(
             'STL MINED',
-            style: TextStyle(
-              color: Color(0xFFBFAEDB),
+            style:
+                TextStyle(
+              color:
+                  Color(0xFFBFAEDB),
               letterSpacing: 2,
               fontSize: 12,
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(
+            height: 24,
+          ),
 
           Container(
-            width: double.infinity,
+            width:
+                double.infinity,
             padding:
                 const EdgeInsets.symmetric(
               vertical: 15,
@@ -1521,7 +1611,8 @@ class _HomePageState extends State<HomePage>
             decoration:
                 BoxDecoration(
               color:
-                  Colors.black.withValues(
+                  Colors.black
+                      .withValues(
                 alpha: 0.20,
               ),
               borderRadius:
@@ -1529,7 +1620,8 @@ class _HomePageState extends State<HomePage>
                 18,
               ),
             ),
-            child: Column(
+            child:
+                Column(
               children: [
                 Text(
                   _miningActive
@@ -1541,14 +1633,17 @@ class _HomePageState extends State<HomePage>
                           : 'READY',
                   style:
                       const TextStyle(
-                    color: Colors.white,
+                    color:
+                        Colors.white,
                     fontSize: 27,
                     fontWeight:
                         FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 5),
+                const SizedBox(
+                  height: 5,
+                ),
 
                 Text(
                   _miningActive
@@ -1561,7 +1656,8 @@ class _HomePageState extends State<HomePage>
                     color:
                         Color(0xFFBFAEDB),
                     fontSize: 11,
-                    letterSpacing: 1.5,
+                    letterSpacing:
+                        1.5,
                   ),
                 ),
               ],
@@ -1580,22 +1676,29 @@ class _HomePageState extends State<HomePage>
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
+          child:
+              _buildStatCard(
             icon:
                 Icons.bolt_rounded,
-            title: 'HASH RATE',
+            title:
+                'HASH RATE',
             value:
                 '${_hashRate.toStringAsFixed(0)} H/s',
           ),
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(
+          width: 12,
+        ),
 
         Expanded(
-          child: _buildStatCard(
-            icon: Icons
-                .currency_bitcoin_rounded,
-            title: 'TOTAL STL',
+          child:
+              _buildStatCard(
+            icon:
+                Icons
+                    .currency_bitcoin_rounded,
+            title:
+                'TOTAL STL',
             value:
                 '${_formatStl(_estimatedTotal)} STL',
           ),
@@ -1616,7 +1719,9 @@ class _HomePageState extends State<HomePage>
           BoxDecoration(
         color: cardColor,
         borderRadius:
-            BorderRadius.circular(20),
+            BorderRadius.circular(
+          20,
+        ),
         border: Border.all(
           color:
               Colors.white.withValues(
@@ -1624,13 +1729,15 @@ class _HomePageState extends State<HomePage>
           ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
-            color: pinkColor,
+            color:
+                pinkColor,
           ),
 
           const SizedBox(
@@ -1659,7 +1766,8 @@ class _HomePageState extends State<HomePage>
                 TextOverflow.ellipsis,
             style:
                 const TextStyle(
-              color: Colors.white,
+              color:
+                  Colors.white,
               fontSize: 15,
               fontWeight:
                   FontWeight.bold,
@@ -1684,9 +1792,13 @@ class _HomePageState extends State<HomePage>
           (_miningRemainingMs /
               _miningDurationMs);
 
-      progress = progress
-          .clamp(0.0, 1.0)
-          .toDouble();
+      progress =
+          progress
+              .clamp(
+                0.0,
+                1.0,
+              )
+              .toDouble();
     }
 
     return Container(
@@ -1694,17 +1806,21 @@ class _HomePageState extends State<HomePage>
           const EdgeInsets.all(20),
       decoration:
           BoxDecoration(
-        color: cardColor,
+        color:
+            cardColor,
         borderRadius:
-            BorderRadius.circular(22),
+            BorderRadius.circular(
+          22,
+        ),
         border: Border.all(
-          color: accentColor
-              .withValues(
+          color:
+              accentColor.withValues(
             alpha: 0.10,
           ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
@@ -1713,21 +1829,26 @@ class _HomePageState extends State<HomePage>
               const Expanded(
                 child: Text(
                   '⛏️ STELLA MINING PROGRESS',
-                  style: TextStyle(
-                    color: Colors.white,
+                  style:
+                      TextStyle(
+                    color:
+                        Colors.white,
                     fontWeight:
                         FontWeight.bold,
                   ),
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(
+                width: 8,
+              ),
 
               Text(
                 '${(progress * 100).toStringAsFixed(1)}%',
                 style:
                     const TextStyle(
-                  color: goldColor,
+                  color:
+                      goldColor,
                   fontWeight:
                       FontWeight.bold,
                 ),
@@ -1746,8 +1867,10 @@ class _HomePageState extends State<HomePage>
             ),
             child:
                 LinearProgressIndicator(
-              value: progress,
-              minHeight: 12,
+              value:
+                  progress,
+              minHeight:
+                  12,
               backgroundColor:
                   backgroundColor,
               valueColor:
@@ -1792,7 +1915,8 @@ class _HomePageState extends State<HomePage>
       text =
           'STELLA IS WORKING...';
       icon =
-          Icons.hourglass_top_rounded;
+          Icons
+              .hourglass_top_rounded;
       onPressed = null;
     } else if (_miningActive) {
       text =
@@ -1810,22 +1934,29 @@ class _HomePageState extends State<HomePage>
           '📺 WATCH AD • COLLECT & RESTART';
       icon =
           Icons.inventory_2_rounded;
-      onPressed = _startMining;
+      onPressed =
+          _startMining;
     } else {
       text =
           '📺 WATCH AD • START MINING';
       icon =
           Icons.play_arrow_rounded;
-      onPressed = _startMining;
+      onPressed =
+          _startMining;
     }
 
     return SizedBox(
-      width: double.infinity,
+      width:
+          double.infinity,
       height: 62,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Text(
+      child:
+          ElevatedButton.icon(
+        onPressed:
+            onPressed,
+        icon:
+            Icon(icon),
+        label:
+            Text(
           text,
           textAlign:
               TextAlign.center,
@@ -1833,7 +1964,8 @@ class _HomePageState extends State<HomePage>
               const TextStyle(
             fontWeight:
                 FontWeight.bold,
-            letterSpacing: 0.5,
+            letterSpacing:
+                0.5,
           ),
         ),
         style:
@@ -1843,7 +1975,9 @@ class _HomePageState extends State<HomePage>
           foregroundColor:
               Colors.white,
           disabledBackgroundColor:
-              const Color(0xFF4A315F),
+              const Color(
+            0xFF4A315F,
+          ),
           shape:
               RoundedRectangleBorder(
             borderRadius:
@@ -1891,22 +2025,28 @@ class _HomePageState extends State<HomePage>
           const EdgeInsets.all(18),
       decoration:
           BoxDecoration(
-        color: cardColor,
+        color:
+            cardColor,
         borderRadius:
-            BorderRadius.circular(22),
+            BorderRadius.circular(
+          22,
+        ),
         border: Border.all(
-          color: pinkColor.withValues(
+          color:
+              pinkColor.withValues(
             alpha: 0.30,
           ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         children: [
           Row(
             children: [
               const Text(
                 '📺',
-                style: TextStyle(
+                style:
+                    TextStyle(
                   fontSize: 28,
                 ),
               ),
@@ -1916,7 +2056,8 @@ class _HomePageState extends State<HomePage>
               ),
 
               const Expanded(
-                child: Column(
+                child:
+                    Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
@@ -1953,7 +2094,8 @@ class _HomePageState extends State<HomePage>
           ),
 
           SizedBox(
-            width: double.infinity,
+            width:
+                double.infinity,
             child:
                 OutlinedButton(
               onPressed:
@@ -1971,7 +2113,8 @@ class _HomePageState extends State<HomePage>
                 ),
                 side:
                     const BorderSide(
-                  color: pinkColor,
+                  color:
+                      pinkColor,
                 ),
                 padding:
                     const EdgeInsets
@@ -1986,11 +2129,13 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              child: Text(
+              child:
+                  Text(
                 'WATCH AD • $subtitle',
                 textAlign:
                     TextAlign.center,
-                maxLines: 2,
+                maxLines:
+                    2,
                 overflow:
                     TextOverflow.ellipsis,
               ),
@@ -2026,7 +2171,9 @@ class _HomePageState extends State<HomePage>
       decoration:
           BoxDecoration(
         borderRadius:
-            BorderRadius.circular(22),
+            BorderRadius.circular(
+          22,
+        ),
         gradient:
             const LinearGradient(
           colors: [
@@ -2035,16 +2182,19 @@ class _HomePageState extends State<HomePage>
           ],
         ),
         border: Border.all(
-          color: goldColor.withValues(
+          color:
+              goldColor.withValues(
             alpha: 0.16,
           ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         children: [
           const Text(
             '🐱🎁',
-            style: TextStyle(
+            style:
+                TextStyle(
               fontSize: 40,
             ),
           ),
@@ -2057,7 +2207,8 @@ class _HomePageState extends State<HomePage>
             'STELLA DAILY BONUS',
             style:
                 TextStyle(
-              color: Colors.white,
+              color:
+                  Colors.white,
               fontSize: 17,
               fontWeight:
                   FontWeight.bold,
@@ -2085,8 +2236,10 @@ class _HomePageState extends State<HomePage>
           ),
 
           SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
+            width:
+                double.infinity,
+            child:
+                ElevatedButton(
               onPressed:
                   _dailyClaimed ||
                           _actionLoading
@@ -2117,7 +2270,8 @@ class _HomePageState extends State<HomePage>
                   vertical: 14,
                 ),
               ),
-              child: Text(
+              child:
+                  Text(
                 _dailyClaimed
                     ? '🐱 BONUS CLAIMED TODAY'
                     : '🎁 CLAIM DAILY BONUS',
@@ -2142,11 +2296,13 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildStellaFooter() {
     return const Center(
-      child: Column(
+      child:
+          Column(
         children: [
           Text(
             '🐱💜⛏️',
-            style: TextStyle(
+            style:
+                TextStyle(
               fontSize: 28,
             ),
           ),
