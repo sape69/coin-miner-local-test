@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color catFactAccentColor = Color(0xFF35D0A0);
+// ============================================================
+// 🐱 STELLURIINI COLORS
+// ============================================================
+
+const Color backgroundColor = Color(0xFF120B24);
+const Color cardColor = Color(0xFF21113B);
+
+const Color catFactAccentColor = Color(0xFFB58CFF);
+const Color catFactPinkColor = Color(0xFFFFB7E8);
+
+// ============================================================
+// 🐱 STELLA CAT FACT CARD
+// ============================================================
 
 class CatFactCard extends StatelessWidget {
   final String title;
@@ -24,7 +34,7 @@ class CatFactCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: catFactAccentColor.withValues(
-            alpha: 0.20,
+            alpha: 0.28,
           ),
         ),
         boxShadow: [
@@ -39,9 +49,9 @@ class CatFactCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ================================================
-          // HEADER
-          // ================================================
+          // ==================================================
+          // 🐱 HEADER
+          // ==================================================
 
           Row(
             children: [
@@ -53,6 +63,11 @@ class CatFactCard extends StatelessWidget {
                     alpha: 0.15,
                   ),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: catFactPinkColor.withValues(
+                      alpha: 0.18,
+                    ),
+                  ),
                 ),
                 child: const Center(
                   child: Text(
@@ -88,9 +103,9 @@ class CatFactCard extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ================================================
-          // FACT BUBBLE
-          // ================================================
+          // ==================================================
+          // 💬 FACT BUBBLE
+          // ==================================================
 
           Container(
             width: double.infinity,
@@ -102,7 +117,7 @@ class CatFactCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: catFactAccentColor.withValues(
-                  alpha: 0.12,
+                  alpha: 0.16,
                 ),
               ),
             ),
@@ -134,13 +149,12 @@ class CatFactCard extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ================================================
-          // STELLA FOOTER
-          // ================================================
+          // ==================================================
+          // 🐾 STELLA FOOTER
+          // ==================================================
 
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
                 '🐾',
@@ -154,8 +168,8 @@ class CatFactCard extends StatelessWidget {
               Text(
                 'A little fact from Stella 🐱',
                 style: TextStyle(
-                  color: catFactAccentColor.withValues(
-                    alpha: 0.80,
+                  color: catFactPinkColor.withValues(
+                    alpha: 0.88,
                   ),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
