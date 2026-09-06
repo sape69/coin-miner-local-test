@@ -121,6 +121,13 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _catAnimation;
 
   // ============================================================
+  // 🌍 LOCALIZATION
+  // ============================================================
+
+  AppLocalizations get _localization =>
+      AppLocalizations(widget.languageCode);
+
+  // ============================================================
   // INIT
   // ============================================================
 
@@ -175,7 +182,7 @@ class _HomePageState extends State<HomePage>
       });
 
       _showMessage(
-        '🐱 Stella ei saanut yhteyttä palvelimeen.',
+        _localization.get('serverConnectionFailed'),
       );
     }
   }
@@ -421,7 +428,9 @@ class _HomePageState extends State<HomePage>
 
     if (_miningActive) {
       _showMessage(
-        '🐱⛏️ Stella louhii jo STL:ää!',
+        _localization.get(
+          'stellaAlreadyMining',
+        ),
       );
 
       return;
@@ -430,7 +439,9 @@ class _HomePageState extends State<HomePage>
     if (_rewardedAd == null ||
         !_adReady) {
       _showMessage(
-        '📺 Stella valmistelee mainosta...',
+        _localization.get(
+          'prepareAd',
+        ),
       );
 
       await _loadRewardedAd();
@@ -511,22 +522,31 @@ class _HomePageState extends State<HomePage>
 
       if (alreadyMining) {
         _showMessage(
-          '🐱⛏️ Stella louhii jo STL:ää!',
+          _localization.get(
+            'stellaAlreadyMining',
+          ),
         );
       } else if (collected > 0) {
         _showMessage(
-          '🐱✨ Stella keräsi '
-          '${_formatStl(collected)} STL '
-          'ja aloitti uuden 24h louhinnan! ⛏️',
+          _localization.getWithParams(
+            'miningCollected',
+            params: {
+              'amount':
+                  _formatStl(collected),
+            },
+          ),
         );
       } else if (started) {
         _showMessage(
-          '🐱⛏️📺 Mainos katsottu! '
-          'Stella aloitti 24 tunnin louhinnan!',
+          _localization.get(
+            'miningStarted',
+          ),
         );
       } else {
         _showMessage(
-          '🐱 Louhinnan käynnistäminen epäonnistui.',
+          _localization.get(
+            'miningStartFailed',
+          ),
         );
       }
 
@@ -538,7 +558,9 @@ class _HomePageState extends State<HomePage>
 
       if (mounted) {
         _showMessage(
-          '🐱 Louhinnan käynnistäminen epäonnistui.',
+          _localization.get(
+            'miningStartFailed',
+          ),
         );
       }
     } finally {
@@ -592,7 +614,9 @@ class _HomePageState extends State<HomePage>
 
       if (alreadyClaimed) {
         _showMessage(
-          '🐱 Stella Daily Bonus on jo kerätty tänään!',
+          _localization.get(
+            'dailyBonusAlreadyClaimed',
+          ),
         );
       } else {
         final double bonus =
@@ -606,9 +630,15 @@ class _HomePageState extends State<HomePage>
         );
 
         _showMessage(
-          '🐱🎁 +${bonus.toStringAsFixed(0)} '
-          'Hash Rate! '
-          'Streak: $streak 🔥',
+          _localization.getWithParams(
+            'dailyBonusSuccess',
+            params: {
+              'amount':
+                  bonus.toStringAsFixed(0),
+              'streak':
+                  streak.toString(),
+            },
+          ),
         );
       }
 
@@ -620,7 +650,9 @@ class _HomePageState extends State<HomePage>
 
       if (mounted) {
         _showMessage(
-          '🐱 Daily Bonus epäonnistui.',
+          _localization.get(
+            'dailyBonusFailed',
+          ),
         );
       }
     } finally {
@@ -740,14 +772,21 @@ class _HomePageState extends State<HomePage>
     if (!_canWatchAd) {
       if (_cooldownRemainingMs > 0) {
         _showMessage(
-          '🐱 Stella lepää vielä '
-          '${_formatDuration(
-            _cooldownRemainingMs,
-          )}.',
+          _localization.getWithParams(
+            'stellaResting',
+            params: {
+              'time':
+                  _formatDuration(
+                _cooldownRemainingMs,
+              ),
+            },
+          ),
         );
       } else {
         _showMessage(
-          '🐱 Päivän mainosraja on saavutettu.',
+          _localization.get(
+            'dailyLimitReached',
+          ),
         );
       }
 
@@ -757,7 +796,9 @@ class _HomePageState extends State<HomePage>
     if (_rewardedAd == null ||
         !_adReady) {
       _showMessage(
-        '📺 Stella valmistelee mainosta...',
+        _localization.get(
+          'prepareAd',
+        ),
       );
 
       await _loadRewardedAd();
@@ -837,18 +878,26 @@ class _HomePageState extends State<HomePage>
 
       if (rewarded) {
         _showMessage(
-          '🐱⚡ Stella sai +'
-          '${bonus.toStringAsFixed(0)} '
-          'Hash Rate Power Boostin!',
+          _localization.getWithParams(
+            'powerBoostReward',
+            params: {
+              'amount':
+                  bonus.toStringAsFixed(0),
+            },
+          ),
         );
       } else if (duplicate) {
         _showMessage(
-          '🐱📺 Mainospalkinto on jo käsitelty.',
+          _localization.get(
+            'adRewardDuplicate',
+          ),
         );
       } else {
         _showMessage(
           data['message']?.toString() ??
-              '🐱 Power Boost epäonnistui.',
+              _localization.get(
+                'powerBoostFailed',
+              ),
         );
       }
 
@@ -860,7 +909,9 @@ class _HomePageState extends State<HomePage>
 
       if (mounted) {
         _showMessage(
-          '🐱 Mainospalkinnon tallentaminen epäonnistui.',
+          _localization.get(
+            'testAdRewardFailed',
+          ),
         );
       }
     } finally {
@@ -880,7 +931,7 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _showLanguageDialog() async {
     final AppLocalizations localization =
-        AppLocalizations(widget.languageCode);
+        _localization;
 
     await showDialog(
       context: context,
@@ -947,7 +998,7 @@ class _HomePageState extends State<HomePage>
 
           if (mounted) {
             _showMessage(
-              '🐱 Stella vaihtoi kielen!',
+              _languageChangedMessage(code),
             );
           }
         },
@@ -999,15 +1050,52 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  String _languageChangedMessage(
+    String code,
+  ) {
+    switch (code) {
+      case 'fi':
+        return '🐱 Stella vaihtoi kieleksi suomen!';
+
+      case 'de':
+        return '🐱 Stella hat die Sprache auf Deutsch geändert!';
+
+      case 'es':
+        return '🐱 ¡Stella cambió el idioma a español!';
+
+      case 'fr':
+        return '🐱 Stella a changé la langue en français !';
+
+      case 'zh':
+        return '🐱 Stella 已将语言切换为中文！';
+
+      case 'vi':
+        return '🐱 Stella đã đổi ngôn ngữ sang tiếng Việt!';
+
+      case 'ja':
+        return '🐱 Stella は日本語に変更しました！';
+
+      case 'en':
+      default:
+        return '🐱 Stella changed the language to English!';
+    }
+  }
+
   // ============================================================
   // 🐱 DRAWER PAGE MESSAGE
   // ============================================================
 
   void _showStellaPageMessage(
-    String title,
+    String titleKey,
   ) {
     _showMessage(
-      '🐱✨ $title tulee Stella-teemalla pian!',
+      _localization.getWithParams(
+        'comingSoon',
+        params: {
+          'title':
+              _localization.get(titleKey),
+        },
+      ),
     );
   }
 
@@ -1023,38 +1111,12 @@ class _HomePageState extends State<HomePage>
     );
 
     return CatFactCard(
-      title: _catFactTitle(),
+      title:
+          _localization.get(
+        'stellaFacts',
+      ),
       fact: fact,
     );
-  }
-
-  String _catFactTitle() {
-    switch (widget.languageCode) {
-      case 'fi':
-        return '🐱 Stella-kissan päivän fakta';
-
-      case 'de':
-        return '🐱 Stellas Katzenfakt des Tages';
-
-      case 'es':
-        return '🐱 Dato felino del día de Stella';
-
-      case 'fr':
-        return '🐱 Le fait félin du jour de Stella';
-
-      case 'zh':
-        return '🐱 Stella 今日猫咪知识';
-
-      case 'vi':
-        return '🐱 Sự thật về mèo của Stella hôm nay';
-
-      case 'ja':
-        return '🐱 Stella 今日の猫豆知識';
-
-      case 'en':
-      default:
-        return '🐱 Stella Cat Fact of the Day';
-    }
   }
 
   // ============================================================
@@ -1185,37 +1247,37 @@ class _HomePageState extends State<HomePage>
 
         onAboutPressed: () {
           _showStellaPageMessage(
-            'About Stelluriini',
+            'about',
           );
         },
 
         onWhitePaperPressed: () {
           _showStellaPageMessage(
-            'White Paper',
+            'whitePaper',
           );
         },
 
         onTokenPressed: () {
           _showStellaPageMessage(
-            'STL Token',
+            'token',
           );
         },
 
         onTokenomicsPressed: () {
           _showStellaPageMessage(
-            'Tokenomics',
+            'tokenomics',
           );
         },
 
         onRoadmapPressed: () {
           _showStellaPageMessage(
-            'Roadmap',
+            'roadmap',
           );
         },
 
         onTransactionHistoryPressed: () {
           _showStellaPageMessage(
-            'Transaction History',
+            'transactionHistory',
           );
         },
       ),
@@ -1342,7 +1404,9 @@ class _HomePageState extends State<HomePage>
                   size: 29,
                 ),
                 tooltip:
-                    'Stella Menu',
+                    _localization.get(
+                  'menu',
+                ),
               ),
             );
           },
@@ -1390,12 +1454,12 @@ class _HomePageState extends State<HomePage>
           width: 14,
         ),
 
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'STELLURIINI',
                 style: TextStyle(
                   color:
@@ -1406,12 +1470,15 @@ class _HomePageState extends State<HomePage>
                   letterSpacing: 1.2,
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 3,
               ),
               Text(
-                'Stella Mining ⛏️✨',
-                style: TextStyle(
+                _localization.get(
+                  'stellaMining',
+                ),
+                style:
+                    const TextStyle(
                   color:
                       pinkColor,
                   fontSize: 14,
@@ -1428,7 +1495,10 @@ class _HomePageState extends State<HomePage>
             Icons.refresh_rounded,
             color: Colors.white,
           ),
-          tooltip: 'Refresh',
+          tooltip:
+              _localization.get(
+            'refresh',
+          ),
         ),
       ],
     );
@@ -1442,6 +1512,62 @@ class _HomePageState extends State<HomePage>
     final bool completed =
         !_miningActive &&
             _unclaimedMining > 0;
+
+    final String title;
+
+    final String subtitle;
+
+    final String timerText;
+
+    final String timerLabel;
+
+    if (_miningActive) {
+      title = _localization.get(
+        'stellaIsMining',
+      );
+
+      subtitle = _localization.get(
+        'stellaMiningNow',
+      );
+
+      timerText = _formatDuration(
+        _miningRemainingMs,
+      );
+
+      timerLabel = _localization.get(
+        'timeRemaining',
+      );
+    } else if (completed) {
+      title = _localization.get(
+        'miningComplete',
+      );
+
+      subtitle = _localization.get(
+        'stlReadyToCollect',
+      );
+
+      timerText = '00:00:00';
+
+      timerLabel = _localization.get(
+        'miningFinished',
+      );
+    } else {
+      title = _localization.get(
+        'stellaIsResting',
+      );
+
+      subtitle = _localization.get(
+        'stellaWaiting',
+      );
+
+      timerText = _localization.get(
+        'ready',
+      );
+
+      timerLabel = _localization.get(
+        'waitingForStella',
+      );
+    }
 
     return Container(
       padding:
@@ -1527,11 +1653,9 @@ class _HomePageState extends State<HomePage>
           ),
 
           Text(
-            _miningActive
-                ? 'STELLA IS MINING'
-                : completed
-                    ? 'MINING COMPLETE!'
-                    : 'STELLA IS RESTING',
+            title,
+            textAlign:
+                TextAlign.center,
             style:
                 const TextStyle(
               color:
@@ -1548,11 +1672,7 @@ class _HomePageState extends State<HomePage>
           ),
 
           Text(
-            _miningActive
-                ? '🐾 Stella louhii STL:ää juuri nyt'
-                : completed
-                    ? '🐱✨ STL on valmis kerättäväksi!'
-                    : '🐱 Stella odottaa seuraavaa louhintaa',
+            subtitle,
             textAlign:
                 TextAlign.center,
             style:
@@ -1585,10 +1705,12 @@ class _HomePageState extends State<HomePage>
             height: 4,
           ),
 
-          const Text(
-            'STL MINED',
+          Text(
+            _localization.get(
+              'stlMined',
+            ),
             style:
-                TextStyle(
+                const TextStyle(
               color:
                   Color(0xFFBFAEDB),
               letterSpacing: 2,
@@ -1624,13 +1746,7 @@ class _HomePageState extends State<HomePage>
                 Column(
               children: [
                 Text(
-                  _miningActive
-                      ? _formatDuration(
-                          _miningRemainingMs,
-                        )
-                      : completed
-                          ? '00:00:00'
-                          : 'READY',
+                  timerText,
                   style:
                       const TextStyle(
                     color:
@@ -1646,11 +1762,7 @@ class _HomePageState extends State<HomePage>
                 ),
 
                 Text(
-                  _miningActive
-                      ? 'TIME REMAINING'
-                      : completed
-                          ? 'MINING FINISHED'
-                          : 'WAITING FOR STELLA',
+                  timerLabel,
                   style:
                       const TextStyle(
                     color:
@@ -1681,7 +1793,9 @@ class _HomePageState extends State<HomePage>
             icon:
                 Icons.bolt_rounded,
             title:
-                'HASH RATE',
+                _localization.get(
+              'hashRate',
+            ),
             value:
                 '${_hashRate.toStringAsFixed(0)} H/s',
           ),
@@ -1698,7 +1812,9 @@ class _HomePageState extends State<HomePage>
                 Icons
                     .currency_bitcoin_rounded,
             title:
-                'TOTAL STL',
+                _localization.get(
+              'totalStl',
+            ),
             value:
                 '${_formatStl(_estimatedTotal)} STL',
           ),
@@ -1826,11 +1942,13 @@ class _HomePageState extends State<HomePage>
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '⛏️ STELLA MINING PROGRESS',
+                  _localization.get(
+                    'stellaMiningProgress',
+                  ),
                   style:
-                      TextStyle(
+                      const TextStyle(
                     color:
                         Colors.white,
                     fontWeight:
@@ -1886,7 +2004,14 @@ class _HomePageState extends State<HomePage>
           ),
 
           Text(
-            '⚡ ${_miningPerHour.toStringAsFixed(2)} STL / hour',
+            _localization.getWithParams(
+              'stlPerHour',
+              params: {
+                'amount':
+                    _miningPerHour
+                        .toStringAsFixed(2),
+              },
+            ),
             style:
                 const TextStyle(
               color:
@@ -1913,34 +2038,51 @@ class _HomePageState extends State<HomePage>
 
     if (_actionLoading) {
       text =
-          'STELLA IS WORKING...';
+          _localization.get(
+        'stellaIsWorking',
+      );
+
       icon =
           Icons
               .hourglass_top_rounded;
+
       onPressed = null;
     } else if (_miningActive) {
       text =
-          '🐱 STELLA IS MINING';
+          _localization.get(
+        'stellaIsMiningButton',
+      );
+
       icon =
           Icons.lock_rounded;
 
       onPressed = () {
         _showMessage(
-          '🐱⛏️ Stella louhii jo STL:ää!',
+          _localization.get(
+            'stellaAlreadyMining',
+          ),
         );
       };
     } else if (completed) {
       text =
-          '📺 WATCH AD • COLLECT & RESTART';
+          _localization.get(
+        'watchAdCollectRestart',
+      );
+
       icon =
           Icons.inventory_2_rounded;
+
       onPressed =
           _startMining;
     } else {
       text =
-          '📺 WATCH AD • START MINING';
+          _localization.get(
+        'watchAdStartMining',
+      );
+
       icon =
           Icons.play_arrow_rounded;
+
       onPressed =
           _startMining;
     }
@@ -2005,7 +2147,9 @@ class _HomePageState extends State<HomePage>
     if (_adsToday >=
         _maxAdsPerDay) {
       subtitle =
-          '🐱 Päivän mainosraja saavutettu';
+          '🐱 ${_localization.get(
+            'dailyLimitReached',
+          )}';
     } else if (_cooldownRemainingMs >
         0) {
       subtitle =
@@ -2014,10 +2158,19 @@ class _HomePageState extends State<HomePage>
           )}';
     } else if (!_adReady) {
       subtitle =
-          '📺 Stella lataa mainosta...';
+          _localization.get(
+            'adLoading',
+          );
     } else {
       subtitle =
-          '+${_adHashRateBonus.toStringAsFixed(0)} Hash Rate';
+          _localization.getWithParams(
+        'hashRateBonus',
+        params: {
+          'amount':
+              _adHashRateBonus
+                  .toStringAsFixed(0),
+        },
+      );
     }
 
     return Container(
@@ -2055,29 +2208,33 @@ class _HomePageState extends State<HomePage>
                 width: 12,
               ),
 
-              const Expanded(
+              Expanded(
                 child:
                     Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'STELLA POWER BOOST',
+                      _localization.get(
+                        'stellaPowerBoost',
+                      ),
                       style:
-                          TextStyle(
+                          const TextStyle(
                         color:
                             Colors.white,
                         fontWeight:
                             FontWeight.bold,
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 3,
                     ),
                     Text(
-                      'Katso mainos ja auta Stellaa ⚡',
+                      _localization.get(
+                        'watchAdHelpStella',
+                      ),
                       style:
-                          TextStyle(
+                          const TextStyle(
                         color:
                             secondaryTextColor,
                         fontSize: 12,
@@ -2131,7 +2288,7 @@ class _HomePageState extends State<HomePage>
               ),
               child:
                   Text(
-                'WATCH AD • $subtitle',
+                '${_localization.get('watchAd')} • $subtitle',
                 textAlign:
                     TextAlign.center,
                 maxLines:
@@ -2147,7 +2304,15 @@ class _HomePageState extends State<HomePage>
           ),
 
           Text(
-            '$_adsToday / $_maxAdsPerDay Power Boosts today',
+            _localization.getWithParams(
+              'adsToday',
+              params: {
+                'current':
+                    _adsToday.toString(),
+                'max':
+                    _maxAdsPerDay.toString(),
+              },
+            ),
             style:
                 const TextStyle(
               color:
@@ -2203,10 +2368,14 @@ class _HomePageState extends State<HomePage>
             height: 8,
           ),
 
-          const Text(
-            'STELLA DAILY BONUS',
+          Text(
+            _localization.get(
+              'stellaDailyBonus',
+            ),
+            textAlign:
+                TextAlign.center,
             style:
-                TextStyle(
+                const TextStyle(
               color:
                   Colors.white,
               fontSize: 17,
@@ -2220,8 +2389,16 @@ class _HomePageState extends State<HomePage>
           ),
 
           Text(
-            '+${_dailyHashRateBonus.toStringAsFixed(0)} '
-            'Hash Rate • 🔥 $_streak day streak',
+            _localization.getWithParams(
+              'dailyBonusDescription',
+              params: {
+                'amount':
+                    _dailyHashRateBonus
+                        .toStringAsFixed(0),
+                'streak':
+                    _streak.toString(),
+              },
+            ),
             textAlign:
                 TextAlign.center,
             style:
@@ -2273,8 +2450,12 @@ class _HomePageState extends State<HomePage>
               child:
                   Text(
                 _dailyClaimed
-                    ? '🐱 BONUS CLAIMED TODAY'
-                    : '🎁 CLAIM DAILY BONUS',
+                    ? _localization.get(
+                        'bonusClaimedToday',
+                      )
+                    : _localization.get(
+                        'claimDailyBonus',
+                      ),
                 textAlign:
                     TextAlign.center,
                 style:
@@ -2295,11 +2476,11 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStellaFooter() {
-    return const Center(
+    return Center(
       child:
           Column(
         children: [
-          Text(
+          const Text(
             '🐱💜⛏️',
             style:
                 TextStyle(
@@ -2307,14 +2488,18 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          SizedBox(
+          const SizedBox(
             height: 8,
           ),
 
           Text(
-            'Stella is mining the future.',
+            _localization.get(
+              'footerTagline',
+            ),
+            textAlign:
+                TextAlign.center,
             style:
-                TextStyle(
+                const TextStyle(
               color:
                   Color(0xFF8D7BA8),
               fontStyle:
@@ -2322,14 +2507,16 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          SizedBox(
+          const SizedBox(
             height: 4,
           ),
 
           Text(
-            'STELLURIINI • STL',
+            _localization.get(
+              'footerToken',
+            ),
             style:
-                TextStyle(
+                const TextStyle(
               color:
                   Color(0xFF5F4D70),
               fontSize: 11,
