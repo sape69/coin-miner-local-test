@@ -182,7 +182,9 @@ class _HomePageState extends State<HomePage>
       });
 
       _showMessage(
-        _localization.get('serverConnectionFailed'),
+        _localization.get(
+          'serverConnectionFailed',
+        ),
       );
     }
   }
@@ -1112,9 +1114,7 @@ class _HomePageState extends State<HomePage>
 
     return CatFactCard(
       title:
-          _localization.get(
-        'stellaFacts',
-      ),
+          '🐱 ${_localization.get('stellaFacts')}',
       fact: fact,
     );
   }
@@ -1470,9 +1470,11 @@ class _HomePageState extends State<HomePage>
                   letterSpacing: 1.2,
                 ),
               ),
+
               const SizedBox(
                 height: 3,
               ),
+
               Text(
                 _localization.get(
                   'stellaMining',
@@ -1514,11 +1516,8 @@ class _HomePageState extends State<HomePage>
             _unclaimedMining > 0;
 
     final String title;
-
     final String subtitle;
-
     final String timerText;
-
     final String timerLabel;
 
     if (_miningActive) {
@@ -1616,8 +1615,7 @@ class _HomePageState extends State<HomePage>
                 offset:
                     Offset(
                   0,
-                  -_catAnimation
-                      .value,
+                  -_catAnimation.value,
                 ),
                 child: child,
               );
@@ -1630,8 +1628,7 @@ class _HomePageState extends State<HomePage>
                 shape:
                     BoxShape.circle,
                 color:
-                    accentColor
-                        .withValues(
+                    accentColor.withValues(
                   alpha: 0.15,
                 ),
               ),
@@ -1733,8 +1730,7 @@ class _HomePageState extends State<HomePage>
             decoration:
                 BoxDecoration(
               color:
-                  Colors.black
-                      .withValues(
+                  Colors.black.withValues(
                 alpha: 0.20,
               ),
               borderRadius:
@@ -1809,8 +1805,7 @@ class _HomePageState extends State<HomePage>
           child:
               _buildStatCard(
             icon:
-                Icons
-                    .currency_bitcoin_rounded,
+                Icons.currency_bitcoin_rounded,
             title:
                 _localization.get(
               'totalStl',
@@ -1835,9 +1830,7 @@ class _HomePageState extends State<HomePage>
           BoxDecoration(
         color: cardColor,
         borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
+            BorderRadius.circular(20),
         border: Border.all(
           color:
               Colors.white.withValues(
@@ -1925,9 +1918,7 @@ class _HomePageState extends State<HomePage>
         color:
             cardColor,
         borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
+            BorderRadius.circular(22),
         border: Border.all(
           color:
               accentColor.withValues(
@@ -1980,9 +1971,7 @@ class _HomePageState extends State<HomePage>
 
           ClipRRect(
             borderRadius:
-                BorderRadius.circular(
-              20,
-            ),
+                BorderRadius.circular(20),
             child:
                 LinearProgressIndicator(
               value:
@@ -2043,8 +2032,7 @@ class _HomePageState extends State<HomePage>
       );
 
       icon =
-          Icons
-              .hourglass_top_rounded;
+          Icons.hourglass_top_rounded;
 
       onPressed = null;
     } else if (_miningActive) {
@@ -2117,15 +2105,11 @@ class _HomePageState extends State<HomePage>
           foregroundColor:
               Colors.white,
           disabledBackgroundColor:
-              const Color(
-            0xFF4A315F,
-          ),
+              const Color(0xFF4A315F),
           shape:
               RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(
-              20,
-            ),
+                BorderRadius.circular(20),
           ),
         ),
       ),
@@ -2181,9 +2165,7 @@ class _HomePageState extends State<HomePage>
         color:
             cardColor,
         borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
+            BorderRadius.circular(22),
         border: Border.all(
           color:
               pinkColor.withValues(
@@ -2226,9 +2208,11 @@ class _HomePageState extends State<HomePage>
                             FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(
                       height: 3,
                     ),
+
                     Text(
                       _localization.get(
                         'watchAdHelpStella',
@@ -2264,8 +2248,7 @@ class _HomePageState extends State<HomePage>
                 foregroundColor:
                     pinkColor,
                 disabledForegroundColor:
-                    Colors.white
-                        .withValues(
+                    Colors.white.withValues(
                   alpha: 0.35,
                 ),
                 side:
@@ -2274,16 +2257,13 @@ class _HomePageState extends State<HomePage>
                       pinkColor,
                 ),
                 padding:
-                    const EdgeInsets
-                        .symmetric(
+                    const EdgeInsets.symmetric(
                   vertical: 15,
                 ),
                 shape:
                     RoundedRectangleBorder(
                   borderRadius:
-                      BorderRadius.circular(
-                    16,
-                  ),
+                      BorderRadius.circular(16),
                 ),
               ),
               child:
@@ -2336,9 +2316,7 @@ class _HomePageState extends State<HomePage>
       decoration:
           BoxDecoration(
         borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
+            BorderRadius.circular(22),
         gradient:
             const LinearGradient(
           colors: [
@@ -2427,23 +2405,16 @@ class _HomePageState extends State<HomePage>
                 backgroundColor:
                     goldColor,
                 foregroundColor:
-                    const Color(
-                  0xFF24132F,
-                ),
+                    const Color(0xFF24132F),
                 disabledBackgroundColor:
-                    const Color(
-                  0xFF5A4A64,
-                ),
+                    const Color(0xFF5A4A64),
                 shape:
                     RoundedRectangleBorder(
                   borderRadius:
-                      BorderRadius.circular(
-                    16,
-                  ),
+                      BorderRadius.circular(16),
                 ),
                 padding:
-                    const EdgeInsets
-                        .symmetric(
+                    const EdgeInsets.symmetric(
                   vertical: 14,
                 ),
               ),
