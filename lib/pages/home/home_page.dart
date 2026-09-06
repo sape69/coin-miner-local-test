@@ -42,14 +42,14 @@ class _HomePageState extends State<HomePage>
   static const Color secondaryTextColor = Color(0xFFBFAEDB);
 
   // ============================================================
-  // ⚡ STELLA POWER BOOST CONSTANTS
+  // ⚡ STELLA POWER BOOST
   // ============================================================
 
   static const double defaultAdHashRateBonus = 0.5833;
 
   static const int defaultMaxAdsPerDay = 6;
 
-  static const int adBoostDurationMs =
+  static const int defaultAdBoostDurationMs =
       4 * 60 * 60 * 1000;
 
   // ============================================================
@@ -57,6 +57,8 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   static const double defaultDailyHashRate = 0.5;
+  static const double dailyHashRateStep = 0.5;
+  static const double maximumDailyHashRate = 3.5;
 
   // ============================================================
   // 💰 MINING RATE
@@ -65,11 +67,17 @@ class _HomePageState extends State<HomePage>
   static const double miningPerHashPerHour = 0.10;
 
   // ============================================================
+  // ⏱️ MINING DURATION
+  // ============================================================
+
+  static const int defaultMiningDurationMs =
+      24 * 60 * 60 * 1000;
+
+  // ============================================================
   // 🐱 FIREBASE
   // ============================================================
 
-  final FirebaseAuth _auth =
-      FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(
@@ -94,27 +102,28 @@ class _HomePageState extends State<HomePage>
 
   bool _loading = true;
   bool _actionLoading = false;
-
   bool _miningActive = false;
 
-  /// Current Daily Hash Rate.
+  /// Daily Hash Rate.
   ///
-  /// Examples:
   /// Day 1 = 0.5 HR
   /// Day 2 = 1.0 HR
-  /// ...
+  /// Day 3 = 1.5 HR
+  /// Day 4 = 2.0 HR
+  /// Day 5 = 2.5 HR
+  /// Day 6 = 3.0 HR
   /// Day 7+ = 3.5 HR
   double _hashRate = defaultDailyHashRate;
 
-  double _miningBalance = 0;
-  double _unclaimedMining = 0;
-  double _estimatedTotal = 0;
-  double _miningPerHour = 0;
+  double _miningBalance = 0.0;
+  double _unclaimedMining = 0.0;
+  double _estimatedTotal = 0.0;
+  double _miningPerHour = 0.0;
 
   int _miningRemainingMs = 0;
 
   int _miningDurationMs =
-      24 * 60 * 60 * 1000;
+      defaultMiningDurationMs;
 
   // ============================================================
   // 🎁 DAILY BONUS
@@ -123,40 +132,35 @@ class _HomePageState extends State<HomePage>
   bool _dailyClaimed = false;
   int _streak = 0;
 
-  /// Current Daily Hash Rate.
-  ///
-  /// This is NOT an STL amount.
   double _dailyHashRateBonus =
       defaultDailyHashRate;
 
   // ============================================================
-  // ⚡ STELLA POWER BOOST
+  // ⚡ POWER BOOST STATE
   // ============================================================
 
   int _adsToday = 0;
+
   int _maxAdsPerDay =
       defaultMaxAdsPerDay;
 
   double _adHashRateBonus =
       defaultAdHashRateBonus;
 
-  /// True when the backend says another ad can be watched.
   bool _canWatchAd = false;
 
-  /// Legacy-compatible cooldown field.
-  ///
-  /// In the new model this represents the remaining
-  /// time until the current 4-hour Power Boost ends.
+  /// Remaining cooldown / active boost time.
   int _cooldownRemainingMs = 0;
 
-  /// True while a temporary +0.5833 HR boost is active.
   bool _adBoostActive = false;
 
-  /// Remaining time for the current Power Boost.
   int _adBoostRemainingMs = 0;
 
   /// Effective Hash Rate:
-  /// Daily Hash Rate + active temporary ad boost.
+  ///
+  /// Daily HR
+  /// +
+  /// active Power Boost
   double _effectiveHashRate =
       defaultDailyHashRate;
 
@@ -288,7 +292,8 @@ class _HomePageState extends State<HomePage>
           // POWER BOOST TIMER
           // ----------------------------------------------------
 
-          if (_adBoostRemainingMs > 0) {
+          if (_adBoostActive &&
+              _adBoostRemainingMs > 0) {
             _adBoostRemainingMs -= 1000;
 
             if (_adBoostRemainingMs <= 0) {
@@ -298,10 +303,6 @@ class _HomePageState extends State<HomePage>
               _effectiveHashRate =
                   _hashRate;
 
-              _canWatchAd =
-                  _adsToday <
-                  _maxAdsPerDay;
-
               _cooldownRemainingMs = 0;
 
               _recalculateMiningPerHour();
@@ -309,7 +310,7 @@ class _HomePageState extends State<HomePage>
           }
 
           // ----------------------------------------------------
-          // NEXT AD AVAILABILITY
+          // COOLDOWN TIMER
           // ----------------------------------------------------
 
           if (!_adBoostActive &&
@@ -318,11 +319,20 @@ class _HomePageState extends State<HomePage>
 
             if (_cooldownRemainingMs <= 0) {
               _cooldownRemainingMs = 0;
-
-              _canWatchAd =
-                  _adsToday <
-                  _maxAdsPerDay;
             }
+          }
+
+          // ----------------------------------------------------
+          // AD AVAILABILITY
+          //
+          // The server remains authoritative. This only
+          // updates the local UI between server refreshes.
+          // ----------------------------------------------------
+
+          if (!_adBoostActive &&
+              _cooldownRemainingMs <= 0 &&
+              _adsToday < _maxAdsPerDay) {
+            _canWatchAd = true;
           }
 
           // ----------------------------------------------------
@@ -366,7 +376,7 @@ class _HomePageState extends State<HomePage>
     }
 
     final double perSecond =
-        liveMiningPerHour / 3600;
+        liveMiningPerHour / 3600.0;
 
     _unclaimedMining += perSecond;
 
@@ -457,18 +467,19 @@ class _HomePageState extends State<HomePage>
 
         if (_miningDurationMs <= 0) {
           _miningDurationMs =
-              24 * 60 * 60 * 1000;
+              defaultMiningDurationMs;
         }
 
         // ------------------------------------------------------
-        // DAILY HASH RATE
+        // DAILY
         // ------------------------------------------------------
 
         _dailyClaimed =
             data['dailyClaimed'] == true;
 
         _streak = _toInt(
-          data['streak'],
+          data['streak'] ??
+              data['dailyStreak'],
         );
 
         _dailyHashRateBonus =
@@ -478,7 +489,11 @@ class _HomePageState extends State<HomePage>
 
         if (_dailyHashRateBonus <= 0) {
           _dailyHashRateBonus =
-              _hashRate;
+              _hashRate > 0
+                  ? _hashRate
+                  : _calculateDailyHashRate(
+                      _streak,
+                    );
         }
 
         // ------------------------------------------------------
@@ -521,6 +536,13 @@ class _HomePageState extends State<HomePage>
           data['cooldownRemainingMs'],
         );
 
+        // If the backend says there is no remaining time,
+        // the boost cannot remain visually active.
+        if (_adBoostRemainingMs <= 0) {
+          _adBoostRemainingMs = 0;
+          _adBoostActive = false;
+        }
+
         // ------------------------------------------------------
         // EFFECTIVE HASH RATE
         // ------------------------------------------------------
@@ -548,10 +570,13 @@ class _HomePageState extends State<HomePage>
         _canWatchAd =
             data['canWatchAd'] == true;
 
-        // If a boost is active, the user must wait until
-        // that boost ends before watching another ad.
-        if (_adBoostActive &&
+        if (_adBoostActive ||
             _adBoostRemainingMs > 0) {
+          _canWatchAd = false;
+        }
+
+        if (_adsToday >=
+            _maxAdsPerDay) {
           _canWatchAd = false;
         }
 
@@ -583,7 +608,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // ⛏️ START MINING
+  // ⛏️ START / COLLECT MINING
   // ============================================================
 
   Future<void> _startMining() async {
@@ -639,7 +664,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // ⛏️ START MINING AFTER REWARDED AD
+  // ⛏️ START MINING AFTER AD
   // ============================================================
 
   Future<void> _startMiningAfterAd() async {
@@ -849,10 +874,8 @@ class _HomePageState extends State<HomePage>
     _adLoading = true;
 
     await RewardedAd.load(
-      adUnitId:
-          _rewardedAdUnitId,
-      request:
-          const AdRequest(),
+      adUnitId: _rewardedAdUnitId,
+      request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
         onAdLoaded: (
@@ -919,9 +942,7 @@ class _HomePageState extends State<HomePage>
           }
 
           Future.delayed(
-            const Duration(
-              seconds: 10,
-            ),
+            const Duration(seconds: 10),
             () {
               if (mounted) {
                 _loadRewardedAd();
@@ -951,38 +972,56 @@ class _HomePageState extends State<HomePage>
       _showMessage(
         '⚡ Stella’s Power Boost is active. '
         'Next ad in '
-        '${_formatDuration(_adBoostRemainingMs)}.',
+        '${_formatDuration(
+          _adBoostRemainingMs,
+        )}.',
       );
 
       return;
     }
 
     // ----------------------------------------------------------
-    // AD LIMIT / AVAILABILITY
+    // DAILY LIMIT
+    // ----------------------------------------------------------
+
+    if (_adsToday >=
+        _maxAdsPerDay) {
+      _showMessage(
+        _localization.get(
+          'dailyLimitReached',
+        ),
+      );
+
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // COOLDOWN
+    // ----------------------------------------------------------
+
+    if (_cooldownRemainingMs > 0) {
+      _showMessage(
+        '⏳ Next Power Boost in '
+        '${_formatDuration(
+          _cooldownRemainingMs,
+        )}.',
+      );
+
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // BACKEND AVAILABILITY
     // ----------------------------------------------------------
 
     if (!_canWatchAd) {
-      if (_adBoostRemainingMs > 0) {
-        _showMessage(
-          '⏳ Next Power Boost in '
-          '${_formatDuration(
-            _adBoostRemainingMs,
-          )}.',
-        );
-      } else if (_adsToday >=
-          _maxAdsPerDay) {
-        _showMessage(
-          _localization.get(
-            'dailyLimitReached',
-          ),
-        );
-      } else {
-        _showMessage(
-          _localization.get(
-            'prepareAd',
-          ),
-        );
-      }
+      _showMessage(
+        _localization.get(
+          'prepareAd',
+        ),
+      );
+
+      await _loadMiningStatus();
 
       return;
     }
@@ -1083,15 +1122,15 @@ class _HomePageState extends State<HomePage>
               : defaultAdHashRateBonus;
 
       if (rewarded) {
-        final int boostDuration =
+        final int backendDuration =
             _toInt(
           data['adBoostDurationMs'],
         );
 
         final int duration =
-            boostDuration > 0
-                ? boostDuration
-                : adBoostDurationMs;
+            backendDuration > 0
+                ? backendDuration
+                : defaultAdBoostDurationMs;
 
         _showMessage(
           '⚡ Power Boost activated! '
@@ -1099,11 +1138,19 @@ class _HomePageState extends State<HomePage>
           'for 4 hours 🐱',
         );
 
-        // The server remains authoritative.
-        // This local update makes the UI react immediately.
+        // ------------------------------------------------------
+        // Immediate local UI update.
+        //
+        // Backend remains authoritative and the next status
+        // refresh will synchronize everything again.
+        // ------------------------------------------------------
+
         setState(() {
           _adBoostActive = true;
-          _adBoostRemainingMs = duration;
+
+          _adBoostRemainingMs =
+              duration;
+
           _adHashRateBonus =
               boostAmount;
 
@@ -1182,7 +1229,9 @@ class _HomePageState extends State<HomePage>
                 BorderRadius.circular(24),
           ),
           title: Text(
-            '🐱 ${localization.get('selectLanguage')}',
+            '🐱 ${localization.get(
+              'selectLanguage',
+            )}',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -1203,14 +1252,10 @@ class _HomePageState extends State<HomePage>
                         const EdgeInsets.only(
                       bottom: 10,
                     ),
-                    child:
-                        _languageButton(
-                      context:
-                          dialogContext,
-                      code:
-                          entry.key,
-                      title:
-                          entry.value,
+                    child: _languageButton(
+                      context: dialogContext,
+                      code: entry.key,
+                      title: entry.value,
                     ),
                   );
                 },
@@ -1248,8 +1293,7 @@ class _HomePageState extends State<HomePage>
             );
           }
         },
-        style:
-            ElevatedButton.styleFrom(
+        style: ElevatedButton.styleFrom(
           backgroundColor:
               selected
                   ? accentColor
@@ -1285,10 +1329,8 @@ class _HomePageState extends State<HomePage>
             ),
             if (selected)
               const Icon(
-                Icons
-                    .check_circle_rounded,
-                color:
-                    goldColor,
+                Icons.check_circle_rounded,
+                color: goldColor,
                 size: 20,
               ),
           ],
@@ -1361,7 +1403,9 @@ class _HomePageState extends State<HomePage>
 
     return CatFactCard(
       title:
-          '🐱 ${_localization.get('stellaFacts')}',
+          '🐱 ${_localization.get(
+        'stellaFacts',
+      )}',
       fact: fact,
     );
   }
@@ -1378,7 +1422,7 @@ class _HomePageState extends State<HomePage>
     return double.tryParse(
           value?.toString() ?? '',
         ) ??
-        0;
+        0.0;
   }
 
   int _toInt(dynamic value) {
@@ -1401,15 +1445,20 @@ class _HomePageState extends State<HomePage>
 
     final double rate =
         defaultDailyHashRate +
-        ((streak - 1) * 0.5);
+        ((streak - 1) *
+            dailyHashRateStep);
 
-    return rate.clamp(
-      0.5,
-      3.5,
-    ).toDouble();
+    return rate
+        .clamp(
+          defaultDailyHashRate,
+          maximumDailyHashRate,
+        )
+        .toDouble();
   }
 
-  String _formatStl(double value) {
+  String _formatStl(
+    double value,
+  ) {
     return value.toStringAsFixed(4);
   }
 
@@ -1468,8 +1517,7 @@ class _HomePageState extends State<HomePage>
         SnackBar(
           content: Text(
             message,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               fontWeight:
                   FontWeight.w600,
             ),
@@ -1481,9 +1529,7 @@ class _HomePageState extends State<HomePage>
           shape:
               RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(
-              14,
-            ),
+                BorderRadius.circular(14),
           ),
         ),
       );
@@ -1903,14 +1949,14 @@ class _HomePageState extends State<HomePage>
         ),
         boxShadow:
             const [
-          BoxShadow(
-            color:
-                Color(0x55000000),
-            blurRadius: 25,
-            offset:
-                Offset(0, 10),
-          ),
-        ],
+              BoxShadow(
+                color:
+                    Color(0x55000000),
+                blurRadius: 25,
+                offset:
+                    Offset(0, 10),
+              ),
+            ],
       ),
       child:
           Column(
@@ -2127,7 +2173,9 @@ class _HomePageState extends State<HomePage>
               'totalStl',
             ),
             value:
-                '${_formatStl(_estimatedTotal)} STL',
+                '${_formatStl(
+                  _estimatedTotal,
+                )} STL',
           ),
         ),
       ],
@@ -2216,12 +2264,12 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildMiningProgress() {
-    double progress = 0;
+    double progress = 0.0;
 
     if (_miningActive &&
         _miningDurationMs > 0) {
       progress =
-          1 -
+          1.0 -
           (_miningRemainingMs /
               _miningDurationMs);
 
@@ -2371,6 +2419,25 @@ class _HomePageState extends State<HomePage>
               ],
             ],
           ),
+
+          if (_adBoostActive) ...[
+            const SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              '⚡ Effective HR: '
+              '${_effectiveHashRate.toStringAsFixed(4)} HR',
+              style:
+                  const TextStyle(
+                color:
+                    goldColor,
+                fontSize: 12,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -2498,7 +2565,9 @@ class _HomePageState extends State<HomePage>
         _canWatchAd &&
             _adReady &&
             !_actionLoading &&
-            !boostActive;
+            !boostActive &&
+            _adsToday < _maxAdsPerDay &&
+            _cooldownRemainingMs <= 0;
 
     String subtitle;
 
@@ -2513,8 +2582,7 @@ class _HomePageState extends State<HomePage>
           '⚡ ${_formatDuration(
             _adBoostRemainingMs,
           )}';
-    } else if (_cooldownRemainingMs >
-        0) {
+    } else if (_cooldownRemainingMs > 0) {
       subtitle =
           '⏳ ${_formatDuration(
             _cooldownRemainingMs,
@@ -2675,7 +2743,9 @@ class _HomePageState extends State<HomePage>
                   ),
 
                   Text(
-                    '${_formatDuration(_adBoostRemainingMs)} remaining',
+                    '${_formatDuration(
+                      _adBoostRemainingMs,
+                    )} remaining',
                     style:
                         const TextStyle(
                       color:
@@ -2697,6 +2767,22 @@ class _HomePageState extends State<HomePage>
                         const TextStyle(
                       color:
                           pinkColor,
+                      fontWeight:
+                          FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 5,
+                  ),
+
+                  Text(
+                    'Effective HR: '
+                    '${_effectiveHashRate.toStringAsFixed(4)} HR',
+                    style:
+                        const TextStyle(
+                      color:
+                          goldColor,
                       fontWeight:
                           FontWeight.w700,
                     ),
@@ -2768,7 +2854,9 @@ class _HomePageState extends State<HomePage>
                 ),
                 child:
                     Text(
-                  '${_localization.get('watchAd')} • $subtitle',
+                  '${_localization.get(
+                    'watchAd',
+                  )} • $subtitle',
                   textAlign:
                       TextAlign.center,
                   maxLines:
@@ -2806,10 +2894,10 @@ class _HomePageState extends State<HomePage>
             height: 4,
           ),
 
-          Text(
+          const Text(
             'Max 6 boosts/day • 4 hours each',
             style:
-                const TextStyle(
+                TextStyle(
               color:
                   Color(0xFF6F5C84),
               fontSize:
@@ -2826,6 +2914,13 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildDailyBonusCard() {
+    final double displayedRate =
+        _dailyHashRateBonus > 0
+            ? _dailyHashRateBonus
+            : _calculateDailyHashRate(
+                _streak,
+              );
+
     return Container(
       padding:
           const EdgeInsets.all(
@@ -2891,7 +2986,7 @@ class _HomePageState extends State<HomePage>
           Text(
             'Day $_streak • '
             'Daily Hash Rate '
-            '${_dailyHashRateBonus.toStringAsFixed(1)} HR',
+            '${displayedRate.toStringAsFixed(1)} HR',
             textAlign:
                 TextAlign.center,
             style:
