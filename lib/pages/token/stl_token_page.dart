@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/cat_avatar.dart';
+import '../../widgets/stelluriini_logo.dart';
 
-const Color tokenBackgroundColor = Color(0xFF0B1112);
-const Color tokenCardColor = Color(0xFF151B1C);
-const Color tokenAccentColor = Color(0xFF35D0A0);
+const Color tokenBackgroundColor = Color(0xFF120B24);
+const Color tokenCardColor = Color(0xFF21113B);
+const Color tokenAccentColor = Color(0xFFB58CFF);
+const Color tokenPinkColor = Color(0xFFFFB7E8);
+const Color tokenGoldColor = Color(0xFFFFD166);
 
 class StlTokenPage extends StatelessWidget {
   const StlTokenPage({
@@ -45,8 +48,13 @@ class StlTokenPage extends StatelessWidget {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         const SnackBar(
+          backgroundColor: tokenCardColor,
           content: Text(
             'Mint address copied! 🐱',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       );
@@ -62,7 +70,7 @@ class StlTokenPage extends StatelessWidget {
     );
 
     try {
-      final opened = await launchUrl(
+      final bool opened = await launchUrl(
         url,
         mode: LaunchMode.externalApplication,
       );
@@ -72,8 +80,12 @@ class StlTokenPage extends StatelessWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(
             const SnackBar(
+              backgroundColor: tokenCardColor,
               content: Text(
                 'Could not open Solscan.',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
               ),
             ),
           );
@@ -85,8 +97,12 @@ class StlTokenPage extends StatelessWidget {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
+            backgroundColor: tokenCardColor,
             content: Text(
               'Could not open Solscan.',
+              style: TextStyle(
+                color: Colors.white,
+              ),
             ),
           ),
         );
@@ -102,34 +118,67 @@ class StlTokenPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: tokenBackgroundColor,
 
+      // ========================================================
+      // APP BAR
+      // ========================================================
+
       appBar: AppBar(
+        backgroundColor: tokenBackgroundColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         title: const Text(
           'STL Token',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
           ),
         ),
       ),
 
+      // ========================================================
+      // BODY
+      // ========================================================
+
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
-
             // ==================================================
-            // HEADER
+            // STELLA HEADER
             // ==================================================
 
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(
+                24,
+                28,
+                24,
+                26,
+              ),
               decoration: BoxDecoration(
-                color: tokenCardColor,
-                borderRadius: BorderRadius.circular(24),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF21113B),
+                    Color(0xFF2A1648),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(26),
                 border: Border.all(
                   color: tokenAccentColor.withValues(
-                    alpha: 0.20,
+                    alpha: 0.30,
                   ),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: tokenAccentColor.withValues(
+                      alpha: 0.10,
+                    ),
+                    blurRadius: 24,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -145,7 +194,7 @@ class StlTokenPage extends StatelessWidget {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 3,
-                      color: tokenAccentColor,
+                      color: tokenPinkColor,
                     ),
                   ),
 
@@ -161,15 +210,33 @@ class StlTokenPage extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
-                  Text(
-                    '🐱 Solana Community Token',
-                    style: TextStyle(
-                      color: Colors.white.withValues(
-                        alpha: 0.60,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tokenAccentColor.withValues(
+                        alpha: 0.10,
                       ),
-                      fontSize: 15,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: tokenAccentColor.withValues(
+                          alpha: 0.22,
+                        ),
+                      ),
+                    ),
+                    child: const Text(
+                      '🐾 SOLANA COMMUNITY TOKEN 🐾',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: tokenAccentColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ],
@@ -185,6 +252,7 @@ class StlTokenPage extends StatelessWidget {
             _TokenCard(
               title: 'Token Information',
               icon: Icons.monetization_on_outlined,
+              accent: tokenAccentColor,
               child: const Column(
                 children: [
                   _TokenInfoRow(
@@ -229,22 +297,23 @@ class StlTokenPage extends StatelessWidget {
             _TokenCard(
               title: 'Token Supply',
               icon: Icons.inventory_2_outlined,
+              accent: tokenGoldColor,
               child: Column(
                 children: [
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 24,
+                      vertical: 26,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(
-                        alpha: 0.22,
+                      color: tokenGoldColor.withValues(
+                        alpha: 0.07,
                       ),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: tokenAccentColor.withValues(
-                          alpha: 0.25,
+                        color: tokenGoldColor.withValues(
+                          alpha: 0.20,
                         ),
                       ),
                     ),
@@ -268,7 +337,7 @@ class StlTokenPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
-                            color: tokenAccentColor,
+                            color: tokenGoldColor,
                           ),
                         ),
 
@@ -280,6 +349,7 @@ class StlTokenPage extends StatelessWidget {
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 3,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -288,14 +358,12 @@ class StlTokenPage extends StatelessWidget {
 
                   const SizedBox(height: 18),
 
-                  Text(
+                  const Text(
                     'Stelluriini has a fixed total supply of '
-                    '$totalSupply STL tokens.',
+                    '17 602 539 062 STL tokens.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withValues(
-                        alpha: 0.65,
-                      ),
+                      color: Colors.white65,
                       fontSize: 15,
                       height: 1.5,
                     ),
@@ -313,16 +381,15 @@ class StlTokenPage extends StatelessWidget {
             _TokenCard(
               title: 'Official Mint Address',
               icon: Icons.vpn_key_outlined,
+              accent: tokenPinkColor,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
+                  const Text(
                     'This is the official public mint address '
                     'for the Stelluriini token.',
                     style: TextStyle(
-                      color: Colors.white.withValues(
-                        alpha: 0.65,
-                      ),
+                      color: Colors.white65,
                       fontSize: 15,
                       height: 1.5,
                     ),
@@ -337,12 +404,17 @@ class StlTokenPage extends StatelessWidget {
                         alpha: 0.22,
                       ),
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: tokenPinkColor.withValues(
+                          alpha: 0.15,
+                        ),
+                      ),
                     ),
-                    child: SelectableText(
+                    child: const SelectableText(
                       mintAddress,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: tokenAccentColor,
+                      style: TextStyle(
+                        color: tokenPinkColor,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.3,
@@ -351,6 +423,10 @@ class StlTokenPage extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 14),
+
+                  // ------------------------------------------------
+                  // COPY
+                  // ------------------------------------------------
 
                   SizedBox(
                     height: 52,
@@ -369,6 +445,7 @@ class StlTokenPage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: tokenAccentColor,
                         foregroundColor: tokenBackgroundColor,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -377,6 +454,10 @@ class StlTokenPage extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 12),
+
+                  // ------------------------------------------------
+                  // SOLSCAN
+                  // ------------------------------------------------
 
                   SizedBox(
                     height: 52,
@@ -393,10 +474,10 @@ class StlTokenPage extends StatelessWidget {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: tokenAccentColor,
+                        foregroundColor: tokenPinkColor,
                         side: BorderSide(
-                          color: tokenAccentColor.withValues(
-                            alpha: 0.60,
+                          color: tokenPinkColor.withValues(
+                            alpha: 0.55,
                           ),
                         ),
                         shape: RoundedRectangleBorder(
@@ -412,28 +493,104 @@ class StlTokenPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // ==================================================
+            // STELLA TOKEN CARD
+            // ==================================================
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: tokenCardColor,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: tokenPinkColor.withValues(
+                    alpha: 0.18,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const StelluriiniLogo(
+                    size: 72,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  const Text(
+                    '🐱 Stella & STL',
+                    style: TextStyle(
+                      color: tokenPinkColor,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  const Text(
+                    'Community • Curiosity • Solana',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ==================================================
             // IMPORTANT INFORMATION
             // ==================================================
 
             _TokenCard(
               title: 'Important Information',
               icon: Icons.info_outline,
-              child: Text(
+              accent: tokenGoldColor,
+              child: const Text(
                 'STL shown inside the Stelluriini application '
                 'currently represents virtual in-app points. '
                 'These points are not automatically connected '
                 'to a withdrawable cryptocurrency balance.',
                 style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.60,
-                  ),
+                  color: Colors.white60,
                   fontSize: 15,
-                  height: 1.5,
+                  height: 1.6,
                 ),
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
+
+            // ==================================================
+            // FOOTER
+            // ==================================================
+
+            const Text(
+              '🐾 STELLURIINI • STL • SOLANA 🐾',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: tokenPinkColor,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              '17 602 539 062 STL',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: tokenGoldColor,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -449,11 +606,13 @@ class _TokenCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
+  final Color accent;
 
   const _TokenCard({
     required this.title,
     required this.icon,
     required this.child,
+    this.accent = tokenAccentColor,
   });
 
   @override
@@ -464,8 +623,8 @@ class _TokenCard extends StatelessWidget {
         color: tokenCardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: tokenAccentColor.withValues(
-            alpha: 0.15,
+          color: accent.withValues(
+            alpha: 0.16,
           ),
         ),
       ),
@@ -474,19 +633,32 @@ class _TokenCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: tokenAccentColor,
-                size: 30,
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent.withValues(
+                    alpha: 0.10,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  icon,
+                  color: accent,
+                  size: 25,
+                ),
               ),
 
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
 
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -531,21 +703,24 @@ class _TokenInfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              color: Colors.white.withValues(
-                alpha: 0.60,
-              ),
+            style: const TextStyle(
+              color: Colors.white60,
               fontSize: 15,
             ),
           ),
         ),
 
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 12),
+
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
