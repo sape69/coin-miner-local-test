@@ -28,19 +28,16 @@ class AppLocalizations {
     // ========================================================
 
     'fi': {
-      // ------------------------------------------------------
       // General
-      // ------------------------------------------------------
-
       'stella': 'Stella',
       'yourBalance': 'SINUN STL-SALDOSI',
       'virtualPoints': 'Virtuaalisia sovelluspisteitä',
       'selectLanguage': 'Valitse kieli',
+      'refresh': 'Päivitä',
+      'serverConnectionFailed':
+          '🐱 Yhteyttä palvelimeen ei voitu muodostaa.',
 
-      // ------------------------------------------------------
       // Mining
-      // ------------------------------------------------------
-
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA LOUHII',
       'miningComplete': 'LOUHINTA VALMIS!',
@@ -62,10 +59,7 @@ class AppLocalizations {
           '⛏️ STELLAN LOUHINNAN EDISTYMINEN',
       'stlPerHour': '⚡ {amount} STL / tunti',
 
-      // ------------------------------------------------------
       // Mining buttons
-      // ------------------------------------------------------
-
       'stellaIsWorking': 'STELLA TYÖSKENTELEE...',
       'stellaIsMiningButton':
           '🐱 STELLA LOUHII',
@@ -84,10 +78,7 @@ class AppLocalizations {
       'miningStartFailed':
           '🐱 Louhinnan käynnistäminen epäonnistui.',
 
-      // ------------------------------------------------------
       // Power Boost
-      // ------------------------------------------------------
-
       'stellaPowerBoost': 'STELLA POWER BOOST',
       'watchAdHelpStella':
           'Katso mainos ja auta Stellaa ⚡',
@@ -101,7 +92,8 @@ class AppLocalizations {
       'dailyLimitReached':
           'Päivän mainosraja saavutettu',
       'nextAd': 'Seuraava mainos',
-      'adsToday': '{current} / {max} Power Boostia tänään',
+      'adsToday':
+          '{current} / {max} Power Boostia tänään',
       'stellaResting':
           '🐱 Stella lepää vielä {time}.',
       'testAdRewardFailed':
@@ -113,10 +105,7 @@ class AppLocalizations {
       'powerBoostFailed':
           '🐱 Power Boost epäonnistui.',
 
-      // ------------------------------------------------------
       // Daily Bonus
-      // ------------------------------------------------------
-
       'dailyClaim': 'Päivittäinen palkinto',
       'dailyReward': 'LUNASTA PÄIVÄN PALKINTO',
       'claimed': 'Lunastettu tänään',
@@ -134,16 +123,10 @@ class AppLocalizations {
       'dailyBonusFailed':
           '🐱 Daily Bonus epäonnistui.',
 
-      // ------------------------------------------------------
       // Cat Fact
-      // ------------------------------------------------------
-
       'stellaFacts': 'Stellan kissafakta 🐱',
 
-      // ------------------------------------------------------
       // Drawer / navigation
-      // ------------------------------------------------------
-
       'menu': 'Stella Menu',
       'about': 'Tietoa Stelluriinista',
       'whitePaper': 'White Paper',
@@ -154,19 +137,13 @@ class AppLocalizations {
       'comingSoon':
           '🐱✨ {title} tulee Stella-teemalla pian!',
 
-      // ------------------------------------------------------
       // Footer
-      // ------------------------------------------------------
-
       'footerTagline':
           'Stella louhii tulevaisuutta.',
       'footerToken':
           'STELLURIINI • STL',
 
-      // ------------------------------------------------------
-      // Existing app strings
-      // ------------------------------------------------------
-
+      // Existing app
       'watchEarn': 'Katso ja ansaitse',
       'pointsAdded': '+3 STL lisätty!',
       'info': 'Tietoa Stelluriinista',
@@ -186,19 +163,16 @@ class AppLocalizations {
     // ========================================================
 
     'en': {
-      // ------------------------------------------------------
       // General
-      // ------------------------------------------------------
-
       'stella': 'Stella',
       'yourBalance': 'YOUR STL BALANCE',
       'virtualPoints': 'Virtual in-app points',
       'selectLanguage': 'Select language',
+      'refresh': 'Refresh',
+      'serverConnectionFailed':
+          '🐱 Could not connect to the server.',
 
-      // ------------------------------------------------------
       // Mining
-      // ------------------------------------------------------
-
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA IS MINING',
       'miningComplete': 'MINING COMPLETE!',
@@ -220,10 +194,7 @@ class AppLocalizations {
           '⛏️ STELLA MINING PROGRESS',
       'stlPerHour': '⚡ {amount} STL / hour',
 
-      // ------------------------------------------------------
       // Mining buttons
-      // ------------------------------------------------------
-
       'stellaIsWorking': 'STELLA IS WORKING...',
       'stellaIsMiningButton':
           '🐱 STELLA IS MINING',
@@ -242,10 +213,7 @@ class AppLocalizations {
       'miningStartFailed':
           '🐱 Failed to start mining.',
 
-      // ------------------------------------------------------
       // Power Boost
-      // ------------------------------------------------------
-
       'stellaPowerBoost': 'STELLA POWER BOOST',
       'watchAdHelpStella':
           'Watch an ad and help Stella ⚡',
@@ -272,10 +240,7 @@ class AppLocalizations {
       'powerBoostFailed':
           '🐱 Power Boost failed.',
 
-      // ------------------------------------------------------
       // Daily Bonus
-      // ------------------------------------------------------
-
       'dailyClaim': 'Daily reward',
       'dailyReward': 'CLAIM DAILY REWARD',
       'claimed': 'Claimed today',
@@ -293,16 +258,10 @@ class AppLocalizations {
       'dailyBonusFailed':
           '🐱 Daily Bonus failed.',
 
-      // ------------------------------------------------------
       // Cat Fact
-      // ------------------------------------------------------
-
       'stellaFacts': 'Stella’s cat fact 🐱',
 
-      // ------------------------------------------------------
       // Drawer / navigation
-      // ------------------------------------------------------
-
       'menu': 'Stella Menu',
       'about': 'About Stelluriini',
       'whitePaper': 'White Paper',
@@ -313,19 +272,13 @@ class AppLocalizations {
       'comingSoon':
           '🐱✨ {title} is coming soon with the Stella theme!',
 
-      // ------------------------------------------------------
       // Footer
-      // ------------------------------------------------------
-
       'footerTagline':
           'Stella is mining the future.',
       'footerToken':
           'STELLURIINI • STL',
 
-      // ------------------------------------------------------
-      // Existing app strings
-      // ------------------------------------------------------
-
+      // Existing app
       'watchEarn': 'Watch and earn',
       'pointsAdded': '+3 STL added!',
       'info': 'About Stelluriini',
@@ -349,6 +302,9 @@ class AppLocalizations {
       'yourBalance': 'DEIN STL-GUTHABEN',
       'virtualPoints': 'Virtuelle Punkte in der App',
       'selectLanguage': 'Sprache auswählen',
+      'refresh': 'Aktualisieren',
+      'serverConnectionFailed':
+          '🐱 Verbindung zum Server konnte nicht hergestellt werden.',
 
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA MINING',
@@ -470,8 +426,12 @@ class AppLocalizations {
     'es': {
       'stella': 'Stella',
       'yourBalance': 'TU SALDO DE STL',
-      'virtualPoints': 'Puntos virtuales dentro de la aplicación',
+      'virtualPoints':
+          'Puntos virtuales dentro de la aplicación',
       'selectLanguage': 'Seleccionar idioma',
+      'refresh': 'Actualizar',
+      'serverConnectionFailed':
+          '🐱 No se pudo conectar con el servidor.',
 
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA ESTÁ MINANDO',
@@ -563,7 +523,8 @@ class AppLocalizations {
       'token': 'Token STL',
       'tokenomics': 'Tokenomics',
       'roadmap': 'Hoja de ruta',
-      'transactionHistory': 'Historial de transacciones',
+      'transactionHistory':
+          'Historial de transacciones',
       'comingSoon':
           '🐱✨ {title} llegará pronto con el estilo de Stella.',
 
@@ -593,8 +554,12 @@ class AppLocalizations {
     'fr': {
       'stella': 'Stella',
       'yourBalance': 'TON SOLDE STL',
-      'virtualPoints': 'Points virtuels dans l’application',
+      'virtualPoints':
+          'Points virtuels dans l’application',
       'selectLanguage': 'Choisir la langue',
+      'refresh': 'Actualiser',
+      'serverConnectionFailed':
+          '🐱 Impossible de se connecter au serveur.',
 
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA MINE',
@@ -720,6 +685,9 @@ class AppLocalizations {
       'yourBalance': '你的 STL 余额',
       'virtualPoints': '应用内虚拟积分',
       'selectLanguage': '选择语言',
+      'refresh': '刷新',
+      'serverConnectionFailed':
+          '🐱 无法连接到服务器。',
 
       'stellaMining': 'Stella 挖矿',
       'stellaIsMining': 'STELLA 正在挖矿',
@@ -844,6 +812,9 @@ class AppLocalizations {
       'yourBalance': 'SỐ DƯ STL CỦA BẠN',
       'virtualPoints': 'Điểm ảo trong ứng dụng',
       'selectLanguage': 'Chọn ngôn ngữ',
+      'refresh': 'Làm mới',
+      'serverConnectionFailed':
+          '🐱 Không thể kết nối với máy chủ.',
 
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA ĐANG ĐÀO',
@@ -970,6 +941,9 @@ class AppLocalizations {
       'yourBalance': 'あなたの STL 残高',
       'virtualPoints': 'アプリ内の仮想ポイント',
       'selectLanguage': '言語を選択',
+      'refresh': '更新',
+      'serverConnectionFailed':
+          '🐱 サーバーに接続できませんでした。',
 
       'stellaMining': 'Stella Mining',
       'stellaIsMining': 'STELLA は採掘中',
