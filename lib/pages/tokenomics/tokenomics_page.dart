@@ -30,10 +30,6 @@ class TokenomicsPage extends StatelessWidget {
 
   // ==========================================================
   // TOKEN ALLOCATIONS
-  //
-  // These amounts add up exactly to:
-  //
-  // 17 602 539 062 STL
   // ==========================================================
 
   static const int communityRewards = 7041015625;
@@ -138,14 +134,14 @@ class TokenomicsPage extends StatelessWidget {
   // ==========================================================
 
   Widget _paragraph(String text) {
-    return const TextStyle(
-      color: Colors.white70,
-      fontSize: 15,
-      height: 1.6,
-    ).let((style) => Text(
-          text,
-          style: style,
-        ));
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 15,
+        height: 1.6,
+      ),
+    );
   }
 
   // ==========================================================
@@ -241,8 +237,11 @@ class TokenomicsPage extends StatelessWidget {
             child: LinearProgressIndicator(
               value: chartValue,
               minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.06),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+              backgroundColor: Colors.white.withValues(
+                alpha: 0.06,
+              ),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(color),
             ),
           ),
           const SizedBox(height: 14),
@@ -486,7 +485,12 @@ class TokenomicsPage extends StatelessWidget {
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            32,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -906,7 +910,8 @@ class TokenomicsPage extends StatelessWidget {
                 icon: Icons.workspace_premium_rounded,
                 title: 'Allocation Principles',
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     _paragraph(
                       'The token allocation structure is designed '
@@ -1190,19 +1195,5 @@ class _TokenomicsChartPainter extends CustomPainter {
     covariant CustomPainter oldDelegate,
   ) {
     return false;
-  }
-}
-
-// ============================================================
-// SMALL TEXTSTYLE HELPER
-// ============================================================
-//
-// Keeps _paragraph() readable without introducing another
-// widget class just for a TextStyle.
-//
-
-extension on TextStyle {
-  T let<T>(T Function(TextStyle value) builder) {
-    return builder(this);
   }
 }
