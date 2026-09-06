@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// CAT AVATAR
+// 🐱 STELLURIINI / STELLA CAT AVATAR
 //
 // Käyttää kaikkialla samaa Stelluriini-logo-kuvaa.
+// ============================================================
+
+const Color catAvatarBackgroundColor = Color(0xFF120B24);
+const Color catAvatarCardColor = Color(0xFF21113B);
+
+const Color catAvatarAccentColor = Color(0xFFB58CFF);
+const Color catAvatarPinkColor = Color(0xFFFFB7E8);
+
+// ============================================================
+// 🐱 CAT AVATAR
 // ============================================================
 
 class CatAvatar extends StatelessWidget {
@@ -21,17 +31,25 @@ class CatAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFF151B1C),
+        color: catAvatarCardColor,
         border: Border.all(
-          color: const Color(0xFF35D0A0),
+          color: catAvatarAccentColor,
           width: 3,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF35D0A0)
-                .withValues(alpha: 0.18),
+            color: catAvatarAccentColor.withValues(
+              alpha: 0.18,
+            ),
             blurRadius: 18,
             spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: catAvatarPinkColor.withValues(
+              alpha: 0.08,
+            ),
+            blurRadius: 28,
+            spreadRadius: 1,
           ),
         ],
       ),
@@ -49,7 +67,7 @@ class CatAvatar extends StatelessWidget {
             return const Center(
               child: Icon(
                 Icons.pets,
-                color: Color(0xFF35D0A0),
+                color: catAvatarAccentColor,
               ),
             );
           },
