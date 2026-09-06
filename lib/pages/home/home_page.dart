@@ -104,15 +104,9 @@ class _HomePageState extends State<HomePage>
   bool _actionLoading = false;
   bool _miningActive = false;
 
-  /// Daily Hash Rate.
+  /// Current mining hash rate.
   ///
-  /// Day 1 = 0.5 HR
-  /// Day 2 = 1.0 HR
-  /// Day 3 = 1.5 HR
-  /// Day 4 = 2.0 HR
-  /// Day 5 = 2.5 HR
-  /// Day 6 = 3.0 HR
-  /// Day 7+ = 3.5 HR
+  /// The backend remains authoritative for an active mining cycle.
   double _hashRate = defaultDailyHashRate;
 
   double _miningBalance = 0.0;
@@ -132,6 +126,15 @@ class _HomePageState extends State<HomePage>
   bool _dailyClaimed = false;
   int _streak = 0;
 
+  /// Daily base Hash Rate.
+  ///
+  /// Day 1 = 0.5 HR
+  /// Day 2 = 1.0 HR
+  /// Day 3 = 1.5 HR
+  /// Day 4 = 2.0 HR
+  /// Day 5 = 2.5 HR
+  /// Day 6 = 3.0 HR
+  /// Day 7+ = 3.5 HR
   double _dailyHashRateBonus =
       defaultDailyHashRate;
 
@@ -149,7 +152,6 @@ class _HomePageState extends State<HomePage>
 
   bool _canWatchAd = false;
 
-  /// Remaining cooldown / active boost time.
   int _cooldownRemainingMs = 0;
 
   bool _adBoostActive = false;
@@ -324,9 +326,6 @@ class _HomePageState extends State<HomePage>
 
           // ----------------------------------------------------
           // AD AVAILABILITY
-          //
-          // The server remains authoritative. This only
-          // updates the local UI between server refreshes.
           // ----------------------------------------------------
 
           if (!_adBoostActive &&
@@ -482,19 +481,25 @@ class _HomePageState extends State<HomePage>
               data['dailyStreak'],
         );
 
-        _dailyHashRateBonus =
-            _toDouble(
-          data['dailyHashRateBonus'],
-        );
+        // ------------------------------------------------------
+        // IMPORTANT:
+        //
+        // Daily Hash Rate is now calculated from the streak.
+        //
+        // We do NOT trust a legacy dailyHashRateBonus value
+        // from Firestore because older accounts may contain
+        // values from the previous mining system.
+        //
+        // Day 1 = 0.5 HR
+        // Day 2 = 1.0 HR
+        // ...
+        // Day 7+ = 3.5 HR
+        // ------------------------------------------------------
 
-        if (_dailyHashRateBonus <= 0) {
-          _dailyHashRateBonus =
-              _hashRate > 0
-                  ? _hashRate
-                  : _calculateDailyHashRate(
-                      _streak,
-                    );
-        }
+        _dailyHashRateBonus =
+            _calculateDailyHashRate(
+          _streak,
+        );
 
         // ------------------------------------------------------
         // POWER BOOST
@@ -536,8 +541,6 @@ class _HomePageState extends State<HomePage>
           data['cooldownRemainingMs'],
         );
 
-        // If the backend says there is no remaining time,
-        // the boost cannot remain visually active.
         if (_adBoostRemainingMs <= 0) {
           _adBoostRemainingMs = 0;
           _adBoostActive = false;
@@ -811,23 +814,23 @@ class _HomePageState extends State<HomePage>
           ),
         );
       } else {
-        final double dailyHashRate =
-            _toDouble(
-          data['dailyHashRate'],
-        );
-
         final int streak =
             _toInt(
           data['dailyStreak'] ??
               data['streak'],
         );
 
+        // ------------------------------------------------------
+        // IMPORTANT:
+        //
+        // The displayed rate is always calculated from the
+        // streak using the new 0.5 HR progression.
+        // ------------------------------------------------------
+
         final double displayedHashRate =
-            dailyHashRate > 0
-                ? dailyHashRate
-                : _calculateDailyHashRate(
-                    streak,
-                  );
+            _calculateDailyHashRate(
+          streak,
+        );
 
         _showMessage(
           '🐱 Daily Hash Rate: '
@@ -963,10 +966,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // ACTIVE BOOST
-    // ----------------------------------------------------------
-
     if (_adBoostActive &&
         _adBoostRemainingMs > 0) {
       _showMessage(
@@ -980,10 +979,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // DAILY LIMIT
-    // ----------------------------------------------------------
-
     if (_adsToday >=
         _maxAdsPerDay) {
       _showMessage(
@@ -994,10 +989,6 @@ class _HomePageState extends State<HomePage>
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // COOLDOWN
-    // ----------------------------------------------------------
 
     if (_cooldownRemainingMs > 0) {
       _showMessage(
@@ -1010,10 +1001,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // BACKEND AVAILABILITY
-    // ----------------------------------------------------------
-
     if (!_canWatchAd) {
       _showMessage(
         _localization.get(
@@ -1025,10 +1012,6 @@ class _HomePageState extends State<HomePage>
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // AD READY
-    // ----------------------------------------------------------
 
     if (_rewardedAd == null ||
         !_adReady) {
@@ -1137,13 +1120,6 @@ class _HomePageState extends State<HomePage>
           '+${boostAmount.toStringAsFixed(4)} HR '
           'for 4 hours 🐱',
         );
-
-        // ------------------------------------------------------
-        // Immediate local UI update.
-        //
-        // Backend remains authoritative and the next status
-        // refresh will synchronize everything again.
-        // ------------------------------------------------------
 
         setState(() {
           _adBoostActive = true;
@@ -2389,7 +2365,7 @@ class _HomePageState extends State<HomePage>
             children: [
               Text(
                 'Daily HR: '
-                '${_hashRate.toStringAsFixed(1)} HR',
+                '${_dailyHashRateBonus.toStringAsFixed(1)} HR',
                 style:
                     const TextStyle(
                   color:
@@ -2688,10 +2664,6 @@ class _HomePageState extends State<HomePage>
             height: 16,
           ),
 
-          // ----------------------------------------------------
-          // ACTIVE BOOST
-          // ----------------------------------------------------
-
           if (boostActive)
             Container(
               width:
@@ -2812,9 +2784,6 @@ class _HomePageState extends State<HomePage>
               ),
             )
           else
-            // --------------------------------------------------
-            // WATCH AD BUTTON
-            // --------------------------------------------------
             SizedBox(
               width:
                   double.infinity,
@@ -2915,11 +2884,9 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildDailyBonusCard() {
     final double displayedRate =
-        _dailyHashRateBonus > 0
-            ? _dailyHashRateBonus
-            : _calculateDailyHashRate(
-                _streak,
-              );
+        _calculateDailyHashRate(
+      _streak,
+    );
 
     return Container(
       padding:
