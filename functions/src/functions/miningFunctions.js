@@ -38,10 +38,14 @@ const {
 // ============================================================
 
 const {
-  DEFAULT_HASH_RATE,
+  DAILY_HASH_RATE_START,
+  DAILY_HASH_RATE_STEP,
+  DAILY_HASH_RATE_MAX_DAY,
+  MAX_DAILY_HASH_RATE,
   MINING_DURATION_MS,
   MINING_PER_HASH_PER_HOUR,
   AD_HASH_RATE_BONUS,
+  AD_BOOST_DURATION_MS,
   MAX_ADS_PER_DAY,
   AD_COOLDOWN_MS,
 } = require("../config/miningConfig");
@@ -78,7 +82,10 @@ const {
 // 🔢 SAFE NUMBER
 // ============================================================
 
-function getSafeNumber(value, fallback = 0) {
+function getSafeNumber(
+  value,
+  fallback = 0
+) {
   const number = Number(value);
 
   return Number.isFinite(number)
@@ -89,14 +96,10 @@ function getSafeNumber(value, fallback = 0) {
 // ============================================================
 // 🔥 SAFE NON-NEGATIVE NUMBER
 // ============================================================
-//
-// Hyväksyy myös arvon 0.
-//
-// ============================================================
 
 function getSafeNonNegativeNumber(
   value,
-  fallback
+  fallback = 0
 ) {
   const number = Number(value);
 
@@ -113,15 +116,10 @@ function getSafeNonNegativeNumber(
 // ============================================================
 // 🔥 SAFE POSITIVE NUMBER
 // ============================================================
-//
-// Käytetään asioissa, joiden täytyy olla aidosti suurempia
-// kuin nolla.
-//
-// ============================================================
 
 function getSafePositiveNumber(
   value,
-  fallback
+  fallback = 0
 ) {
   const number = Number(value);
 
@@ -136,6 +134,180 @@ function getSafePositiveNumber(
 }
 
 // ============================================================
+// 🎁 CALCULATE DAILY HASH RATE
+// ============================================================
+//
+// Päivittäinen Hash Rate:
+//
+// Day 1  = 0.5 HR
+// Day 2  = 1.0 HR
+// Day 3  = 1.5 HR
+// Day 4  = 2.0 HR
+// Day 5  = 2.5 HR
+// Day 6  = 3.0 HR
+// Day 7+ = 3.5 HR
+//
+// ============================================================
+
+function calculateDailyHashRate(
+  streak
+) {
+  const safeStreak =
+    Math.max(
+      1,
+      Math.floor(
+        getSafeNumber(
+          streak,
+          1
+        )
+      )
+    );
+
+  const effectiveDay =
+    Math.min(
+      safeStreak,
+      DAILY_HASH_RATE_MAX_DAY
+    );
+
+  const rate =
+    DAILY_HASH_RATE_START +
+    (
+      (effectiveDay - 1) *
+      DAILY_HASH_RATE_STEP
+    );
+
+  return Math.min(
+    MAX_DAILY_HASH_RATE,
+    Math.max(
+      DAILY_HASH_RATE_START,
+      rate
+    )
+  );
+}
+
+// ============================================================
+// 🎁 GET DAILY STREAK
+// ============================================================
+
+function getDailyStreak(
+  data
+) {
+  const storedStreak =
+    data.dailyStreak ??
+    data.streak ??
+    0;
+
+  return Math.max(
+    0,
+    Math.floor(
+      getSafeNumber(
+        storedStreak,
+        0
+      )
+    )
+  );
+}
+
+// ============================================================
+// 🎁 GET DAILY STATUS
+// ============================================================
+
+function getDailyStatus(
+  data,
+  today
+) {
+  const lastDailyDate =
+    typeof data.lastDailyDate === "string"
+      ? data.lastDailyDate
+      : "";
+
+  const dailyClaimed =
+    lastDailyDate === today;
+
+  const streak =
+    getDailyStreak(data);
+
+  const dailyHashRate =
+    calculateDailyHashRate(
+      streak > 0
+        ? streak
+        : 1
+    );
+
+  return {
+    dailyClaimed,
+    streak,
+    dailyHashRate,
+  };
+}
+
+// ============================================================
+// 📺 TIMESTAMP → MILLISECONDS
+// ============================================================
+
+function getTimestampMilliseconds(
+  value
+) {
+  if (!value) {
+    return 0;
+  }
+
+  if (
+    typeof value.toDate === "function"
+  ) {
+    const date =
+      value.toDate();
+
+    if (
+      date instanceof Date &&
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return date.getTime();
+    }
+  }
+
+  if (
+    value instanceof Date
+  ) {
+    if (
+      !Number.isNaN(
+        value.getTime()
+      )
+    ) {
+      return value.getTime();
+    }
+
+    return 0;
+  }
+
+  if (
+    typeof value === "string"
+  ) {
+    const parsed =
+      new Date(value);
+
+    if (
+      !Number.isNaN(
+        parsed.getTime()
+      )
+    ) {
+      return parsed.getTime();
+    }
+  }
+
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
+    return value;
+  }
+
+  return 0;
+}
+
+// ============================================================
 // 📺 GET AD STATUS
 // ============================================================
 
@@ -144,18 +316,10 @@ function getAdStatus(
   nowMs,
   today
 ) {
-  // ==========================================================
-  // 📅 STORED DATE
-  // ==========================================================
-
   const storedDate =
     typeof data.lastAdDate === "string"
       ? data.lastAdDate
       : "";
-
-  // ==========================================================
-  // 🔢 ADS TODAY
-  // ==========================================================
 
   const adsToday =
     storedDate === today
@@ -170,59 +334,10 @@ function getAdStatus(
         )
       : 0;
 
-  // ==========================================================
-  // ⏳ LAST AD REWARD
-  // ==========================================================
-
-  const lastAdRewardAt =
-    data.lastAdRewardAt;
-
-  let lastAdRewardMs = 0;
-
-  if (
-    lastAdRewardAt &&
-    typeof lastAdRewardAt.toDate === "function"
-  ) {
-    const date =
-      lastAdRewardAt.toDate();
-
-    if (
-      date instanceof Date &&
-      !Number.isNaN(date.getTime())
-    ) {
-      lastAdRewardMs =
-        date.getTime();
-    }
-  } else if (
-    lastAdRewardAt instanceof Date
-  ) {
-    if (
-      !Number.isNaN(
-        lastAdRewardAt.getTime()
-      )
-    ) {
-      lastAdRewardMs =
-        lastAdRewardAt.getTime();
-    }
-  } else if (
-    typeof lastAdRewardAt === "string"
-  ) {
-    const parsedDate =
-      new Date(lastAdRewardAt);
-
-    if (
-      !Number.isNaN(
-        parsedDate.getTime()
-      )
-    ) {
-      lastAdRewardMs =
-        parsedDate.getTime();
-    }
-  }
-
-  // ==========================================================
-  // ⏳ COOLDOWN
-  // ==========================================================
+  const lastAdRewardMs =
+    getTimestampMilliseconds(
+      data.lastAdRewardAt
+    );
 
   const cooldownRemainingMs =
     lastAdRewardMs > 0
@@ -234,99 +349,77 @@ function getAdStatus(
         )
       : 0;
 
-  // ==========================================================
-  // 📺 CAN WATCH
-  // ==========================================================
+  const boostStartedMs =
+    getTimestampMilliseconds(
+      data.adBoostStartedAt
+    );
+
+  const boostEndsMs =
+    getTimestampMilliseconds(
+      data.adBoostEndsAt
+    );
+
+  const adBoostActive =
+    boostStartedMs > 0 &&
+    boostEndsMs > nowMs;
+
+  const adBoostRemainingMs =
+    adBoostActive
+      ? Math.max(
+          0,
+          boostEndsMs -
+            nowMs
+        )
+      : 0;
 
   const canWatchAd =
     adsToday < MAX_ADS_PER_DAY &&
-    cooldownRemainingMs === 0;
+    cooldownRemainingMs === 0 &&
+    !adBoostActive;
 
   return {
     adsToday,
+
     maxAdsPerDay:
       MAX_ADS_PER_DAY,
+
     cooldownRemainingMs,
+
     canWatchAd,
+
+    adBoostActive,
+
+    adBoostRemainingMs,
+
+    adBoostStartedAt:
+      boostStartedMs > 0
+        ? new Date(
+            boostStartedMs
+          )
+        : null,
+
+    adBoostEndsAt:
+      boostEndsMs > 0
+        ? new Date(
+            boostEndsMs
+          )
+        : null,
   };
 }
 
 // ============================================================
-// 🎁 DAILY STATUS
-// ============================================================
-
-function getDailyStatus(
-  data,
-  today
-) {
-  // ==========================================================
-  // 📅 LAST DAILY DATE
-  // ==========================================================
-
-  const lastDailyDate =
-    typeof data.lastDailyDate === "string"
-      ? data.lastDailyDate
-      : "";
-
-  // ==========================================================
-  // 🎁 CLAIMED TODAY
-  // ==========================================================
-
-  const dailyClaimed =
-    lastDailyDate === today;
-
-  // ==========================================================
-  // 🔥 DAILY STREAK
-  //
-  // Tuetaan:
-  //
-  // • dailyStreak
-  // • streak
-  //
-  // ==========================================================
-
-  const storedStreak =
-    data.dailyStreak ??
-    data.streak ??
-    0;
-
-  const streak =
-    Math.max(
-      0,
-      Math.floor(
-        getSafeNumber(
-          storedStreak,
-          0
-        )
-      )
-    );
-
-  // ==========================================================
-  // ⚡ DAILY HASH RATE BONUS
-  // ==========================================================
-
-  const dailyHashRateBonus =
-    getSafePositiveNumber(
-      data.dailyHashRateBonus,
-      1
-    );
-
-  return {
-    dailyClaimed,
-    streak,
-    dailyHashRateBonus,
-  };
-}
-
-// ============================================================
-// ⛏️ GET MINING HASH RATE
+// ⛏️ GET VALID MINING HASH RATE
 // ============================================================
 //
-// Louhinnan aikana käytetään miningHashRate-arvoa.
+// Aktiivisen louhintajakson Hash Rate lukitaan jakson
+// alussa.
 //
-// Tämä lukitsee aktiivisen louhintajakson Hash Rate -arvon.
-// Daily Bonus ja Power Boost vaikuttavat seuraavaan
-// louhintajaksoon.
+// Uusi järjestelmä sallii vain:
+//
+// 0.5 → 1.0 → 1.5 → 2.0 → 2.5 → 3.0 → 3.5 HR
+//
+// Jos Firestoressa on vanha arvo, esimerkiksi 12 HR,
+// sitä EI käytetä uuden järjestelmän louhintanopeutena.
 //
 // ============================================================
 
@@ -334,9 +427,203 @@ function getMiningHashRate(
   data,
   fallbackHashRate
 ) {
-  return getSafeNonNegativeNumber(
-    data.miningHashRate,
-    fallbackHashRate
+  const stored =
+    getSafePositiveNumber(
+      data.miningHashRate,
+      0
+    );
+
+  if (
+    stored >= DAILY_HASH_RATE_START &&
+    stored <= MAX_DAILY_HASH_RATE
+  ) {
+    return stored;
+  }
+
+  return fallbackHashRate;
+}
+
+// ============================================================
+// 📺 GET AD BOOST HISTORY
+// ============================================================
+//
+// Haetaan käyttäjän Power Boost -historia.
+//
+// Jokainen ad_reward sisältää:
+//
+// boostStartedAt
+// boostEndsAt
+//
+// Näiden avulla lasketaan kuinka paljon aktiivinen boosti
+// osui kyseiseen mining-jaksoon.
+//
+// ============================================================
+
+async function getAdBoostHistory(
+  uid,
+  miningStartMs,
+  miningEndMs
+) {
+  if (
+    !miningStartMs ||
+    !miningEndMs ||
+    miningEndMs <= miningStartMs
+  ) {
+    return [];
+  }
+
+  const historyCollection =
+    getHistoryCollection(uid);
+
+  const snapshot =
+    await historyCollection
+      .where(
+        "type",
+        "==",
+        "ad_reward"
+      )
+      .get();
+
+  const boosts = [];
+
+  snapshot.forEach(
+    (doc) => {
+      const data =
+        doc.data() || {};
+
+      const boostStartedMs =
+        getTimestampMilliseconds(
+          data.boostStartedAt
+        );
+
+      const boostEndsMs =
+        getTimestampMilliseconds(
+          data.boostEndsAt
+        );
+
+      if (
+        boostStartedMs <= 0 ||
+        boostEndsMs <= boostStartedMs
+      ) {
+        return;
+      }
+
+      // --------------------------------------------------------
+      // Boostin täytyy leikata mining-jakson kanssa.
+      // --------------------------------------------------------
+
+      if (
+        boostEndsMs <= miningStartMs ||
+        boostStartedMs >= miningEndMs
+      ) {
+        return;
+      }
+
+      boosts.push({
+        boostStartedMs,
+        boostEndsMs,
+      });
+    }
+  );
+
+  return boosts;
+}
+
+// ============================================================
+// ⚡ CALCULATE AD BOOST MILLISECONDS
+// ============================================================
+
+function calculateAdBoostMilliseconds(
+  boosts,
+  miningStartMs,
+  miningEndMs
+) {
+  let totalMs = 0;
+
+  for (
+    const boost of boosts
+  ) {
+    const overlapStart =
+      Math.max(
+        miningStartMs,
+        boost.boostStartedMs
+      );
+
+    const overlapEnd =
+      Math.min(
+        miningEndMs,
+        boost.boostEndsMs
+      );
+
+    if (
+      overlapEnd > overlapStart
+    ) {
+      totalMs +=
+        overlapEnd -
+        overlapStart;
+    }
+  }
+
+  return Math.max(
+    0,
+    totalMs
+  );
+}
+
+// ============================================================
+// 💰 CALCULATE MINING AMOUNT
+// ============================================================
+
+function calculateMiningAmount(
+  miningHashRate,
+  miningStartMs,
+  effectiveEndMs,
+  adBoostMilliseconds
+) {
+  if (
+    effectiveEndMs <=
+    miningStartMs
+  ) {
+    return 0;
+  }
+
+  const totalDurationMs =
+    effectiveEndMs -
+    miningStartMs;
+
+  // ----------------------------------------------------------
+  // Base mining
+  // ----------------------------------------------------------
+
+  const baseMining =
+    calculateMining(
+      miningHashRate,
+      totalDurationMs
+    );
+
+  // ----------------------------------------------------------
+  // Power Boost mining
+  //
+  // Base rate on koko jaksolta.
+  // Boost lisää vain +0.5833 HR sen aktiivisen ajan.
+  // ----------------------------------------------------------
+
+  const boostMining =
+    calculateMining(
+      AD_HASH_RATE_BONUS,
+      adBoostMilliseconds
+    );
+
+  return Math.max(
+    0,
+    getSafeNumber(
+      baseMining,
+      0
+    ) +
+    getSafeNumber(
+      boostMining,
+      0
+    )
   );
 }
 
@@ -394,14 +681,28 @@ const getMiningStatus =
           getUtcDateString();
 
         // ====================================================
+        // 🎁 DAILY STATUS
+        // ====================================================
+
+        const dailyStatus =
+          getDailyStatus(
+            data,
+            today
+          );
+
+        // ====================================================
         // ⚡ CURRENT HASH RATE
+        // ====================================================
+        //
+        // Uusi järjestelmä ei koskaan käytä vanhaa esim.
+        // 12 HR Firestore-arvoa.
+        //
+        // Hash Rate tulee Daily Streakistä.
+        //
         // ====================================================
 
         const hashRate =
-          getSafeNonNegativeNumber(
-            data.hashRate,
-            DEFAULT_HASH_RATE
-          );
+          dailyStatus.dailyHashRate;
 
         // ====================================================
         // ⛏️ ACTIVE MINING HASH RATE
@@ -441,27 +742,6 @@ const getMiningStatus =
           );
 
         // ====================================================
-        // ✨ UNCLAIMED MINING
-        // ====================================================
-
-        const unclaimedMining =
-          Math.max(
-            0,
-            getSafeNumber(
-              miningStatus.minedAmount,
-              0
-            )
-          );
-
-        // ====================================================
-        // 💎 ESTIMATED TOTAL
-        // ====================================================
-
-        const estimatedTotal =
-          miningBalance +
-          unclaimedMining;
-
-        // ====================================================
         // 🕒 MINING TIMES
         // ====================================================
 
@@ -483,25 +763,98 @@ const getMiningStatus =
           );
 
         // ====================================================
-        // 🎁 DAILY STATUS
+        // ✨ BASE UNCLAIMED MINING
         // ====================================================
 
-        const dailyStatus =
-          getDailyStatus(
-            data,
-            today
+        let unclaimedMining =
+          Math.max(
+            0,
+            getSafeNumber(
+              miningStatus.minedAmount,
+              0
+            )
           );
+
+        // ====================================================
+        // ⚡ POWER BOOST MINING
+        // ====================================================
+
+        let adBoostMining = 0;
+
+        if (
+          miningStartedAt &&
+          miningEndsAt
+        ) {
+          const miningStartMs =
+            miningStartedAt.getTime();
+
+          const miningEndMs =
+            Math.min(
+              miningEndsAt.getTime(),
+              nowMs
+            );
+
+          if (
+            miningEndMs >
+            miningStartMs
+          ) {
+            const boosts =
+              await getAdBoostHistory(
+                uid,
+                miningStartMs,
+                miningEndMs
+              );
+
+            const boostMilliseconds =
+              calculateAdBoostMilliseconds(
+                boosts,
+                miningStartMs,
+                miningEndMs
+              );
+
+            adBoostMining =
+              calculateMining(
+                AD_HASH_RATE_BONUS,
+                boostMilliseconds
+              );
+
+            unclaimedMining =
+              Math.max(
+                0,
+                unclaimedMining +
+                  adBoostMining
+              );
+          }
+        }
+
+        // ====================================================
+        // 💎 ESTIMATED TOTAL
+        // ====================================================
+
+        const estimatedTotal =
+          miningBalance +
+          unclaimedMining;
+
+        // ====================================================
+        // ⚡ EFFECTIVE HASH RATE
+        // ====================================================
+
+        const effectiveHashRate =
+          adStatus.adBoostActive
+            ? hashRate +
+                AD_HASH_RATE_BONUS
+            : hashRate;
 
         // ====================================================
         // ⚡ CURRENT MINING SPEED
         // ====================================================
 
         const miningPerHour =
-          hashRate *
+          effectiveHashRate *
           MINING_PER_HASH_PER_HOUR;
 
         // ====================================================
-        // ⛏️ ACTIVE CYCLE SPEED
+        // ⛏️ ACTIVE CYCLE BASE SPEED
         // ====================================================
 
         const activeMiningPerHour =
@@ -523,7 +876,7 @@ const getMiningStatus =
                   : "🐱 Stella odottaa seuraavaa louhintaa.",
 
           // ==================================================
-          // ⚡ CURRENT HASH RATE
+          // ⚡ CURRENT DAILY HASH RATE
           // ==================================================
 
           hashRate,
@@ -545,6 +898,12 @@ const getMiningStatus =
           // ==================================================
 
           unclaimedMining,
+
+          // ==================================================
+          // ⚡ AD BOOST MINING
+          // ==================================================
+
+          adBoostMining,
 
           // ==================================================
           // 💎 TOTAL
@@ -633,7 +992,7 @@ const getMiningStatus =
             dailyStatus.streak,
 
           dailyHashRateBonus:
-            dailyStatus.dailyHashRateBonus,
+            dailyStatus.dailyHashRate,
 
           // ==================================================
           // 📺 POWER BOOST
@@ -648,11 +1007,32 @@ const getMiningStatus =
           adHashRateBonus:
             AD_HASH_RATE_BONUS,
 
+          adBoostDurationMs:
+            AD_BOOST_DURATION_MS,
+
+          adBoostActive:
+            adStatus.adBoostActive,
+
+          adBoostRemainingMs:
+            adStatus.adBoostRemainingMs,
+
+          adBoostStartedAt:
+            adStatus.adBoostStartedAt
+              ? adStatus.adBoostStartedAt.toISOString()
+              : null,
+
+          adBoostEndsAt:
+            adStatus.adBoostEndsAt
+              ? adStatus.adBoostEndsAt.toISOString()
+              : null,
+
           canWatchAd:
             adStatus.canWatchAd,
 
           cooldownRemainingMs:
             adStatus.cooldownRemainingMs,
+
+          effectiveHashRate,
         };
       } catch (error) {
         console.error(
@@ -719,6 +1099,12 @@ const claimMining =
         const now =
           new Date();
 
+        const nowMs =
+          now.getTime();
+
+        const today =
+          getUtcDateString();
+
         // ====================================================
         // 🔥 FIRESTORE TRANSACTION
         // ====================================================
@@ -740,14 +1126,26 @@ const claimMining =
                 : {};
 
             // ==================================================
-            // ⚡ CURRENT HASH RATE
+            // 🎁 DAILY STATUS
             // ==================================================
 
-            const hashRate =
-              getSafeNonNegativeNumber(
-                data.hashRate,
-                DEFAULT_HASH_RATE
+            const dailyStatus =
+              getDailyStatus(
+                data,
+                today
               );
+
+            // ==================================================
+            // ⚡ CURRENT HASH RATE
+            // ====================================================
+            //
+            // Vanha Firestore-hashRate, esim. 12 HR,
+            // ei enää määrää uutta louhintanopeutta.
+            //
+            // ====================================================
+
+            const hashRate =
+              dailyStatus.dailyHashRate;
 
             // ==================================================
             // ⛏️ ACTIVE CYCLE HASH RATE
@@ -774,7 +1172,7 @@ const claimMining =
 
             // ==================================================
             // ⛏️ CURRENT MINING STATUS
-            // ==================================================
+            // ====================================================
 
             const miningStatus =
               calculateMiningStatus(
@@ -847,6 +1245,8 @@ const claimMining =
             let completedPreviousCycle =
               false;
 
+            let previousAdBoostMining = 0;
+
             // ==================================================
             // 💰 COLLECT FINISHED MINING
             // ==================================================
@@ -855,24 +1255,30 @@ const claimMining =
               previousStart &&
               previousEnd &&
               previousEnd.getTime() <=
-                now.getTime()
+                nowMs
             ) {
               // ================================================
               // ⏱️ PREVIOUS DURATION
               // ================================================
 
+              const previousStartMs =
+                previousStart.getTime();
+
+              const previousEndMs =
+                previousEnd.getTime();
+
               const previousDuration =
                 Math.max(
                   0,
-                  previousEnd.getTime() -
-                    previousStart.getTime()
+                  previousEndMs -
+                    previousStartMs
                 );
 
               // ================================================
-              // 💰 CALCULATE USING LOCKED HASH RATE
+              // 💰 BASE MINING
               // ================================================
 
-              collected =
+              const baseCollected =
                 Math.max(
                   0,
                   getSafeNumber(
@@ -883,6 +1289,44 @@ const claimMining =
                     0
                   )
                 );
+
+              // ================================================
+              // ⚡ POWER BOOST MINING
+              // ================================================
+
+              const boosts =
+                await getAdBoostHistory(
+                  uid,
+                  previousStartMs,
+                  previousEndMs
+                );
+
+              const boostMilliseconds =
+                calculateAdBoostMilliseconds(
+                  boosts,
+                  previousStartMs,
+                  previousEndMs
+                );
+
+              previousAdBoostMining =
+                Math.max(
+                  0,
+                  getSafeNumber(
+                    calculateMining(
+                      AD_HASH_RATE_BONUS,
+                      boostMilliseconds
+                    ),
+                    0
+                  )
+                );
+
+              // ================================================
+              // 💰 TOTAL COLLECTION
+              // ================================================
+
+              collected =
+                baseCollected +
+                previousAdBoostMining;
 
               if (
                 collected > 0
@@ -905,13 +1349,17 @@ const claimMining =
 
             const newMiningEndsAt =
               new Date(
-                now.getTime() +
+                nowMs +
                   MINING_DURATION_MS
               );
 
             // ==================================================
             // ⚡ NEW CYCLE HASH RATE
-            // ==================================================
+            // ====================================================
+            //
+            // Uusi mining-jakso käyttää Daily Hash Ratea.
+            //
+            // ====================================================
 
             const newMiningHashRate =
               hashRate;
@@ -919,47 +1367,65 @@ const claimMining =
             // ==================================================
             // 👤 UPDATE USER
             // ==================================================
+            //
+            // Tärkeää:
+            //
+            // Power Boost -kenttiä EI poisteta tässä.
+            //
+            // Jos boost on edelleen aktiivinen uuden mining-
+            // jakson alkaessa, sen pitää jatkaa toimintaansa.
+            //
+            // ==================================================
+
+            const userUpdate = {
+              // ==============================================
+              // ⚡ CURRENT DAILY HASH RATE
+              // ==============================================
+
+              hashRate,
+
+              // ==============================================
+              // 🎁 DAILY HASH RATE
+              // ==============================================
+
+              dailyHashRate:
+                dailyStatus.dailyHashRate,
+
+              // ==============================================
+              // ⛏️ HASH RATE LOCKED FOR THIS CYCLE
+              // ==============================================
+
+              miningHashRate:
+                newMiningHashRate,
+
+              // ==============================================
+              // 💰 BALANCE
+              // ==============================================
+
+              miningBalance:
+                newBalance,
+
+              // ==============================================
+              // ⛏️ MINING TIME
+              // ==============================================
+
+              miningStartedAt:
+                newMiningStartedAt,
+
+              miningEndsAt:
+                newMiningEndsAt,
+
+              // ==============================================
+              // 🕒 METADATA
+              // ==============================================
+
+              updatedAt:
+                FieldValue.serverTimestamp(),
+            };
 
             transaction.set(
               userRef,
-              {
-                // ==============================================
-                // ⚡ CURRENT HASH RATE
-                // ==============================================
-
-                hashRate,
-
-                // ==============================================
-                // ⛏️ HASH RATE LOCKED FOR THIS CYCLE
-                // ==============================================
-
-                miningHashRate:
-                  newMiningHashRate,
-
-                // ==============================================
-                // 💰 BALANCE
-                // ==============================================
-
-                miningBalance:
-                  newBalance,
-
-                // ==============================================
-                // ⛏️ MINING TIME
-                // ==============================================
-
-                miningStartedAt:
-                  newMiningStartedAt,
-
-                miningEndsAt:
-                  newMiningEndsAt,
-
-                // ==============================================
-                // 🕒 METADATA
-                // ==============================================
-
-                updatedAt:
-                  FieldValue.serverTimestamp(),
-              },
+              userUpdate,
               {
                 merge: true,
               }
@@ -993,6 +1459,25 @@ const claimMining =
 
                   hashRate:
                     miningHashRate,
+
+                  baseMining:
+                    Math.max(
+                      0,
+                      getSafeNumber(
+                        calculateMining(
+                          miningHashRate,
+                          Math.max(
+                            0,
+                            previousEnd.getTime() -
+                              previousStart.getTime()
+                          )
+                        ),
+                        0
+                      )
+                    ),
+
+                  adBoostMining:
+                    previousAdBoostMining,
 
                   createdAt:
                     FieldValue.serverTimestamp(),
@@ -1032,6 +1517,36 @@ const claimMining =
             );
 
             // ==================================================
+            // ⚡ ACTIVE POWER BOOST INFO
+            // ==================================================
+
+            const boostStartedMs =
+              getTimestampMilliseconds(
+                data.adBoostStartedAt
+              );
+
+            const boostEndsMs =
+              getTimestampMilliseconds(
+                data.adBoostEndsAt
+              );
+
+            const adBoostActive =
+              boostStartedMs > 0 &&
+              boostEndsMs > nowMs;
+
+            const adBoostRemainingMs =
+              adBoostActive
+                ? boostEndsMs -
+                    nowMs
+                : 0;
+
+            const effectiveHashRate =
+              adBoostActive
+                ? hashRate +
+                    AD_HASH_RATE_BONUS
+                : hashRate;
+
+            // ==================================================
             // ✅ RESPONSE
             // ==================================================
 
@@ -1065,6 +1580,21 @@ const claimMining =
 
               miningEndsAt:
                 newMiningEndsAt.toISOString(),
+
+              dailyHashRate:
+                dailyStatus.dailyHashRate,
+
+              dailyStreak:
+                dailyStatus.streak,
+
+              adBoostActive,
+
+              adBoostRemainingMs,
+
+              adHashRateBonus:
+                AD_HASH_RATE_BONUS,
+
+              effectiveHashRate,
 
               message:
                 completedPreviousCycle
