@@ -1,12 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../widgets/cat_avatar.dart';
+import '../../widgets/stelluriini_logo.dart';
+
 // ============================================================
-// COLORS
+// STELLA THEME COLORS
 // ============================================================
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color accentColor = Color(0xFF35D0A0);
+const Color tokenomicsBackgroundColor = Color(0xFF120B24);
+const Color tokenomicsCardColor = Color(0xFF21113B);
+const Color tokenomicsAccentColor = Color(0xFFB58CFF);
+const Color tokenomicsPinkColor = Color(0xFFFFB7E8);
+const Color tokenomicsGoldColor = Color(0xFFFFD166);
 
 // ============================================================
 // TOKENOMICS PAGE
@@ -54,16 +61,17 @@ class TokenomicsPage extends StatelessWidget {
     required IconData icon,
     required String title,
     required Widget child,
+    Color accent = tokenomicsAccentColor,
   }) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: tokenomicsCardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.18),
+          color: accent.withValues(alpha: 0.18),
         ),
       ),
       child: Column(
@@ -75,18 +83,16 @@ class TokenomicsPage extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
+                  color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   icon,
-                  color: accentColor,
+                  color: accent,
                   size: 25,
                 ),
               ),
-
               const SizedBox(width: 14),
-
               Expanded(
                 child: Text(
                   title,
@@ -99,9 +105,7 @@ class TokenomicsPage extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           child,
         ],
       ),
@@ -113,11 +117,11 @@ class TokenomicsPage extends StatelessWidget {
   // ==========================================================
 
   String _formatNumber(int number) {
-    final text = number.toString();
-    final buffer = StringBuffer();
+    final String text = number.toString();
+    final StringBuffer buffer = StringBuffer();
 
     for (int i = 0; i < text.length; i++) {
-      final position = text.length - i;
+      final int position = text.length - i;
 
       buffer.write(text[i]);
 
@@ -134,14 +138,14 @@ class TokenomicsPage extends StatelessWidget {
   // ==========================================================
 
   Widget _paragraph(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.72),
-        fontSize: 15,
-        height: 1.6,
-      ),
-    );
+    return const TextStyle(
+      color: Colors.white70,
+      fontSize: 15,
+      height: 1.6,
+    ).let((style) => Text(
+          text,
+          style: style,
+        ));
   }
 
   // ==========================================================
@@ -161,7 +165,7 @@ class TokenomicsPage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: backgroundColor.withValues(alpha: 0.45),
+        color: tokenomicsBackgroundColor.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: color.withValues(alpha: 0.28),
@@ -187,13 +191,10 @@ class TokenomicsPage extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(width: 14),
-
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
@@ -203,22 +204,17 @@ class TokenomicsPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 4),
-
                     Text(
                       '${_formatNumber(amount)} STL',
-                      style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: 0.58,
-                        ),
+                      style: const TextStyle(
+                        color: Colors.white60,
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 13,
@@ -239,32 +235,21 @@ class TokenomicsPage extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: chartValue,
               minHeight: 8,
-              backgroundColor: Colors.white.withValues(
-                alpha: 0.06,
-              ),
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(
-                color,
-              ),
+              backgroundColor: Colors.white.withValues(alpha: 0.06),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
-
           const SizedBox(height: 14),
-
           Text(
             description,
-            style: TextStyle(
-              color: Colors.white.withValues(
-                alpha: 0.65,
-              ),
+            style: const TextStyle(
+              color: Colors.white65,
               fontSize: 14,
               height: 1.5,
             ),
@@ -289,24 +274,19 @@ class TokenomicsPage extends StatelessWidget {
             size: const Size(230, 230),
             painter: _TokenomicsChartPainter(),
           ),
-
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'TOTAL SUPPLY',
                 style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.50,
-                  ),
+                  color: Colors.white54,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.3,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               const Text(
                 '17.6B',
                 style: TextStyle(
@@ -315,13 +295,11 @@ class TokenomicsPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 3),
-
               const Text(
                 'STL',
                 style: TextStyle(
-                  color: accentColor,
+                  color: tokenomicsPinkColor,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -355,21 +333,16 @@ class TokenomicsPage extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-
           const SizedBox(width: 10),
-
           Expanded(
             child: Text(
               title,
-              style: TextStyle(
-                color: Colors.white.withValues(
-                  alpha: 0.72,
-                ),
+              style: const TextStyle(
+                color: Colors.white70,
                 fontSize: 14,
               ),
             ),
           ),
-
           Text(
             percentage,
             style: TextStyle(
@@ -389,8 +362,9 @@ class TokenomicsPage extends StatelessWidget {
   Widget _principle(
     IconData icon,
     String title,
-    String description,
-  ) {
+    String description, {
+    Color accent = tokenomicsAccentColor,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -398,22 +372,19 @@ class TokenomicsPage extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: accentColor.withValues(alpha: 0.10),
+            color: accent.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: accentColor,
+            color: accent,
             size: 22,
           ),
         ),
-
         const SizedBox(width: 12),
-
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
@@ -423,15 +394,11 @@ class TokenomicsPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 description,
-                style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.60,
-                  ),
+                style: const TextStyle(
+                  color: Colors.white60,
                   fontSize: 13,
                   height: 1.45,
                 ),
@@ -455,26 +422,21 @@ class TokenomicsPage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_rounded,
-            color: accentColor,
+            color: tokenomicsAccentColor,
             size: 20,
           ),
-
           const SizedBox(width: 10),
-
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.white.withValues(
-                  alpha: 0.70,
-                ),
+              style: const TextStyle(
+                color: Colors.white70,
                 fontSize: 14,
               ),
             ),
           ),
-
           Text(
             value,
             style: const TextStyle(
@@ -495,14 +457,14 @@ class TokenomicsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: tokenomicsBackgroundColor,
 
-      // ======================================================
+      // ========================================================
       // APP BAR
-      // ======================================================
+      // ========================================================
 
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: tokenomicsBackgroundColor,
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(
@@ -518,59 +480,57 @@ class TokenomicsPage extends StatelessWidget {
         ),
       ),
 
-      // ======================================================
+      // ========================================================
       // BODY
-      // ======================================================
+      // ========================================================
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ==================================================
-              // HEADER
+              // STELLA HEADER
               // ==================================================
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  28,
+                  24,
+                  26,
+                ),
                 decoration: BoxDecoration(
-                  color: cardColor,
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF21113B),
+                      Color(0xFF2A1648),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(
-                    color: accentColor.withValues(
+                    color: tokenomicsAccentColor.withValues(
                       alpha: 0.30,
                     ),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: accentColor.withValues(
-                        alpha: 0.08,
+                      color: tokenomicsAccentColor.withValues(
+                        alpha: 0.10,
                       ),
-                      blurRadius: 20,
-                      spreadRadius: 2,
+                      blurRadius: 24,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(
-                          alpha: 0.12,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.pie_chart_rounded,
-                        color: accentColor,
-                        size: 42,
-                      ),
+                    const CatAvatar(
+                      size: 110,
                     ),
 
                     const SizedBox(height: 18),
@@ -578,7 +538,7 @@ class TokenomicsPage extends StatelessWidget {
                     const Text(
                       'STELLURIINI',
                       style: TextStyle(
-                        color: accentColor,
+                        color: tokenomicsPinkColor,
                         fontSize: 27,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 3,
@@ -587,17 +547,27 @@ class TokenomicsPage extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    Text(
+                    const Text(
                       'Official STL Tokenomics',
                       style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: 0.65,
-                        ),
+                        color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 7),
+
+                    const Text(
+                      'STL • SOLANA',
+                      style: TextStyle(
+                        color: tokenomicsAccentColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
 
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -605,16 +575,20 @@ class TokenomicsPage extends StatelessWidget {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(
-                          alpha: 0.10,
+                        color: tokenomicsGoldColor.withValues(
+                          alpha: 0.09,
                         ),
-                        borderRadius:
-                            BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: tokenomicsGoldColor.withValues(
+                            alpha: 0.20,
+                          ),
+                        ),
                       ),
                       child: const Text(
-                        '🪙 17 602 539 062 STL',
+                        '🐾 17 602 539 062 STL 🐾',
                         style: TextStyle(
-                          color: accentColor,
+                          color: tokenomicsGoldColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -656,31 +630,31 @@ class TokenomicsPage extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     _legendRow(
-                      color: accentColor,
+                      color: tokenomicsAccentColor,
                       title: 'Community & Rewards',
                       percentage: '40%',
                     ),
 
                     _legendRow(
-                      color: Colors.blueAccent,
+                      color: const Color(0xFF72B7FF),
                       title: 'Liquidity',
                       percentage: '20%',
                     ),
 
                     _legendRow(
-                      color: Colors.purpleAccent,
+                      color: const Color(0xFFC084FC),
                       title: 'Ecosystem',
                       percentage: '15%',
                     ),
 
                     _legendRow(
-                      color: Colors.orangeAccent,
+                      color: tokenomicsGoldColor,
                       title: 'Development',
                       percentage: '15%',
                     ),
 
                     _legendRow(
-                      color: Colors.pinkAccent,
+                      color: tokenomicsPinkColor,
                       title: 'Marketing',
                       percentage: '10%',
                     ),
@@ -695,13 +669,14 @@ class TokenomicsPage extends StatelessWidget {
               _section(
                 icon: Icons.account_balance_wallet_rounded,
                 title: 'Total Supply',
+                accent: tokenomicsGoldColor,
                 child: Column(
                   children: [
                     Text(
                       _formatNumber(totalSupply),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: accentColor,
+                        color: tokenomicsGoldColor,
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
                       ),
@@ -709,12 +684,10 @@ class TokenomicsPage extends StatelessWidget {
 
                     const SizedBox(height: 6),
 
-                    Text(
+                    const Text(
                       'STL TOKENS',
                       style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: 0.50,
-                        ),
+                        color: Colors.white50,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
@@ -742,26 +715,18 @@ class TokenomicsPage extends StatelessWidget {
                 title: 'Token Allocation',
                 child: Column(
                   children: [
-                    // ============================================
-                    // COMMUNITY
-                    // ============================================
-
                     _allocationCard(
                       emoji: '🐾',
                       title: 'Community & Rewards',
                       percentage: '40%',
                       chartValue: 0.40,
                       amount: communityRewards,
-                      color: accentColor,
+                      color: tokenomicsAccentColor,
                       description:
                           'Allocated to community initiatives, '
                           'user rewards, engagement programs and '
                           'future community-focused activities.',
                     ),
-
-                    // ============================================
-                    // LIQUIDITY
-                    // ============================================
 
                     _allocationCard(
                       emoji: '💧',
@@ -769,16 +734,12 @@ class TokenomicsPage extends StatelessWidget {
                       percentage: '20%',
                       chartValue: 0.20,
                       amount: liquidity,
-                      color: Colors.blueAccent,
+                      color: const Color(0xFF72B7FF),
                       description:
                           'Reserved to support liquidity and help '
                           'create a healthier and more accessible '
                           'market environment for STL.',
                     ),
-
-                    // ============================================
-                    // ECOSYSTEM
-                    // ============================================
 
                     _allocationCard(
                       emoji: '🚀',
@@ -786,16 +747,12 @@ class TokenomicsPage extends StatelessWidget {
                       percentage: '15%',
                       chartValue: 0.15,
                       amount: ecosystem,
-                      color: Colors.purpleAccent,
+                      color: const Color(0xFFC084FC),
                       description:
                           'Reserved for future ecosystem growth, '
                           'applications, games, integrations and '
                           'new digital experiences.',
                     ),
-
-                    // ============================================
-                    // DEVELOPMENT
-                    // ============================================
 
                     _allocationCard(
                       emoji: '🔧',
@@ -803,16 +760,12 @@ class TokenomicsPage extends StatelessWidget {
                       percentage: '15%',
                       chartValue: 0.15,
                       amount: development,
-                      color: Colors.orangeAccent,
+                      color: tokenomicsGoldColor,
                       description:
                           'Allocated to technical development, '
                           'application development, infrastructure '
                           'and future improvements.',
                     ),
-
-                    // ============================================
-                    // MARKETING
-                    // ============================================
 
                     _allocationCard(
                       emoji: '📢',
@@ -820,7 +773,7 @@ class TokenomicsPage extends StatelessWidget {
                       percentage: '10%',
                       chartValue: 0.10,
                       amount: marketing,
-                      color: Colors.pinkAccent,
+                      color: tokenomicsPinkColor,
                       description:
                           'Allocated to marketing, awareness, '
                           'community growth and promotional '
@@ -873,7 +826,7 @@ class TokenomicsPage extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.account_balance_wallet_rounded,
-                          color: accentColor,
+                          color: tokenomicsGoldColor,
                           size: 22,
                         ),
 
@@ -893,7 +846,7 @@ class TokenomicsPage extends StatelessWidget {
                         Text(
                           _formatNumber(allocatedTotal),
                           style: const TextStyle(
-                            color: accentColor,
+                            color: tokenomicsGoldColor,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
@@ -907,12 +860,12 @@ class TokenomicsPage extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(
+                        color: tokenomicsAccentColor.withValues(
                           alpha: 0.08,
                         ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: accentColor.withValues(
+                          color: tokenomicsAccentColor.withValues(
                             alpha: 0.20,
                           ),
                         ),
@@ -921,7 +874,7 @@ class TokenomicsPage extends StatelessWidget {
                         children: [
                           const Icon(
                             Icons.check_circle_rounded,
-                            color: accentColor,
+                            color: tokenomicsAccentColor,
                           ),
 
                           const SizedBox(width: 10),
@@ -931,10 +884,8 @@ class TokenomicsPage extends StatelessWidget {
                               allocatedTotal == totalSupply
                                   ? 'Allocation verified: the total allocation matches the complete STL supply.'
                                   : 'Allocation requires verification.',
-                              style: TextStyle(
-                                color: Colors.white.withValues(
-                                  alpha: 0.78,
-                                ),
+                              style: const TextStyle(
+                                color: Colors.white70,
                                 fontSize: 13,
                                 height: 1.45,
                               ),
@@ -955,8 +906,7 @@ class TokenomicsPage extends StatelessWidget {
                 icon: Icons.workspace_premium_rounded,
                 title: 'Allocation Principles',
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _paragraph(
                       'The token allocation structure is designed '
@@ -972,6 +922,7 @@ class TokenomicsPage extends StatelessWidget {
                       'A significant portion of the planned supply '
                       'is allocated to community initiatives and '
                       'rewards.',
+                      accent: tokenomicsPinkColor,
                     ),
 
                     const SizedBox(height: 16),
@@ -982,6 +933,7 @@ class TokenomicsPage extends StatelessWidget {
                       'Ecosystem and development allocations are '
                       'intended to support future expansion and '
                       'new projects.',
+                      accent: tokenomicsAccentColor,
                     ),
 
                     const SizedBox(height: 16),
@@ -992,6 +944,57 @@ class TokenomicsPage extends StatelessWidget {
                       'Liquidity allocation is intended to support '
                       'accessibility and market participation for '
                       'the STL token.',
+                      accent: tokenomicsGoldColor,
+                    ),
+                  ],
+                ),
+              ),
+
+              // ==================================================
+              // STELLA
+              // ==================================================
+
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: tokenomicsCardColor,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: tokenomicsPinkColor.withValues(
+                      alpha: 0.20,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const StelluriiniLogo(
+                      size: 72,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      '🐱 Stella & the STL Community',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: tokenomicsPinkColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    const Text(
+                      'Community • Curiosity • Development • Solana',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
@@ -1036,16 +1039,14 @@ class TokenomicsPage extends StatelessWidget {
 
                     const SizedBox(height: 10),
 
-                    Text(
+                    const Text(
                       'The token allocation structure describes '
                       'the planned Stelluriini ecosystem model. '
                       'Nothing on this page should be considered '
                       'financial, investment or legal advice.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: 0.65,
-                        ),
+                        color: Colors.white60,
                         fontSize: 13,
                         height: 1.5,
                       ),
@@ -1054,27 +1055,36 @@ class TokenomicsPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 28),
 
               // ==================================================
               // FOOTER
               // ==================================================
 
-              Center(
-                child: Text(
-                  '🐾 STELLURIINI • STL • SOLANA 🐾',
-                  style: TextStyle(
-                    color: accentColor.withValues(
-                      alpha: 0.75,
-                    ),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
+              const Text(
+                '🐾 STELLA • STELLURIINI • STL • SOLANA 🐾',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: tokenomicsPinkColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 8),
+
+              const Text(
+                '17 602 539 062 STL',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: tokenomicsGoldColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -1093,27 +1103,24 @@ class _TokenomicsChartPainter extends CustomPainter {
     Canvas canvas,
     Size size,
   ) {
-    final center = Offset(
+    final Offset center = Offset(
       size.width / 2,
       size.height / 2,
     );
 
-    final radius =
-        size.width / 2 - 18;
+    final double radius = size.width / 2 - 18;
 
-    final rect = Rect.fromCircle(
+    final Rect rect = Rect.fromCircle(
       center: center,
       radius: radius,
     );
 
     // ==========================================================
-    // BACKGROUND
+    // BACKGROUND RING
     // ==========================================================
 
-    final backgroundPaint = Paint()
-      ..color = Colors.white.withValues(
-        alpha: 0.06,
-      )
+    final Paint backgroundPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.06)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 24;
 
@@ -1124,10 +1131,10 @@ class _TokenomicsChartPainter extends CustomPainter {
     );
 
     // ==========================================================
-    // VALUES
+    // DISTRIBUTION
     // ==========================================================
 
-    const values = [
+    const List<double> values = [
       0.40,
       0.20,
       0.15,
@@ -1136,30 +1143,31 @@ class _TokenomicsChartPainter extends CustomPainter {
     ];
 
     // ==========================================================
-    // COLORS
+    // STELLA THEME COLORS
     // ==========================================================
 
-    const colors = [
-      accentColor,
-      Colors.blueAccent,
-      Colors.purpleAccent,
-      Colors.orangeAccent,
-      Colors.pinkAccent,
+    const List<Color> colors = [
+      tokenomicsAccentColor,
+      Color(0xFF72B7FF),
+      Color(0xFFC084FC),
+      tokenomicsGoldColor,
+      tokenomicsPinkColor,
     ];
 
     // ==========================================================
-    // DRAW CHART
+    // DRAW
     // ==========================================================
 
-    double startAngle = -1.5708;
+    double startAngle = -math.pi / 2;
 
-    const gap = 0.035;
+    const double fullCircle = math.pi * 2;
+    const double gap = 0.035;
 
     for (int i = 0; i < values.length; i++) {
-      final sweepAngle =
-          (values[i] * 6.283185) - gap;
+      final double sweepAngle =
+          (values[i] * fullCircle) - gap;
 
-      final paint = Paint()
+      final Paint paint = Paint()
         ..color = colors[i]
         ..style = PaintingStyle.stroke
         ..strokeWidth = 24
@@ -1173,8 +1181,7 @@ class _TokenomicsChartPainter extends CustomPainter {
         paint,
       );
 
-      startAngle +=
-          values[i] * 6.283185;
+      startAngle += values[i] * fullCircle;
     }
   }
 
@@ -1183,5 +1190,19 @@ class _TokenomicsChartPainter extends CustomPainter {
     covariant CustomPainter oldDelegate,
   ) {
     return false;
+  }
+}
+
+// ============================================================
+// SMALL TEXTSTYLE HELPER
+// ============================================================
+//
+// Keeps _paragraph() readable without introducing another
+// widget class just for a TextStyle.
+//
+
+extension on TextStyle {
+  T let<T>(T Function(TextStyle value) builder) {
+    return builder(this);
   }
 }
