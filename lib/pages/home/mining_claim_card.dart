@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// COLORS
+// 🐱 STELLURIINI COLORS
 // ============================================================
 
-const Color miningCardColor = Color(0xFF151B1C);
-const Color miningAccentColor = Color(0xFF35D0A0);
-const Color miningBackgroundColor = Color(0xFF0B1112);
+const Color miningCardColor = Color(0xFF21113B);
+const Color miningAccentColor = Color(0xFFB58CFF);
+const Color miningPinkColor = Color(0xFFFFB7E8);
+const Color miningGoldColor = Color(0xFFFFD166);
+const Color miningBackgroundColor = Color(0xFF120B24);
 
 // ============================================================
-// MINING CLAIM CARD
+// 🐱 STELLA MINING CLAIM CARD
 // ============================================================
 
 class MiningClaimCard extends StatelessWidget {
@@ -33,26 +35,23 @@ class MiningClaimCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasMining = unclaimedMining > 0.000001;
+    final bool hasMining = unclaimedMining > 0.000001;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-
       decoration: BoxDecoration(
         color: miningCardColor,
         borderRadius: BorderRadius.circular(24),
-
         border: Border.all(
           color: miningAccentColor.withValues(
-            alpha: 0.25,
+            alpha: 0.30,
           ),
         ),
-
         boxShadow: [
           BoxShadow(
             color: miningAccentColor.withValues(
-              alpha: 0.06,
+              alpha: 0.08,
             ),
             blurRadius: 20,
             spreadRadius: 1,
@@ -60,36 +59,29 @@ class MiningClaimCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // ==================================================
-          // HEADER
+          // 🐱 HEADER
           // ==================================================
 
           Row(
             children: [
-
               Container(
                 width: 58,
                 height: 58,
-
                 decoration: BoxDecoration(
                   color: miningAccentColor.withValues(
                     alpha: 0.14,
                   ),
-
                   borderRadius: BorderRadius.circular(18),
-
                   border: Border.all(
-                    color: miningAccentColor.withValues(
+                    color: miningPinkColor.withValues(
                       alpha: 0.30,
                     ),
                   ),
                 ),
-
                 child: const Center(
                   child: Text(
                     '⛏️',
@@ -106,12 +98,9 @@ class MiningClaimCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-
                   children: [
-
                     const Text(
                       'STELLA MINING',
-
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -126,12 +115,10 @@ class MiningClaimCard extends StatelessWidget {
                       hasMining
                           ? 'Mining rewards are ready 🐱'
                           : 'Stella is mining... ⛏️🐱',
-
                       style: TextStyle(
                         color: Colors.white.withValues(
                           alpha: 0.55,
                         ),
-
                         fontSize: 12,
                       ),
                     ),
@@ -148,27 +135,21 @@ class MiningClaimCard extends StatelessWidget {
                   horizontal: 10,
                   vertical: 6,
                 ),
-
                 decoration: BoxDecoration(
                   color: miningAccentColor.withValues(
                     alpha: 0.14,
                   ),
-
-                  borderRadius:
-                      BorderRadius.circular(20),
-
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: miningAccentColor.withValues(
+                    color: miningPinkColor.withValues(
                       alpha: 0.25,
                     ),
                   ),
                 ),
-
                 child: const Text(
                   '● LIVE',
-
                   style: TextStyle(
-                    color: miningAccentColor,
+                    color: miningPinkColor,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -180,37 +161,30 @@ class MiningClaimCard extends StatelessWidget {
           const SizedBox(height: 22),
 
           // ==================================================
-          // UNCLAIMED MINING
+          // 📦 UNCLAIMED MINING
           // ==================================================
 
           Container(
             padding: const EdgeInsets.all(18),
-
             decoration: BoxDecoration(
               color: Colors.black.withValues(
                 alpha: 0.18,
               ),
-
               borderRadius: BorderRadius.circular(20),
-
               border: Border.all(
                 color: miningAccentColor.withValues(
                   alpha: 0.12,
                 ),
               ),
             ),
-
             child: Column(
               children: [
-
                 Text(
                   'UNCLAIMED MINING',
-
                   style: TextStyle(
                     color: Colors.white.withValues(
                       alpha: 0.50,
                     ),
-
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
@@ -221,7 +195,6 @@ class MiningClaimCard extends StatelessWidget {
 
                 Text(
                   '${unclaimedMining.toStringAsFixed(4)} STL',
-
                   style: const TextStyle(
                     color: miningAccentColor,
                     fontSize: 32,
@@ -235,14 +208,11 @@ class MiningClaimCard extends StatelessWidget {
                   hasMining
                       ? 'Ready to add to your Mining Balance'
                       : 'Keep mining to collect STL',
-
                   textAlign: TextAlign.center,
-
                   style: TextStyle(
                     color: Colors.white.withValues(
                       alpha: 0.42,
                     ),
-
                     fontSize: 11,
                   ),
                 ),
@@ -253,18 +223,16 @@ class MiningClaimCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // ==================================================
-          // MINING STATS
+          // 📊 MINING STATS
           // ==================================================
 
           Row(
             children: [
-
               Expanded(
                 child: _StatBox(
                   emoji: '⚡',
                   label: 'HASH RATE',
-                  value:
-                      hashRate.toStringAsFixed(0),
+                  value: hashRate.toStringAsFixed(0),
                 ),
               ),
 
@@ -284,24 +252,16 @@ class MiningClaimCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ==================================================
-          // CLAIM BUTTON
+          // ⛏️ CLAIM BUTTON
           // ==================================================
 
           SizedBox(
             height: 62,
-
             child: Material(
               color: Colors.transparent,
-
               child: InkWell(
-                onTap:
-                    loading
-                        ? null
-                        : onPressed,
-
-                borderRadius:
-                    BorderRadius.circular(18),
-
+                onTap: loading ? null : onPressed,
+                borderRadius: BorderRadius.circular(18),
                 child: Ink(
                   decoration: BoxDecoration(
                     color: loading
@@ -309,15 +269,13 @@ class MiningClaimCard extends StatelessWidget {
                             alpha: 0.18,
                           )
                         : miningAccentColor,
-
-                    borderRadius:
-                        BorderRadius.circular(18),
-
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: loading
                         ? []
                         : [
                             BoxShadow(
-                              color: miningAccentColor.withValues(
+                              color: miningAccentColor
+                                  .withValues(
                                 alpha: 0.28,
                               ),
                               blurRadius: 18,
@@ -325,7 +283,6 @@ class MiningClaimCard extends StatelessWidget {
                             ),
                           ],
                   ),
-
                   child: Center(
                     child: loading
                         ? const SizedBox(
@@ -340,31 +297,29 @@ class MiningClaimCard extends StatelessWidget {
                         : Row(
                             mainAxisAlignment:
                                 MainAxisAlignment.center,
-
                             children: [
-
                               const Icon(
                                 Icons.download_rounded,
-                                color: miningBackgroundColor,
+                                color:
+                                    miningBackgroundColor,
                               ),
 
                               const SizedBox(width: 10),
 
-                              Text(
-                                hasMining
-                                    ? 'CLAIM MINING REWARDS'
-                                    : 'START STELLA MINING',
-
-                                style: const TextStyle(
-                                  color:
-                                      miningBackgroundColor,
-
-                                  fontSize: 14,
-
-                                  fontWeight:
-                                      FontWeight.bold,
-
-                                  letterSpacing: 0.8,
+                              Flexible(
+                                child: Text(
+                                  hasMining
+                                      ? 'CLAIM MINING REWARDS'
+                                      : 'START STELLA MINING',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color:
+                                        miningBackgroundColor,
+                                    fontSize: 14,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                    letterSpacing: 0.8,
+                                  ),
                                 ),
                               ),
 
@@ -387,18 +342,18 @@ class MiningClaimCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // ==================================================
-          // INFO
+          // ℹ️ INFO
           // ==================================================
 
           Center(
             child: Text(
-              'Mining Balance: ${miningBalance.toStringAsFixed(2)} STL',
-
+              'Mining Balance: '
+              '${miningBalance.toStringAsFixed(2)} STL',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(
                   alpha: 0.40,
                 ),
-
                 fontSize: 12,
               ),
             ),
@@ -410,7 +365,7 @@ class MiningClaimCard extends StatelessWidget {
 }
 
 // ============================================================
-// STAT BOX
+// 📊 STAT BOX
 // ============================================================
 
 class _StatBox extends StatelessWidget {
@@ -431,24 +386,19 @@ class _StatBox extends StatelessWidget {
         horizontal: 10,
         vertical: 14,
       ),
-
       decoration: BoxDecoration(
         color: Colors.white.withValues(
           alpha: 0.035,
         ),
-
         borderRadius: BorderRadius.circular(16),
-
         border: Border.all(
-          color: Colors.white.withValues(
-            alpha: 0.05,
+          color: miningPinkColor.withValues(
+            alpha: 0.06,
           ),
         ),
       ),
-
       child: Column(
         children: [
-
           Text(
             emoji,
             style: const TextStyle(
@@ -460,14 +410,11 @@ class _StatBox extends StatelessWidget {
 
           Text(
             label,
-
             textAlign: TextAlign.center,
-
             style: TextStyle(
               color: Colors.white.withValues(
                 alpha: 0.42,
               ),
-
               fontSize: 9,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.8,
@@ -478,13 +425,9 @@ class _StatBox extends StatelessWidget {
 
           Text(
             value,
-
             textAlign: TextAlign.center,
-
             maxLines: 1,
-
             overflow: TextOverflow.ellipsis,
-
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
