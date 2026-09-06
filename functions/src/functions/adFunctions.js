@@ -8,11 +8,11 @@
 //
 // 📺 Test Ad Reward
 // 🎁 Stella Power Boost
-// ⚡ Hash Rate -palkinnon
-// ⏳ Ad Cooldownin
-// 🔢 Päivittäisen mainosrajan
-// 📜 Ad-tapahtumahistorian
-// 🔐 AdMob SSV -callbackin
+// ⚡ Väliaikainen Hash Rate -boost
+// ⏳ 4 tunnin boost
+// 🔢 Päivittäinen mainosraja
+// 📜 Ad-tapahtumahistoria
+// 🔐 AdMob SSV -callback
 //
 // ============================================================
 
@@ -47,8 +47,8 @@ const {
 // ============================================================
 
 const {
-  DEFAULT_HASH_RATE,
   AD_HASH_RATE_BONUS,
+  AD_BOOST_DURATION_MS,
   MAX_ADS_PER_DAY,
   AD_COOLDOWN_MS,
 } = require(
@@ -109,14 +109,64 @@ function getSafeNumber(
 
 
 // ============================================================
+// 🕒 CONVERT FIRESTORE DATE TO MILLISECONDS
+// ============================================================
+
+function getTimestampMilliseconds(
+  value
+) {
+
+  if (
+    value &&
+    typeof value.toDate === "function"
+  ) {
+
+    const date =
+      value.toDate();
+
+    return date.getTime();
+  }
+
+
+  if (
+    value instanceof Date
+  ) {
+
+    return value.getTime();
+  }
+
+
+  if (
+    typeof value === "string"
+  ) {
+
+    const parsedDate =
+      new Date(value);
+
+    if (
+      !Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return parsedDate.getTime();
+    }
+  }
+
+
+  return 0;
+}
+
+
+// ============================================================
 // 📺 GET AD STATUS
 // ============================================================
 //
 // Tarkistaa:
 //
 // • Päivittäisen mainosmäärän
+// • Aktiivisen 4 h boostin
 // • Cooldownin
-// • Voiko käyttäjä katsoa mainoksen
+// • Seuraavan mainoksen ajankohdan
 //
 // ============================================================
 
@@ -125,6 +175,7 @@ function getAdStatus(
   nowMs,
   today
 ) {
+
   // ==========================================================
   // 📅 STORED DATE
   // ==========================================================
@@ -157,47 +208,10 @@ function getAdStatus(
   // ⏳ LAST AD REWARD
   // ==========================================================
 
-  const lastAdRewardAt =
-    data.lastAdRewardAt;
-
-
-  let lastAdRewardMs =
-    0;
-
-
-  if (
-    lastAdRewardAt &&
-    typeof lastAdRewardAt.toDate ===
-      "function"
-  ) {
-    lastAdRewardMs =
-      lastAdRewardAt
-        .toDate()
-        .getTime();
-
-  } else if (
-    lastAdRewardAt instanceof Date
-  ) {
-    lastAdRewardMs =
-      lastAdRewardAt.getTime();
-
-  } else if (
-    typeof lastAdRewardAt === "string"
-  ) {
-    const parsedDate =
-      new Date(
-        lastAdRewardAt
-      );
-
-    if (
-      !Number.isNaN(
-        parsedDate.getTime()
-      )
-    ) {
-      lastAdRewardMs =
-        parsedDate.getTime();
-    }
-  }
+  const lastAdRewardMs =
+    getTimestampMilliseconds(
+      data.lastAdRewardAt
+    );
 
 
   // ==========================================================
@@ -218,11 +232,56 @@ function getAdStatus(
 
 
   // ==========================================================
+  // ⚡ CURRENT AD BOOST
+  // ==========================================================
+
+  const adBoostHashRate =
+    Math.max(
+      0,
+      getSafeNumber(
+        data.adBoostHashRate,
+        0
+      )
+    );
+
+
+  // ==========================================================
+  // ⏳ AD BOOST END
+  // ==========================================================
+
+  const adBoostEndsAtMs =
+    getTimestampMilliseconds(
+      data.adBoostEndsAt
+    );
+
+
+  const adBoostRemainingMs =
+    adBoostEndsAtMs > nowMs
+      ? adBoostEndsAtMs - nowMs
+      : 0;
+
+
+  // ==========================================================
+  // ⚡ ACTIVE BOOST
+  // ==========================================================
+
+  const adBoostActive =
+    adBoostHashRate > 0 &&
+    adBoostRemainingMs > 0;
+
+
+  // ==========================================================
   // 📺 CAN WATCH
+  // ==========================================================
+  //
+  // Uusi mainos voidaan katsoa vasta,
+  // kun edellinen 4 h boost on päättynyt.
+  //
   // ==========================================================
 
   const canWatchAd =
     adsToday < MAX_ADS_PER_DAY &&
+    adBoostRemainingMs === 0 &&
     cooldownRemainingMs === 0;
 
 
@@ -231,6 +290,7 @@ function getAdStatus(
   // ==========================================================
 
   return {
+
     adsToday,
 
     maxAdsPerDay:
@@ -238,8 +298,18 @@ function getAdStatus(
 
     cooldownRemainingMs,
 
+    adBoostHashRate,
+
+    adBoostEndsAtMs,
+
+    adBoostRemainingMs,
+
+    adBoostActive,
+
     canWatchAd,
+
   };
+
 }
 
 
@@ -247,15 +317,12 @@ function getAdStatus(
 // 🎁 APPLY AD REWARD
 // ============================================================
 //
-// Lisää käyttäjälle:
+// Mainos:
 //
-// ⚡ AD_HASH_RATE_BONUS
+// 📺 +0.5833 HR
+// ⏳ 4 tunniksi
 //
-// Estää:
-//
-// 🔐 Saman transactionId:n käytön uudelleen
-// 🚫 Päivittäisen rajan ylittämisen
-// ⏳ Cooldownin ohittamisen
+// Mainosboosti EI lisää pysyvästi käyttäjän Daily Hash Ratea.
 //
 // ============================================================
 
@@ -264,6 +331,7 @@ async function applyAdReward(
   transactionId,
   rewardType
 ) {
+
   // ==========================================================
   // 👤 USER
   // ==========================================================
@@ -316,7 +384,9 @@ async function applyAdReward(
       if (
         rewardSnapshot.exists
       ) {
+
         return {
+
           success:
             true,
 
@@ -331,7 +401,9 @@ async function applyAdReward(
 
           message:
             "🐱📺 Tämä mainospalkinto on jo käsitelty.",
+
         };
+
       }
 
 
@@ -371,7 +443,9 @@ async function applyAdReward(
         adStatus.adsToday >=
         MAX_ADS_PER_DAY
       ) {
+
         return {
+
           success:
             false,
 
@@ -393,12 +467,62 @@ async function applyAdReward(
           cooldownRemainingMs:
             0,
 
+          adBoostRemainingMs:
+            adStatus.adBoostRemainingMs,
+
           canWatchAd:
             false,
 
           message:
             "🐱📺 Päivän Stella Power Boost -raja on saavutettu.",
+
         };
+
+      }
+
+
+      // ======================================================
+      // ⏳ ACTIVE BOOST
+      // ======================================================
+
+      if (
+        adStatus.adBoostRemainingMs > 0
+      ) {
+
+        return {
+
+          success:
+            false,
+
+          rewarded:
+            false,
+
+          duplicate:
+            false,
+
+          reason:
+            "boost_active",
+
+          adsToday:
+            adStatus.adsToday,
+
+          maxAdsPerDay:
+            MAX_ADS_PER_DAY,
+
+          cooldownRemainingMs:
+            adStatus.cooldownRemainingMs,
+
+          adBoostRemainingMs:
+            adStatus.adBoostRemainingMs,
+
+          canWatchAd:
+            false,
+
+          message:
+            "🐱⏳ Stella Power Boost on vielä aktiivinen.",
+
+        };
+
       }
 
 
@@ -409,7 +533,9 @@ async function applyAdReward(
       if (
         adStatus.cooldownRemainingMs > 0
       ) {
+
         return {
+
           success:
             false,
 
@@ -431,52 +557,43 @@ async function applyAdReward(
           cooldownRemainingMs:
             adStatus.cooldownRemainingMs,
 
+          adBoostRemainingMs:
+            0,
+
           canWatchAd:
             false,
 
           message:
             "🐱⏳ Stella Power Boost on vielä cooldownissa.",
+
         };
+
       }
 
 
       // ======================================================
-      // ⚡ CURRENT HASH RATE
+      // ⚡ DAILY HASH RATE
+      // ======================================================
+      //
+      // Daily Hash Rate on käyttäjän pysyvä
+      // streak-pohjainen louhintateho.
+      //
+      // Mainos ei muuta tätä arvoa.
+      //
       // ======================================================
 
-      const currentHashRate =
+      const dailyHashRate =
         Math.max(
           0,
           getSafeNumber(
             data.hashRate,
-            DEFAULT_HASH_RATE
+            0
           )
         );
 
 
       // ======================================================
-      // ⚡ CURRENT ACTIVE MINING HASH RATE
-      // ======================================================
-      //
-      // Tämä arvo on mahdollisesti lukittu nykyiseen
-      // 24 tunnin louhintajaksoon.
-      //
-      // Power Boost ei muuta aktiivista sykliä.
-      //
-      // ======================================================
-
-      const currentMiningHashRate =
-        Math.max(
-          0,
-          getSafeNumber(
-            data.miningHashRate,
-            currentHashRate
-          )
-        );
-
-
-      // ======================================================
-      // 🎁 BONUS
+      // 🎁 AD BOOST
       // ======================================================
 
       const bonus =
@@ -490,11 +607,32 @@ async function applyAdReward(
 
 
       // ======================================================
-      // ⚡ NEW HASH RATE
+      // ⏳ BOOST TIMES
       // ======================================================
 
-      const newHashRate =
-        currentHashRate +
+      const boostStartedAt =
+        now;
+
+
+      const boostEndsAt =
+        new Date(
+          nowMs +
+          AD_BOOST_DURATION_MS
+        );
+
+
+      // ======================================================
+      // ⚡ EFFECTIVE HASH RATE
+      // ======================================================
+      //
+      // Daily Hash Rate + yksi aktiivinen mainosboost.
+      //
+      // Boostit eivät kasaannu.
+      //
+      // ======================================================
+
+      const effectiveHashRate =
+        dailyHashRate +
         bonus;
 
 
@@ -508,26 +646,35 @@ async function applyAdReward(
 
 
       // ======================================================
-      // ⏳ NEW COOLDOWN
-      // ==========================================================
-
-      const newCooldownRemainingMs =
-        AD_COOLDOWN_MS;
-
-
-      // ======================================================
       // 👤 UPDATE USER
       // ======================================================
 
       transaction.set(
         userRef,
         {
+
           // ==================================================
-          // ⚡ CURRENT HASH RATE
+          // ⚡ DAILY HASH RATE
+          // ==================================================
+          //
+          // Tätä EI kasvateta mainoksella.
+          //
+          hashRate:
+            dailyHashRate,
+
+
+          // ==================================================
+          // 📺 AD BOOST
           // ==================================================
 
-          hashRate:
-            newHashRate,
+          adBoostHashRate:
+            bonus,
+
+          adBoostStartedAt:
+            boostStartedAt,
+
+          adBoostEndsAt:
+            boostEndsAt,
 
 
           // ==================================================
@@ -542,7 +689,7 @@ async function applyAdReward(
 
 
           // ==================================================
-          // ⏳ COOLDOWN
+          // ⏳ LAST AD
           // ==================================================
 
           lastAdRewardAt:
@@ -555,6 +702,7 @@ async function applyAdReward(
 
           updatedAt:
             FieldValue.serverTimestamp(),
+
         },
         {
           merge:
@@ -570,6 +718,7 @@ async function applyAdReward(
       transaction.set(
         rewardRef,
         {
+
           uid,
 
           transactionId,
@@ -578,17 +727,17 @@ async function applyAdReward(
 
           bonus,
 
-          hashRateBefore:
-            currentHashRate,
+          dailyHashRate,
 
-          hashRateAfter:
-            newHashRate,
+          effectiveHashRate,
 
-          miningHashRate:
-            currentMiningHashRate,
+          boostStartedAt,
+
+          boostEndsAt,
 
           createdAt:
             FieldValue.serverTimestamp(),
+
         }
       );
 
@@ -605,6 +754,7 @@ async function applyAdReward(
       transaction.set(
         historyRef,
         {
+
           type:
             "ad_reward",
 
@@ -615,13 +765,21 @@ async function applyAdReward(
             bonus,
 
           hashRateBefore:
-            currentHashRate,
+            dailyHashRate,
 
           hashRateAfter:
-            newHashRate,
+            dailyHashRate,
 
-          miningHashRate:
-            currentMiningHashRate,
+          dailyHashRate,
+
+          adBoostHashRate:
+            bonus,
+
+          effectiveHashRate,
+
+          boostStartedAt,
+
+          boostEndsAt,
 
           rewardType,
 
@@ -630,6 +788,7 @@ async function applyAdReward(
 
           createdAt:
             FieldValue.serverTimestamp(),
+
         }
       );
 
@@ -639,6 +798,7 @@ async function applyAdReward(
       // ======================================================
 
       return {
+
         success:
           true,
 
@@ -653,34 +813,36 @@ async function applyAdReward(
 
 
         // ====================================================
-        // ⚡ REWARD
+        // 🎁 BOOST
         // ====================================================
 
         bonus,
 
 
+        adBoostHashRate:
+          bonus,
+
+
+        adBoostDurationMs:
+          AD_BOOST_DURATION_MS,
+
+
         // ====================================================
-        // ⚡ HASH RATE
+        // ⚡ DAILY HASH RATE
         // ====================================================
 
-        hashRateBefore:
-          currentHashRate,
+        dailyHashRate,
+
+
+        // ====================================================
+        // ⚡ EFFECTIVE HASH RATE
+        // ====================================================
 
         hashRate:
-          newHashRate,
+          effectiveHashRate,
 
 
-        // ====================================================
-        // ⛏️ ACTIVE MINING HASH RATE
-        // ====================================================
-        //
-        // Nykyinen aktiivinen mining-jakso pysyy
-        // lukittuna alkuperäiseen Hash Rateen.
-        //
-        // ====================================================
-
-        miningHashRate:
-          currentMiningHashRate,
+        effectiveHashRate,
 
 
         // ====================================================
@@ -695,11 +857,25 @@ async function applyAdReward(
 
 
         // ====================================================
+        // ⏳ BOOST
+        // ====================================================
+
+        boostActive:
+          true,
+
+        boostRemainingMs:
+          AD_BOOST_DURATION_MS,
+
+        boostEndsAt:
+          boostEndsAt.toISOString(),
+
+
+        // ====================================================
         // ⏳ COOLDOWN
         // ====================================================
 
         cooldownRemainingMs:
-          newCooldownRemainingMs,
+          AD_COOLDOWN_MS,
 
         cooldownMs:
           AD_COOLDOWN_MS,
@@ -718,10 +894,13 @@ async function applyAdReward(
         // ====================================================
 
         message:
-          `🐱📺⚡ Stella sai +${bonus} Hash Rate Power Boostin!`,
+          `🐱📺⚡ Stella Power Boost +${bonus} HR 4 tunniksi!`,
+
       };
+
     }
   );
+
 }
 
 
@@ -749,10 +928,12 @@ const testAdReward =
       // ========================================================
 
       if (!request.auth) {
+
         throw new HttpsError(
           "unauthenticated",
           "🐱 Kirjaudu sisään saadaksesi Stella Power Boostin."
         );
+
       }
 
 
@@ -797,7 +978,9 @@ const testAdReward =
         if (
           error instanceof HttpsError
         ) {
+
           throw error;
+
         }
 
 
@@ -805,7 +988,9 @@ const testAdReward =
           "internal",
           "🐱 Stella Power Boostin käsittely epäonnistui."
         );
+
       }
+
     }
   );
 
@@ -866,15 +1051,19 @@ const adMobReward =
           !uid ||
           !transactionId
         ) {
+
           res.status(400).json({
+
             success:
               false,
 
             error:
               "Missing user_id or transaction_id.",
+
           });
 
           return;
+
         }
 
 
@@ -907,6 +1096,7 @@ const adMobReward =
 
 
         res.status(400).json({
+
           success:
             false,
 
@@ -914,8 +1104,11 @@ const adMobReward =
             error instanceof Error
               ? error.message
               : "Unknown error",
+
         });
+
       }
+
     }
   );
 
@@ -925,6 +1118,9 @@ const adMobReward =
 // ============================================================
 
 module.exports = {
+
   testAdReward,
+
   adMobReward,
+
 };
