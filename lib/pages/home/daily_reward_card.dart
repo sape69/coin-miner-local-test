@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// COLORS
+// 🐱 STELLURIINI COLORS
 // ============================================================
 
-const Color dailyCardColor = Color(0xFF151B1C);
-const Color dailyAccentColor = Color(0xFF35D0A0);
+const Color dailyCardColor = Color(0xFF21113B);
+const Color dailyAccentColor = Color(0xFFB58CFF);
+const Color dailyPinkColor = Color(0xFFFFB7E8);
+const Color dailyGoldColor = Color(0xFFFFD166);
 
 // ============================================================
-// DAILY HASH RATE CARD
+// 🐱 STELLA DAILY HASH RATE CARD
 // ============================================================
 
 class DailyRewardCard extends StatelessWidget {
@@ -41,13 +43,13 @@ class DailyRewardCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: dailyAccentColor.withValues(
-            alpha: 0.25,
+            alpha: 0.30,
           ),
         ),
         boxShadow: [
           BoxShadow(
             color: dailyAccentColor.withValues(
-              alpha: 0.06,
+              alpha: 0.08,
             ),
             blurRadius: 20,
             spreadRadius: 1,
@@ -58,9 +60,9 @@ class DailyRewardCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ================================================
-          // HEADER
-          // ================================================
+          // ==================================================
+          // 🐱 HEADER
+          // ==================================================
 
           Row(
             children: [
@@ -73,8 +75,8 @@ class DailyRewardCard extends StatelessWidget {
                     alpha: 0.15,
                   ),
                   border: Border.all(
-                    color: dailyAccentColor.withValues(
-                      alpha: 0.35,
+                    color: dailyPinkColor.withValues(
+                      alpha: 0.38,
                     ),
                   ),
                 ),
@@ -90,9 +92,9 @@ class DailyRewardCard extends StatelessWidget {
 
               const SizedBox(width: 14),
 
-              // ============================================
+              // ==================================================
               // TITLE
-              // ============================================
+              // ==================================================
 
               Expanded(
                 child: Column(
@@ -124,14 +126,13 @@ class DailyRewardCard extends StatelessWidget {
                 ),
               ),
 
-              // ============================================
+              // ==================================================
               // CLAIMED STATUS
-              // ============================================
+              // ==================================================
 
               if (dailyClaimed)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 6,
                   ),
@@ -139,10 +140,9 @@ class DailyRewardCard extends StatelessWidget {
                     color: dailyAccentColor.withValues(
                       alpha: 0.15,
                     ),
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: dailyAccentColor.withValues(
+                      color: dailyPinkColor.withValues(
                         alpha: 0.25,
                       ),
                     ),
@@ -150,7 +150,7 @@ class DailyRewardCard extends StatelessWidget {
                   child: const Text(
                     '✓ DONE',
                     style: TextStyle(
-                      color: dailyAccentColor,
+                      color: dailyPinkColor,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -161,9 +161,9 @@ class DailyRewardCard extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ================================================
-          // HASH RATE REWARD
-          // ================================================
+          // ==================================================
+          // ⚡ HASH RATE REWARD
+          // ==================================================
 
           Container(
             padding: const EdgeInsets.all(16),
@@ -173,8 +173,8 @@ class DailyRewardCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: Colors.white.withValues(
-                  alpha: 0.06,
+                color: dailyAccentColor.withValues(
+                  alpha: 0.12,
                 ),
               ),
             ),
@@ -187,6 +187,11 @@ class DailyRewardCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: dailyAccentColor.withValues(
                       alpha: 0.12,
+                    ),
+                    border: Border.all(
+                      color: dailyAccentColor.withValues(
+                        alpha: 0.18,
+                      ),
                     ),
                   ),
                   child: const Center(
@@ -234,25 +239,23 @@ class DailyRewardCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // ================================================
-          // STREAK
-          // ================================================
+          // ==================================================
+          // 🔥 STREAK
+          // ==================================================
 
           Container(
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(
+              color: dailyPinkColor.withValues(
                 alpha: 0.035,
               ),
-              borderRadius:
-                  BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withValues(
-                  alpha: 0.04,
+                color: dailyPinkColor.withValues(
+                  alpha: 0.06,
                 ),
               ),
             ),
@@ -285,24 +288,21 @@ class DailyRewardCard extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          // ================================================
-          // CLAIM BUTTON
-          // ================================================
+          // ==================================================
+          // 🎁 CLAIM BUTTON
+          // ==================================================
 
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed:
-                  dailyLoading || dailyClaimed
-                      ? null
-                      : onPressed,
-
+              onPressed: dailyLoading || dailyClaimed
+                  ? null
+                  : onPressed,
               icon: dailyLoading
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child:
-                          CircularProgressIndicator(
+                      child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.black,
                       ),
@@ -312,7 +312,6 @@ class DailyRewardCard extends StatelessWidget {
                           ? Icons.check_circle
                           : Icons.bolt,
                     ),
-
               label: Text(
                 dailyLoading
                     ? 'CLAIMING...'
@@ -320,35 +319,23 @@ class DailyRewardCard extends StatelessWidget {
                         ? 'CLAIMED TODAY'
                         : 'CLAIM +1 HASH RATE',
               ),
-
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    dailyAccentColor,
-
-                foregroundColor:
-                    Colors.black,
-
+                backgroundColor: dailyGoldColor,
+                foregroundColor: const Color(0xFF24132F),
                 disabledBackgroundColor:
                     Colors.white.withValues(
                   alpha: 0.08,
                 ),
-
                 disabledForegroundColor:
                     Colors.white.withValues(
                   alpha: 0.35,
                 ),
-
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   vertical: 15,
                 ),
-
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
@@ -359,13 +346,12 @@ class DailyRewardCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // ================================================
-          // INFO
-          // ================================================
+          // ==================================================
+          // ℹ️ INFO
+          // ==================================================
 
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.info_outline,
