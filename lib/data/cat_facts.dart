@@ -3,7 +3,7 @@
 //
 // 60 päivittäistä kissafaktaa × 8 kieltä.
 //
-// Sama päivä näyttää saman faktan kaikille käyttäjille.
+// Sama UTC-päivä näyttää saman faktan kaikille käyttäjille.
 // Kieli määräytyy sovelluksen nykyisen kielikoodin mukaan.
 //
 // Tuetut kielet:
@@ -16,7 +16,7 @@
 // vi = Tiếng Việt
 // ja = 日本語
 //
-// Päivän fakta vaihtuu automaattisesti päivämäärän perusteella.
+// Päivän fakta vaihtuu automaattisesti UTC-päivän perusteella.
 // ============================================================
 
 class CatFacts {
@@ -34,7 +34,7 @@ class CatFacts {
     'Hidas silmien räpytys voi olla kissan ystävällinen tervehdys.',
     'Kissat ovat luonnostaan uteliaita eläimiä.',
     'Kissat voivat kehrätä sekä sisään- että uloshengityksen aikana.',
-    'Kissat käyttävät hajuaistiaan tärkeänä tapana tutkia ympäristöään.',
+    'Kissat käyttävät hajuaistiaan ympäristön tutkimiseen.',
     'Kissan korvat voivat liikkua eri suuntiin äänten paikantamiseksi.',
     'Kissat viettävät paljon aikaa turkkinsa puhdistamiseen.',
     'Kissat voivat hypätä useita kertoja oman pituutensa korkeudelle.',
@@ -42,7 +42,7 @@ class CatFacts {
     'Kissat voivat oppia tunnistamaan omistajansa äänen.',
     'Kissat voivat olla aktiivisimmillaan aamun ja illan hämärässä.',
     'Kissan tassujen pehmeät anturat auttavat sitä liikkumaan hiljaa.',
-    'Kissat voivat käyttää erilaisia ääniä viestiäkseen ihmisten kanssa.',
+    'Kissat käyttävät erilaisia ääniä viestiessään ihmisten kanssa.',
     'Kissat voivat nähdä hämärässä paremmin kuin ihmiset.',
     'Täydellisessä pimeydessä kissakaan ei kuitenkaan näe.',
     'Kissat ovat luonnostaan taitavia metsästäjiä.',
@@ -101,7 +101,7 @@ class CatFacts {
     'A slow blink can be a friendly greeting from a cat.',
     'Cats are naturally curious animals.',
     'Cats can purr during both inhaling and exhaling.',
-    'Cats use their sense of smell as an important way to explore their environment.',
+    'Cats use their sense of smell to explore their environment.',
     'A cat can move its ears to help locate sounds.',
     'Cats spend a large amount of time grooming their fur.',
     'Cats can jump several times their own body length.',
@@ -109,7 +109,7 @@ class CatFacts {
     'Cats can learn to recognize their owner’s voice.',
     'Cats can be most active around dawn and dusk.',
     'The soft pads on a cat’s paws help it move quietly.',
-    'Cats can use different sounds to communicate with humans.',
+    'Cats use different sounds to communicate with humans.',
     'Cats can see better in low light than humans.',
     'However, even cats cannot see in complete darkness.',
     'Cats are naturally skilled hunters.',
@@ -168,7 +168,7 @@ class CatFacts {
     'Langsames Blinzeln kann eine freundliche Begrüßung einer Katze sein.',
     'Katzen sind von Natur aus neugierige Tiere.',
     'Katzen können sowohl beim Ein- als auch beim Ausatmen schnurren.',
-    'Katzen nutzen ihren Geruchssinn intensiv, um ihre Umgebung zu erkunden.',
+    'Katzen nutzen ihren Geruchssinn, um ihre Umgebung zu erkunden.',
     'Eine Katze kann ihre Ohren bewegen, um Geräusche besser zu orten.',
     'Katzen verbringen viel Zeit mit der Fellpflege.',
     'Katzen können ein Mehrfaches ihrer eigenen Körperlänge hochspringen.',
@@ -178,7 +178,7 @@ class CatFacts {
     'Die weichen Ballen an den Pfoten helfen Katzen, sich leise zu bewegen.',
     'Katzen können verschiedene Laute verwenden, um mit Menschen zu kommunizieren.',
     'Katzen können bei schwachem Licht besser sehen als Menschen.',
-    'Auch Katzen können jedoch in völliger Dunkelheit nicht sehen.',
+    'Auch Katzen können in völliger Dunkelheit nicht sehen.',
     'Katzen sind von Natur aus geschickte Jäger.',
     'Eine Katze kann sich sehr leise an ihre Beute anschleichen.',
     'Die Zunge einer Katze hat kleine nach hinten gerichtete Widerhaken.',
@@ -235,7 +235,7 @@ class CatFacts {
     'Un parpadeo lento puede ser un saludo amistoso de un gato.',
     'Los gatos son animales naturalmente curiosos.',
     'Los gatos pueden ronronear tanto al inhalar como al exhalar.',
-    'Los gatos utilizan el olfato como una forma importante de explorar su entorno.',
+    'Los gatos utilizan el olfato para explorar su entorno.',
     'Un gato puede mover las orejas para localizar sonidos.',
     'Los gatos pasan mucho tiempo limpiando su pelaje.',
     'Los gatos pueden saltar varias veces la longitud de su cuerpo.',
@@ -254,7 +254,7 @@ class CatFacts {
     'Los gatos adultos suelen maullar más a los humanos que a otros gatos.',
     'Una cola levantada puede ser una señal de un saludo amistoso.',
     'Los gatos también marcan su entorno utilizando olores.',
-    'Los gatos tienen glándulas odoríferas, por ejemplo, en las mejillas y las patas.',
+    'Los gatos tienen glándulas odoríferas en lugares como las mejillas y las patas.',
     'Los gatos pueden pasar mucho tiempo observando su entorno.',
     'Las pupilas de un gato pueden cambiar rápidamente según la cantidad de luz.',
     'Los gatos pueden crear fuertes vínculos con las personas.',
@@ -564,12 +564,16 @@ class CatFacts {
     required String languageCode,
     DateTime? date,
   }) {
-    final DateTime day = date ?? DateTime.now();
+    // Käytetään aina UTC-päivää.
+    //
+    // Näin esimerkiksi Suomessa ja Japanissa oleva käyttäjä
+    // saa saman faktan saman UTC-päivän aikana.
+    final DateTime inputDate = date ?? DateTime.now().toUtc();
 
-    final DateTime currentDay = DateTime.utc(
-      day.year,
-      day.month,
-      day.day,
+    final DateTime utcDay = DateTime.utc(
+      inputDate.toUtc().year,
+      inputDate.toUtc().month,
+      inputDate.toUtc().day,
     );
 
     final DateTime startDay = DateTime.utc(
@@ -578,17 +582,15 @@ class CatFacts {
       1,
     );
 
-    final int dayIndex =
-        currentDay.difference(startDay).inDays;
+    final int dayIndex = utcDay.difference(startDay).inDays;
 
-    final List<String> facts =
-        _factsForLanguage(languageCode);
+    final List<String> facts = _factsForLanguage(languageCode);
 
     if (facts.isEmpty) {
       return '';
     }
 
-    // Toimii oikein myös ennen 1.1.2026 olevilla päivämäärillä.
+    // Toimii myös ennen 1.1.2026.
     final int index =
         ((dayIndex % facts.length) + facts.length) %
             facts.length;
@@ -603,7 +605,15 @@ class CatFacts {
   static List<String> _factsForLanguage(
     String languageCode,
   ) {
-    switch (languageCode) {
+    // Tukee myös koodeja kuten:
+    // en-US
+    // fi-FI
+    // de-DE
+    // jne.
+    final String normalizedCode =
+        languageCode.trim().toLowerCase().split('-').first;
+
+    switch (normalizedCode) {
       case 'fi':
         return fi;
 
@@ -629,6 +639,7 @@ class CatFacts {
         return ja;
 
       default:
+        // Turvallinen oletuskieli.
         return en;
     }
   }
