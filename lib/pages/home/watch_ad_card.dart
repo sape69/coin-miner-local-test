@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// COLORS
+// STELLA THEME
 // ============================================================
 
-const Color backgroundColor = Color(0xFF0B1112);
-const Color cardColor = Color(0xFF151B1C);
-const Color watchAdAccentColor = Color(0xFF35D0A0);
+const Color backgroundColor = Color(0xFF120B24);
+const Color cardColor = Color(0xFF21113B);
+
+const Color watchAdAccentColor = Color(0xFFB58CFF);
+const Color watchAdPinkColor = Color(0xFFFFB7E8);
+const Color watchAdGoldColor = Color(0xFFFFD166);
 
 // ============================================================
 // WATCH AD CARD
@@ -55,8 +58,7 @@ class WatchAdCard extends StatelessWidget {
     // STATUS
     // ========================================================
 
-    final limitReached =
-        adsToday >= maxAdsPerDay;
+    final limitReached = adsToday >= maxAdsPerDay;
 
     final isDisabled =
         adLoading ||
@@ -95,70 +97,71 @@ class WatchAdCard extends StatelessWidget {
     // PROGRESS
     // ========================================================
 
-    final progress =
+    final rawProgress =
         maxAdsPerDay > 0
             ? adsToday / maxAdsPerDay
             : 0.0;
 
+    final progress =
+        rawProgress.clamp(0.0, 1.0).toDouble();
+
+    // ========================================================
+    // CARD
+    // ========================================================
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(24),
-
         border: Border.all(
           color: watchAdAccentColor.withValues(
             alpha: 0.22,
           ),
         ),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
-              alpha: 0.20,
+              alpha: 0.28,
             ),
-            blurRadius: 18,
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.stretch,
-
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // ==================================================
           // HEADER
           // ==================================================
 
           Row(
             children: [
-
               Container(
                 width: 58,
                 height: 58,
-
                 decoration: BoxDecoration(
-                  color:
+                  gradient: LinearGradient(
+                    colors: [
                       watchAdAccentColor.withValues(
-                    alpha: 0.14,
+                        alpha: 0.20,
+                      ),
+                      watchAdPinkColor.withValues(
+                        alpha: 0.12,
+                      ),
+                    ],
                   ),
-
                   borderRadius:
                       BorderRadius.circular(18),
-
                   border: Border.all(
                     color:
                         watchAdAccentColor.withValues(
-                      alpha: 0.30,
+                      alpha: 0.32,
                     ),
                   ),
                 ),
-
                 child: const Center(
                   child: Text(
                     '📺',
@@ -175,17 +178,13 @@ class WatchAdCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-
                   children: [
-
                     Text(
                       title.toUpperCase(),
-
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -194,12 +193,10 @@ class WatchAdCard extends StatelessWidget {
 
                     Text(
                       'Boost Stella’s Hash Rate ⚡🐱',
-
                       style: TextStyle(
                         color: Colors.white.withValues(
-                          alpha: 0.55,
+                          alpha: 0.58,
                         ),
-
                         fontSize: 12,
                       ),
                     ),
@@ -212,47 +209,44 @@ class WatchAdCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ==================================================
-          // HASH RATE INFO
+          // MINING POWER INFO
           // ==================================================
 
           Container(
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 15,
             ),
-
             decoration: BoxDecoration(
-              color: Colors.black.withValues(
-                alpha: 0.18,
+              color: backgroundColor.withValues(
+                alpha: 0.72,
               ),
-
               borderRadius:
                   BorderRadius.circular(18),
-
               border: Border.all(
-                color: Colors.white.withValues(
-                  alpha: 0.05,
+                color: watchAdPinkColor.withValues(
+                  alpha: 0.08,
                 ),
               ),
             ),
-
             child: Row(
               children: [
-
                 Container(
                   width: 42,
                   height: 42,
-
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-
-                    color:
+                    gradient: LinearGradient(
+                      colors: [
                         watchAdAccentColor.withValues(
-                      alpha: 0.14,
+                          alpha: 0.20,
+                        ),
+                        watchAdGoldColor.withValues(
+                          alpha: 0.12,
+                        ),
+                      ],
                     ),
                   ),
-
                   child: const Center(
                     child: Text(
                       '⚡',
@@ -269,17 +263,13 @@ class WatchAdCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
-
                     children: [
-
                       const Text(
                         'MINING POWER BOOST',
-
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 13,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -288,13 +278,10 @@ class WatchAdCard extends StatelessWidget {
 
                       Text(
                         'Watch an ad to increase Hash Rate',
-
                         style: TextStyle(
-                          color:
-                              Colors.white.withValues(
+                          color: Colors.white.withValues(
                             alpha: 0.50,
                           ),
-
                           fontSize: 11,
                         ),
                       ),
@@ -314,28 +301,27 @@ class WatchAdCard extends StatelessWidget {
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.spaceBetween,
-
             children: [
-
-              Text(
-                '$dailyLimitText: '
-                '$adsToday / $maxAdsPerDay',
-
-                style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.75,
+              Expanded(
+                child: Text(
+                  '$dailyLimitText: '
+                  '$adsToday / $maxAdsPerDay',
+                  style: TextStyle(
+                    color: Colors.white.withValues(
+                      alpha: 0.78,
+                    ),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
-
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
 
+              const SizedBox(width: 12),
+
               Text(
                 '$adsToday/$maxAdsPerDay',
-
                 style: const TextStyle(
-                  color: watchAdAccentColor,
+                  color: watchAdPinkColor,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                 ),
@@ -352,17 +338,13 @@ class WatchAdCard extends StatelessWidget {
           ClipRRect(
             borderRadius:
                 BorderRadius.circular(20),
-
             child: LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-
+              value: progress,
               minHeight: 8,
-
               backgroundColor:
                   Colors.white.withValues(
                 alpha: 0.07,
               ),
-
               valueColor:
                   const AlwaysStoppedAnimation<Color>(
                 watchAdAccentColor,
@@ -376,31 +358,25 @@ class WatchAdCard extends StatelessWidget {
 
           if (adsToday < maxAdsPerDay &&
               !canWatch) ...[
-
             const SizedBox(height: 16),
 
             Container(
               padding:
                   const EdgeInsets.all(14),
-
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(
-                  alpha: 0.10,
+                color: watchAdGoldColor.withValues(
+                  alpha: 0.08,
                 ),
-
                 borderRadius:
                     BorderRadius.circular(16),
-
                 border: Border.all(
-                  color: Colors.orange.withValues(
-                    alpha: 0.25,
+                  color: watchAdGoldColor.withValues(
+                    alpha: 0.22,
                   ),
                 ),
               ),
-
               child: Row(
                 children: [
-
                   const Text(
                     '😺',
                     style: TextStyle(
@@ -413,9 +389,8 @@ class WatchAdCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       nextAdText,
-
                       style: const TextStyle(
-                        color: Colors.orangeAccent,
+                        color: watchAdGoldColor,
                         fontSize: 13,
                         fontWeight:
                             FontWeight.bold,
@@ -436,114 +411,130 @@ class WatchAdCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 62,
-
             child: Material(
               color: Colors.transparent,
-
               child: InkWell(
                 onTap:
                     isDisabled
                         ? null
                         : onPressed,
-
                 borderRadius:
                     BorderRadius.circular(18),
-
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: isDisabled
-                        ? Colors.grey.withValues(
-                            alpha: 0.18,
-                          )
-                        : watchAdAccentColor,
-
+                    gradient:
+                        isDisabled
+                            ? null
+                            : const LinearGradient(
+                                colors: [
+                                  watchAdAccentColor,
+                                  watchAdPinkColor,
+                                ],
+                                begin:
+                                    Alignment.centerLeft,
+                                end:
+                                    Alignment.centerRight,
+                              ),
+                    color:
+                        isDisabled
+                            ? Colors.grey.withValues(
+                                alpha: 0.18,
+                              )
+                            : null,
                     borderRadius:
                         BorderRadius.circular(18),
-
-                    boxShadow: isDisabled
-                        ? []
-                        : [
-                            BoxShadow(
-                              color:
-                                  watchAdAccentColor
-                                      .withValues(
-                                alpha: 0.28,
-                              ),
-
-                              blurRadius: 18,
-                              offset:
-                                  const Offset(0, 7),
-                            ),
-                          ],
-                  ),
-
-                  child: Center(
-                    child: adLoading
-
-                        ? const SizedBox(
-                            width: 26,
-                            height: 26,
-
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: backgroundColor,
-                            ),
-                          )
-
-                        : Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
-
-                            children: [
-
-                              Text(
-                                leftEmoji,
-                                style: const TextStyle(
-                                  fontSize: 25,
-                                ),
-                              ),
-
-                              const SizedBox(width: 10),
-
-                              Flexible(
-                                child: Text(
-                                  buttonText,
-
-                                  textAlign:
-                                      TextAlign.center,
-
-                                  overflow:
-                                      TextOverflow.ellipsis,
-
-                                  style: TextStyle(
-                                    color: isDisabled
-                                        ? Colors.white
-                                            .withValues(
-                                            alpha: 0.40,
-                                          )
-                                        : backgroundColor,
-
-                                    fontSize: 14,
-
-                                    fontWeight:
-                                        FontWeight.bold,
-
-                                    letterSpacing: 0.7,
+                    boxShadow:
+                        isDisabled
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color:
+                                      watchAdAccentColor
+                                          .withValues(
+                                    alpha: 0.25,
+                                  ),
+                                  blurRadius: 18,
+                                  offset:
+                                      const Offset(
+                                    0,
+                                    7,
                                   ),
                                 ),
-                              ),
-
-                              const SizedBox(width: 10),
-
-                              Text(
-                                rightEmoji,
-                                style: const TextStyle(
-                                  fontSize: 24,
+                              ],
+                  ),
+                  child: Center(
+                    child:
+                        adLoading
+                            ? const SizedBox(
+                                width: 26,
+                                height: 26,
+                                child:
+                                    CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color:
+                                      backgroundColor,
                                 ),
+                              )
+                            : Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .center,
+                                children: [
+                                  Text(
+                                    leftEmoji,
+                                    style:
+                                        const TextStyle(
+                                      fontSize: 25,
+                                    ),
+                                  ),
+
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+
+                                  Flexible(
+                                    child: Text(
+                                      buttonText,
+                                      textAlign:
+                                          TextAlign
+                                              .center,
+                                      overflow:
+                                          TextOverflow
+                                              .ellipsis,
+                                      style:
+                                          TextStyle(
+                                        color:
+                                            isDisabled
+                                                ? Colors
+                                                    .white
+                                                    .withValues(
+                                                    alpha:
+                                                        0.40,
+                                                  )
+                                                : backgroundColor,
+                                        fontSize: 14,
+                                        fontWeight:
+                                            FontWeight
+                                                .bold,
+                                        letterSpacing:
+                                            0.7,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+
+                                  Text(
+                                    rightEmoji,
+                                    style:
+                                        const TextStyle(
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                   ),
                 ),
               ),
@@ -563,15 +554,11 @@ class WatchAdCard extends StatelessWidget {
                   : canWatch && adReady
                       ? 'Stella is ready to boost her mining power! ⚡🐱'
                       : cooldownRemainingText(),
-
               textAlign: TextAlign.center,
-
               style: TextStyle(
-                color:
-                    watchAdAccentColor.withValues(
-                  alpha: 0.75,
+                color: watchAdAccentColor.withValues(
+                  alpha: 0.78,
                 ),
-
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
