@@ -322,7 +322,12 @@ class StlTokenPage extends StatelessWidget {
                         Text(
                           'TOTAL SUPPLY',
                           style: TextStyle(
-                            color: Colors.white60,
+                            color: Color.fromRGBO(
+                              255,
+                              255,
+                              255,
+                              0.60,
+                            ),
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2,
@@ -363,7 +368,12 @@ class StlTokenPage extends StatelessWidget {
                     '17 602 539 062 STL tokens.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white65,
+                      color: Color.fromRGBO(
+                        255,
+                        255,
+                        255,
+                        0.65,
+                      ),
                       fontSize: 15,
                       height: 1.5,
                     ),
@@ -389,7 +399,12 @@ class StlTokenPage extends StatelessWidget {
                     'This is the official public mint address '
                     'for the Stelluriini token.',
                     style: TextStyle(
-                      color: Colors.white65,
+                      color: Color.fromRGBO(
+                        255,
+                        255,
+                        255,
+                        0.65,
+                      ),
                       fontSize: 15,
                       height: 1.5,
                     ),
@@ -530,7 +545,12 @@ class StlTokenPage extends StatelessWidget {
                     'Community • Curiosity • Solana',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white60,
+                      color: Color.fromRGBO(
+                        255,
+                        255,
+                        255,
+                        0.60,
+                      ),
                       fontSize: 14,
                     ),
                   ),
@@ -554,7 +574,12 @@ class StlTokenPage extends StatelessWidget {
                 'These points are not automatically connected '
                 'to a withdrawable cryptocurrency balance.',
                 style: TextStyle(
-                  color: Colors.white60,
+                  color: Color.fromRGBO(
+                    255,
+                    255,
+                    255,
+                    0.60,
+                  ),
                   fontSize: 15,
                   height: 1.6,
                 ),
@@ -704,7 +729,12 @@ class _TokenInfoRow extends StatelessWidget {
           child: Text(
             label,
             style: const TextStyle(
-              color: Colors.white60,
+              color: Color.fromRGBO(
+                255,
+                255,
+                255,
+                0.60,
+              ),
               fontSize: 15,
             ),
           ),
