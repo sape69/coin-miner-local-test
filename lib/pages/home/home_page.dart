@@ -5,7 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../../data/cat_facts.dart';
 import '../../widgets/home_drawer.dart';
+import 'cat_fact_card.dart';
 
 // ============================================================
 // 🐱 STELLURIINI HOME PAGE
@@ -1027,6 +1029,56 @@ class _HomePageState extends State<HomePage>
     return '$hours:$minutes:$seconds';
   }
 
+  // ============================================================
+  // 🐱 DAILY CAT FACT
+  // ============================================================
+
+  Widget _buildDailyCatFact() {
+    final String fact =
+        CatFacts.getDailyFact(
+      languageCode:
+          widget.languageCode,
+    );
+
+    return CatFactCard(
+      title: _catFactTitle(),
+      fact: fact,
+    );
+  }
+
+  String _catFactTitle() {
+    switch (widget.languageCode) {
+      case 'fi':
+        return '🐱 Stella-kissan päivän fakta';
+
+      case 'de':
+        return '🐱 Stellas Katzenfakt des Tages';
+
+      case 'es':
+        return '🐱 Dato felino del día de Stella';
+
+      case 'fr':
+        return '🐱 Le fait félin du jour de Stella';
+
+      case 'zh':
+        return '🐱 Stella 今日猫咪知识';
+
+      case 'vi':
+        return '🐱 Sự thật về mèo của Stella hôm nay';
+
+      case 'ja':
+        return '🐱 Stella 今日の猫豆知識';
+
+      case 'en':
+      default:
+        return '🐱 Stella Cat Fact of the Day';
+    }
+  }
+
+  // ============================================================
+  // 💬 MESSAGE
+  // ============================================================
+
   void _showMessage(
     String message,
   ) {
@@ -1186,7 +1238,17 @@ class _HomePageState extends State<HomePage>
                         _buildDailyBonusCard(),
 
                         const SizedBox(
-                          height: 24,
+                          height: 28,
+                        ),
+
+                        // ==================================================
+                        // 🐱 DAILY CAT FACT
+                        // ==================================================
+
+                        _buildDailyCatFact(),
+
+                        const SizedBox(
+                          height: 30,
                         ),
 
                         _buildStellaFooter(),
@@ -1352,10 +1414,6 @@ class _HomePageState extends State<HomePage>
       ),
       child: Column(
         children: [
-          // ------------------------------------------------------
-          // STELLA
-          // ------------------------------------------------------
-
           AnimatedBuilder(
             animation: _catAnimation,
             builder: (
@@ -1428,10 +1486,6 @@ class _HomePageState extends State<HomePage>
 
           const SizedBox(height: 24),
 
-          // ------------------------------------------------------
-          // MINED AMOUNT
-          // ------------------------------------------------------
-
           Text(
             _formatStl(
               _unclaimedMining,
@@ -1456,10 +1510,6 @@ class _HomePageState extends State<HomePage>
           ),
 
           const SizedBox(height: 24),
-
-          // ------------------------------------------------------
-          // TIMER
-          // ------------------------------------------------------
 
           Container(
             width: double.infinity,
@@ -2047,7 +2097,9 @@ class _HomePageState extends State<HomePage>
                 backgroundColor:
                     goldColor,
                 foregroundColor:
-                    Color(0xFF24132F),
+                    const Color(
+                  0xFF24132F,
+                ),
                 disabledBackgroundColor:
                     const Color(
                   0xFF5A4A64,
