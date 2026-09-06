@@ -6,9 +6,23 @@
 //
 // 🎁 Stella Daily Check-In
 // 📅 Päivittäinen bonus
-// ⚡ Hash Rate -kasvu
+// ⚡ Daily Streak Hash Rate
 // 🛡️ Tuplabonuksen esto
 // 📜 Daily-tapahtumahistoria
+//
+// Daily Hash Rate:
+//
+// Päivä 1  → 0.5 HR
+// Päivä 2  → 1.0 HR
+// Päivä 3  → 1.5 HR
+// Päivä 4  → 2.0 HR
+// Päivä 5  → 2.5 HR
+// Päivä 6  → 3.0 HR
+// Päivä 7+ → 3.5 HR
+//
+// Jos käyttäjä jättää yhden kokonaisen päivän väliin,
+// seuraava Daily Check-In aloittaa uuden streakin
+// päivästä 1.
 //
 // Kaikki päivät käsitellään UTC-ajassa.
 //
@@ -44,8 +58,10 @@ const {
 // ============================================================
 
 const {
-  DEFAULT_HASH_RATE,
-  DAILY_HASH_RATE_BONUS,
+  DAILY_HASH_RATE_START,
+  DAILY_HASH_RATE_STEP,
+  DAILY_HASH_RATE_MAX_DAY,
+  MAX_DAILY_HASH_RATE,
 } = require(
   "../config/miningConfig"
 );
@@ -83,6 +99,48 @@ const {
 } = require(
   "../services/historyService"
 );
+
+
+// ============================================================
+// ⚡ CALCULATE DAILY HASH RATE
+// ============================================================
+//
+// Muuntaa streak-päivän Daily Hash Rateksi.
+//
+// Päivä 1  → 0.5
+// Päivä 2  → 1.0
+// Päivä 3  → 1.5
+// ...
+// Päivä 7+ → 3.5
+//
+// ============================================================
+
+function calculateDailyHashRate(streak) {
+
+  const safeStreak =
+    Number.isFinite(streak) && streak > 0
+      ? Math.floor(streak)
+      : 1;
+
+
+  const effectiveDay =
+    Math.min(
+      safeStreak,
+      DAILY_HASH_RATE_MAX_DAY
+    );
+
+
+  const calculatedHashRate =
+    DAILY_HASH_RATE_START +
+    ((effectiveDay - 1) * DAILY_HASH_RATE_STEP);
+
+
+  return Math.min(
+    calculatedHashRate,
+    MAX_DAILY_HASH_RATE
+  );
+
+}
 
 
 // ============================================================
@@ -168,6 +226,16 @@ const dailyCheckIn =
             // ==================================================
             // ⚡ CURRENT HASH RATE
             // ==================================================
+            //
+            // Hash Rate voidaan säilyttää käyttäjädatassa.
+            //
+            // Uudessa mallissa Daily Check-In määrittää
+            // Daily Hash Raten streakin perusteella.
+            //
+            // Mainosboostit voivat nostaa aktiivista Hash Ratea
+            // väliaikaisesti erillisessä ad-logiikassa.
+            //
+            // ==================================================
 
             const savedHashRate =
               Number(data.hashRate);
@@ -177,7 +245,7 @@ const dailyCheckIn =
               Number.isFinite(savedHashRate) &&
                       savedHashRate >= 0
                   ? savedHashRate
-                  : DEFAULT_HASH_RATE;
+                  : 0;
 
 
             // ==================================================
@@ -217,10 +285,8 @@ const dailyCheckIn =
 
                 hashRate: currentHashRate,
 
-                // Flutter-yhteensopivuus
                 streak: currentStreak,
 
-                // Backend-yhteensopivuus
                 dailyStreak: currentStreak,
 
                 message:
@@ -232,33 +298,62 @@ const dailyCheckIn =
 
 
             // ==================================================
-            // 🎁 DAILY BONUS
+            // 🔥 CALCULATE NEW STREAK
             // ==================================================
-
-            const configuredBonus =
-              Number(DAILY_HASH_RATE_BONUS);
-
-
-            const bonus =
-              Number.isFinite(configuredBonus) &&
-                      configuredBonus > 0
-                  ? configuredBonus
-                  : 1;
-
-
-            const newHashRate =
-              currentHashRate +
-              bonus;
-
-
-            // ==================================================
-            // 🔥 DAILY STREAK
+            //
+            // Jos eilinen Daily oli kerätty:
+            //
+            //   streak + 1
+            //
+            // Muussa tapauksessa:
+            //
+            //   uusi streak alkaa päivästä 1.
+            //
             // ==================================================
 
             const newDailyStreak =
               lastDailyDate === yesterday
                 ? currentStreak + 1
                 : 1;
+
+
+            // ==================================================
+            // ⚡ CALCULATE DAILY HASH RATE
+            // ==================================================
+
+            const dailyHashRate =
+              calculateDailyHashRate(
+                newDailyStreak
+              );
+
+
+            // ==================================================
+            // 📊 PREVIOUS HASH RATE
+            // ==================================================
+
+            const previousHashRate =
+              currentHashRate;
+
+
+            // ==================================================
+            // ⚡ NEW HASH RATE
+            // ============================================================
+            //
+            // Daily Hash Rate korvaa vanhan Daily-bonuksen
+            // kumulatiivisen lisäämisen.
+            //
+            // Esimerkiksi:
+            //
+            // vanha HR = 1.5
+            // uusi streak = päivä 4
+            // Daily HR = 2.0
+            //
+            // => hashRate = 2.0
+            //
+            // ============================================================
+
+            const newHashRate =
+              dailyHashRate;
 
 
             // ==================================================
@@ -280,7 +375,7 @@ const dailyCheckIn =
               userRef,
               {
 
-                // ⚡ HASH RATE
+                // ⚡ DAILY HASH RATE
 
                 hashRate:
                   newHashRate,
@@ -321,22 +416,28 @@ const dailyCheckIn =
 
 
                 bonusType:
-                  "hashRate",
+                  "dailyHashRate",
 
+
+                // Daily Hash Rate kyseisenä päivänä
 
                 bonus:
-                  bonus,
+                  dailyHashRate,
 
+
+                // Hash Rate ennen Daily Check-Iniä
 
                 previousHashRate:
-                  currentHashRate,
+                  previousHashRate,
 
+
+                // Hash Rate Daily Check-Inin jälkeen
 
                 newHashRate:
                   newHashRate,
 
 
-                // Flutter + backend compatibility
+                // Daily Streak
 
                 streak:
                   newDailyStreak,
@@ -344,6 +445,12 @@ const dailyCheckIn =
 
                 dailyStreak:
                   newDailyStreak,
+
+
+                // Päivän Hash Rate
+
+                dailyHashRate:
+                  dailyHashRate,
 
 
                 date:
@@ -380,18 +487,32 @@ const dailyCheckIn =
 
               date: today,
 
-              bonus: bonus,
+              // Päivän Daily Hash Rate
 
-              hashRate: newHashRate,
+              bonus:
+                dailyHashRate,
 
-              // Flutter odottaa tätä
-              streak: newDailyStreak,
+              dailyHashRate:
+                dailyHashRate,
 
-              // Säilytetään myös tämä
-              dailyStreak: newDailyStreak,
+              // Uusi käyttäjän Hash Rate
+
+              hashRate:
+                newHashRate,
+
+              // Streak
+
+              streak:
+                newDailyStreak,
+
+              dailyStreak:
+                newDailyStreak,
 
               message:
-                "🐱🎁 Daily Bonus kerätty! Hash Rate kasvoi.",
+                `🐱🎁 Daily Bonus kerätty! Päivä ${Math.min(
+                  newDailyStreak,
+                  DAILY_HASH_RATE_MAX_DAY
+                )}: +${dailyHashRate} HR.`,
 
             };
 
