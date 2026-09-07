@@ -64,10 +64,10 @@ class _HomePageState extends State<HomePage>
   // Day 6  = 3.0 HR
   // Day 7+ = 3.5 HR
   //
-  // Päivittäinen HR käsitellään automaattisesti samalla kun
-  // uusi 24 tunnin louhintajakso käynnistetään.
+  // Daily Hash Rate ei ole pysyvästi kertyvä bonus.
   //
-  // Erillistä Daily Bonus -korttia ei enää ole.
+  // Se määräytyy streak-päivän mukaan ja toimii kyseisen
+  // päivittäisen louhintajakson perus-hash-ratena.
   //
   // ============================================================
 
@@ -133,10 +133,6 @@ class _HomePageState extends State<HomePage>
 
   // ============================================================
   // 🎁 DAILY HASH RATE STATE
-  // ============================================================
-  //
-  // Päiväbonus on nyt osa louhinnan päivittäistä käynnistystä.
-  //
   // ============================================================
 
   int _streak = 0;
@@ -426,17 +422,71 @@ class _HomePageState extends State<HomePage>
 
       setState(() {
         // ------------------------------------------------------
-        // MINING
+        // DAILY STREAK
         // ------------------------------------------------------
 
-        _hashRate = _toDouble(
+        _streak = _toInt(
+          data['streak'] ??
+              data['dailyStreak'],
+        );
+
+        // ------------------------------------------------------
+        // DAILY HASH RATE
+        // ------------------------------------------------------
+        //
+        // Backendin arvo on ensisijainen.
+        // Jos sitä ei ole saatavilla, lasketaan arvo streakistä.
+        //
+        // ------------------------------------------------------
+
+        final double backendDailyHashRate =
+            _toDouble(
+          data['dailyHashRate'],
+        );
+
+        if (backendDailyHashRate >=
+                defaultDailyHashRate &&
+            backendDailyHashRate <=
+                maximumDailyHashRate) {
+          _dailyHashRate =
+              backendDailyHashRate;
+        } else {
+          _dailyHashRate =
+              _calculateDailyHashRate(
+            _streak,
+          );
+        }
+
+        // ------------------------------------------------------
+        // BASE HASH RATE
+        // ------------------------------------------------------
+        //
+        // Vanha mahdollinen legacy-arvo, esimerkiksi 12 HR,
+        // ei saa enää näkyä uudessa käyttöliittymässä.
+        //
+        // Sallittu uusi Daily Hash Rate on 0.5–3.5 HR.
+        //
+        // ------------------------------------------------------
+
+        final double backendHashRate =
+            _toDouble(
           data['hashRate'],
         );
 
-        if (_hashRate <= 0) {
+        if (backendHashRate >=
+                defaultDailyHashRate &&
+            backendHashRate <=
+                maximumDailyHashRate) {
           _hashRate =
-              defaultDailyHashRate;
+              backendHashRate;
+        } else {
+          _hashRate =
+              _dailyHashRate;
         }
+
+        // ------------------------------------------------------
+        // MINING
+        // ------------------------------------------------------
 
         _miningBalance = _toDouble(
           data['miningBalance'],
@@ -448,10 +498,6 @@ class _HomePageState extends State<HomePage>
 
         _estimatedTotal = _toDouble(
           data['estimatedTotal'],
-        );
-
-        _miningPerHour = _toDouble(
-          data['miningPerHour'],
         );
 
         _miningActive =
@@ -471,30 +517,6 @@ class _HomePageState extends State<HomePage>
         }
 
         // ------------------------------------------------------
-        // DAILY HASH RATE
-        // ------------------------------------------------------
-
-        _streak = _toInt(
-          data['streak'] ??
-              data['dailyStreak'],
-        );
-
-        final double backendDailyHashRate =
-            _toDouble(
-          data['dailyHashRate'],
-        );
-
-        if (backendDailyHashRate > 0) {
-          _dailyHashRate =
-              backendDailyHashRate;
-        } else {
-          _dailyHashRate =
-              _calculateDailyHashRate(
-            _streak,
-          );
-        }
-
-        // ------------------------------------------------------
         // POWER BOOST
         // ------------------------------------------------------
 
@@ -511,12 +533,15 @@ class _HomePageState extends State<HomePage>
               defaultMaxAdsPerDay;
         }
 
-        _adHashRateBonus =
+        final double backendAdBonus =
             _toDouble(
           data['adHashRateBonus'],
         );
 
-        if (_adHashRateBonus <= 0) {
+        if (backendAdBonus > 0) {
+          _adHashRateBonus =
+              backendAdBonus;
+        } else {
           _adHashRateBonus =
               defaultAdHashRateBonus;
         }
@@ -542,22 +567,32 @@ class _HomePageState extends State<HomePage>
         // ------------------------------------------------------
         // EFFECTIVE HASH RATE
         // ------------------------------------------------------
+        //
+        // Lasketaan käyttöliittymän arvo itse uuden mallin mukaan.
+        //
+        // Base HR:
+        //   0.5–3.5
+        //
+        // Active Power Boost:
+        //   +0.5833
+        //
+        // Maksimi yhtä aikaa:
+        //   4.0833 HR
+        //
+        // ------------------------------------------------------
 
-        final double backendEffectiveHashRate =
-            _toDouble(
-          data['effectiveHashRate'],
-        );
-
-        if (backendEffectiveHashRate > 0) {
+        if (_adBoostActive) {
           _effectiveHashRate =
-              backendEffectiveHashRate;
+              _hashRate +
+                  _adHashRateBonus;
         } else {
           _effectiveHashRate =
-              _adBoostActive
-                  ? _hashRate +
-                      _adHashRateBonus
-                  : _hashRate;
+              _hashRate;
         }
+
+        _miningPerHour =
+            _effectiveHashRate *
+            miningPerHashPerHour;
 
         // ------------------------------------------------------
         // CAN WATCH AD
@@ -576,14 +611,8 @@ class _HomePageState extends State<HomePage>
           _canWatchAd = false;
         }
 
-        // ------------------------------------------------------
-        // FALLBACK MINING RATE
-        // ------------------------------------------------------
-
-        if (_miningPerHour <= 0) {
-          _miningPerHour =
-              _effectiveHashRate *
-              miningPerHashPerHour;
+        if (_cooldownRemainingMs > 0) {
+          _canWatchAd = false;
         }
 
         _loading = false;
@@ -607,10 +636,10 @@ class _HomePageState extends State<HomePage>
   // ⛏️ START / COLLECT MINING
   // ============================================================
   //
-  // Uusi päivittäinen Daily Hash Rate käsitellään backendissä
-  // claimMining-kutsun yhteydessä.
+  // Yksi 24 tunnin mining-jakso.
   //
-  // Tämä on käyttäjän yksi päivittäinen louhinnan käynnistys.
+  // claimMining käsittelee backendissä uuden päivittäisen
+  // streakin ja Daily Hash Raten.
   //
   // ============================================================
 
@@ -714,8 +743,7 @@ class _HomePageState extends State<HomePage>
       );
 
       // --------------------------------------------------------
-      // Päivän Daily Hash Rate tulee nyt suoraan claimMining-
-      // vastauksesta.
+      // DAILY HASH RATE
       // --------------------------------------------------------
 
       final int returnedStreak =
@@ -726,8 +754,7 @@ class _HomePageState extends State<HomePage>
 
       final double returnedDailyHashRate =
           _toDouble(
-        data['dailyHashRate'] ??
-            data['hashRate'],
+        data['dailyHashRate'],
       );
 
       if (returnedStreak > 0) {
@@ -735,7 +762,10 @@ class _HomePageState extends State<HomePage>
             returnedStreak;
       }
 
-      if (returnedDailyHashRate > 0) {
+      if (returnedDailyHashRate >=
+              defaultDailyHashRate &&
+          returnedDailyHashRate <=
+              maximumDailyHashRate) {
         _dailyHashRate =
             returnedDailyHashRate;
       } else {
@@ -744,6 +774,22 @@ class _HomePageState extends State<HomePage>
           _streak,
         );
       }
+
+      // --------------------------------------------------------
+      // BASE HASH RATE
+      // --------------------------------------------------------
+
+      if (_dailyHashRate >=
+              defaultDailyHashRate &&
+          _dailyHashRate <=
+              maximumDailyHashRate) {
+        _hashRate =
+            _dailyHashRate;
+      }
+
+      // --------------------------------------------------------
+      // MESSAGE
+      // --------------------------------------------------------
 
       if (alreadyMining) {
         _showMessage(
@@ -2317,16 +2363,11 @@ class _HomePageState extends State<HomePage>
           ),
 
           const SizedBox(
-            height: 8,
+            height: 10,
           ),
 
           // ------------------------------------------------------
           // 🎁 DAILY HASH RATE
-          // ------------------------------------------------------
-          //
-          // Päivittäinen bonus näkyy nyt osana normaalia
-          // louhintatietoa.
-          //
           // ------------------------------------------------------
 
           Row(
@@ -2390,32 +2431,32 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
+          // ------------------------------------------------------
+          // ⚡ ACTIVE POWER BOOST
+          // ------------------------------------------------------
+
           if (_adBoostActive) ...[
             const SizedBox(
               height: 8,
             ),
 
-            Row(
-              children: [
-                Text(
-                  _localization.getWithParams(
-                    'hashRateBonus',
-                    params: {
-                      'amount':
-                          _adHashRateBonus
-                              .toStringAsFixed(4),
-                    },
-                  ),
-                  style:
-                      const TextStyle(
-                    color:
-                        goldColor,
-                    fontSize: 12,
-                    fontWeight:
-                        FontWeight.w600,
-                  ),
-                ),
-              ],
+            Text(
+              _localization.getWithParams(
+                'hashRateBonus',
+                params: {
+                  'amount':
+                      _adHashRateBonus
+                          .toStringAsFixed(4),
+                },
+              ),
+              style:
+                  const TextStyle(
+                color:
+                    goldColor,
+                fontSize: 12,
+                fontWeight:
+                    FontWeight.w600,
+              ),
             ),
 
             const SizedBox(
