@@ -101,9 +101,29 @@ class AppLocalizations {
       'adRewardDuplicate':
           '🐱📺 Mainospalkinto on jo käsitelty.',
       'powerBoostReward':
-          '🐱⚡ Stella sai +{amount} Hash Rate Power Boostin!',
+          '🐱⚡ Stella sai +{amount} HR Power Boostin!',
       'powerBoostFailed':
           '🐱 Power Boost epäonnistui.',
+      'powerBoostOffer':
+          '+{amount} HR • {hours} tuntia',
+      'powerBoostActive':
+          'Power Boost on aktiivinen ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST ON AKTIIVINEN',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost on jo aktiivinen. Aikaa jäljellä: {time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Stella Power Boost on jo aktiivinen!',
+      'nextPowerBoostMessage':
+          '⏳ Seuraava Power Boost on käytettävissä ajassa {time}.',
+      'nextAdAfterBoost':
+          'Seuraava mainos on käytettävissä, kun tämä Power Boost päättyy.',
+      'maxBoostsInfo':
+          'Enintään {max} Power Boostia päivässä • {hours} tuntia kerrallaan',
+      'effectiveHashRateLabel':
+          '⚡ Tehokas Hash Rate: {amount} HR',
+      'dailyHashRateLabel':
+          'Päivän Hash Rate: {amount} HR',
 
       // Daily Bonus
       'dailyClaim': 'Päivittäinen palkinto',
@@ -112,14 +132,20 @@ class AppLocalizations {
       'streak': 'Päiväputki',
       'stellaDailyBonus': 'STELLAN PÄIVÄBONUS',
       'dailyBonusDescription':
-          'Daily Hash Rate: {amount} HR • 🔥 {streak} päivän putki',
+          'Päivän Hash Rate: {amount} HR • 🔥 {streak} päivän putki',
+      'dailyHashRateDay':
+          'Päivä {day} • Päivän Hash Rate {amount} HR',
+      'dailyHashRateMaximum':
+          'Päivä 7+ saavuttaa päivittäisen Hash Raten maksimin: {amount} HR.',
       'claimDailyBonus': '🎁 LUNASTA PÄIVÄBONUS',
       'bonusClaimedToday':
           '🐱 BONUS LUNASTETTU TÄNÄÄN',
       'dailyBonusAlreadyClaimed':
           '🐱 Stella Daily Bonus on jo kerätty tänään!',
       'dailyBonusSuccess':
-          '🐱🎁 Daily Hash Rate: {amount} HR! Putki: {streak} 🔥',
+          '🐱🎁 Päivän Hash Rate: {amount} HR! Putki: {streak} 🔥',
+      'dailyHashRateSuccess':
+          '🐱🎁 Päivän Hash Rate: {amount} HR! Putki: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Daily Bonus epäonnistui.',
 
@@ -236,9 +262,29 @@ class AppLocalizations {
       'adRewardDuplicate':
           '🐱📺 The ad reward has already been processed.',
       'powerBoostReward':
-          '🐱⚡ Stella received +{amount} Hash Rate from Power Boost!',
+          '🐱⚡ Stella received +{amount} HR from Power Boost!',
       'powerBoostFailed':
           '🐱 Power Boost failed.',
+      'powerBoostOffer':
+          '+{amount} HR • {hours} hours',
+      'powerBoostActive':
+          'Power Boost is active ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST ACTIVE',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost is already active. Time remaining: {time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Stella Power Boost is already active!',
+      'nextPowerBoostMessage':
+          '⏳ Next Power Boost will be available in {time}.',
+      'nextAdAfterBoost':
+          'The next ad is available when this Power Boost ends.',
+      'maxBoostsInfo':
+          'Maximum {max} Power Boosts per day • {hours} hours each',
+      'effectiveHashRateLabel':
+          '⚡ Effective Hash Rate: {amount} HR',
+      'dailyHashRateLabel':
+          'Daily Hash Rate: {amount} HR',
 
       // Daily Bonus
       'dailyClaim': 'Daily reward',
@@ -248,12 +294,18 @@ class AppLocalizations {
       'stellaDailyBonus': 'STELLA DAILY BONUS',
       'dailyBonusDescription':
           'Daily Hash Rate: {amount} HR • 🔥 {streak} day streak',
+      'dailyHashRateDay':
+          'Day {day} • Daily Hash Rate {amount} HR',
+      'dailyHashRateMaximum':
+          'Day 7+ reaches the maximum Daily Hash Rate of {amount} HR.',
       'claimDailyBonus': '🎁 CLAIM DAILY BONUS',
       'bonusClaimedToday':
           '🐱 BONUS CLAIMED TODAY',
       'dailyBonusAlreadyClaimed':
           '🐱 Stella Daily Bonus has already been claimed today!',
       'dailyBonusSuccess':
+          '🐱🎁 Daily Hash Rate: {amount} HR! Streak: {streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 Daily Hash Rate: {amount} HR! Streak: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Daily Bonus failed.',
@@ -367,9 +419,29 @@ class AppLocalizations {
       'adRewardDuplicate':
           '🐱📺 Die Werbeprämie wurde bereits verarbeitet.',
       'powerBoostReward':
-          '🐱⚡ Stella erhielt +{amount} Hash Rate durch Power Boost!',
+          '🐱⚡ Stella erhielt +{amount} HR durch Power Boost!',
       'powerBoostFailed':
           '🐱 Power Boost fehlgeschlagen.',
+      'powerBoostOffer':
+          '+{amount} HR • {hours} Stunden',
+      'powerBoostActive':
+          'Power Boost ist aktiv ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST AKTIV',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost ist bereits aktiv. Verbleibende Zeit: {time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Stella Power Boost ist bereits aktiv!',
+      'nextPowerBoostMessage':
+          '⏳ Der nächste Power Boost ist in {time} verfügbar.',
+      'nextAdAfterBoost':
+          'Die nächste Werbung ist verfügbar, sobald dieser Power Boost endet.',
+      'maxBoostsInfo':
+          'Maximal {max} Power Boosts pro Tag • jeweils {hours} Stunden',
+      'effectiveHashRateLabel':
+          '⚡ Effektive Hash Rate: {amount} HR',
+      'dailyHashRateLabel':
+          'Tägliche Hash Rate: {amount} HR',
 
       'dailyClaim': 'Tägliche Belohnung',
       'dailyReward': 'TAGESBELOHNUNG ABHOLEN',
@@ -378,12 +450,18 @@ class AppLocalizations {
       'stellaDailyBonus': 'STELLAS TAGESBONUS',
       'dailyBonusDescription':
           'Tägliche Hash Rate: {amount} HR • 🔥 {streak} Tage Serie',
+      'dailyHashRateDay':
+          'Tag {day} • Tägliche Hash Rate {amount} HR',
+      'dailyHashRateMaximum':
+          'Ab Tag 7 wird das Maximum von {amount} HR erreicht.',
       'claimDailyBonus': '🎁 TAGESBONUS ABHOLEN',
       'bonusClaimedToday':
           '🐱 BONUS HEUTE ABGEHOLT',
       'dailyBonusAlreadyClaimed':
           '🐱 Stellas Tagesbonus wurde heute bereits abgeholt!',
       'dailyBonusSuccess':
+          '🐱🎁 Tägliche Hash Rate: {amount} HR! Serie: {streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 Tägliche Hash Rate: {amount} HR! Serie: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Tagesbonus fehlgeschlagen.',
@@ -494,9 +572,29 @@ class AppLocalizations {
       'adRewardDuplicate':
           '🐱📺 La recompensa del anuncio ya fue procesada.',
       'powerBoostReward':
-          '🐱⚡ ¡Stella recibió +{amount} Hash Rate con Power Boost!',
+          '🐱⚡ ¡Stella recibió +{amount} HR con Power Boost!',
       'powerBoostFailed':
           '🐱 Power Boost falló.',
+      'powerBoostOffer':
+          '+{amount} HR • {hours} horas',
+      'powerBoostActive':
+          'Power Boost está activo ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST ACTIVO',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost ya está activo. Tiempo restante: {time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ ¡El Power Boost de Stella ya está activo!',
+      'nextPowerBoostMessage':
+          '⏳ El próximo Power Boost estará disponible en {time}.',
+      'nextAdAfterBoost':
+          'El próximo anuncio estará disponible cuando termine este Power Boost.',
+      'maxBoostsInfo':
+          'Máximo {max} Power Boosts al día • {hours} horas cada uno',
+      'effectiveHashRateLabel':
+          '⚡ Hash Rate efectivo: {amount} HR',
+      'dailyHashRateLabel':
+          'Hash Rate diario: {amount} HR',
 
       'dailyClaim': 'Recompensa diaria',
       'dailyReward': 'RECLAMAR RECOMPENSA DIARIA',
@@ -505,12 +603,18 @@ class AppLocalizations {
       'stellaDailyBonus': 'BONO DIARIO DE STELLA',
       'dailyBonusDescription':
           'Hash Rate diario: {amount} HR • 🔥 racha de {streak} días',
+      'dailyHashRateDay':
+          'Día {day} • Hash Rate diario {amount} HR',
+      'dailyHashRateMaximum':
+          'Desde el día 7 se alcanza el máximo de {amount} HR.',
       'claimDailyBonus': '🎁 RECLAMAR BONO DIARIO',
       'bonusClaimedToday':
           '🐱 BONO RECLAMADO HOY',
       'dailyBonusAlreadyClaimed':
           '🐱 ¡El bono diario de Stella ya fue reclamado hoy!',
       'dailyBonusSuccess':
+          '🐱🎁 Hash Rate diario: {amount} HR! Racha: {streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 Hash Rate diario: {amount} HR! Racha: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 El bono diario falló.',
@@ -622,9 +726,29 @@ class AppLocalizations {
       'adRewardDuplicate':
           '🐱📺 La récompense publicitaire a déjà été traitée.',
       'powerBoostReward':
-          '🐱⚡ Stella a reçu +{amount} Hash Rate grâce au Power Boost !',
+          '🐱⚡ Stella a reçu +{amount} HR grâce au Power Boost !',
       'powerBoostFailed':
           '🐱 Échec du Power Boost.',
+      'powerBoostOffer':
+          '+{amount} HR • {hours} heures',
+      'powerBoostActive':
+          'Power Boost actif ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST ACTIF',
+      'powerBoostActiveMessage':
+          '🐱⚡ Le Power Boost est déjà actif. Temps restant : {time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Le Power Boost de Stella est déjà actif !',
+      'nextPowerBoostMessage':
+          '⏳ Le prochain Power Boost sera disponible dans {time}.',
+      'nextAdAfterBoost':
+          'La prochaine publicité sera disponible lorsque ce Power Boost sera terminé.',
+      'maxBoostsInfo':
+          'Maximum {max} Power Boosts par jour • {hours} heures chacun',
+      'effectiveHashRateLabel':
+          '⚡ Hash Rate effectif : {amount} HR',
+      'dailyHashRateLabel':
+          'Hash Rate quotidien : {amount} HR',
 
       'dailyClaim': 'Récompense quotidienne',
       'dailyReward': 'RÉCLAMER LA RÉCOMPENSE',
@@ -633,12 +757,18 @@ class AppLocalizations {
       'stellaDailyBonus': 'BONUS QUOTIDIEN DE STELLA',
       'dailyBonusDescription':
           'Hash Rate quotidien : {amount} HR • 🔥 série de {streak} jours',
+      'dailyHashRateDay':
+          'Jour {day} • Hash Rate quotidien {amount} HR',
+      'dailyHashRateMaximum':
+          'À partir du jour 7, le maximum de {amount} HR est atteint.',
       'claimDailyBonus': '🎁 RÉCLAMER LE BONUS QUOTIDIEN',
       'bonusClaimedToday':
           '🐱 BONUS RÉCLAMÉ AUJOURD’HUI',
       'dailyBonusAlreadyClaimed':
           '🐱 Le bonus quotidien de Stella a déjà été réclamé aujourd’hui !',
       'dailyBonusSuccess':
+          '🐱🎁 Hash Rate quotidien : {amount} HR ! Série : {streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 Hash Rate quotidien : {amount} HR ! Série : {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Échec du bonus quotidien.',
@@ -753,6 +883,26 @@ class AppLocalizations {
           '🐱⚡ Stella 通过 Power Boost 获得了 +{amount} 算力！',
       'powerBoostFailed':
           '🐱 Power Boost 失败。',
+      'powerBoostOffer':
+          '+{amount} 算力 • {hours} 小时',
+      'powerBoostActive':
+          'Power Boost 正在生效 ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST 正在生效',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost 已经生效。剩余时间：{time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Stella Power Boost 已经生效！',
+      'nextPowerBoostMessage':
+          '⏳ 下一个 Power Boost 将在 {time} 后可用。',
+      'nextAdAfterBoost':
+          '当前 Power Boost 结束后即可观看下一条广告。',
+      'maxBoostsInfo':
+          '每天最多 {max} 次 Power Boost • 每次 {hours} 小时',
+      'effectiveHashRateLabel':
+          '⚡ 有效算力：{amount} HR',
+      'dailyHashRateLabel':
+          '每日算力：{amount} HR',
 
       'dailyClaim': '每日奖励',
       'dailyReward': '领取每日奖励',
@@ -761,12 +911,18 @@ class AppLocalizations {
       'stellaDailyBonus': 'STELLA 每日奖励',
       'dailyBonusDescription':
           '每日算力：{amount} HR • 🔥 连续 {streak} 天',
+      'dailyHashRateDay':
+          '第 {day} 天 • 每日算力 {amount} HR',
+      'dailyHashRateMaximum':
+          '第 7 天及以后达到最高每日算力 {amount} HR。',
       'claimDailyBonus': '🎁 领取每日奖励',
       'bonusClaimedToday':
           '🐱 今天已领取奖励',
       'dailyBonusAlreadyClaimed':
           '🐱 Stella 的每日奖励今天已经领取过了！',
       'dailyBonusSuccess':
+          '🐱🎁 每日算力：{amount} HR！连续签到：{streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 每日算力：{amount} HR！连续签到：{streak} 🔥',
       'dailyBonusFailed':
           '🐱 每日奖励失败。',
@@ -880,6 +1036,26 @@ class AppLocalizations {
           '🐱⚡ Stella nhận được +{amount} Hash Rate từ Power Boost!',
       'powerBoostFailed':
           '🐱 Power Boost thất bại.',
+      'powerBoostOffer':
+          '+{amount} HR • {hours} giờ',
+      'powerBoostActive':
+          'Power Boost đang hoạt động ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST ĐANG HOẠT ĐỘNG',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost đã đang hoạt động. Thời gian còn lại: {time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Stella Power Boost đang hoạt động!',
+      'nextPowerBoostMessage':
+          '⏳ Power Boost tiếp theo sẽ khả dụng sau {time}.',
+      'nextAdAfterBoost':
+          'Quảng cáo tiếp theo sẽ khả dụng khi Power Boost này kết thúc.',
+      'maxBoostsInfo':
+          'Tối đa {max} Power Boost mỗi ngày • {hours} giờ mỗi lần',
+      'effectiveHashRateLabel':
+          '⚡ Hash Rate hiệu dụng: {amount} HR',
+      'dailyHashRateLabel':
+          'Hash Rate hàng ngày: {amount} HR',
 
       'dailyClaim': 'Phần thưởng hàng ngày',
       'dailyReward': 'NHẬN PHẦN THƯỞNG HÀNG NGÀY',
@@ -888,6 +1064,10 @@ class AppLocalizations {
       'stellaDailyBonus': 'THƯỞNG HÀNG NGÀY CỦA STELLA',
       'dailyBonusDescription':
           'Hash Rate hàng ngày: {amount} HR • 🔥 chuỗi {streak} ngày',
+      'dailyHashRateDay':
+          'Ngày {day} • Hash Rate hàng ngày {amount} HR',
+      'dailyHashRateMaximum':
+          'Từ ngày 7 trở đi đạt tối đa {amount} HR.',
       'claimDailyBonus':
           '🎁 NHẬN THƯỞNG HÀNG NGÀY',
       'bonusClaimedToday':
@@ -895,6 +1075,8 @@ class AppLocalizations {
       'dailyBonusAlreadyClaimed':
           '🐱 Phần thưởng hàng ngày của Stella đã được nhận hôm nay!',
       'dailyBonusSuccess':
+          '🐱🎁 Hash Rate hàng ngày: {amount} HR! Chuỗi: {streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 Hash Rate hàng ngày: {amount} HR! Chuỗi: {streak} 🔥',
       'dailyBonusFailed':
           '🐱 Nhận thưởng hàng ngày thất bại.',
@@ -1009,6 +1191,26 @@ class AppLocalizations {
           '🐱⚡ Power Boost で Stella が +{amount} ハッシュレートを獲得しました！',
       'powerBoostFailed':
           '🐱 Power Boost に失敗しました。',
+      'powerBoostOffer':
+          '+{amount} HR • {hours}時間',
+      'powerBoostActive':
+          'Power Boost が有効です ⚡',
+      'powerBoostActiveTitle':
+          '⚡ STELLA POWER BOOST 有効中',
+      'powerBoostActiveMessage':
+          '🐱⚡ Power Boost はすでに有効です。残り時間：{time}',
+      'powerBoostAlreadyActive':
+          '🐱⚡ Stella Power Boost はすでに有効です！',
+      'nextPowerBoostMessage':
+          '⏳ 次の Power Boost は {time} 後に利用できます。',
+      'nextAdAfterBoost':
+          'この Power Boost が終了すると次の広告を利用できます。',
+      'maxBoostsInfo':
+          '1日最大 {max} 回の Power Boost • 1回 {hours} 時間',
+      'effectiveHashRateLabel':
+          '⚡ 実効ハッシュレート：{amount} HR',
+      'dailyHashRateLabel':
+          'デイリーハッシュレート：{amount} HR',
 
       'dailyClaim': '毎日の報酬',
       'dailyReward': '毎日の報酬を受け取る',
@@ -1017,6 +1219,10 @@ class AppLocalizations {
       'stellaDailyBonus': 'STELLA デイリーボーナス',
       'dailyBonusDescription':
           '毎日のハッシュレート: {amount} HR • 🔥 {streak}日連続',
+      'dailyHashRateDay':
+          '{day}日目 • デイリーハッシュレート {amount} HR',
+      'dailyHashRateMaximum':
+          '7日目以降は最大 {amount} HR に到達します。',
       'claimDailyBonus':
           '🎁 デイリーボーナスを受け取る',
       'bonusClaimedToday':
@@ -1024,6 +1230,8 @@ class AppLocalizations {
       'dailyBonusAlreadyClaimed':
           '🐱 Stella のデイリーボーナスは本日すでに受け取っています！',
       'dailyBonusSuccess':
+          '🐱🎁 毎日のハッシュレート: {amount} HR！連続記録：{streak} 🔥',
+      'dailyHashRateSuccess':
           '🐱🎁 毎日のハッシュレート: {amount} HR！連続記録：{streak} 🔥',
       'dailyBonusFailed':
           '🐱 デイリーボーナスに失敗しました。',
