@@ -2557,7 +2557,7 @@ class _HomePageState extends State<HomePage>
                   children: [
                     Text(
                       _localization.get(
-                        'stellaPowerBoost',
+                        'powerBoost',
                       ),
                       style:
                           const TextStyle(
@@ -2770,11 +2770,13 @@ class _HomePageState extends State<HomePage>
                 ),
                 child:
                     Text(
-                  '${_localization.get('watchAd')} • $subtitle',
+                  _localization.get(
+                    'watchAd',
+                  ),
                   textAlign:
                       TextAlign.center,
                   maxLines:
-                      2,
+                      1,
                   overflow:
                       TextOverflow.ellipsis,
                 ),
