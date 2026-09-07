@@ -16,6 +16,7 @@ import '../token/stl_token_page.dart';
 import '../tokenomics/tokenomics_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
+import 'stella_mining_card.dart';
 
 // ============================================================
 // 🐱 STELLURIINI HOME PAGE
@@ -1735,223 +1736,16 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    return Container(
-      padding:
-          const EdgeInsets.all(
-        24,
-      ),
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          30,
-        ),
-        gradient:
-            const LinearGradient(
-          begin:
-              Alignment.topLeft,
-          end:
-              Alignment.bottomRight,
-          colors: [
-            Color(0xFF2D174D),
-            Color(0xFF1B1033),
-          ],
-        ),
-        border:
-            Border.all(
-          color:
-              accentColor.withValues(
-            alpha: 0.4,
-          ),
-        ),
-        boxShadow:
-            const [
-              BoxShadow(
-                color:
-                    Color(0x55000000),
-                blurRadius: 25,
-                offset:
-                    Offset(0, 10),
-              ),
-            ],
-      ),
-      child:
-          Column(
-        children: [
-          AnimatedBuilder(
-            animation:
-                _catAnimation,
-            builder:
-                (
-              context,
-              child,
-            ) {
-              return Transform.translate(
-                offset:
-                    Offset(
-                  0,
-                  -_catAnimation.value,
-                ),
-                child:
-                    child,
-              );
-            },
-            child:
-                Container(
-              width: 110,
-              height: 110,
-              decoration:
-                  BoxDecoration(
-                shape:
-                    BoxShape.circle,
-                color:
-                    accentColor.withValues(
-                  alpha: 0.15,
-                ),
-              ),
-              child:
-                  const Center(
-                child:
-                    Text(
-                  '🐱⛏️',
-                  style:
-                      TextStyle(
-                    fontSize: 55,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 18,
-          ),
-
-          Text(
-            title,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
-              fontSize: 20,
-              fontWeight:
-                  FontWeight.bold,
-              letterSpacing: 1,
-            ),
-          ),
-
-          const SizedBox(
-            height: 8,
-          ),
-
-          Text(
-            subtitle,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
-              fontSize: 14,
-            ),
-          ),
-
-          const SizedBox(
-            height: 24,
-          ),
-
-          Text(
-            _formatStl(
-              _unclaimedMining,
-            ),
-            style:
-                const TextStyle(
-              color:
-                  goldColor,
-              fontSize: 38,
-              fontWeight:
-                  FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(
-            height: 4,
-          ),
-
-          Text(
-            _localization.get(
-              'stlMined',
-            ),
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFFBFAEDB),
-              letterSpacing:
-                  2,
-              fontSize: 12,
-            ),
-          ),
-
-          const SizedBox(
-            height: 24,
-          ),
-
-          Container(
-            width:
-                double.infinity,
-            padding:
-                const EdgeInsets.symmetric(
-              vertical: 15,
-              horizontal: 20,
-            ),
-            decoration:
-                BoxDecoration(
-              color:
-                  Colors.black.withValues(
-                alpha: 0.20,
-              ),
-              borderRadius:
-                  BorderRadius.circular(
-                18,
-              ),
-            ),
-            child:
-                Column(
-              children: [
-                Text(
-                  timerText,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-                    fontSize: 27,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 5,
-                ),
-
-                Text(
-                  timerLabel,
-                  style:
-                      const TextStyle(
-                    color:
-                        Color(0xFFBFAEDB),
-                    fontSize: 11,
-                    letterSpacing:
-                        1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return StellaMiningCard(
+      miningActive: _miningActive,
+      miningComplete: completed,
+      unclaimedMining: _unclaimedMining,
+      miningRemainingMs: _miningRemainingMs,
+      miningTitle: title,
+      miningSubtitle: subtitle,
+      timerText: timerText,
+      timerLabel: timerLabel,
+      catAnimation: _catAnimation,
     );
   }
 
