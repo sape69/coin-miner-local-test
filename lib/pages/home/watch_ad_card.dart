@@ -10,6 +10,7 @@ const Color cardColor = Color(0xFF21113B);
 const Color watchAdAccentColor = Color(0xFFB58CFF);
 const Color watchAdPinkColor = Color(0xFFFFB7E8);
 const Color watchAdGoldColor = Color(0xFFFFD166);
+const Color watchAdSecondaryTextColor = Color(0xFFBFAEDB);
 
 // ============================================================
 // WATCH AD CARD
@@ -17,157 +18,334 @@ const Color watchAdGoldColor = Color(0xFFFFD166);
 
 class WatchAdCard extends StatelessWidget {
   // ==========================================================
-  // AD / BOOST CONSTANTS
+  // DEFAULT POWER BOOST VALUES
   // ==========================================================
 
-  static const double adHashRateBonus = 0.5833;
-  static const int adBoostDurationHours = 4;
+  static const double defaultAdHashRateBonus = 0.5833;
+  static const int defaultAdBoostDurationHours = 4;
 
   // ==========================================================
-  // REQUIRED DATA
+  // BASIC TEXT
   // ==========================================================
 
   final String title;
   final String dailyLimitText;
 
+  final String watchButtonText;
+  final String loadingText;
+  final String limitReachedText;
+  final String unavailableText;
+  final String nextAdText;
+
+  // ==========================================================
+  // STATUS / DESCRIPTION TEXT
+  // ==========================================================
+
+  final String powerBoostActiveText;
+  final String powerBoostOfferText;
+  final String powerBoostActiveTitleText;
+  final String remainingText;
+  final String nextAdAfterBoostText;
+
+  final String adsTodayText;
+  final String maxBoostsInfoText;
+
+  // ==========================================================
+  // POWER BOOST STATE
+  // ==========================================================
+
   final int adsToday;
   final int maxAdsPerDay;
 
   final bool canWatch;
-  final String nextAdText;
 
   final bool adLoading;
   final bool adReady;
 
-  final String loadingText;
-  final String limitReachedText;
-  final String unavailableText;
-  final String watchButtonText;
+  final bool adBoostActive;
+
+  final Duration adBoostRemaining;
+
+  final Duration cooldownRemaining;
+
+  final double adHashRateBonus;
+
+  // ==========================================================
+  // CALLBACK
+  // ==========================================================
 
   final VoidCallback? onPressed;
 
-  // ==========================================================
-  // OPTIONAL BOOST DATA
-  // ==========================================================
-
-  /// True when Stella currently has an active 4-hour ad boost.
-  final bool adBoostActive;
-
-  /// Remaining duration of the currently active boost.
-  final Duration adBoostRemaining;
-
-  /// Current temporary boost Hash Rate.
-  ///
-  /// Defaults to +0.5833 HR so the widget can be used before
-  /// HomePage is updated to pass the backend value.
-  final double adBoostHashRate;
-
   const WatchAdCard({
     super.key,
+
+    // Basic text
     required this.title,
     required this.dailyLimitText,
-    required this.adsToday,
-    required this.maxAdsPerDay,
-    required this.canWatch,
-    required this.nextAdText,
-    required this.adLoading,
-    required this.adReady,
+    required this.watchButtonText,
     required this.loadingText,
     required this.limitReachedText,
     required this.unavailableText,
-    required this.watchButtonText,
+    required this.nextAdText,
+
+    // Status text
+    required this.powerBoostActiveText,
+    required this.powerBoostOfferText,
+    required this.powerBoostActiveTitleText,
+    required this.remainingText,
+    required this.nextAdAfterBoostText,
+    required this.adsTodayText,
+    required this.maxBoostsInfoText,
+
+    // State
+    required this.adsToday,
+    required this.maxAdsPerDay,
+    required this.canWatch,
+    required this.adLoading,
+    required this.adReady,
+    required this.adBoostActive,
+    required this.adBoostRemaining,
+    required this.cooldownRemaining,
+
+    // Boost
+    this.adHashRateBonus = defaultAdHashRateBonus,
+
+    // Callback
     required this.onPressed,
-    this.adBoostActive = false,
-    this.adBoostRemaining = Duration.zero,
-    this.adBoostHashRate = adHashRateBonus,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    // ========================================================
-    // STATUS
-    // ========================================================
+  // ==========================================================
+  // BOOST ACTIVE
+  // ==========================================================
 
-    final limitReached = adsToday >= maxAdsPerDay;
+  bool get boostActive =>
+      adBoostActive &&
+      adBoostRemaining > Duration.zero;
 
-    final boostActive =
-        adBoostActive && adBoostRemaining > Duration.zero;
+  // ==========================================================
+  // DAILY LIMIT
+  // ==========================================================
 
-    final isDisabled =
-        adLoading ||
-        limitReached ||
-        !canWatch ||
-        !adReady ||
-        boostActive ||
-        onPressed == null;
+  bool get limitReached =>
+      adsToday >= maxAdsPerDay;
 
-    String buttonText;
-    String leftEmoji;
-    String rightEmoji;
+  // ==========================================================
+  // BUTTON AVAILABLE
+  // ==========================================================
 
-    if (adLoading) {
-      buttonText = loadingText;
-      leftEmoji = '⏳';
-      rightEmoji = '🐾';
-    } else if (limitReached) {
-      buttonText = limitReachedText;
-      leftEmoji = '😿';
-      rightEmoji = '🐾';
-    } else if (boostActive) {
-      buttonText = formatBoostRemaining(adBoostRemaining);
-      leftEmoji = '⚡';
-      rightEmoji = '🐱';
-    } else if (!canWatch) {
-      buttonText = nextAdText;
-      leftEmoji = '⏰';
-      rightEmoji = '🐱';
-    } else if (!adReady) {
-      buttonText = unavailableText;
-      leftEmoji = '🐱';
-      rightEmoji = '💤';
-    } else {
-      buttonText = watchButtonText;
-      leftEmoji = '📺';
-      rightEmoji = '⚡';
+  bool get canUseButton =>
+      !adLoading &&
+      !limitReached &&
+      canWatch &&
+      adReady &&
+      !boostActive &&
+      cooldownRemaining <= Duration.zero &&
+      onPressed != null;
+
+  // ==========================================================
+  // FORMAT BOOST TIME
+  // ==========================================================
+
+  String formatBoostRemaining(
+    Duration duration,
+  ) {
+    if (duration <= Duration.zero) {
+      return '00:00:00';
     }
 
-    // ========================================================
-    // PROGRESS
-    // ========================================================
+    final int totalSeconds =
+        duration.inSeconds;
 
-    final rawProgress =
-        maxAdsPerDay > 0
-            ? adsToday / maxAdsPerDay
-            : 0.0;
+    final int hours =
+        totalSeconds ~/ 3600;
 
-    final progress =
-        rawProgress.clamp(0.0, 1.0).toDouble();
+    final int minutes =
+        (totalSeconds % 3600) ~/ 60;
 
-    // ========================================================
-    // CARD
-    // ========================================================
+    final int seconds =
+        totalSeconds % 60;
 
+    final String hoursText =
+        hours.toString().padLeft(2, '0');
+
+    final String minutesText =
+        minutes.toString().padLeft(2, '0');
+
+    final String secondsText =
+        seconds.toString().padLeft(2, '0');
+
+    return '$hoursText:$minutesText:$secondsText';
+  }
+
+  // ==========================================================
+  // PROGRESS
+  // ==========================================================
+
+  double get dailyProgress {
+    if (maxAdsPerDay <= 0) {
+      return 0.0;
+    }
+
+    return (adsToday / maxAdsPerDay)
+        .clamp(0.0, 1.0)
+        .toDouble();
+  }
+
+  // ==========================================================
+  // BUTTON TEXT
+  // ==========================================================
+
+  String get _buttonText {
+    if (adLoading) {
+      return loadingText;
+    }
+
+    if (limitReached) {
+      return limitReachedText;
+    }
+
+    if (boostActive) {
+      return formatBoostRemaining(
+        adBoostRemaining,
+      );
+    }
+
+    if (!canWatch) {
+      return nextAdText;
+    }
+
+    if (!adReady) {
+      return unavailableText;
+    }
+
+    return watchButtonText;
+  }
+
+  // ==========================================================
+  // BUTTON EMOJI
+  // ==========================================================
+
+  String get _leftEmoji {
+    if (adLoading) {
+      return '⏳';
+    }
+
+    if (limitReached) {
+      return '😿';
+    }
+
+    if (boostActive) {
+      return '⚡';
+    }
+
+    if (!canWatch) {
+      return '⏰';
+    }
+
+    if (!adReady) {
+      return '🐱';
+    }
+
+    return '📺';
+  }
+
+  String get _rightEmoji {
+    if (adLoading) {
+      return '🐾';
+    }
+
+    if (limitReached) {
+      return '🐾';
+    }
+
+    if (boostActive) {
+      return '🐱';
+    }
+
+    if (!canWatch) {
+      return '🐱';
+    }
+
+    if (!adReady) {
+      return '💤';
+    }
+
+    return '⚡';
+  }
+
+  // ==========================================================
+  // STATUS TEXT
+  // ==========================================================
+
+  String get _statusText {
+    if (limitReached) {
+      return limitReachedText;
+    }
+
+    if (boostActive) {
+      return powerBoostActiveText;
+    }
+
+    if (cooldownRemaining > Duration.zero) {
+      return nextAdText;
+    }
+
+    if (canWatch && adReady) {
+      return powerBoostOfferText;
+    }
+
+    return unavailableText;
+  }
+
+  // ==========================================================
+  // HEADER SUBTITLE
+  // ==========================================================
+
+  String get _headerSubtitle {
+    if (boostActive) {
+      return powerBoostActiveText;
+    }
+
+    return powerBoostOfferText;
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color: boostActive
-              ? watchAdGoldColor.withValues(alpha: 0.38)
-              : watchAdAccentColor.withValues(alpha: 0.22),
+              ? watchAdGoldColor.withValues(
+                  alpha: 0.38,
+                )
+              : watchAdPinkColor.withValues(
+                  alpha: 0.24,
+                ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.28),
+            color: Colors.black.withValues(
+              alpha: 0.25,
+            ),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment:
+            CrossAxisAlignment.stretch,
         children: [
           // ==================================================
           // HEADER
@@ -179,27 +357,42 @@ class WatchAdCard extends StatelessWidget {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient:
+                      LinearGradient(
                     colors: [
-                      watchAdAccentColor.withValues(
+                      watchAdAccentColor
+                          .withValues(
                         alpha: 0.20,
                       ),
-                      watchAdPinkColor.withValues(
+                      watchAdPinkColor
+                          .withValues(
                         alpha: 0.12,
                       ),
                     ],
+                    begin:
+                        Alignment.topLeft,
+                    end:
+                        Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
                   border: Border.all(
-                    color: watchAdAccentColor.withValues(
+                    color:
+                        watchAdAccentColor
+                            .withValues(
                       alpha: 0.32,
                     ),
                   ),
                 ),
                 child: Center(
                   child: Text(
-                    boostActive ? '⚡' : '📺',
-                    style: const TextStyle(
+                    boostActive
+                        ? '⚡'
+                        : '📺',
+                    style:
+                        const TextStyle(
                       fontSize: 30,
                     ),
                   ),
@@ -214,24 +407,34 @@ class WatchAdCard extends StatelessWidget {
                       CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      title,
+                      maxLines: 1,
+                      overflow:
+                          TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+                        fontWeight:
+                            FontWeight.bold,
+                        letterSpacing:
+                            1.1,
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(
+                      height: 5,
+                    ),
 
                     Text(
-                      boostActive
-                          ? 'Stella’s Power Boost is active ⚡🐱'
-                          : '+${adHashRateBonus.toStringAsFixed(4)} HR '
-                              'for $adBoostDurationHours hours ⚡🐱',
+                      _headerSubtitle,
+                      maxLines: 2,
+                      overflow:
+                          TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(
+                        color: Colors.white
+                            .withValues(
                           alpha: 0.58,
                         ),
                         fontSize: 12,
@@ -243,26 +446,43 @@ class WatchAdCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // ==================================================
-          // ACTIVE BOOST / MINING POWER INFO
+          // BOOST INFORMATION
           // ==================================================
 
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 15,
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 15,
+              vertical: 14,
             ),
-            decoration: BoxDecoration(
+            decoration:
+                BoxDecoration(
               color: boostActive
-                  ? watchAdGoldColor.withValues(alpha: 0.08)
-                  : backgroundColor.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(18),
+                  ? watchAdGoldColor
+                      .withValues(
+                      alpha: 0.08,
+                    )
+                  : backgroundColor
+                      .withValues(
+                      alpha: 0.72,
+                    ),
+              borderRadius:
+                  BorderRadius.circular(
+                17,
+              ),
               border: Border.all(
                 color: boostActive
-                    ? watchAdGoldColor.withValues(alpha: 0.25)
-                    : watchAdPinkColor.withValues(alpha: 0.08),
+                    ? watchAdGoldColor
+                        .withValues(
+                        alpha: 0.25,
+                      )
+                    : watchAdPinkColor
+                        .withValues(
+                        alpha: 0.08,
+                      ),
               ),
             ),
             child: Row(
@@ -270,14 +490,19 @@ class WatchAdCard extends StatelessWidget {
                 Container(
                   width: 42,
                   height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
+                  decoration:
+                      BoxDecoration(
+                    shape:
+                        BoxShape.circle,
+                    gradient:
+                        LinearGradient(
                       colors: [
-                        watchAdAccentColor.withValues(
+                        watchAdAccentColor
+                            .withValues(
                           alpha: 0.20,
                         ),
-                        watchAdGoldColor.withValues(
+                        watchAdGoldColor
+                            .withValues(
                           alpha: 0.12,
                         ),
                       ],
@@ -285,15 +510,20 @@ class WatchAdCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      boostActive ? '⚡' : '🚀',
-                      style: const TextStyle(
+                      boostActive
+                          ? '⚡'
+                          : '🚀',
+                      style:
+                          const TextStyle(
                         fontSize: 22,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(
+                  width: 12,
+                ),
 
                 Expanded(
                   child: Column(
@@ -302,34 +532,48 @@ class WatchAdCard extends StatelessWidget {
                     children: [
                       Text(
                         boostActive
-                            ? 'POWER BOOST ACTIVE'
-                            : 'MINING POWER BOOST',
-                        style: const TextStyle(
-                          color: Colors.white,
+                            ? powerBoostActiveTitleText
+                            : title,
+                        maxLines: 1,
+                        overflow:
+                            TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white,
                           fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing:
+                              0.7,
                         ),
                       ),
 
-                      const SizedBox(height: 4),
+                      const SizedBox(
+                        height: 4,
+                      ),
 
                       Text(
                         boostActive
-                            ? '+${adBoostHashRate.toStringAsFixed(4)} HR '
-                                '• ${formatBoostRemaining(adBoostRemaining)}'
-                            : '+${adHashRateBonus.toStringAsFixed(4)} HR '
-                                '• $adBoostDurationHours hours',
-                        style: TextStyle(
+                            ? '+${adHashRateBonus.toStringAsFixed(4)} HR • '
+                                '${formatBoostRemaining(adBoostRemaining)}'
+                            : powerBoostOfferText,
+                        maxLines: 2,
+                        overflow:
+                            TextOverflow.ellipsis,
+                        style:
+                            TextStyle(
                           color: boostActive
                               ? watchAdGoldColor
-                              : Colors.white.withValues(
+                              : Colors.white
+                                  .withValues(
                                   alpha: 0.50,
                                 ),
                           fontSize: 11,
-                          fontWeight: boostActive
-                              ? FontWeight.w700
-                              : FontWeight.normal,
+                          fontWeight:
+                              boostActive
+                                  ? FontWeight.w700
+                                  : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -346,31 +590,40 @@ class WatchAdCard extends StatelessWidget {
           // ==================================================
 
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
                   '$dailyLimitText: '
                   '$adsToday / $maxAdsPerDay',
-                  style: TextStyle(
-                    color: Colors.white.withValues(
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style:
+                      TextStyle(
+                    color: Colors.white
+                        .withValues(
                       alpha: 0.78,
                     ),
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight:
+                        FontWeight.w600,
                   ),
                 ),
               ),
 
-              const SizedBox(width: 12),
+              const SizedBox(
+                width: 10,
+              ),
 
               Text(
                 '$adsToday/$maxAdsPerDay',
-                style: const TextStyle(
-                  color: watchAdPinkColor,
+                style:
+                    const TextStyle(
+                  color:
+                      watchAdPinkColor,
                   fontSize: 13,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ],
@@ -379,39 +632,58 @@ class WatchAdCard extends StatelessWidget {
           const SizedBox(height: 8),
 
           // ==================================================
-          // PROGRESS BAR
+          // DAILY PROGRESS
           // ==================================================
 
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              value: progress,
+            borderRadius:
+                BorderRadius.circular(
+              20,
+            ),
+            child:
+                LinearProgressIndicator(
+              value: dailyProgress,
               minHeight: 8,
               backgroundColor:
-                  Colors.white.withValues(alpha: 0.07),
+                  Colors.white
+                      .withValues(
+                alpha: 0.07,
+              ),
               valueColor:
-                  const AlwaysStoppedAnimation<Color>(
+                  const AlwaysStoppedAnimation<
+                      Color>(
                 watchAdAccentColor,
               ),
             ),
           ),
 
           // ==================================================
-          // ACTIVE BOOST MESSAGE
+          // ACTIVE BOOST
           // ==================================================
 
           if (boostActive) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: watchAdAccentColor.withValues(
+              padding:
+                  const EdgeInsets.all(
+                14,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    watchAdAccentColor
+                        .withValues(
                   alpha: 0.08,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius:
+                    BorderRadius.circular(
+                  16,
+                ),
                 border: Border.all(
-                  color: watchAdAccentColor.withValues(
+                  color:
+                      watchAdAccentColor
+                          .withValues(
                     alpha: 0.24,
                   ),
                 ),
@@ -420,46 +692,82 @@ class WatchAdCard extends StatelessWidget {
                 children: [
                   const Text(
                     '⚡',
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontSize: 22,
                     ),
                   ),
 
-                  const SizedBox(width: 10),
+                  const SizedBox(
+                    width: 10,
+                  ),
 
                   Expanded(
                     child: Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'STELLA POWER BOOST',
-                          style: TextStyle(
-                            color: watchAdAccentColor,
+                        Text(
+                          powerBoostActiveTitleText,
+                          style:
+                              const TextStyle(
+                            color:
+                                watchAdAccentColor,
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.7,
+                            fontWeight:
+                                FontWeight.bold,
+                            letterSpacing:
+                                0.7,
                           ),
                         ),
 
-                        const SizedBox(height: 3),
+                        const SizedBox(
+                          height: 4,
+                        ),
 
                         Text(
-                          '${formatBoostRemaining(adBoostRemaining)} '
-                          'remaining',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          '$remainingText: '
+                          '${formatBoostRemaining(adBoostRemaining)}',
+                          style:
+                              const TextStyle(
+                            color:
+                                Colors.white,
                             fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            fontWeight:
+                                FontWeight.w600,
                           ),
                         ),
 
-                        const SizedBox(height: 2),
+                        const SizedBox(
+                          height: 3,
+                        ),
 
                         Text(
-                          'The next ad is available after this boost ends.',
-                          style: TextStyle(
-                            color: Colors.white.withValues(
+                          '+${adHashRateBonus.toStringAsFixed(4)} HR',
+                          style:
+                              const TextStyle(
+                            color:
+                                watchAdGoldColor,
+                            fontSize: 11,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 3,
+                        ),
+
+                        Text(
+                          nextAdAfterBoostText,
+                          maxLines: 2,
+                          overflow:
+                              TextOverflow.ellipsis,
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.white
+                                    .withValues(
                               alpha: 0.50,
                             ),
                             fontSize: 11,
@@ -474,22 +782,34 @@ class WatchAdCard extends StatelessWidget {
           ]
 
           // ==================================================
-          // COOLDOWN / NEXT AD
+          // COOLDOWN
           // ==================================================
 
-          else if (adsToday < maxAdsPerDay &&
-              !canWatch) ...[
-            const SizedBox(height: 16),
+          else if (cooldownRemaining >
+                  Duration.zero &&
+              adsToday < maxAdsPerDay) ...[
+            const SizedBox(height: 14),
 
             Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: watchAdGoldColor.withValues(
+              padding:
+                  const EdgeInsets.all(
+                14,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    watchAdGoldColor
+                        .withValues(
                   alpha: 0.08,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius:
+                    BorderRadius.circular(
+                  16,
+                ),
                 border: Border.all(
-                  color: watchAdGoldColor.withValues(
+                  color:
+                      watchAdGoldColor
+                          .withValues(
                     alpha: 0.22,
                   ),
                 ),
@@ -498,20 +818,29 @@ class WatchAdCard extends StatelessWidget {
                 children: [
                   const Text(
                     '😺',
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontSize: 22,
                     ),
                   ),
 
-                  const SizedBox(width: 10),
+                  const SizedBox(
+                    width: 10,
+                  ),
 
                   Expanded(
                     child: Text(
                       nextAdText,
-                      style: const TextStyle(
-                        color: watchAdGoldColor,
+                      maxLines: 2,
+                      overflow:
+                          TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(
+                        color:
+                            watchAdGoldColor,
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
                   ),
@@ -520,7 +849,7 @@ class WatchAdCard extends StatelessWidget {
             ),
           ],
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
 
           // ==================================================
           // WATCH BUTTON
@@ -528,97 +857,134 @@ class WatchAdCard extends StatelessWidget {
 
           SizedBox(
             width: double.infinity,
-            height: 62,
+            height: 60,
             child: Material(
-              color: Colors.transparent,
+              color:
+                  Colors.transparent,
               child: InkWell(
-                onTap: isDisabled
-                    ? null
-                    : onPressed,
-                borderRadius: BorderRadius.circular(18),
+                onTap: canUseButton
+                    ? onPressed
+                    : null,
+                borderRadius:
+                    BorderRadius.circular(
+                  18,
+                ),
                 child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: isDisabled
+                  decoration:
+                      BoxDecoration(
+                    gradient:
+                        canUseButton
+                            ? const LinearGradient(
+                                colors: [
+                                  watchAdAccentColor,
+                                  watchAdPinkColor,
+                                ],
+                                begin:
+                                    Alignment.centerLeft,
+                                end:
+                                    Alignment.centerRight,
+                              )
+                            : null,
+                    color: canUseButton
                         ? null
-                        : const LinearGradient(
-                            colors: [
-                              watchAdAccentColor,
-                              watchAdPinkColor,
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                    color: isDisabled
-                        ? Colors.grey.withValues(
+                        : Colors.grey
+                            .withValues(
                             alpha: 0.18,
-                          )
-                        : null,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: isDisabled
-                        ? []
-                        : [
-                            BoxShadow(
-                              color: watchAdAccentColor
-                                  .withValues(
-                                alpha: 0.25,
-                              ),
-                              blurRadius: 18,
-                              offset: const Offset(0, 7),
-                            ),
-                          ],
+                          ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      18,
+                    ),
+                    boxShadow:
+                        canUseButton
+                            ? [
+                                BoxShadow(
+                                  color:
+                                      watchAdAccentColor
+                                          .withValues(
+                                    alpha:
+                                        0.24,
+                                  ),
+                                  blurRadius:
+                                      18,
+                                  offset:
+                                      const Offset(
+                                    0,
+                                    7,
+                                  ),
+                                ),
+                              ]
+                            : [],
                   ),
                   child: Center(
                     child: adLoading
                         ? const SizedBox(
-                            width: 26,
-                            height: 26,
+                            width: 25,
+                            height: 25,
                             child:
                                 CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: backgroundColor,
+                              strokeWidth:
+                                  3,
+                              color:
+                                  backgroundColor,
                             ),
                           )
                         : Row(
                             mainAxisAlignment:
-                                MainAxisAlignment.center,
+                                MainAxisAlignment
+                                    .center,
                             children: [
                               Text(
-                                leftEmoji,
-                                style: const TextStyle(
-                                  fontSize: 25,
+                                _leftEmoji,
+                                style:
+                                    const TextStyle(
+                                  fontSize:
+                                      23,
                                 ),
                               ),
 
-                              const SizedBox(width: 10),
+                              const SizedBox(
+                                width: 9,
+                              ),
 
                               Flexible(
                                 child: Text(
-                                  buttonText,
+                                  _buttonText,
                                   textAlign:
                                       TextAlign.center,
+                                  maxLines: 2,
                                   overflow:
                                       TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDisabled
-                                        ? Colors.white
+                                  style:
+                                      TextStyle(
+                                    color: canUseButton
+                                        ? backgroundColor
+                                        : Colors
+                                            .white
                                             .withValues(
-                                            alpha: 0.40,
-                                          )
-                                        : backgroundColor,
-                                    fontSize: 14,
+                                            alpha:
+                                                0.40,
+                                          ),
+                                    fontSize:
+                                        13,
                                     fontWeight:
                                         FontWeight.bold,
-                                    letterSpacing: 0.7,
+                                    letterSpacing:
+                                        0.5,
                                   ),
                                 ),
                               ),
 
-                              const SizedBox(width: 10),
+                              const SizedBox(
+                                width: 9,
+                              ),
 
                               Text(
-                                rightEmoji,
-                                style: const TextStyle(
-                                  fontSize: 24,
+                                _rightEmoji,
+                                style:
+                                    const TextStyle(
+                                  fontSize:
+                                      22,
                                 ),
                               ),
                             ],
@@ -629,76 +995,69 @@ class WatchAdCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // ==================================================
-          // STATUS TEXT
+          // STATUS
           // ==================================================
 
-          Center(
-            child: Text(
-              limitReached
-                  ? 'Daily mining boost limit reached 🐱'
-                  : boostActive
-                      ? 'Stella is mining with Power Boost! ⚡🐱'
-                      : canWatch && adReady
-                          ? 'Watch an ad for '
-                              '+${adHashRateBonus.toStringAsFixed(4)} HR '
-                              'for 4 hours! ⚡🐱'
-                          : cooldownRemainingText(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: boostActive
-                    ? watchAdGoldColor.withValues(
-                        alpha: 0.88,
-                      )
-                    : watchAdAccentColor.withValues(
-                        alpha: 0.78,
-                      ),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            _statusText,
+            textAlign:
+                TextAlign.center,
+            maxLines: 2,
+            overflow:
+                TextOverflow.ellipsis,
+            style: TextStyle(
+              color: boostActive
+                  ? watchAdGoldColor
+                      .withValues(
+                      alpha: 0.88,
+                    )
+                  : watchAdAccentColor
+                      .withValues(
+                      alpha: 0.78,
+                    ),
+              fontSize: 11,
+              fontWeight:
+                  FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // ==================================================
+          // FOOTER
+          // ==================================================
+
+          Text(
+            maxBoostsInfoText,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  Color(0xFF6F5C84),
+              fontSize: 10,
+            ),
+          ),
+
+          const SizedBox(height: 3),
+
+          Text(
+            '$adsToday/$maxAdsPerDay • '
+            '$adsTodayText',
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  Color(0xFF8D7BA8),
+              fontSize: 10,
             ),
           ),
         ],
       ),
     );
-  }
-
-  // ==========================================================
-  // FORMAT BOOST TIME
-  // ==========================================================
-
-  String formatBoostRemaining(Duration duration) {
-    if (duration <= Duration.zero) {
-      return '00:00:00';
-    }
-
-    final totalSeconds = duration.inSeconds;
-
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
-    final hoursText =
-        hours.toString().padLeft(2, '0');
-    final minutesText =
-        minutes.toString().padLeft(2, '0');
-    final secondsText =
-        seconds.toString().padLeft(2, '0');
-
-    return '$hoursText:$minutesText:$secondsText';
-  }
-
-  // ==========================================================
-  // STATUS TEXT
-  // ==========================================================
-
-  String cooldownRemainingText() {
-    if (nextAdText.isEmpty) {
-      return 'Preparing Stella’s next mining boost 🐱';
-    }
-
-    return nextAdText;
   }
 }
