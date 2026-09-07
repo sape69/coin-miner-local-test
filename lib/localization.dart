@@ -1,1304 +1,584 @@
-class AppLocalizations {
+import 'package:flutter/material.dart';
+
+class AppLocalization {
   final String languageCode;
 
-  AppLocalizations(this.languageCode);
+  const AppLocalization(this.languageCode);
 
-  // ==========================================================
-  // 🌍 SUPPORTED LANGUAGES
-  // ==========================================================
-
-  static const Map<String, String> supportedLanguages = {
-    'fi': '🇫🇮 Suomi',
-    'en': '🇬🇧 English',
-    'de': '🇩🇪 Deutsch',
-    'es': '🇪🇸 Español',
-    'fr': '🇫🇷 Français',
-    'zh': '🇨🇳 中文',
-    'vi': '🇻🇳 Tiếng Việt',
-    'ja': '🇯🇵 日本語',
-  };
-
-  // ==========================================================
-  // 🌍 TRANSLATIONS
-  // ==========================================================
+  static const supportedLanguages = <String>[
+    'fi',
+    'en',
+    'de',
+    'es',
+    'fr',
+    'zh',
+    'vi',
+    'ja',
+  ];
 
   static const Map<String, Map<String, String>> _translations = {
-    // ========================================================
-    // 🇫🇮 SUOMI
-    // ========================================================
-
     'fi': {
-      // General
-      'stella': 'Stella',
-      'yourBalance': 'SINUN STL-SALDOSI',
-      'virtualPoints': 'Virtuaalisia sovelluspisteitä',
-      'selectLanguage': 'Valitse kieli',
-      'refresh': 'Päivitä',
-      'serverConnectionFailed':
-          '🐱 Yhteyttä palvelimeen ei voitu muodostaa.',
-
-      // Mining
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA LOUHII',
-      'miningComplete': 'LOUHINTA VALMIS!',
-      'stellaIsResting': 'STELLA LEPÄÄ',
-      'stellaMiningNow':
-          '🐾 Stella louhii STL:ää juuri nyt',
-      'stlReadyToCollect':
-          '🐱✨ STL on valmis kerättäväksi!',
-      'stellaWaiting':
-          '🐱 Stella odottaa seuraavaa louhintaa',
-      'stlMined': 'LOUHITTU STL',
-      'timeRemaining': 'AIKAA JÄLJELLÄ',
-      'miningFinished': 'LOUHINTA PÄÄTTYNYT',
-      'waitingForStella': 'ODOTETAAN STELLAA',
-      'ready': 'VALMIS',
-      'hashRate': 'HASH RATE',
-      'totalStl': 'TOTAL STL',
-      'stellaMiningProgress':
-          '⛏️ STELLAN LOUHINNAN EDISTYMINEN',
-      'stlPerHour': '⚡ {amount} STL / tunti',
-
-      // Mining buttons
-      'stellaIsWorking': 'STELLA TYÖSKENTELEE...',
-      'stellaIsMiningButton':
-          '🐱 STELLA LOUHII',
-      'watchAdCollectRestart':
-          '📺 KATSO MAINOS • KERÄÄ & ALOITA UUDELLEEN',
-      'watchAdStartMining':
-          '📺 KATSO MAINOS • ALOITA LOUHINTA',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella louhii jo STL:ää!',
-      'prepareAd':
-          '📺 Stella valmistelee mainosta...',
-      'miningStarted':
-          '🐱⛏️📺 Mainos katsottu! Stella aloitti 24 tunnin louhinnan!',
-      'miningCollected':
-          '🐱✨ Stella keräsi {amount} STL ja aloitti uuden 24h louhinnan! ⛏️',
-      'miningStartFailed':
-          '🐱 Louhinnan käynnistäminen epäonnistui.',
-
-      // Power Boost
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          'Katso mainos ja auta Stellaa ⚡',
-      'watchAd': 'KATSO MAINOS',
-      'adLoading': 'MAINOSTA LADATAAN...',
-      'adUnavailable': 'MAINOS EI SAATAVILLA',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} Hash Rate',
-      'dailyAds': 'Päivän mainokset',
-      'dailyLimit': 'Päivän mainokset',
-      'dailyLimitReached':
-          'Päivän mainosraja saavutettu',
-      'nextAd': 'Seuraava mainos',
-      'adsToday':
-          '{current} / {max} Power Boostia tänään',
-      'stellaResting':
-          '🐱 Stella lepää vielä {time}.',
-      'testAdRewardFailed':
-          '🐱 Mainospalkinnon tallentaminen epäonnistui.',
-      'adRewardDuplicate':
-          '🐱📺 Mainospalkinto on jo käsitelty.',
-      'powerBoostReward':
-          '🐱⚡ Stella sai +{amount} HR Power Boostin!',
-      'powerBoostFailed':
-          '🐱 Power Boost epäonnistui.',
-      'powerBoostOffer':
-          '+{amount} HR • {hours} tuntia',
-      'powerBoostActive':
-          'Power Boost on aktiivinen ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST ON AKTIIVINEN',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost on jo aktiivinen. Aikaa jäljellä: {time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Stella Power Boost on jo aktiivinen!',
-      'nextPowerBoostMessage':
-          '⏳ Seuraava Power Boost on käytettävissä ajassa {time}.',
-      'nextAdAfterBoost':
-          'Seuraava mainos on käytettävissä, kun tämä Power Boost päättyy.',
-      'maxBoostsInfo':
-          'Enintään {max} Power Boostia päivässä • {hours} tuntia kerrallaan',
-      'effectiveHashRateLabel':
-          '⚡ Tehokas Hash Rate: {amount} HR',
-      'dailyHashRateLabel':
-          'Päivän Hash Rate: {amount} HR',
-
-      // Daily Bonus
-      'dailyClaim': 'Päivittäinen palkinto',
-      'dailyReward': 'LUNASTA PÄIVÄN PALKINTO',
-      'claimed': 'Lunastettu tänään',
-      'streak': 'Päiväputki',
-      'stellaDailyBonus': 'STELLAN PÄIVÄBONUS',
-      'dailyBonusDescription':
-          'Päivän Hash Rate: {amount} HR • 🔥 {streak} päivän putki',
-      'dailyHashRateDay':
-          'Päivä {day} • Päivän Hash Rate {amount} HR',
-      'dailyHashRateMaximum':
-          'Päivä 7+ saavuttaa päivittäisen Hash Raten maksimin: {amount} HR.',
-      'claimDailyBonus': '🎁 LUNASTA PÄIVÄBONUS',
-      'bonusClaimedToday':
-          '🐱 BONUS LUNASTETTU TÄNÄÄN',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Stella Daily Bonus on jo kerätty tänään!',
-      'dailyBonusSuccess':
-          '🐱🎁 Päivän Hash Rate: {amount} HR! Putki: {streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 Päivän Hash Rate: {amount} HR! Putki: {streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 Daily Bonus epäonnistui.',
-
-      // Cat Fact
-      'stellaFacts': 'Stellan kissafakta 🐱',
-
-      // Drawer / navigation
-      'menu': 'Stella Menu',
-      'about': 'Tietoa Stelluriinista',
-      'whitePaper': 'White Paper',
+      'appTitle': 'STELLURIINI',
+      'home': 'Etusivu',
+      'about': 'Tietoa',
+      'history': 'Tapahtumahistoria',
+      'roadmap': 'Tiekartta',
       'token': 'STL Token',
-      'tokenomics': 'Tokenomics',
-      'roadmap': 'Roadmap',
-      'transactionHistory': 'Tapahtumahistoria',
-      'comingSoon':
-          '🐱✨ {title} tulee Stella-teemalla pian!',
-
-      // Footer
-      'footerTagline':
-          'Stella louhii tulevaisuutta.',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      // Existing app
-      'watchEarn': 'Katso ja ansaitse',
-      'pointsAdded': '+3 STL lisätty!',
-      'info': 'Tietoa Stelluriinista',
-      'solanaToken':
-          'Stelluriini (STL) on Solana-ekosysteemiin liittyvä token-projekti.',
-      'stellaCompany':
-          'STL-pisteet tässä sovelluksessa ovat sovelluksen sisäisiä virtuaalisia pisteitä.',
-      'login': 'Kirjaudu sisään',
-      'register': 'Luo tili',
-      'email': 'Sähköposti',
-      'password': 'Salasana',
+      'tokenomics': 'Tokenomiikka',
+      'whitepaper': 'Whitepaper',
+      'language': 'Kieli',
       'logout': 'Kirjaudu ulos',
+      'balance': 'Saldo',
+      'mining': 'Louhinta',
+      'miningRate': 'Louhintanopeus',
+      'hashRate': 'Hash Rate',
+      'effectiveHashRate': 'Tehokas Hash Rate',
+      'dailyHashRateLabel': 'Päivittäinen Hash Rate',
+      'dailyHashRateDay': 'Päivä {day}',
+      'dailyHashRateMaximum': 'Maksimi: {rate} HR',
+      'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
+      'startMining': 'ALOITA LOUHINTA',
+      'claimMining': 'KERÄÄ STL',
+      'miningActive': 'Louhinta käynnissä',
+      'miningComplete': 'Louhintajakso valmis',
+      'timeRemaining': 'Aikaa jäljellä',
+      'remaining': 'Aikaa jäljellä: {time}',
+      'streak': 'Putki',
+      'days': 'päivää',
+      'dailyBonus': 'Päivittäinen bonus',
+      'dailyClaim': 'Kerää päivittäinen bonus',
+      'dailyReward': 'Päivittäinen palkinto',
+      'claimedToday': 'Kerätty tänään',
+      'alreadyClaimed': 'Olet jo kerännyt tämän päivän palkinnon.',
+      'watchAd': 'KATSO MAINOS',
+      'watchAndEarn': 'KATSO & ANSAITSE',
+      'loadingAd': 'LADATAAN MAINOSTA...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': 'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
+      'powerBoostActive': 'Power Boost aktiivinen',
+      'powerBoostActiveTitle': 'Stella Power Boost on aktiivinen!',
+      'powerBoostActiveMessage': '+{amount} HR on käytössä louhintasiirron aikana.',
+      'powerBoostAlreadyActive': 'Power Boost on jo aktiivinen.',
+      'nextPowerBoostMessage': 'Seuraava Power Boost on saatavilla, kun nykyinen boost päättyy.',
+      'nextAdAfterBoost': 'Seuraava mainos on saatavilla boostin päätyttyä.',
+      'maxBoostsInfo': 'Voit aktivoida enintään {count} Power Boostia päivässä.',
+      'effectiveHashRateLabel': 'Tehokas Hash Rate',
+      'dailyHashRateMaximum': 'Maksimi: {rate} HR',
+      'serverConnectionFailed': 'Palvelinyhteys epäonnistui.',
+      'refresh': 'Päivitä',
+      'profile': 'Profiili',
+      'comingSoon': 'Tulossa pian',
+      'information': 'Tietoa',
+      'catFact': 'Stellan kissafakta',
+      'stellaPower': 'Stella Power',
+      'transactions': 'Tapahtumat',
+      'noTransactions': 'Ei tapahtumia vielä.',
+      'points': 'pistettä',
+      'pointsAdded': 'Pisteitä lisätty',
+      'resetAccount': 'Nollaa testitili',
+      'resetConfirm': 'Haluatko varmasti nollata testitilin?',
+      'cancel': 'Peruuta',
+      'reset': 'Nollaa',
+      'error': 'Virhe',
+      'success': 'Onnistui',
+      'close': 'Sulje',
     },
-
-    // ========================================================
-    // 🇬🇧 ENGLISH
-    // ========================================================
 
     'en': {
-      // General
-      'stella': 'Stella',
-      'yourBalance': 'YOUR STL BALANCE',
-      'virtualPoints': 'Virtual in-app points',
-      'selectLanguage': 'Select language',
-      'refresh': 'Refresh',
-      'serverConnectionFailed':
-          '🐱 Could not connect to the server.',
-
-      // Mining
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA IS MINING',
-      'miningComplete': 'MINING COMPLETE!',
-      'stellaIsResting': 'STELLA IS RESTING',
-      'stellaMiningNow':
-          '🐾 Stella is mining STL right now',
-      'stlReadyToCollect':
-          '🐱✨ STL is ready to collect!',
-      'stellaWaiting':
-          '🐱 Stella is waiting for the next mining cycle',
-      'stlMined': 'STL MINED',
-      'timeRemaining': 'TIME REMAINING',
-      'miningFinished': 'MINING FINISHED',
-      'waitingForStella': 'WAITING FOR STELLA',
-      'ready': 'READY',
-      'hashRate': 'HASH RATE',
-      'totalStl': 'TOTAL STL',
-      'stellaMiningProgress':
-          '⛏️ STELLA MINING PROGRESS',
-      'stlPerHour': '⚡ {amount} STL / hour',
-
-      // Mining buttons
-      'stellaIsWorking': 'STELLA IS WORKING...',
-      'stellaIsMiningButton':
-          '🐱 STELLA IS MINING',
-      'watchAdCollectRestart':
-          '📺 WATCH AD • COLLECT & RESTART',
-      'watchAdStartMining':
-          '📺 WATCH AD • START MINING',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella is already mining STL!',
-      'prepareAd':
-          '📺 Stella is preparing an ad...',
-      'miningStarted':
-          '🐱⛏️📺 Ad watched! Stella started a 24-hour mining cycle!',
-      'miningCollected':
-          '🐱✨ Stella collected {amount} STL and started a new 24-hour mining cycle! ⛏️',
-      'miningStartFailed':
-          '🐱 Failed to start mining.',
-
-      // Power Boost
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          'Watch an ad and help Stella ⚡',
-      'watchAd': 'WATCH AD',
-      'adLoading': 'LOADING AD...',
-      'adUnavailable': 'AD NOT AVAILABLE',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} Hash Rate',
-      'dailyAds': 'Daily ads',
-      'dailyLimit': 'Daily ads',
-      'dailyLimitReached':
-          'Daily ad limit reached',
-      'nextAd': 'Next ad',
-      'adsToday':
-          '{current} / {max} Power Boosts today',
-      'stellaResting':
-          '🐱 Stella is resting for {time}.',
-      'testAdRewardFailed':
-          '🐱 Failed to save the ad reward.',
-      'adRewardDuplicate':
-          '🐱📺 The ad reward has already been processed.',
-      'powerBoostReward':
-          '🐱⚡ Stella received +{amount} HR from Power Boost!',
-      'powerBoostFailed':
-          '🐱 Power Boost failed.',
-      'powerBoostOffer':
-          '+{amount} HR • {hours} hours',
-      'powerBoostActive':
-          'Power Boost is active ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST ACTIVE',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost is already active. Time remaining: {time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Stella Power Boost is already active!',
-      'nextPowerBoostMessage':
-          '⏳ Next Power Boost will be available in {time}.',
-      'nextAdAfterBoost':
-          'The next ad is available when this Power Boost ends.',
-      'maxBoostsInfo':
-          'Maximum {max} Power Boosts per day • {hours} hours each',
-      'effectiveHashRateLabel':
-          '⚡ Effective Hash Rate: {amount} HR',
-      'dailyHashRateLabel':
-          'Daily Hash Rate: {amount} HR',
-
-      // Daily Bonus
-      'dailyClaim': 'Daily reward',
-      'dailyReward': 'CLAIM DAILY REWARD',
-      'claimed': 'Claimed today',
-      'streak': 'Daily streak',
-      'stellaDailyBonus': 'STELLA DAILY BONUS',
-      'dailyBonusDescription':
-          'Daily Hash Rate: {amount} HR • 🔥 {streak} day streak',
-      'dailyHashRateDay':
-          'Day {day} • Daily Hash Rate {amount} HR',
-      'dailyHashRateMaximum':
-          'Day 7+ reaches the maximum Daily Hash Rate of {amount} HR.',
-      'claimDailyBonus': '🎁 CLAIM DAILY BONUS',
-      'bonusClaimedToday':
-          '🐱 BONUS CLAIMED TODAY',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Stella Daily Bonus has already been claimed today!',
-      'dailyBonusSuccess':
-          '🐱🎁 Daily Hash Rate: {amount} HR! Streak: {streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 Daily Hash Rate: {amount} HR! Streak: {streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 Daily Bonus failed.',
-
-      // Cat Fact
-      'stellaFacts': 'Stella’s cat fact 🐱',
-
-      // Drawer / navigation
-      'menu': 'Stella Menu',
-      'about': 'About Stelluriini',
-      'whitePaper': 'White Paper',
+      'appTitle': 'STELLURIINI',
+      'home': 'Home',
+      'about': 'About',
+      'history': 'Transaction History',
+      'roadmap': 'Roadmap',
       'token': 'STL Token',
       'tokenomics': 'Tokenomics',
-      'roadmap': 'Roadmap',
-      'transactionHistory': 'Transaction History',
-      'comingSoon':
-          '🐱✨ {title} is coming soon with the Stella theme!',
-
-      // Footer
-      'footerTagline':
-          'Stella is mining the future.',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      // Existing app
-      'watchEarn': 'Watch and earn',
-      'pointsAdded': '+3 STL added!',
-      'info': 'About Stelluriini',
-      'solanaToken':
-          'Stelluriini (STL) is a token project connected to the Solana ecosystem.',
-      'stellaCompany':
-          'The STL points in this app are virtual in-app points.',
-      'login': 'Log in',
-      'register': 'Create account',
-      'email': 'Email',
-      'password': 'Password',
+      'whitepaper': 'Whitepaper',
+      'language': 'Language',
       'logout': 'Log out',
+      'balance': 'Balance',
+      'mining': 'Mining',
+      'miningRate': 'Mining Rate',
+      'hashRate': 'Hash Rate',
+      'effectiveHashRate': 'Effective Hash Rate',
+      'dailyHashRateLabel': 'Daily Hash Rate',
+      'dailyHashRateDay': 'Day {day}',
+      'dailyHashRateMaximum': 'Maximum: {rate} HR',
+      'dailyHashRateSuccess': 'Day {day} Hash Rate: {rate} HR',
+      'startMining': 'START MINING',
+      'claimMining': 'CLAIM STL',
+      'miningActive': 'Mining active',
+      'miningComplete': 'Mining cycle complete',
+      'timeRemaining': 'Time remaining',
+      'remaining': 'Time remaining: {time}',
+      'streak': 'Streak',
+      'days': 'days',
+      'dailyBonus': 'Daily Bonus',
+      'dailyClaim': 'Claim Daily Bonus',
+      'dailyReward': 'Daily Reward',
+      'claimedToday': 'Claimed today',
+      'alreadyClaimed': 'You have already claimed today’s reward.',
+      'watchAd': 'WATCH AD',
+      'watchAndEarn': 'WATCH & EARN',
+      'loadingAd': 'LOADING AD...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': 'Watch an ad to activate +{amount} HR Stella Power Boost for 4 hours.',
+      'powerBoostActive': 'Power Boost active',
+      'powerBoostActiveTitle': 'Stella Power Boost is active!',
+      'powerBoostActiveMessage': '+{amount} HR is active during your mining cycle.',
+      'powerBoostAlreadyActive': 'Power Boost is already active.',
+      'nextPowerBoostMessage': 'The next Power Boost is available when the current boost ends.',
+      'nextAdAfterBoost': 'The next ad is available after the boost ends.',
+      'maxBoostsInfo': 'You can activate up to {count} Power Boosts per day.',
+      'effectiveHashRateLabel': 'Effective Hash Rate',
+      'serverConnectionFailed': 'Server connection failed.',
+      'refresh': 'Refresh',
+      'profile': 'Profile',
+      'comingSoon': 'Coming Soon',
+      'information': 'Information',
+      'catFact': 'Stella Cat Fact',
+      'stellaPower': 'Stella Power',
+      'transactions': 'Transactions',
+      'noTransactions': 'No transactions yet.',
+      'points': 'points',
+      'pointsAdded': 'Points added',
+      'resetAccount': 'Reset Test Account',
+      'resetConfirm': 'Are you sure you want to reset the test account?',
+      'cancel': 'Cancel',
+      'reset': 'Reset',
+      'error': 'Error',
+      'success': 'Success',
+      'close': 'Close',
     },
-
-    // ========================================================
-    // 🇩🇪 DEUTSCH
-    // ========================================================
 
     'de': {
-      'stella': 'Stella',
-      'yourBalance': 'DEIN STL-GUTHABEN',
-      'virtualPoints': 'Virtuelle Punkte in der App',
-      'selectLanguage': 'Sprache auswählen',
-      'refresh': 'Aktualisieren',
-      'serverConnectionFailed':
-          '🐱 Verbindung zum Server konnte nicht hergestellt werden.',
-
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA MINING',
-      'miningComplete': 'MINING ABGESCHLOSSEN!',
-      'stellaIsResting': 'STELLA RUHT',
-      'stellaMiningNow':
-          '🐾 Stella schürft gerade STL',
-      'stlReadyToCollect':
-          '🐱✨ STL kann eingesammelt werden!',
-      'stellaWaiting':
-          '🐱 Stella wartet auf den nächsten Mining-Zyklus',
-      'stlMined': 'STL GEMINT',
-      'timeRemaining': 'VERBLEIBENDE ZEIT',
-      'miningFinished': 'MINING BEENDET',
-      'waitingForStella': 'WARTE AUF STELLA',
-      'ready': 'BEREIT',
-      'hashRate': 'HASH RATE',
-      'totalStl': 'GESAMT STL',
-      'stellaMiningProgress':
-          '⛏️ STELLAS MINING-FORTSCHRITT',
-      'stlPerHour': '⚡ {amount} STL / Stunde',
-
-      'stellaIsWorking': 'STELLA ARBEITET...',
-      'stellaIsMiningButton':
-          '🐱 STELLA MINING',
-      'watchAdCollectRestart':
-          '📺 WERBUNG • EINSAMMELN & NEU STARTEN',
-      'watchAdStartMining':
-          '📺 WERBUNG • MINING STARTEN',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella schürft bereits STL!',
-      'prepareAd':
-          '📺 Stella bereitet eine Werbung vor...',
-      'miningStarted':
-          '🐱⛏️📺 Werbung angesehen! Stella hat einen 24-Stunden-Mining-Zyklus gestartet!',
-      'miningCollected':
-          '🐱✨ Stella hat {amount} STL gesammelt und einen neuen 24-Stunden-Mining-Zyklus gestartet! ⛏️',
-      'miningStartFailed':
-          '🐱 Mining konnte nicht gestartet werden.',
-
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          'Sieh eine Werbung und hilf Stella ⚡',
-      'watchAd': 'WERBUNG ANSEHEN',
-      'adLoading': 'WERBUNG WIRD GELADEN...',
-      'adUnavailable': 'WERBUNG NICHT VERFÜGBAR',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} Hash Rate',
-      'dailyAds': 'Tägliche Werbung',
-      'dailyLimit': 'Tägliche Werbung',
-      'dailyLimitReached':
-          'Tägliches Werbelimit erreicht',
-      'nextAd': 'Nächste Werbung',
-      'adsToday':
-          '{current} / {max} Power Boosts heute',
-      'stellaResting':
-          '🐱 Stella ruht noch {time}.',
-      'testAdRewardFailed':
-          '🐱 Die Werbeprämie konnte nicht gespeichert werden.',
-      'adRewardDuplicate':
-          '🐱📺 Die Werbeprämie wurde bereits verarbeitet.',
-      'powerBoostReward':
-          '🐱⚡ Stella erhielt +{amount} HR durch Power Boost!',
-      'powerBoostFailed':
-          '🐱 Power Boost fehlgeschlagen.',
-      'powerBoostOffer':
-          '+{amount} HR • {hours} Stunden',
-      'powerBoostActive':
-          'Power Boost ist aktiv ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST AKTIV',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost ist bereits aktiv. Verbleibende Zeit: {time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Stella Power Boost ist bereits aktiv!',
-      'nextPowerBoostMessage':
-          '⏳ Der nächste Power Boost ist in {time} verfügbar.',
-      'nextAdAfterBoost':
-          'Die nächste Werbung ist verfügbar, sobald dieser Power Boost endet.',
-      'maxBoostsInfo':
-          'Maximal {max} Power Boosts pro Tag • jeweils {hours} Stunden',
-      'effectiveHashRateLabel':
-          '⚡ Effektive Hash Rate: {amount} HR',
-      'dailyHashRateLabel':
-          'Tägliche Hash Rate: {amount} HR',
-
-      'dailyClaim': 'Tägliche Belohnung',
-      'dailyReward': 'TAGESBELOHNUNG ABHOLEN',
-      'claimed': 'Heute abgeholt',
-      'streak': 'Tagesserie',
-      'stellaDailyBonus': 'STELLAS TAGESBONUS',
-      'dailyBonusDescription':
-          'Tägliche Hash Rate: {amount} HR • 🔥 {streak} Tage Serie',
-      'dailyHashRateDay':
-          'Tag {day} • Tägliche Hash Rate {amount} HR',
-      'dailyHashRateMaximum':
-          'Ab Tag 7 wird das Maximum von {amount} HR erreicht.',
-      'claimDailyBonus': '🎁 TAGESBONUS ABHOLEN',
-      'bonusClaimedToday':
-          '🐱 BONUS HEUTE ABGEHOLT',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Stellas Tagesbonus wurde heute bereits abgeholt!',
-      'dailyBonusSuccess':
-          '🐱🎁 Tägliche Hash Rate: {amount} HR! Serie: {streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 Tägliche Hash Rate: {amount} HR! Serie: {streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 Tagesbonus fehlgeschlagen.',
-
-      'stellaFacts': 'Stellas Katzenfakt 🐱',
-
-      'menu': 'Stella Menü',
-      'about': 'Über Stelluriini',
-      'whitePaper': 'White Paper',
+      'appTitle': 'STELLURIINI',
+      'home': 'Startseite',
+      'about': 'Über uns',
+      'history': 'Transaktionsverlauf',
+      'roadmap': 'Roadmap',
       'token': 'STL Token',
       'tokenomics': 'Tokenomics',
-      'roadmap': 'Roadmap',
-      'transactionHistory': 'Transaktionsverlauf',
-      'comingSoon':
-          '🐱✨ {title} kommt bald im Stella-Stil!',
-
-      'footerTagline':
-          'Stella schürft die Zukunft.',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      'watchEarn': 'Ansehen und verdienen',
-      'pointsAdded': '+3 STL hinzugefügt!',
-      'info': 'Über Stelluriini',
-      'solanaToken':
-          'Stelluriini (STL) ist ein Token-Projekt im Zusammenhang mit dem Solana-Ökosystem.',
-      'stellaCompany':
-          'Die STL-Punkte in dieser App sind virtuelle Punkte innerhalb der App.',
-      'login': 'Anmelden',
-      'register': 'Konto erstellen',
-      'email': 'E-Mail',
-      'password': 'Passwort',
+      'whitepaper': 'Whitepaper',
+      'language': 'Sprache',
       'logout': 'Abmelden',
+      'balance': 'Guthaben',
+      'mining': 'Mining',
+      'miningRate': 'Mining-Rate',
+      'hashRate': 'Hash Rate',
+      'effectiveHashRate': 'Effektive Hash Rate',
+      'dailyHashRateLabel': 'Tägliche Hash Rate',
+      'dailyHashRateDay': 'Tag {day}',
+      'dailyHashRateMaximum': 'Maximum: {rate} HR',
+      'dailyHashRateSuccess': 'Hash Rate an Tag {day}: {rate} HR',
+      'startMining': 'MINING STARTEN',
+      'claimMining': 'STL EINSAMMELN',
+      'miningActive': 'Mining aktiv',
+      'miningComplete': 'Mining-Zyklus abgeschlossen',
+      'timeRemaining': 'Verbleibende Zeit',
+      'remaining': 'Verbleibende Zeit: {time}',
+      'streak': 'Serie',
+      'days': 'Tage',
+      'dailyBonus': 'Täglicher Bonus',
+      'dailyClaim': 'Täglichen Bonus sammeln',
+      'dailyReward': 'Tägliche Belohnung',
+      'claimedToday': 'Heute gesammelt',
+      'alreadyClaimed': 'Du hast die heutige Belohnung bereits gesammelt.',
+      'watchAd': 'WERBUNG ANSEHEN',
+      'watchAndEarn': 'ANSEHEN & VERDIENEN',
+      'loadingAd': 'WERBUNG WIRD GELADEN...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': 'Werbung ansehen und +{amount} HR Stella Power Boost für 4 Stunden aktivieren.',
+      'powerBoostActive': 'Power Boost aktiv',
+      'powerBoostActiveTitle': 'Stella Power Boost ist aktiv!',
+      'powerBoostActiveMessage': '+{amount} HR ist während deines Mining-Zyklus aktiv.',
+      'powerBoostAlreadyActive': 'Power Boost ist bereits aktiv.',
+      'nextPowerBoostMessage': 'Der nächste Power Boost ist verfügbar, wenn der aktuelle Boost endet.',
+      'nextAdAfterBoost': 'Die nächste Werbung ist nach Ende des Boosts verfügbar.',
+      'maxBoostsInfo': 'Du kannst bis zu {count} Power Boosts pro Tag aktivieren.',
+      'effectiveHashRateLabel': 'Effektive Hash Rate',
+      'serverConnectionFailed': 'Serververbindung fehlgeschlagen.',
+      'refresh': 'Aktualisieren',
+      'profile': 'Profil',
+      'comingSoon': 'Demnächst',
+      'information': 'Information',
+      'catFact': 'Stellas Katzenfakt',
+      'stellaPower': 'Stella Power',
+      'transactions': 'Transaktionen',
+      'noTransactions': 'Noch keine Transaktionen.',
+      'points': 'Punkte',
+      'pointsAdded': 'Punkte hinzugefügt',
+      'resetAccount': 'Testkonto zurücksetzen',
+      'resetConfirm': 'Möchtest du das Testkonto wirklich zurücksetzen?',
+      'cancel': 'Abbrechen',
+      'reset': 'Zurücksetzen',
+      'error': 'Fehler',
+      'success': 'Erfolgreich',
+      'close': 'Schließen',
     },
-
-    // ========================================================
-    // 🇪🇸 ESPAÑOL
-    // ========================================================
 
     'es': {
-      'stella': 'Stella',
-      'yourBalance': 'TU SALDO DE STL',
-      'virtualPoints':
-          'Puntos virtuales dentro de la aplicación',
-      'selectLanguage': 'Seleccionar idioma',
-      'refresh': 'Actualizar',
-      'serverConnectionFailed':
-          '🐱 No se pudo conectar con el servidor.',
-
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA ESTÁ MINANDO',
-      'miningComplete': '¡MINERÍA COMPLETADA!',
-      'stellaIsResting': 'STELLA ESTÁ DESCANSANDO',
-      'stellaMiningNow':
-          '🐾 Stella está minando STL ahora mismo',
-      'stlReadyToCollect':
-          '🐱✨ ¡STL listo para recoger!',
-      'stellaWaiting':
-          '🐱 Stella espera el próximo ciclo de minería',
-      'stlMined': 'STL MINADO',
-      'timeRemaining': 'TIEMPO RESTANTE',
-      'miningFinished': 'MINERÍA TERMINADA',
-      'waitingForStella': 'ESPERANDO A STELLA',
-      'ready': 'LISTO',
-      'hashRate': 'HASH RATE',
-      'totalStl': 'TOTAL STL',
-      'stellaMiningProgress':
-          '⛏️ PROGRESO DE MINERÍA DE STELLA',
-      'stlPerHour': '⚡ {amount} STL / hora',
-
-      'stellaIsWorking': 'STELLA ESTÁ TRABAJANDO...',
-      'stellaIsMiningButton':
-          '🐱 STELLA ESTÁ MINANDO',
-      'watchAdCollectRestart':
-          '📺 VER ANUNCIO • RECOGER Y REINICIAR',
-      'watchAdStartMining':
-          '📺 VER ANUNCIO • INICIAR MINERÍA',
-      'stellaAlreadyMining':
-          '🐱⛏️ ¡Stella ya está minando STL!',
-      'prepareAd':
-          '📺 Stella está preparando un anuncio...',
-      'miningStarted':
-          '🐱⛏️📺 ¡Anuncio visto! Stella ha iniciado un ciclo de minería de 24 horas.',
-      'miningCollected':
-          '🐱✨ Stella recogió {amount} STL y comenzó un nuevo ciclo de minería de 24 horas. ⛏️',
-      'miningStartFailed':
-          '🐱 No se pudo iniciar la minería.',
-
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          'Mira un anuncio y ayuda a Stella ⚡',
-      'watchAd': 'VER ANUNCIO',
-      'adLoading': 'CARGANDO ANUNCIO...',
-      'adUnavailable': 'ANUNCIO NO DISPONIBLE',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} Hash Rate',
-      'dailyAds': 'Anuncios diarios',
-      'dailyLimit': 'Anuncios diarios',
-      'dailyLimitReached':
-          'Límite diario de anuncios alcanzado',
-      'nextAd': 'Próximo anuncio',
-      'adsToday':
-          '{current} / {max} Power Boosts hoy',
-      'stellaResting':
-          '🐱 Stella está descansando durante {time}.',
-      'testAdRewardFailed':
-          '🐱 No se pudo guardar la recompensa del anuncio.',
-      'adRewardDuplicate':
-          '🐱📺 La recompensa del anuncio ya fue procesada.',
-      'powerBoostReward':
-          '🐱⚡ ¡Stella recibió +{amount} HR con Power Boost!',
-      'powerBoostFailed':
-          '🐱 Power Boost falló.',
-      'powerBoostOffer':
-          '+{amount} HR • {hours} horas',
-      'powerBoostActive':
-          'Power Boost está activo ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST ACTIVO',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost ya está activo. Tiempo restante: {time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ ¡El Power Boost de Stella ya está activo!',
-      'nextPowerBoostMessage':
-          '⏳ El próximo Power Boost estará disponible en {time}.',
-      'nextAdAfterBoost':
-          'El próximo anuncio estará disponible cuando termine este Power Boost.',
-      'maxBoostsInfo':
-          'Máximo {max} Power Boosts al día • {hours} horas cada uno',
-      'effectiveHashRateLabel':
-          '⚡ Hash Rate efectivo: {amount} HR',
-      'dailyHashRateLabel':
-          'Hash Rate diario: {amount} HR',
-
-      'dailyClaim': 'Recompensa diaria',
-      'dailyReward': 'RECLAMAR RECOMPENSA DIARIA',
-      'claimed': 'Reclamado hoy',
-      'streak': 'Racha diaria',
-      'stellaDailyBonus': 'BONO DIARIO DE STELLA',
-      'dailyBonusDescription':
-          'Hash Rate diario: {amount} HR • 🔥 racha de {streak} días',
-      'dailyHashRateDay':
-          'Día {day} • Hash Rate diario {amount} HR',
-      'dailyHashRateMaximum':
-          'Desde el día 7 se alcanza el máximo de {amount} HR.',
-      'claimDailyBonus': '🎁 RECLAMAR BONO DIARIO',
-      'bonusClaimedToday':
-          '🐱 BONO RECLAMADO HOY',
-      'dailyBonusAlreadyClaimed':
-          '🐱 ¡El bono diario de Stella ya fue reclamado hoy!',
-      'dailyBonusSuccess':
-          '🐱🎁 Hash Rate diario: {amount} HR! Racha: {streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 Hash Rate diario: {amount} HR! Racha: {streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 El bono diario falló.',
-
-      'stellaFacts': 'Dato curioso de Stella 🐱',
-
-      'menu': 'Menú de Stella',
-      'about': 'Sobre Stelluriini',
-      'whitePaper': 'White Paper',
-      'token': 'Token STL',
-      'tokenomics': 'Tokenomics',
+      'appTitle': 'STELLURIINI',
+      'home': 'Inicio',
+      'about': 'Acerca de',
+      'history': 'Historial de transacciones',
       'roadmap': 'Hoja de ruta',
-      'transactionHistory':
-          'Historial de transacciones',
-      'comingSoon':
-          '🐱✨ {title} llegará pronto con el estilo de Stella.',
-
-      'footerTagline':
-          'Stella está minando el futuro.',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      'watchEarn': 'Mira y gana',
-      'pointsAdded': '+3 STL añadidos!',
-      'info': 'Sobre Stelluriini',
-      'solanaToken':
-          'Stelluriini (STL) es un proyecto de token relacionado con el ecosistema Solana.',
-      'stellaCompany':
-          'Los puntos STL de esta aplicación son puntos virtuales dentro de la aplicación.',
-      'login': 'Iniciar sesión',
-      'register': 'Crear cuenta',
-      'email': 'Correo electrónico',
-      'password': 'Contraseña',
+      'token': 'Token STL',
+      'tokenomics': 'Tokenómica',
+      'whitepaper': 'Whitepaper',
+      'language': 'Idioma',
       'logout': 'Cerrar sesión',
+      'balance': 'Saldo',
+      'mining': 'Minería',
+      'miningRate': 'Tasa de minería',
+      'hashRate': 'Hash Rate',
+      'effectiveHashRate': 'Hash Rate efectivo',
+      'dailyHashRateLabel': 'Hash Rate diario',
+      'dailyHashRateDay': 'Día {day}',
+      'dailyHashRateMaximum': 'Máximo: {rate} HR',
+      'dailyHashRateSuccess': 'Hash Rate del día {day}: {rate} HR',
+      'startMining': 'INICIAR MINERÍA',
+      'claimMining': 'RECLAMAR STL',
+      'miningActive': 'Minería activa',
+      'miningComplete': 'Ciclo de minería completado',
+      'timeRemaining': 'Tiempo restante',
+      'remaining': 'Tiempo restante: {time}',
+      'streak': 'Racha',
+      'days': 'días',
+      'dailyBonus': 'Bono diario',
+      'dailyClaim': 'Reclamar bono diario',
+      'dailyReward': 'Recompensa diaria',
+      'claimedToday': 'Reclamado hoy',
+      'alreadyClaimed': 'Ya has reclamado la recompensa de hoy.',
+      'watchAd': 'VER ANUNCIO',
+      'watchAndEarn': 'VER Y GANAR',
+      'loadingAd': 'CARGANDO ANUNCIO...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': 'Mira un anuncio para activar +{amount} HR de Stella Power Boost durante 4 horas.',
+      'powerBoostActive': 'Power Boost activo',
+      'powerBoostActiveTitle': '¡Stella Power Boost está activo!',
+      'powerBoostActiveMessage': '+{amount} HR está activo durante tu ciclo de minería.',
+      'powerBoostAlreadyActive': 'Power Boost ya está activo.',
+      'nextPowerBoostMessage': 'El próximo Power Boost estará disponible cuando termine el actual.',
+      'nextAdAfterBoost': 'El próximo anuncio estará disponible después de que termine el boost.',
+      'maxBoostsInfo': 'Puedes activar hasta {count} Power Boosts al día.',
+      'effectiveHashRateLabel': 'Hash Rate efectivo',
+      'serverConnectionFailed': 'Error de conexión con el servidor.',
+      'refresh': 'Actualizar',
+      'profile': 'Perfil',
+      'comingSoon': 'Próximamente',
+      'information': 'Información',
+      'catFact': 'Dato gatuno de Stella',
+      'stellaPower': 'Stella Power',
+      'transactions': 'Transacciones',
+      'noTransactions': 'Aún no hay transacciones.',
+      'points': 'puntos',
+      'pointsAdded': 'Puntos añadidos',
+      'resetAccount': 'Restablecer cuenta de prueba',
+      'resetConfirm': '¿Seguro que quieres restablecer la cuenta de prueba?',
+      'cancel': 'Cancelar',
+      'reset': 'Restablecer',
+      'error': 'Error',
+      'success': 'Éxito',
+      'close': 'Cerrar',
     },
-
-    // ========================================================
-    // 🇫🇷 FRANÇAIS
-    // ========================================================
 
     'fr': {
-      'stella': 'Stella',
-      'yourBalance': 'TON SOLDE STL',
-      'virtualPoints':
-          'Points virtuels dans l’application',
-      'selectLanguage': 'Choisir la langue',
-      'refresh': 'Actualiser',
-      'serverConnectionFailed':
-          '🐱 Impossible de se connecter au serveur.',
-
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA MINE',
-      'miningComplete': 'MINAGE TERMINÉ !',
-      'stellaIsResting': 'STELLA SE REPOSE',
-      'stellaMiningNow':
-          '🐾 Stella mine actuellement du STL',
-      'stlReadyToCollect':
-          '🐱✨ Le STL est prêt à être récupéré !',
-      'stellaWaiting':
-          '🐱 Stella attend le prochain cycle de minage',
-      'stlMined': 'STL MINÉ',
-      'timeRemaining': 'TEMPS RESTANT',
-      'miningFinished': 'MINAGE TERMINÉ',
-      'waitingForStella': 'EN ATTENTE DE STELLA',
-      'ready': 'PRÊT',
-      'hashRate': 'HASH RATE',
-      'totalStl': 'TOTAL STL',
-      'stellaMiningProgress':
-          '⛏️ PROGRESSION DU MINAGE DE STELLA',
-      'stlPerHour': '⚡ {amount} STL / heure',
-
-      'stellaIsWorking': 'STELLA TRAVAILLE...',
-      'stellaIsMiningButton':
-          '🐱 STELLA MINE',
-      'watchAdCollectRestart':
-          '📺 REGARDER LA PUB • RÉCUPÉRER & RECOMMENCER',
-      'watchAdStartMining':
-          '📺 REGARDER LA PUB • COMMENCER LE MINAGE',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella mine déjà du STL !',
-      'prepareAd':
-          '📺 Stella prépare une publicité...',
-      'miningStarted':
-          '🐱⛏️📺 Publicité regardée ! Stella a commencé un cycle de minage de 24 heures !',
-      'miningCollected':
-          '🐱✨ Stella a récupéré {amount} STL et a commencé un nouveau cycle de minage de 24 heures ! ⛏️',
-      'miningStartFailed':
-          '🐱 Impossible de démarrer le minage.',
-
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          'Regardez une publicité et aidez Stella ⚡',
-      'watchAd': 'REGARDER LA PUB',
-      'adLoading': 'CHARGEMENT DE LA PUB...',
-      'adUnavailable': 'PUBLICITÉ NON DISPONIBLE',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} Hash Rate',
-      'dailyAds': 'Publicités quotidiennes',
-      'dailyLimit': 'Publicités quotidiennes',
-      'dailyLimitReached':
-          'Limite quotidienne atteinte',
-      'nextAd': 'Prochaine publicité',
-      'adsToday':
-          '{current} / {max} Power Boosts aujourd’hui',
-      'stellaResting':
-          '🐱 Stella se repose encore {time}.',
-      'testAdRewardFailed':
-          '🐱 Impossible d’enregistrer la récompense publicitaire.',
-      'adRewardDuplicate':
-          '🐱📺 La récompense publicitaire a déjà été traitée.',
-      'powerBoostReward':
-          '🐱⚡ Stella a reçu +{amount} HR grâce au Power Boost !',
-      'powerBoostFailed':
-          '🐱 Échec du Power Boost.',
-      'powerBoostOffer':
-          '+{amount} HR • {hours} heures',
-      'powerBoostActive':
-          'Power Boost actif ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST ACTIF',
-      'powerBoostActiveMessage':
-          '🐱⚡ Le Power Boost est déjà actif. Temps restant : {time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Le Power Boost de Stella est déjà actif !',
-      'nextPowerBoostMessage':
-          '⏳ Le prochain Power Boost sera disponible dans {time}.',
-      'nextAdAfterBoost':
-          'La prochaine publicité sera disponible lorsque ce Power Boost sera terminé.',
-      'maxBoostsInfo':
-          'Maximum {max} Power Boosts par jour • {hours} heures chacun',
-      'effectiveHashRateLabel':
-          '⚡ Hash Rate effectif : {amount} HR',
-      'dailyHashRateLabel':
-          'Hash Rate quotidien : {amount} HR',
-
-      'dailyClaim': 'Récompense quotidienne',
-      'dailyReward': 'RÉCLAMER LA RÉCOMPENSE',
-      'claimed': 'Réclamée aujourd’hui',
-      'streak': 'Série quotidienne',
-      'stellaDailyBonus': 'BONUS QUOTIDIEN DE STELLA',
-      'dailyBonusDescription':
-          'Hash Rate quotidien : {amount} HR • 🔥 série de {streak} jours',
-      'dailyHashRateDay':
-          'Jour {day} • Hash Rate quotidien {amount} HR',
-      'dailyHashRateMaximum':
-          'À partir du jour 7, le maximum de {amount} HR est atteint.',
-      'claimDailyBonus': '🎁 RÉCLAMER LE BONUS QUOTIDIEN',
-      'bonusClaimedToday':
-          '🐱 BONUS RÉCLAMÉ AUJOURD’HUI',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Le bonus quotidien de Stella a déjà été réclamé aujourd’hui !',
-      'dailyBonusSuccess':
-          '🐱🎁 Hash Rate quotidien : {amount} HR ! Série : {streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 Hash Rate quotidien : {amount} HR ! Série : {streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 Échec du bonus quotidien.',
-
-      'stellaFacts':
-          'Le fait sur les chats de Stella 🐱',
-
-      'menu': 'Menu de Stella',
-      'about': 'À propos de Stelluriini',
-      'whitePaper': 'White Paper',
+      'appTitle': 'STELLURIINI',
+      'home': 'Accueil',
+      'about': 'À propos',
+      'history': 'Historique des transactions',
+      'roadmap': 'Feuille de route',
       'token': 'Token STL',
       'tokenomics': 'Tokenomics',
-      'roadmap': 'Feuille de route',
-      'transactionHistory':
-          'Historique des transactions',
-      'comingSoon':
-          '🐱✨ {title} arrive bientôt avec le style Stella !',
-
-      'footerTagline':
-          'Stella mine l’avenir.',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      'watchEarn': 'Regarder et gagner',
-      'pointsAdded': '+3 STL ajoutés !',
-      'info': 'À propos de Stelluriini',
-      'solanaToken':
-          'Stelluriini (STL) est un projet de token lié à l’écosystème Solana.',
-      'stellaCompany':
-          'Les points STL dans cette application sont des points virtuels internes.',
-      'login': 'Se connecter',
-      'register': 'Créer un compte',
-      'email': 'E-mail',
-      'password': 'Mot de passe',
+      'whitepaper': 'Whitepaper',
+      'language': 'Langue',
       'logout': 'Se déconnecter',
+      'balance': 'Solde',
+      'mining': 'Minage',
+      'miningRate': 'Taux de minage',
+      'hashRate': 'Hash Rate',
+      'effectiveHashRate': 'Hash Rate effectif',
+      'dailyHashRateLabel': 'Hash Rate quotidien',
+      'dailyHashRateDay': 'Jour {day}',
+      'dailyHashRateMaximum': 'Maximum : {rate} HR',
+      'dailyHashRateSuccess': 'Hash Rate du jour {day} : {rate} HR',
+      'startMining': 'DÉMARRER LE MINAGE',
+      'claimMining': 'RÉCLAMER STL',
+      'miningActive': 'Minage actif',
+      'miningComplete': 'Cycle de minage terminé',
+      'timeRemaining': 'Temps restant',
+      'remaining': 'Temps restant : {time}',
+      'streak': 'Série',
+      'days': 'jours',
+      'dailyBonus': 'Bonus quotidien',
+      'dailyClaim': 'Réclamer le bonus quotidien',
+      'dailyReward': 'Récompense quotidienne',
+      'claimedToday': 'Réclamé aujourd’hui',
+      'alreadyClaimed': 'Vous avez déjà réclamé la récompense du jour.',
+      'watchAd': 'REGARDER LA PUB',
+      'watchAndEarn': 'REGARDER & GAGNER',
+      'loadingAd': 'CHARGEMENT DE LA PUB...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': 'Regardez une publicité pour activer +{amount} HR de Stella Power Boost pendant 4 heures.',
+      'powerBoostActive': 'Power Boost actif',
+      'powerBoostActiveTitle': 'Stella Power Boost est actif !',
+      'powerBoostActiveMessage': '+{amount} HR est actif pendant votre cycle de minage.',
+      'powerBoostAlreadyActive': 'Le Power Boost est déjà actif.',
+      'nextPowerBoostMessage': 'Le prochain Power Boost sera disponible lorsque le boost actuel sera terminé.',
+      'nextAdAfterBoost': 'La prochaine publicité sera disponible après la fin du boost.',
+      'maxBoostsInfo': 'Vous pouvez activer jusqu’à {count} Power Boosts par jour.',
+      'effectiveHashRateLabel': 'Hash Rate effectif',
+      'serverConnectionFailed': 'Échec de la connexion au serveur.',
+      'refresh': 'Actualiser',
+      'profile': 'Profil',
+      'comingSoon': 'Bientôt disponible',
+      'information': 'Informations',
+      'catFact': 'Fait sur les chats de Stella',
+      'stellaPower': 'Stella Power',
+      'transactions': 'Transactions',
+      'noTransactions': 'Aucune transaction pour le moment.',
+      'points': 'points',
+      'pointsAdded': 'Points ajoutés',
+      'resetAccount': 'Réinitialiser le compte de test',
+      'resetConfirm': 'Voulez-vous vraiment réinitialiser le compte de test ?',
+      'cancel': 'Annuler',
+      'reset': 'Réinitialiser',
+      'error': 'Erreur',
+      'success': 'Succès',
+      'close': 'Fermer',
     },
-
-    // ========================================================
-    // 🇨🇳 中文
-    // ========================================================
 
     'zh': {
-      'stella': 'Stella',
-      'yourBalance': '你的 STL 余额',
-      'virtualPoints': '应用内虚拟积分',
-      'selectLanguage': '选择语言',
-      'refresh': '刷新',
-      'serverConnectionFailed':
-          '🐱 无法连接到服务器。',
-
-      'stellaMining': 'Stella 挖矿',
-      'stellaIsMining': 'STELLA 正在挖矿',
-      'miningComplete': '挖矿完成！',
-      'stellaIsResting': 'STELLA 正在休息',
-      'stellaMiningNow':
-          '🐾 Stella 正在挖掘 STL',
-      'stlReadyToCollect':
-          '🐱✨ STL 已准备好领取！',
-      'stellaWaiting':
-          '🐱 Stella 正在等待下一轮挖矿',
-      'stlMined': '已挖出 STL',
-      'timeRemaining': '剩余时间',
-      'miningFinished': '挖矿结束',
-      'waitingForStella': '等待 Stella',
-      'ready': '准备好了',
-      'hashRate': '算力',
-      'totalStl': 'STL 总量',
-      'stellaMiningProgress':
-          '⛏️ STELLA 挖矿进度',
-      'stlPerHour': '⚡ {amount} STL / 小时',
-
-      'stellaIsWorking': 'STELLA 正在工作...',
-      'stellaIsMiningButton':
-          '🐱 STELLA 正在挖矿',
-      'watchAdCollectRestart':
-          '📺 观看广告 • 领取并重新开始',
-      'watchAdStartMining':
-          '📺 观看广告 • 开始挖矿',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella 已经在挖 STL 了！',
-      'prepareAd':
-          '📺 Stella 正在准备广告...',
-      'miningStarted':
-          '🐱⛏️📺 广告已观看！Stella 开始了 24 小时挖矿！',
-      'miningCollected':
-          '🐱✨ Stella 收集了 {amount} STL，并开始了新的 24 小时挖矿！⛏️',
-      'miningStartFailed':
-          '🐱 无法开始挖矿。',
-
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          '观看广告帮助 Stella ⚡',
-      'watchAd': '观看广告',
-      'adLoading': '正在加载广告...',
-      'adUnavailable': '广告暂时不可用',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} 算力',
-      'dailyAds': '每日广告',
-      'dailyLimit': '每日广告',
-      'dailyLimitReached':
-          '已达到每日广告限制',
-      'nextAd': '下一次广告',
-      'adsToday':
-          '今天的 Power Boost：{current} / {max}',
-      'stellaResting':
-          '🐱 Stella 还需要休息 {time}。',
-      'testAdRewardFailed':
-          '🐱 无法保存广告奖励。',
-      'adRewardDuplicate':
-          '🐱📺 广告奖励已经处理过了。',
-      'powerBoostReward':
-          '🐱⚡ Stella 通过 Power Boost 获得了 +{amount} 算力！',
-      'powerBoostFailed':
-          '🐱 Power Boost 失败。',
-      'powerBoostOffer':
-          '+{amount} 算力 • {hours} 小时',
-      'powerBoostActive':
-          'Power Boost 正在生效 ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST 正在生效',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost 已经生效。剩余时间：{time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Stella Power Boost 已经生效！',
-      'nextPowerBoostMessage':
-          '⏳ 下一个 Power Boost 将在 {time} 后可用。',
-      'nextAdAfterBoost':
-          '当前 Power Boost 结束后即可观看下一条广告。',
-      'maxBoostsInfo':
-          '每天最多 {max} 次 Power Boost • 每次 {hours} 小时',
-      'effectiveHashRateLabel':
-          '⚡ 有效算力：{amount} HR',
-      'dailyHashRateLabel':
-          '每日算力：{amount} HR',
-
-      'dailyClaim': '每日奖励',
-      'dailyReward': '领取每日奖励',
-      'claimed': '今天已领取',
-      'streak': '连续签到',
-      'stellaDailyBonus': 'STELLA 每日奖励',
-      'dailyBonusDescription':
-          '每日算力：{amount} HR • 🔥 连续 {streak} 天',
-      'dailyHashRateDay':
-          '第 {day} 天 • 每日算力 {amount} HR',
-      'dailyHashRateMaximum':
-          '第 7 天及以后达到最高每日算力 {amount} HR。',
-      'claimDailyBonus': '🎁 领取每日奖励',
-      'bonusClaimedToday':
-          '🐱 今天已领取奖励',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Stella 的每日奖励今天已经领取过了！',
-      'dailyBonusSuccess':
-          '🐱🎁 每日算力：{amount} HR！连续签到：{streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 每日算力：{amount} HR！连续签到：{streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 每日奖励失败。',
-
-      'stellaFacts':
-          'Stella 的猫咪知识 🐱',
-
-      'menu': 'Stella 菜单',
-      'about': '关于 Stelluriini',
-      'whitePaper': '白皮书',
+      'appTitle': 'STELLURIINI',
+      'home': '首页',
+      'about': '关于',
+      'history': '交易历史',
+      'roadmap': '路线图',
       'token': 'STL 代币',
       'tokenomics': '代币经济学',
-      'roadmap': '路线图',
-      'transactionHistory': '交易记录',
-      'comingSoon':
-          '🐱✨ {title} 即将以 Stella 风格推出！',
-
-      'footerTagline':
-          'Stella 正在挖掘未来。',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      'watchEarn': '观看并赚取',
-      'pointsAdded': '已添加 +3 STL！',
-      'info': '关于 Stelluriini',
-      'solanaToken':
-          'Stelluriini (STL) 是一个与 Solana 生态系统相关的代币项目。',
-      'stellaCompany':
-          '此应用中的 STL 积分是应用内的虚拟积分。',
-      'login': '登录',
-      'register': '创建账户',
-      'email': '电子邮箱',
-      'password': '密码',
+      'whitepaper': '白皮书',
+      'language': '语言',
       'logout': '退出登录',
+      'balance': '余额',
+      'mining': '挖矿',
+      'miningRate': '挖矿速率',
+      'hashRate': '哈希率',
+      'effectiveHashRate': '有效哈希率',
+      'dailyHashRateLabel': '每日哈希率',
+      'dailyHashRateDay': '第 {day} 天',
+      'dailyHashRateMaximum': '最高：{rate} HR',
+      'dailyHashRateSuccess': '第 {day} 天哈希率：{rate} HR',
+      'startMining': '开始挖矿',
+      'claimMining': '领取 STL',
+      'miningActive': '挖矿进行中',
+      'miningComplete': '挖矿周期完成',
+      'timeRemaining': '剩余时间',
+      'remaining': '剩余时间：{time}',
+      'streak': '连续天数',
+      'days': '天',
+      'dailyBonus': '每日奖励',
+      'dailyClaim': '领取每日奖励',
+      'dailyReward': '每日奖励',
+      'claimedToday': '今日已领取',
+      'alreadyClaimed': '您今天已经领取过奖励。',
+      'watchAd': '观看广告',
+      'watchAndEarn': '观看并赚取',
+      'loadingAd': '正在加载广告...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': '观看广告，激活 +{amount} HR Stella Power Boost，持续 4 小时。',
+      'powerBoostActive': 'Power Boost 已激活',
+      'powerBoostActiveTitle': 'Stella Power Boost 已激活！',
+      'powerBoostActiveMessage': '+{amount} HR 将在您的挖矿周期中生效。',
+      'powerBoostAlreadyActive': 'Power Boost 已经激活。',
+      'nextPowerBoostMessage': '当前 Boost 结束后即可使用下一个 Power Boost。',
+      'nextAdAfterBoost': 'Boost 结束后即可观看下一条广告。',
+      'maxBoostsInfo': '每天最多可以激活 {count} 个 Power Boost。',
+      'effectiveHashRateLabel': '有效哈希率',
+      'serverConnectionFailed': '服务器连接失败。',
+      'refresh': '刷新',
+      'profile': '个人资料',
+      'comingSoon': '即将推出',
+      'information': '信息',
+      'catFact': 'Stella 猫咪知识',
+      'stellaPower': 'Stella Power',
+      'transactions': '交易',
+      'noTransactions': '暂无交易。',
+      'points': '积分',
+      'pointsAdded': '积分已添加',
+      'resetAccount': '重置测试账户',
+      'resetConfirm': '确定要重置测试账户吗？',
+      'cancel': '取消',
+      'reset': '重置',
+      'error': '错误',
+      'success': '成功',
+      'close': '关闭',
     },
-
-    // ========================================================
-    // 🇻🇳 TIẾNG VIỆT
-    // ========================================================
 
     'vi': {
-      'stella': 'Stella',
-      'yourBalance': 'SỐ DƯ STL CỦA BẠN',
-      'virtualPoints': 'Điểm ảo trong ứng dụng',
-      'selectLanguage': 'Chọn ngôn ngữ',
-      'refresh': 'Làm mới',
-      'serverConnectionFailed':
-          '🐱 Không thể kết nối với máy chủ.',
-
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA ĐANG ĐÀO',
-      'miningComplete': 'ĐÃ ĐÀO XONG!',
-      'stellaIsResting': 'STELLA ĐANG NGHỈ',
-      'stellaMiningNow':
-          '🐾 Stella đang đào STL ngay bây giờ',
-      'stlReadyToCollect':
-          '🐱✨ STL đã sẵn sàng để nhận!',
-      'stellaWaiting':
-          '🐱 Stella đang chờ chu kỳ đào tiếp theo',
-      'stlMined': 'STL ĐÃ ĐÀO',
-      'timeRemaining': 'THỜI GIAN CÒN LẠI',
-      'miningFinished': 'ĐÃ KẾT THÚC ĐÀO',
-      'waitingForStella': 'ĐANG CHỜ STELLA',
-      'ready': 'SẴN SÀNG',
-      'hashRate': 'HASH RATE',
-      'totalStl': 'TỔNG STL',
-      'stellaMiningProgress':
-          '⛏️ TIẾN ĐỘ ĐÀO CỦA STELLA',
-      'stlPerHour': '⚡ {amount} STL / giờ',
-
-      'stellaIsWorking': 'STELLA ĐANG LÀM VIỆC...',
-      'stellaIsMiningButton':
-          '🐱 STELLA ĐANG ĐÀO',
-      'watchAdCollectRestart':
-          '📺 XEM QUẢNG CÁO • NHẬN & ĐÀO LẠI',
-      'watchAdStartMining':
-          '📺 XEM QUẢNG CÁO • BẮT ĐẦU ĐÀO',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella đang đào STL rồi!',
-      'prepareAd':
-          '📺 Stella đang chuẩn bị quảng cáo...',
-      'miningStarted':
-          '🐱⛏️📺 Đã xem quảng cáo! Stella bắt đầu chu kỳ đào 24 giờ!',
-      'miningCollected':
-          '🐱✨ Stella đã nhận {amount} STL và bắt đầu chu kỳ đào 24 giờ mới! ⛏️',
-      'miningStartFailed':
-          '🐱 Không thể bắt đầu đào.',
-
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          'Xem quảng cáo và giúp Stella ⚡',
-      'watchAd': 'XEM QUẢNG CÁO',
-      'adLoading': 'ĐANG TẢI QUẢNG CÁO...',
-      'adUnavailable': 'QUẢNG CÁO KHÔNG KHẢ DỤNG',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} Hash Rate',
-      'dailyAds': 'Quảng cáo hàng ngày',
-      'dailyLimit': 'Quảng cáo mỗi ngày',
-      'dailyLimitReached':
-          'Đã đạt giới hạn quảng cáo hàng ngày',
-      'nextAd': 'Quảng cáo tiếp theo',
-      'adsToday':
-          '{current} / {max} Power Boost hôm nay',
-      'stellaResting':
-          '🐱 Stella đang nghỉ thêm {time}.',
-      'testAdRewardFailed':
-          '🐱 Không thể lưu phần thưởng quảng cáo.',
-      'adRewardDuplicate':
-          '🐱📺 Phần thưởng quảng cáo đã được xử lý.',
-      'powerBoostReward':
-          '🐱⚡ Stella nhận được +{amount} Hash Rate từ Power Boost!',
-      'powerBoostFailed':
-          '🐱 Power Boost thất bại.',
-      'powerBoostOffer':
-          '+{amount} HR • {hours} giờ',
-      'powerBoostActive':
-          'Power Boost đang hoạt động ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST ĐANG HOẠT ĐỘNG',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost đã đang hoạt động. Thời gian còn lại: {time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Stella Power Boost đang hoạt động!',
-      'nextPowerBoostMessage':
-          '⏳ Power Boost tiếp theo sẽ khả dụng sau {time}.',
-      'nextAdAfterBoost':
-          'Quảng cáo tiếp theo sẽ khả dụng khi Power Boost này kết thúc.',
-      'maxBoostsInfo':
-          'Tối đa {max} Power Boost mỗi ngày • {hours} giờ mỗi lần',
-      'effectiveHashRateLabel':
-          '⚡ Hash Rate hiệu dụng: {amount} HR',
-      'dailyHashRateLabel':
-          'Hash Rate hàng ngày: {amount} HR',
-
-      'dailyClaim': 'Phần thưởng hàng ngày',
-      'dailyReward': 'NHẬN PHẦN THƯỞNG HÀNG NGÀY',
-      'claimed': 'Đã nhận hôm nay',
-      'streak': 'Chuỗi ngày liên tiếp',
-      'stellaDailyBonus': 'THƯỞNG HÀNG NGÀY CỦA STELLA',
-      'dailyBonusDescription':
-          'Hash Rate hàng ngày: {amount} HR • 🔥 chuỗi {streak} ngày',
-      'dailyHashRateDay':
-          'Ngày {day} • Hash Rate hàng ngày {amount} HR',
-      'dailyHashRateMaximum':
-          'Từ ngày 7 trở đi đạt tối đa {amount} HR.',
-      'claimDailyBonus':
-          '🎁 NHẬN THƯỞNG HÀNG NGÀY',
-      'bonusClaimedToday':
-          '🐱 ĐÃ NHẬN THƯỞNG HÔM NAY',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Phần thưởng hàng ngày của Stella đã được nhận hôm nay!',
-      'dailyBonusSuccess':
-          '🐱🎁 Hash Rate hàng ngày: {amount} HR! Chuỗi: {streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 Hash Rate hàng ngày: {amount} HR! Chuỗi: {streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 Nhận thưởng hàng ngày thất bại.',
-
-      'stellaFacts':
-          'Sự thật về mèo của Stella 🐱',
-
-      'menu': 'Menu Stella',
-      'about': 'Thông tin về Stelluriini',
-      'whitePaper': 'White Paper',
+      'appTitle': 'STELLURIINI',
+      'home': 'Trang chủ',
+      'about': 'Giới thiệu',
+      'history': 'Lịch sử giao dịch',
+      'roadmap': 'Lộ trình',
       'token': 'Token STL',
       'tokenomics': 'Tokenomics',
-      'roadmap': 'Lộ trình',
-      'transactionHistory':
-          'Lịch sử giao dịch',
-      'comingSoon':
-          '🐱✨ {title} sẽ sớm ra mắt với phong cách Stella!',
-
-      'footerTagline':
-          'Stella đang đào tương lai.',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      'watchEarn': 'Xem và nhận thưởng',
-      'pointsAdded': 'Đã thêm +3 STL!',
-      'info': 'Thông tin về Stelluriini',
-      'solanaToken':
-          'Stelluriini (STL) là một dự án token liên quan đến hệ sinh thái Solana.',
-      'stellaCompany':
-          'Điểm STL trong ứng dụng này là điểm ảo bên trong ứng dụng.',
-      'login': 'Đăng nhập',
-      'register': 'Tạo tài khoản',
-      'email': 'Email',
-      'password': 'Mật khẩu',
+      'whitepaper': 'Whitepaper',
+      'language': 'Ngôn ngữ',
       'logout': 'Đăng xuất',
+      'balance': 'Số dư',
+      'mining': 'Khai thác',
+      'miningRate': 'Tốc độ khai thác',
+      'hashRate': 'Hash Rate',
+      'effectiveHashRate': 'Hash Rate hiệu dụng',
+      'dailyHashRateLabel': 'Hash Rate hàng ngày',
+      'dailyHashRateDay': 'Ngày {day}',
+      'dailyHashRateMaximum': 'Tối đa: {rate} HR',
+      'dailyHashRateSuccess': 'Hash Rate ngày {day}: {rate} HR',
+      'startMining': 'BẮT ĐẦU KHAI THÁC',
+      'claimMining': 'NHẬN STL',
+      'miningActive': 'Đang khai thác',
+      'miningComplete': 'Chu kỳ khai thác hoàn tất',
+      'timeRemaining': 'Thời gian còn lại',
+      'remaining': 'Thời gian còn lại: {time}',
+      'streak': 'Chuỗi ngày',
+      'days': 'ngày',
+      'dailyBonus': 'Thưởng hàng ngày',
+      'dailyClaim': 'Nhận thưởng hàng ngày',
+      'dailyReward': 'Phần thưởng hàng ngày',
+      'claimedToday': 'Đã nhận hôm nay',
+      'alreadyClaimed': 'Bạn đã nhận phần thưởng hôm nay.',
+      'watchAd': 'XEM QUẢNG CÁO',
+      'watchAndEarn': 'XEM & NHẬN',
+      'loadingAd': 'ĐANG TẢI QUẢNG CÁO...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': 'Xem quảng cáo để kích hoạt +{amount} HR Stella Power Boost trong 4 giờ.',
+      'powerBoostActive': 'Power Boost đang hoạt động',
+      'powerBoostActiveTitle': 'Stella Power Boost đang hoạt động!',
+      'powerBoostActiveMessage': '+{amount} HR đang được áp dụng trong chu kỳ khai thác của bạn.',
+      'powerBoostAlreadyActive': 'Power Boost đã đang hoạt động.',
+      'nextPowerBoostMessage': 'Power Boost tiếp theo sẽ khả dụng khi boost hiện tại kết thúc.',
+      'nextAdAfterBoost': 'Quảng cáo tiếp theo khả dụng sau khi boost kết thúc.',
+      'maxBoostsInfo': 'Bạn có thể kích hoạt tối đa {count} Power Boost mỗi ngày.',
+      'effectiveHashRateLabel': 'Hash Rate hiệu dụng',
+      'serverConnectionFailed': 'Kết nối máy chủ thất bại.',
+      'refresh': 'Làm mới',
+      'profile': 'Hồ sơ',
+      'comingSoon': 'Sắp ra mắt',
+      'information': 'Thông tin',
+      'catFact': 'Sự thật về mèo Stella',
+      'stellaPower': 'Stella Power',
+      'transactions': 'Giao dịch',
+      'noTransactions': 'Chưa có giao dịch.',
+      'points': 'điểm',
+      'pointsAdded': 'Đã thêm điểm',
+      'resetAccount': 'Đặt lại tài khoản thử nghiệm',
+      'resetConfirm': 'Bạn có chắc muốn đặt lại tài khoản thử nghiệm không?',
+      'cancel': 'Hủy',
+      'reset': 'Đặt lại',
+      'error': 'Lỗi',
+      'success': 'Thành công',
+      'close': 'Đóng',
     },
 
-    // ========================================================
-    // 🇯🇵 日本語
-    // ========================================================
-
     'ja': {
-      'stella': 'Stella',
-      'yourBalance': 'あなたの STL 残高',
-      'virtualPoints': 'アプリ内の仮想ポイント',
-      'selectLanguage': '言語を選択',
-      'refresh': '更新',
-      'serverConnectionFailed':
-          '🐱 サーバーに接続できませんでした。',
-
-      'stellaMining': 'Stella Mining',
-      'stellaIsMining': 'STELLA は採掘中',
-      'miningComplete': '採掘完了！',
-      'stellaIsResting': 'STELLA は休憩中',
-      'stellaMiningNow':
-          '🐾 Stella は今 STL を採掘しています',
-      'stlReadyToCollect':
-          '🐱✨ STL を受け取る準備ができました！',
-      'stellaWaiting':
-          '🐱 Stella は次の採掘サイクルを待っています',
-      'stlMined': '採掘済み STL',
-      'timeRemaining': '残り時間',
-      'miningFinished': '採掘終了',
-      'waitingForStella': 'STELLA を待っています',
-      'ready': '準備完了',
-      'hashRate': 'ハッシュレート',
-      'totalStl': 'STL 合計',
-      'stellaMiningProgress':
-          '⛏️ STELLA 採掘進行状況',
-      'stlPerHour': '⚡ {amount} STL / 時間',
-
-      'stellaIsWorking': 'STELLA が作業中...',
-      'stellaIsMiningButton':
-          '🐱 STELLA は採掘中',
-      'watchAdCollectRestart':
-          '📺 広告を見る • 受け取って再スタート',
-      'watchAdStartMining':
-          '📺 広告を見る • 採掘を開始',
-      'stellaAlreadyMining':
-          '🐱⛏️ Stella はすでに STL を採掘中です！',
-      'prepareAd':
-          '📺 Stella が広告を準備しています...',
-      'miningStarted':
-          '🐱⛏️📺 広告を視聴しました！Stella が24時間の採掘を開始しました！',
-      'miningCollected':
-          '🐱✨ Stella は {amount} STL を受け取り、新しい24時間の採掘を開始しました！⛏️',
-      'miningStartFailed':
-          '🐱 採掘を開始できませんでした。',
-
-      'stellaPowerBoost': 'STELLA POWER BOOST',
-      'watchAdHelpStella':
-          '広告を見て Stella を助けよう ⚡',
-      'watchAd': '広告を見る',
-      'adLoading': '広告を読み込み中...',
-      'adUnavailable': '広告を利用できません',
-      'powerBoost': 'Power Boost',
-      'hashRateBonus': '+{amount} ハッシュレート',
-      'dailyAds': '毎日の広告',
-      'dailyLimit': '1日の広告',
-      'dailyLimitReached':
-          '1日の広告上限に達しました',
-      'nextAd': '次の広告',
-      'adsToday':
-          '本日の Power Boost: {current} / {max}',
-      'stellaResting':
-          '🐱 Stella はあと {time} 休憩します。',
-      'testAdRewardFailed':
-          '🐱 広告報酬を保存できませんでした。',
-      'adRewardDuplicate':
-          '🐱📺 広告報酬はすでに処理されています。',
-      'powerBoostReward':
-          '🐱⚡ Power Boost で Stella が +{amount} ハッシュレートを獲得しました！',
-      'powerBoostFailed':
-          '🐱 Power Boost に失敗しました。',
-      'powerBoostOffer':
-          '+{amount} HR • {hours}時間',
-      'powerBoostActive':
-          'Power Boost が有効です ⚡',
-      'powerBoostActiveTitle':
-          '⚡ STELLA POWER BOOST 有効中',
-      'powerBoostActiveMessage':
-          '🐱⚡ Power Boost はすでに有効です。残り時間：{time}',
-      'powerBoostAlreadyActive':
-          '🐱⚡ Stella Power Boost はすでに有効です！',
-      'nextPowerBoostMessage':
-          '⏳ 次の Power Boost は {time} 後に利用できます。',
-      'nextAdAfterBoost':
-          'この Power Boost が終了すると次の広告を利用できます。',
-      'maxBoostsInfo':
-          '1日最大 {max} 回の Power Boost • 1回 {hours} 時間',
-      'effectiveHashRateLabel':
-          '⚡ 実効ハッシュレート：{amount} HR',
-      'dailyHashRateLabel':
-          'デイリーハッシュレート：{amount} HR',
-
-      'dailyClaim': '毎日の報酬',
-      'dailyReward': '毎日の報酬を受け取る',
-      'claimed': '本日は受け取り済み',
-      'streak': '連続記録',
-      'stellaDailyBonus': 'STELLA デイリーボーナス',
-      'dailyBonusDescription':
-          '毎日のハッシュレート: {amount} HR • 🔥 {streak}日連続',
-      'dailyHashRateDay':
-          '{day}日目 • デイリーハッシュレート {amount} HR',
-      'dailyHashRateMaximum':
-          '7日目以降は最大 {amount} HR に到達します。',
-      'claimDailyBonus':
-          '🎁 デイリーボーナスを受け取る',
-      'bonusClaimedToday':
-          '🐱 本日のボーナスは受け取り済み',
-      'dailyBonusAlreadyClaimed':
-          '🐱 Stella のデイリーボーナスは本日すでに受け取っています！',
-      'dailyBonusSuccess':
-          '🐱🎁 毎日のハッシュレート: {amount} HR！連続記録：{streak} 🔥',
-      'dailyHashRateSuccess':
-          '🐱🎁 毎日のハッシュレート: {amount} HR！連続記録：{streak} 🔥',
-      'dailyBonusFailed':
-          '🐱 デイリーボーナスに失敗しました。',
-
-      'stellaFacts':
-          'Stella の猫の豆知識 🐱',
-
-      'menu': 'Stella メニュー',
-      'about': 'Stelluriini について',
-      'whitePaper': 'ホワイトペーパー',
+      'appTitle': 'STELLURIINI',
+      'home': 'ホーム',
+      'about': '概要',
+      'history': '取引履歴',
+      'roadmap': 'ロードマップ',
       'token': 'STL トークン',
       'tokenomics': 'トークノミクス',
-      'roadmap': 'ロードマップ',
-      'transactionHistory':
-          '取引履歴',
-      'comingSoon':
-          '🐱✨ {title} は Stella テーマで近日公開！',
-
-      'footerTagline':
-          'Stella は未来を採掘しています。',
-      'footerToken':
-          'STELLURIINI • STL',
-
-      'watchEarn': '視聴して獲得',
-      'pointsAdded': '+3 STL を追加しました！',
-      'info': 'Stelluriini について',
-      'solanaToken':
-          'Stelluriini（STL）は、Solanaエコシステムに関連するトークンプロジェクトです。',
-      'stellaCompany':
-          'このアプリ内のSTLポイントは仮想的なアプリ内ポイントです。',
-      'login': 'ログイン',
-      'register': 'アカウントを作成',
-      'email': 'メールアドレス',
-      'password': 'パスワード',
+      'whitepaper': 'ホワイトペーパー',
+      'language': '言語',
       'logout': 'ログアウト',
+      'balance': '残高',
+      'mining': 'マイニング',
+      'miningRate': 'マイニング速度',
+      'hashRate': 'ハッシュレート',
+      'effectiveHashRate': '実効ハッシュレート',
+      'dailyHashRateLabel': 'デイリーハッシュレート',
+      'dailyHashRateDay': '{day}日目',
+      'dailyHashRateMaximum': '最大：{rate} HR',
+      'dailyHashRateSuccess': '{day}日目のハッシュレート：{rate} HR',
+      'startMining': 'マイニング開始',
+      'claimMining': 'STLを受け取る',
+      'miningActive': 'マイニング中',
+      'miningComplete': 'マイニングサイクル完了',
+      'timeRemaining': '残り時間',
+      'remaining': '残り時間：{time}',
+      'streak': '連続日数',
+      'days': '日',
+      'dailyBonus': 'デイリーボーナス',
+      'dailyClaim': 'デイリーボーナスを受け取る',
+      'dailyReward': 'デイリー報酬',
+      'claimedToday': '本日受け取り済み',
+      'alreadyClaimed': '本日の報酬はすでに受け取っています。',
+      'watchAd': '広告を見る',
+      'watchAndEarn': '見て獲得',
+      'loadingAd': '広告を読み込み中...',
+      'adReward': '+{amount} HR',
+      'powerBoost': 'Stella Power Boost',
+      'powerBoostOffer': '広告を見て、+{amount} HR の Stella Power Boost を4時間有効にします。',
+      'powerBoostActive': 'Power Boost 有効',
+      'powerBoostActiveTitle': 'Stella Power Boost が有効です！',
+      'powerBoostActiveMessage': 'マイニングサイクル中、+{amount} HR が有効です。',
+      'powerBoostAlreadyActive': 'Power Boost はすでに有効です。',
+      'nextPowerBoostMessage': '現在のBoostが終了すると、次のPower Boostを利用できます。',
+      'nextAdAfterBoost': 'Boost終了後に次の広告を利用できます。',
+      'maxBoostsInfo': '1日に最大 {count} 回の Power Boost を有効にできます。',
+      'effectiveHashRateLabel': '実効ハッシュレート',
+      'serverConnectionFailed': 'サーバーへの接続に失敗しました。',
+      'refresh': '更新',
+      'profile': 'プロフィール',
+      'comingSoon': '近日公開',
+      'information': '情報',
+      'catFact': 'Stellaの猫豆知識',
+      'stellaPower': 'Stella Power',
+      'transactions': '取引',
+      'noTransactions': 'まだ取引はありません。',
+      'points': 'ポイント',
+      'pointsAdded': 'ポイントが追加されました',
+      'resetAccount': 'テストアカウントをリセット',
+      'resetConfirm': 'テストアカウントをリセットしますか？',
+      'cancel': 'キャンセル',
+      'reset': 'リセット',
+      'error': 'エラー',
+      'success': '成功',
+      'close': '閉じる',
     },
   };
 
-  // ==========================================================
-  // 🔤 GET TRANSLATION
-  // ==========================================================
-
-  String get(String key) {
-    return _translations[languageCode]?[key] ??
+  String t(String key, {Map<String, String>? params}) {
+    String value =
+        _translations[languageCode]?[key] ??
         _translations['en']?[key] ??
-        _translations['fi']?[key] ??
         key;
-  }
 
-  // ==========================================================
-  // 🔤 GET TRANSLATION WITH PARAMETERS
-  // ==========================================================
-
-  String getWithParams(
-    String key, {
-    Map<String, String> params = const {},
-  }) {
-    String text = get(key);
-
-    for (final MapEntry<String, String> entry
-        in params.entries) {
-      text = text.replaceAll(
-        '{${entry.key}}',
-        entry.value,
-      );
+    if (params != null) {
+      params.forEach((key, replacement) {
+        value = value.replaceAll('{$key}', replacement);
+      });
     }
 
-    return text;
+    return value;
+  }
+
+  String get(String key) => t(key);
+
+  static AppLocalization of(BuildContext context) {
+    final locale = Localizations.localeOf(context);
+
+    final languageCode = supportedLanguages.contains(locale.languageCode)
+        ? locale.languageCode
+        : 'en';
+
+    return AppLocalization(languageCode);
   }
 }
