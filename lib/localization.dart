@@ -139,6 +139,10 @@ class AppLocalizations {
       'prepareAd': 'Valmistellaan mainosta...',
       'miningCollected': 'Kerätty {amount} STL',
       'miningStartFailed': 'Louhinnan aloittaminen epäonnistui.',
+
+      // Footer
+      'footerTagline': 'Louhitaan yhdessä Stelluriinin tulevaisuutta.',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -213,8 +217,10 @@ class AppLocalizations {
       'adsToday': 'Ads today: {current}/{max}',
       'dailyLimitReached': 'Daily ad limit reached.',
       'powerBoostReward': 'Stella Power Boost: +{amount} HR',
-      'adRewardDuplicate': 'This ad reward has already been processed.',
-      'testAdRewardFailed': 'Failed to process the ad reward.',
+      'adRewardDuplicate':
+          'This ad reward has already been processed.',
+      'testAdRewardFailed':
+          'Failed to process the ad reward.',
 
       'serverConnectionFailed':
           'Server connection failed.',
@@ -249,7 +255,8 @@ class AppLocalizations {
       'stellaIsMining': 'Stella is mining',
       'stellaMiningNow': 'Stella is mining right now',
       'stellaIsResting': 'Stella is resting',
-      'stellaWaiting': 'Stella is waiting for the next mining cycle',
+      'stellaWaiting':
+          'Stella is waiting for the next mining cycle',
       'stlReadyToCollect': 'STL is ready to collect',
       'stlMined': 'STL MINED',
       'waitingForStella': 'Waiting for Stella',
@@ -260,6 +267,10 @@ class AppLocalizations {
       'prepareAd': 'Preparing ad...',
       'miningCollected': 'Collected {amount} STL',
       'miningStartFailed': 'Failed to start mining.',
+
+      // Footer
+      'footerTagline': 'Mining together for the future of Stelluriini.',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -385,6 +396,11 @@ class AppLocalizations {
       'prepareAd': 'Werbung wird vorbereitet...',
       'miningCollected': '{amount} STL gesammelt',
       'miningStartFailed': 'Mining konnte nicht gestartet werden.',
+
+      // Footer
+      'footerTagline':
+          'Gemeinsam für die Zukunft von Stelluriini minen.',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -459,7 +475,8 @@ class AppLocalizations {
       'maxBoostsInfo':
           'Puedes activar hasta {count} Power Boosts al día.',
       'adsToday': 'Anuncios hoy: {current}/{max}',
-      'dailyLimitReached': 'Se alcanzó el límite diario de anuncios.',
+      'dailyLimitReached':
+          'Se alcanzó el límite diario de anuncios.',
       'powerBoostReward': 'Stella Power Boost: +{amount} HR',
       'adRewardDuplicate':
           'Esta recompensa publicitaria ya fue procesada.',
@@ -515,6 +532,11 @@ class AppLocalizations {
       'miningCollected': 'Recolectado {amount} STL',
       'miningStartFailed':
           'No se pudo iniciar la minería.',
+
+      // Footer
+      'footerTagline':
+          'Minando juntos por el futuro de Stelluriini.',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -646,6 +668,11 @@ class AppLocalizations {
       'miningCollected': '{amount} STL récupérés',
       'miningStartFailed':
           'Impossible de démarrer le minage.',
+
+      // Footer
+      'footerTagline':
+          'Minons ensemble pour l’avenir de Stelluriini.',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -760,8 +787,10 @@ class AppLocalizations {
       'stellaIsMining': 'Stella 正在挖矿',
       'stellaMiningNow': 'Stella 正在挖矿',
       'stellaIsResting': 'Stella 正在休息',
-      'stellaWaiting': 'Stella 正在等待下一轮挖矿',
-      'stlReadyToCollect': 'STL 已准备好领取',
+      'stellaWaiting':
+          'Stella 正在等待下一轮挖矿',
+      'stlReadyToCollect':
+          'STL 已准备好领取',
       'stlMined': '已挖出的 STL',
       'waitingForStella': '正在等待 Stella',
 
@@ -771,6 +800,10 @@ class AppLocalizations {
       'prepareAd': '正在准备广告...',
       'miningCollected': '已领取 {amount} STL',
       'miningStartFailed': '挖矿启动失败。',
+
+      // Footer
+      'footerTagline': '一起挖矿，共创 Stelluriini 的未来。',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -901,6 +934,11 @@ class AppLocalizations {
       'miningCollected': 'Đã nhận {amount} STL',
       'miningStartFailed':
           'Không thể bắt đầu khai thác.',
+
+      // Footer
+      'footerTagline':
+          'Cùng khai thác vì tương lai của Stelluriini.',
+      'footerToken': 'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -1033,6 +1071,11 @@ class AppLocalizations {
           '{amount} STLを受け取りました',
       'miningStartFailed':
           'マイニングを開始できませんでした。',
+
+      // Footer
+      'footerTagline':
+          'Stelluriiniの未来のために、一緒にマイニングしましょう。',
+      'footerToken': 'STL • STELLURIINI',
     },
   };
 
