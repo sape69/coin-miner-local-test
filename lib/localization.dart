@@ -54,6 +54,10 @@ class AppLocalizations {
       'dailyHashRateMaximum': 'Maksimi: {rate} HR',
       'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
 
+      'stellaMiningProgress': 'Stellan louhinnan edistyminen',
+      'stlPerHour': 'STL tunnissa',
+      'hashRateBonus': 'Hash Rate -bonus',
+
       'startMining': 'ALOITA LOUHINTA',
       'claimMining': 'KERÄÄ STL',
       'miningActive': 'Louhinta käynnissä',
@@ -174,6 +178,10 @@ class AppLocalizations {
       'dailyHashRateMaximum': 'Maximum: {rate} HR',
       'dailyHashRateSuccess': 'Day {day} Hash Rate: {rate} HR',
 
+      'stellaMiningProgress': 'Stella Mining Progress',
+      'stlPerHour': 'STL per hour',
+      'hashRateBonus': 'Hash Rate Bonus',
+
       'startMining': 'START MINING',
       'claimMining': 'CLAIM STL',
       'miningActive': 'Mining active',
@@ -269,7 +277,8 @@ class AppLocalizations {
       'miningStartFailed': 'Failed to start mining.',
 
       // Footer
-      'footerTagline': 'Mining together for the future of Stelluriini.',
+      'footerTagline':
+          'Mining together for the future of Stelluriini.',
       'footerToken': 'STL • STELLURIINI',
     },
 
@@ -302,6 +311,10 @@ class AppLocalizations {
       'dailyHashRateMaximum': 'Maximum: {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate an Tag {day}: {rate} HR',
+
+      'stellaMiningProgress': 'Stellas Mining-Fortschritt',
+      'stlPerHour': 'STL pro Stunde',
+      'hashRateBonus': 'Hash-Rate-Bonus',
 
       'startMining': 'MINING STARTEN',
       'claimMining': 'STL EINSAMMELN',
@@ -432,6 +445,10 @@ class AppLocalizations {
       'dailyHashRateMaximum': 'Máximo: {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate del día {day}: {rate} HR',
+
+      'stellaMiningProgress': 'Progreso de minería de Stella',
+      'stlPerHour': 'STL por hora',
+      'hashRateBonus': 'Bono de Hash Rate',
 
       'startMining': 'INICIAR MINERÍA',
       'claimMining': 'RECLAMAR STL',
@@ -569,6 +586,10 @@ class AppLocalizations {
       'dailyHashRateSuccess':
           'Hash Rate du jour {day} : {rate} HR',
 
+      'stellaMiningProgress': 'Progression du minage de Stella',
+      'stlPerHour': 'STL par heure',
+      'hashRateBonus': 'Bonus de Hash Rate',
+
       'startMining': 'DÉMARRER LE MINAGE',
       'claimMining': 'RÉCLAMER STL',
       'miningActive': 'Minage actif',
@@ -705,6 +726,10 @@ class AppLocalizations {
       'dailyHashRateSuccess':
           '第 {day} 天哈希率：{rate} HR',
 
+      'stellaMiningProgress': 'Stella 挖矿进度',
+      'stlPerHour': '每小时 STL',
+      'hashRateBonus': '哈希率奖励',
+
       'startMining': '开始挖矿',
       'claimMining': '领取 STL',
       'miningActive': '挖矿进行中',
@@ -835,6 +860,10 @@ class AppLocalizations {
       'dailyHashRateMaximum': 'Tối đa: {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate ngày {day}: {rate} HR',
+
+      'stellaMiningProgress': 'Tiến độ khai thác của Stella',
+      'stlPerHour': 'STL mỗi giờ',
+      'hashRateBonus': 'Thưởng Hash Rate',
 
       'startMining': 'BẮT ĐẦU KHAI THÁC',
       'claimMining': 'NHẬN STL',
@@ -970,6 +999,10 @@ class AppLocalizations {
       'dailyHashRateMaximum': '最大：{rate} HR',
       'dailyHashRateSuccess':
           '{day}日目のハッシュレート：{rate} HR',
+
+      'stellaMiningProgress': 'Stellaのマイニング進行状況',
+      'stlPerHour': '1時間あたりのSTL',
+      'hashRateBonus': 'ハッシュレートボーナス',
 
       'startMining': 'マイニング開始',
       'claimMining': 'STLを受け取る',
