@@ -411,15 +411,27 @@ function getAdStatus(
 // ⛏️ GET VALID MINING HASH RATE
 // ============================================================
 //
-// Aktiivisen louhintajakson Hash Rate lukitaan jakson
-// alussa.
+// TÄRKEÄ UUSI SÄÄNTÖ:
 //
-// Uusi järjestelmä sallii vain:
+// Vanhaa Firestore-arvoa ei käytetä uuden järjestelmän
+// Daily Hash Raten määrittämiseen.
+//
+// Legacy-arvot, esimerkiksi:
+//
+// 12 HR
+// 10 HR
+// 7 HR
+// 5 HR
+//
+// eivät saa koskaan jatkaa uudessa järjestelmässä.
+//
+// Aktiivinen mining-jakso voi käyttää vain uuden järjestelmän
+// sallimaa arvoa:
 //
 // 0.5 → 1.0 → 1.5 → 2.0 → 2.5 → 3.0 → 3.5 HR
 //
-// Jos Firestoressa on vanha arvo, esimerkiksi 12 HR,
-// sitä EI käytetä uuden järjestelmän louhintanopeutena.
+// Jos vanha arvo on suurempi kuin 3.5 HR, käytetään nykyistä
+// Daily Hash Ratea.
 //
 // ============================================================
 
@@ -433,14 +445,50 @@ function getMiningHashRate(
       0
     );
 
+  const safeFallback =
+    Math.min(
+      MAX_DAILY_HASH_RATE,
+      Math.max(
+        DAILY_HASH_RATE_START,
+        getSafePositiveNumber(
+          fallbackHashRate,
+          DAILY_HASH_RATE_START
+        )
+      )
+    );
+
+  // ----------------------------------------------------------
+  // Legacy-arvo
+  // ----------------------------------------------------------
+  //
+  // Jos arvo on yli uuden järjestelmän maksimin, sitä ei
+  // hyväksytä.
+  //
+  // Esimerkiksi 12 HR → käytetään Daily Hash Ratea.
+  //
+  // ----------------------------------------------------------
+
   if (
-    stored >= DAILY_HASH_RATE_START &&
-    stored <= MAX_DAILY_HASH_RATE
+    stored > MAX_DAILY_HASH_RATE
   ) {
-    return stored;
+    return safeFallback;
   }
 
-  return fallbackHashRate;
+  // ----------------------------------------------------------
+  // Puuttuva tai virheellinen arvo
+  // ----------------------------------------------------------
+
+  if (
+    stored < DAILY_HASH_RATE_START
+  ) {
+    return safeFallback;
+  }
+
+  // ----------------------------------------------------------
+  // Sallittu uuden järjestelmän arvo
+  // ----------------------------------------------------------
+
+  return stored;
 }
 
 // ============================================================
@@ -454,8 +502,11 @@ function getMiningHashRate(
 // boostStartedAt
 // boostEndsAt
 //
-// Näiden avulla lasketaan kuinka paljon aktiivinen boosti
-// osui kyseiseen mining-jaksoon.
+// Boost voidaan aloittaa edellisen mining-jakson aikana ja
+// se voi jatkua uuden mining-jakson puolelle.
+//
+// Siksi tarkistamme boostin ja mining-jakson päällekkäisyyden
+// kokonaan JavaScriptissä.
 //
 // ============================================================
 
@@ -691,13 +742,21 @@ const getMiningStatus =
           );
 
         // ====================================================
-        // ⚡ CURRENT HASH RATE
+        // ⚡ CURRENT DAILY HASH RATE
         // ====================================================
         //
-        // Uusi järjestelmä ei koskaan käytä vanhaa esim.
-        // 12 HR Firestore-arvoa.
+        // TÄRKEÄ:
         //
-        // Hash Rate tulee Daily Streakistä.
+        // Nykyinen Daily Hash Rate lasketaan aina streakistä.
+        //
+        // Firestoressa oleva vanha hashRate ei määrää tätä.
+        //
+        // Esimerkiksi:
+        //
+        // legacy hashRate = 12
+        // streak = 1
+        //
+        // → hashRate = 0.5
         //
         // ====================================================
 
@@ -994,6 +1053,9 @@ const getMiningStatus =
           dailyHashRateBonus:
             dailyStatus.dailyHashRate,
 
+          dailyHashRate:
+            dailyStatus.dailyHashRate,
+
           // ==================================================
           // 📺 POWER BOOST
           // ==================================================
@@ -1136,12 +1198,7 @@ const claimMining =
               );
 
             // ==================================================
-            // ⚡ CURRENT HASH RATE
-            // ====================================================
-            //
-            // Vanha Firestore-hashRate, esim. 12 HR,
-            // ei enää määrää uutta louhintanopeutta.
-            //
+            // ⚡ CURRENT DAILY HASH RATE
             // ====================================================
 
             const hashRate =
@@ -1229,7 +1286,7 @@ const claimMining =
 
             // ==================================================
             // 🕒 PREVIOUS MINING CYCLE
-            // ==================================================
+            // ====================================================
 
             const previousStart =
               getMiningStartTime(data);
@@ -1249,7 +1306,7 @@ const claimMining =
 
             // ==================================================
             // 💰 COLLECT FINISHED MINING
-            // ==================================================
+            // ====================================================
 
             if (
               previousStart &&
@@ -1357,7 +1414,8 @@ const claimMining =
             // ⚡ NEW CYCLE HASH RATE
             // ====================================================
             //
-            // Uusi mining-jakso käyttää Daily Hash Ratea.
+            // Uusi mining-jakso käyttää aina tämänhetkistä
+            // Daily Hash Ratea.
             //
             // ====================================================
 
@@ -1366,15 +1424,6 @@ const claimMining =
 
             // ==================================================
             // 👤 UPDATE USER
-            // ==================================================
-            //
-            // Tärkeää:
-            //
-            // Power Boost -kenttiä EI poisteta tässä.
-            //
-            // Jos boost on edelleen aktiivinen uuden mining-
-            // jakson alkaessa, sen pitää jatkaa toimintaansa.
-            //
             // ==================================================
 
             const userUpdate = {
@@ -1422,6 +1471,16 @@ const claimMining =
               updatedAt:
                 FieldValue.serverTimestamp(),
             };
+
+            // --------------------------------------------------
+            // TÄRKEÄÄ:
+            //
+            // Älä poista adBoostStartedAt / adBoostEndsAt /
+            // adBoostHashRate -kenttiä tässä.
+            //
+            // Aktiivinen Power Boost voi jatkua mining-jakson
+            // vaihtuessa.
+            // --------------------------------------------------
 
             transaction.set(
               userRef,
@@ -1548,7 +1607,7 @@ const claimMining =
 
             // ==================================================
             // ✅ RESPONSE
-            // ==================================================
+            // ====================================================
 
             return {
               success: true,
@@ -1582,6 +1641,9 @@ const claimMining =
                 newMiningEndsAt.toISOString(),
 
               dailyHashRate:
+                dailyStatus.dailyHashRate,
+
+              dailyHashRateBonus:
                 dailyStatus.dailyHashRate,
 
               dailyStreak:
