@@ -50,7 +50,6 @@ class _HomePageState extends State<HomePage>
   static const Color accentColor = Color(0xFFB58CFF);
   static const Color pinkColor = Color(0xFFFFB7E8);
   static const Color goldColor = Color(0xFFFFD166);
-  static const Color secondaryTextColor = Color(0xFFBFAEDB);
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
