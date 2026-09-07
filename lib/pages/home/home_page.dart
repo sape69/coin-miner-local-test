@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../../data/cat_facts.dart';
 import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_logo.dart';
@@ -15,7 +14,7 @@ import '../roadmap/roadmap_page.dart';
 import '../token/stl_token_page.dart';
 import '../tokenomics/tokenomics_page.dart';
 import '../whitepaper/whitepaper_page.dart';
-import 'cat_fact_card.dart';
+import 'daily_cat_fact_section.dart';
 import 'home_stats_card.dart';
 import 'mining_action_button.dart';
 import 'mining_progress_card.dart';
@@ -1253,26 +1252,6 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 DAILY CAT FACT
-  // ============================================================
-
-  Widget _buildDailyCatFact() {
-    final String fact =
-        CatFacts.getDailyFact(
-      languageCode:
-          widget.languageCode,
-    );
-
-    return CatFactCard(
-      title:
-          '🐱 ${_localization.get(
-        'stellaFacts',
-      )}',
-      fact: fact,
-    );
-  }
-
-  // ============================================================
   // 🔢 HELPERS
   // ============================================================
 
@@ -2061,6 +2040,17 @@ class _HomePageState extends State<HomePage>
       maxBoostsInfoText:
           maxBoostsInfoText,
       onPressed: _watchAd,
+    );
+  }
+
+  // ============================================================
+  // 🐱 DAILY CAT FACT
+  // ============================================================
+
+  Widget _buildDailyCatFact() {
+    return DailyCatFactSection(
+      languageCode:
+          widget.languageCode,
     );
   }
 
