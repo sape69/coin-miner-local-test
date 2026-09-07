@@ -8,6 +8,12 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../../data/cat_facts.dart';
 import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
+import '../about/about_page.dart';
+import '../history/transaction_history_page.dart';
+import '../roadmap/roadmap_page.dart';
+import '../token/stl_token_page.dart';
+import '../tokenomics/tokenomics_page.dart';
+import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
 
 // ============================================================
@@ -112,8 +118,7 @@ class _HomePageState extends State<HomePage>
 
   int _miningRemainingMs = 0;
 
-  int _miningDurationMs =
-      defaultMiningDurationMs;
+  int _miningDurationMs = defaultMiningDurationMs;
 
   // ============================================================
   // 🎁 DAILY HASH RATE STATE
@@ -121,8 +126,7 @@ class _HomePageState extends State<HomePage>
 
   int _streak = 0;
 
-  double _dailyHashRate =
-      defaultDailyHashRate;
+  double _dailyHashRate = defaultDailyHashRate;
 
   // ============================================================
   // ⚡ POWER BOOST STATE
@@ -130,11 +134,9 @@ class _HomePageState extends State<HomePage>
 
   int _adsToday = 0;
 
-  int _maxAdsPerDay =
-      defaultMaxAdsPerDay;
+  int _maxAdsPerDay = defaultMaxAdsPerDay;
 
-  double _adHashRateBonus =
-      defaultAdHashRateBonus;
+  double _adHashRateBonus = defaultAdHashRateBonus;
 
   bool _canWatchAd = false;
 
@@ -144,8 +146,7 @@ class _HomePageState extends State<HomePage>
 
   int _adBoostRemainingMs = 0;
 
-  double _effectiveHashRate =
-      defaultDailyHashRate;
+  double _effectiveHashRate = defaultDailyHashRate;
 
   // ============================================================
   // ⏱️ TIMERS
@@ -312,14 +313,12 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   void _recalculateMiningPerHour() {
-    _effectiveHashRate =
-        _adBoostActive
-            ? _hashRate + _adHashRateBonus
-            : _hashRate;
+    _effectiveHashRate = _adBoostActive
+        ? _hashRate + _adHashRateBonus
+        : _hashRate;
 
     _miningPerHour =
-        _effectiveHashRate *
-            miningPerHashPerHour;
+        _effectiveHashRate * miningPerHashPerHour;
   }
 
   // ============================================================
@@ -333,8 +332,7 @@ class _HomePageState extends State<HomePage>
         'getMiningStatus',
       );
 
-      final result =
-          await callable.call();
+      final result = await callable.call();
 
       final data =
           Map<String, dynamic>.from(
@@ -390,11 +388,9 @@ class _HomePageState extends State<HomePage>
                 defaultDailyHashRate &&
             backendHashRate <=
                 maximumDailyHashRate) {
-          _hashRate =
-              backendHashRate;
+          _hashRate = backendHashRate;
         } else {
-          _hashRate =
-              _dailyHashRate;
+          _hashRate = _dailyHashRate;
         }
 
         // ------------------------------------------------------
@@ -544,8 +540,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final RewardedAd ad =
-        _rewardedAd!;
+    final RewardedAd ad = _rewardedAd!;
 
     _rewardedAd = null;
     _adReady = false;
@@ -631,8 +626,7 @@ class _HomePageState extends State<HomePage>
       );
 
       if (returnedStreak > 0) {
-        _streak =
-            returnedStreak;
+        _streak = returnedStreak;
       }
 
       if (returnedDailyHashRate >=
@@ -648,8 +642,7 @@ class _HomePageState extends State<HomePage>
         );
       }
 
-      _hashRate =
-          _dailyHashRate;
+      _hashRate = _dailyHashRate;
 
       _recalculateMiningPerHour();
 
@@ -851,8 +844,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_adsToday >=
-        _maxAdsPerDay) {
+    if (_adsToday >= _maxAdsPerDay) {
       _showMessage(
         _localization.get(
           'dailyLimitReached',
@@ -901,8 +893,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final RewardedAd ad =
-        _rewardedAd!;
+    final RewardedAd ad = _rewardedAd!;
 
     _rewardedAd = null;
     _adReady = false;
@@ -1223,20 +1214,37 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 DRAWER MESSAGE
+  // 🧭 PAGE NAVIGATION
   // ============================================================
 
-  void _showStellaPageMessage(
-    String titleKey,
-  ) {
-    final String title =
-        _localization.get(
-      titleKey,
+  Future<void> _openPage(
+    Widget page,
+  ) async {
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pop();
+
+    await Future<void>.delayed(
+      Duration.zero,
     );
 
-    _showMessage(
-      '${_localization.get('comingSoon')}: $title',
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => page,
+      ),
     );
+
+    if (!mounted) {
+      return;
+    }
+
+    await _loadMiningStatus();
   }
 
   // ============================================================
@@ -1418,38 +1426,38 @@ class _HomePageState extends State<HomePage>
             _showLanguageDialog,
 
         onAboutPressed: () {
-          _showStellaPageMessage(
-            'about',
+          _openPage(
+            const AboutPage(),
           );
         },
 
         onWhitePaperPressed: () {
-          _showStellaPageMessage(
-            'whitepaper',
+          _openPage(
+            const WhitePaperPage(),
           );
         },
 
         onTokenPressed: () {
-          _showStellaPageMessage(
-            'token',
+          _openPage(
+            const StlTokenPage(),
           );
         },
 
         onTokenomicsPressed: () {
-          _showStellaPageMessage(
-            'tokenomics',
+          _openPage(
+            const TokenomicsPage(),
           );
         },
 
         onRoadmapPressed: () {
-          _showStellaPageMessage(
-            'roadmap',
+          _openPage(
+            const RoadmapPage(),
           );
         },
 
         onTransactionHistoryPressed: () {
-          _showStellaPageMessage(
-            'history',
+          _openPage(
+            const TransactionHistoryPage(),
           );
         },
       ),
