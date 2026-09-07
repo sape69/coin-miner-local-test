@@ -10,7 +10,8 @@
 // 💰 Valmistuneen louhinnan kerääminen
 // 🔄 Uuden louhintajakson käynnistäminen
 // 📜 Mining-historia
-// 🎁 Daily Bonus -tila
+// 🎁 Daily Hash Rate yhdistyy päivittäiseen louhinnan
+//    käynnistämiseen
 // 📺 Stella Power Boost -tila
 //
 // ============================================================
@@ -137,8 +138,6 @@ function getSafePositiveNumber(
 // 🎁 CALCULATE DAILY HASH RATE
 // ============================================================
 //
-// Päivittäinen Hash Rate:
-//
 // Day 1  = 0.5 HR
 // Day 2  = 1.0 HR
 // Day 3  = 1.5 HR
@@ -211,6 +210,13 @@ function getDailyStreak(
 // ============================================================
 // 🎁 GET DAILY STATUS
 // ============================================================
+//
+// Tämä näyttää nykyisen Daily Hash Raten.
+//
+// Päivittäinen streak päivitetään varsinaisesti
+// claimMining-toiminnossa.
+//
+// ============================================================
 
 function getDailyStatus(
   data,
@@ -237,6 +243,101 @@ function getDailyStatus(
   return {
     dailyClaimed,
     streak,
+    dailyHashRate,
+  };
+}
+
+// ============================================================
+// 🎁 CALCULATE NEXT DAILY CLAIM
+// ============================================================
+//
+// Päivittäinen bonus on nyt osa päivittäisen louhinnan
+// käynnistämistä.
+//
+// Jos käyttäjä ei ole vielä lunastanut tämän päivän
+// Daily Hash Ratea:
+//
+// - eilen = streak + 1
+// - muu päivä = Day 1
+//
+// Jos tämän päivän bonus on jo käsitelty, streakiä ei
+// kasvateta uudelleen.
+//
+// ============================================================
+
+function calculateNextDailyClaim(
+  data,
+  today
+) {
+  const lastDailyDate =
+    typeof data.lastDailyDate === "string"
+      ? data.lastDailyDate
+      : "";
+
+  const currentStreak =
+    getDailyStreak(data);
+
+  // ----------------------------------------------------------
+  // Tämän päivän Daily Hash Rate on jo käsitelty.
+  // ----------------------------------------------------------
+
+  if (
+    lastDailyDate === today
+  ) {
+    const safeStreak =
+      currentStreak > 0
+        ? currentStreak
+        : 1;
+
+    return {
+      claimedToday: true,
+      streak: safeStreak,
+      dailyHashRate:
+        calculateDailyHashRate(
+          safeStreak
+        ),
+    };
+  }
+
+  // ----------------------------------------------------------
+  // Eilinen päivä → streak jatkuu.
+  // ----------------------------------------------------------
+
+  const yesterday =
+    new Date(
+      `${today}T00:00:00.000Z`
+    );
+
+  yesterday.setUTCDate(
+    yesterday.getUTCDate() - 1
+  );
+
+  const yesterdayString =
+    yesterday
+      .toISOString()
+      .slice(
+        0,
+        10
+      );
+
+  let newStreak = 1;
+
+  if (
+    lastDailyDate === yesterdayString &&
+    currentStreak > 0
+  ) {
+    newStreak =
+      currentStreak + 1;
+  }
+
+  const dailyHashRate =
+    calculateDailyHashRate(
+      newStreak
+    );
+
+  return {
+    claimedToday: false,
+    streak: newStreak,
     dailyHashRate,
   };
 }
@@ -411,27 +512,11 @@ function getAdStatus(
 // ⛏️ GET VALID MINING HASH RATE
 // ============================================================
 //
-// TÄRKEÄ UUSI SÄÄNTÖ:
+// Vanha esimerkiksi 12 HR arvo ei saa jatkaa käytössä.
 //
-// Vanhaa Firestore-arvoa ei käytetä uuden järjestelmän
-// Daily Hash Raten määrittämiseen.
-//
-// Legacy-arvot, esimerkiksi:
-//
-// 12 HR
-// 10 HR
-// 7 HR
-// 5 HR
-//
-// eivät saa koskaan jatkaa uudessa järjestelmässä.
-//
-// Aktiivinen mining-jakso voi käyttää vain uuden järjestelmän
-// sallimaa arvoa:
+// Uuden järjestelmän sallittu alue:
 //
 // 0.5 → 1.0 → 1.5 → 2.0 → 2.5 → 3.0 → 3.5 HR
-//
-// Jos vanha arvo on suurempi kuin 3.5 HR, käytetään nykyistä
-// Daily Hash Ratea.
 //
 // ============================================================
 
@@ -460,13 +545,6 @@ function getMiningHashRate(
   // ----------------------------------------------------------
   // Legacy-arvo
   // ----------------------------------------------------------
-  //
-  // Jos arvo on yli uuden järjestelmän maksimin, sitä ei
-  // hyväksytä.
-  //
-  // Esimerkiksi 12 HR → käytetään Daily Hash Ratea.
-  //
-  // ----------------------------------------------------------
 
   if (
     stored > MAX_DAILY_HASH_RATE
@@ -484,30 +562,11 @@ function getMiningHashRate(
     return safeFallback;
   }
 
-  // ----------------------------------------------------------
-  // Sallittu uuden järjestelmän arvo
-  // ----------------------------------------------------------
-
   return stored;
 }
 
 // ============================================================
 // 📺 GET AD BOOST HISTORY
-// ============================================================
-//
-// Haetaan käyttäjän Power Boost -historia.
-//
-// Jokainen ad_reward sisältää:
-//
-// boostStartedAt
-// boostEndsAt
-//
-// Boost voidaan aloittaa edellisen mining-jakson aikana ja
-// se voi jatkua uuden mining-jakson puolelle.
-//
-// Siksi tarkistamme boostin ja mining-jakson päällekkäisyyden
-// kokonaan JavaScriptissä.
-//
 // ============================================================
 
 async function getAdBoostHistory(
@@ -642,22 +701,11 @@ function calculateMiningAmount(
     effectiveEndMs -
     miningStartMs;
 
-  // ----------------------------------------------------------
-  // Base mining
-  // ----------------------------------------------------------
-
   const baseMining =
     calculateMining(
       miningHashRate,
       totalDurationMs
     );
-
-  // ----------------------------------------------------------
-  // Power Boost mining
-  //
-  // Base rate on koko jaksolta.
-  // Boost lisää vain +0.5833 HR sen aktiivisen ajan.
-  // ----------------------------------------------------------
 
   const boostMining =
     calculateMining(
@@ -743,21 +791,6 @@ const getMiningStatus =
 
         // ====================================================
         // ⚡ CURRENT DAILY HASH RATE
-        // ====================================================
-        //
-        // TÄRKEÄ:
-        //
-        // Nykyinen Daily Hash Rate lasketaan aina streakistä.
-        //
-        // Firestoressa oleva vanha hashRate ei määrää tätä.
-        //
-        // Esimerkiksi:
-        //
-        // legacy hashRate = 12
-        // streak = 1
-        //
-        // → hashRate = 0.5
-        //
         // ====================================================
 
         const hashRate =
@@ -934,55 +967,23 @@ const getMiningStatus =
                   ? "🐱✨ Louhinta on valmis kerättäväksi!"
                   : "🐱 Stella odottaa seuraavaa louhintaa.",
 
-          // ==================================================
-          // ⚡ CURRENT DAILY HASH RATE
-          // ==================================================
-
           hashRate,
-
-          // ==================================================
-          // ⛏️ ACTIVE MINING HASH RATE
-          // ==================================================
 
           miningHashRate,
 
-          // ==================================================
-          // 💰 BALANCE
-          // ==================================================
-
           miningBalance,
-
-          // ==================================================
-          // ✨ UNCLAIMED
-          // ==================================================
 
           unclaimedMining,
 
-          // ==================================================
-          // ⚡ AD BOOST MINING
-          // ==================================================
-
           adBoostMining,
 
-          // ==================================================
-          // 💎 TOTAL
-          // ==================================================
-
           estimatedTotal,
-
-          // ==================================================
-          // ⛏️ STATUS
-          // ==================================================
 
           miningActive:
             miningStatus.miningActive === true,
 
           miningFinished:
             miningStatus.miningFinished === true,
-
-          // ==================================================
-          // ⏱️ TIME
-          // ==================================================
 
           miningRemainingMs:
             Math.max(
@@ -1005,10 +1006,6 @@ const getMiningStatus =
           miningDurationMs:
             MINING_DURATION_MS,
 
-          // ==================================================
-          // 🕒 START / END
-          // ==================================================
-
           miningStartedAt:
             miningStartedAt
               ? miningStartedAt.toISOString()
@@ -1019,10 +1016,6 @@ const getMiningStatus =
               ? miningEndsAt.toISOString()
               : null,
 
-          // ==================================================
-          // ⚡ SPEED
-          // ==================================================
-
           miningPerHour,
 
           miningPerMinute:
@@ -1031,14 +1024,10 @@ const getMiningStatus =
           miningPerSecond:
             miningPerHour / 3600,
 
-          // ==================================================
-          // ⛏️ ACTIVE CYCLE SPEED
-          // ==================================================
-
           activeMiningPerHour,
 
           // ==================================================
-          // 🎁 DAILY BONUS
+          // 🎁 DAILY HASH RATE
           // ==================================================
 
           dailyClaimed:
@@ -1050,10 +1039,11 @@ const getMiningStatus =
           dailyStreak:
             dailyStatus.streak,
 
-          dailyHashRateBonus:
+          dailyHashRate:
             dailyStatus.dailyHashRate,
 
-          dailyHashRate:
+          // Säilytetään vanha kenttä yhteensopivuutta varten.
+          dailyHashRateBonus:
             dailyStatus.dailyHashRate,
 
           // ==================================================
@@ -1120,13 +1110,17 @@ const getMiningStatus =
 // ⛏️ CLAIM / START STELLA MINING
 // ============================================================
 //
-// Tämä funktio:
+// TÄRKEÄ MUUTOS:
 //
-// 1. Tarkistaa käyttäjän
-// 2. Tarkistaa louhiiko Stella jo
-// 3. Kerää valmistuneen louhinnan
-// 4. Lisää STL-saldon
-// 5. Käynnistää uuden 24h louhinnan
+// Päiväbonus ei ole enää erillinen toiminto.
+//
+// Kun käyttäjä käynnistää uuden 24 h louhinnan:
+//
+// 1. Tarkistetaan päivän Daily Hash Rate
+// 2. Päivitetään streak tarvittaessa
+// 3. Asetetaan päivän Hash Rate
+// 4. Kerätään mahdollinen valmis louhinta
+// 5. Aloitetaan uusi 24 h louhintajakso
 //
 // ============================================================
 
@@ -1188,31 +1182,25 @@ const claimMining =
                 : {};
 
             // ==================================================
-            // 🎁 DAILY STATUS
+            // 🎁 DAILY HASH RATE
+            // ==================================================
+            //
+            // Päivittäinen bonus käsitellään tässä samalla,
+            // kun käyttäjä käynnistää uuden louhinnan.
+            //
             // ==================================================
 
-            const dailyStatus =
-              getDailyStatus(
+            const dailyClaim =
+              calculateNextDailyClaim(
                 data,
                 today
               );
 
-            // ==================================================
-            // ⚡ CURRENT DAILY HASH RATE
-            // ====================================================
+            const dailyHashRate =
+              dailyClaim.dailyHashRate;
 
-            const hashRate =
-              dailyStatus.dailyHashRate;
-
-            // ==================================================
-            // ⛏️ ACTIVE CYCLE HASH RATE
-            // ==================================================
-
-            const miningHashRate =
-              getMiningHashRate(
-                data,
-                hashRate
-              );
+            const dailyStreak =
+              dailyClaim.streak;
 
             // ==================================================
             // 💰 CURRENT BALANCE
@@ -1228,22 +1216,28 @@ const claimMining =
               );
 
             // ==================================================
-            // ⛏️ CURRENT MINING STATUS
+            // ⛏️ PREVIOUS MINING STATUS
             // ====================================================
+
+            const previousMiningHashRate =
+              getMiningHashRate(
+                data,
+                dailyHashRate
+              );
 
             const miningStatus =
               calculateMiningStatus(
                 {
                   ...data,
                   hashRate:
-                    miningHashRate,
+                    previousMiningHashRate,
                 },
                 now
               );
 
             // ==================================================
             // 🐱 ALREADY MINING
-            // ====================================================
+            // ==================================================
 
             if (
               miningStatus.miningActive
@@ -1257,9 +1251,18 @@ const claimMining =
 
                 miningActive: true,
 
-                hashRate,
+                hashRate:
+                  dailyHashRate,
 
-                miningHashRate,
+                miningHashRate:
+                  previousMiningHashRate,
+
+                dailyHashRate,
+
+                dailyStreak,
+
+                streak:
+                  dailyStreak,
 
                 unclaimedMining:
                   Math.max(
@@ -1286,7 +1289,7 @@ const claimMining =
 
             // ==================================================
             // 🕒 PREVIOUS MINING CYCLE
-            // ====================================================
+            // ==================================================
 
             const previousStart =
               getMiningStartTime(data);
@@ -1306,7 +1309,7 @@ const claimMining =
 
             // ==================================================
             // 💰 COLLECT FINISHED MINING
-            // ====================================================
+            // ==================================================
 
             if (
               previousStart &&
@@ -1314,10 +1317,6 @@ const claimMining =
               previousEnd.getTime() <=
                 nowMs
             ) {
-              // ================================================
-              // ⏱️ PREVIOUS DURATION
-              // ================================================
-
               const previousStartMs =
                 previousStart.getTime();
 
@@ -1340,7 +1339,7 @@ const claimMining =
                   0,
                   getSafeNumber(
                     calculateMining(
-                      miningHashRate,
+                      previousMiningHashRate,
                       previousDuration
                     ),
                     0
@@ -1412,15 +1411,16 @@ const claimMining =
 
             // ==================================================
             // ⚡ NEW CYCLE HASH RATE
-            // ====================================================
+            // ==================================================
             //
-            // Uusi mining-jakso käyttää aina tämänhetkistä
-            // Daily Hash Ratea.
+            // TÄRKEÄ:
             //
-            // ====================================================
+            // Uusi mining-jakso saa päivän Daily Hash Raten.
+            //
+            // ==================================================
 
             const newMiningHashRate =
-              hashRate;
+              dailyHashRate;
 
             // ==================================================
             // 👤 UPDATE USER
@@ -1431,14 +1431,32 @@ const claimMining =
               // ⚡ CURRENT DAILY HASH RATE
               // ==============================================
 
-              hashRate,
+              hashRate:
+                dailyHashRate,
+
+              dailyHashRate,
 
               // ==============================================
-              // 🎁 DAILY HASH RATE
+              // 🎁 DAILY STREAK
               // ==============================================
 
-              dailyHashRate:
-                dailyStatus.dailyHashRate,
+              dailyStreak,
+
+              streak:
+                dailyStreak,
+
+              // ==============================================
+              // 📅 DAILY CLAIM DATE
+              // ==============================================
+
+              lastDailyDate:
+                dailyClaim.claimedToday
+                  ? (
+                      typeof data.lastDailyDate === "string"
+                        ? data.lastDailyDate
+                        : today
+                    )
+                  : today,
 
               // ==============================================
               // ⛏️ HASH RATE LOCKED FOR THIS CYCLE
@@ -1475,11 +1493,10 @@ const claimMining =
             // --------------------------------------------------
             // TÄRKEÄÄ:
             //
-            // Älä poista adBoostStartedAt / adBoostEndsAt /
-            // adBoostHashRate -kenttiä tässä.
+            // Power Boost -kenttiä ei poisteta.
             //
-            // Aktiivinen Power Boost voi jatkua mining-jakson
-            // vaihtuessa.
+            // Aktiivinen boost voi jatkua uuden mining-jakson
+            // alkaessa.
             // --------------------------------------------------
 
             transaction.set(
@@ -1489,6 +1506,50 @@ const claimMining =
                 merge: true,
               }
             );
+
+            // ==================================================
+            // 📜 HISTORY: DAILY HASH RATE
+            // ==================================================
+            //
+            // Päiväbonus tallennetaan nyt samaan tapahtumaan
+            // uuden louhinnan kanssa.
+            //
+            // ==================================================
+
+            if (
+              !dailyClaim.claimedToday
+            ) {
+              const dailyHistoryRef =
+                getHistoryCollection(uid)
+                  .doc();
+
+              transaction.set(
+                dailyHistoryRef,
+                {
+                  type:
+                    "daily_hash_rate",
+
+                  title:
+                    "Stella Daily Hash Rate 🐱✨",
+
+                  amount:
+                    dailyHashRate,
+
+                  hashRate:
+                    dailyHashRate,
+
+                  dailyHashRate,
+
+                  dailyStreak,
+
+                  streak:
+                    dailyStreak,
+
+                  createdAt:
+                    FieldValue.serverTimestamp(),
+                }
+              );
+            }
 
             // ==================================================
             // 📜 HISTORY: COMPLETED MINING
@@ -1517,14 +1578,14 @@ const claimMining =
                     newBalance,
 
                   hashRate:
-                    miningHashRate,
+                    previousMiningHashRate,
 
                   baseMining:
                     Math.max(
                       0,
                       getSafeNumber(
                         calculateMining(
-                          miningHashRate,
+                          previousMiningHashRate,
                           Math.max(
                             0,
                             previousEnd.getTime() -
@@ -1567,6 +1628,10 @@ const claimMining =
                 hashRate:
                   newMiningHashRate,
 
+                dailyHashRate,
+
+                dailyStreak,
+
                 miningDurationMs:
                   MINING_DURATION_MS,
 
@@ -1601,13 +1666,22 @@ const claimMining =
 
             const effectiveHashRate =
               adBoostActive
-                ? hashRate +
+                ? dailyHashRate +
                     AD_HASH_RATE_BONUS
-                : hashRate;
+                : dailyHashRate;
+
+            // ==================================================
+            // 🎁 DAILY MESSAGE
+            // ==================================================
+
+            const dailyMessage =
+              dailyClaim.claimedToday
+                ? "🐱⛏️ Stella jatkaa tämän päivän louhintaa!"
+                : `🐱✨ Stella sai päivän ${dailyStreak} Daily Hash Raten: ${dailyHashRate.toFixed(4)} HR!`;
 
             // ==================================================
             // ✅ RESPONSE
-            // ====================================================
+            // ==================================================
 
             return {
               success: true,
@@ -1623,7 +1697,26 @@ const claimMining =
               miningBalance:
                 newBalance,
 
-              hashRate,
+              // ==================================================
+              // ⚡ DAILY HASH RATE
+              // ==================================================
+
+              hashRate:
+                dailyHashRate,
+
+              dailyHashRate,
+
+              dailyHashRateBonus:
+                dailyHashRate,
+
+              dailyStreak,
+
+              streak:
+                dailyStreak,
+
+              // ==================================================
+              // ⛏️ MINING
+              // ==================================================
 
               miningHashRate:
                 newMiningHashRate,
@@ -1640,14 +1733,9 @@ const claimMining =
               miningEndsAt:
                 newMiningEndsAt.toISOString(),
 
-              dailyHashRate:
-                dailyStatus.dailyHashRate,
-
-              dailyHashRateBonus:
-                dailyStatus.dailyHashRate,
-
-              dailyStreak:
-                dailyStatus.streak,
+              // ==================================================
+              // ⚡ POWER BOOST
+              // ==================================================
 
               adBoostActive,
 
@@ -1658,10 +1746,14 @@ const claimMining =
 
               effectiveHashRate,
 
+              // ==================================================
+              // 🐱 MESSAGE
+              // ==================================================
+
               message:
                 completedPreviousCycle
-                  ? "🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan!"
-                  : "🐱⛏️ Stella aloitti 24 tunnin STL-louhinnan!",
+                  ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! ${dailyMessage}`
+                  : dailyMessage,
             };
           }
         );
