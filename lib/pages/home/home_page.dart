@@ -16,6 +16,8 @@ import '../token/stl_token_page.dart';
 import '../tokenomics/tokenomics_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
+import 'home_stats_card.dart';
+import 'mining_progress_card.dart';
 import 'stella_mining_card.dart';
 
 // ============================================================
@@ -1736,9 +1738,6 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    // StellaMiningCard has been simplified:
-    // mining state is handled here in HomePage,
-    // while the card only receives the values it displays.
     return StellaMiningCard(
       unclaimedMining: _unclaimedMining,
       miningTitle: title,
@@ -1754,119 +1753,21 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStatsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child:
-              _buildStatCard(
-            icon:
-                Icons.bolt_rounded,
-            title:
-                _localization.get(
-              'hashRate',
-            ),
-            value:
-                '${_effectiveHashRate.toStringAsFixed(4)} HR',
-          ),
-        ),
-
-        const SizedBox(
-          width: 12,
-        ),
-
-        Expanded(
-          child:
-              _buildStatCard(
-            icon:
-                Icons.currency_bitcoin_rounded,
-            title:
-                _localization.get(
-              'totalStl',
-            ),
-            value:
-                '${_formatStl(
-                  _estimatedTotal,
-                )} STL',
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Container(
-      padding:
-          const EdgeInsets.all(
-        16,
+    return HomeStatsCard(
+      hashRateTitle:
+          _localization.get(
+        'hashRate',
       ),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
-        borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
-        border:
-            Border.all(
-          color:
-              Colors.white.withValues(
-            alpha: 0.06,
-          ),
-        ),
+      hashRateValue:
+          '${_effectiveHashRate.toStringAsFixed(4)} HR',
+      totalStlTitle:
+          _localization.get(
+        'totalStl',
       ),
-      child:
-          Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            color:
-                pinkColor,
-          ),
-
-          const SizedBox(
-            height: 12,
-          ),
-
-          Text(
-            title,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFFBFAEDB),
-              fontSize: 10,
-              letterSpacing:
-                  1,
-            ),
-          ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
-          Text(
-            value,
-            maxLines:
-                1,
-            overflow:
-                TextOverflow.ellipsis,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
-              fontSize: 15,
-              fontWeight:
-                  FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
+      totalStlValue:
+          '${_formatStl(
+            _estimatedTotal,
+          )} STL',
     );
   }
 
@@ -1875,240 +1776,65 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildMiningProgress() {
-    double progress = 0.0;
-
-    if (_miningActive &&
-        _miningDurationMs > 0) {
-      progress =
-          1.0 -
-              (_miningRemainingMs /
-                  _miningDurationMs);
-
-      progress =
-          progress
-              .clamp(
-                0.0,
-                1.0,
-              )
-              .toDouble();
-    }
-
-    return Container(
-      padding:
-          const EdgeInsets.all(
-        20,
+    return MiningProgressCard(
+      miningActive: _miningActive,
+      miningRemainingMs: _miningRemainingMs,
+      miningDurationMs: _miningDurationMs,
+      title:
+          _localization.get(
+        'stellaMiningProgress',
       ),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
-        borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
-        border:
-            Border.all(
-          color:
-              accentColor.withValues(
-            alpha: 0.10,
-          ),
-        ),
+      stlPerHourText:
+          _localization.getWithParams(
+        'stlPerHour',
+        params: {
+          'amount':
+              _miningPerHour
+                  .toStringAsFixed(4),
+        },
       ),
-      child:
-          Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child:
-                    Text(
-                  _localization.get(
-                    'stellaMiningProgress',
-                  ),
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              Text(
-                '${(progress * 100).toStringAsFixed(1)}%',
-                style:
-                    const TextStyle(
-                  color:
-                      goldColor,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(
-            height: 14,
-          ),
-
-          ClipRRect(
-            borderRadius:
-                BorderRadius.circular(
-              20,
-            ),
-            child:
-                LinearProgressIndicator(
-              value:
-                  progress,
-              minHeight:
-                  12,
-              backgroundColor:
-                  backgroundColor,
-              valueColor:
-                  const AlwaysStoppedAnimation<
-                      Color>(
-                accentColor,
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 12,
-          ),
-
-          Text(
-            _localization.getWithParams(
-              'stlPerHour',
-              params: {
-                'amount':
-                    _miningPerHour
-                        .toStringAsFixed(4),
-              },
-            ),
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
-            ),
-          ),
-
-          const SizedBox(
-            height: 10,
-          ),
-
-          Row(
-            children: [
-              const Text(
-                '🎁',
-                style:
-                    TextStyle(
-                  fontSize: 14,
-                ),
-              ),
-
-              const SizedBox(
-                width: 6,
-              ),
-
-              Expanded(
-                child:
-                    Text(
-                  _localization.getWithParams(
-                    'dailyHashRateLabel',
-                    params: {
-                      'amount':
-                          _dailyHashRate
-                              .toStringAsFixed(1),
-                    },
-                  ),
-                  style:
-                      const TextStyle(
-                    color:
-                        pinkColor,
-                    fontSize: 12,
-                    fontWeight:
-                        FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
-          Text(
-            _localization.getWithParams(
-              'dailyHashRateDay',
-              params: {
-                'day':
-                    _streak.toString(),
-                'amount':
-                    _dailyHashRate
-                        .toStringAsFixed(1),
-              },
-            ),
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF9F8CB8),
-              fontSize: 11,
-            ),
-          ),
-
-          if (_adBoostActive) ...[
-            const SizedBox(
-              height: 8,
-            ),
-
-            Text(
-              _localization.getWithParams(
-                'hashRateBonus',
-                params: {
-                  'amount':
-                      _adHashRateBonus
-                          .toStringAsFixed(4),
-                },
-              ),
-              style:
-                  const TextStyle(
-                color:
-                    goldColor,
-                fontSize: 12,
-                fontWeight:
-                    FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(
-              height: 8,
-            ),
-
-            Text(
-              _localization.getWithParams(
-                'effectiveHashRateLabel',
-                params: {
-                  'amount':
-                      _effectiveHashRate
-                          .toStringAsFixed(4),
-                },
-              ),
-              style:
-                  const TextStyle(
-                color:
-                    goldColor,
-                fontSize: 12,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-          ],
-        ],
+      dailyHashRateText:
+          _localization.getWithParams(
+        'dailyHashRateLabel',
+        params: {
+          'amount':
+              _dailyHashRate
+                  .toStringAsFixed(1),
+        },
       ),
+      dailyHashRateDayText:
+          _localization.getWithParams(
+        'dailyHashRateDay',
+        params: {
+          'day':
+              _streak.toString(),
+          'amount':
+              _dailyHashRate
+                  .toStringAsFixed(1),
+        },
+      ),
+      hashRateBonusText:
+          _adBoostActive
+              ? _localization.getWithParams(
+                  'hashRateBonus',
+                  params: {
+                    'amount':
+                        _adHashRateBonus
+                            .toStringAsFixed(4),
+                  },
+                )
+              : '',
+      effectiveHashRateText:
+          _adBoostActive
+              ? _localization.getWithParams(
+                  'effectiveHashRateLabel',
+                  params: {
+                    'amount':
+                        _effectiveHashRate
+                            .toStringAsFixed(4),
+                  },
+                )
+              : '',
     );
   }
 
