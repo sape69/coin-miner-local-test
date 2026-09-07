@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
 
 class StellaMiningCard extends StatelessWidget {
-  final bool miningActive;
-  final bool miningComplete;
   final double unclaimedMining;
-  final int miningRemainingMs;
   final String miningTitle;
   final String miningSubtitle;
   final String timerText;
   final String timerLabel;
   final Animation<double> catAnimation;
 
-  static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
   static const Color goldColor = Color(0xFFFFD166);
   static const Color secondaryTextColor = Color(0xFFBFAEDB);
 
   const StellaMiningCard({
     super.key,
-    required this.miningActive,
-    required this.miningComplete,
     required this.unclaimedMining,
-    required this.miningRemainingMs,
     required this.miningTitle,
     required this.miningSubtitle,
     required this.timerText,
@@ -134,7 +127,7 @@ class StellaMiningCard extends StatelessWidget {
           const Text(
             'STL',
             style: TextStyle(
-              color: Color(0xFFBFAEDB),
+              color: secondaryTextColor,
               letterSpacing: 2,
               fontSize: 12,
             ),
@@ -171,7 +164,7 @@ class StellaMiningCard extends StatelessWidget {
                   timerLabel,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFFBFAEDB),
+                    color: secondaryTextColor,
                     fontSize: 11,
                     letterSpacing: 1.5,
                   ),
