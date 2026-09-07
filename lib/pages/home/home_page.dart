@@ -1736,11 +1736,11 @@ class _HomePageState extends State<HomePage>
       );
     }
 
+    // StellaMiningCard has been simplified:
+    // mining state is handled here in HomePage,
+    // while the card only receives the values it displays.
     return StellaMiningCard(
-      miningActive: _miningActive,
-      miningComplete: completed,
       unclaimedMining: _unclaimedMining,
-      miningRemainingMs: _miningRemainingMs,
       miningTitle: title,
       miningSubtitle: subtitle,
       timerText: timerText,
