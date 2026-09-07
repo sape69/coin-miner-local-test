@@ -144,6 +144,29 @@ class AppLocalizations {
       'miningCollected': 'Kerätty {amount} STL',
       'miningStartFailed': 'Louhinnan aloittaminen epäonnistui.',
 
+      // Transaction History
+      'transactionHistory': 'Tapahtumahistoria',
+      'stellaActivity': 'STELLAN AKTIIVISUUS',
+      'latestTransactions': '{count} viimeisintä tapahtumaa',
+      'dailyStellaBonus': 'Stellan päivittäinen bonus',
+      'dailyBonusDescription': 'Päivittäinen bonus Stellalta',
+      'stellaAdReward': 'Stellan mainospalkinto',
+      'adRewardDescription': 'Palkinto katsotusta mainoksesta',
+      'stellaMining': 'Stella Mining',
+      'miningRewardDescription': 'Louhintapalkinto kerätty',
+      'stlTransaction': 'STL-tapahtuma',
+      'stelluriiniActivity': 'Stelluriini-aktiviteetti',
+      'transactionBalance': 'Saldo: {balance} STL',
+      'tryAgain': 'Yritä uudelleen',
+      'noTransactionsYet': 'Ei tapahtumia vielä',
+      'rewardsAppearHere': 'STL-palkintosi näkyvät täällä. 🐱',
+      'startMiningWithStella': 'Aloita louhinta Stellan kanssa',
+      'historyRecorded':
+          'Louhinta, päivittäiset bonukset ja mainospalkinnot tallennetaan tänne.',
+      'stellaCheckingHistory': 'Stella tarkistaa historiaasi...',
+      'everyRewardJourney':
+          'Jokainen palkinto on osa Stelluriini-matkaasi. 🐾',
+
       // Footer
       'footerTagline': 'Louhitaan yhdessä Stelluriinin tulevaisuutta.',
       'footerToken': 'STL • STELLURIINI',
@@ -275,6 +298,27 @@ class AppLocalizations {
       'prepareAd': 'Preparing ad...',
       'miningCollected': 'Collected {amount} STL',
       'miningStartFailed': 'Failed to start mining.',
+
+      // Transaction History
+      'transactionHistory': 'Transaction History',
+      'stellaActivity': 'STELLA ACTIVITY',
+      'latestTransactions': '{count} latest transactions',
+      'dailyStellaBonus': 'Daily Stella Bonus',
+      'dailyBonusDescription': 'Daily bonus from Stella',
+      'stellaAdReward': 'Stella Ad Reward',
+      'adRewardDescription': 'Rewarded ad bonus',
+      'stlTransaction': 'STL Transaction',
+      'stelluriiniActivity': 'Stelluriini activity',
+      'transactionBalance': 'Balance: {balance} STL',
+      'tryAgain': 'Try Again',
+      'noTransactionsYet': 'No transactions yet',
+      'rewardsAppearHere': 'Your STL rewards will appear here. 🐱',
+      'startMiningWithStella': 'Start mining with Stella',
+      'historyRecorded':
+          'Your mining, daily bonuses and ad rewards will be recorded here.',
+      'stellaCheckingHistory': 'Stella is checking your history...',
+      'everyRewardJourney':
+          'Every reward is part of your Stelluriini journey. 🐾',
 
       // Footer
       'footerTagline':
@@ -410,6 +454,27 @@ class AppLocalizations {
       'miningCollected': '{amount} STL gesammelt',
       'miningStartFailed': 'Mining konnte nicht gestartet werden.',
 
+      // Transaction History
+      'transactionHistory': 'Transaktionsverlauf',
+      'stellaActivity': 'STELLA-AKTIVITÄT',
+      'latestTransactions': '{count} letzte Transaktionen',
+      'dailyStellaBonus': 'Täglicher Stella-Bonus',
+      'dailyBonusDescription': 'Täglicher Bonus von Stella',
+      'stellaAdReward': 'Stella-Werbebelohnung',
+      'adRewardDescription': 'Belohnung für angesehene Werbung',
+      'stlTransaction': 'STL-Transaktion',
+      'stelluriiniActivity': 'Stelluriini-Aktivität',
+      'transactionBalance': 'Guthaben: {balance} STL',
+      'tryAgain': 'Erneut versuchen',
+      'noTransactionsYet': 'Noch keine Transaktionen',
+      'rewardsAppearHere': 'Deine STL-Belohnungen erscheinen hier. 🐱',
+      'startMiningWithStella': 'Starte das Mining mit Stella',
+      'historyRecorded':
+          'Mining, tägliche Boni und Werbebelohnungen werden hier gespeichert.',
+      'stellaCheckingHistory': 'Stella überprüft deinen Verlauf...',
+      'everyRewardJourney':
+          'Jede Belohnung ist Teil deiner Stelluriini-Reise. 🐾',
+
       // Footer
       'footerTagline':
           'Gemeinsam für die Zukunft von Stelluriini minen.',
@@ -453,8 +518,7 @@ class AppLocalizations {
       'startMining': 'INICIAR MINERÍA',
       'claimMining': 'RECLAMAR STL',
       'miningActive': 'Minería activa',
-      'miningComplete':
-          'Ciclo de minería completado',
+      'miningComplete': 'Ciclo de minería completado',
 
       'timeRemaining': 'Tiempo restante',
       'remaining': 'Tiempo restante: {time}',
@@ -514,15 +578,13 @@ class AppLocalizations {
       'stellaMining': 'Stella Mining',
 
       'transactions': 'Transacciones',
-      'noTransactions':
-          'Aún no hay transacciones.',
+      'noTransactions': 'Aún no hay transacciones.',
       'totalStl': 'STL total',
 
       'points': 'puntos',
       'pointsAdded': 'Puntos añadidos',
 
-      'resetAccount':
-          'Restablecer cuenta de prueba',
+      'resetAccount': 'Restablecer cuenta de prueba',
       'resetConfirm':
           '¿Seguro que quieres restablecer la cuenta de prueba?',
 
@@ -549,6 +611,30 @@ class AppLocalizations {
       'miningCollected': 'Recolectado {amount} STL',
       'miningStartFailed':
           'No se pudo iniciar la minería.',
+
+      // Transaction History
+      'transactionHistory': 'Historial de transacciones',
+      'stellaActivity': 'ACTIVIDAD DE STELLA',
+      'latestTransactions': '{count} transacciones recientes',
+      'dailyStellaBonus': 'Bono diario de Stella',
+      'dailyBonusDescription': 'Bono diario de Stella',
+      'stellaAdReward': 'Recompensa de anuncio de Stella',
+      'adRewardDescription': 'Recompensa por anuncio visto',
+      'stlTransaction': 'Transacción STL',
+      'stelluriiniActivity': 'Actividad de Stelluriini',
+      'transactionBalance': 'Saldo: {balance} STL',
+      'tryAgain': 'Intentar de nuevo',
+      'noTransactionsYet': 'Aún no hay transacciones',
+      'rewardsAppearHere':
+          'Tus recompensas STL aparecerán aquí. 🐱',
+      'startMiningWithStella':
+          'Empieza a minar con Stella',
+      'historyRecorded':
+          'La minería, los bonos diarios y las recompensas por anuncios se registrarán aquí.',
+      'stellaCheckingHistory':
+          'Stella está revisando tu historial...',
+      'everyRewardJourney':
+          'Cada recompensa forma parte de tu viaje con Stelluriini. 🐾',
 
       // Footer
       'footerTagline':
@@ -690,6 +776,30 @@ class AppLocalizations {
       'miningStartFailed':
           'Impossible de démarrer le minage.',
 
+      // Transaction History
+      'transactionHistory': 'Historique des transactions',
+      'stellaActivity': 'ACTIVITÉ DE STELLA',
+      'latestTransactions': '{count} dernières transactions',
+      'dailyStellaBonus': 'Bonus quotidien de Stella',
+      'dailyBonusDescription': 'Bonus quotidien de Stella',
+      'stellaAdReward': 'Récompense publicitaire de Stella',
+      'adRewardDescription': 'Récompense pour publicité regardée',
+      'stlTransaction': 'Transaction STL',
+      'stelluriiniActivity': 'Activité Stelluriini',
+      'transactionBalance': 'Solde : {balance} STL',
+      'tryAgain': 'Réessayer',
+      'noTransactionsYet': 'Aucune transaction pour le moment',
+      'rewardsAppearHere':
+          'Vos récompenses STL apparaîtront ici. 🐱',
+      'startMiningWithStella':
+          'Commencez à miner avec Stella',
+      'historyRecorded':
+          'Votre minage, vos bonus quotidiens et vos récompenses publicitaires seront enregistrés ici.',
+      'stellaCheckingHistory':
+          'Stella vérifie votre historique...',
+      'everyRewardJourney':
+          'Chaque récompense fait partie de votre aventure Stelluriini. 🐾',
+
       // Footer
       'footerTagline':
           'Minons ensemble pour l’avenir de Stelluriini.',
@@ -825,6 +935,30 @@ class AppLocalizations {
       'prepareAd': '正在准备广告...',
       'miningCollected': '已领取 {amount} STL',
       'miningStartFailed': '挖矿启动失败。',
+
+      // Transaction History
+      'transactionHistory': '交易历史',
+      'stellaActivity': 'STELLA 活动',
+      'latestTransactions': '最近 {count} 笔交易',
+      'dailyStellaBonus': 'Stella 每日奖励',
+      'dailyBonusDescription': 'Stella 的每日奖励',
+      'stellaAdReward': 'Stella 广告奖励',
+      'adRewardDescription': '观看广告获得的奖励',
+      'stlTransaction': 'STL 交易',
+      'stelluriiniActivity': 'Stelluriini 活动',
+      'transactionBalance': '余额：{balance} STL',
+      'tryAgain': '重试',
+      'noTransactionsYet': '暂无交易',
+      'rewardsAppearHere':
+          '您的 STL 奖励将显示在这里。🐱',
+      'startMiningWithStella':
+          '与 Stella 一起开始挖矿',
+      'historyRecorded':
+          '您的挖矿、每日奖励和广告奖励都会记录在这里。',
+      'stellaCheckingHistory':
+          'Stella 正在检查您的历史记录...',
+      'everyRewardJourney':
+          '每一份奖励都是您 Stelluriini 旅程的一部分。🐾',
 
       // Footer
       'footerTagline': '一起挖矿，共创 Stelluriini 的未来。',
@@ -963,6 +1097,30 @@ class AppLocalizations {
       'miningCollected': 'Đã nhận {amount} STL',
       'miningStartFailed':
           'Không thể bắt đầu khai thác.',
+
+      // Transaction History
+      'transactionHistory': 'Lịch sử giao dịch',
+      'stellaActivity': 'HOẠT ĐỘNG CỦA STELLA',
+      'latestTransactions': '{count} giao dịch gần nhất',
+      'dailyStellaBonus': 'Thưởng hàng ngày của Stella',
+      'dailyBonusDescription': 'Phần thưởng hàng ngày từ Stella',
+      'stellaAdReward': 'Phần thưởng quảng cáo Stella',
+      'adRewardDescription': 'Phần thưởng từ quảng cáo đã xem',
+      'stlTransaction': 'Giao dịch STL',
+      'stelluriiniActivity': 'Hoạt động Stelluriini',
+      'transactionBalance': 'Số dư: {balance} STL',
+      'tryAgain': 'Thử lại',
+      'noTransactionsYet': 'Chưa có giao dịch',
+      'rewardsAppearHere':
+          'Phần thưởng STL của bạn sẽ xuất hiện tại đây. 🐱',
+      'startMiningWithStella':
+          'Bắt đầu khai thác cùng Stella',
+      'historyRecorded':
+          'Hoạt động khai thác, thưởng hàng ngày và thưởng quảng cáo sẽ được ghi lại tại đây.',
+      'stellaCheckingHistory':
+          'Stella đang kiểm tra lịch sử của bạn...',
+      'everyRewardJourney':
+          'Mỗi phần thưởng là một phần trong hành trình Stelluriini của bạn. 🐾',
 
       // Footer
       'footerTagline':
@@ -1104,6 +1262,30 @@ class AppLocalizations {
           '{amount} STLを受け取りました',
       'miningStartFailed':
           'マイニングを開始できませんでした。',
+
+      // Transaction History
+      'transactionHistory': '取引履歴',
+      'stellaActivity': 'STELLA アクティビティ',
+      'latestTransactions': '最新 {count} 件の取引',
+      'dailyStellaBonus': 'Stella デイリーボーナス',
+      'dailyBonusDescription': 'Stellaからのデイリーボーナス',
+      'stellaAdReward': 'Stella 広告報酬',
+      'adRewardDescription': '広告視聴による報酬',
+      'stlTransaction': 'STL 取引',
+      'stelluriiniActivity': 'Stelluriini アクティビティ',
+      'transactionBalance': '残高：{balance} STL',
+      'tryAgain': 'もう一度試す',
+      'noTransactionsYet': 'まだ取引はありません',
+      'rewardsAppearHere':
+          'STL報酬がここに表示されます。🐱',
+      'startMiningWithStella':
+          'Stellaと一緒にマイニングを始めましょう',
+      'historyRecorded':
+          'マイニング、デイリーボーナス、広告報酬がここに記録されます。',
+      'stellaCheckingHistory':
+          'Stellaが履歴を確認しています...',
+      'everyRewardJourney':
+          'すべての報酬がStelluriiniの旅の一部です。🐾',
 
       // Footer
       'footerTagline':
