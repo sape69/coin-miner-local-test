@@ -55,6 +55,21 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // ⛏️ DAILY HASH RATE
   // ============================================================
+  //
+  // Day 1  = 0.5 HR
+  // Day 2  = 1.0 HR
+  // Day 3  = 1.5 HR
+  // Day 4  = 2.0 HR
+  // Day 5  = 2.5 HR
+  // Day 6  = 3.0 HR
+  // Day 7+ = 3.5 HR
+  //
+  // Päivittäinen HR käsitellään automaattisesti samalla kun
+  // uusi 24 tunnin louhintajakso käynnistetään.
+  //
+  // Erillistä Daily Bonus -korttia ei enää ole.
+  //
+  // ============================================================
 
   static const double defaultDailyHashRate = 0.5;
   static const double dailyHashRateStep = 0.5;
@@ -117,13 +132,16 @@ class _HomePageState extends State<HomePage>
       defaultMiningDurationMs;
 
   // ============================================================
-  // 🎁 DAILY BONUS
+  // 🎁 DAILY HASH RATE STATE
+  // ============================================================
+  //
+  // Päiväbonus on nyt osa louhinnan päivittäistä käynnistystä.
+  //
   // ============================================================
 
-  bool _dailyClaimed = false;
   int _streak = 0;
 
-  double _dailyHashRateBonus =
+  double _dailyHashRate =
       defaultDailyHashRate;
 
   // ============================================================
@@ -453,21 +471,28 @@ class _HomePageState extends State<HomePage>
         }
 
         // ------------------------------------------------------
-        // DAILY
+        // DAILY HASH RATE
         // ------------------------------------------------------
-
-        _dailyClaimed =
-            data['dailyClaimed'] == true;
 
         _streak = _toInt(
           data['streak'] ??
               data['dailyStreak'],
         );
 
-        _dailyHashRateBonus =
-            _calculateDailyHashRate(
-          _streak,
+        final double backendDailyHashRate =
+            _toDouble(
+          data['dailyHashRate'],
         );
+
+        if (backendDailyHashRate > 0) {
+          _dailyHashRate =
+              backendDailyHashRate;
+        } else {
+          _dailyHashRate =
+              _calculateDailyHashRate(
+            _streak,
+          );
+        }
 
         // ------------------------------------------------------
         // POWER BOOST
@@ -581,6 +606,13 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // ⛏️ START / COLLECT MINING
   // ============================================================
+  //
+  // Uusi päivittäinen Daily Hash Rate käsitellään backendissä
+  // claimMining-kutsun yhteydessä.
+  //
+  // Tämä on käyttäjän yksi päivittäinen louhinnan käynnistys.
+  //
+  // ============================================================
 
   Future<void> _startMining() async {
     if (_actionLoading) {
@@ -681,13 +713,46 @@ class _HomePageState extends State<HomePage>
         data['collected'],
       );
 
+      // --------------------------------------------------------
+      // Päivän Daily Hash Rate tulee nyt suoraan claimMining-
+      // vastauksesta.
+      // --------------------------------------------------------
+
+      final int returnedStreak =
+          _toInt(
+        data['dailyStreak'] ??
+            data['streak'],
+      );
+
+      final double returnedDailyHashRate =
+          _toDouble(
+        data['dailyHashRate'] ??
+            data['hashRate'],
+      );
+
+      if (returnedStreak > 0) {
+        _streak =
+            returnedStreak;
+      }
+
+      if (returnedDailyHashRate > 0) {
+        _dailyHashRate =
+            returnedDailyHashRate;
+      } else {
+        _dailyHashRate =
+            _calculateDailyHashRate(
+          _streak,
+        );
+      }
+
       if (alreadyMining) {
         _showMessage(
           _localization.get(
             'stellaAlreadyMining',
           ),
         );
-      } else if (collected > 0) {
+      } else if (collected > 0 &&
+          started) {
         _showMessage(
           _localization.getWithParams(
             'miningCollected',
@@ -701,8 +766,15 @@ class _HomePageState extends State<HomePage>
         );
       } else if (started) {
         _showMessage(
-          _localization.get(
-            'miningStarted',
+          _localization.getWithParams(
+            'dailyHashRateSuccess',
+            params: {
+              'amount':
+                  _dailyHashRate
+                      .toStringAsFixed(1),
+              'streak':
+                  _streak.toString(),
+            },
           ),
         );
       } else {
@@ -734,98 +806,6 @@ class _HomePageState extends State<HomePage>
       }
 
       await _loadRewardedAd();
-    }
-  }
-
-  // ============================================================
-  // 🎁 DAILY CHECK-IN
-  // ============================================================
-
-  Future<void> _dailyCheckIn() async {
-    if (_actionLoading) {
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _actionLoading = true;
-    });
-
-    try {
-      final callable =
-          _functions.httpsCallable(
-        'dailyCheckIn',
-      );
-
-      final result =
-          await callable.call();
-
-      final data =
-          Map<String, dynamic>.from(
-        result.data as Map,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      final bool alreadyClaimed =
-          data['alreadyClaimed'] == true;
-
-      if (alreadyClaimed) {
-        _showMessage(
-          _localization.get(
-            'dailyBonusAlreadyClaimed',
-          ),
-        );
-      } else {
-        final int streak =
-            _toInt(
-          data['dailyStreak'] ??
-              data['streak'],
-        );
-
-        final double displayedHashRate =
-            _calculateDailyHashRate(
-          streak,
-        );
-
-        _showMessage(
-          _localization.getWithParams(
-            'dailyHashRateSuccess',
-            params: {
-              'amount':
-                  displayedHashRate
-                      .toStringAsFixed(1),
-              'streak':
-                  streak.toString(),
-            },
-          ),
-        );
-      }
-
-      await _loadMiningStatus();
-    } catch (error) {
-      debugPrint(
-        'Daily error: $error',
-      );
-
-      if (mounted) {
-        _showMessage(
-          _localization.get(
-            'dailyBonusFailed',
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _actionLoading = false;
-        });
-      }
     }
   }
 
@@ -1617,12 +1597,6 @@ class _HomePageState extends State<HomePage>
                         _buildAdButton(),
 
                         const SizedBox(
-                          height: 24,
-                        ),
-
-                        _buildDailyBonusCard(),
-
-                        const SizedBox(
                           height: 28,
                         ),
 
@@ -2343,35 +2317,86 @@ class _HomePageState extends State<HomePage>
           ),
 
           const SizedBox(
-            height: 5,
+            height: 8,
           ),
+
+          // ------------------------------------------------------
+          // 🎁 DAILY HASH RATE
+          // ------------------------------------------------------
+          //
+          // Päivittäinen bonus näkyy nyt osana normaalia
+          // louhintatietoa.
+          //
+          // ------------------------------------------------------
 
           Row(
             children: [
-              Text(
-                _localization.getWithParams(
-                  'dailyHashRateLabel',
-                  params: {
-                    'amount':
-                        _dailyHashRateBonus
-                            .toStringAsFixed(1),
-                  },
-                ),
+              const Text(
+                '🎁',
                 style:
-                    const TextStyle(
-                  color:
-                      pinkColor,
-                  fontSize: 12,
-                  fontWeight:
-                      FontWeight.w600,
+                    TextStyle(
+                  fontSize: 14,
                 ),
               ),
 
-              if (_adBoostActive) ...[
-                const SizedBox(
-                  width: 10,
-                ),
+              const SizedBox(
+                width: 6,
+              ),
 
+              Expanded(
+                child:
+                    Text(
+                  _localization.getWithParams(
+                    'dailyHashRateLabel',
+                    params: {
+                      'amount':
+                          _dailyHashRate
+                              .toStringAsFixed(1),
+                    },
+                  ),
+                  style:
+                      const TextStyle(
+                    color:
+                        pinkColor,
+                    fontSize: 12,
+                    fontWeight:
+                        FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(
+            height: 5,
+          ),
+
+          Text(
+            _localization.getWithParams(
+              'dailyHashRateDay',
+              params: {
+                'day':
+                    _streak.toString(),
+                'amount':
+                    _dailyHashRate
+                        .toStringAsFixed(1),
+              },
+            ),
+            style:
+                const TextStyle(
+              color:
+                  Color(0xFF9F8CB8),
+              fontSize: 11,
+            ),
+          ),
+
+          if (_adBoostActive) ...[
+            const SizedBox(
+              height: 8,
+            ),
+
+            Row(
+              children: [
                 Text(
                   _localization.getWithParams(
                     'hashRateBonus',
@@ -2391,10 +2416,8 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ],
-            ],
-          ),
+            ),
 
-          if (_adBoostActive) ...[
             const SizedBox(
               height: 8,
             ),
@@ -2937,187 +2960,6 @@ class _HomePageState extends State<HomePage>
                       TextAlign.center,
                 )
               : const SizedBox.shrink(),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // 🎁 DAILY BONUS
-  // ============================================================
-
-  Widget _buildDailyBonusCard() {
-    final double displayedRate =
-        _calculateDailyHashRate(
-      _streak,
-    );
-
-    return Container(
-      padding:
-          const EdgeInsets.all(
-        20,
-      ),
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
-        gradient:
-            const LinearGradient(
-          colors: [
-            Color(0xFF3A1D5A),
-            Color(0xFF25113F),
-          ],
-        ),
-        border:
-            Border.all(
-          color:
-              goldColor.withValues(
-            alpha: 0.16,
-          ),
-        ),
-      ),
-      child:
-          Column(
-        children: [
-          const Text(
-            '🐱🎁',
-            style:
-                TextStyle(
-              fontSize: 40,
-            ),
-          ),
-
-          const SizedBox(
-            height: 8,
-          ),
-
-          Text(
-            _localization.get(
-              'stellaDailyBonus',
-            ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
-              fontSize:
-                  17,
-              fontWeight:
-                  FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(
-            height: 6,
-          ),
-
-          Text(
-            _localization.getWithParams(
-              'dailyHashRateDay',
-              params: {
-                'day':
-                    _streak.toString(),
-                'amount':
-                    displayedRate
-                        .toStringAsFixed(1),
-              },
-            ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFFCFC2E8),
-            ),
-          ),
-
-          const SizedBox(
-            height: 8,
-          ),
-
-          Text(
-            _localization.getWithParams(
-              'dailyHashRateMaximum',
-              params: {
-                'amount':
-                    maximumDailyHashRate
-                        .toStringAsFixed(1),
-              },
-            ),
-            textAlign:
-                TextAlign.center,
-            style:
-                TextStyle(
-              color:
-                  Colors.white.withValues(
-                alpha: 0.45,
-              ),
-              fontSize:
-                  11,
-            ),
-          ),
-
-          const SizedBox(
-            height: 16,
-          ),
-
-          SizedBox(
-            width:
-                double.infinity,
-            child:
-                ElevatedButton(
-              onPressed:
-                  _dailyClaimed ||
-                          _actionLoading
-                      ? null
-                      : _dailyCheckIn,
-              style:
-                  ElevatedButton.styleFrom(
-                backgroundColor:
-                    goldColor,
-                foregroundColor:
-                    const Color(
-                      0xFF24132F,
-                    ),
-                disabledBackgroundColor:
-                    const Color(
-                      0xFF5A4A64,
-                    ),
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(
-                    16,
-                  ),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical:
-                      14,
-                ),
-              ),
-              child:
-                  Text(
-                _dailyClaimed
-                    ? _localization.get(
-                        'bonusClaimedToday',
-                      )
-                    : _localization.get(
-                        'claimDailyBonus',
-                      ),
-                textAlign:
-                    TextAlign.center,
-                style:
-                    const TextStyle(
-                  fontWeight:
-                      FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
