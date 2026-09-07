@@ -8,6 +8,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../../data/cat_facts.dart';
 import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
+import '../../widgets/stelluriini_logo.dart';
 import '../about/about_page.dart';
 import '../history/transaction_history_page.dart';
 import '../roadmap/roadmap_page.dart';
@@ -1595,42 +1596,8 @@ class _HomePageState extends State<HomePage>
           width: 12,
         ),
 
-        Container(
-          width: 58,
-          height: 58,
-          decoration:
-              BoxDecoration(
-            borderRadius:
-                BorderRadius.circular(
-              18,
-            ),
-            gradient:
-                const LinearGradient(
-              colors: [
-                pinkColor,
-                accentColor,
-              ],
-            ),
-            boxShadow:
-                const [
-              BoxShadow(
-                color:
-                    Color(0x663C1B63),
-                blurRadius: 20,
-              ),
-            ],
-          ),
-          child:
-              const Center(
-            child:
-                Text(
-              '🐱',
-              style:
-                  TextStyle(
-                fontSize: 30,
-              ),
-            ),
-          ),
+        const StelluriiniLogo(
+          size: 58,
         ),
 
         const SizedBox(
