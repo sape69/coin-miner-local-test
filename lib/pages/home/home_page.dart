@@ -106,7 +106,6 @@ class _HomePageState extends State<HomePage>
 
   double _hashRate = defaultDailyHashRate;
 
-  double _miningBalance = 0.0;
   double _unclaimedMining = 0.0;
   double _estimatedTotal = 0.0;
   double _miningPerHour = 0.0;
@@ -401,11 +400,6 @@ class _HomePageState extends State<HomePage>
         // ------------------------------------------------------
         // MINING
         // ------------------------------------------------------
-
-        _miningBalance =
-            _toDouble(
-          data['miningBalance'],
-        );
 
         _unclaimedMining =
             _toDouble(
