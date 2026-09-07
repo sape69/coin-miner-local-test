@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class AppLocalization {
+class AppLocalizations {
   final String languageCode;
 
-  const AppLocalization(this.languageCode);
+  const AppLocalizations(this.languageCode);
 
   static const supportedLanguages = <String>[
     'fi',
@@ -55,16 +55,20 @@ class AppLocalization {
       'loadingAd': 'LADATAAN MAINOSTA...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': 'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
+      'powerBoostOffer':
+          'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
       'powerBoostActive': 'Power Boost aktiivinen',
       'powerBoostActiveTitle': 'Stella Power Boost on aktiivinen!',
-      'powerBoostActiveMessage': '+{amount} HR on käytössä louhintasiirron aikana.',
+      'powerBoostActiveMessage':
+          '+{amount} HR on käytössä louhintasiirron aikana.',
       'powerBoostAlreadyActive': 'Power Boost on jo aktiivinen.',
-      'nextPowerBoostMessage': 'Seuraava Power Boost on saatavilla, kun nykyinen boost päättyy.',
-      'nextAdAfterBoost': 'Seuraava mainos on saatavilla boostin päätyttyä.',
-      'maxBoostsInfo': 'Voit aktivoida enintään {count} Power Boostia päivässä.',
+      'nextPowerBoostMessage':
+          'Seuraava Power Boost on saatavilla, kun nykyinen boost päättyy.',
+      'nextAdAfterBoost':
+          'Seuraava mainos on saatavilla boostin päätyttyä.',
+      'maxBoostsInfo':
+          'Voit aktivoida enintään {count} Power Boostia päivässä.',
       'effectiveHashRateLabel': 'Tehokas Hash Rate',
-      'dailyHashRateMaximum': 'Maksimi: {rate} HR',
       'serverConnectionFailed': 'Palvelinyhteys epäonnistui.',
       'refresh': 'Päivitä',
       'profile': 'Profiili',
@@ -123,14 +127,19 @@ class AppLocalization {
       'loadingAd': 'LOADING AD...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': 'Watch an ad to activate +{amount} HR Stella Power Boost for 4 hours.',
+      'powerBoostOffer':
+          'Watch an ad to activate +{amount} HR Stella Power Boost for 4 hours.',
       'powerBoostActive': 'Power Boost active',
       'powerBoostActiveTitle': 'Stella Power Boost is active!',
-      'powerBoostActiveMessage': '+{amount} HR is active during your mining cycle.',
+      'powerBoostActiveMessage':
+          '+{amount} HR is active during your mining cycle.',
       'powerBoostAlreadyActive': 'Power Boost is already active.',
-      'nextPowerBoostMessage': 'The next Power Boost is available when the current boost ends.',
-      'nextAdAfterBoost': 'The next ad is available after the boost ends.',
-      'maxBoostsInfo': 'You can activate up to {count} Power Boosts per day.',
+      'nextPowerBoostMessage':
+          'The next Power Boost is available when the current boost ends.',
+      'nextAdAfterBoost':
+          'The next ad is available after the boost ends.',
+      'maxBoostsInfo':
+          'You can activate up to {count} Power Boosts per day.',
       'effectiveHashRateLabel': 'Effective Hash Rate',
       'serverConnectionFailed': 'Server connection failed.',
       'refresh': 'Refresh',
@@ -184,20 +193,26 @@ class AppLocalization {
       'dailyClaim': 'Täglichen Bonus sammeln',
       'dailyReward': 'Tägliche Belohnung',
       'claimedToday': 'Heute gesammelt',
-      'alreadyClaimed': 'Du hast die heutige Belohnung bereits gesammelt.',
+      'alreadyClaimed':
+          'Du hast die heutige Belohnung bereits gesammelt.',
       'watchAd': 'WERBUNG ANSEHEN',
       'watchAndEarn': 'ANSEHEN & VERDIENEN',
       'loadingAd': 'WERBUNG WIRD GELADEN...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': 'Werbung ansehen und +{amount} HR Stella Power Boost für 4 Stunden aktivieren.',
+      'powerBoostOffer':
+          'Werbung ansehen und +{amount} HR Stella Power Boost für 4 Stunden aktivieren.',
       'powerBoostActive': 'Power Boost aktiv',
       'powerBoostActiveTitle': 'Stella Power Boost ist aktiv!',
-      'powerBoostActiveMessage': '+{amount} HR ist während deines Mining-Zyklus aktiv.',
+      'powerBoostActiveMessage':
+          '+{amount} HR ist während deines Mining-Zyklus aktiv.',
       'powerBoostAlreadyActive': 'Power Boost ist bereits aktiv.',
-      'nextPowerBoostMessage': 'Der nächste Power Boost ist verfügbar, wenn der aktuelle Boost endet.',
-      'nextAdAfterBoost': 'Die nächste Werbung ist nach Ende des Boosts verfügbar.',
-      'maxBoostsInfo': 'Du kannst bis zu {count} Power Boosts pro Tag aktivieren.',
+      'nextPowerBoostMessage':
+          'Der nächste Power Boost ist verfügbar, wenn der aktuelle Boost endet.',
+      'nextAdAfterBoost':
+          'Die nächste Werbung ist nach Ende des Boosts verfügbar.',
+      'maxBoostsInfo':
+          'Du kannst bis zu {count} Power Boosts pro Tag aktivieren.',
       'effectiveHashRateLabel': 'Effektive Hash Rate',
       'serverConnectionFailed': 'Serververbindung fehlgeschlagen.',
       'refresh': 'Aktualisieren',
@@ -211,7 +226,8 @@ class AppLocalization {
       'points': 'Punkte',
       'pointsAdded': 'Punkte hinzugefügt',
       'resetAccount': 'Testkonto zurücksetzen',
-      'resetConfirm': 'Möchtest du das Testkonto wirklich zurücksetzen?',
+      'resetConfirm':
+          'Möchtest du das Testkonto wirklich zurücksetzen?',
       'cancel': 'Abbrechen',
       'reset': 'Zurücksetzen',
       'error': 'Fehler',
@@ -251,22 +267,31 @@ class AppLocalization {
       'dailyClaim': 'Reclamar bono diario',
       'dailyReward': 'Recompensa diaria',
       'claimedToday': 'Reclamado hoy',
-      'alreadyClaimed': 'Ya has reclamado la recompensa de hoy.',
+      'alreadyClaimed':
+          'Ya has reclamado la recompensa de hoy.',
       'watchAd': 'VER ANUNCIO',
       'watchAndEarn': 'VER Y GANAR',
       'loadingAd': 'CARGANDO ANUNCIO...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': 'Mira un anuncio para activar +{amount} HR de Stella Power Boost durante 4 horas.',
+      'powerBoostOffer':
+          'Mira un anuncio para activar +{amount} HR de Stella Power Boost durante 4 horas.',
       'powerBoostActive': 'Power Boost activo',
-      'powerBoostActiveTitle': '¡Stella Power Boost está activo!',
-      'powerBoostActiveMessage': '+{amount} HR está activo durante tu ciclo de minería.',
-      'powerBoostAlreadyActive': 'Power Boost ya está activo.',
-      'nextPowerBoostMessage': 'El próximo Power Boost estará disponible cuando termine el actual.',
-      'nextAdAfterBoost': 'El próximo anuncio estará disponible después de que termine el boost.',
-      'maxBoostsInfo': 'Puedes activar hasta {count} Power Boosts al día.',
+      'powerBoostActiveTitle':
+          '¡Stella Power Boost está activo!',
+      'powerBoostActiveMessage':
+          '+{amount} HR está activo durante tu ciclo de minería.',
+      'powerBoostAlreadyActive':
+          'Power Boost ya está activo.',
+      'nextPowerBoostMessage':
+          'El próximo Power Boost estará disponible cuando termine el actual.',
+      'nextAdAfterBoost':
+          'El próximo anuncio estará disponible después de que termine el boost.',
+      'maxBoostsInfo':
+          'Puedes activar hasta {count} Power Boosts al día.',
       'effectiveHashRateLabel': 'Hash Rate efectivo',
-      'serverConnectionFailed': 'Error de conexión con el servidor.',
+      'serverConnectionFailed':
+          'Error de conexión con el servidor.',
       'refresh': 'Actualizar',
       'profile': 'Perfil',
       'comingSoon': 'Próximamente',
@@ -278,7 +303,8 @@ class AppLocalization {
       'points': 'puntos',
       'pointsAdded': 'Puntos añadidos',
       'resetAccount': 'Restablecer cuenta de prueba',
-      'resetConfirm': '¿Seguro que quieres restablecer la cuenta de prueba?',
+      'resetConfirm':
+          '¿Seguro que quieres restablecer la cuenta de prueba?',
       'cancel': 'Cancelar',
       'reset': 'Restablecer',
       'error': 'Error',
@@ -305,7 +331,8 @@ class AppLocalization {
       'dailyHashRateLabel': 'Hash Rate quotidien',
       'dailyHashRateDay': 'Jour {day}',
       'dailyHashRateMaximum': 'Maximum : {rate} HR',
-      'dailyHashRateSuccess': 'Hash Rate du jour {day} : {rate} HR',
+      'dailyHashRateSuccess':
+          'Hash Rate du jour {day} : {rate} HR',
       'startMining': 'DÉMARRER LE MINAGE',
       'claimMining': 'RÉCLAMER STL',
       'miningActive': 'Minage actif',
@@ -318,22 +345,31 @@ class AppLocalization {
       'dailyClaim': 'Réclamer le bonus quotidien',
       'dailyReward': 'Récompense quotidienne',
       'claimedToday': 'Réclamé aujourd’hui',
-      'alreadyClaimed': 'Vous avez déjà réclamé la récompense du jour.',
+      'alreadyClaimed':
+          'Vous avez déjà réclamé la récompense du jour.',
       'watchAd': 'REGARDER LA PUB',
       'watchAndEarn': 'REGARDER & GAGNER',
       'loadingAd': 'CHARGEMENT DE LA PUB...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': 'Regardez une publicité pour activer +{amount} HR de Stella Power Boost pendant 4 heures.',
+      'powerBoostOffer':
+          'Regardez une publicité pour activer +{amount} HR de Stella Power Boost pendant 4 heures.',
       'powerBoostActive': 'Power Boost actif',
-      'powerBoostActiveTitle': 'Stella Power Boost est actif !',
-      'powerBoostActiveMessage': '+{amount} HR est actif pendant votre cycle de minage.',
-      'powerBoostAlreadyActive': 'Le Power Boost est déjà actif.',
-      'nextPowerBoostMessage': 'Le prochain Power Boost sera disponible lorsque le boost actuel sera terminé.',
-      'nextAdAfterBoost': 'La prochaine publicité sera disponible après la fin du boost.',
-      'maxBoostsInfo': 'Vous pouvez activer jusqu’à {count} Power Boosts par jour.',
+      'powerBoostActiveTitle':
+          'Stella Power Boost est actif !',
+      'powerBoostActiveMessage':
+          '+{amount} HR est actif pendant votre cycle de minage.',
+      'powerBoostAlreadyActive':
+          'Le Power Boost est déjà actif.',
+      'nextPowerBoostMessage':
+          'Le prochain Power Boost sera disponible lorsque le boost actuel sera terminé.',
+      'nextAdAfterBoost':
+          'La prochaine publicité sera disponible après la fin du boost.',
+      'maxBoostsInfo':
+          'Vous pouvez activer jusqu’à {count} Power Boosts par jour.',
       'effectiveHashRateLabel': 'Hash Rate effectif',
-      'serverConnectionFailed': 'Échec de la connexion au serveur.',
+      'serverConnectionFailed':
+          'Échec de la connexion au serveur.',
       'refresh': 'Actualiser',
       'profile': 'Profil',
       'comingSoon': 'Bientôt disponible',
@@ -341,11 +377,14 @@ class AppLocalization {
       'catFact': 'Fait sur les chats de Stella',
       'stellaPower': 'Stella Power',
       'transactions': 'Transactions',
-      'noTransactions': 'Aucune transaction pour le moment.',
+      'noTransactions':
+          'Aucune transaction pour le moment.',
       'points': 'points',
       'pointsAdded': 'Points ajoutés',
-      'resetAccount': 'Réinitialiser le compte de test',
-      'resetConfirm': 'Voulez-vous vraiment réinitialiser le compte de test ?',
+      'resetAccount':
+          'Réinitialiser le compte de test',
+      'resetConfirm':
+          'Voulez-vous vraiment réinitialiser le compte de test ?',
       'cancel': 'Annuler',
       'reset': 'Réinitialiser',
       'error': 'Erreur',
@@ -372,7 +411,8 @@ class AppLocalization {
       'dailyHashRateLabel': '每日哈希率',
       'dailyHashRateDay': '第 {day} 天',
       'dailyHashRateMaximum': '最高：{rate} HR',
-      'dailyHashRateSuccess': '第 {day} 天哈希率：{rate} HR',
+      'dailyHashRateSuccess':
+          '第 {day} 天哈希率：{rate} HR',
       'startMining': '开始挖矿',
       'claimMining': '领取 STL',
       'miningActive': '挖矿进行中',
@@ -385,22 +425,31 @@ class AppLocalization {
       'dailyClaim': '领取每日奖励',
       'dailyReward': '每日奖励',
       'claimedToday': '今日已领取',
-      'alreadyClaimed': '您今天已经领取过奖励。',
+      'alreadyClaimed':
+          '您今天已经领取过奖励。',
       'watchAd': '观看广告',
       'watchAndEarn': '观看并赚取',
       'loadingAd': '正在加载广告...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': '观看广告，激活 +{amount} HR Stella Power Boost，持续 4 小时。',
+      'powerBoostOffer':
+          '观看广告，激活 +{amount} HR Stella Power Boost，持续 4 小时。',
       'powerBoostActive': 'Power Boost 已激活',
-      'powerBoostActiveTitle': 'Stella Power Boost 已激活！',
-      'powerBoostActiveMessage': '+{amount} HR 将在您的挖矿周期中生效。',
-      'powerBoostAlreadyActive': 'Power Boost 已经激活。',
-      'nextPowerBoostMessage': '当前 Boost 结束后即可使用下一个 Power Boost。',
-      'nextAdAfterBoost': 'Boost 结束后即可观看下一条广告。',
-      'maxBoostsInfo': '每天最多可以激活 {count} 个 Power Boost。',
+      'powerBoostActiveTitle':
+          'Stella Power Boost 已激活！',
+      'powerBoostActiveMessage':
+          '+{amount} HR 将在您的挖矿周期中生效。',
+      'powerBoostAlreadyActive':
+          'Power Boost 已经激活。',
+      'nextPowerBoostMessage':
+          '当前 Boost 结束后即可使用下一个 Power Boost。',
+      'nextAdAfterBoost':
+          'Boost 结束后即可观看下一条广告。',
+      'maxBoostsInfo':
+          '每天最多可以激活 {count} 个 Power Boost。',
       'effectiveHashRateLabel': '有效哈希率',
-      'serverConnectionFailed': '服务器连接失败。',
+      'serverConnectionFailed':
+          '服务器连接失败。',
       'refresh': '刷新',
       'profile': '个人资料',
       'comingSoon': '即将推出',
@@ -412,7 +461,8 @@ class AppLocalization {
       'points': '积分',
       'pointsAdded': '积分已添加',
       'resetAccount': '重置测试账户',
-      'resetConfirm': '确定要重置测试账户吗？',
+      'resetConfirm':
+          '确定要重置测试账户吗？',
       'cancel': '取消',
       'reset': '重置',
       'error': '错误',
@@ -439,7 +489,8 @@ class AppLocalization {
       'dailyHashRateLabel': 'Hash Rate hàng ngày',
       'dailyHashRateDay': 'Ngày {day}',
       'dailyHashRateMaximum': 'Tối đa: {rate} HR',
-      'dailyHashRateSuccess': 'Hash Rate ngày {day}: {rate} HR',
+      'dailyHashRateSuccess':
+          'Hash Rate ngày {day}: {rate} HR',
       'startMining': 'BẮT ĐẦU KHAI THÁC',
       'claimMining': 'NHẬN STL',
       'miningActive': 'Đang khai thác',
@@ -452,22 +503,33 @@ class AppLocalization {
       'dailyClaim': 'Nhận thưởng hàng ngày',
       'dailyReward': 'Phần thưởng hàng ngày',
       'claimedToday': 'Đã nhận hôm nay',
-      'alreadyClaimed': 'Bạn đã nhận phần thưởng hôm nay.',
+      'alreadyClaimed':
+          'Bạn đã nhận phần thưởng hôm nay.',
       'watchAd': 'XEM QUẢNG CÁO',
       'watchAndEarn': 'XEM & NHẬN',
       'loadingAd': 'ĐANG TẢI QUẢNG CÁO...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': 'Xem quảng cáo để kích hoạt +{amount} HR Stella Power Boost trong 4 giờ.',
-      'powerBoostActive': 'Power Boost đang hoạt động',
-      'powerBoostActiveTitle': 'Stella Power Boost đang hoạt động!',
-      'powerBoostActiveMessage': '+{amount} HR đang được áp dụng trong chu kỳ khai thác của bạn.',
-      'powerBoostAlreadyActive': 'Power Boost đã đang hoạt động.',
-      'nextPowerBoostMessage': 'Power Boost tiếp theo sẽ khả dụng khi boost hiện tại kết thúc.',
-      'nextAdAfterBoost': 'Quảng cáo tiếp theo khả dụng sau khi boost kết thúc.',
-      'maxBoostsInfo': 'Bạn có thể kích hoạt tối đa {count} Power Boost mỗi ngày.',
-      'effectiveHashRateLabel': 'Hash Rate hiệu dụng',
-      'serverConnectionFailed': 'Kết nối máy chủ thất bại.',
+      'powerBoostOffer':
+          'Xem quảng cáo để kích hoạt +{amount} HR Stella Power Boost trong 4 giờ.',
+      'powerBoostActive':
+          'Power Boost đang hoạt động',
+      'powerBoostActiveTitle':
+          'Stella Power Boost đang hoạt động!',
+      'powerBoostActiveMessage':
+          '+{amount} HR đang được áp dụng trong chu kỳ khai thác của bạn.',
+      'powerBoostAlreadyActive':
+          'Power Boost đã đang hoạt động.',
+      'nextPowerBoostMessage':
+          'Power Boost tiếp theo sẽ khả dụng khi boost hiện tại kết thúc.',
+      'nextAdAfterBoost':
+          'Quảng cáo tiếp theo khả dụng sau khi boost kết thúc.',
+      'maxBoostsInfo':
+          'Bạn có thể kích hoạt tối đa {count} Power Boost mỗi ngày.',
+      'effectiveHashRateLabel':
+          'Hash Rate hiệu dụng',
+      'serverConnectionFailed':
+          'Kết nối máy chủ thất bại.',
       'refresh': 'Làm mới',
       'profile': 'Hồ sơ',
       'comingSoon': 'Sắp ra mắt',
@@ -475,11 +537,14 @@ class AppLocalization {
       'catFact': 'Sự thật về mèo Stella',
       'stellaPower': 'Stella Power',
       'transactions': 'Giao dịch',
-      'noTransactions': 'Chưa có giao dịch.',
+      'noTransactions':
+          'Chưa có giao dịch.',
       'points': 'điểm',
       'pointsAdded': 'Đã thêm điểm',
-      'resetAccount': 'Đặt lại tài khoản thử nghiệm',
-      'resetConfirm': 'Bạn có chắc muốn đặt lại tài khoản thử nghiệm không?',
+      'resetAccount':
+          'Đặt lại tài khoản thử nghiệm',
+      'resetConfirm':
+          'Bạn có chắc muốn đặt lại tài khoản thử nghiệm không?',
       'cancel': 'Hủy',
       'reset': 'Đặt lại',
       'error': 'Lỗi',
@@ -506,7 +571,8 @@ class AppLocalization {
       'dailyHashRateLabel': 'デイリーハッシュレート',
       'dailyHashRateDay': '{day}日目',
       'dailyHashRateMaximum': '最大：{rate} HR',
-      'dailyHashRateSuccess': '{day}日目のハッシュレート：{rate} HR',
+      'dailyHashRateSuccess':
+          '{day}日目のハッシュレート：{rate} HR',
       'startMining': 'マイニング開始',
       'claimMining': 'STLを受け取る',
       'miningActive': 'マイニング中',
@@ -519,22 +585,32 @@ class AppLocalization {
       'dailyClaim': 'デイリーボーナスを受け取る',
       'dailyReward': 'デイリー報酬',
       'claimedToday': '本日受け取り済み',
-      'alreadyClaimed': '本日の報酬はすでに受け取っています。',
+      'alreadyClaimed':
+          '本日の報酬はすでに受け取っています。',
       'watchAd': '広告を見る',
       'watchAndEarn': '見て獲得',
       'loadingAd': '広告を読み込み中...',
       'adReward': '+{amount} HR',
       'powerBoost': 'Stella Power Boost',
-      'powerBoostOffer': '広告を見て、+{amount} HR の Stella Power Boost を4時間有効にします。',
+      'powerBoostOffer':
+          '広告を見て、+{amount} HR の Stella Power Boost を4時間有効にします。',
       'powerBoostActive': 'Power Boost 有効',
-      'powerBoostActiveTitle': 'Stella Power Boost が有効です！',
-      'powerBoostActiveMessage': 'マイニングサイクル中、+{amount} HR が有効です。',
-      'powerBoostAlreadyActive': 'Power Boost はすでに有効です。',
-      'nextPowerBoostMessage': '現在のBoostが終了すると、次のPower Boostを利用できます。',
-      'nextAdAfterBoost': 'Boost終了後に次の広告を利用できます。',
-      'maxBoostsInfo': '1日に最大 {count} 回の Power Boost を有効にできます。',
-      'effectiveHashRateLabel': '実効ハッシュレート',
-      'serverConnectionFailed': 'サーバーへの接続に失敗しました。',
+      'powerBoostActiveTitle':
+          'Stella Power Boost が有効です！',
+      'powerBoostActiveMessage':
+          'マイニングサイクル中、+{amount} HR が有効です。',
+      'powerBoostAlreadyActive':
+          'Power Boost はすでに有効です。',
+      'nextPowerBoostMessage':
+          '現在のBoostが終了すると、次のPower Boostを利用できます。',
+      'nextAdAfterBoost':
+          'Boost終了後に次の広告を利用できます。',
+      'maxBoostsInfo':
+          '1日に最大 {count} 回の Power Boost を有効にできます。',
+      'effectiveHashRateLabel':
+          '実効ハッシュレート',
+      'serverConnectionFailed':
+          'サーバーへの接続に失敗しました。',
       'refresh': '更新',
       'profile': 'プロフィール',
       'comingSoon': '近日公開',
@@ -542,11 +618,14 @@ class AppLocalization {
       'catFact': 'Stellaの猫豆知識',
       'stellaPower': 'Stella Power',
       'transactions': '取引',
-      'noTransactions': 'まだ取引はありません。',
+      'noTransactions':
+          'まだ取引はありません。',
       'points': 'ポイント',
       'pointsAdded': 'ポイントが追加されました',
-      'resetAccount': 'テストアカウントをリセット',
-      'resetConfirm': 'テストアカウントをリセットしますか？',
+      'resetAccount':
+          'テストアカウントをリセット',
+      'resetConfirm':
+          'テストアカウントをリセットしますか？',
       'cancel': 'キャンセル',
       'reset': 'リセット',
       'error': 'エラー',
@@ -555,15 +634,21 @@ class AppLocalization {
     },
   };
 
-  String t(String key, {Map<String, String>? params}) {
+  String t(
+    String key, {
+    Map<String, String>? params,
+  }) {
     String value =
         _translations[languageCode]?[key] ??
         _translations['en']?[key] ??
         key;
 
     if (params != null) {
-      params.forEach((key, replacement) {
-        value = value.replaceAll('{$key}', replacement);
+      params.forEach((name, replacement) {
+        value = value.replaceAll(
+          '{$name}',
+          replacement,
+        );
       });
     }
 
@@ -572,13 +657,14 @@ class AppLocalization {
 
   String get(String key) => t(key);
 
-  static AppLocalization of(BuildContext context) {
+  static AppLocalizations of(BuildContext context) {
     final locale = Localizations.localeOf(context);
 
-    final languageCode = supportedLanguages.contains(locale.languageCode)
-        ? locale.languageCode
-        : 'en';
+    final languageCode =
+        supportedLanguages.contains(locale.languageCode)
+            ? locale.languageCode
+            : 'en';
 
-    return AppLocalization(languageCode);
+    return AppLocalizations(languageCode);
   }
 }
