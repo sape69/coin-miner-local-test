@@ -18,6 +18,7 @@ import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
 import 'home_stats_card.dart';
 import 'mining_progress_card.dart';
+import 'power_boost_card.dart';
 import 'stella_mining_card.dart';
 
 // ============================================================
@@ -2000,331 +2001,105 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    return Container(
-      padding:
-          const EdgeInsets.all(
-        18,
-      ),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
-        borderRadius:
-            BorderRadius.circular(
-          22,
+    final String activeText =
+        _localization.get(
+      'powerBoostActive',
+    );
+
+    final String activeTitle =
+        _localization.get(
+      'powerBoostActiveTitle',
+    );
+
+    final String remainingText =
+        _localization.getWithParams(
+      'remaining',
+      params: {
+        'time':
+            _formatDuration(
+          _adBoostRemainingMs,
         ),
-        border:
-            Border.all(
-          color:
-              boostActive
-                  ? goldColor.withValues(
-                      alpha: 0.40,
-                    )
-                  : pinkColor.withValues(
-                      alpha: 0.30,
-                    ),
-        ),
+      },
+    );
+
+    final String hashRateBonusText =
+        _localization.getWithParams(
+      'hashRateBonus',
+      params: {
+        'amount':
+            _adHashRateBonus
+                .toStringAsFixed(4),
+      },
+    );
+
+    final String effectiveHashRateText =
+        _localization.getWithParams(
+      'effectiveHashRateLabel',
+      params: {
+        'amount':
+            _effectiveHashRate
+                .toStringAsFixed(4),
+      },
+    );
+
+    final String nextAdAfterBoostText =
+        _localization.get(
+      'nextAdAfterBoost',
+    );
+
+    final String watchAdText =
+        _localization.get(
+      'watchAd',
+    );
+
+    final String adsTodayText =
+        _localization.getWithParams(
+      'adsToday',
+      params: {
+        'current':
+            _adsToday.toString(),
+        'max':
+            _maxAdsPerDay.toString(),
+      },
+    );
+
+    final String maxBoostsInfoText =
+        _localization.getWithParams(
+      'maxBoostsInfo',
+      params: {
+        'count':
+            _maxAdsPerDay.toString(),
+      },
+    );
+
+    return PowerBoostCard(
+      boostActive: boostActive,
+      boostRemainingMs:
+          _adBoostRemainingMs,
+      adsToday: _adsToday,
+      maxAdsPerDay: _maxAdsPerDay,
+      canUse: canUse,
+      subtitle: subtitle,
+      title:
+          _localization.get(
+        'powerBoost',
       ),
-      child:
-          Column(
-        children: [
-          Row(
-            children: [
-              Text(
-                boostActive
-                    ? '⚡'
-                    : '📺',
-                style:
-                    const TextStyle(
-                  fontSize: 28,
-                ),
-              ),
-
-              const SizedBox(
-                width: 12,
-              ),
-
-              Expanded(
-                child:
-                    Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _localization.get(
-                        'powerBoost',
-                      ),
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.white,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 3,
-                    ),
-
-                    Text(
-                      boostActive
-                          ? _localization.get(
-                              'powerBoostActive',
-                            )
-                          : subtitle,
-                      style:
-                          const TextStyle(
-                        color:
-                            secondaryTextColor,
-                        fontSize:
-                            12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(
-            height: 16,
-          ),
-
-          if (boostActive)
-            Container(
-              width:
-                  double.infinity,
-              padding:
-                  const EdgeInsets.all(
-                14,
-              ),
-              decoration:
-                  BoxDecoration(
-                color:
-                    goldColor.withValues(
-                  alpha: 0.08,
-                ),
-                borderRadius:
-                    BorderRadius.circular(
-                  16,
-                ),
-                border:
-                    Border.all(
-                  color:
-                      goldColor.withValues(
-                    alpha: 0.25,
-                  ),
-                ),
-              ),
-              child:
-                  Column(
-                children: [
-                  Text(
-                    _localization.get(
-                      'powerBoostActiveTitle',
-                    ),
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      color:
-                          goldColor,
-                      fontWeight:
-                          FontWeight.bold,
-                      fontSize:
-                          12,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 7,
-                  ),
-
-                  Text(
-                    _localization.getWithParams(
-                      'remaining',
-                      params: {
-                        'time':
-                            _formatDuration(
-                          _adBoostRemainingMs,
-                        ),
-                      },
-                    ),
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.white,
-                      fontSize:
-                          18,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 5,
-                  ),
-
-                  Text(
-                    _localization.getWithParams(
-                      'hashRateBonus',
-                      params: {
-                        'amount':
-                            _adHashRateBonus
-                                .toStringAsFixed(4),
-                      },
-                    ),
-                    style:
-                        const TextStyle(
-                      color:
-                          pinkColor,
-                      fontWeight:
-                          FontWeight.w700,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 5,
-                  ),
-
-                  Text(
-                    _localization.getWithParams(
-                      'effectiveHashRateLabel',
-                      params: {
-                        'amount':
-                            _effectiveHashRate
-                                .toStringAsFixed(4),
-                      },
-                    ),
-                    style:
-                        const TextStyle(
-                      color:
-                          goldColor,
-                      fontWeight:
-                          FontWeight.w700,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 5,
-                  ),
-
-                  Text(
-                    _localization.get(
-                      'nextAdAfterBoost',
-                    ),
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        TextStyle(
-                      color:
-                          Colors.white.withValues(
-                        alpha: 0.50,
-                      ),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            SizedBox(
-              width:
-                  double.infinity,
-              child:
-                  OutlinedButton(
-                onPressed:
-                    canUse
-                        ? _watchAd
-                        : null,
-                style:
-                    OutlinedButton.styleFrom(
-                  foregroundColor:
-                      pinkColor,
-                  disabledForegroundColor:
-                      Colors.white.withValues(
-                    alpha: 0.35,
-                  ),
-                  side:
-                      const BorderSide(
-                    color:
-                        pinkColor,
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(
-                    vertical: 15,
-                  ),
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                  ),
-                ),
-                child:
-                    Text(
-                  _localization.get(
-                    'watchAd',
-                  ),
-                  textAlign:
-                      TextAlign.center,
-                  maxLines:
-                      1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-          const SizedBox(
-            height: 10,
-          ),
-
-          Text(
-            _localization.getWithParams(
-              'adsToday',
-              params: {
-                'current':
-                    _adsToday.toString(),
-                'max':
-                    _maxAdsPerDay.toString(),
-              },
-            ),
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF8D7BA8),
-              fontSize:
-                  11,
-            ),
-          ),
-
-          const SizedBox(
-            height: 4,
-          ),
-
-          Text(
-            _localization.getWithParams(
-              'maxBoostsInfo',
-              params: {
-                'count':
-                    _maxAdsPerDay.toString(),
-              },
-            ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF6F5C84),
-              fontSize:
-                  10,
-            ),
-          ),
-        ],
-      ),
+      activeText: activeText,
+      activeTitle: activeTitle,
+      remainingText: remainingText,
+      hashRateBonusText:
+          hashRateBonusText,
+      effectiveHashRateText:
+          effectiveHashRateText,
+      nextAdAfterBoostText:
+          nextAdAfterBoostText,
+      watchAdText:
+          watchAdText,
+      adsTodayText:
+          adsTodayText,
+      maxBoostsInfoText:
+          maxBoostsInfoText,
+      onPressed: _watchAd,
     );
   }
 
