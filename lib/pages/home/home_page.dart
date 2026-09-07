@@ -17,6 +17,7 @@ import '../tokenomics/tokenomics_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
 import 'home_stats_card.dart';
+import 'mining_action_button.dart';
 import 'mining_progress_card.dart';
 import 'power_boost_card.dart';
 import 'stella_mining_card.dart';
@@ -1901,49 +1902,10 @@ class _HomePageState extends State<HomePage>
           _startMining;
     }
 
-    return SizedBox(
-      width:
-          double.infinity,
-      height:
-          62,
-      child:
-          ElevatedButton.icon(
-        onPressed:
-            onPressed,
-        icon:
-            Icon(icon),
-        label:
-            Text(
-          text,
-          textAlign:
-              TextAlign.center,
-          style:
-              const TextStyle(
-            fontWeight:
-                FontWeight.bold,
-            letterSpacing:
-                0.5,
-          ),
-        ),
-        style:
-            ElevatedButton.styleFrom(
-          backgroundColor:
-              accentColor,
-          foregroundColor:
-              Colors.white,
-          disabledBackgroundColor:
-              const Color(
-                0xFF4A315F,
-              ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              20,
-            ),
-          ),
-        ),
-      ),
+    return MiningActionButton(
+      text: text,
+      icon: icon,
+      onPressed: onPressed,
     );
   }
 
