@@ -14,15 +14,18 @@ import 'register_page.dart';
 //
 // Tämä sivu:
 // - käyttää Stelluriinin Stella-teemaa
-// - tukee nykyistä lokalisaatiojärjestelmää
+// - tukee keskitettyä lokalisaatiojärjestelmää
 // - käyttää Firebase Email/Password -kirjautumista
 // - sisältää salasanan palautuksen
 // - sisältää uuden käyttäjätilin luonnin
 // - sisältää kielivalinnan
+// - välittää valitun kielen Register- ja Forgot Password -sivuille
+//
 // ============================================================
 
 class LoginPage extends StatefulWidget {
   final String languageCode;
+
   final Future<void> Function(String) changeLanguage;
 
   const LoginPage({
@@ -47,17 +50,43 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   bool loading = false;
+
   bool showPassword = false;
 
   // ==========================================================
-  // LOCALIZATION
+  // 🎨 STELLA COLORS
   // ==========================================================
 
-  AppLocalizations get t =>
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color accentColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color goldColor =
+      Color(0xFFFFD166);
+
+  static const Color primaryTextColor =
+      Color(0xFFF8F4FF);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBDB4D1);
+
+  // ==========================================================
+  // 🌍 LOCALIZATION
+  // ==========================================================
+
+  AppLocalizations get localization =>
       AppLocalizations(widget.languageCode);
 
   String _t(String key) {
-    return t.get(key);
+    return localization.get(key);
   }
 
   // ==========================================================
@@ -73,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // MESSAGE
+  // 💬 MESSAGE
   // ==========================================================
 
   void _message(String text) {
@@ -85,21 +114,35 @@ class _LoginPageState extends State<LoginPage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(text),
+          content: Text(
+            text,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       );
   }
 
   // ==========================================================
-  // LOGIN
+  // 🔐 LOGIN
   // ==========================================================
 
   Future<void> _login() async {
-    final email =
+    final String email =
         emailController.text.trim();
 
-    final password =
+    final String password =
         passwordController.text;
+
+    // --------------------------------------------------------
+    // EMPTY FIELDS
+    // --------------------------------------------------------
 
     if (email.isEmpty ||
         password.isEmpty) {
@@ -129,34 +172,46 @@ class _LoginPageState extends State<LoginPage> {
 
       switch (error.code) {
         case 'invalid-email':
-          message =
-              _t('loginInvalidEmail');
+          message = _t(
+            'loginInvalidEmail',
+          );
           break;
 
         case 'user-not-found':
-          message =
-              _t('loginUserNotFound');
+          message = _t(
+            'loginUserNotFound',
+          );
           break;
 
         case 'wrong-password':
         case 'invalid-credential':
-          message =
-              _t('loginInvalidCredentials');
+          message = _t(
+            'loginInvalidCredentials',
+          );
           break;
 
         case 'user-disabled':
-          message =
-              _t('loginUserDisabled');
+          message = _t(
+            'loginUserDisabled',
+          );
           break;
 
         case 'too-many-requests':
-          message =
-              _t('loginTooManyRequests');
+          message = _t(
+            'loginTooManyRequests',
+          );
           break;
 
         case 'network-request-failed':
-          message =
-              _t('loginNetworkError');
+          message = _t(
+            'loginNetworkError',
+          );
+          break;
+
+        case 'operation-not-allowed':
+          message = _t(
+            'loginFailed',
+          );
           break;
 
         default:
@@ -183,45 +238,108 @@ class _LoginPageState extends State<LoginPage> {
   // 🌍 LANGUAGE
   // ==========================================================
 
-  void _openLanguageDialog() {
-    showDialog(
+  Future<void> _openLanguageDialog() async {
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(
-            _t('language'),
+          backgroundColor: cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
+          title: Text(
+            '🐱 ${_t('language')}',
+            style: const TextStyle(
+              color: primaryTextColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: AppLocalizations
                   .supportedLanguages
                   .entries
                   .map(
                 (entry) {
-                  return ListTile(
-                    title: Text(
-                      entry.value,
-                    ),
-                    trailing:
-                        widget.languageCode ==
-                                entry.key
-                            ? const Icon(
-                                Icons.check,
-                              )
-                            : null,
-                    onTap: () async {
-                      await widget.changeLanguage(
-                        entry.key,
-                      );
+                  final bool selected =
+                      widget.languageCode ==
+                          entry.key;
 
-                      if (dialogContext.mounted) {
-                        Navigator.pop(
-                          dialogContext,
-                        );
-                      }
-                    },
+                  return Padding(
+                    padding:
+                        const EdgeInsets.only(
+                      bottom: 10,
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: loading
+                            ? null
+                            : () async {
+                                await widget
+                                    .changeLanguage(
+                                  entry.key,
+                                );
+
+                                if (dialogContext
+                                    .mounted) {
+                                  Navigator.pop(
+                                    dialogContext,
+                                  );
+                                }
+                              },
+                        style:
+                            ElevatedButton.styleFrom(
+                          backgroundColor:
+                              selected
+                                  ? accentColor
+                                  : const Color(
+                                      0xFF35204F,
+                                    ),
+                          foregroundColor:
+                              Colors.white,
+                          padding:
+                              const EdgeInsets
+                                  .symmetric(
+                            vertical: 14,
+                          ),
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                              14,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                textAlign:
+                                    TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight:
+                                      selected
+                                          ? FontWeight
+                                              .bold
+                                          : FontWeight
+                                              .normal,
+                                ),
+                              ),
+                            ),
+                            if (selected)
+                              const Icon(
+                                Icons
+                                    .check_circle_rounded,
+                                color: goldColor,
+                                size: 20,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   );
                 },
               ).toList(),
@@ -239,7 +357,23 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
+
+      // ======================================================
+      // APP BAR
+      // ======================================================
+
       appBar: AppBar(
+        backgroundColor: backgroundColor,
+        foregroundColor: primaryTextColor,
+        centerTitle: true,
+        elevation: 0,
+        title: Text(
+          _t('login'),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: _t('language'),
@@ -252,12 +386,23 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+
+      // ======================================================
+      // BODY
+      // ======================================================
+
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding:
                 const EdgeInsets.all(24),
             child: Card(
+              color: cardColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(24),
+              ),
               child: Padding(
                 padding:
                     const EdgeInsets.all(28),
@@ -266,7 +411,7 @@ class _LoginPageState extends State<LoginPage> {
                       MainAxisSize.min,
                   children: [
                     // ==================================================
-                    // STELLA
+                    // 🐱 STELLA
                     // ==================================================
 
                     const CatAvatar(
@@ -286,6 +431,8 @@ class _LoginPageState extends State<LoginPage> {
                       textAlign:
                           TextAlign.center,
                       style: TextStyle(
+                        color:
+                            primaryTextColor,
                         fontSize: 30,
                         fontWeight:
                             FontWeight.bold,
@@ -300,10 +447,26 @@ class _LoginPageState extends State<LoginPage> {
                     const Text(
                       'STL',
                       style: TextStyle(
+                        color: pinkColor,
                         fontSize: 16,
-                        color:
-                            Colors.white60,
+                        fontWeight:
+                            FontWeight.w600,
                         letterSpacing: 4,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                    Text(
+                      _t('login'),
+                      textAlign:
+                          TextAlign.center,
+                      style: const TextStyle(
+                        color:
+                            secondaryTextColor,
+                        fontSize: 15,
                       ),
                     ),
 
@@ -324,16 +487,65 @@ class _LoginPageState extends State<LoginPage> {
                           TextInputAction.next,
                       enabled:
                           !loading,
+                      style:
+                          const TextStyle(
+                        color:
+                            primaryTextColor,
+                      ),
                       decoration:
                           InputDecoration(
                         labelText:
                             _t('email'),
                         prefixIcon:
                             const Icon(
-                          Icons.email_outlined,
+                          Icons
+                              .email_outlined,
+                        ),
+                        filled: true,
+                        fillColor:
+                            const Color(
+                          0xFF18102D,
                         ),
                         border:
-                            const OutlineInputBorder(),
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              BorderSide.none,
+                        ),
+                        enabledBorder:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              BorderSide(
+                            color:
+                                accentColor
+                                    .withValues(
+                              alpha: 0.25,
+                            ),
+                          ),
+                        ),
+                        focusedBorder:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              const BorderSide(
+                            color:
+                                accentColor,
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -359,22 +571,73 @@ class _LoginPageState extends State<LoginPage> {
                           _login();
                         }
                       },
+                      style:
+                          const TextStyle(
+                        color:
+                            primaryTextColor,
+                      ),
                       decoration:
                           InputDecoration(
                         labelText:
                             _t('password'),
                         prefixIcon:
                             const Icon(
-                          Icons.lock_outline,
+                          Icons
+                              .lock_outline,
+                        ),
+                        filled: true,
+                        fillColor:
+                            const Color(
+                          0xFF18102D,
                         ),
                         border:
-                            const OutlineInputBorder(),
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              BorderSide.none,
+                        ),
+                        enabledBorder:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              BorderSide(
+                            color:
+                                accentColor
+                                    .withValues(
+                              alpha: 0.25,
+                            ),
+                          ),
+                        ),
+                        focusedBorder:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              const BorderSide(
+                            color:
+                                accentColor,
+                            width: 1.5,
+                          ),
+                        ),
                         suffixIcon:
                             IconButton(
                           icon: Icon(
                             showPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                                ? Icons
+                                    .visibility
+                                : Icons
+                                    .visibility_off,
                           ),
                           onPressed:
                               loading
@@ -404,7 +667,14 @@ class _LoginPageState extends State<LoginPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) =>
-                                        const ForgotPasswordPage(),
+                                        ForgotPasswordPage(
+                                      languageCode:
+                                          widget
+                                              .languageCode,
+                                      changeLanguage:
+                                          widget
+                                              .changeLanguage,
+                                    ),
                                   ),
                                 );
                               },
@@ -427,7 +697,7 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       width:
                           double.infinity,
-                      height: 55,
+                      height: 56,
                       child:
                           ElevatedButton.icon(
                         onPressed: loading
@@ -445,7 +715,8 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               )
                             : const Icon(
-                                Icons.login,
+                                Icons
+                                    .login_rounded,
                               ),
                         label: Text(
                           loading
@@ -455,6 +726,12 @@ class _LoginPageState extends State<LoginPage> {
                               : _t(
                                   'login',
                                 ),
+                          style:
+                              const TextStyle(
+                            fontWeight:
+                                FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -467,7 +744,7 @@ class _LoginPageState extends State<LoginPage> {
                     // REGISTER
                     // ==================================================
 
-                    TextButton(
+                    TextButton.icon(
                       onPressed: loading
                           ? null
                           : () {
@@ -477,17 +754,39 @@ class _LoginPageState extends State<LoginPage> {
                                   builder: (_) =>
                                       RegisterPage(
                                     languageCode:
-                                        widget.languageCode,
+                                        widget
+                                            .languageCode,
                                     changeLanguage:
-                                        widget.changeLanguage,
+                                        widget
+                                            .changeLanguage,
                                   ),
                                 ),
                               );
                             },
-                      child: Text(
+                      icon:
+                          const Icon(
+                        Icons
+                            .person_add_alt_1_rounded,
+                      ),
+                      label: Text(
                         _t(
                           'createAccount',
                         ),
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
+                    // ==================================================
+                    // STELLA FOOTER
+                    // ==================================================
+
+                    const Text(
+                      '🐱💜',
+                      style: TextStyle(
+                        fontSize: 24,
                       ),
                     ),
                   ],
