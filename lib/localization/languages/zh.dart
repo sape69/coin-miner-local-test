@@ -266,6 +266,37 @@ const Map<String, String> zhTranslations = {
       '登录失败',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      '确认密码',
+
+  'passwordsDoNotMatch':
+      '两次输入的密码不一致。',
+
+  'passwordTooShort':
+      '密码至少需要包含 6 个字符。',
+
+  'creatingAccount':
+      '正在创建账户...',
+
+  'accountCreated':
+      '账户创建成功。',
+
+  'emailAlreadyInUse':
+      '此电子邮箱地址已被使用。',
+
+  'passwordTooWeak':
+      '密码强度太弱。',
+
+  'registrationNotAllowed':
+      '当前不允许注册。',
+
+  'registrationFailed':
+      '账户创建失败。',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
