@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+// ============================================================
+// ⛏️ STELLURIINI MINING PROGRESS CARD
+// ============================================================
+
 class MiningProgressCard extends StatelessWidget {
   final bool miningActive;
   final int miningRemainingMs;
@@ -12,12 +16,34 @@ class MiningProgressCard extends StatelessWidget {
   final String hashRateBonusText;
   final String effectiveHashRateText;
 
-  static const Color backgroundColor = Color(0xFF120B24);
-  static const Color cardColor = Color(0xFF21113B);
-  static const Color accentColor = Color(0xFFB58CFF);
-  static const Color pinkColor = Color(0xFFFFB7E8);
-  static const Color goldColor = Color(0xFFFFD166);
-  static const Color secondaryTextColor = Color(0xFFBFAEDB);
+  // ============================================================
+  // 🎨 STELLA COLORS
+  // ============================================================
+
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color accentColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color goldColor =
+      Color(0xFFFFD166);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBFAEDB);
+
+  static const Color mutedTextColor =
+      Color(0xFF9F8CB8);
+
+  // ============================================================
+  // CONSTRUCTOR
+  // ============================================================
 
   const MiningProgressCard({
     super.key,
@@ -32,138 +58,333 @@ class MiningProgressCard extends StatelessWidget {
     required this.effectiveHashRateText,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    double progress = 0.0;
+  // ============================================================
+  // PROGRESS
+  // ============================================================
 
-    if (miningActive && miningDurationMs > 0) {
-      progress =
-          1.0 -
-          (miningRemainingMs / miningDurationMs);
-
-      progress = progress
-          .clamp(
-            0.0,
-            1.0,
-          )
-          .toDouble();
+  double _calculateProgress() {
+    if (!miningActive ||
+        miningDurationMs <= 0) {
+      return 0.0;
     }
 
+    final double progress =
+        1.0 -
+        (miningRemainingMs /
+            miningDurationMs);
+
+    return progress
+        .clamp(
+          0.0,
+          1.0,
+        )
+        .toDouble();
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
+  @override
+  Widget build(BuildContext context) {
+    final double progress =
+        _calculateProgress();
+
+    final String progressText =
+        '${(progress * 100).toStringAsFixed(1)}%';
+
+    final bool hasPowerBoost =
+        hashRateBonusText.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: accentColor.withValues(
+      padding:
+          const EdgeInsets.all(20),
+      decoration:
+          BoxDecoration(
+        color:
+            cardColor,
+        borderRadius:
+            BorderRadius.circular(22),
+        border:
+            Border.all(
+          color:
+              accentColor.withValues(
             alpha: 0.10,
           ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child:
+          Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
+          // ====================================================
+          // HEADER
+          // ====================================================
+
           Row(
             children: [
               Expanded(
-                child: Text(
+                child:
+                    Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.white,
+                    fontSize:
+                        15,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
               ),
+
+              const SizedBox(
+                width: 10,
+              ),
+
               Text(
-                '${(progress * 100).toStringAsFixed(1)}%',
-                style: const TextStyle(
-                  color: goldColor,
-                  fontWeight: FontWeight.bold,
+                progressText,
+                style:
+                    const TextStyle(
+                  color:
+                      goldColor,
+                  fontSize:
+                      13,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(
+            height: 14,
+          ),
+
+          // ====================================================
+          // MINING PROGRESS
+          // ====================================================
 
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 12,
-              backgroundColor: backgroundColor,
+            borderRadius:
+                BorderRadius.circular(
+              20,
+            ),
+            child:
+                LinearProgressIndicator(
+              value:
+                  progress,
+              minHeight:
+                  12,
+              backgroundColor:
+                  backgroundColor,
               valueColor:
-                  const AlwaysStoppedAnimation<Color>(
+                  const AlwaysStoppedAnimation<
+                      Color>(
                 accentColor,
               ),
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
+
+          // ====================================================
+          // STL PER HOUR
+          // ====================================================
 
           Text(
             stlPerHourText,
-            style: const TextStyle(
-              color: secondaryTextColor,
+            style:
+                const TextStyle(
+              color:
+                  secondaryTextColor,
+              fontSize:
+                  13,
+              fontWeight:
+                  FontWeight.w500,
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(
+            height: 12,
+          ),
 
-          Row(
-            children: [
-              const Text(
-                '🎁',
-                style: TextStyle(
-                  fontSize: 14,
+          // ====================================================
+          // DAILY HASH RATE
+          // ====================================================
+
+          Container(
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            decoration:
+                BoxDecoration(
+              color:
+                  backgroundColor.withValues(
+                alpha: 0.45,
+              ),
+              borderRadius:
+                  BorderRadius.circular(
+                14,
+              ),
+              border:
+                  Border.all(
+                color:
+                    pinkColor.withValues(
+                  alpha: 0.08,
                 ),
               ),
+            ),
+            child:
+                Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      '🎁',
+                      style:
+                          TextStyle(
+                        fontSize:
+                            15,
+                      ),
+                    ),
 
-              const SizedBox(width: 6),
+                    const SizedBox(
+                      width: 7,
+                    ),
 
-              Expanded(
-                child: Text(
-                  dailyHashRateText,
-                  style: const TextStyle(
-                    color: pinkColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    Expanded(
+                      child:
+                          Text(
+                        dailyHashRateText,
+                        style:
+                            const TextStyle(
+                          color:
+                              pinkColor,
+                          fontSize:
+                              12,
+                          fontWeight:
+                              FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(
+                  height: 5,
+                ),
+
+                Text(
+                  dailyHashRateDayText,
+                  style:
+                      const TextStyle(
+                    color:
+                        mutedTextColor,
+                    fontSize:
+                        11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ====================================================
+          // POWER BOOST
+          // ====================================================
+
+          if (hasPowerBoost) ...[
+            const SizedBox(
+              height: 10,
+            ),
+
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    goldColor.withValues(
+                  alpha: 0.06,
+                ),
+                borderRadius:
+                    BorderRadius.circular(
+                  14,
+                ),
+                border:
+                    Border.all(
+                  color:
+                      goldColor.withValues(
+                    alpha: 0.12,
                   ),
                 ),
               ),
-            ],
-          ),
+              child:
+                  Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        '⚡',
+                        style:
+                            TextStyle(
+                          fontSize:
+                              15,
+                        ),
+                      ),
 
-          const SizedBox(height: 5),
+                      const SizedBox(
+                        width: 7,
+                      ),
 
-          Text(
-            dailyHashRateDayText,
-            style: const TextStyle(
-              color: Color(0xFF9F8CB8),
-              fontSize: 11,
-            ),
-          ),
+                      Expanded(
+                        child:
+                            Text(
+                          hashRateBonusText,
+                          style:
+                              const TextStyle(
+                            color:
+                                goldColor,
+                            fontSize:
+                                12,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
 
-          if (hashRateBonusText.isNotEmpty) ...[
-            const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 6,
+                  ),
 
-            Text(
-              hashRateBonusText,
-              style: const TextStyle(
-                color: goldColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              effectiveHashRateText,
-              style: const TextStyle(
-                color: goldColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+                  Text(
+                    effectiveHashRateText,
+                    style:
+                        const TextStyle(
+                      color:
+                          goldColor,
+                      fontSize:
+                          12,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
