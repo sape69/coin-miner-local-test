@@ -5,22 +5,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../../data/cat_facts.dart';
 import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_logo.dart';
 import '../about/about_page.dart';
 import '../history/transaction_history_page.dart';
 import '../roadmap/roadmap_page.dart';
-import '../token/stl_token_page.dart';
 import '../tokenomics/tokenomics_page.dart';
 import '../whitepaper/whitepaper_page.dart';
-import 'daily_cat_fact_section.dart';
+import 'cat_fact_card.dart';
 import 'home_stats_card.dart';
-import 'mining_action_button.dart';
 import 'mining_progress_card.dart';
 import 'power_boost_card.dart';
-import 'stella_footer.dart';
-import 'stella_mining_section.dart';
+import 'stella_mining_card.dart';
 
 // ============================================================
 // 🐱 STELLURIINI HOME PAGE
@@ -349,10 +347,18 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
+        // ------------------------------------------------------
+        // DAILY STREAK
+        // ------------------------------------------------------
+
         _streak = _toInt(
           data['dailyStreak'] ??
               data['streak'],
         );
+
+        // ------------------------------------------------------
+        // DAILY HASH RATE
+        // ------------------------------------------------------
 
         final double backendDailyHashRate =
             _toDouble(
@@ -372,6 +378,10 @@ class _HomePageState extends State<HomePage>
           );
         }
 
+        // ------------------------------------------------------
+        // BASE HASH RATE
+        // ------------------------------------------------------
+
         final double backendHashRate =
             _toDouble(
           data['hashRate'],
@@ -385,6 +395,10 @@ class _HomePageState extends State<HomePage>
         } else {
           _hashRate = _dailyHashRate;
         }
+
+        // ------------------------------------------------------
+        // MINING
+        // ------------------------------------------------------
 
         _unclaimedMining =
             _toDouble(
@@ -413,6 +427,10 @@ class _HomePageState extends State<HomePage>
           _miningDurationMs =
               defaultMiningDurationMs;
         }
+
+        // ------------------------------------------------------
+        // POWER BOOST
+        // ------------------------------------------------------
 
         _adsToday =
             _toInt(
@@ -457,7 +475,15 @@ class _HomePageState extends State<HomePage>
           _adBoostActive = false;
         }
 
+        // ------------------------------------------------------
+        // EFFECTIVE HASH RATE
+        // ------------------------------------------------------
+
         _recalculateMiningPerHour();
+
+        // ------------------------------------------------------
+        // AD AVAILABILITY
+        // ------------------------------------------------------
 
         _canWatchAd =
             data['canWatchAd'] == true;
@@ -587,6 +613,10 @@ class _HomePageState extends State<HomePage>
         data['collected'],
       );
 
+      // --------------------------------------------------------
+      // DAILY HASH RATE
+      // --------------------------------------------------------
+
       final int returnedStreak =
           _toInt(
         data['dailyStreak'] ??
@@ -618,6 +648,10 @@ class _HomePageState extends State<HomePage>
       _hashRate = _dailyHashRate;
 
       _recalculateMiningPerHour();
+
+      // --------------------------------------------------------
+      // MESSAGE
+      // --------------------------------------------------------
 
       if (alreadyMining) {
         _showMessage(
@@ -1217,6 +1251,26 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 🐱 DAILY CAT FACT
+  // ============================================================
+
+  Widget _buildDailyCatFact() {
+    final String fact =
+        CatFacts.getDailyFact(
+      languageCode:
+          widget.languageCode,
+    );
+
+    return CatFactCard(
+      title:
+          '🐱 ${_localization.get(
+        'stellaFacts',
+      )}',
+      fact: fact,
+    );
+  }
+
+  // ============================================================
   // 🔢 HELPERS
   // ============================================================
 
@@ -1383,12 +1437,6 @@ class _HomePageState extends State<HomePage>
         onWhitePaperPressed: () {
           _openPage(
             const WhitePaperPage(),
-          );
-        },
-
-        onTokenPressed: () {
-          _openPage(
-            const StlTokenPage(),
           );
         },
 
@@ -1614,54 +1662,82 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStellaMiningCard() {
-    return StellaMiningSection(
-      miningActive: _miningActive,
-      unclaimedMining: _unclaimedMining,
-      miningRemainingMs: _miningRemainingMs,
-      miningActiveTitle:
+    final bool completed =
+        !_miningActive &&
+            _unclaimedMining > 0;
+
+    final String title;
+    final String subtitle;
+    final String timerText;
+    final String timerLabel;
+
+    if (_miningActive) {
+      title =
           _localization.get(
         'stellaIsMining',
-      ),
-      miningActiveSubtitle:
+      );
+
+      subtitle =
           _localization.get(
         'stellaMiningNow',
-      ),
-      miningCompleteTitle:
-          _localization.get(
-        'miningComplete',
-      ),
-      miningCompleteSubtitle:
-          _localization.get(
-        'stlReadyToCollect',
-      ),
-      restingTitle:
-          _localization.get(
-        'stellaIsResting',
-      ),
-      restingSubtitle:
-          _localization.get(
-        'stellaWaiting',
-      ),
-      timeRemainingLabel:
+      );
+
+      timerText =
+          _formatDuration(
+        _miningRemainingMs,
+      );
+
+      timerLabel =
           _localization.get(
         'timeRemaining',
-      ),
-      miningFinishedLabel:
+      );
+    } else if (completed) {
+      title =
+          _localization.get(
+        'miningComplete',
+      );
+
+      subtitle =
+          _localization.get(
+        'stlReadyToCollect',
+      );
+
+      timerText =
+          '00:00:00';
+
+      timerLabel =
           _localization.get(
         'miningFinished',
-      ),
-      readyText:
+      );
+    } else {
+      title =
+          _localization.get(
+        'stellaIsResting',
+      );
+
+      subtitle =
+          _localization.get(
+        'stellaWaiting',
+      );
+
+      timerText =
           _localization.get(
         'ready',
-      ),
-      waitingForStellaLabel:
+      );
+
+      timerLabel =
           _localization.get(
         'waitingForStella',
-      ),
-      formatDuration:
-          _formatDuration,
-      catAnimation:
-          _catAnimation,
+      );
+    }
+
+    return StellaMiningCard(
+      unclaimedMining: _unclaimedMining,
+      miningTitle: title,
+      miningSubtitle: subtitle,
+      timerText: timerText,
+      timerLabel: timerLabel,
+      catAnimation: _catAnimation,
     );
   }
 
@@ -1818,10 +1894,49 @@ class _HomePageState extends State<HomePage>
           _startMining;
     }
 
-    return MiningActionButton(
-      text: text,
-      icon: icon,
-      onPressed: onPressed,
+    return SizedBox(
+      width:
+          double.infinity,
+      height:
+          62,
+      child:
+          ElevatedButton.icon(
+        onPressed:
+            onPressed,
+        icon:
+            Icon(icon),
+        label:
+            Text(
+          text,
+          textAlign:
+              TextAlign.center,
+          style:
+              const TextStyle(
+            fontWeight:
+                FontWeight.bold,
+            letterSpacing:
+                0.5,
+          ),
+        ),
+        style:
+            ElevatedButton.styleFrom(
+          backgroundColor:
+              accentColor,
+          foregroundColor:
+              Colors.white,
+          disabledBackgroundColor:
+              const Color(
+                0xFF4A315F,
+              ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              20,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1981,24 +2096,64 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 DAILY CAT FACT
-  // ============================================================
-
-  Widget _buildDailyCatFact() {
-    return DailyCatFactSection(
-      languageCode:
-          widget.languageCode,
-    );
-  }
-
-  // ============================================================
   // 🐱 STELLA FOOTER
   // ============================================================
 
   Widget _buildStellaFooter() {
-    return StellaFooter(
-      localization:
-          _localization,
+    return Center(
+      child:
+          Column(
+        children: [
+          const Text(
+            '🐱💜⛏️',
+            style:
+                TextStyle(
+              fontSize:
+                  28,
+            ),
+          ),
+
+          const SizedBox(
+            height:
+                8,
+          ),
+
+          Text(
+            _localization.get(
+              'footerTagline',
+            ),
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  Color(0xFF8D7BA8),
+              fontStyle:
+                  FontStyle.italic,
+            ),
+          ),
+
+          const SizedBox(
+            height:
+                4,
+          ),
+
+          Text(
+            _localization.get(
+              'footerToken',
+            ),
+            style:
+                const TextStyle(
+              color:
+                  Color(0xFF5F4D70),
+              fontSize:
+                  11,
+              letterSpacing:
+                  2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
