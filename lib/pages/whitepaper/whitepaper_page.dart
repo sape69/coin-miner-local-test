@@ -13,6 +13,8 @@ import '../../localization/whitepaper/whitepaper_zh.dart';
 import '../../localization/whitepaper/whitepaper_vi.dart';
 import '../../localization/whitepaper/whitepaper_ja.dart';
 
+import 'whitepaper_section.dart';
+
 // ============================================================
 // STELLA THEME COLORS
 // ============================================================
@@ -87,94 +89,6 @@ class WhitePaperPage extends StatelessWidget {
     return current[key] ??
         whitepaperEn[key] ??
         key;
-  }
-
-  // ==========================================================
-  // SECTION
-  // ==========================================================
-
-  Widget _section({
-    required String number,
-    required IconData icon,
-    required String title,
-    required Widget child,
-    Color accent = whitePaperAccentColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(
-        bottom: 18,
-      ),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: whitePaperCardColor,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: accent.withValues(
-            alpha: 0.18,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: accent.withValues(
-                    alpha: 0.11,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: accent.withValues(
-                      alpha: 0.15,
-                    ),
-                  ),
-                ),
-                child: Icon(
-                  icon,
-                  color: accent,
-                  size: 23,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      number,
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          child,
-        ],
-      ),
-    );
   }
 
   // ==========================================================
@@ -674,11 +588,6 @@ class WhitePaperPage extends StatelessWidget {
     return Scaffold(
       backgroundColor:
           whitePaperBackgroundColor,
-
-      // ========================================================
-      // APP BAR
-      // ========================================================
-
       appBar: AppBar(
         backgroundColor:
             whitePaperBackgroundColor,
@@ -694,11 +603,6 @@ class WhitePaperPage extends StatelessWidget {
           ),
         ),
       ),
-
-      // ========================================================
-      // BODY
-      // ========================================================
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
@@ -857,10 +761,10 @@ class WhitePaperPage extends StatelessWidget {
               const SizedBox(height: 24),
 
               // ==================================================
-              // 01 — EXECUTIVE SUMMARY
+              // 01
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '01',
                 icon:
                     Icons.auto_awesome_rounded,
@@ -871,10 +775,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 02 — VISION
+              // 02
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '02',
                 icon:
                     Icons.visibility_rounded,
@@ -919,10 +823,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 03 — WHAT IS STELLURIINI
+              // 03
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '03',
                 icon: Icons.pets_rounded,
                 title: t('03_title'),
@@ -978,10 +882,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 04 — STELLA
+              // 04
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '04',
                 icon:
                     Icons.favorite_rounded,
@@ -1016,10 +920,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 05 — TOKEN
+              // 05
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '05',
                 icon: Icons
                     .monetization_on_rounded,
@@ -1117,10 +1021,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 06 — TOKENOMICS
+              // 06
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '06',
                 icon:
                     Icons.pie_chart_rounded,
@@ -1222,10 +1126,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 07 — STELLA MINING
+              // 07
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '07',
                 icon: Icons.bolt_rounded,
                 title: t('07_title'),
@@ -1275,10 +1179,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 08 — DAILY BONUS
+              // 08
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '08',
                 icon:
                     Icons.card_giftcard_rounded,
@@ -1313,10 +1217,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 09 — POWER BOOST
+              // 09
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '09',
                 icon: Icons.flash_on_rounded,
                 title: t('09_title'),
@@ -1364,10 +1268,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 10 — ARCHITECTURE
+              // 10
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '10',
                 icon:
                     Icons.account_tree_rounded,
@@ -1426,10 +1330,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 11 — HISTORY
+              // 11
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '11',
                 icon:
                     Icons.history_rounded,
@@ -1452,10 +1356,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 12 — SECURITY
+              // 12
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '12',
                 icon:
                     Icons.security_rounded,
@@ -1513,10 +1417,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 13 — COMMUNITY
+              // 13
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '13',
                 icon:
                     Icons.groups_rounded,
@@ -1551,10 +1455,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 14 — FUTURE ECOSYSTEM
+              // 14
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '14',
                 icon:
                     Icons.rocket_launch_rounded,
@@ -1612,10 +1516,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 15 — ROADMAP
+              // 15
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '15',
                 icon: Icons.map_rounded,
                 title: t('15_title'),
@@ -1670,10 +1574,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 16 — TRANSPARENCY
+              // 16
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '16',
                 icon:
                     Icons.visibility_rounded,
@@ -1713,10 +1617,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 17 — RISKS
+              // 17
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '17',
                 icon:
                     Icons.warning_amber_rounded,
@@ -1847,10 +1751,10 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 19 — OFFICIAL INFORMATION
+              // 19
               // ==================================================
 
-              _section(
+              WhitePaperSection(
                 number: '19',
                 icon: Icons.link_rounded,
                 title: t('19_title'),
