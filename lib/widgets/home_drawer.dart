@@ -21,7 +21,6 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onLanguagePressed;
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
-  final VoidCallback onTokenomicsPressed;
   final VoidCallback onRoadmapPressed;
   final VoidCallback onTransactionHistoryPressed;
 
@@ -30,7 +29,6 @@ class HomeDrawer extends StatelessWidget {
     required this.onLanguagePressed,
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
-    required this.onTokenomicsPressed,
     required this.onRoadmapPressed,
     required this.onTransactionHistoryPressed,
   });
@@ -279,12 +277,6 @@ class HomeDrawer extends StatelessWidget {
                     icon: Icons.description_outlined,
                     title: 'White Paper',
                     onTap: onWhitePaperPressed,
-                  ),
-
-                  _menuItem(
-                    icon: Icons.pie_chart_outline_rounded,
-                    title: 'Tokenomics',
-                    onTap: onTokenomicsPressed,
                   ),
 
                   _menuItem(
