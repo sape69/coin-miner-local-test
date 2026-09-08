@@ -3,10 +3,28 @@ import 'package:flutter/material.dart';
 // ============================================================
 // 🐱 STELLURIINI / STELLA LOGO
 // ============================================================
+//
+// Yhtenäinen Stelluriini-logo koko sovelluksessa.
+//
+// Käyttää:
+// assets/images/stelluriini_logo.png
+//
+// Jos logoa ei löydy, näytetään turvallinen fallback-kuvake.
+//
+// ============================================================
 
-const Color stelluriiniLogoCardColor = Color(0xFF21113B);
-const Color stelluriiniLogoAccentColor = Color(0xFFB58CFF);
-const Color stelluriiniLogoPinkColor = Color(0xFFFFB7E8);
+// ============================================================
+// 🎨 STELLURIINI COLORS
+// ============================================================
+
+const Color stelluriiniLogoCardColor =
+    Color(0xFF21113B);
+
+const Color stelluriiniLogoAccentColor =
+    Color(0xFFB58CFF);
+
+const Color stelluriiniLogoPinkColor =
+    Color(0xFFFFB7E8);
 
 // ============================================================
 // 🐱 STELLURIINI LOGO
@@ -25,7 +43,9 @@ class StelluriiniLogo extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      padding: EdgeInsets.all(size * 0.025),
+      padding: EdgeInsets.all(
+        size * 0.025,
+      ),
       decoration: BoxDecoration(
         color: stelluriiniLogoCardColor,
         borderRadius: BorderRadius.circular(
@@ -65,9 +85,9 @@ class StelluriiniLogo extends StatelessWidget {
           height: size,
           fit: BoxFit.cover,
           errorBuilder: (
-            context,
-            error,
-            stackTrace,
+            BuildContext context,
+            Object error,
+            StackTrace? stackTrace,
           ) {
             return Center(
               child: Icon(
