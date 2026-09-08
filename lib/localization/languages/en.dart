@@ -296,6 +296,31 @@ const Map<String, String> enTranslations = {
       'Failed to create the account.',
 
   // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'The password reset link has been sent to your email.',
+
+  'passwordResetUserNotFound':
+      'No user account was found for this email address.',
+
+  'passwordResetNotAllowed':
+      'Password reset is not currently allowed.',
+
+  'passwordResetFailed':
+      'Password reset failed.',
+
+  'passwordResetDescription':
+      'Enter your account email address and we will send you a password reset link.',
+
+  'sending':
+      'SENDING...',
+
+  'sendPasswordReset':
+      'SEND PASSWORD RESET LINK',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
