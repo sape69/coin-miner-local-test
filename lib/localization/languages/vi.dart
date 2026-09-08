@@ -54,7 +54,8 @@ const Map<String, String> viTranslations = {
   'dailyClaim': 'Nhận phần thưởng hàng ngày',
   'dailyReward': 'Phần thưởng hàng ngày',
   'claimedToday': 'Đã nhận hôm nay',
-  'alreadyClaimed': 'Bạn đã nhận phần thưởng hôm nay.',
+  'alreadyClaimed':
+      'Bạn đã nhận phần thưởng hôm nay.',
 
   // ============================================================
   // 📺 ADS
@@ -139,10 +140,10 @@ const Map<String, String> viTranslations = {
   // ============================================================
 
   'catFact':
-      'Sự thật về mèo Stella',
+      'Kiến thức về mèo Stella',
 
   'stellaFacts':
-      'Sự thật về mèo Stella',
+      'Kiến thức về mèo Stella',
 
   'stellaPower':
       'Stella Power',
@@ -166,7 +167,7 @@ const Map<String, String> viTranslations = {
       'STL đã sẵn sàng để nhận',
 
   'stlMined':
-      'STL đã khai thác',
+      'STL đã được khai thác',
 
   'waitingForStella':
       'Đang chờ Stella',
@@ -178,7 +179,7 @@ const Map<String, String> viTranslations = {
       'Đang khai thác',
 
   'stellaAlreadyMining':
-      'Stella đã đang khai thác.',
+      'Stella đang khai thác.',
 
   'prepareAd':
       'Đang chuẩn bị quảng cáo...',
@@ -309,6 +310,31 @@ const Map<String, String> viTranslations = {
 
   'registrationFailed':
       'Đăng ký tài khoản thất bại.',
+
+  // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn.',
+
+  'passwordResetUserNotFound':
+      'Không tìm thấy tài khoản người dùng cho địa chỉ email này.',
+
+  'passwordResetNotAllowed':
+      'Hiện tại không thể đặt lại mật khẩu.',
+
+  'passwordResetFailed':
+      'Đặt lại mật khẩu thất bại.',
+
+  'passwordResetDescription':
+      'Nhập địa chỉ email của tài khoản và chúng tôi sẽ gửi cho bạn liên kết đặt lại mật khẩu.',
+
+  'sending':
+      'ĐANG GỬI...',
+
+  'sendPasswordReset':
+      'GỬI LIÊN KẾT ĐẶT LẠI MẬT KHẨU',
 
   // ============================================================
   // 📜 TRANSACTION HISTORY
