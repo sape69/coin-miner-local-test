@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage>
   static const Color goldColor = Color(0xFFFFD166);
 
   // ============================================================
-  // ⚡ STELLA POWER BOOST
+  // ⚡ POWER BOOST CONFIG
   // ============================================================
 
   static const double defaultAdHashRateBonus = 0.5833;
@@ -61,22 +61,20 @@ class _HomePageState extends State<HomePage>
       4 * 60 * 60 * 1000;
 
   // ============================================================
-  // ⛏️ DAILY HASH RATE
+  // ⛏️ DAILY HASH RATE CONFIG
   // ============================================================
 
   static const double defaultDailyHashRate = 0.5;
+
   static const double dailyHashRateStep = 0.5;
+
   static const double maximumDailyHashRate = 3.5;
 
   // ============================================================
-  // 💰 MINING RATE
+  // 💰 MINING CONFIG
   // ============================================================
 
   static const double miningPerHashPerHour = 0.10;
-
-  // ============================================================
-  // ⏱️ MINING DURATION
-  // ============================================================
 
   static const int defaultMiningDurationMs =
       24 * 60 * 60 * 1000;
@@ -93,7 +91,7 @@ class _HomePageState extends State<HomePage>
   );
 
   // ============================================================
-  // 📺 ADMOB TEST REWARDED AD
+  // 📺 REWARDED AD
   // ============================================================
 
   static const String _rewardedAdUnitId =
@@ -123,7 +121,7 @@ class _HomePageState extends State<HomePage>
   int _miningDurationMs = defaultMiningDurationMs;
 
   // ============================================================
-  // 🎁 DAILY HASH RATE STATE
+  // 🎁 DAILY HASH RATE
   // ============================================================
 
   int _streak = 0;
@@ -131,7 +129,7 @@ class _HomePageState extends State<HomePage>
   double _dailyHashRate = defaultDailyHashRate;
 
   // ============================================================
-  // ⚡ POWER BOOST STATE
+  // ⚡ POWER BOOST
   // ============================================================
 
   int _adsToday = 0;
@@ -204,6 +202,7 @@ class _HomePageState extends State<HomePage>
   Future<void> _initialize() async {
     try {
       await _ensureSignedIn();
+
       await _loadMiningStatus();
 
       if (!mounted) {
@@ -211,6 +210,11 @@ class _HomePageState extends State<HomePage>
       }
 
       await _loadRewardedAd();
+
+      if (!mounted) {
+        return;
+      }
+
       _startTimers();
     } catch (error) {
       debugPrint(
@@ -260,6 +264,10 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
+          // ------------------------------------------------------
+          // MINING TIMER
+          // ------------------------------------------------------
+
           if (_miningActive &&
               _miningRemainingMs > 0) {
             _miningRemainingMs -= 1000;
@@ -269,6 +277,10 @@ class _HomePageState extends State<HomePage>
               _miningActive = false;
             }
           }
+
+          // ------------------------------------------------------
+          // POWER BOOST TIMER
+          // ------------------------------------------------------
 
           if (_adBoostActive &&
               _adBoostRemainingMs > 0) {
@@ -280,6 +292,10 @@ class _HomePageState extends State<HomePage>
             }
           }
 
+          // ------------------------------------------------------
+          // AD COOLDOWN
+          // ------------------------------------------------------
+
           if (!_adBoostActive &&
               _cooldownRemainingMs > 0) {
             _cooldownRemainingMs -= 1000;
@@ -289,10 +305,18 @@ class _HomePageState extends State<HomePage>
             }
           }
 
+          // ------------------------------------------------------
+          // AD AVAILABILITY
+          // ------------------------------------------------------
+
           if (!_adBoostActive &&
               _cooldownRemainingMs <= 0 &&
               _adsToday < _maxAdsPerDay) {
             _canWatchAd = true;
+          }
+
+          if (_adsToday >= _maxAdsPerDay) {
+            _canWatchAd = false;
           }
 
           _recalculateMiningPerHour();
@@ -311,7 +335,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // MINING RATE
+  // ⛏️ MINING RATE
   // ============================================================
 
   void _recalculateMiningPerHour() {
@@ -324,19 +348,20 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // LOAD MINING STATUS
+  // 📡 LOAD MINING STATUS
   // ============================================================
 
   Future<void> _loadMiningStatus() async {
     try {
-      final callable =
+      final HttpsCallable callable =
           _functions.httpsCallable(
         'getMiningStatus',
       );
 
-      final result = await callable.call();
+      final HttpsCallableResult<dynamic> result =
+          await callable.call();
 
-      final data =
+      final Map<String, dynamic> data =
           Map<String, dynamic>.from(
         result.data as Map,
       );
@@ -346,28 +371,27 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
-        // ------------------------------------------------------
+        // ======================================================
         // DAILY STREAK
-        // ------------------------------------------------------
+        // ======================================================
 
         _streak = _toInt(
           data['dailyStreak'] ??
               data['streak'],
         );
 
-        // ------------------------------------------------------
+        // ======================================================
         // DAILY HASH RATE
-        // ------------------------------------------------------
+        // ======================================================
 
         final double backendDailyHashRate =
             _toDouble(
           data['dailyHashRate'],
         );
 
-        if (backendDailyHashRate >=
-                defaultDailyHashRate &&
-            backendDailyHashRate <=
-                maximumDailyHashRate) {
+        if (_isValidDailyHashRate(
+          backendDailyHashRate,
+        )) {
           _dailyHashRate =
               backendDailyHashRate;
         } else {
@@ -377,27 +401,26 @@ class _HomePageState extends State<HomePage>
           );
         }
 
-        // ------------------------------------------------------
+        // ======================================================
         // BASE HASH RATE
-        // ------------------------------------------------------
+        // ======================================================
 
         final double backendHashRate =
             _toDouble(
           data['hashRate'],
         );
 
-        if (backendHashRate >=
-                defaultDailyHashRate &&
-            backendHashRate <=
-                maximumDailyHashRate) {
+        if (_isValidDailyHashRate(
+          backendHashRate,
+        )) {
           _hashRate = backendHashRate;
         } else {
           _hashRate = _dailyHashRate;
         }
 
-        // ------------------------------------------------------
+        // ======================================================
         // MINING
-        // ------------------------------------------------------
+        // ======================================================
 
         _unclaimedMining =
             _toDouble(
@@ -427,9 +450,9 @@ class _HomePageState extends State<HomePage>
               defaultMiningDurationMs;
         }
 
-        // ------------------------------------------------------
+        // ======================================================
         // POWER BOOST
-        // ------------------------------------------------------
+        // ======================================================
 
         _adsToday =
             _toInt(
@@ -474,15 +497,15 @@ class _HomePageState extends State<HomePage>
           _adBoostActive = false;
         }
 
-        // ------------------------------------------------------
-        // EFFECTIVE HASH RATE
-        // ------------------------------------------------------
+        // ======================================================
+        // EFFECTIVE RATE
+        // ======================================================
 
         _recalculateMiningPerHour();
 
-        // ------------------------------------------------------
+        // ======================================================
         // AD AVAILABILITY
-        // ------------------------------------------------------
+        // ======================================================
 
         _canWatchAd =
             data['canWatchAd'] == true;
@@ -530,6 +553,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // The mining-start ad is required by the current app flow.
     if (_rewardedAd == null ||
         !_adReady) {
       _showMessage(
@@ -539,6 +563,7 @@ class _HomePageState extends State<HomePage>
       );
 
       await _loadRewardedAd();
+
       return;
     }
 
@@ -566,7 +591,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // ⛏️ START MINING AFTER AD
+  // ⛏️ CLAIM / START MINING AFTER AD
   // ============================================================
 
   Future<void> _startMiningAfterAd() async {
@@ -583,15 +608,15 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final callable =
+      final HttpsCallable callable =
           _functions.httpsCallable(
         'claimMining',
       );
 
-      final result =
+      final HttpsCallableResult<dynamic> result =
           await callable.call();
 
-      final data =
+      final Map<String, dynamic> data =
           Map<String, dynamic>.from(
         result.data as Map,
       );
@@ -612,9 +637,9 @@ class _HomePageState extends State<HomePage>
         data['collected'],
       );
 
-      // --------------------------------------------------------
+      // ======================================================
       // DAILY HASH RATE
-      // --------------------------------------------------------
+      // ======================================================
 
       final int returnedStreak =
           _toInt(
@@ -631,10 +656,9 @@ class _HomePageState extends State<HomePage>
         _streak = returnedStreak;
       }
 
-      if (returnedDailyHashRate >=
-              defaultDailyHashRate &&
-          returnedDailyHashRate <=
-              maximumDailyHashRate) {
+      if (_isValidDailyHashRate(
+        returnedDailyHashRate,
+      )) {
         _dailyHashRate =
             returnedDailyHashRate;
       } else {
@@ -644,13 +668,14 @@ class _HomePageState extends State<HomePage>
         );
       }
 
+      // Daily Hash Rate is the base mining rate.
       _hashRate = _dailyHashRate;
 
       _recalculateMiningPerHour();
 
-      // --------------------------------------------------------
+      // ======================================================
       // MESSAGE
-      // --------------------------------------------------------
+      // ======================================================
 
       if (alreadyMining) {
         _showMessage(
@@ -826,6 +851,10 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // ----------------------------------------------------------
+    // ACTIVE BOOST
+    // ----------------------------------------------------------
+
     if (_adBoostActive &&
         _adBoostRemainingMs > 0) {
       _showMessage(
@@ -846,6 +875,10 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // ----------------------------------------------------------
+    // DAILY LIMIT
+    // ----------------------------------------------------------
+
     if (_adsToday >= _maxAdsPerDay) {
       _showMessage(
         _localization.get(
@@ -855,6 +888,10 @@ class _HomePageState extends State<HomePage>
 
       return;
     }
+
+    // ----------------------------------------------------------
+    // COOLDOWN
+    // ----------------------------------------------------------
 
     if (_cooldownRemainingMs > 0) {
       _showMessage(
@@ -872,6 +909,10 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // ----------------------------------------------------------
+    // BACKEND AVAILABILITY
+    // ----------------------------------------------------------
+
     if (!_canWatchAd) {
       _showMessage(
         _localization.get(
@@ -880,8 +921,13 @@ class _HomePageState extends State<HomePage>
       );
 
       await _loadMiningStatus();
+
       return;
     }
+
+    // ----------------------------------------------------------
+    // AD NOT READY
+    // ----------------------------------------------------------
 
     if (_rewardedAd == null ||
         !_adReady) {
@@ -892,6 +938,7 @@ class _HomePageState extends State<HomePage>
       );
 
       await _loadRewardedAd();
+
       return;
     }
 
@@ -936,15 +983,15 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final callable =
+      final HttpsCallable callable =
           _functions.httpsCallable(
         'testAdReward',
       );
 
-      final result =
+      final HttpsCallableResult<dynamic> result =
           await callable.call();
 
-      final data =
+      final Map<String, dynamic> data =
           Map<String, dynamic>.from(
         result.data as Map,
       );
@@ -1293,6 +1340,15 @@ class _HomePageState extends State<HomePage>
           value?.toString() ?? '',
         ) ??
         0;
+  }
+
+  bool _isValidDailyHashRate(
+    double value,
+  ) {
+    return value >=
+            defaultDailyHashRate &&
+        value <=
+            maximumDailyHashRate;
   }
 
   double _calculateDailyHashRate(
