@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../localization.dart';
+
 class PowerBoostCard extends StatelessWidget {
   final bool boostActive;
   final int boostRemainingMs;
@@ -50,6 +52,61 @@ class PowerBoostCard extends StatelessWidget {
     required this.onPressed,
   });
 
+  // ==========================================================
+  // LOCALIZATION
+  // ==========================================================
+
+  String _t(
+    BuildContext context,
+    String key,
+  ) {
+    return AppLocalizations.of(context).get(key);
+  }
+
+  // ==========================================================
+  // LOCALIZED TITLE
+  // ==========================================================
+
+  String _localizedTitle(
+    BuildContext context,
+  ) {
+    final localized =
+        _t(context, 'powerBoost');
+
+    // Fallback for safety if the localization key
+    // is missing from a language.
+    if (localized.isEmpty ||
+        localized == 'powerBoost') {
+      return title;
+    }
+
+    return localized;
+  }
+
+  // ==========================================================
+  // LOCALIZED ACTIVE TITLE
+  // ==========================================================
+
+  String _localizedActiveTitle(
+    BuildContext context,
+  ) {
+    final localized =
+        _t(context, 'powerBoostActiveTitle');
+
+    // Fallback for safety if the localization key
+    // is missing from a language.
+    if (localized.isEmpty ||
+        localized == 'powerBoostActiveTitle') {
+      return activeTitle;
+    }
+
+    return localized;
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -80,7 +137,7 @@ class PowerBoostCard extends StatelessWidget {
                       CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      _localizedTitle(context),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -88,7 +145,9 @@ class PowerBoostCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      boostActive ? activeText : subtitle,
+                      boostActive
+                          ? activeText
+                          : subtitle,
                       style: const TextStyle(
                         color: secondaryTextColor,
                         fontSize: 12,
@@ -103,7 +162,7 @@ class PowerBoostCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           if (boostActive)
-            _buildActiveBoost()
+            _buildActiveBoost(context)
           else
             _buildWatchButton(),
 
@@ -132,7 +191,13 @@ class PowerBoostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActiveBoost() {
+  // ==========================================================
+  // ACTIVE BOOST
+  // ==========================================================
+
+  Widget _buildActiveBoost(
+    BuildContext context,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -146,7 +211,7 @@ class PowerBoostCard extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            activeTitle,
+            _localizedActiveTitle(context),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: goldColor,
@@ -202,6 +267,10 @@ class PowerBoostCard extends StatelessWidget {
       ),
     );
   }
+
+  // ==========================================================
+  // WATCH BUTTON
+  // ==========================================================
 
   Widget _buildWatchButton() {
     return SizedBox(
