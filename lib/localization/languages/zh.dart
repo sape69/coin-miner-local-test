@@ -38,7 +38,7 @@ const Map<String, String> zhTranslations = {
   'startMining': '开始挖矿',
   'claimMining': '领取 STL',
   'miningActive': '挖矿进行中',
-  'miningComplete': '挖矿周期完成',
+  'miningComplete': '挖矿周期已完成',
 
   'timeRemaining': '剩余时间',
   'remaining': '剩余时间：{time}',
@@ -54,7 +54,8 @@ const Map<String, String> zhTranslations = {
   'dailyClaim': '领取每日奖励',
   'dailyReward': '每日奖励',
   'claimedToday': '今日已领取',
-  'alreadyClaimed': '您今天已经领取过奖励。',
+  'alreadyClaimed':
+      '您今天已经领取过奖励。',
 
   // ============================================================
   // 📺 ADS
@@ -75,7 +76,8 @@ const Map<String, String> zhTranslations = {
   'powerBoostOffer':
       '观看广告，激活 +{amount} HR Stella Power Boost，持续 4 小时。',
 
-  'powerBoostActive': 'Power Boost 已激活',
+  'powerBoostActive':
+      'Power Boost 已激活',
 
   'powerBoostActiveTitle':
       'Stella Power Boost 已激活！',
@@ -124,18 +126,30 @@ const Map<String, String> zhTranslations = {
   // 👤 GENERAL UI
   // ============================================================
 
-  'profile': '个人资料',
-  'comingSoon': '即将推出',
-  'information': '信息',
+  'profile':
+      '个人资料',
+
+  'comingSoon':
+      '即将推出',
+
+  'information':
+      '信息',
 
   // ============================================================
   // 🐱 STELLA
   // ============================================================
 
-  'catFact': 'Stella 猫咪知识',
-  'stellaFacts': 'Stella 猫咪知识',
-  'stellaPower': 'Stella Power',
-  'stellaMining': 'Stella Mining',
+  'catFact':
+      'Stella 猫咪知识',
+
+  'stellaFacts':
+      'Stella 猫咪知识',
+
+  'stellaPower':
+      'Stella Power',
+
+  'stellaMining':
+      'Stella Mining',
 
   'stellaIsMining':
       'Stella 正在挖矿',
@@ -180,7 +194,8 @@ const Map<String, String> zhTranslations = {
   // 💎 TRANSACTIONS
   // ============================================================
 
-  'transactions': '交易',
+  'transactions':
+      '交易',
 
   'noTransactions':
       '暂无交易。',
@@ -295,6 +310,31 @@ const Map<String, String> zhTranslations = {
 
   'registrationFailed':
       '账户创建失败。',
+
+  // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      '密码重置链接已发送到您的电子邮箱。',
+
+  'passwordResetUserNotFound':
+      '未找到与此电子邮箱地址对应的用户账户。',
+
+  'passwordResetNotAllowed':
+      '当前不允许重置密码。',
+
+  'passwordResetFailed':
+      '密码重置失败。',
+
+  'passwordResetDescription':
+      '请输入您账户的电子邮箱地址，我们会向您发送密码重置链接。',
+
+  'sending':
+      '正在发送...',
+
+  'sendPasswordReset':
+      '发送密码重置链接',
 
   // ============================================================
   // 📜 TRANSACTION HISTORY
