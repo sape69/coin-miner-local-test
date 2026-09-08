@@ -6,68 +6,90 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_gate.dart';
 import 'pages/loading_page.dart';
 
+// ============================================================
+// 🐱 STELLURIINI / STELLA THEME
+// ============================================================
+//
+// Keskitetty sovelluksen pääteema.
+//
+// Värit vastaavat nykyistä Stelluriini UI -ilmettä:
+// - syvä violetti tausta
+// - tumma violetti korttipinta
+// - Stella purple
+// - Stella pink
+// - kultainen korostus
+//
+// ============================================================
 
 // ============================================================
-// STELLA'S WORLD THEME COLORS
+// 🎨 STELLURIINI COLORS
 // ============================================================
 
-// Syvä avaruustausta.
-const Color backgroundColor = Color(0xFF090B1A);
+const Color backgroundColor =
+    Color(0xFF120B24);
 
-// Hieman vaaleampi avaruuspinta.
-const Color surfaceColor = Color(0xFF12162B);
+const Color surfaceColor =
+    Color(0xFF1A0E31);
 
-// Korttien taustaväri.
-const Color cardColor = Color(0xFF171C35);
+const Color cardColor =
+    Color(0xFF21113B);
 
-// Stella-purppura.
-const Color stellaPurple = Color(0xFF9B6CFF);
+const Color stellaPurple =
+    Color(0xFFB58CFF);
 
-// Stella-vaaleanpunainen.
-const Color stellaPink = Color(0xFFFF79C6);
+const Color stellaPink =
+    Color(0xFFFFB7E8);
 
-// Tähtien kultainen väri.
-const Color starGold = Color(0xFFFFD166);
+const Color starGold =
+    Color(0xFFFFD166);
 
-// STL-kolikon mint-väri.
-const Color accentColor = Color(0xFF35D0A0);
+const Color primaryTextColor =
+    Color(0xFFF8F4FF);
 
-// Vaalea teksti.
-const Color primaryTextColor = Color(0xFFF5F3FF);
-
-// Toissijainen teksti.
-const Color secondaryTextColor = Color(0xFFB7B4C9);
-
+const Color secondaryTextColor =
+    Color(0xFFBDB4D1);
 
 // ============================================================
-// MAIN
+// 🚀 MAIN
 // ============================================================
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase alustetaan ennen sovelluksen käynnistämistä.
+  // ==========================================================
+  // FIREBASE
+  // ==========================================================
+
   await Firebase.initializeApp();
 
-  // Google Mobile Ads alustetaan.
+  // ==========================================================
+  // GOOGLE MOBILE ADS
+  // ==========================================================
+
   await MobileAds.instance.initialize();
 
-  runApp(const StelluriiniApp());
+  // ==========================================================
+  // START APP
+  // ==========================================================
+
+  runApp(
+    const StelluriiniApp(),
+  );
 }
 
-
 // ============================================================
-// STELLURIINI APP
+// 🐱 STELLURIINI APP
 // ============================================================
 
 class StelluriiniApp extends StatefulWidget {
-  const StelluriiniApp({super.key});
+  const StelluriiniApp({
+    super.key,
+  });
 
   @override
   State<StelluriiniApp> createState() =>
       _StelluriiniAppState();
 }
-
 
 // ============================================================
 // APP STATE
@@ -75,11 +97,9 @@ class StelluriiniApp extends StatefulWidget {
 
 class _StelluriiniAppState
     extends State<StelluriiniApp> {
-
   String languageCode = 'fi';
 
   bool languageLoaded = false;
-
 
   // ==========================================================
   // INIT STATE
@@ -92,30 +112,30 @@ class _StelluriiniAppState
     _loadLanguage();
   }
 
-
   // ==========================================================
-  // LOAD LANGUAGE
+  // 🌍 LOAD LANGUAGE
   // ==========================================================
 
   Future<void> _loadLanguage() async {
     try {
-
       final prefs =
           await SharedPreferences.getInstance();
 
       final savedLanguage =
           prefs.getString('language') ?? 'fi';
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         languageCode = savedLanguage;
         languageLoaded = true;
       });
-
     } catch (_) {
-
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         languageCode = 'fi';
@@ -124,15 +144,13 @@ class _StelluriiniAppState
     }
   }
 
-
   // ==========================================================
-  // CHANGE LANGUAGE
+  // 🌍 CHANGE LANGUAGE
   // ==========================================================
 
   Future<void> changeLanguage(
     String language,
   ) async {
-
     final prefs =
         await SharedPreferences.getInstance();
 
@@ -141,55 +159,54 @@ class _StelluriiniAppState
       language,
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       languageCode = language;
     });
   }
 
-
   // ==========================================================
-  // BUILD
+  // 🎨 BUILD
   // ==========================================================
 
   @override
   Widget build(
     BuildContext context,
   ) {
-
     return MaterialApp(
-      title: 'Stella\'s World',
+      // ======================================================
+      // APP INFORMATION
+      // ======================================================
+
+      title: 'Stelluriini',
 
       debugShowCheckedModeBanner: false,
 
-
       // ======================================================
-      // STELLA'S WORLD THEME
+      // 🌌 STELLURIINI THEME
       // ======================================================
 
       theme: ThemeData(
-
         brightness: Brightness.dark,
 
         useMaterial3: true,
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // BACKGROUND
-        // ====================================================
+        // ----------------------------------------------------
 
         scaffoldBackgroundColor:
             backgroundColor,
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // COLOR SCHEME
-        // ====================================================
+        // ----------------------------------------------------
 
         colorScheme:
             ColorScheme.fromSeed(
-
           seedColor:
               stellaPurple,
 
@@ -209,14 +226,12 @@ class _StelluriiniAppState
               surfaceColor,
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // APP BAR
-        // ====================================================
+        // ----------------------------------------------------
 
         appBarTheme:
             const AppBarTheme(
-
           backgroundColor:
               backgroundColor,
 
@@ -242,14 +257,12 @@ class _StelluriiniAppState
           ),
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // CARDS
-        // ====================================================
+        // ----------------------------------------------------
 
         cardTheme:
             const CardThemeData(
-
           color:
               cardColor,
 
@@ -268,17 +281,14 @@ class _StelluriiniAppState
           ),
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // ELEVATED BUTTON
-        // ====================================================
+        // ----------------------------------------------------
 
         elevatedButtonTheme:
             ElevatedButtonThemeData(
-
           style:
               ElevatedButton.styleFrom(
-
             backgroundColor:
                 stellaPurple,
 
@@ -311,17 +321,14 @@ class _StelluriiniAppState
           ),
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // OUTLINED BUTTON
-        // ====================================================
+        // ----------------------------------------------------
 
         outlinedButtonTheme:
             OutlinedButtonThemeData(
-
           style:
               OutlinedButton.styleFrom(
-
             foregroundColor:
                 primaryTextColor,
 
@@ -329,6 +336,7 @@ class _StelluriiniAppState
                 const BorderSide(
               color:
                   stellaPurple,
+
               width:
                   1.5,
             ),
@@ -347,14 +355,12 @@ class _StelluriiniAppState
           ),
         ),
 
-
-        // ====================================================
-        // TEXT
-        // ====================================================
+        // ----------------------------------------------------
+        // TEXT THEME
+        // ----------------------------------------------------
 
         textTheme:
             const TextTheme(
-
           headlineLarge:
               TextStyle(
             color:
@@ -410,14 +416,12 @@ class _StelluriiniAppState
           ),
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // SNACKBAR
-        // ====================================================
+        // ----------------------------------------------------
 
         snackBarTheme:
             SnackBarThemeData(
-
           behavior:
               SnackBarBehavior.floating,
 
@@ -437,42 +441,36 @@ class _StelluriiniAppState
           ),
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // PROGRESS INDICATOR
-        // ====================================================
+        // ----------------------------------------------------
 
         progressIndicatorTheme:
             const ProgressIndicatorThemeData(
-
           color:
               stellaPurple,
         ),
 
-
-        // ====================================================
+        // ----------------------------------------------------
         // DIVIDERS
-        // ====================================================
+        // ----------------------------------------------------
 
         dividerTheme:
             const DividerThemeData(
-
           color:
-              Color(0xFF292E4A),
+              Color(0xFF352653),
 
           thickness:
               1,
         ),
       ),
 
-
       // ======================================================
-      // HOME
+      // 🏠 START PAGE
       // ======================================================
 
       home:
           languageLoaded
-
               ? AuthGate(
                   languageCode:
                       languageCode,
@@ -480,7 +478,6 @@ class _StelluriiniAppState
                   changeLanguage:
                       changeLanguage,
                 )
-
               : const LoadingPage(),
     );
   }
