@@ -264,6 +264,37 @@ const Map<String, String> fiTranslations = {
       'Kirjautuminen epäonnistui',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      'Vahvista salasana',
+
+  'passwordsDoNotMatch':
+      'Salasanat eivät täsmää.',
+
+  'passwordTooShort':
+      'Salasanan täytyy sisältää vähintään 6 merkkiä.',
+
+  'creatingAccount':
+      'LUODAAN TILI...',
+
+  'accountCreated':
+      'Tili luotiin onnistuneesti.',
+
+  'emailAlreadyInUse':
+      'Tämä sähköpostiosoite on jo käytössä.',
+
+  'passwordTooWeak':
+      'Salasana on liian heikko.',
+
+  'registrationNotAllowed':
+      'Rekisteröityminen ei ole tällä hetkellä sallittu.',
+
+  'registrationFailed':
+      'Tilin luominen epäonnistui.',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
