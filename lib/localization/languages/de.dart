@@ -266,6 +266,37 @@ const Map<String, String> deTranslations = {
       'Anmeldung fehlgeschlagen',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      'Passwort bestätigen',
+
+  'passwordsDoNotMatch':
+      'Die Passwörter stimmen nicht überein.',
+
+  'passwordTooShort':
+      'Das Passwort muss mindestens 6 Zeichen enthalten.',
+
+  'creatingAccount':
+      'KONTO WIRD ERSTELLT...',
+
+  'accountCreated':
+      'Konto erfolgreich erstellt.',
+
+  'emailAlreadyInUse':
+      'Diese E-Mail-Adresse wird bereits verwendet.',
+
+  'passwordTooWeak':
+      'Das Passwort ist zu schwach.',
+
+  'registrationNotAllowed':
+      'Die Registrierung ist derzeit nicht möglich.',
+
+  'registrationFailed':
+      'Das Konto konnte nicht erstellt werden.',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
