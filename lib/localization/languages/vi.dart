@@ -280,6 +280,37 @@ const Map<String, String> viTranslations = {
       'Đăng nhập thất bại',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      'Xác nhận mật khẩu',
+
+  'passwordsDoNotMatch':
+      'Mật khẩu không khớp.',
+
+  'passwordTooShort':
+      'Mật khẩu phải có ít nhất 6 ký tự.',
+
+  'creatingAccount':
+      'Đang tạo tài khoản...',
+
+  'accountCreated':
+      'Tạo tài khoản thành công.',
+
+  'emailAlreadyInUse':
+      'Địa chỉ email này đã được sử dụng.',
+
+  'passwordTooWeak':
+      'Mật khẩu quá yếu.',
+
+  'registrationNotAllowed':
+      'Hiện tại không thể đăng ký tài khoản.',
+
+  'registrationFailed':
+      'Đăng ký tài khoản thất bại.',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
