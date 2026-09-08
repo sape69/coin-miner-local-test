@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../localization.dart';
 import '../../widgets/cat_avatar.dart';
 import '../../widgets/stelluriini_logo.dart';
 
@@ -14,17 +15,138 @@ class AboutPage extends StatelessWidget {
     super.key,
   });
 
+  String _text(
+    BuildContext context,
+    String key, {
+    String fallback = '',
+  }) {
+    final value = AppLocalizations.of(context).get(key);
+
+    if (value.isEmpty || value == key) {
+      return fallback;
+    }
+
+    return value;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final aboutTitle = _text(
+      context,
+      'aboutStelluriini',
+      fallback: 'About Stelluriini',
+    );
+
+    final welcomeTitle = _text(
+      context,
+      'aboutWelcome',
+      fallback: 'Welcome to Stelluriini',
+    );
+
+    final welcomeDescription = _text(
+      context,
+      'aboutWelcomeDescription',
+      fallback:
+          'A community-driven project inspired by a curious cat named Stella.',
+    );
+
+    final aboutDescription = _text(
+      context,
+      'aboutDescription',
+      fallback:
+          'Stelluriini is a community-driven project built around Stella, '
+          'a curious cat with a big personality. The project combines a '
+          'playful cat theme with the Solana ecosystem and the STL token.',
+    );
+
+    final meetStella = _text(
+      context,
+      'meetStella',
+      fallback: 'Meet Stella',
+    );
+
+    final stellaIntro = _text(
+      context,
+      'aboutStellaIntro',
+      fallback: '🐱 Stella is the heart of Stelluriini.',
+    );
+
+    final stellaDescription = _text(
+      context,
+      'aboutStellaDescription',
+      fallback:
+          'She represents curiosity, community and the fun side of the '
+          'project. Stella accompanies you through the app while you mine, '
+          'collect rewards and explore the Stelluriini ecosystem.',
+    );
+
+    final community = _text(
+      context,
+      'community',
+      fallback: 'Community',
+    );
+
+    final communityDescription = _text(
+      context,
+      'aboutCommunityDescription',
+      fallback:
+          'Stelluriini is designed to grow together with its community. '
+          'The goal is to create an enjoyable ecosystem where the community '
+          'can participate, share ideas and help shape the future of STL.',
+    );
+
+    final builtOnSolana = _text(
+      context,
+      'builtOnSolana',
+      fallback: 'Built on Solana',
+    );
+
+    final solanaDescription = _text(
+      context,
+      'aboutSolanaDescription',
+      fallback:
+          'Stelluriini is built around the Solana ecosystem. Solana provides '
+          'the blockchain foundation for the STL token and future '
+          'Stelluriini ecosystem features.',
+    );
+
+    final stlToken = _text(
+      context,
+      'stlToken',
+      fallback: 'Stelluriini Token',
+    );
+
+    final importantInformation = _text(
+      context,
+      'importantInformation',
+      fallback: 'Important Information',
+    );
+
+    final importantDescription = _text(
+      context,
+      'aboutImportantDescription',
+      fallback:
+          'STL shown inside this application currently represents virtual '
+          'in-app points. The balance shown in the app is not automatically '
+          'a withdrawable cryptocurrency balance.',
+    );
+
+    final footerTagline = _text(
+      context,
+      'footerTagline',
+      fallback:
+          'Stella is watching over the Stelluriini community',
+    );
+
     return Scaffold(
       backgroundColor: aboutBackgroundColor,
       appBar: AppBar(
         backgroundColor: aboutBackgroundColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'About Stelluriini',
-          style: TextStyle(
+        title: Text(
+          aboutTitle,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
@@ -32,7 +154,12 @@ class AboutPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            32,
+          ),
           children: [
             // ==================================================
             // STELLA HEADER
@@ -50,26 +177,33 @@ class AboutPage extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: aboutAccentColor.withValues(alpha: 0.35),
+                  color: aboutAccentColor.withValues(
+                    alpha: 0.35,
+                  ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: aboutAccentColor.withValues(alpha: 0.12),
+                    color: aboutAccentColor.withValues(
+                      alpha: 0.12,
+                    ),
                     blurRadius: 24,
                     spreadRadius: 1,
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 26),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  28,
+                  24,
+                  26,
+                ),
                 child: Column(
                   children: [
                     const CatAvatar(
                       size: 120,
                     ),
-
                     const SizedBox(height: 20),
-
                     const Text(
                       'STELLURIINI',
                       style: TextStyle(
@@ -79,19 +213,21 @@ class AboutPage extends StatelessWidget {
                         color: aboutPinkColor,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 7,
                       ),
                       decoration: BoxDecoration(
-                        color: aboutAccentColor.withValues(alpha: 0.12),
+                        color: aboutAccentColor.withValues(
+                          alpha: 0.12,
+                        ),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: aboutAccentColor.withValues(alpha: 0.3),
+                          color: aboutAccentColor.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                       ),
                       child: const Text(
@@ -104,26 +240,21 @@ class AboutPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
-                    const Text(
-                      'Welcome to Stelluriini',
+                    Text(
+                      welcomeTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 21,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
-                    const Text(
-                      'A community-driven project inspired by '
-                      'a curious cat named Stella.',
+                    Text(
+                      welcomeDescription,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 15,
                         height: 1.5,
@@ -142,14 +273,11 @@ class AboutPage extends StatelessWidget {
 
             _AboutCard(
               icon: Icons.pets_rounded,
-              title: 'About Stelluriini',
+              title: aboutTitle,
               accentColor: aboutAccentColor,
-              child: const Text(
-                'Stelluriini is a community-driven project built '
-                'around Stella, a curious cat with a big personality. '
-                'The project combines a playful cat theme with the '
-                'Solana ecosystem and the STL token.',
-                style: TextStyle(
+              child: Text(
+                aboutDescription,
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,
                   height: 1.6,
@@ -165,14 +293,14 @@ class AboutPage extends StatelessWidget {
 
             _AboutCard(
               icon: Icons.favorite_rounded,
-              title: 'Meet Stella',
+              title: meetStella,
               accentColor: aboutPinkColor,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '🐱 Stella is the heart of Stelluriini.',
-                    style: TextStyle(
+                  Text(
+                    stellaIntro,
+                    style: const TextStyle(
                       color: aboutPinkColor,
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -180,12 +308,9 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'She represents curiosity, community and the '
-                    'fun side of the project. Stella accompanies you '
-                    'through the app while you mine, collect rewards '
-                    'and explore the Stelluriini ecosystem.',
-                    style: TextStyle(
+                  Text(
+                    stellaDescription,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
                       height: 1.6,
@@ -203,14 +328,11 @@ class AboutPage extends StatelessWidget {
 
             _AboutCard(
               icon: Icons.groups_rounded,
-              title: 'Community',
+              title: community,
               accentColor: aboutAccentColor,
-              child: const Text(
-                'Stelluriini is designed to grow together with its '
-                'community. The goal is to create an enjoyable '
-                'ecosystem where the community can participate, '
-                'share ideas and help shape the future of STL.',
-                style: TextStyle(
+              child: Text(
+                communityDescription,
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,
                   height: 1.6,
@@ -226,13 +348,11 @@ class AboutPage extends StatelessWidget {
 
             _AboutCard(
               icon: Icons.bolt_rounded,
-              title: 'Built on Solana',
+              title: builtOnSolana,
               accentColor: aboutGoldColor,
-              child: const Text(
-                'Stelluriini is built around the Solana ecosystem. '
-                'Solana provides the blockchain foundation for the '
-                'STL token and future Stelluriini ecosystem features.',
-                style: TextStyle(
+              child: Text(
+                solanaDescription,
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,
                   height: 1.6,
@@ -251,7 +371,9 @@ class AboutPage extends StatelessWidget {
                 color: aboutCardColor,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: aboutPinkColor.withValues(alpha: 0.22),
+                  color: aboutPinkColor.withValues(
+                    alpha: 0.22,
+                  ),
                 ),
               ),
               child: Padding(
@@ -261,9 +383,7 @@ class AboutPage extends StatelessWidget {
                     const StelluriiniLogo(
                       size: 70,
                     ),
-
                     const SizedBox(height: 14),
-
                     const Text(
                       'STL',
                       style: TextStyle(
@@ -273,20 +393,17 @@ class AboutPage extends StatelessWidget {
                         letterSpacing: 2,
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
-                    const Text(
-                      'Stelluriini Token',
-                      style: TextStyle(
+                    Text(
+                      stlToken,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
                     const Text(
                       '17 602 539 062 STL',
                       textAlign: TextAlign.center,
@@ -297,9 +414,7 @@ class AboutPage extends StatelessWidget {
                         letterSpacing: 0.5,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     const Text(
                       'Solana • Community-driven',
                       textAlign: TextAlign.center,
@@ -321,14 +436,11 @@ class AboutPage extends StatelessWidget {
 
             _AboutCard(
               icon: Icons.info_outline_rounded,
-              title: 'Important Information',
+              title: importantInformation,
               accentColor: aboutGoldColor,
-              child: const Text(
-                'STL shown inside this application currently '
-                'represents virtual in-app points. The balance shown '
-                'in the app is not automatically a withdrawable '
-                'cryptocurrency balance.',
-                style: TextStyle(
+              child: Text(
+                importantDescription,
+                style: const TextStyle(
                   color: Colors.white60,
                   fontSize: 15,
                   height: 1.6,
@@ -342,10 +454,10 @@ class AboutPage extends StatelessWidget {
             // STELLA FOOTER
             // ==================================================
 
-            const Text(
-              '🐾 Stella is watching over the Stelluriini community 🐾',
+            Text(
+              '🐾 $footerTagline 🐾',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: aboutPinkColor,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -394,7 +506,9 @@ class _AboutCard extends StatelessWidget {
         color: aboutCardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.18),
+          color: accentColor.withValues(
+            alpha: 0.18,
+          ),
         ),
       ),
       child: Padding(
@@ -409,7 +523,9 @@ class _AboutCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
+                    color: accentColor.withValues(
+                      alpha: 0.12,
+                    ),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -418,9 +534,7 @@ class _AboutCard extends StatelessWidget {
                     size: 25,
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 Expanded(
                   child: Text(
                     title,
@@ -433,9 +547,7 @@ class _AboutCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             child,
           ],
         ),
