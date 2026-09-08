@@ -20,7 +20,6 @@ import 'mining_action_button.dart';
 import 'mining_progress_card.dart';
 import 'power_boost_card.dart';
 import 'stella_footer.dart';
-import 'stella_mining_card.dart';
 import 'stella_mining_section.dart';
 
 // ============================================================
