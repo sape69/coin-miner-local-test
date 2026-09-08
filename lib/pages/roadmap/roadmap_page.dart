@@ -153,8 +153,8 @@ class RoadmapPage extends StatelessWidget {
               child: const Text(
                 'The Stelluriini roadmap describes the planned '
                 'direction of the project. Development may evolve '
-                'over time as the community, technology and '
-                'ecosystem grow.',
+                'over time as the community, technology, security '
+                'and ecosystem grow.',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 15,
@@ -166,17 +166,20 @@ class RoadmapPage extends StatelessWidget {
             const SizedBox(height: 18),
 
             // ==================================================
-            // ROADMAP
+            // PHASE 1
             // ==================================================
 
             _RoadmapStep(
               phase: 'PHASE 1',
-              title: 'The Beginning',
+              title: 'Stella Mining',
               description:
-                  '🐱 Create the Stelluriini identity\n'
-                  '🎨 Develop the Stella visual style\n'
-                  '📱 Build the Stelluriini application\n'
-                  '🪙 Prepare STL token information',
+                  '🐱 Build the Stelluriini identity\n'
+                  '🎨 Establish the Stella visual style\n'
+                  '📱 Develop the Stelluriini application\n'
+                  '⛏️ Launch Stella Mining\n'
+                  '🎁 Daily Hash Rate progression\n'
+                  '📺 Stella Power Boost\n'
+                  '📜 Transaction History',
               status: 'IN PROGRESS',
               accent: roadmapPinkColor,
               icon: '🐱',
@@ -184,14 +187,20 @@ class RoadmapPage extends StatelessWidget {
 
             const _RoadmapLine(),
 
+            // ==================================================
+            // PHASE 2
+            // ==================================================
+
             _RoadmapStep(
               phase: 'PHASE 2',
-              title: 'Community',
+              title: 'Community & Testing',
               description:
                   '🐾 Grow the Stelluriini community\n'
-                  '🌍 Improve language support\n'
-                  '🎁 Develop rewards and daily activities\n'
-                  '💬 Build community features',
+                  '🌍 Expand language support\n'
+                  '🧪 Improve mining and reward systems\n'
+                  '🔐 Strengthen security and backend systems\n'
+                  '📊 Improve token and ecosystem information\n'
+                  '💬 Prepare future community features',
               status: 'PLANNED',
               accent: roadmapAccentColor,
               icon: '🐾',
@@ -199,14 +208,20 @@ class RoadmapPage extends StatelessWidget {
 
             const _RoadmapLine(),
 
+            // ==================================================
+            // PHASE 3
+            // ==================================================
+
             _RoadmapStep(
               phase: 'PHASE 3',
               title: 'STL Ecosystem',
               description:
                   '🪙 Develop the STL ecosystem\n'
-                  '🔗 Connect blockchain information\n'
-                  '📊 Add token statistics\n'
-                  '🚀 Expand Stelluriini features',
+                  '🔗 Prepare Solana blockchain integration\n'
+                  '👛 Prepare wallet connectivity\n'
+                  '📊 Expand token statistics and transparency\n'
+                  '🧪 Test future STL transfer functionality\n'
+                  '🚀 Prepare the project for the next stage',
               status: 'FUTURE',
               accent: roadmapGoldColor,
               icon: '🪙',
@@ -214,17 +229,151 @@ class RoadmapPage extends StatelessWidget {
 
             const _RoadmapLine(),
 
+            // ==================================================
+            // PHASE 4
+            // ==================================================
+
             _RoadmapStep(
               phase: 'PHASE 4',
-              title: 'The Future',
+              title: 'Mainnet Preparation',
               description:
-                  '🌟 Continue ecosystem development\n'
+                  '🔐 Prepare secure Mainnet infrastructure\n'
+                  '👛 Complete Solana wallet integration\n'
+                  '📤 Develop the STL withdrawal system\n'
+                  '🧪 Test withdrawals before public launch\n'
+                  '💎 Prepare the 100 STL minimum withdrawal threshold\n'
+                  '🛡️ Review security and transaction handling',
+              status: 'FUTURE',
+              accent: roadmapPinkColor,
+              icon: '🔐',
+            ),
+
+            const _RoadmapLine(),
+
+            // ==================================================
+            // PHASE 5
+            // ==================================================
+
+            _RoadmapStep(
+              phase: 'PHASE 5',
+              title: 'Mainnet & STL Withdrawals',
+              description:
+                  '🚀 Open the Stelluriini Mainnet phase\n'
+                  '👛 Connect a Solana wallet\n'
+                  '📤 Enable STL withdrawals\n'
+                  '💎 Minimum withdrawal target: 100 STL\n'
+                  '⛽ Users pay their own Solana network fee\n'
+                  '🪙 Transfer STL directly to the user wallet',
+              status: 'FUTURE',
+              accent: roadmapGoldColor,
+              icon: '🚀',
+            ),
+
+            const _RoadmapLine(),
+
+            // ==================================================
+            // PHASE 6
+            // ==================================================
+
+            _RoadmapStep(
+              phase: 'PHASE 6',
+              title: 'Exchange & Ecosystem',
+              description:
+                  '🌟 Explore DEX and CEX opportunities\n'
+                  '💧 Prepare appropriate liquidity solutions\n'
+                  '📈 Expand the STL ecosystem\n'
+                  '🤝 Grow partnerships and community participation\n'
                   '🐱 Introduce new Stella experiences\n'
-                  '🤝 Expand community participation\n'
-                  '🚀 Explore new possibilities for STL',
+                  '🚀 Explore future applications for STL',
               status: 'FUTURE',
               accent: roadmapPinkColor,
               icon: '🌟',
+            ),
+
+            const SizedBox(height: 20),
+
+            // ==================================================
+            // WITHDRAWAL EXPLANATION
+            // ==================================================
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: roadmapCardColor,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: roadmapGoldColor.withValues(
+                    alpha: 0.20,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: roadmapGoldColor,
+                    size: 32,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    'Future STL Withdrawals',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: roadmapGoldColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'STL withdrawals are not available in the '
+                    'current mining version. They are planned for '
+                    'a later Mainnet phase after the necessary '
+                    'wallet, security and blockchain infrastructure '
+                    'has been completed and tested.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 13,
+                      height: 1.55,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: roadmapGoldColor.withValues(
+                        alpha: 0.08,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: roadmapGoldColor.withValues(
+                          alpha: 0.15,
+                        ),
+                      ),
+                    ),
+                    child: const Text(
+                      '🐱 Planned model: 100 STL minimum withdrawal • '
+                      'User pays the Solana network fee',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -289,7 +438,8 @@ class RoadmapPage extends StatelessWidget {
               title: 'Development Principles',
               accent: roadmapGoldColor,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: const [
                   _PrincipleRow(
                     icon: Icons.groups_rounded,
@@ -303,6 +453,13 @@ class RoadmapPage extends StatelessWidget {
                     title: 'Stella',
                     text:
                         'Keep Stella at the heart of the project identity.',
+                  ),
+                  SizedBox(height: 14),
+                  _PrincipleRow(
+                    icon: Icons.security_rounded,
+                    title: 'Security',
+                    text:
+                        'Develop blockchain and wallet features carefully and test them before release.',
                   ),
                   SizedBox(height: 14),
                   _PrincipleRow(
@@ -364,8 +521,9 @@ class RoadmapPage extends StatelessWidget {
 
                   const Text(
                     'The roadmap represents the current planned '
-                    'direction of Stelluriini. Dates, features and '
-                    'priorities may change as the project develops.',
+                    'direction of Stelluriini. Dates, features, '
+                    'priorities and launch plans may change as '
+                    'the project develops.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white60,
@@ -438,7 +596,8 @@ class _RoadmapStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         // ======================================================
         // STELLA / PAW MARKER
@@ -448,14 +607,20 @@ class _RoadmapStep extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.12),
+            color: accent.withValues(
+              alpha: 0.12,
+            ),
             shape: BoxShape.circle,
             border: Border.all(
-              color: accent.withValues(alpha: 0.45),
+              color: accent.withValues(
+                alpha: 0.45,
+              ),
             ),
             boxShadow: [
               BoxShadow(
-                color: accent.withValues(alpha: 0.08),
+                color: accent.withValues(
+                  alpha: 0.08,
+                ),
                 blurRadius: 12,
               ),
             ],
@@ -481,9 +646,12 @@ class _RoadmapStep extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: roadmapCardColor,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius:
+                  BorderRadius.circular(20),
               border: Border.all(
-                color: accent.withValues(alpha: 0.17),
+                color: accent.withValues(
+                  alpha: 0.17,
+                ),
               ),
             ),
             child: Column(
@@ -492,17 +660,20 @@ class _RoadmapStep extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      phase,
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                    Expanded(
+                      child: Text(
+                        phase,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 12,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                     ),
 
-                    const Spacer(),
+                    const SizedBox(width: 8),
 
                     Container(
                       padding:
@@ -510,7 +681,8 @@ class _RoadmapStep extends StatelessWidget {
                         horizontal: 9,
                         vertical: 5,
                       ),
-                      decoration: BoxDecoration(
+                      decoration:
+                          BoxDecoration(
                         color:
                             accent.withValues(
                           alpha: 0.12,
@@ -546,7 +718,8 @@ class _RoadmapStep extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
 
@@ -622,7 +795,8 @@ class _RoadmapInfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: roadmapCardColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color:
               accent.withValues(
@@ -639,13 +813,16 @@ class _RoadmapInfoCard extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(
+                decoration:
+                    BoxDecoration(
                   color:
                       accent.withValues(
                     alpha: 0.11,
                   ),
                   borderRadius:
-                      BorderRadius.circular(14),
+                      BorderRadius.circular(
+                    14,
+                  ),
                 ),
                 child: Icon(
                   icon,
@@ -701,8 +878,8 @@ class _PrincipleRow extends StatelessWidget {
       crossAxisAlignment:
           CrossAxisAlignment.start,
       children: [
-        const Icon(
-          Icons.check_circle_rounded,
+        Icon(
+          icon,
           color: roadmapAccentColor,
           size: 20,
         ),
