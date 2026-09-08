@@ -52,9 +52,11 @@ class AppLocalizations {
       'dailyHashRateLabel': 'Päivittäinen Hash Rate',
       'dailyHashRateDay': 'Päivä {day}',
       'dailyHashRateMaximum': 'Maksimi: {rate} HR',
-      'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
+      'dailyHashRateSuccess':
+          'Päivän {day} Hash Rate: {rate} HR',
 
-      'stellaMiningProgress': 'Stellan louhinnan edistyminen',
+      'stellaMiningProgress':
+          'Stellan louhinnan edistyminen',
       'stlPerHour': 'STL tunnissa',
       'hashRateBonus': 'Hash Rate -bonus',
 
@@ -73,7 +75,8 @@ class AppLocalizations {
       'dailyClaim': 'Kerää päivittäinen bonus',
       'dailyReward': 'Päivittäinen palkinto',
       'claimedToday': 'Kerätty tänään',
-      'alreadyClaimed': 'Olet jo kerännyt tämän päivän palkinnon.',
+      'alreadyClaimed':
+          'Olet jo kerännyt tämän päivän palkinnon.',
 
       'watchAd': 'KATSO MAINOS',
       'watchAndEarn': 'KATSO & ANSAITSE',
@@ -85,10 +88,12 @@ class AppLocalizations {
       'powerBoostOffer':
           'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
       'powerBoostActive': 'Power Boost aktiivinen',
-      'powerBoostActiveTitle': 'Stella Power Boost on aktiivinen!',
+      'powerBoostActiveTitle':
+          'Stella Power Boost on aktiivinen!',
       'powerBoostActiveMessage':
           '+{amount} HR on käytössä louhintasiirron aikana.',
-      'powerBoostAlreadyActive': 'Power Boost on jo aktiivinen.',
+      'powerBoostAlreadyActive':
+          'Power Boost on jo aktiivinen.',
       'nextPowerBoostMessage':
           'Seuraava Power Boost on saatavilla, kun nykyinen boost päättyy.',
       'nextAdAfterBoost':
@@ -96,12 +101,17 @@ class AppLocalizations {
       'maxBoostsInfo':
           'Voit aktivoida enintään {count} Power Boostia päivässä.',
       'adsToday': 'Mainoksia tänään: {current}/{max}',
-      'dailyLimitReached': 'Päivittäinen mainosraja on saavutettu.',
-      'powerBoostReward': 'Stella Power Boost: +{amount} HR',
-      'adRewardDuplicate': 'Tämä mainospalkinto on jo käsitelty.',
-      'testAdRewardFailed': 'Mainospalkinnon käsittely epäonnistui.',
+      'dailyLimitReached':
+          'Päivittäinen mainosraja on saavutettu.',
+      'powerBoostReward':
+          'Stella Power Boost: +{amount} HR',
+      'adRewardDuplicate':
+          'Tämä mainospalkinto on jo käsitelty.',
+      'testAdRewardFailed':
+          'Mainospalkinnon käsittely epäonnistui.',
 
-      'serverConnectionFailed': 'Palvelinyhteys epäonnistui.',
+      'serverConnectionFailed':
+          'Palvelinyhteys epäonnistui.',
       'refresh': 'Päivitä',
 
       'profile': 'Profiili',
@@ -121,7 +131,8 @@ class AppLocalizations {
       'pointsAdded': 'Pisteitä lisätty',
 
       'resetAccount': 'Nollaa testitili',
-      'resetConfirm': 'Haluatko varmasti nollata testitilin?',
+      'resetConfirm':
+          'Haluatko varmasti nollata testitilin?',
 
       'cancel': 'Peruuta',
       'reset': 'Nollaa',
@@ -130,47 +141,102 @@ class AppLocalizations {
       'close': 'Sulje',
 
       'stellaIsMining': 'Stella louhii',
-      'stellaMiningNow': 'Stella louhii juuri nyt',
+      'stellaMiningNow':
+          'Stella louhii juuri nyt',
       'stellaIsResting': 'Stella lepää',
-      'stellaWaiting': 'Stella odottaa seuraavaa louhintaa',
-      'stlReadyToCollect': 'STL on valmis kerättäväksi',
+      'stellaWaiting':
+          'Stella odottaa seuraavaa louhintaa',
+      'stlReadyToCollect':
+          'STL on valmis kerättäväksi',
       'stlMined': 'LOUHITTU STL',
-      'waitingForStella': 'Odotetaan Stellaa',
+      'waitingForStella':
+          'Odotetaan Stellaa',
 
-      'stellaIsWorking': 'STELLA TYÖSKENTELEE...',
-      'stellaIsMiningButton': 'LOUHINTA KÄYNNISSÄ',
-      'stellaAlreadyMining': 'Stella louhii jo.',
-      'prepareAd': 'Valmistellaan mainosta...',
-      'miningCollected': 'Kerätty {amount} STL',
-      'miningStartFailed': 'Louhinnan aloittaminen epäonnistui.',
+      'stellaIsWorking':
+          'STELLA TYÖSKENTELEE...',
+      'stellaIsMiningButton':
+          'LOUHINTA KÄYNNISSÄ',
+      'stellaAlreadyMining':
+          'Stella louhii jo.',
+      'prepareAd':
+          'Valmistellaan mainosta...',
+      'miningCollected':
+          'Kerätty {amount} STL',
+      'miningStartFailed':
+          'Louhinnan aloittaminen epäonnistui.',
+
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email': 'Sähköposti',
+      'password': 'Salasana',
+      'forgotPassword':
+          'Unohditko salasanan?',
+      'login': 'KIRJAUDU SISÄÄN',
+      'loggingIn': 'KIRJAUDUTAAN...',
+      'createAccount':
+          'Ei vielä tiliä? Luo uusi tili',
+      'loginFillFields':
+          'Anna sähköposti ja salasana.',
+      'loginInvalidEmail':
+          'Sähköpostiosoite ei ole kelvollinen.',
+      'loginUserNotFound':
+          'Käyttäjää ei löytynyt.',
+      'loginInvalidCredentials':
+          'Sähköposti tai salasana on väärä.',
+      'loginUserDisabled':
+          'Tämä käyttäjätili on poistettu käytöstä.',
+      'loginTooManyRequests':
+          'Liian monta yritystä. Yritä myöhemmin uudelleen.',
+      'loginNetworkError':
+          'Verkkoyhteys epäonnistui.',
+      'loginFailed':
+          'Kirjautuminen epäonnistui',
 
       // ==========================================================
       // TRANSACTION HISTORY
       // ==========================================================
 
-      'transactionHistory': 'Tapahtumahistoria',
-      'stellaActivity': 'STELLAN AKTIIVISUUS',
-      'latestTransactions': '{count} viimeisintä tapahtumaa',
-      'dailyStellaBonus': 'Stellan päivittäinen bonus',
-      'dailyBonusDescription': 'Päivittäinen bonus Stellalta',
-      'stellaAdReward': 'Stellan mainospalkinto',
-      'adRewardDescription': 'Palkinto katsotusta mainoksesta',
-      'stlTransaction': 'STL-tapahtuma',
-      'stelluriiniActivity': 'Stelluriini-aktiviteetti',
-      'transactionBalance': 'Saldo: {balance} STL',
+      'transactionHistory':
+          'Tapahtumahistoria',
+      'stellaActivity':
+          'STELLAN AKTIIVISUUS',
+      'latestTransactions':
+          '{count} viimeisintä tapahtumaa',
+      'dailyStellaBonus':
+          'Stellan päivittäinen bonus',
+      'dailyBonusDescription':
+          'Päivittäinen bonus Stellalta',
+      'stellaAdReward':
+          'Stellan mainospalkinto',
+      'adRewardDescription':
+          'Palkinto katsotusta mainoksesta',
+      'stlTransaction':
+          'STL-tapahtuma',
+      'stelluriiniActivity':
+          'Stelluriini-aktiviteetti',
+      'transactionBalance':
+          'Saldo: {balance} STL',
       'tryAgain': 'Yritä uudelleen',
-      'noTransactionsYet': 'Ei tapahtumia vielä',
-      'rewardsAppearHere': 'STL-palkintosi näkyvät täällä. 🐱',
-      'startMiningWithStella': 'Aloita louhinta Stellan kanssa',
+      'noTransactionsYet':
+          'Ei tapahtumia vielä',
+      'rewardsAppearHere':
+          'STL-palkintosi näkyvät täällä. 🐱',
+      'startMiningWithStella':
+          'Aloita louhinta Stellan kanssa',
       'historyRecorded':
           'Louhinta, päivittäiset bonukset ja mainospalkinnot tallennetaan tänne.',
-      'stellaCheckingHistory': 'Stella tarkistaa historiaasi...',
+      'stellaCheckingHistory':
+          'Stella tarkistaa historiaasi...',
       'everyRewardJourney':
           'Jokainen palkinto on osa Stelluriini-matkaasi. 🐾',
 
       // Footer
-      'footerTagline': 'Louhitaan yhdessä Stelluriinin tulevaisuutta.',
-      'footerToken': 'STL • STELLURIINI',
+      'footerTagline':
+          'Louhitaan yhdessä Stelluriinin tulevaisuutta.',
+      'footerToken':
+          'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -194,46 +260,74 @@ class AppLocalizations {
       'mining': 'Mining',
       'miningRate': 'Mining Rate',
       'hashRate': 'Hash Rate',
-      'effectiveHashRate': 'Effective Hash Rate',
-      'effectiveHashRateLabel': 'Effective Hash Rate',
+      'effectiveHashRate':
+          'Effective Hash Rate',
+      'effectiveHashRateLabel':
+          'Effective Hash Rate',
 
-      'dailyHashRateLabel': 'Daily Hash Rate',
-      'dailyHashRateDay': 'Day {day}',
-      'dailyHashRateMaximum': 'Maximum: {rate} HR',
-      'dailyHashRateSuccess': 'Day {day} Hash Rate: {rate} HR',
+      'dailyHashRateLabel':
+          'Daily Hash Rate',
+      'dailyHashRateDay':
+          'Day {day}',
+      'dailyHashRateMaximum':
+          'Maximum: {rate} HR',
+      'dailyHashRateSuccess':
+          'Day {day} Hash Rate: {rate} HR',
 
-      'stellaMiningProgress': 'Stella Mining Progress',
-      'stlPerHour': 'STL per hour',
-      'hashRateBonus': 'Hash Rate Bonus',
+      'stellaMiningProgress':
+          'Stella Mining Progress',
+      'stlPerHour':
+          'STL per hour',
+      'hashRateBonus':
+          'Hash Rate Bonus',
 
-      'startMining': 'START MINING',
-      'claimMining': 'CLAIM STL',
-      'miningActive': 'Mining active',
-      'miningComplete': 'Mining cycle complete',
+      'startMining':
+          'START MINING',
+      'claimMining':
+          'CLAIM STL',
+      'miningActive':
+          'Mining active',
+      'miningComplete':
+          'Mining cycle complete',
 
-      'timeRemaining': 'Time remaining',
-      'remaining': 'Time remaining: {time}',
+      'timeRemaining':
+          'Time remaining',
+      'remaining':
+          'Time remaining: {time}',
 
-      'streak': 'Streak',
-      'days': 'days',
+      'streak':
+          'Streak',
+      'days':
+          'days',
 
-      'dailyBonus': 'Daily Bonus',
-      'dailyClaim': 'Claim Daily Bonus',
-      'dailyReward': 'Daily Reward',
-      'claimedToday': 'Claimed today',
+      'dailyBonus':
+          'Daily Bonus',
+      'dailyClaim':
+          'Claim Daily Bonus',
+      'dailyReward':
+          'Daily Reward',
+      'claimedToday':
+          'Claimed today',
       'alreadyClaimed':
           'You have already claimed today’s reward.',
 
-      'watchAd': 'WATCH AD',
-      'watchAndEarn': 'WATCH & EARN',
-      'loadingAd': 'LOADING AD...',
-      'adLoading': 'LOADING AD...',
-      'adReward': '+{amount} HR',
+      'watchAd':
+          'WATCH AD',
+      'watchAndEarn':
+          'WATCH & EARN',
+      'loadingAd':
+          'LOADING AD...',
+      'adLoading':
+          'LOADING AD...',
+      'adReward':
+          '+{amount} HR',
 
-      'powerBoost': 'Stella Power Boost',
+      'powerBoost':
+          'Stella Power Boost',
       'powerBoostOffer':
           'Watch an ad to activate +{amount} HR Stella Power Boost for 4 hours.',
-      'powerBoostActive': 'Power Boost active',
+      'powerBoostActive':
+          'Power Boost active',
       'powerBoostActiveTitle':
           'Stella Power Boost is active!',
       'powerBoostActiveMessage':
@@ -246,72 +340,152 @@ class AppLocalizations {
           'The next ad is available after the boost ends.',
       'maxBoostsInfo':
           'You can activate up to {count} Power Boosts per day.',
-      'adsToday': 'Ads today: {current}/{max}',
-      'dailyLimitReached': 'Daily ad limit reached.',
-      'powerBoostReward': 'Stella Power Boost: +{amount} HR',
+      'adsToday':
+          'Ads today: {current}/{max}',
+      'dailyLimitReached':
+          'Daily ad limit reached.',
+      'powerBoostReward':
+          'Stella Power Boost: +{amount} HR',
       'adRewardDuplicate':
           'This ad reward has already been processed.',
       'testAdRewardFailed':
           'Failed to process the ad reward.',
 
-      'serverConnectionFailed': 'Server connection failed.',
-      'refresh': 'Refresh',
+      'serverConnectionFailed':
+          'Server connection failed.',
+      'refresh':
+          'Refresh',
 
-      'profile': 'Profile',
-      'comingSoon': 'Coming Soon',
-      'information': 'Information',
+      'profile':
+          'Profile',
+      'comingSoon':
+          'Coming Soon',
+      'information':
+          'Information',
 
-      'catFact': 'Stella Cat Fact',
-      'stellaFacts': 'Stella Cat Fact',
-      'stellaPower': 'Stella Power',
-      'stellaMining': 'Stella Mining',
+      'catFact':
+          'Stella Cat Fact',
+      'stellaFacts':
+          'Stella Cat Fact',
+      'stellaPower':
+          'Stella Power',
+      'stellaMining':
+          'Stella Mining',
 
-      'transactions': 'Transactions',
-      'noTransactions': 'No transactions yet.',
-      'totalStl': 'Total STL',
+      'transactions':
+          'Transactions',
+      'noTransactions':
+          'No transactions yet.',
+      'totalStl':
+          'Total STL',
 
-      'points': 'points',
-      'pointsAdded': 'Points added',
+      'points':
+          'points',
+      'pointsAdded':
+          'Points added',
 
-      'resetAccount': 'Reset Test Account',
+      'resetAccount':
+          'Reset Test Account',
       'resetConfirm':
           'Are you sure you want to reset the test account?',
 
-      'cancel': 'Cancel',
-      'reset': 'Reset',
-      'error': 'Error',
-      'success': 'Success',
-      'close': 'Close',
+      'cancel':
+          'Cancel',
+      'reset':
+          'Reset',
+      'error':
+          'Error',
+      'success':
+          'Success',
+      'close':
+          'Close',
 
-      'stellaIsMining': 'Stella is mining',
-      'stellaMiningNow': 'Stella is mining right now',
-      'stellaIsResting': 'Stella is resting',
+      'stellaIsMining':
+          'Stella is mining',
+      'stellaMiningNow':
+          'Stella is mining right now',
+      'stellaIsResting':
+          'Stella is resting',
       'stellaWaiting':
           'Stella is waiting for the next mining cycle',
-      'stlReadyToCollect': 'STL is ready to collect',
-      'stlMined': 'STL MINED',
-      'waitingForStella': 'Waiting for Stella',
+      'stlReadyToCollect':
+          'STL is ready to collect',
+      'stlMined':
+          'STL MINED',
+      'waitingForStella':
+          'Waiting for Stella',
 
-      'stellaIsWorking': 'STELLA IS WORKING...',
-      'stellaIsMiningButton': 'MINING ACTIVE',
-      'stellaAlreadyMining': 'Stella is already mining.',
-      'prepareAd': 'Preparing ad...',
-      'miningCollected': 'Collected {amount} STL',
-      'miningStartFailed': 'Failed to start mining.',
+      'stellaIsWorking':
+          'STELLA IS WORKING...',
+      'stellaIsMiningButton':
+          'MINING ACTIVE',
+      'stellaAlreadyMining':
+          'Stella is already mining.',
+      'prepareAd':
+          'Preparing ad...',
+      'miningCollected':
+          'Collected {amount} STL',
+      'miningStartFailed':
+          'Failed to start mining.',
+
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          'Email',
+      'password':
+          'Password',
+      'forgotPassword':
+          'Forgot password?',
+      'login':
+          'LOG IN',
+      'loggingIn':
+          'LOGGING IN...',
+      'createAccount':
+          'No account yet? Create a new account',
+      'loginFillFields':
+          'Enter your email and password.',
+      'loginInvalidEmail':
+          'The email address is not valid.',
+      'loginUserNotFound':
+          'User not found.',
+      'loginInvalidCredentials':
+          'The email or password is incorrect.',
+      'loginUserDisabled':
+          'This user account has been disabled.',
+      'loginTooManyRequests':
+          'Too many attempts. Please try again later.',
+      'loginNetworkError':
+          'Network connection failed.',
+      'loginFailed':
+          'Login failed',
 
       // Transaction History
-      'transactionHistory': 'Transaction History',
-      'stellaActivity': 'STELLA ACTIVITY',
-      'latestTransactions': '{count} latest transactions',
-      'dailyStellaBonus': 'Daily Stella Bonus',
-      'dailyBonusDescription': 'Daily bonus from Stella',
-      'stellaAdReward': 'Stella Ad Reward',
-      'adRewardDescription': 'Rewarded ad bonus',
-      'stlTransaction': 'STL Transaction',
-      'stelluriiniActivity': 'Stelluriini activity',
-      'transactionBalance': 'Balance: {balance} STL',
-      'tryAgain': 'Try Again',
-      'noTransactionsYet': 'No transactions yet',
+      'transactionHistory':
+          'Transaction History',
+      'stellaActivity':
+          'STELLA ACTIVITY',
+      'latestTransactions':
+          '{count} latest transactions',
+      'dailyStellaBonus':
+          'Daily Stella Bonus',
+      'dailyBonusDescription':
+          'Daily bonus from Stella',
+      'stellaAdReward':
+          'Stella Ad Reward',
+      'adRewardDescription':
+          'Rewarded ad bonus',
+      'stlTransaction':
+          'STL Transaction',
+      'stelluriiniActivity':
+          'Stelluriini activity',
+      'transactionBalance':
+          'Balance: {balance} STL',
+      'tryAgain':
+          'Try Again',
+      'noTransactionsYet':
+          'No transactions yet',
       'rewardsAppearHere':
           'Your STL rewards will appear here. 🐱',
       'startMiningWithStella':
@@ -326,7 +500,8 @@ class AppLocalizations {
       // Footer
       'footerTagline':
           'Mining together for the future of Stelluriini.',
-      'footerToken': 'STL • STELLURIINI',
+      'footerToken':
+          'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -350,47 +525,74 @@ class AppLocalizations {
       'mining': 'Mining',
       'miningRate': 'Mining-Rate',
       'hashRate': 'Hash Rate',
-      'effectiveHashRate': 'Effektive Hash Rate',
-      'effectiveHashRateLabel': 'Effektive Hash Rate',
+      'effectiveHashRate':
+          'Effektive Hash Rate',
+      'effectiveHashRateLabel':
+          'Effektive Hash Rate',
 
-      'dailyHashRateLabel': 'Tägliche Hash Rate',
-      'dailyHashRateDay': 'Tag {day}',
-      'dailyHashRateMaximum': 'Maximum: {rate} HR',
+      'dailyHashRateLabel':
+          'Tägliche Hash Rate',
+      'dailyHashRateDay':
+          'Tag {day}',
+      'dailyHashRateMaximum':
+          'Maximum: {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate an Tag {day}: {rate} HR',
 
-      'stellaMiningProgress': 'Stellas Mining-Fortschritt',
-      'stlPerHour': 'STL pro Stunde',
-      'hashRateBonus': 'Hash-Rate-Bonus',
+      'stellaMiningProgress':
+          'Stellas Mining-Fortschritt',
+      'stlPerHour':
+          'STL pro Stunde',
+      'hashRateBonus':
+          'Hash-Rate-Bonus',
 
-      'startMining': 'MINING STARTEN',
-      'claimMining': 'STL EINSAMMELN',
-      'miningActive': 'Mining aktiv',
-      'miningComplete': 'Mining-Zyklus abgeschlossen',
+      'startMining':
+          'MINING STARTEN',
+      'claimMining':
+          'STL EINSAMMELN',
+      'miningActive':
+          'Mining aktiv',
+      'miningComplete':
+          'Mining-Zyklus abgeschlossen',
 
-      'timeRemaining': 'Verbleibende Zeit',
-      'remaining': 'Verbleibende Zeit: {time}',
+      'timeRemaining':
+          'Verbleibende Zeit',
+      'remaining':
+          'Verbleibende Zeit: {time}',
 
-      'streak': 'Serie',
-      'days': 'Tage',
+      'streak':
+          'Serie',
+      'days':
+          'Tage',
 
-      'dailyBonus': 'Täglicher Bonus',
-      'dailyClaim': 'Täglichen Bonus sammeln',
-      'dailyReward': 'Tägliche Belohnung',
-      'claimedToday': 'Heute gesammelt',
+      'dailyBonus':
+          'Täglicher Bonus',
+      'dailyClaim':
+          'Täglichen Bonus sammeln',
+      'dailyReward':
+          'Tägliche Belohnung',
+      'claimedToday':
+          'Heute gesammelt',
       'alreadyClaimed':
           'Du hast die heutige Belohnung bereits gesammelt.',
 
-      'watchAd': 'WERBUNG ANSEHEN',
-      'watchAndEarn': 'ANSEHEN & VERDIENEN',
-      'loadingAd': 'WERBUNG WIRD GELADEN...',
-      'adLoading': 'WERBUNG WIRD GELADEN...',
-      'adReward': '+{amount} HR',
+      'watchAd':
+          'WERBUNG ANSEHEN',
+      'watchAndEarn':
+          'ANSEHEN & VERDIENEN',
+      'loadingAd':
+          'WERBUNG WIRD GELADEN...',
+      'adLoading':
+          'WERBUNG WIRD GELADEN...',
+      'adReward':
+          '+{amount} HR',
 
-      'powerBoost': 'Stella Power Boost',
+      'powerBoost':
+          'Stella Power Boost',
       'powerBoostOffer':
           'Werbung ansehen und +{amount} HR Stella Power Boost für 4 Stunden aktivieren.',
-      'powerBoostActive': 'Power Boost aktiv',
+      'powerBoostActive':
+          'Power Boost aktiv',
       'powerBoostActiveTitle':
           'Stella Power Boost ist aktiv!',
       'powerBoostActiveMessage':
@@ -403,9 +605,12 @@ class AppLocalizations {
           'Die nächste Werbung ist nach Ende des Boosts verfügbar.',
       'maxBoostsInfo':
           'Du kannst bis zu {count} Power Boosts pro Tag aktivieren.',
-      'adsToday': 'Werbung heute: {current}/{max}',
-      'dailyLimitReached': 'Tägliches Werbelimit erreicht.',
-      'powerBoostReward': 'Stella Power Boost: +{amount} HR',
+      'adsToday':
+          'Werbung heute: {current}/{max}',
+      'dailyLimitReached':
+          'Tägliches Werbelimit erreicht.',
+      'powerBoostReward':
+          'Stella Power Boost: +{amount} HR',
       'adRewardDuplicate':
           'Diese Werbeprämie wurde bereits verarbeitet.',
       'testAdRewardFailed':
@@ -413,66 +618,143 @@ class AppLocalizations {
 
       'serverConnectionFailed':
           'Serververbindung fehlgeschlagen.',
-      'refresh': 'Aktualisieren',
+      'refresh':
+          'Aktualisieren',
 
-      'profile': 'Profil',
-      'comingSoon': 'Demnächst',
-      'information': 'Information',
+      'profile':
+          'Profil',
+      'comingSoon':
+          'Demnächst',
+      'information':
+          'Information',
 
-      'catFact': 'Stellas Katzenfakt',
-      'stellaFacts': 'Stellas Katzenfakt',
-      'stellaPower': 'Stella Power',
-      'stellaMining': 'Stella Mining',
+      'catFact':
+          'Stellas Katzenfakt',
+      'stellaFacts':
+          'Stellas Katzenfakt',
+      'stellaPower':
+          'Stella Power',
+      'stellaMining':
+          'Stella Mining',
 
-      'transactions': 'Transaktionen',
-      'noTransactions': 'Noch keine Transaktionen.',
-      'totalStl': 'STL insgesamt',
+      'transactions':
+          'Transaktionen',
+      'noTransactions':
+          'Noch keine Transaktionen.',
+      'totalStl':
+          'STL insgesamt',
 
-      'points': 'Punkte',
-      'pointsAdded': 'Punkte hinzugefügt',
+      'points':
+          'Punkte',
+      'pointsAdded':
+          'Punkte hinzugefügt',
 
-      'resetAccount': 'Testkonto zurücksetzen',
+      'resetAccount':
+          'Testkonto zurücksetzen',
       'resetConfirm':
           'Möchtest du das Testkonto wirklich zurücksetzen?',
 
-      'cancel': 'Abbrechen',
-      'reset': 'Zurücksetzen',
-      'error': 'Fehler',
-      'success': 'Erfolgreich',
-      'close': 'Schließen',
+      'cancel':
+          'Abbrechen',
+      'reset':
+          'Zurücksetzen',
+      'error':
+          'Fehler',
+      'success':
+          'Erfolgreich',
+      'close':
+          'Schließen',
 
-      'stellaIsMining': 'Stella miniert',
-      'stellaMiningNow': 'Stella miniert gerade',
-      'stellaIsResting': 'Stella ruht sich aus',
+      'stellaIsMining':
+          'Stella miniert',
+      'stellaMiningNow':
+          'Stella miniert gerade',
+      'stellaIsResting':
+          'Stella ruht sich aus',
       'stellaWaiting':
           'Stella wartet auf den nächsten Mining-Zyklus',
-      'stlReadyToCollect': 'STL kann gesammelt werden',
-      'stlMined': 'STL GEMINT',
-      'waitingForStella': 'Warte auf Stella',
+      'stlReadyToCollect':
+          'STL kann gesammelt werden',
+      'stlMined':
+          'STL GEMINT',
+      'waitingForStella':
+          'Warte auf Stella',
 
-      'stellaIsWorking': 'STELLA ARBEITET...',
-      'stellaIsMiningButton': 'MINING AKTIV',
-      'stellaAlreadyMining': 'Stella miniert bereits.',
-      'prepareAd': 'Werbung wird vorbereitet...',
-      'miningCollected': '{amount} STL gesammelt',
-      'miningStartFailed': 'Mining konnte nicht gestartet werden.',
+      'stellaIsWorking':
+          'STELLA ARBEITET...',
+      'stellaIsMiningButton':
+          'MINING AKTIV',
+      'stellaAlreadyMining':
+          'Stella miniert bereits.',
+      'prepareAd':
+          'Werbung wird vorbereitet...',
+      'miningCollected':
+          '{amount} STL gesammelt',
+      'miningStartFailed':
+          'Mining konnte nicht gestartet werden.',
+
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          'E-Mail',
+      'password':
+          'Passwort',
+      'forgotPassword':
+          'Passwort vergessen?',
+      'login':
+          'ANMELDEN',
+      'loggingIn':
+          'ANMELDUNG...',
+      'createAccount':
+          'Noch kein Konto? Neues Konto erstellen',
+      'loginFillFields':
+          'E-Mail und Passwort eingeben.',
+      'loginInvalidEmail':
+          'Die E-Mail-Adresse ist ungültig.',
+      'loginUserNotFound':
+          'Benutzer wurde nicht gefunden.',
+      'loginInvalidCredentials':
+          'E-Mail oder Passwort ist falsch.',
+      'loginUserDisabled':
+          'Dieses Benutzerkonto wurde deaktiviert.',
+      'loginTooManyRequests':
+          'Zu viele Versuche. Bitte später erneut versuchen.',
+      'loginNetworkError':
+          'Netzwerkverbindung fehlgeschlagen.',
+      'loginFailed':
+          'Anmeldung fehlgeschlagen',
 
       // Transaction History
-      'transactionHistory': 'Transaktionsverlauf',
-      'stellaActivity': 'STELLA-AKTIVITÄT',
-      'latestTransactions': '{count} letzte Transaktionen',
-      'dailyStellaBonus': 'Täglicher Stella-Bonus',
-      'dailyBonusDescription': 'Täglicher Bonus von Stella',
-      'stellaAdReward': 'Stella-Werbebelohnung',
-      'adRewardDescription': 'Belohnung für angesehene Werbung',
-      'stlTransaction': 'STL-Transaktion',
-      'stelluriiniActivity': 'Stelluriini-Aktivität',
-      'transactionBalance': 'Guthaben: {balance} STL',
-      'tryAgain': 'Erneut versuchen',
-      'noTransactionsYet': 'Noch keine Transaktionen',
+      'transactionHistory':
+          'Transaktionsverlauf',
+      'stellaActivity':
+          'STELLA-AKTIVITÄT',
+      'latestTransactions':
+          '{count} letzte Transaktionen',
+      'dailyStellaBonus':
+          'Täglicher Stella-Bonus',
+      'dailyBonusDescription':
+          'Täglicher Bonus von Stella',
+      'stellaAdReward':
+          'Stella-Werbebelohnung',
+      'adRewardDescription':
+          'Belohnung für angesehene Werbung',
+      'stlTransaction':
+          'STL-Transaktion',
+      'stelluriiniActivity':
+          'Stelluriini-Aktivität',
+      'transactionBalance':
+          'Guthaben: {balance} STL',
+      'tryAgain':
+          'Erneut versuchen',
+      'noTransactionsYet':
+          'Noch keine Transaktionen',
       'rewardsAppearHere':
           'Deine STL-Belohnungen erscheinen hier. 🐱',
-      'startMiningWithStella': 'Starte das Mining mit Stella',
+      'startMiningWithStella':
+          'Starte das Mining mit Stella',
       'historyRecorded':
           'Mining, tägliche Boni und Werbebelohnungen werden hier gespeichert.',
       'stellaCheckingHistory':
@@ -483,7 +765,8 @@ class AppLocalizations {
       // Footer
       'footerTagline':
           'Gemeinsam für die Zukunft von Stelluriini minen.',
-      'footerToken': 'STL • STELLURIINI',
+      'footerToken':
+          'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -507,47 +790,74 @@ class AppLocalizations {
       'mining': 'Minería',
       'miningRate': 'Tasa de minería',
       'hashRate': 'Hash Rate',
-      'effectiveHashRate': 'Hash Rate efectivo',
-      'effectiveHashRateLabel': 'Hash Rate efectivo',
+      'effectiveHashRate':
+          'Hash Rate efectivo',
+      'effectiveHashRateLabel':
+          'Hash Rate efectivo',
 
-      'dailyHashRateLabel': 'Hash Rate diario',
-      'dailyHashRateDay': 'Día {day}',
-      'dailyHashRateMaximum': 'Máximo: {rate} HR',
+      'dailyHashRateLabel':
+          'Hash Rate diario',
+      'dailyHashRateDay':
+          'Día {day}',
+      'dailyHashRateMaximum':
+          'Máximo: {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate del día {day}: {rate} HR',
 
-      'stellaMiningProgress': 'Progreso de minería de Stella',
-      'stlPerHour': 'STL por hora',
-      'hashRateBonus': 'Bono de Hash Rate',
+      'stellaMiningProgress':
+          'Progreso de minería de Stella',
+      'stlPerHour':
+          'STL por hora',
+      'hashRateBonus':
+          'Bono de Hash Rate',
 
-      'startMining': 'INICIAR MINERÍA',
-      'claimMining': 'RECLAMAR STL',
-      'miningActive': 'Minería activa',
-      'miningComplete': 'Ciclo de minería completado',
+      'startMining':
+          'INICIAR MINERÍA',
+      'claimMining':
+          'RECLAMAR STL',
+      'miningActive':
+          'Minería activa',
+      'miningComplete':
+          'Ciclo de minería completado',
 
-      'timeRemaining': 'Tiempo restante',
-      'remaining': 'Tiempo restante: {time}',
+      'timeRemaining':
+          'Tiempo restante',
+      'remaining':
+          'Tiempo restante: {time}',
 
-      'streak': 'Racha',
-      'days': 'días',
+      'streak':
+          'Racha',
+      'days':
+          'días',
 
-      'dailyBonus': 'Bono diario',
-      'dailyClaim': 'Reclamar bono diario',
-      'dailyReward': 'Recompensa diaria',
-      'claimedToday': 'Reclamado hoy',
+      'dailyBonus':
+          'Bono diario',
+      'dailyClaim':
+          'Reclamar bono diario',
+      'dailyReward':
+          'Recompensa diaria',
+      'claimedToday':
+          'Reclamado hoy',
       'alreadyClaimed':
           'Ya has reclamado la recompensa de hoy.',
 
-      'watchAd': 'VER ANUNCIO',
-      'watchAndEarn': 'VER Y GANAR',
-      'loadingAd': 'CARGANDO ANUNCIO...',
-      'adLoading': 'CARGANDO ANUNCIO...',
-      'adReward': '+{amount} HR',
+      'watchAd':
+          'VER ANUNCIO',
+      'watchAndEarn':
+          'VER Y GANAR',
+      'loadingAd':
+          'CARGANDO ANUNCIO...',
+      'adLoading':
+          'CARGANDO ANUNCIO...',
+      'adReward':
+          '+{amount} HR',
 
-      'powerBoost': 'Stella Power Boost',
+      'powerBoost':
+          'Stella Power Boost',
       'powerBoostOffer':
           'Mira un anuncio para activar +{amount} HR de Stella Power Boost durante 4 horas.',
-      'powerBoostActive': 'Power Boost activo',
+      'powerBoostActive':
+          'Power Boost activo',
       'powerBoostActiveTitle':
           '¡Stella Power Boost está activo!',
       'powerBoostActiveMessage':
@@ -560,7 +870,8 @@ class AppLocalizations {
           'El próximo anuncio estará disponible después de que termine el boost.',
       'maxBoostsInfo':
           'Puedes activar hasta {count} Power Boosts al día.',
-      'adsToday': 'Anuncios hoy: {current}/{max}',
+      'adsToday':
+          'Anuncios hoy: {current}/{max}',
       'dailyLimitReached':
           'Se alcanzó el límite diario de anuncios.',
       'powerBoostReward':
@@ -572,69 +883,137 @@ class AppLocalizations {
 
       'serverConnectionFailed':
           'Error de conexión con el servidor.',
-      'refresh': 'Actualizar',
+      'refresh':
+          'Actualizar',
 
-      'profile': 'Perfil',
-      'comingSoon': 'Próximamente',
-      'information': 'Información',
+      'profile':
+          'Perfil',
+      'comingSoon':
+          'Próximamente',
+      'information':
+          'Información',
 
-      'catFact': 'Dato gatuno de Stella',
-      'stellaFacts': 'Dato gatuno de Stella',
-      'stellaPower': 'Stella Power',
-      'stellaMining': 'Stella Mining',
+      'catFact':
+          'Dato gatuno de Stella',
+      'stellaFacts':
+          'Dato gatuno de Stella',
+      'stellaPower':
+          'Stella Power',
+      'stellaMining':
+          'Stella Mining',
 
-      'transactions': 'Transacciones',
-      'noTransactions': 'Aún no hay transacciones.',
-      'totalStl': 'STL total',
+      'transactions':
+          'Transacciones',
+      'noTransactions':
+          'Aún no hay transacciones.',
+      'totalStl':
+          'STL total',
 
-      'points': 'puntos',
-      'pointsAdded': 'Puntos añadidos',
+      'points':
+          'puntos',
+      'pointsAdded':
+          'Puntos añadidos',
 
-      'resetAccount': 'Restablecer cuenta de prueba',
+      'resetAccount':
+          'Restablecer cuenta de prueba',
       'resetConfirm':
           '¿Seguro que quieres restablecer la cuenta de prueba?',
 
-      'cancel': 'Cancelar',
-      'reset': 'Restablecer',
-      'error': 'Error',
-      'success': 'Éxito',
-      'close': 'Cerrar',
+      'cancel':
+          'Cancelar',
+      'reset':
+          'Restablecer',
+      'error':
+          'Error',
+      'success':
+          'Éxito',
+      'close':
+          'Cerrar',
 
-      'stellaIsMining': 'Stella está minando',
-      'stellaMiningNow': 'Stella está minando ahora',
-      'stellaIsResting': 'Stella está descansando',
+      'stellaIsMining':
+          'Stella está minando',
+      'stellaMiningNow':
+          'Stella está minando ahora',
+      'stellaIsResting':
+          'Stella está descansando',
       'stellaWaiting':
           'Stella está esperando el próximo ciclo de minería',
       'stlReadyToCollect':
           'STL está listo para reclamar',
-      'stlMined': 'STL MINADO',
-      'waitingForStella': 'Esperando a Stella',
+      'stlMined':
+          'STL MINADO',
+      'waitingForStella':
+          'Esperando a Stella',
 
-      'stellaIsWorking': 'STELLA ESTÁ TRABAJANDO...',
-      'stellaIsMiningButton': 'MINERÍA ACTIVA',
-      'stellaAlreadyMining': 'Stella ya está minando.',
-      'prepareAd': 'Preparando anuncio...',
-      'miningCollected': 'Recolectado {amount} STL',
+      'stellaIsWorking':
+          'STELLA ESTÁ TRABAJANDO...',
+      'stellaIsMiningButton':
+          'MINERÍA ACTIVA',
+      'stellaAlreadyMining':
+          'Stella ya está minando.',
+      'prepareAd':
+          'Preparando anuncio...',
+      'miningCollected':
+          'Recolectado {amount} STL',
       'miningStartFailed':
           'No se pudo iniciar la minería.',
 
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          'Correo electrónico',
+      'password':
+          'Contraseña',
+      'forgotPassword':
+          '¿Olvidaste tu contraseña?',
+      'login':
+          'INICIAR SESIÓN',
+      'loggingIn':
+          'INICIANDO SESIÓN...',
+      'createAccount':
+          '¿Aún no tienes cuenta? Crear una nueva cuenta',
+      'loginFillFields':
+          'Introduce tu correo electrónico y contraseña.',
+      'loginInvalidEmail':
+          'La dirección de correo electrónico no es válida.',
+      'loginUserNotFound':
+          'No se encontró el usuario.',
+      'loginInvalidCredentials':
+          'El correo electrónico o la contraseña son incorrectos.',
+      'loginUserDisabled':
+          'Esta cuenta de usuario ha sido deshabilitada.',
+      'loginTooManyRequests':
+          'Demasiados intentos. Inténtalo de nuevo más tarde.',
+      'loginNetworkError':
+          'Error de conexión de red.',
+      'loginFailed':
+          'Error al iniciar sesión',
+
       // Transaction History
-      'transactionHistory': 'Historial de transacciones',
-      'stellaActivity': 'ACTIVIDAD DE STELLA',
+      'transactionHistory':
+          'Historial de transacciones',
+      'stellaActivity':
+          'ACTIVIDAD DE STELLA',
       'latestTransactions':
           '{count} transacciones recientes',
-      'dailyStellaBonus': 'Bono diario de Stella',
-      'dailyBonusDescription': 'Bono diario de Stella',
+      'dailyStellaBonus':
+          'Bono diario de Stella',
+      'dailyBonusDescription':
+          'Bono diario de Stella',
       'stellaAdReward':
           'Recompensa de anuncio de Stella',
       'adRewardDescription':
           'Recompensa por anuncio visto',
-      'stlTransaction': 'Transacción STL',
+      'stlTransaction':
+          'Transacción STL',
       'stelluriiniActivity':
           'Actividad de Stelluriini',
       'transactionBalance':
           'Saldo: {balance} STL',
-      'tryAgain': 'Intentar de nuevo',
+      'tryAgain':
+          'Intentar de nuevo',
       'noTransactionsYet':
           'Aún no hay transacciones',
       'rewardsAppearHere':
@@ -651,7 +1030,8 @@ class AppLocalizations {
       // Footer
       'footerTagline':
           'Minando juntos por el futuro de Stelluriini.',
-      'footerToken': 'STL • STELLURIINI',
+      'footerToken':
+          'STL • STELLURIINI',
     },
 
     // ============================================================
@@ -675,51 +1055,70 @@ class AppLocalizations {
       'mining': 'Minage',
       'miningRate': 'Taux de minage',
       'hashRate': 'Hash Rate',
-      'effectiveHashRate': 'Hash Rate effectif',
-      'effectiveHashRateLabel': 'Hash Rate effectif',
+      'effectiveHashRate':
+          'Hash Rate effectif',
+      'effectiveHashRateLabel':
+          'Hash Rate effectif',
 
-      'dailyHashRateLabel': 'Hash Rate quotidien',
-      'dailyHashRateDay': 'Jour {day}',
-      'dailyHashRateMaximum': 'Maximum : {rate} HR',
+      'dailyHashRateLabel':
+          'Hash Rate quotidien',
+      'dailyHashRateDay':
+          'Jour {day}',
+      'dailyHashRateMaximum':
+          'Maximum : {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate du jour {day} : {rate} HR',
 
       'stellaMiningProgress':
           'Progression du minage de Stella',
-      'stlPerHour': 'STL par heure',
-      'hashRateBonus': 'Bonus de Hash Rate',
+      'stlPerHour':
+          'STL par heure',
+      'hashRateBonus':
+          'Bonus de Hash Rate',
 
-      'startMining': 'DÉMARRER LE MINAGE',
-      'claimMining': 'RÉCLAMER STL',
-      'miningActive': 'Minage actif',
+      'startMining':
+          'DÉMARRER LE MINAGE',
+      'claimMining':
+          'RÉCLAMER STL',
+      'miningActive':
+          'Minage actif',
       'miningComplete':
           'Cycle de minage terminé',
 
-      'timeRemaining': 'Temps restant',
-      'remaining': 'Temps restant : {time}',
+      'timeRemaining':
+          'Temps restant',
+      'remaining':
+          'Temps restant : {time}',
 
-      'streak': 'Série',
-      'days': 'jours',
+      'streak':
+          'Série',
+      'days':
+          'jours',
 
-      'dailyBonus': 'Bonus quotidien',
+      'dailyBonus':
+          'Bonus quotidien',
       'dailyClaim':
           'Réclamer le bonus quotidien',
-      'dailyReward': 'Récompense quotidienne',
+      'dailyReward':
+          'Récompense quotidienne',
       'claimedToday':
           'Réclamé aujourd’hui',
       'alreadyClaimed':
           'Vous avez déjà réclamé la récompense du jour.',
 
-      'watchAd': 'REGARDER LA PUB',
+      'watchAd':
+          'REGARDER LA PUB',
       'watchAndEarn':
           'REGARDER & GAGNER',
       'loadingAd':
           'CHARGEMENT DE LA PUB...',
       'adLoading':
           'CHARGEMENT DE LA PUB...',
-      'adReward': '+{amount} HR',
+      'adReward':
+          '+{amount} HR',
 
-      'powerBoost': 'Stella Power Boost',
+      'powerBoost':
+          'Stella Power Boost',
       'powerBoostOffer':
           'Regardez une publicité pour activer +{amount} HR de Stella Power Boost pendant 4 heures.',
       'powerBoostActive':
@@ -749,12 +1148,15 @@ class AppLocalizations {
 
       'serverConnectionFailed':
           'Échec de la connexion au serveur.',
-      'refresh': 'Actualiser',
+      'refresh':
+          'Actualiser',
 
-      'profile': 'Profil',
+      'profile':
+          'Profil',
       'comingSoon':
           'Bientôt disponible',
-      'information': 'Informations',
+      'information':
+          'Informations',
 
       'catFact':
           'Fait sur les chats de Stella',
@@ -772,7 +1174,8 @@ class AppLocalizations {
       'totalStl':
           'STL total',
 
-      'points': 'points',
+      'points':
+          'points',
       'pointsAdded':
           'Points ajoutés',
 
@@ -781,11 +1184,16 @@ class AppLocalizations {
       'resetConfirm':
           'Voulez-vous vraiment réinitialiser le compte de test ?',
 
-      'cancel': 'Annuler',
-      'reset': 'Réinitialiser',
-      'error': 'Erreur',
-      'success': 'Succès',
-      'close': 'Fermer',
+      'cancel':
+          'Annuler',
+      'reset':
+          'Réinitialiser',
+      'error':
+          'Erreur',
+      'success':
+          'Succès',
+      'close':
+          'Fermer',
 
       'stellaIsMining':
           'Stella mine',
@@ -814,6 +1222,39 @@ class AppLocalizations {
           '{amount} STL récupérés',
       'miningStartFailed':
           'Impossible de démarrer le minage.',
+
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          'E-mail',
+      'password':
+          'Mot de passe',
+      'forgotPassword':
+          'Mot de passe oublié ?',
+      'login':
+          'SE CONNECTER',
+      'loggingIn':
+          'CONNEXION...',
+      'createAccount':
+          'Pas encore de compte ? Créer un compte',
+      'loginFillFields':
+          'Entrez votre e-mail et votre mot de passe.',
+      'loginInvalidEmail':
+          'L’adresse e-mail n’est pas valide.',
+      'loginUserNotFound':
+          'Utilisateur introuvable.',
+      'loginInvalidCredentials':
+          'L’e-mail ou le mot de passe est incorrect.',
+      'loginUserDisabled':
+          'Ce compte utilisateur a été désactivé.',
+      'loginTooManyRequests':
+          'Trop de tentatives. Réessayez plus tard.',
+      'loginNetworkError':
+          'Échec de la connexion réseau.',
+      'loginFailed':
+          'Échec de la connexion',
 
       // Transaction History
       'transactionHistory':
@@ -879,12 +1320,17 @@ class AppLocalizations {
       'mining': '挖矿',
       'miningRate': '挖矿速率',
       'hashRate': '哈希率',
-      'effectiveHashRate': '有效哈希率',
-      'effectiveHashRateLabel': '有效哈希率',
+      'effectiveHashRate':
+          '有效哈希率',
+      'effectiveHashRateLabel':
+          '有效哈希率',
 
-      'dailyHashRateLabel': '每日哈希率',
-      'dailyHashRateDay': '第 {day} 天',
-      'dailyHashRateMaximum': '最高：{rate} HR',
+      'dailyHashRateLabel':
+          '每日哈希率',
+      'dailyHashRateDay':
+          '第 {day} 天',
+      'dailyHashRateMaximum':
+          '最高：{rate} HR',
       'dailyHashRateSuccess':
           '第 {day} 天哈希率：{rate} HR',
 
@@ -1042,6 +1488,39 @@ class AppLocalizations {
       'miningStartFailed':
           '挖矿启动失败。',
 
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          '电子邮箱',
+      'password':
+          '密码',
+      'forgotPassword':
+          '忘记密码？',
+      'login':
+          '登录',
+      'loggingIn':
+          '正在登录...',
+      'createAccount':
+          '还没有账户？创建新账户',
+      'loginFillFields':
+          '请输入电子邮箱和密码。',
+      'loginInvalidEmail':
+          '电子邮箱地址无效。',
+      'loginUserNotFound':
+          '未找到用户。',
+      'loginInvalidCredentials':
+          '电子邮箱或密码错误。',
+      'loginUserDisabled':
+          '此用户账户已被禁用。',
+      'loginTooManyRequests':
+          '尝试次数过多，请稍后再试。',
+      'loginNetworkError':
+          '网络连接失败。',
+      'loginFailed':
+          '登录失败',
+
       // Transaction History
       'transactionHistory':
           '交易历史',
@@ -1106,12 +1585,17 @@ class AppLocalizations {
       'mining': 'Khai thác',
       'miningRate': 'Tốc độ khai thác',
       'hashRate': 'Hash Rate',
-      'effectiveHashRate': 'Hash Rate hiệu dụng',
-      'effectiveHashRateLabel': 'Hash Rate hiệu dụng',
+      'effectiveHashRate':
+          'Hash Rate hiệu dụng',
+      'effectiveHashRateLabel':
+          'Hash Rate hiệu dụng',
 
-      'dailyHashRateLabel': 'Hash Rate hàng ngày',
-      'dailyHashRateDay': 'Ngày {day}',
-      'dailyHashRateMaximum': 'Tối đa: {rate} HR',
+      'dailyHashRateLabel':
+          'Hash Rate hàng ngày',
+      'dailyHashRateDay':
+          'Ngày {day}',
+      'dailyHashRateMaximum':
+          'Tối đa: {rate} HR',
       'dailyHashRateSuccess':
           'Hash Rate ngày {day}: {rate} HR',
 
@@ -1269,6 +1753,39 @@ class AppLocalizations {
       'miningStartFailed':
           'Không thể bắt đầu khai thác.',
 
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          'Email',
+      'password':
+          'Mật khẩu',
+      'forgotPassword':
+          'Quên mật khẩu?',
+      'login':
+          'ĐĂNG NHẬP',
+      'loggingIn':
+          'ĐANG ĐĂNG NHẬP...',
+      'createAccount':
+          'Chưa có tài khoản? Tạo tài khoản mới',
+      'loginFillFields':
+          'Vui lòng nhập email và mật khẩu.',
+      'loginInvalidEmail':
+          'Địa chỉ email không hợp lệ.',
+      'loginUserNotFound':
+          'Không tìm thấy người dùng.',
+      'loginInvalidCredentials':
+          'Email hoặc mật khẩu không chính xác.',
+      'loginUserDisabled':
+          'Tài khoản người dùng này đã bị vô hiệu hóa.',
+      'loginTooManyRequests':
+          'Quá nhiều lần thử. Vui lòng thử lại sau.',
+      'loginNetworkError':
+          'Kết nối mạng thất bại.',
+      'loginFailed':
+          'Đăng nhập thất bại',
+
       // Transaction History
       'transactionHistory':
           'Lịch sử giao dịch',
@@ -1333,8 +1850,10 @@ class AppLocalizations {
       'mining': 'マイニング',
       'miningRate': 'マイニング速度',
       'hashRate': 'ハッシュレート',
-      'effectiveHashRate': '実効ハッシュレート',
-      'effectiveHashRateLabel': '実効ハッシュレート',
+      'effectiveHashRate':
+          '実効ハッシュレート',
+      'effectiveHashRateLabel':
+          '実効ハッシュレート',
 
       'dailyHashRateLabel':
           'デイリーハッシュレート',
@@ -1498,6 +2017,39 @@ class AppLocalizations {
           '{amount} STLを受け取りました',
       'miningStartFailed':
           'マイニングを開始できませんでした。',
+
+      // ==========================================================
+      // 🔐 LOGIN
+      // ==========================================================
+
+      'email':
+          'メールアドレス',
+      'password':
+          'パスワード',
+      'forgotPassword':
+          'パスワードをお忘れですか？',
+      'login':
+          'ログイン',
+      'loggingIn':
+          'ログイン中...',
+      'createAccount':
+          'アカウントをお持ちでないですか？新規登録',
+      'loginFillFields':
+          'メールアドレスとパスワードを入力してください。',
+      'loginInvalidEmail':
+          'メールアドレスが無効です。',
+      'loginUserNotFound':
+          'ユーザーが見つかりません。',
+      'loginInvalidCredentials':
+          'メールアドレスまたはパスワードが正しくありません。',
+      'loginUserDisabled':
+          'このユーザーアカウントは無効になっています。',
+      'loginTooManyRequests':
+          '試行回数が多すぎます。しばらくしてから再試行してください。',
+      'loginNetworkError':
+          'ネットワーク接続に失敗しました。',
+      'loginFailed':
+          'ログインに失敗しました',
 
       // Transaction History
       'transactionHistory':
