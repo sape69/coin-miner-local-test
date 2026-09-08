@@ -51,6 +51,16 @@ class _TransactionHistoryPageState
     return AppLocalizations.of(context).get(key);
   }
 
+  String _tWithParams(
+    String key,
+    Map<String, dynamic> params,
+  ) {
+    return AppLocalizations.of(context).getWithParams(
+      key,
+      params: params,
+    );
+  }
+
   // ==========================================================
   // FIREBASE FUNCTIONS
   // ==========================================================
@@ -69,6 +79,76 @@ class _TransactionHistoryPageState
     super.initState();
 
     _loadTransactions();
+  }
+
+  // ==========================================================
+  // TRANSACTION TYPE HELPERS
+  // ==========================================================
+
+  bool _isHashRateTransaction(
+    String type,
+  ) {
+    return type == 'dailyHashRate' ||
+        type == 'daily_reward' ||
+        type == 'ad_reward';
+  }
+
+  bool _isMiningTransaction(
+    String type,
+  ) {
+    return type == 'mining' ||
+        type == 'mining_reward' ||
+        type == 'claim_mining';
+  }
+
+  // ==========================================================
+  // TRANSACTION AMOUNT VALUE
+  // ==========================================================
+
+  dynamic _transactionAmountValue(
+    Map<String, dynamic> transaction,
+  ) {
+    final type =
+        transaction['type']?.toString() ?? '';
+
+    // --------------------------------------------------------
+    // DAILY HASH RATE
+    // --------------------------------------------------------
+
+    if (type == 'dailyHashRate') {
+      return transaction['dailyHashRate'] ??
+          transaction['bonus'] ??
+          transaction['amount'] ??
+          0;
+    }
+
+    // --------------------------------------------------------
+    // LEGACY DAILY REWARD
+    // --------------------------------------------------------
+
+    if (type == 'daily_reward') {
+      return transaction['dailyHashRate'] ??
+          transaction['bonus'] ??
+          transaction['amount'] ??
+          0;
+    }
+
+    // --------------------------------------------------------
+    // AD HASH RATE BOOST
+    // --------------------------------------------------------
+
+    if (type == 'ad_reward') {
+      return transaction['hashRateBonus'] ??
+          transaction['adHashRateBonus'] ??
+          transaction['amount'] ??
+          0;
+    }
+
+    // --------------------------------------------------------
+    // NORMAL STL TRANSACTION
+    // --------------------------------------------------------
+
+    return transaction['amount'] ?? 0;
   }
 
   // ==========================================================
@@ -100,11 +180,47 @@ class _TransactionHistoryPageState
 
       if (rawTransactions is List) {
         for (final item in rawTransactions) {
-          if (item is Map) {
-            loadedTransactions.add(
-              Map<String, dynamic>.from(item),
-            );
+          if (item is! Map) {
+            continue;
           }
+
+          final transaction =
+              Map<String, dynamic>.from(item);
+
+          final type =
+              transaction['type']?.toString() ?? '';
+
+          final amount =
+              _transactionAmountValue(transaction);
+
+          final amountNumber = amount is num
+              ? amount.toDouble()
+              : double.tryParse(
+                    amount?.toString() ?? '',
+                  ) ??
+                  0.0;
+
+          // --------------------------------------------------
+          // Do not display zero-value transactions.
+          // This removes old "+0 STL" history entries.
+          // --------------------------------------------------
+
+          if (amountNumber <= 0) {
+            continue;
+          }
+
+          // --------------------------------------------------
+          // Only known transaction types are displayed.
+          // Unknown historical records are still ignored
+          // instead of producing misleading UI.
+          // --------------------------------------------------
+
+          if (!_isHashRateTransaction(type) &&
+              !_isMiningTransaction(type)) {
+            continue;
+          }
+
+          loadedTransactions.add(transaction);
         }
       }
 
@@ -150,13 +266,16 @@ class _TransactionHistoryPageState
       if (date != null) {
         final local = date.toLocal();
 
-        final day = local.day.toString().padLeft(2, '0');
+        final day =
+            local.day.toString().padLeft(2, '0');
 
-        final month = local.month.toString().padLeft(2, '0');
+        final month =
+            local.month.toString().padLeft(2, '0');
 
         final year = local.year;
 
-        final hour = local.hour.toString().padLeft(2, '0');
+        final hour =
+            local.hour.toString().padLeft(2, '0');
 
         final minute =
             local.minute.toString().padLeft(2, '0');
@@ -175,7 +294,7 @@ class _TransactionHistoryPageState
   }
 
   // ==========================================================
-  // FORMAT STL AMOUNT
+  // FORMAT AMOUNT
   // ==========================================================
 
   String _formatAmount(
@@ -203,6 +322,7 @@ class _TransactionHistoryPageState
     String type,
   ) {
     switch (type) {
+      case 'dailyHashRate':
       case 'daily_reward':
         return Icons.card_giftcard_rounded;
 
@@ -227,6 +347,7 @@ class _TransactionHistoryPageState
     String type,
   ) {
     switch (type) {
+      case 'dailyHashRate':
       case 'daily_reward':
         return goldAccentColor;
 
@@ -250,9 +371,11 @@ class _TransactionHistoryPageState
   String _transactionTitle(
     Map<String, dynamic> transaction,
   ) {
-    final type = transaction['type']?.toString() ?? '';
+    final type =
+        transaction['type']?.toString() ?? '';
 
-    if (type == 'daily_reward') {
+    if (type == 'dailyHashRate' ||
+        type == 'daily_reward') {
       return _t('dailyStellaBonus');
     }
 
@@ -260,9 +383,7 @@ class _TransactionHistoryPageState
       return _t('stellaAdReward');
     }
 
-    if (type == 'mining' ||
-        type == 'mining_reward' ||
-        type == 'claim_mining') {
+    if (_isMiningTransaction(type)) {
       return _t('stellaMining');
     }
 
@@ -277,6 +398,7 @@ class _TransactionHistoryPageState
     String type,
   ) {
     switch (type) {
+      case 'dailyHashRate':
       case 'daily_reward':
         return _t('dailyBonusDescription');
 
@@ -294,6 +416,116 @@ class _TransactionHistoryPageState
   }
 
   // ==========================================================
+  // SECONDARY INFORMATION
+  // ==========================================================
+
+  Widget _buildSecondaryInformation(
+    Map<String, dynamic> transaction,
+    String type,
+    String amountText,
+    String balanceText,
+  ) {
+    // --------------------------------------------------------
+    // DAILY HASH RATE
+    // --------------------------------------------------------
+
+    if (type == 'dailyHashRate' ||
+        type == 'daily_reward') {
+      return Row(
+        children: [
+          Icon(
+            Icons.speed_rounded,
+            size: 12,
+            color: goldAccentColor.withValues(
+              alpha: 0.55,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              '${_t('dailyHashRateLabel')}: '
+              '$amountText HR',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(
+                  alpha: 0.50,
+                ),
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // --------------------------------------------------------
+    // AD HASH RATE BOOST
+    // --------------------------------------------------------
+
+    if (type == 'ad_reward') {
+      return Row(
+        children: [
+          Icon(
+            Icons.speed_rounded,
+            size: 12,
+            color: pinkAccentColor.withValues(
+              alpha: 0.55,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              '${_t('hashRateBonus')}: '
+              '+$amountText HR',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(
+                  alpha: 0.50,
+                ),
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // --------------------------------------------------------
+    // NORMAL STL TRANSACTION
+    // --------------------------------------------------------
+
+    return Row(
+      children: [
+        Icon(
+          Icons.account_balance_wallet_rounded,
+          size: 12,
+          color: Colors.white.withValues(
+            alpha: 0.38,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            _tWithParams(
+              'transactionBalance',
+              {
+                'balance': balanceText,
+              },
+            ),
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white.withValues(
+                alpha: 0.50,
+              ),
+              fontSize: 11,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================
   // BUILD TRANSACTION CARD
   // ==========================================================
 
@@ -302,8 +534,6 @@ class _TransactionHistoryPageState
   ) {
     final type =
         transaction['type']?.toString() ?? '';
-
-    final amount = transaction['amount'];
 
     final balanceAfter =
         transaction['balanceAfter'];
@@ -315,19 +545,26 @@ class _TransactionHistoryPageState
     final description =
         _transactionDescription(type);
 
-    final color = _transactionColor(type);
+    final color =
+        _transactionColor(type);
 
     final date = _formatDate(
       transaction,
     );
 
-    final amountText = _formatAmount(
-      amount,
-    );
+    final amount =
+        _transactionAmountValue(transaction);
 
-    final balanceText = _formatAmount(
-      balanceAfter,
-    );
+    final amountText =
+        _formatAmount(amount);
+
+    final balanceText =
+        _formatAmount(balanceAfter);
+
+    final isHashRate =
+        _isHashRateTransaction(type);
+
+    final unit = isHashRate ? 'HR' : 'STL';
 
     return Container(
       margin: const EdgeInsets.only(
@@ -410,6 +647,9 @@ class _TransactionHistoryPageState
 
                 Text(
                   description,
+                  maxLines: 2,
+                  overflow:
+                      TextOverflow.ellipsis,
                   style: TextStyle(
                     color: pinkAccentColor
                         .withValues(
@@ -438,34 +678,11 @@ class _TransactionHistoryPageState
 
                 const SizedBox(height: 5),
 
-                Row(
-                  children: [
-                    Icon(
-                      Icons
-                          .account_balance_wallet_rounded,
-                      size: 12,
-                      color: Colors.white
-                          .withValues(
-                        alpha: 0.38,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '${_t('transactionBalance')}: '
-                        '$balanceText STL',
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white
-                              .withValues(
-                            alpha: 0.50,
-                          ),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
+                _buildSecondaryInformation(
+                  transaction,
+                  type,
+                  amountText,
+                  balanceText,
                 ),
               ],
             ),
@@ -493,9 +710,9 @@ class _TransactionHistoryPageState
 
               const SizedBox(height: 2),
 
-              const Text(
-                'STL',
-                style: TextStyle(
+              Text(
+                unit,
+                style: const TextStyle(
                   color: Colors.white38,
                   fontSize: 10,
                   fontWeight:
