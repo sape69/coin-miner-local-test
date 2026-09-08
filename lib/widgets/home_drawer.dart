@@ -4,7 +4,26 @@ import '../localization.dart';
 import 'cat_avatar.dart';
 
 // ============================================================
-// STELLA THEME
+// 🐱 STELLURIINI / STELLA HOME DRAWER
+// ============================================================
+//
+// Sovelluksen päävalikko.
+//
+// Tämä widget:
+// - käyttää Stelluriinin violetti/pinkki-teemaa
+// - käyttää keskitettyä AppLocalizations-järjestelmää
+// - tukee kaikkia nykyisiä kieliä
+// - sisältää navigoinnit:
+//   • Language
+//   • About Stelluriini
+//   • White Paper
+//   • Roadmap
+//   • Transaction History
+// - käyttää samaa Stella-visuaalista ilmettä kuin HomePage
+// ============================================================
+
+// ============================================================
+// 🎨 STELLURIINI COLORS
 // ============================================================
 
 const Color backgroundColor = Color(0xFF120B24);
@@ -15,7 +34,7 @@ const Color pinkAccentColor = Color(0xFFFFB7E8);
 const Color goldAccentColor = Color(0xFFFFD166);
 
 // ============================================================
-// HOME DRAWER
+// 🐱 HOME DRAWER
 // ============================================================
 
 class HomeDrawer extends StatelessWidget {
@@ -35,7 +54,7 @@ class HomeDrawer extends StatelessWidget {
   });
 
   // ==========================================================
-  // LOCALIZATION
+  // 🌍 LOCALIZATION
   // ==========================================================
 
   String _t(
@@ -46,7 +65,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // MENU ITEM
+  // 📋 MENU ITEM
   // ==========================================================
 
   Widget _menuItem({
@@ -73,11 +92,17 @@ class HomeDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
+                // ==================================================
+                // ICON
+                // ==================================================
+
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
                         accentColor.withValues(
                           alpha: 0.28,
@@ -87,8 +112,7 @@ class HomeDrawer extends StatelessWidget {
                         ),
                       ],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(13),
                     border: Border.all(
                       color: accentColor.withValues(
                         alpha: 0.20,
@@ -102,55 +126,65 @@ class HomeDrawer extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(width: 14),
+                const SizedBox(
+                  width: 14,
+                ),
+
+                // ==================================================
+                // TITLE
+                // ==================================================
 
                 Expanded(
                   child: Text(
                     title,
                     maxLines: 2,
-                    overflow:
-                        TextOverflow.ellipsis,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
 
-                if (badge != null) ...[
-                  const SizedBox(width: 8),
+                // ==================================================
+                // OPTIONAL BADGE
+                // ==================================================
 
+                if (badge != null) ...[
+                  const SizedBox(
+                    width: 8,
+                  ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color:
-                          goldAccentColor.withValues(
+                      color: goldAccentColor.withValues(
                         alpha: 0.15,
                       ),
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       badge,
                       style: const TextStyle(
-                        color:
-                            goldAccentColor,
+                        color: goldAccentColor,
                         fontSize: 10,
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ],
 
-                const SizedBox(width: 4),
+                const SizedBox(
+                  width: 4,
+                ),
+
+                // ==================================================
+                // CHEVRON
+                // ==================================================
 
                 Icon(
                   Icons.chevron_right_rounded,
@@ -167,7 +201,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // BUILD
+  // 🏠 BUILD
   // ==========================================================
 
   @override
@@ -178,41 +212,34 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             // ==================================================
-            // HEADER
+            // 🐱 STELLA HEADER
             // ==================================================
 
             Container(
               width: double.infinity,
               margin: const EdgeInsets.all(12),
-              padding:
-                  const EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 20,
                 vertical: 22,
               ),
               decoration: BoxDecoration(
-                gradient:
-                    const LinearGradient(
-                  begin:
-                      Alignment.topLeft,
-                  end:
-                      Alignment.bottomRight,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: [
                     Color(0xFF2D174D),
                     Color(0xFF1B1033),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color:
-                      accentColor.withValues(
+                  color: accentColor.withValues(
                     alpha: 0.45,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        accentColor.withValues(
+                    color: accentColor.withValues(
                       alpha: 0.14,
                     ),
                     blurRadius: 24,
@@ -222,10 +249,13 @@ class HomeDrawer extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  // ==================================================
+                  // HEADER DECORATION
+                  // ==================================================
+
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceBetween,
+                        MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         '🐱',
@@ -233,22 +263,17 @@ class HomeDrawer extends StatelessWidget {
                           fontSize: 28,
                         ),
                       ),
-
                       Text(
                         '🐾 STL • SOLANA 🐾',
                         style: TextStyle(
-                          color:
-                              pinkAccentColor
-                                  .withValues(
+                          color: pinkAccentColor.withValues(
                             alpha: 0.90,
                           ),
                           fontSize: 11,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                           letterSpacing: 1,
                         ),
                       ),
-
                       const Text(
                         '🐱',
                         style: TextStyle(
@@ -258,45 +283,57 @@ class HomeDrawer extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 18),
+                  const SizedBox(
+                    height: 18,
+                  ),
+
+                  // ==================================================
+                  // STELLA AVATAR
+                  // ==================================================
 
                   const CatAvatar(
                     size: 105,
                   ),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(
+                    height: 14,
+                  ),
+
+                  // ==================================================
+                  // APP NAME
+                  // ==================================================
 
                   const Text(
                     'STELLURIINI',
-                    textAlign:
-                        TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 3,
                     ),
                   ),
 
-                  const SizedBox(height: 6),
+                  const SizedBox(
+                    height: 6,
+                  ),
+
+                  // ==================================================
+                  // COMMUNITY TEXT
+                  // ==================================================
 
                   Text(
                     _t(
                       context,
                       'stellaCommunity',
                     ),
-                    textAlign:
-                        TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color:
-                          pinkAccentColor
-                              .withValues(
+                      color: pinkAccentColor.withValues(
                         alpha: 0.85,
                       ),
                       fontSize: 13,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: 1,
                     ),
                   ),
@@ -305,110 +342,118 @@ class HomeDrawer extends StatelessWidget {
             ),
 
             // ==================================================
-            // MENU
+            // 📋 MENU
             // ==================================================
 
             Expanded(
               child: ListView(
-                padding:
-                    const EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   top: 4,
                   bottom: 8,
                 ),
                 children: [
+                  // ------------------------------------------------
+                  // LANGUAGE
+                  // ------------------------------------------------
+
                   _menuItem(
-                    icon:
-                        Icons.language_rounded,
+                    icon: Icons.language_rounded,
                     title: _t(
                       context,
                       'language',
                     ),
-                    onTap:
-                        onLanguagePressed,
+                    onTap: onLanguagePressed,
                   ),
 
+                  // ------------------------------------------------
+                  // ABOUT
+                  // ------------------------------------------------
+
                   _menuItem(
-                    icon:
-                        Icons.info_outline_rounded,
+                    icon: Icons.info_outline_rounded,
                     title: _t(
                       context,
                       'aboutStelluriini',
                     ),
-                    onTap:
-                        onAboutPressed,
+                    onTap: onAboutPressed,
                   ),
 
+                  // ------------------------------------------------
+                  // WHITE PAPER
+                  // ------------------------------------------------
+
                   _menuItem(
-                    icon:
-                        Icons.description_outlined,
+                    icon: Icons.description_outlined,
                     title: _t(
                       context,
                       'whitePaper',
                     ),
-                    onTap:
-                        onWhitePaperPressed,
+                    onTap: onWhitePaperPressed,
                   ),
 
+                  // ------------------------------------------------
+                  // ROADMAP
+                  // ------------------------------------------------
+
                   _menuItem(
-                    icon:
-                        Icons.map_outlined,
+                    icon: Icons.map_outlined,
                     title: _t(
                       context,
                       'roadmap',
                     ),
-                    onTap:
-                        onRoadmapPressed,
+                    onTap: onRoadmapPressed,
                   ),
 
+                  // ------------------------------------------------
+                  // TRANSACTION HISTORY
+                  // ------------------------------------------------
+
                   _menuItem(
-                    icon:
-                        Icons.history_rounded,
+                    icon: Icons.history_rounded,
                     title: _t(
                       context,
                       'transactionHistory',
                     ),
-                    onTap:
-                        onTransactionHistoryPressed,
+                    onTap: onTransactionHistoryPressed,
                   ),
                 ],
               ),
             ),
 
             // ==================================================
-            // FOOTER
+            // 🐾 FOOTER
             // ==================================================
 
             Container(
               width: double.infinity,
-              margin:
-                  const EdgeInsets.fromLTRB(
+              margin: const EdgeInsets.fromLTRB(
                 16,
                 4,
                 16,
                 16,
               ),
-              padding:
-                  const EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
               decoration: BoxDecoration(
                 color: cardColor,
-                borderRadius:
-                    BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color:
-                      accentColor.withValues(
+                  color: accentColor.withValues(
                     alpha: 0.16,
                   ),
                 ),
               ),
               child: Column(
                 children: [
+                  // ==================================================
+                  // FOOTER TAGLINE
+                  // ==================================================
+
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment
-                            .center,
+                        MainAxisAlignment.center,
                     children: [
                       const Text(
                         '🐾',
@@ -417,7 +462,9 @@ class HomeDrawer extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(width: 7),
+                      const SizedBox(
+                        width: 7,
+                      ),
 
                       Flexible(
                         child: Text(
@@ -425,22 +472,20 @@ class HomeDrawer extends StatelessWidget {
                             context,
                             'footerTagline',
                           ),
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color:
-                                Colors.white
-                                    .withValues(
+                            color: Colors.white.withValues(
                               alpha: 0.60,
                             ),
                             fontSize: 11,
-                            fontWeight:
-                                FontWeight.w600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
 
-                      const SizedBox(width: 7),
+                      const SizedBox(
+                        width: 7,
+                      ),
 
                       const Text(
                         '🐾',
@@ -451,24 +496,26 @@ class HomeDrawer extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 7),
+                  const SizedBox(
+                    height: 7,
+                  ),
+
+                  // ==================================================
+                  // TOKEN FOOTER
+                  // ==================================================
 
                   Text(
                     _t(
                       context,
                       'footerToken',
                     ),
-                    textAlign:
-                        TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color:
-                          pinkAccentColor
-                              .withValues(
+                      color: pinkAccentColor.withValues(
                         alpha: 0.72,
                       ),
                       fontSize: 10,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
                   ),
