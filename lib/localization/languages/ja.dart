@@ -29,48 +29,86 @@ const Map<String, String> jaTranslations = {
   'dailyHashRateLabel': 'デイリーハッシュレート',
   'dailyHashRateDay': '{day}日目',
   'dailyHashRateMaximum': '最大: {rate} HR',
-  'dailyHashRateSuccess': '{day}日目のハッシュレート: {rate} HR',
+  'dailyHashRateSuccess':
+      '{day}日目のハッシュレート: {rate} HR',
 
-  'stellaMiningProgress': 'Stellaマイニング進捗',
-  'stlPerHour': '1時間あたりのSTL',
-  'hashRateBonus': 'ハッシュレートボーナス',
+  'stellaMiningProgress':
+      'Stellaマイニング進捗',
 
-  'startMining': 'マイニング開始',
-  'claimMining': 'STLを受け取る',
-  'miningActive': 'マイニング中',
-  'miningComplete': 'マイニングサイクル完了',
+  'stlPerHour':
+      '1時間あたりのSTL',
 
-  'timeRemaining': '残り時間',
-  'remaining': '残り: {time}',
+  'hashRateBonus':
+      'ハッシュレートボーナス',
 
-  'streak': '連続日数',
-  'days': '日',
+  'startMining':
+      'マイニング開始',
+
+  'claimMining':
+      'STLを受け取る',
+
+  'miningActive':
+      'マイニング中',
+
+  'miningComplete':
+      'マイニングサイクル完了',
+
+  'timeRemaining':
+      '残り時間',
+
+  'remaining':
+      '残り: {time}',
+
+  'streak':
+      '連続日数',
+
+  'days':
+      '日',
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
-  'dailyBonus': 'デイリーボーナス',
-  'dailyClaim': 'デイリーボーナスを受け取る',
-  'dailyReward': 'デイリー報酬',
-  'claimedToday': '本日受け取り済み',
-  'alreadyClaimed': '本日の報酬はすでに受け取っています。',
+  'dailyBonus':
+      'デイリーボーナス',
+
+  'dailyClaim':
+      'デイリーボーナスを受け取る',
+
+  'dailyReward':
+      'デイリー報酬',
+
+  'claimedToday':
+      '本日受け取り済み',
+
+  'alreadyClaimed':
+      '本日の報酬はすでに受け取っています。',
 
   // ============================================================
   // 📺 ADS
   // ============================================================
 
-  'watchAd': '広告を見る',
-  'watchAndEarn': '広告を見て獲得',
-  'loadingAd': '広告を読み込み中...',
-  'adLoading': '広告を読み込み中...',
-  'adReward': '+{amount} HR',
+  'watchAd':
+      '広告を見る',
+
+  'watchAndEarn':
+      '広告を見て獲得',
+
+  'loadingAd':
+      '広告を読み込み中...',
+
+  'adLoading':
+      '広告を読み込み中...',
+
+  'adReward':
+      '+{amount} HR',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
-  'powerBoost': 'Stella Power Boost',
+  'powerBoost':
+      'Stella Power Boost',
 
   'powerBoostOffer':
       '広告を見て、4時間の間Stella Power Boost +{amount} HRを有効にします。',
@@ -309,6 +347,31 @@ const Map<String, String> jaTranslations = {
 
   'registrationFailed':
       'アカウントの登録に失敗しました。',
+
+  // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'パスワード再設定用のリンクをメールアドレスに送信しました。',
+
+  'passwordResetUserNotFound':
+      'このメールアドレスに該当するユーザーアカウントが見つかりません。',
+
+  'passwordResetNotAllowed':
+      '現在、パスワードの再設定は許可されていません。',
+
+  'passwordResetFailed':
+      'パスワードの再設定に失敗しました。',
+
+  'passwordResetDescription':
+      'アカウントのメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。',
+
+  'sending':
+      '送信中...',
+
+  'sendPasswordReset':
+      'パスワード再設定リンクを送信',
 
   // ============================================================
   // 📜 TRANSACTION HISTORY
