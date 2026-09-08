@@ -281,6 +281,37 @@ const Map<String, String> esTranslations = {
       'Error al iniciar sesión',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      'Confirmar contraseña',
+
+  'passwordsDoNotMatch':
+      'Las contraseñas no coinciden.',
+
+  'passwordTooShort':
+      'La contraseña debe tener al menos 6 caracteres.',
+
+  'creatingAccount':
+      'CREANDO CUENTA...',
+
+  'accountCreated':
+      'Cuenta creada correctamente.',
+
+  'emailAlreadyInUse':
+      'Esta dirección de correo electrónico ya está en uso.',
+
+  'passwordTooWeak':
+      'La contraseña es demasiado débil.',
+
+  'registrationNotAllowed':
+      'El registro no está permitido actualmente.',
+
+  'registrationFailed':
+      'No se pudo crear la cuenta.',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
