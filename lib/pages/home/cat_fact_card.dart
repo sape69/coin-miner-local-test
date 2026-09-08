@@ -6,27 +6,35 @@ import 'package:flutter/material.dart';
 //
 // Päivittäinen kissafakta Stelluriini-sovelluksessa.
 //
-// Tämä widget:
+// Lokalisaatio hoidetaan HomePagessa.
+// Tämä widget vastaanottaa valmiin title + fact -tekstin.
+//
+// Widget:
 // - toimii kaikilla 8 tuetulla kielellä
-// - ei sisällä kovakoodattua käännöstekstiä
+// - ei sisällä käännöslogiikkaa
 // - käyttää Stelluriinin violetti/pinkki-teemaa
 // - mukautuu pitkiin käännöksiin
-// - toimii myös pienillä Android-näytöillä
-//
-// Lokalisaatio hoidetaan HomePagessa.
-// Tälle widgetille annetaan valmis title + fact.
+// - toimii pienillä Android-näytöillä
 // ============================================================
 
 // ============================================================
 // 🎨 STELLURIINI COLORS
 // ============================================================
 
-const Color catFactBackgroundColor = Color(0xFF120B24);
-const Color catFactCardColor = Color(0xFF21113B);
+const Color catFactBackgroundColor =
+    Color(0xFF120B24);
 
-const Color catFactPurple = Color(0xFFB58CFF);
-const Color catFactPink = Color(0xFFFFB7E8);
-const Color catFactGold = Color(0xFFFFD166);
+const Color catFactCardColor =
+    Color(0xFF21113B);
+
+const Color catFactPurple =
+    Color(0xFFB58CFF);
+
+const Color catFactPink =
+    Color(0xFFFFB7E8);
+
+const Color catFactGold =
+    Color(0xFFFFD166);
 
 // ============================================================
 // 🐱 STELLA CAT FACT CARD
@@ -42,222 +50,381 @@ class CatFactCard extends StatelessWidget {
     required this.fact,
   });
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: catFactCardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: catFactPurple.withValues(alpha: 0.30),
-          width: 1.2,
+      width:
+          double.infinity,
+      padding:
+          const EdgeInsets.all(20),
+      decoration:
+          BoxDecoration(
+        color:
+            catFactCardColor,
+        borderRadius:
+            BorderRadius.circular(24),
+        border:
+            Border.all(
+          color:
+              catFactPurple.withValues(
+            alpha: 0.30,
+          ),
+          width:
+              1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.28),
-            blurRadius: 18,
-            spreadRadius: 0,
-            offset: const Offset(0, 8),
+            color:
+                Colors.black.withValues(
+              alpha: 0.28,
+            ),
+            blurRadius:
+                18,
+            offset:
+                const Offset(
+              0,
+              8,
+            ),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child:
+          Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.stretch,
         children: [
-          // ==================================================
+          // ====================================================
           // 🐱 HEADER
-          // ==================================================
+          // ====================================================
 
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment:
+                CrossAxisAlignment.center,
             children: [
-              // Stella icon
+              // ------------------------------------------------
+              // STELLA ICON
+              // ------------------------------------------------
+
               Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                width:
+                    56,
+                height:
+                    56,
+                decoration:
+                    BoxDecoration(
+                  gradient:
+                      LinearGradient(
+                    begin:
+                        Alignment.topLeft,
+                    end:
+                        Alignment.bottomRight,
                     colors: [
-                      catFactPurple.withValues(alpha: 0.24),
-                      catFactPink.withValues(alpha: 0.12),
+                      catFactPurple.withValues(
+                        alpha: 0.24,
+                      ),
+                      catFactPink.withValues(
+                        alpha: 0.12,
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: catFactPink.withValues(alpha: 0.25),
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
+                  border:
+                      Border.all(
+                    color:
+                        catFactPink.withValues(
+                      alpha: 0.25,
+                    ),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: catFactPurple.withValues(alpha: 0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color:
+                          catFactPurple.withValues(
+                        alpha: 0.12,
+                      ),
+                      blurRadius:
+                          12,
+                      offset:
+                          const Offset(
+                        0,
+                        4,
+                      ),
                     ),
                   ],
                 ),
-                child: const Center(
-                  child: Text(
+                child:
+                    const Center(
+                  child:
+                      Text(
                     '🐱',
-                    style: TextStyle(
-                      fontSize: 30,
+                    style:
+                        TextStyle(
+                      fontSize:
+                          30,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(width: 14),
+              const SizedBox(
+                width: 14,
+              ),
 
-              // Title
+              // ------------------------------------------------
+              // TITLE
+              // ------------------------------------------------
+
               Expanded(
-                child: Text(
+                child:
+                    Text(
                   title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    height: 1.2,
-                    fontWeight: FontWeight.w700,
+                  maxLines:
+                      3,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.white,
+                    fontSize:
+                        19,
+                    height:
+                        1.2,
+                    fontWeight:
+                        FontWeight.w700,
                   ),
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(
+                width: 8,
+              ),
 
-              // Paw
+              // ------------------------------------------------
+              // PAW
+              // ------------------------------------------------
+
               const Text(
                 '🐾',
-                style: TextStyle(
-                  fontSize: 24,
+                style:
+                    TextStyle(
+                  fontSize:
+                      24,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(
+            height: 18,
+          ),
 
-          // ==================================================
+          // ====================================================
           // ✨ DIVIDER
-          // ==================================================
+          // ====================================================
 
           Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
+            height:
+                1,
+            decoration:
+                BoxDecoration(
+              gradient:
+                  LinearGradient(
                 colors: [
                   Colors.transparent,
-                  catFactPurple.withValues(alpha: 0.35),
-                  catFactPink.withValues(alpha: 0.35),
+                  catFactPurple.withValues(
+                    alpha: 0.35,
+                  ),
+                  catFactPink.withValues(
+                    alpha: 0.35,
+                  ),
                   Colors.transparent,
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(
+            height: 18,
+          ),
 
-          // ==================================================
+          // ====================================================
           // 💬 FACT BUBBLE
-          // ==================================================
+          // ====================================================
 
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(
+            width:
+                double.infinity,
+            padding:
+                const EdgeInsets.fromLTRB(
               18,
               20,
               18,
               20,
             ),
-            decoration: BoxDecoration(
-              color: catFactBackgroundColor.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: catFactPurple.withValues(alpha: 0.18),
+            decoration:
+                BoxDecoration(
+              color:
+                  catFactBackgroundColor.withValues(
+                alpha: 0.72,
+              ),
+              borderRadius:
+                  BorderRadius.circular(
+                20,
+              ),
+              border:
+                  Border.all(
+                color:
+                    catFactPurple.withValues(
+                  alpha: 0.18,
+                ),
               ),
             ),
-            child: Column(
+            child:
+                Column(
               children: [
-                // Speech bubble icon
+                // ------------------------------------------------
+                // SPEECH ICON
+                // ------------------------------------------------
+
                 Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: catFactPurple.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: catFactGold.withValues(alpha: 0.20),
+                  width:
+                      52,
+                  height:
+                      52,
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        catFactPurple.withValues(
+                      alpha: 0.12,
+                    ),
+                    shape:
+                        BoxShape.circle,
+                    border:
+                        Border.all(
+                      color:
+                          catFactGold.withValues(
+                        alpha: 0.20,
+                      ),
                     ),
                   ),
-                  child: const Center(
-                    child: Text(
+                  child:
+                      const Center(
+                    child:
+                        Text(
                       '💬',
-                      style: TextStyle(
-                        fontSize: 27,
+                      style:
+                          TextStyle(
+                        fontSize:
+                            27,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(
+                  height: 14,
+                ),
 
-                // Daily fact
+                // ------------------------------------------------
+                // DAILY FACT
+                // ------------------------------------------------
+
                 Text(
                   fact,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontSize: 16,
-                    height: 1.55,
-                    fontWeight: FontWeight.w400,
+                  textAlign:
+                      TextAlign.center,
+                  style:
+                      TextStyle(
+                    color:
+                        Colors.white.withValues(
+                      alpha: 0.88,
+                    ),
+                    fontSize:
+                        16,
+                    height:
+                        1.55,
+                    fontWeight:
+                        FontWeight.w400,
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
-          // ==================================================
+          // ====================================================
           // 🐾 STELLA SIGNATURE
-          // ==================================================
+          // ====================================================
 
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
               Text(
                 '🐾',
-                style: TextStyle(
-                  fontSize: 17,
-                  color: catFactPink.withValues(alpha: 0.90),
-                ),
-              ),
-
-              const SizedBox(width: 7),
-
-              Flexible(
-                child: Text(
-                  'STELLA • STELLURIINI',
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: catFactPink.withValues(alpha: 0.90),
-                    fontSize: 12,
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w700,
+                style:
+                    TextStyle(
+                  fontSize:
+                      17,
+                  color:
+                      catFactPink.withValues(
+                    alpha: 0.90,
                   ),
                 ),
               ),
 
-              const SizedBox(width: 7),
+              const SizedBox(
+                width: 7,
+              ),
+
+              Flexible(
+                child:
+                    Text(
+                  'STELLA • STELLURIINI',
+                  textAlign:
+                      TextAlign.center,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style:
+                      TextStyle(
+                    color:
+                        catFactPink.withValues(
+                      alpha: 0.90,
+                    ),
+                    fontSize:
+                        12,
+                    letterSpacing:
+                        0.8,
+                    fontWeight:
+                        FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              const SizedBox(
+                width: 7,
+              ),
 
               Text(
                 '🐾',
-                style: TextStyle(
-                  fontSize: 17,
-                  color: catFactPink.withValues(alpha: 0.90),
+                style:
+                    TextStyle(
+                  fontSize:
+                      17,
+                  color:
+                      catFactPink.withValues(
+                    alpha: 0.90,
+                  ),
                 ),
               ),
             ],
