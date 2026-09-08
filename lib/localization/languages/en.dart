@@ -265,6 +265,37 @@ const Map<String, String> enTranslations = {
       'Login failed',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      'Confirm password',
+
+  'passwordsDoNotMatch':
+      'The passwords do not match.',
+
+  'passwordTooShort':
+      'The password must contain at least 6 characters.',
+
+  'creatingAccount':
+      'CREATING ACCOUNT...',
+
+  'accountCreated':
+      'Account created successfully.',
+
+  'emailAlreadyInUse':
+      'This email address is already in use.',
+
+  'passwordTooWeak':
+      'The password is too weak.',
+
+  'registrationNotAllowed':
+      'Registration is not currently allowed.',
+
+  'registrationFailed':
+      'Failed to create the account.',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
