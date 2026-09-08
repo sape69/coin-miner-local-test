@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../localization.dart';
+// ============================================================
+// ⚡ STELLURIINI POWER BOOST CARD
+// ============================================================
 
 class PowerBoostCard extends StatelessWidget {
   final bool boostActive;
@@ -26,10 +28,37 @@ class PowerBoostCard extends StatelessWidget {
 
   final VoidCallback? onPressed;
 
-  static const Color cardColor = Color(0xFF21113B);
-  static const Color pinkColor = Color(0xFFFFB7E8);
-  static const Color goldColor = Color(0xFFFFD166);
-  static const Color secondaryTextColor = Color(0xFFBFAEDB);
+  // ============================================================
+  // 🎨 STELLA COLORS
+  // ============================================================
+
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color accentColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color goldColor =
+      Color(0xFFFFD166);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBFAEDB);
+
+  static const Color mutedTextColor =
+      Color(0xFF8D7BA8);
+
+  static const Color veryMutedTextColor =
+      Color(0xFF6F5C84);
+
+  // ============================================================
+  // CONSTRUCTOR
+  // ============================================================
 
   const PowerBoostCard({
     super.key,
@@ -52,105 +81,94 @@ class PowerBoostCard extends StatelessWidget {
     required this.onPressed,
   });
 
-  // ==========================================================
-  // LOCALIZATION
-  // ==========================================================
-
-  String _t(
-    BuildContext context,
-    String key,
-  ) {
-    return AppLocalizations.of(context).get(key);
-  }
-
-  // ==========================================================
-  // LOCALIZED TITLE
-  // ==========================================================
-
-  String _localizedTitle(
-    BuildContext context,
-  ) {
-    final localized =
-        _t(context, 'powerBoost');
-
-    // Fallback for safety if the localization key
-    // is missing from a language.
-    if (localized.isEmpty ||
-        localized == 'powerBoost') {
-      return title;
-    }
-
-    return localized;
-  }
-
-  // ==========================================================
-  // LOCALIZED ACTIVE TITLE
-  // ==========================================================
-
-  String _localizedActiveTitle(
-    BuildContext context,
-  ) {
-    final localized =
-        _t(context, 'powerBoostActiveTitle');
-
-    // Fallback for safety if the localization key
-    // is missing from a language.
-    if (localized.isEmpty ||
-        localized == 'powerBoostActiveTitle') {
-      return activeTitle;
-    }
-
-    return localized;
-  }
-
-  // ==========================================================
+  // ============================================================
   // BUILD
-  // ==========================================================
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
+    final bool hasActiveBoost =
+        boostActive &&
+        boostRemainingMs > 0;
+
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: boostActive
-              ? goldColor.withValues(alpha: 0.40)
-              : pinkColor.withValues(alpha: 0.30),
+      padding:
+          const EdgeInsets.all(18),
+      decoration:
+          BoxDecoration(
+        color:
+            cardColor,
+        borderRadius:
+            BorderRadius.circular(22),
+        border:
+            Border.all(
+          color:
+              hasActiveBoost
+                  ? goldColor.withValues(
+                      alpha: 0.40,
+                    )
+                  : pinkColor.withValues(
+                      alpha: 0.30,
+                    ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         children: [
+          // ====================================================
+          // HEADER
+          // ====================================================
+
           Row(
             children: [
               Text(
-                boostActive ? '⚡' : '📺',
-                style: const TextStyle(
-                  fontSize: 28,
+                hasActiveBoost
+                    ? '⚡'
+                    : '📺',
+                style:
+                    const TextStyle(
+                  fontSize:
+                      28,
                 ),
               ),
-              const SizedBox(width: 12),
+
+              const SizedBox(
+                width: 12,
+              ),
+
               Expanded(
-                child: Column(
+                child:
+                    Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _localizedTitle(context),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      title,
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white,
+                        fontSize:
+                            15,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 3),
+
+                    const SizedBox(
+                      height: 3,
+                    ),
+
                     Text(
-                      boostActive
+                      hasActiveBoost
                           ? activeText
                           : subtitle,
-                      style: const TextStyle(
-                        color: secondaryTextColor,
-                        fontSize: 12,
+                      style:
+                          const TextStyle(
+                        color:
+                            secondaryTextColor,
+                        fontSize:
+                            12,
                       ),
                     ),
                   ],
@@ -159,31 +177,58 @@ class PowerBoostCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
-          if (boostActive)
-            _buildActiveBoost(context)
+          // ====================================================
+          // ACTIVE BOOST / WATCH BUTTON
+          // ====================================================
+
+          if (hasActiveBoost)
+            _buildActiveBoost()
           else
             _buildWatchButton(),
 
-          const SizedBox(height: 10),
+          const SizedBox(
+            height: 10,
+          ),
+
+          // ====================================================
+          // DAILY AD COUNT
+          // ====================================================
 
           Text(
             adsTodayText,
-            style: const TextStyle(
-              color: Color(0xFF8D7BA8),
-              fontSize: 11,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  mutedTextColor,
+              fontSize:
+                  11,
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(
+            height: 4,
+          ),
+
+          // ====================================================
+          // DAILY LIMIT INFORMATION
+          // ====================================================
 
           Text(
             maxBoostsInfoText,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF6F5C84),
-              fontSize: 10,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  veryMutedTextColor,
+              fontSize:
+                  10,
             ),
           ),
         ],
@@ -191,76 +236,143 @@ class PowerBoostCard extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // ACTIVE BOOST
-  // ==========================================================
+  // ============================================================
+  // ⚡ ACTIVE BOOST
+  // ============================================================
 
-  Widget _buildActiveBoost(
-    BuildContext context,
-  ) {
+  Widget _buildActiveBoost() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: goldColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: goldColor.withValues(alpha: 0.25),
+      width:
+          double.infinity,
+      padding:
+          const EdgeInsets.all(14),
+      decoration:
+          BoxDecoration(
+        color:
+            goldColor.withValues(
+          alpha: 0.08,
+        ),
+        borderRadius:
+            BorderRadius.circular(16),
+        border:
+            Border.all(
+          color:
+              goldColor.withValues(
+            alpha: 0.25,
+          ),
         ),
       ),
-      child: Column(
+      child:
+          Column(
         children: [
+          // ----------------------------------------------------
+          // ACTIVE TITLE
+          // ----------------------------------------------------
+
           Text(
-            _localizedActiveTitle(context),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: goldColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+            activeTitle,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  goldColor,
+              fontSize:
+                  12,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 7),
+          const SizedBox(
+            height: 7,
+          ),
+
+          // ----------------------------------------------------
+          // REMAINING TIME
+          // ----------------------------------------------------
 
           Text(
             remainingText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white,
+              fontSize:
+                  18,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 5),
+          const SizedBox(
+            height: 6,
+          ),
+
+          // ----------------------------------------------------
+          // HASH RATE BONUS
+          // ----------------------------------------------------
 
           Text(
             hashRateBonusText,
-            style: const TextStyle(
-              color: pinkColor,
-              fontWeight: FontWeight.w700,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  pinkColor,
+              fontSize:
+                  13,
+              fontWeight:
+                  FontWeight.w700,
             ),
           ),
 
-          const SizedBox(height: 5),
+          const SizedBox(
+            height: 6,
+          ),
+
+          // ----------------------------------------------------
+          // EFFECTIVE HASH RATE
+          // ----------------------------------------------------
 
           Text(
             effectiveHashRateText,
-            style: const TextStyle(
-              color: goldColor,
-              fontWeight: FontWeight.w700,
+            textAlign:
+                TextAlign.center,
+            style:
+                const TextStyle(
+              color:
+                  goldColor,
+              fontSize:
+                  13,
+              fontWeight:
+                  FontWeight.w700,
             ),
           ),
 
-          const SizedBox(height: 5),
+          const SizedBox(
+            height: 6,
+          ),
+
+          // ----------------------------------------------------
+          // NEXT AD INFORMATION
+          // ----------------------------------------------------
 
           Text(
             nextAdAfterBoostText,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withValues(
+            textAlign:
+                TextAlign.center,
+            style:
+                TextStyle(
+              color:
+                  Colors.white.withValues(
                 alpha: 0.50,
               ),
-              fontSize: 11,
+              fontSize:
+                  11,
             ),
           ),
         ],
@@ -268,34 +380,86 @@ class PowerBoostCard extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // WATCH BUTTON
-  // ==========================================================
+  // ============================================================
+  // 📺 WATCH AD BUTTON
+  // ============================================================
 
   Widget _buildWatchButton() {
     return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: canUse ? onPressed : null,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: pinkColor,
+      width:
+          double.infinity,
+      child:
+          OutlinedButton(
+        onPressed:
+            canUse
+                ? onPressed
+                : null,
+        style:
+            OutlinedButton.styleFrom(
+          foregroundColor:
+              pinkColor,
           disabledForegroundColor:
-              Colors.white.withValues(alpha: 0.35),
-          side: const BorderSide(
-            color: pinkColor,
+              Colors.white.withValues(
+            alpha: 0.35,
           ),
-          padding: const EdgeInsets.symmetric(
+          side:
+              BorderSide(
+            color:
+                canUse
+                    ? pinkColor
+                    : pinkColor.withValues(
+                        alpha: 0.25,
+                      ),
+          ),
+          padding:
+              const EdgeInsets.symmetric(
             vertical: 15,
+            horizontal: 12,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              16,
+            ),
           ),
         ),
-        child: Text(
-          watchAdText,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        child:
+            Row(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            const Text(
+              '📺',
+              style:
+                  TextStyle(
+                fontSize:
+                    16,
+              ),
+            ),
+
+            const SizedBox(
+              width: 8,
+            ),
+
+            Flexible(
+              child:
+                  Text(
+                watchAdText,
+                textAlign:
+                    TextAlign.center,
+                maxLines:
+                    2,
+                overflow:
+                    TextOverflow.ellipsis,
+                style:
+                    const TextStyle(
+                  fontWeight:
+                      FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
