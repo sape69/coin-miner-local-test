@@ -202,7 +202,6 @@ class _TransactionHistoryPageState
 
           // --------------------------------------------------
           // Do not display zero-value transactions.
-          // This removes old "+0 STL" history entries.
           // --------------------------------------------------
 
           if (amountNumber <= 0) {
@@ -211,8 +210,6 @@ class _TransactionHistoryPageState
 
           // --------------------------------------------------
           // Only known transaction types are displayed.
-          // Unknown historical records are still ignored
-          // instead of producing misleading UI.
           // --------------------------------------------------
 
           if (!_isHashRateTransaction(type) &&
@@ -805,9 +802,19 @@ class _TransactionHistoryPageState
 
                 const SizedBox(height: 5),
 
+                // ------------------------------------------------
+                // FIX:
+                // Pass the actual transaction count to the
+                // localized text so {count} is replaced.
+                // ------------------------------------------------
+
                 Text(
-                  '${transactions.length} '
-                  '${_t('latestTransactions')}',
+                  _tWithParams(
+                    'latestTransactions',
+                    {
+                      'count': transactions.length,
+                    },
+                  ),
                   style: TextStyle(
                     color: Colors.white
                         .withValues(
