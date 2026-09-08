@@ -14,6 +14,7 @@ import '../../localization/whitepaper/whitepaper_vi.dart';
 import '../../localization/whitepaper/whitepaper_ja.dart';
 
 import 'whitepaper_section.dart';
+import 'whitepaper_paragraph.dart';
 
 // ============================================================
 // STELLA THEME COLORS
@@ -89,23 +90,6 @@ class WhitePaperPage extends StatelessWidget {
     return current[key] ??
         whitepaperEn[key] ??
         key;
-  }
-
-  // ==========================================================
-  // PARAGRAPH
-  // ==========================================================
-
-  Widget _paragraph(
-    String text,
-  ) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white70,
-        fontSize: 14,
-        height: 1.65,
-      ),
-    );
   }
 
   // ==========================================================
@@ -769,8 +753,8 @@ class WhitePaperPage extends StatelessWidget {
                 icon:
                     Icons.auto_awesome_rounded,
                 title: t('01_title'),
-                child: _paragraph(
-                  t('01_text'),
+                child: WhitePaperParagraph(
+                  text: t('01_text'),
                 ),
               ),
 
@@ -789,8 +773,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('02_text'),
+                    WhitePaperParagraph(
+                      text: t('02_text'),
                     ),
                     const SizedBox(height: 18),
                     _bullet(
@@ -834,8 +818,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('03_text'),
+                    WhitePaperParagraph(
+                      text: t('03_text'),
                     ),
                     const SizedBox(height: 18),
                     _featureRow(
@@ -912,8 +896,8 @@ class WhitePaperPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _paragraph(
-                      t('04_text'),
+                    WhitePaperParagraph(
+                      text: t('04_text'),
                     ),
                   ],
                 ),
@@ -1033,8 +1017,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('06_text'),
+                    WhitePaperParagraph(
+                      text: t('06_text'),
                     ),
                     const SizedBox(height: 18),
                     _allocationRow(
@@ -1139,8 +1123,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('07_text'),
+                    WhitePaperParagraph(
+                      text: t('07_text'),
                     ),
                     const SizedBox(height: 18),
                     _featureRow(
@@ -1193,8 +1177,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('08_text'),
+                    WhitePaperParagraph(
+                      text: t('08_text'),
                     ),
                     const SizedBox(height: 16),
                     _bullet(
@@ -1230,8 +1214,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('09_text'),
+                    WhitePaperParagraph(
+                      text: t('09_text'),
                     ),
                     const SizedBox(height: 16),
                     _featureRow(
@@ -1280,8 +1264,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('10_text'),
+                    WhitePaperParagraph(
+                      text: t('10_text'),
                     ),
                     const SizedBox(height: 18),
                     _architectureBox(
@@ -1342,8 +1326,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('11_text'),
+                    WhitePaperParagraph(
+                      text: t('11_text'),
                     ),
                     const SizedBox(height: 16),
                     _bullet(t('11_b1')),
@@ -1370,8 +1354,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('12_text'),
+                    WhitePaperParagraph(
+                      text: t('12_text'),
                     ),
                     const SizedBox(height: 18),
                     _featureRow(
@@ -1431,8 +1415,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('13_text'),
+                    WhitePaperParagraph(
+                      text: t('13_text'),
                     ),
                     const SizedBox(height: 18),
                     _bullet(
@@ -1469,8 +1453,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('14_text'),
+                    WhitePaperParagraph(
+                      text: t('14_text'),
                     ),
                     const SizedBox(height: 18),
                     _featureRow(
@@ -1588,8 +1572,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('16_text'),
+                    WhitePaperParagraph(
+                      text: t('16_text'),
                     ),
                     const SizedBox(height: 18),
                     _bullet(
@@ -1631,8 +1615,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('17_text'),
+                    WhitePaperParagraph(
+                      text: t('17_text'),
                     ),
                     const SizedBox(height: 18),
                     _bullet(
@@ -1764,8 +1748,8 @@ class WhitePaperPage extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    _paragraph(
-                      t('19_text'),
+                    WhitePaperParagraph(
+                      text: t('19_text'),
                     ),
                     const SizedBox(height: 18),
                     Container(
