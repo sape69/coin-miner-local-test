@@ -297,6 +297,31 @@ const Map<String, String> frTranslations = {
       'Impossible de créer le compte.',
 
   // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'Le lien de réinitialisation du mot de passe a été envoyé à votre adresse e-mail.',
+
+  'passwordResetUserNotFound':
+      'Aucun compte utilisateur n’a été trouvé pour cette adresse e-mail.',
+
+  'passwordResetNotAllowed':
+      'La réinitialisation du mot de passe n’est actuellement pas autorisée.',
+
+  'passwordResetFailed':
+      'Échec de la réinitialisation du mot de passe.',
+
+  'passwordResetDescription':
+      'Entrez l’adresse e-mail de votre compte et nous vous enverrons un lien pour réinitialiser votre mot de passe.',
+
+  'sending':
+      'ENVOI EN COURS...',
+
+  'sendPasswordReset':
+      'ENVOYER LE LIEN DE RÉINITIALISATION',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
