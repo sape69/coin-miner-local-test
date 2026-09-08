@@ -266,6 +266,37 @@ const Map<String, String> frTranslations = {
       'Échec de la connexion',
 
   // ============================================================
+  // 📝 REGISTER
+  // ============================================================
+
+  'confirmPassword':
+      'Confirmer le mot de passe',
+
+  'passwordsDoNotMatch':
+      'Les mots de passe ne correspondent pas.',
+
+  'passwordTooShort':
+      'Le mot de passe doit contenir au moins 6 caractères.',
+
+  'creatingAccount':
+      'CRÉATION DU COMPTE...',
+
+  'accountCreated':
+      'Compte créé avec succès.',
+
+  'emailAlreadyInUse':
+      'Cette adresse e-mail est déjà utilisée.',
+
+  'passwordTooWeak':
+      'Le mot de passe est trop faible.',
+
+  'registrationNotAllowed':
+      'L’inscription n’est actuellement pas autorisée.',
+
+  'registrationFailed':
+      'Impossible de créer le compte.',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
