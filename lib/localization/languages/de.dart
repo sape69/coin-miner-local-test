@@ -297,6 +297,31 @@ const Map<String, String> deTranslations = {
       'Das Konto konnte nicht erstellt werden.',
 
   // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'Der Link zum Zurücksetzen des Passworts wurde an deine E-Mail-Adresse gesendet.',
+
+  'passwordResetUserNotFound':
+      'Für diese E-Mail-Adresse wurde kein Benutzerkonto gefunden.',
+
+  'passwordResetNotAllowed':
+      'Das Zurücksetzen des Passworts ist derzeit nicht möglich.',
+
+  'passwordResetFailed':
+      'Das Zurücksetzen des Passworts ist fehlgeschlagen.',
+
+  'passwordResetDescription':
+      'Gib die E-Mail-Adresse deines Kontos ein. Wir senden dir anschließend einen Link zum Zurücksetzen deines Passworts.',
+
+  'sending':
+      'WIRD GESENDET...',
+
+  'sendPasswordReset':
+      'LINK ZUM ZURÜCKSETZEN SENDEN',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
