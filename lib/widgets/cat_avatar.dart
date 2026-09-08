@@ -2,15 +2,30 @@ import 'package:flutter/material.dart';
 
 // ============================================================
 // 🐱 STELLURIINI / STELLA CAT AVATAR
+// ============================================================
 //
-// Käyttää kaikkialla samaa Stelluriini-logo-kuvaa.
+// Yhtenäinen Stella-avatar koko Stelluriini-sovelluksessa.
+//
+// Käyttää samaa Stelluriini-logo-kuvaa kaikissa näkymissä.
+// Jos kuvaa ei löydy, näytetään turvallinen fallback-kuvake.
+//
 // ============================================================
 
-const Color catAvatarBackgroundColor = Color(0xFF120B24);
-const Color catAvatarCardColor = Color(0xFF21113B);
+// ============================================================
+// 🎨 STELLURIINI COLORS
+// ============================================================
 
-const Color catAvatarAccentColor = Color(0xFFB58CFF);
-const Color catAvatarPinkColor = Color(0xFFFFB7E8);
+const Color catAvatarBackgroundColor =
+    Color(0xFF120B24);
+
+const Color catAvatarCardColor =
+    Color(0xFF21113B);
+
+const Color catAvatarAccentColor =
+    Color(0xFFB58CFF);
+
+const Color catAvatarPinkColor =
+    Color(0xFFFFB7E8);
 
 // ============================================================
 // 🐱 CAT AVATAR
@@ -55,14 +70,16 @@ class CatAvatar extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: EdgeInsets.all(size * 0.06),
+        padding: EdgeInsets.all(
+          size * 0.06,
+        ),
         child: Image.asset(
           'assets/images/stelluriini_logo.png',
           fit: BoxFit.contain,
           errorBuilder: (
-            context,
-            error,
-            stackTrace,
+            BuildContext context,
+            Object error,
+            StackTrace? stackTrace,
           ) {
             return const Center(
               child: Icon(
