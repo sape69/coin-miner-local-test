@@ -21,7 +21,6 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onLanguagePressed;
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
-  final VoidCallback onTokenPressed;
   final VoidCallback onTokenomicsPressed;
   final VoidCallback onRoadmapPressed;
   final VoidCallback onTransactionHistoryPressed;
@@ -31,7 +30,6 @@ class HomeDrawer extends StatelessWidget {
     required this.onLanguagePressed,
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
-    required this.onTokenPressed,
     required this.onTokenomicsPressed,
     required this.onRoadmapPressed,
     required this.onTransactionHistoryPressed,
@@ -281,13 +279,6 @@ class HomeDrawer extends StatelessWidget {
                     icon: Icons.description_outlined,
                     title: 'White Paper',
                     onTap: onWhitePaperPressed,
-                  ),
-
-                  _menuItem(
-                    icon: Icons.token_rounded,
-                    title: 'Token',
-                    onTap: onTokenPressed,
-                    badge: 'STL',
                   ),
 
                   _menuItem(
