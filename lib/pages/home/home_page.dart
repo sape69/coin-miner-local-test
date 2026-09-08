@@ -21,6 +21,7 @@ import 'mining_progress_card.dart';
 import 'power_boost_card.dart';
 import 'stella_footer.dart';
 import 'stella_mining_card.dart';
+import 'stella_mining_section.dart';
 
 // ============================================================
 // 🐱 STELLURIINI HOME PAGE
@@ -349,18 +350,10 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
-        // ------------------------------------------------------
-        // DAILY STREAK
-        // ------------------------------------------------------
-
         _streak = _toInt(
           data['dailyStreak'] ??
               data['streak'],
         );
-
-        // ------------------------------------------------------
-        // DAILY HASH RATE
-        // ------------------------------------------------------
 
         final double backendDailyHashRate =
             _toDouble(
@@ -380,10 +373,6 @@ class _HomePageState extends State<HomePage>
           );
         }
 
-        // ------------------------------------------------------
-        // BASE HASH RATE
-        // ------------------------------------------------------
-
         final double backendHashRate =
             _toDouble(
           data['hashRate'],
@@ -397,10 +386,6 @@ class _HomePageState extends State<HomePage>
         } else {
           _hashRate = _dailyHashRate;
         }
-
-        // ------------------------------------------------------
-        // MINING
-        // ------------------------------------------------------
 
         _unclaimedMining =
             _toDouble(
@@ -429,10 +414,6 @@ class _HomePageState extends State<HomePage>
           _miningDurationMs =
               defaultMiningDurationMs;
         }
-
-        // ------------------------------------------------------
-        // POWER BOOST
-        // ------------------------------------------------------
 
         _adsToday =
             _toInt(
@@ -477,15 +458,7 @@ class _HomePageState extends State<HomePage>
           _adBoostActive = false;
         }
 
-        // ------------------------------------------------------
-        // EFFECTIVE HASH RATE
-        // ------------------------------------------------------
-
         _recalculateMiningPerHour();
-
-        // ------------------------------------------------------
-        // AD AVAILABILITY
-        // ------------------------------------------------------
 
         _canWatchAd =
             data['canWatchAd'] == true;
@@ -615,10 +588,6 @@ class _HomePageState extends State<HomePage>
         data['collected'],
       );
 
-      // --------------------------------------------------------
-      // DAILY HASH RATE
-      // --------------------------------------------------------
-
       final int returnedStreak =
           _toInt(
         data['dailyStreak'] ??
@@ -650,10 +619,6 @@ class _HomePageState extends State<HomePage>
       _hashRate = _dailyHashRate;
 
       _recalculateMiningPerHour();
-
-      // --------------------------------------------------------
-      // MESSAGE
-      // --------------------------------------------------------
 
       if (alreadyMining) {
         _showMessage(
@@ -1650,82 +1615,54 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStellaMiningCard() {
-    final bool completed =
-        !_miningActive &&
-            _unclaimedMining > 0;
-
-    final String title;
-    final String subtitle;
-    final String timerText;
-    final String timerLabel;
-
-    if (_miningActive) {
-      title =
+    return StellaMiningSection(
+      miningActive: _miningActive,
+      unclaimedMining: _unclaimedMining,
+      miningRemainingMs: _miningRemainingMs,
+      miningActiveTitle:
           _localization.get(
         'stellaIsMining',
-      );
-
-      subtitle =
+      ),
+      miningActiveSubtitle:
           _localization.get(
         'stellaMiningNow',
-      );
-
-      timerText =
-          _formatDuration(
-        _miningRemainingMs,
-      );
-
-      timerLabel =
-          _localization.get(
-        'timeRemaining',
-      );
-    } else if (completed) {
-      title =
+      ),
+      miningCompleteTitle:
           _localization.get(
         'miningComplete',
-      );
-
-      subtitle =
+      ),
+      miningCompleteSubtitle:
           _localization.get(
         'stlReadyToCollect',
-      );
-
-      timerText =
-          '00:00:00';
-
-      timerLabel =
-          _localization.get(
-        'miningFinished',
-      );
-    } else {
-      title =
+      ),
+      restingTitle:
           _localization.get(
         'stellaIsResting',
-      );
-
-      subtitle =
+      ),
+      restingSubtitle:
           _localization.get(
         'stellaWaiting',
-      );
-
-      timerText =
+      ),
+      timeRemainingLabel:
+          _localization.get(
+        'timeRemaining',
+      ),
+      miningFinishedLabel:
+          _localization.get(
+        'miningFinished',
+      ),
+      readyText:
           _localization.get(
         'ready',
-      );
-
-      timerLabel =
+      ),
+      waitingForStellaLabel:
           _localization.get(
         'waitingForStella',
-      );
-    }
-
-    return StellaMiningCard(
-      unclaimedMining: _unclaimedMining,
-      miningTitle: title,
-      miningSubtitle: subtitle,
-      timerText: timerText,
-      timerLabel: timerLabel,
-      catAnimation: _catAnimation,
+      ),
+      formatDuration:
+          _formatDuration,
+      catAnimation:
+          _catAnimation,
     );
   }
 
