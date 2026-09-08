@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================================
+    // 🔐 STELLURIINI FIRESTORE SECURITY RULES
+    // ========================================================
+    //
+    // Flutter-sovellus käyttää Cloud Functions -rajapintaa
+    // käyttäjätietojen ja historian käsittelyyn.
+    //
+    // Cloud Functions käyttää Firebase Admin SDK:ta, joten
+    // nämä säännöt eivät estä palvelinpuolen toimintoja.
+    //
+    // Asiakasohjelmalle ei anneta suoraa luku- tai
+    // kirjoitusoikeutta käyttäjien taloudellisiin tietoihin,
+    // mining-tietoihin tai tapahtumahistoriaan.
+    //
+    // ========================================================
+
+
+    // ========================================================
+    // 👤 USERS
+    // ========================================================
+
+    match /users/{userId} {
+
+      // Ei suoraa asiakaslukua.
+      //
+      // Käyttäjän tiedot haetaan Cloud Functionsien kautta.
+      //
+      allow read: if false;
+
+      // Ei suoraa asiakaskirjoitusta.
+      //
+      // Mining, Daily Hash Rate, Power Boost ja balance
+      // käsitellään palvelinpuolella.
+      //
+      allow write: if false;
+
+
+      // ======================================================
+      // 📜 TRANSACTION HISTORY
+      // ======================================================
+
+      match /transactions/{transactionId} {
+
+        // Historia haetaan getTransactionHistory()
+        // Cloud Functionin kautta.
+        //
+        allow read: if false;
+
+        // Historiaa kirjoittavat Cloud Functionsit
+        // Firebase Admin SDK:n kautta.
+        //
+        allow write: if false;
+      }
+    }
+
+
+    // ========================================================
+    // 📺 ADMOB REWARDS
+    // ========================================================
+
+    match /admobRewards/{transactionId} {
+
+      // AdMob reward -tietoja ei saa lukea suoraan Flutterista.
+      //
+      allow read: if false;
+
+      // Reward-tapahtumat luodaan ja validoidaan
+      // Cloud Functionsissa.
+      //
+      allow write: if false;
+    }
+
+
+    // ========================================================
+    // 🚫 DEFAULT DENY
+    // ========================================================
+    //
+    // Kaikki muut Firestore-dokumentit ovat oletuksena
+    // kiellettyjä asiakkaalta.
+    //
+    // ========================================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
