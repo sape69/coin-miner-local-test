@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../localization.dart';
 import 'cat_avatar.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / STELLA THEME
+// STELLA THEME
 // ============================================================
 
 const Color backgroundColor = Color(0xFF120B24);
@@ -14,7 +15,7 @@ const Color pinkAccentColor = Color(0xFFFFB7E8);
 const Color goldAccentColor = Color(0xFFFFD166);
 
 // ============================================================
-// 🐱 HOME DRAWER
+// HOME DRAWER
 // ============================================================
 
 class HomeDrawer extends StatelessWidget {
@@ -34,7 +35,18 @@ class HomeDrawer extends StatelessWidget {
   });
 
   // ==========================================================
-  // 🐾 MENU ITEM
+  // LOCALIZATION
+  // ==========================================================
+
+  String _t(
+    BuildContext context,
+    String key,
+  ) {
+    return AppLocalizations.of(context).get(key);
+  }
+
+  // ==========================================================
+  // MENU ITEM
   // ==========================================================
 
   Widget _menuItem({
@@ -67,13 +79,20 @@ class HomeDrawer extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        accentColor.withValues(alpha: 0.28),
-                        pinkAccentColor.withValues(alpha: 0.16),
+                        accentColor.withValues(
+                          alpha: 0.28,
+                        ),
+                        pinkAccentColor.withValues(
+                          alpha: 0.16,
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius:
+                        BorderRadius.circular(13),
                     border: Border.all(
-                      color: accentColor.withValues(alpha: 0.20),
+                      color: accentColor.withValues(
+                        alpha: 0.20,
+                      ),
                     ),
                   ),
                   child: Icon(
@@ -82,44 +101,57 @@ class HomeDrawer extends StatelessWidget {
                     size: 23,
                   ),
                 ),
+
                 const SizedBox(width: 14),
+
                 Expanded(
                   child: Text(
                     title,
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow:
+                        TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
                 ),
+
                 if (badge != null) ...[
                   const SizedBox(width: 8),
+
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: goldAccentColor.withValues(
+                      color:
+                          goldAccentColor.withValues(
                         alpha: 0.15,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius:
+                          BorderRadius.circular(20),
                     ),
                     child: Text(
                       badge,
                       style: const TextStyle(
-                        color: goldAccentColor,
+                        color:
+                            goldAccentColor,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ],
+
                 const SizedBox(width: 4),
+
                 Icon(
                   Icons.chevron_right_rounded,
                   color: Colors.white.withValues(
@@ -135,7 +167,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // 🐱 BUILD
+  // BUILD
   // ==========================================================
 
   @override
@@ -146,34 +178,41 @@ class HomeDrawer extends StatelessWidget {
         child: Column(
           children: [
             // ==================================================
-            // 🐱 STELLA HEADER
+            // HEADER
             // ==================================================
 
             Container(
               width: double.infinity,
               margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.symmetric(
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 20,
                 vertical: 22,
               ),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                gradient:
+                    const LinearGradient(
+                  begin:
+                      Alignment.topLeft,
+                  end:
+                      Alignment.bottomRight,
                   colors: [
                     Color(0xFF2D174D),
                     Color(0xFF1B1033),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius:
+                    BorderRadius.circular(24),
                 border: Border.all(
-                  color: accentColor.withValues(
+                  color:
+                      accentColor.withValues(
                     alpha: 0.45,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: accentColor.withValues(
+                    color:
+                        accentColor.withValues(
                       alpha: 0.14,
                     ),
                     blurRadius: 24,
@@ -185,7 +224,8 @@ class HomeDrawer extends StatelessWidget {
                 children: [
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        MainAxisAlignment
+                            .spaceBetween,
                     children: [
                       const Text(
                         '🐱',
@@ -193,17 +233,22 @@ class HomeDrawer extends StatelessWidget {
                           fontSize: 28,
                         ),
                       ),
+
                       Text(
                         '🐾 STL • SOLANA 🐾',
                         style: TextStyle(
-                          color: pinkAccentColor.withValues(
+                          color:
+                              pinkAccentColor
+                                  .withValues(
                             alpha: 0.90,
                           ),
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                           letterSpacing: 1,
                         ),
                       ),
+
                       const Text(
                         '🐱',
                         style: TextStyle(
@@ -223,11 +268,13 @@ class HomeDrawer extends StatelessWidget {
 
                   const Text(
                     'STELLURIINI',
-                    textAlign: TextAlign.center,
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       letterSpacing: 3,
                     ),
                   ),
@@ -235,14 +282,21 @@ class HomeDrawer extends StatelessWidget {
                   const SizedBox(height: 6),
 
                   Text(
-                    'Stella Community',
-                    textAlign: TextAlign.center,
+                    _t(
+                      context,
+                      'stellaCommunity',
+                    ),
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
-                      color: pinkAccentColor.withValues(
+                      color:
+                          pinkAccentColor
+                              .withValues(
                         alpha: 0.85,
                       ),
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                       letterSpacing: 1,
                     ),
                   ),
@@ -251,70 +305,100 @@ class HomeDrawer extends StatelessWidget {
             ),
 
             // ==================================================
-            // 🐾 MENU
+            // MENU
             // ==================================================
 
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(
+                padding:
+                    const EdgeInsets.only(
                   top: 4,
                   bottom: 8,
                 ),
                 children: [
                   _menuItem(
-                    icon: Icons.language_rounded,
-                    title: 'Language',
-                    onTap: onLanguagePressed,
+                    icon:
+                        Icons.language_rounded,
+                    title: _t(
+                      context,
+                      'language',
+                    ),
+                    onTap:
+                        onLanguagePressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.info_outline_rounded,
-                    title: 'About Stelluriini',
-                    onTap: onAboutPressed,
+                    icon:
+                        Icons.info_outline_rounded,
+                    title: _t(
+                      context,
+                      'aboutStelluriini',
+                    ),
+                    onTap:
+                        onAboutPressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.description_outlined,
-                    title: 'White Paper',
-                    onTap: onWhitePaperPressed,
+                    icon:
+                        Icons.description_outlined,
+                    title: _t(
+                      context,
+                      'whitePaper',
+                    ),
+                    onTap:
+                        onWhitePaperPressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.map_outlined,
-                    title: 'Roadmap',
-                    onTap: onRoadmapPressed,
+                    icon:
+                        Icons.map_outlined,
+                    title: _t(
+                      context,
+                      'roadmap',
+                    ),
+                    onTap:
+                        onRoadmapPressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.history_rounded,
-                    title: 'Transaction History',
-                    onTap: onTransactionHistoryPressed,
+                    icon:
+                        Icons.history_rounded,
+                    title: _t(
+                      context,
+                      'transactionHistory',
+                    ),
+                    onTap:
+                        onTransactionHistoryPressed,
                   ),
                 ],
               ),
             ),
 
             // ==================================================
-            // 🐱 FOOTER
+            // FOOTER
             // ==================================================
 
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(
+              margin:
+                  const EdgeInsets.fromLTRB(
                 16,
                 4,
                 16,
                 16,
               ),
-              padding: const EdgeInsets.symmetric(
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
               decoration: BoxDecoration(
                 color: cardColor,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius:
+                    BorderRadius.circular(18),
                 border: Border.all(
-                  color: accentColor.withValues(
+                  color:
+                      accentColor.withValues(
                     alpha: 0.16,
                   ),
                 ),
@@ -323,7 +407,8 @@ class HomeDrawer extends StatelessWidget {
                 children: [
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment.center,
+                        MainAxisAlignment
+                            .center,
                     children: [
                       const Text(
                         '🐾',
@@ -331,19 +416,32 @@ class HomeDrawer extends StatelessWidget {
                           fontSize: 16,
                         ),
                       ),
+
                       const SizedBox(width: 7),
-                      Text(
-                        'Community-driven • Solana',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(
-                            alpha: 0.60,
+
+                      Flexible(
+                        child: Text(
+                          _t(
+                            context,
+                            'footerTagline',
                           ),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          textAlign:
+                              TextAlign.center,
+                          style: TextStyle(
+                            color:
+                                Colors.white
+                                    .withValues(
+                              alpha: 0.60,
+                            ),
+                            fontSize: 11,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
                         ),
                       ),
+
                       const SizedBox(width: 7),
+
                       const Text(
                         '🐾',
                         style: TextStyle(
@@ -356,14 +454,21 @@ class HomeDrawer extends StatelessWidget {
                   const SizedBox(height: 7),
 
                   Text(
-                    'STL • Stelluriini',
-                    textAlign: TextAlign.center,
+                    _t(
+                      context,
+                      'footerToken',
+                    ),
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
-                      color: pinkAccentColor.withValues(
+                      color:
+                          pinkAccentColor
+                              .withValues(
                         alpha: 0.72,
                       ),
                       fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       letterSpacing: 1,
                     ),
                   ),
