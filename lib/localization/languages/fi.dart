@@ -295,6 +295,31 @@ const Map<String, String> fiTranslations = {
       'Tilin luominen epäonnistui.',
 
   // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'Salasanan palautuslinkki lähetettiin sähköpostiisi.',
+
+  'passwordResetUserNotFound':
+      'Tälle sähköpostiosoitteelle ei löytynyt käyttäjätiliä.',
+
+  'passwordResetNotAllowed':
+      'Salasanan palautus ei ole tällä hetkellä sallittu.',
+
+  'passwordResetFailed':
+      'Salasanan palautus epäonnistui.',
+
+  'passwordResetDescription':
+      'Anna tilisi sähköpostiosoite, niin lähetämme sinulle salasanan palautuslinkin.',
+
+  'sending':
+      'LÄHETETÄÄN...',
+
+  'sendPasswordReset':
+      'LÄHETÄ PALAUTUSLINKKI',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
