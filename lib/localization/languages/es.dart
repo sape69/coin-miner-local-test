@@ -312,6 +312,31 @@ const Map<String, String> esTranslations = {
       'No se pudo crear la cuenta.',
 
   // ============================================================
+  // 🔑 FORGOT PASSWORD
+  // ============================================================
+
+  'passwordResetSent':
+      'El enlace para restablecer la contraseña se ha enviado a tu correo electrónico.',
+
+  'passwordResetUserNotFound':
+      'No se encontró ninguna cuenta de usuario para esta dirección de correo electrónico.',
+
+  'passwordResetNotAllowed':
+      'El restablecimiento de contraseña no está permitido actualmente.',
+
+  'passwordResetFailed':
+      'No se pudo restablecer la contraseña.',
+
+  'passwordResetDescription':
+      'Introduce la dirección de correo electrónico de tu cuenta y te enviaremos un enlace para restablecer tu contraseña.',
+
+  'sending':
+      'ENVIANDO...',
+
+  'sendPasswordReset':
+      'ENVIAR ENLACE PARA RESTABLECER',
+
+  // ============================================================
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
