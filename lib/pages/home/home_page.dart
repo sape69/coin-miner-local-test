@@ -19,6 +19,7 @@ import 'home_stats_card.dart';
 import 'mining_action_button.dart';
 import 'mining_progress_card.dart';
 import 'power_boost_card.dart';
+import 'stella_footer.dart';
 import 'stella_mining_card.dart';
 
 // ============================================================
@@ -2059,60 +2060,9 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStellaFooter() {
-    return Center(
-      child:
-          Column(
-        children: [
-          const Text(
-            '🐱💜⛏️',
-            style:
-                TextStyle(
-              fontSize:
-                  28,
-            ),
-          ),
-
-          const SizedBox(
-            height:
-                8,
-          ),
-
-          Text(
-            _localization.get(
-              'footerTagline',
-            ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF8D7BA8),
-              fontStyle:
-                  FontStyle.italic,
-            ),
-          ),
-
-          const SizedBox(
-            height:
-                4,
-          ),
-
-          Text(
-            _localization.get(
-              'footerToken',
-            ),
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF5F4D70),
-              fontSize:
-                  11,
-              letterSpacing:
-                  2,
-            ),
-          ),
-        ],
-      ),
+    return StellaFooter(
+      localization:
+          _localization,
     );
   }
 }
