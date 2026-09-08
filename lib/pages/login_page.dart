@@ -475,7 +475,12 @@ class _LoginPageState extends State<LoginPage> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      const RegisterPage(),
+                                      RegisterPage(
+                                    languageCode:
+                                        widget.languageCode,
+                                    changeLanguage:
+                                        widget.changeLanguage,
+                                  ),
                                 ),
                               );
                             },
