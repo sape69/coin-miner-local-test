@@ -12,7 +12,6 @@ import '../../widgets/stelluriini_logo.dart';
 import '../about/about_page.dart';
 import '../history/transaction_history_page.dart';
 import '../roadmap/roadmap_page.dart';
-import '../tokenomics/tokenomics_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
 import 'home_stats_card.dart';
@@ -1437,12 +1436,6 @@ class _HomePageState extends State<HomePage>
         onWhitePaperPressed: () {
           _openPage(
             const WhitePaperPage(),
-          );
-        },
-
-        onTokenomicsPressed: () {
-          _openPage(
-            const TokenomicsPage(),
           );
         },
 
