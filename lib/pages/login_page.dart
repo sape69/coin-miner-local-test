@@ -6,6 +6,21 @@ import '../widgets/cat_avatar.dart';
 import 'forgot_password_page.dart';
 import 'register_page.dart';
 
+// ============================================================
+// 🐱 STELLURIINI / LOGIN PAGE
+// ============================================================
+//
+// Firebase Authentication -kirjautuminen.
+//
+// Tämä sivu:
+// - käyttää Stelluriinin Stella-teemaa
+// - tukee nykyistä lokalisaatiojärjestelmää
+// - käyttää Firebase Email/Password -kirjautumista
+// - sisältää salasanan palautuksen
+// - sisältää uuden käyttäjätilin luonnin
+// - sisältää kielivalinnan
+// ============================================================
+
 class LoginPage extends StatefulWidget {
   final String languageCode;
   final Future<void> Function(String) changeLanguage;
@@ -20,6 +35,10 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
+// ============================================================
+// STATE
+// ============================================================
+
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController =
       TextEditingController();
@@ -30,8 +49,20 @@ class _LoginPageState extends State<LoginPage> {
   bool loading = false;
   bool showPassword = false;
 
+  // ==========================================================
+  // LOCALIZATION
+  // ==========================================================
+
   AppLocalizations get t =>
       AppLocalizations(widget.languageCode);
+
+  String _t(String key) {
+    return t.get(key);
+  }
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
@@ -46,7 +77,9 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   void _message(String text) {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -71,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
     if (email.isEmpty ||
         password.isEmpty) {
       _message(
-        'Anna sähköposti ja salasana.',
+        _t('loginFillFields'),
       );
 
       return;
@@ -89,51 +122,53 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // AuthGate huomaa automaattisesti
-      // kirjautumisen ja avaa HomePage-sivun.
+      // Firebase Authentication -tilan muutoksen
+      // ja avaa HomePage-sivun.
     } on FirebaseAuthException catch (error) {
       String message;
 
       switch (error.code) {
         case 'invalid-email':
           message =
-              'Sähköpostiosoite ei ole kelvollinen.';
+              _t('loginInvalidEmail');
           break;
 
         case 'user-not-found':
           message =
-              'Käyttäjää ei löytynyt.';
+              _t('loginUserNotFound');
           break;
 
         case 'wrong-password':
         case 'invalid-credential':
           message =
-              'Sähköposti tai salasana on väärä.';
+              _t('loginInvalidCredentials');
           break;
 
         case 'user-disabled':
           message =
-              'Tämä käyttäjätili on poistettu käytöstä.';
+              _t('loginUserDisabled');
           break;
 
         case 'too-many-requests':
           message =
-              'Liian monta yritystä. Yritä myöhemmin uudelleen.';
+              _t('loginTooManyRequests');
           break;
 
         case 'network-request-failed':
           message =
-              'Verkkoyhteys epäonnistui.';
+              _t('loginNetworkError');
           break;
 
         default:
           message =
-              'Kirjautuminen epäonnistui: ${error.message ?? error.code}';
+              '${_t('loginFailed')}: '
+              '${error.message ?? error.code}';
       }
 
       _message(message);
     } catch (_) {
       _message(
-        'Kirjautuminen epäonnistui.',
+        _t('loginFailed'),
       );
     } finally {
       if (mounted) {
@@ -145,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // LANGUAGE
+  // 🌍 LANGUAGE
   // ==========================================================
 
   void _openLanguageDialog() {
@@ -153,8 +188,8 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
-            'Valitse kieli',
+          title: Text(
+            _t('language'),
           ),
           content: SizedBox(
             width: double.maxFinite,
@@ -198,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // BUILD
+  // 🏠 BUILD
   // ==========================================================
 
   @override
@@ -207,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         actions: [
           IconButton(
-            tooltip: 'Vaihda kieli',
+            tooltip: _t('language'),
             icon: const Icon(
               Icons.language,
             ),
@@ -230,6 +265,10 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisSize:
                       MainAxisSize.min,
                   children: [
+                    // ==================================================
+                    // STELLA
+                    // ==================================================
+
                     const CatAvatar(
                       size: 120,
                     ),
@@ -238,8 +277,14 @@ class _LoginPageState extends State<LoginPage> {
                       height: 20,
                     ),
 
+                    // ==================================================
+                    // APP NAME
+                    // ==================================================
+
                     const Text(
                       'STELLURIINI',
+                      textAlign:
+                          TextAlign.center,
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight:
@@ -256,7 +301,8 @@ class _LoginPageState extends State<LoginPage> {
                       'STL',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white60,
+                        color:
+                            Colors.white60,
                         letterSpacing: 4,
                       ),
                     ),
@@ -265,30 +311,39 @@ class _LoginPageState extends State<LoginPage> {
                       height: 28,
                     ),
 
+                    // ==================================================
+                    // EMAIL
+                    // ==================================================
+
                     TextField(
                       controller:
                           emailController,
                       keyboardType:
-                          TextInputType
-                              .emailAddress,
+                          TextInputType.emailAddress,
                       textInputAction:
                           TextInputAction.next,
-                      enabled: !loading,
+                      enabled:
+                          !loading,
                       decoration:
-                          const InputDecoration(
+                          InputDecoration(
                         labelText:
-                            'Sähköposti',
-                        prefixIcon: Icon(
+                            _t('email'),
+                        prefixIcon:
+                            const Icon(
                           Icons.email_outlined,
                         ),
                         border:
-                            OutlineInputBorder(),
+                            const OutlineInputBorder(),
                       ),
                     ),
 
                     const SizedBox(
                       height: 16,
                     ),
+
+                    // ==================================================
+                    // PASSWORD
+                    // ==================================================
 
                     TextField(
                       controller:
@@ -297,7 +352,8 @@ class _LoginPageState extends State<LoginPage> {
                           !showPassword,
                       textInputAction:
                           TextInputAction.done,
-                      enabled: !loading,
+                      enabled:
+                          !loading,
                       onSubmitted: (_) {
                         if (!loading) {
                           _login();
@@ -306,8 +362,9 @@ class _LoginPageState extends State<LoginPage> {
                       decoration:
                           InputDecoration(
                         labelText:
-                            'Salasana',
-                        prefixIcon: const Icon(
+                            _t('password'),
+                        prefixIcon:
+                            const Icon(
                           Icons.lock_outline,
                         ),
                         border:
@@ -319,17 +376,22 @@ class _LoginPageState extends State<LoginPage> {
                                 ? Icons.visibility
                                 : Icons.visibility_off,
                           ),
-                          onPressed: loading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    showPassword =
-                                        !showPassword;
-                                  });
-                                },
+                          onPressed:
+                              loading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        showPassword =
+                                            !showPassword;
+                                      });
+                                    },
                         ),
                       ),
                     ),
+
+                    // ==================================================
+                    // FORGOT PASSWORD
+                    // ==================================================
 
                     Align(
                       alignment:
@@ -346,8 +408,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 );
                               },
-                        child: const Text(
-                          'Unohditko salasanan?',
+                        child: Text(
+                          _t(
+                            'forgotPassword',
+                          ),
                         ),
                       ),
                     ),
@@ -355,6 +419,10 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 12,
                     ),
+
+                    // ==================================================
+                    // LOGIN BUTTON
+                    // ==================================================
 
                     SizedBox(
                       width:
@@ -372,7 +440,8 @@ class _LoginPageState extends State<LoginPage> {
                                 child:
                                     CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.black,
+                                  color:
+                                      Colors.white,
                                 ),
                               )
                             : const Icon(
@@ -380,8 +449,12 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                         label: Text(
                           loading
-                              ? 'KIRJAUDUTAAN...'
-                              : 'KIRJAUDU SISÄÄN',
+                              ? _t(
+                                  'loggingIn',
+                                )
+                              : _t(
+                                  'login',
+                                ),
                         ),
                       ),
                     ),
@@ -389,6 +462,10 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 10,
                     ),
+
+                    // ==================================================
+                    // REGISTER
+                    // ==================================================
 
                     TextButton(
                       onPressed: loading
@@ -402,8 +479,10 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               );
                             },
-                      child: const Text(
-                        'Ei vielä tiliä? Luo uusi tili',
+                      child: Text(
+                        _t(
+                          'createAccount',
+                        ),
                       ),
                     ),
                   ],
