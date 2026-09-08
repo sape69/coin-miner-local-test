@@ -305,7 +305,7 @@ function calculateNextDailyClaim(
   let newStreak = 1;
 
   // ----------------------------------------------------------
-  // Jos käyttäjä käytti sovellusta eilen,
+  // Jos käyttäjä kävi sovelluksessa eilen,
   // streak jatkuu.
   // ----------------------------------------------------------
 
@@ -497,15 +497,6 @@ function getAdStatus(
 // ============================================================
 // ⛏️ GET VALID MINING HASH RATE
 // ============================================================
-//
-// Legacy-arvot, kuten 12 HR, eivät saa jatkaa uuden
-// järjestelmän louhintanopeutena.
-//
-// Sallittu alue:
-//
-// 0.5 → 1.0 → 1.5 → 2.0 → 2.5 → 3.0 → 3.5 HR
-//
-// ============================================================
 
 function getMiningHashRate(
   data,
@@ -529,19 +520,11 @@ function getMiningHashRate(
       )
     );
 
-  // ----------------------------------------------------------
-  // Legacy-arvo.
-  // ----------------------------------------------------------
-
   if (
     stored > MAX_DAILY_HASH_RATE
   ) {
     return safeFallback;
   }
-
-  // ----------------------------------------------------------
-  // Puuttuva tai liian pieni arvo.
-  // ----------------------------------------------------------
 
   if (
     stored < DAILY_HASH_RATE_START
@@ -554,14 +537,6 @@ function getMiningHashRate(
 
 // ============================================================
 // 📺 GET AD BOOST HISTORY
-// ============================================================
-//
-// Haetaan kaikki käyttäjän ad_reward-tapahtumat ja tarkistetaan
-// JavaScriptissä, leikkaako boost mining-jakson kanssa.
-//
-// Tämä ratkaisee myös tilanteen, jossa boost alkoi juuri ennen
-// uuden mining-jakson alkua.
-//
 // ============================================================
 
 async function getAdBoostHistory(
@@ -623,10 +598,6 @@ async function getAdBoostHistory(
         return;
       }
 
-      // --------------------------------------------------------
-      // Boostin pitää leikata mining-jakson kanssa.
-      // --------------------------------------------------------
-
       if (
         boostEndsMs <= miningStartMs ||
         boostStartedMs >= miningEndMs
@@ -682,52 +653,6 @@ function calculateAdBoostMilliseconds(
   return Math.max(
     0,
     totalMs
-  );
-}
-
-// ============================================================
-// 💰 CALCULATE MINING AMOUNT
-// ============================================================
-
-function calculateMiningAmount(
-  miningHashRate,
-  miningStartMs,
-  effectiveEndMs,
-  adBoostMilliseconds
-) {
-  if (
-    effectiveEndMs <=
-    miningStartMs
-  ) {
-    return 0;
-  }
-
-  const totalDurationMs =
-    effectiveEndMs -
-    miningStartMs;
-
-  const baseMining =
-    calculateMining(
-      miningHashRate,
-      totalDurationMs
-    );
-
-  const boostMining =
-    calculateMining(
-      AD_HASH_RATE_BONUS,
-      adBoostMilliseconds
-    );
-
-  return Math.max(
-    0,
-    getSafeNumber(
-      baseMining,
-      0
-    ) +
-    getSafeNumber(
-      boostMining,
-      0
-    )
   );
 }
 
@@ -1198,7 +1123,7 @@ const claimMining =
 
             // ==================================================
             // ⛏️ PREVIOUS MINING HASH RATE
-            // ====================================================
+            // ==================================================
 
             const previousMiningHashRate =
               getMiningHashRate(
@@ -1471,9 +1396,6 @@ const claimMining =
 
             // --------------------------------------------------
             // Power Boost -kenttiä ei poisteta.
-            //
-            // Näin jo aktiivinen boost voi jatkua uuden
-            // mining-jakson puolelle.
             // --------------------------------------------------
 
             transaction.set(
@@ -1487,6 +1409,11 @@ const claimMining =
             // ==================================================
             // 📜 HISTORY: DAILY HASH RATE
             // ==================================================
+            //
+            // Flutter transaction_history_page.dart käyttää
+            // tyyppiä "dailyHashRate".
+            //
+            // ==================================================
 
             if (
               !dailyClaim.claimedToday
@@ -1499,7 +1426,7 @@ const claimMining =
                 dailyHistoryRef,
                 {
                   type:
-                    "daily_hash_rate",
+                    "dailyHashRate",
 
                   title:
                     "Stella Daily Hash Rate 🐱✨",
@@ -1511,6 +1438,15 @@ const claimMining =
                     dailyHashRate,
 
                   dailyHashRate,
+
+                  hashRateBefore:
+                    getSafeNonNegativeNumber(
+                      data.hashRate,
+                      0
+                    ),
+
+                  hashRateAfter:
+                    dailyHashRate,
 
                   dailyStreak,
 
@@ -1526,6 +1462,10 @@ const claimMining =
             // ==================================================
             // 📜 HISTORY: COMPLETED MINING
             // ==================================================
+            //
+            // Flutter tunnistaa tämän mining-tapahtumana.
+            //
+            // ==================================================
 
             if (
               completedPreviousCycle
@@ -1538,7 +1478,7 @@ const claimMining =
                 completeHistoryRef,
                 {
                   type:
-                    "mining_complete",
+                    "mining_reward",
 
                   title:
                     "Stella Mining Complete 🐱⛏️✨",
@@ -1589,7 +1529,7 @@ const claimMining =
               startHistoryRef,
               {
                 type:
-                  "mining_started",
+                  "mining",
 
                 title:
                   "Stella Mining Started 🐱⛏️",
