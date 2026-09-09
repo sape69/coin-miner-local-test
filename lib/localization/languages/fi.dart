@@ -42,15 +42,20 @@ const Map<String, String> fiTranslations = {
   'dailyHashRateMaximum': 'Maksimi: {rate} HR',
   'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
 
-  'stellaMiningProgress': 'Stellan louhinnan edistyminen',
+  'stellaMiningProgress':
+      'Stellan louhinnan edistyminen',
 
-  'stlPerHour': 'STL tunnissa',
+  'stlPerHour':
+      'STL tunnissa',
 
-  'hashRateBonus': 'Hash Rate -bonus',
+  'hashRateBonus':
+      'Hash Rate -bonus',
 
-  'startMining': 'ALOITA LOUHINTA',
+  'startMining':
+      'ALOITA LOUHINTA',
 
-  'claimMining': 'KERÄÄ STL',
+  'claimMining':
+      'KERÄÄ STL',
 
   'watchAdStartMining':
       'KATSO MAINOS JA ALOITA LOUHINTA',
@@ -58,33 +63,45 @@ const Map<String, String> fiTranslations = {
   'watchAdCollectReward':
       'KATSO MAINOS JA KERÄÄ PALKINTO',
 
-  'miningActive': 'Louhinta käynnissä',
+  'miningActive':
+      'Louhinta käynnissä',
 
-  'miningComplete': 'Louhintajakso valmis',
+  'miningComplete':
+      'Louhintajakso valmis',
 
-  'miningFinished': 'Louhinta valmis',
+  'miningFinished':
+      'Louhinta valmis',
 
-  'timeRemaining': 'Aikaa jäljellä',
+  'timeRemaining':
+      'Aikaa jäljellä',
 
-  'remaining': 'Aikaa jäljellä: {time}',
+  'remaining':
+      'Aikaa jäljellä: {time}',
 
-  'waitingForStella': 'Odotetaan Stellaa',
+  'waitingForStella':
+      'Odotetaan Stellaa',
 
-  'streak': 'Päiväputki',
+  'streak':
+      'Päiväputki',
 
-  'days': 'päivää',
+  'days':
+      'päivää',
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
-  'dailyBonus': 'Päivittäinen bonus',
+  'dailyBonus':
+      'Päivittäinen bonus',
 
-  'dailyClaim': 'Kerää päivittäinen bonus',
+  'dailyClaim':
+      'Kerää päivittäinen bonus',
 
-  'dailyReward': 'Päivittäinen palkinto',
+  'dailyReward':
+      'Päivittäinen palkinto',
 
-  'claimedToday': 'Kerätty tänään',
+  'claimedToday':
+      'Kerätty tänään',
 
   'alreadyClaimed':
       'Olet jo kerännyt tämän päivän palkinnon.',
@@ -93,28 +110,36 @@ const Map<String, String> fiTranslations = {
   // 📺 ADS
   // ============================================================
 
-  'watchAd': 'KATSO MAINOS',
+  'watchAd':
+      'KATSO MAINOS',
 
-  'watchAndEarn': 'KATSO & ANSAITSE',
+  'watchAndEarn':
+      'KATSO & ANSAITSE',
 
-  'loadingAd': 'LADATAAN MAINOSTA...',
+  'loadingAd':
+      'LADATAAN MAINOSTA...',
 
-  'adLoading': 'LADATAAN MAINOSTA...',
+  'adLoading':
+      'LADATAAN MAINOSTA...',
 
-  'prepareAd': 'Valmistellaan mainosta...',
+  'prepareAd':
+      'Valmistellaan mainosta...',
 
-  'adReward': '+{amount} HR',
+  'adReward':
+      '+{amount} HR',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
-  'powerBoost': 'Stella Power Boost',
+  'powerBoost':
+      'Stella Power Boost',
 
   'powerBoostOffer':
       'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
 
-  'powerBoostActive': 'Power Boost aktiivinen',
+  'powerBoostActive':
+      'Power Boost aktiivinen',
 
   'powerBoostActiveTitle':
       'Stella Power Boost on aktiivinen!',
@@ -160,25 +185,33 @@ const Map<String, String> fiTranslations = {
   // 👤 GENERAL UI
   // ============================================================
 
-  'profile': 'Profiili',
+  'profile':
+      'Profiili',
 
   // ============================================================
   // 🐱 STELLA
   // ============================================================
 
-  'catFact': 'Stellan kissafakta',
+  'catFact':
+      'Stellan kissafakta',
 
-  'stellaFacts': 'Stellan kissafakta',
+  'stellaFacts':
+      'Stellan kissafakta',
 
-  'stellaPower': 'Stella Power',
+  'stellaPower':
+      'Stella Power',
 
-  'stellaMining': 'Stella Mining',
+  'stellaMining':
+      'Stella Mining',
 
-  'stellaIsMining': 'Stella louhii',
+  'stellaIsMining':
+      'Stella louhii',
 
-  'stellaMiningNow': 'Stella louhii juuri nyt',
+  'stellaMiningNow':
+      'Stella louhii juuri nyt',
 
-  'stellaIsResting': 'Stella lepää',
+  'stellaIsResting':
+      'Stella lepää',
 
   'stellaWaiting':
       'Stella odottaa seuraavaa louhintajaksoa',
@@ -186,19 +219,24 @@ const Map<String, String> fiTranslations = {
   'stlReadyToCollect':
       'STL on valmis kerättäväksi',
 
-  'stlMined': 'LOUHITTU STL',
+  'stlMined':
+      'LOUHITTU STL',
 
-  'stellaIsWorking': 'STELLA TYÖSKENTELEE...',
+  'stellaIsWorking':
+      'STELLA TYÖSKENTELEE...',
 
-  'stellaIsMiningButton': 'LOUHINTA KÄYNNISSÄ',
+  'stellaIsMiningButton':
+      'LOUHINTA KÄYNNISSÄ',
 
-  'stellaAlreadyMining': 'Stella louhii jo.',
+  'stellaAlreadyMining':
+      'Stella louhii jo.',
 
   // ============================================================
   // ⛏️ MINING MESSAGES
   // ============================================================
 
-  'miningCollected': 'Kerätty {amount} STL',
+  'miningCollected':
+      'Kerätty {amount} STL',
 
   'miningStartFailed':
       'Louhinnan aloittaminen epäonnistui.',
@@ -207,40 +245,52 @@ const Map<String, String> fiTranslations = {
   // 💎 TRANSACTIONS
   // ============================================================
 
-  'transactions': 'Tapahtumat',
+  'transactions':
+      'Tapahtumat',
 
-  'noTransactions': 'Ei tapahtumia vielä.',
+  'noTransactions':
+      'Ei tapahtumia vielä.',
 
-  'totalStl': 'STL yhteensä',
+  'totalStl':
+      'STL yhteensä',
 
-  'points': 'pistettä',
+  'points':
+      'pistettä',
 
-  'pointsAdded': 'Pisteitä lisätty',
+  'pointsAdded':
+      'Pisteitä lisätty',
 
   // ============================================================
   // 🔄 TEST ACCOUNT
   // ============================================================
 
-  'resetAccount': 'Nollaa testitili',
+  'resetAccount':
+      'Nollaa testitili',
 
   'resetConfirm':
       'Haluatko varmasti nollata testitilin?',
 
-  'reset': 'Nollaa',
+  'reset':
+      'Nollaa',
 
   // ============================================================
   // 🔐 LOGIN
   // ============================================================
 
-  'email': 'Sähköposti',
+  'email':
+      'Sähköposti',
 
-  'password': 'Salasana',
+  'password':
+      'Salasana',
 
-  'forgotPassword': 'Unohditko salasanan?',
+  'forgotPassword':
+      'Unohditko salasanan?',
 
-  'login': 'KIRJAUDU SISÄÄN',
+  'login':
+      'KIRJAUDU SISÄÄN',
 
-  'loggingIn': 'KIRJAUDUTAAN...',
+  'loggingIn':
+      'KIRJAUDUTAAN...',
 
   'createAccount':
       'Ei vielä tiliä? Luo uusi tili',
@@ -273,7 +323,8 @@ const Map<String, String> fiTranslations = {
   // 📝 REGISTER
   // ============================================================
 
-  'confirmPassword': 'Vahvista salasana',
+  'confirmPassword':
+      'Vahvista salasana',
 
   'passwordsDoNotMatch':
       'Salasanat eivät täsmää.',
@@ -281,7 +332,8 @@ const Map<String, String> fiTranslations = {
   'passwordTooShort':
       'Salasanan täytyy sisältää vähintään 6 merkkiä.',
 
-  'creatingAccount': 'LUODAAN TILI...',
+  'creatingAccount':
+      'LUODAAN TILI...',
 
   'accountCreated':
       'Tili luotiin onnistuneesti.',
@@ -317,7 +369,8 @@ const Map<String, String> fiTranslations = {
   'passwordResetDescription':
       'Anna tilisi sähköpostiosoite, niin lähetämme sinulle salasanan palautuslinkin.',
 
-  'sending': 'LÄHETETÄÄN...',
+  'sending':
+      'LÄHETETÄÄN...',
 
   'sendPasswordReset':
       'LÄHETÄ PALAUTUSLINKKI',
@@ -326,9 +379,11 @@ const Map<String, String> fiTranslations = {
   // 📜 TRANSACTION HISTORY
   // ============================================================
 
-  'transactionHistory': 'Tapahtumahistoria',
+  'transactionHistory':
+      'Tapahtumahistoria',
 
-  'stellaActivity': 'STELLAN AKTIIVISUUS',
+  'stellaActivity':
+      'STELLAN AKTIIVISUUS',
 
   'latestTransactions':
       '{count} viimeisintä tapahtumaa',
@@ -345,7 +400,8 @@ const Map<String, String> fiTranslations = {
   'adRewardDescription':
       'Palkinto katsotusta mainoksesta',
 
-  'stlTransaction': 'STL-tapahtuma',
+  'stlTransaction':
+      'STL-tapahtuma',
 
   'stelluriiniActivity':
       'Stelluriini-aktiviteetti',
@@ -353,7 +409,8 @@ const Map<String, String> fiTranslations = {
   'transactionBalance':
       'Saldo: {balance} STL',
 
-  'tryAgain': 'Yritä uudelleen',
+  'tryAgain':
+      'Yritä uudelleen',
 
   'noTransactionsYet':
       'Ei tapahtumia vielä',
@@ -386,7 +443,8 @@ const Map<String, String> fiTranslations = {
   'aboutDescription':
       'Stelluriini yhdistää yhteisön, digitaalisen tokenin ja Stellan ympärille rakennetun sovelluskokemuksen.',
 
-  'meetStella': 'Tapaa Stella',
+  'meetStella':
+      'Tapaa Stella',
 
   'aboutStellaIntro':
       'Stella on Stelluriinin sydän ja projektin rakastettava kissamaskotti.',
@@ -394,7 +452,8 @@ const Map<String, String> fiTranslations = {
   'aboutStellaDescription':
       'Stella kulkee käyttäjien mukana louhinnassa, palkinnoissa ja Stelluriini-ekosysteemissä.',
 
-  'community': 'Yhteisö',
+  'community':
+      'Yhteisö',
 
   'aboutCommunityDescription':
       'Stelluriini rakentuu yhteisön ympärille. Tavoitteena on luoda avoin, hauska ja helposti lähestyttävä ekosysteemi.',
@@ -405,7 +464,8 @@ const Map<String, String> fiTranslations = {
   'aboutSolanaDescription':
       'Stelluriini käyttää Solana-lohkoketjua, joka tarjoaa nopean ja kustannustehokkaan ympäristön STL-tokenille.',
 
-  'stlToken': 'STL Token',
+  'stlToken':
+      'STL Token',
 
   'importantInformation':
       'Tärkeää tietoa',
@@ -577,16 +637,14 @@ const Map<String, String> fiTranslations = {
   'tokenDescription':
       'Stelluriini on yhteisölähtöinen token Solana-lohkoketjussa.',
 
-  'solana': 'Solana',
+  'solana':
+      'Solana',
 
   'copyAddress':
       'Kopioi osoite',
 
   'addressCopied':
       'Osoite kopioitu.',
-
-  'stlToken':
-      'STL Token',
 
   'solanaCommunityToken':
       'Yhteisölähtöinen Solana-token',
