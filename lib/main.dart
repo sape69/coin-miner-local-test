@@ -124,12 +124,30 @@ class _StelluriiniAppState
       final savedLanguage =
           prefs.getString('language') ?? 'fi';
 
+      // Varmistetaan, että tallennettu kieli
+      // kuuluu tuettuihin kieliin.
+      const supportedLanguages = {
+        'fi',
+        'en',
+        'de',
+        'es',
+        'fr',
+        'zh',
+        'vi',
+        'ja',
+      };
+
+      final validLanguage =
+          supportedLanguages.contains(savedLanguage)
+              ? savedLanguage
+              : 'fi';
+
       if (!mounted) {
         return;
       }
 
       setState(() {
-        languageCode = savedLanguage;
+        languageCode = validLanguage;
         languageLoaded = true;
       });
     } catch (_) {
@@ -151,12 +169,30 @@ class _StelluriiniAppState
   Future<void> changeLanguage(
     String language,
   ) async {
+    const supportedLanguages = {
+      'fi',
+      'en',
+      'de',
+      'es',
+      'fr',
+      'zh',
+      'vi',
+      'ja',
+    };
+
+    // Jos joku komponentti yrittää asettaa
+    // tuntemattoman kielen, palataan suomeen.
+    final validLanguage =
+        supportedLanguages.contains(language)
+            ? language
+            : 'fi';
+
     final prefs =
         await SharedPreferences.getInstance();
 
     await prefs.setString(
       'language',
-      language,
+      validLanguage,
     );
 
     if (!mounted) {
@@ -164,8 +200,25 @@ class _StelluriiniAppState
     }
 
     setState(() {
-      languageCode = language;
+      languageCode = validLanguage;
     });
+  }
+
+  // ==========================================================
+  // 🌍 SUPPORTED LOCALES
+  // ==========================================================
+
+  List<Locale> get supportedLocales {
+    return const [
+      Locale('fi'),
+      Locale('en'),
+      Locale('de'),
+      Locale('es'),
+      Locale('fr'),
+      Locale('zh'),
+      Locale('vi'),
+      Locale('ja'),
+    ];
   }
 
   // ==========================================================
@@ -184,6 +237,27 @@ class _StelluriiniAppState
       title: 'Stelluriini',
 
       debugShowCheckedModeBanner: false,
+
+      // ======================================================
+      // 🌍 CURRENT APP LOCALE
+      // ======================================================
+      //
+      // Tämä on tärkeä lisäys.
+      //
+      // languageCode tulee SharedPreferencesista ja
+      // päivittyy heti, kun käyttäjä vaihtaa kieltä.
+      //
+      // Tämän ansiosta:
+      //
+      // AppLocalizations.of(context)
+      //
+      // saa saman aktiivisen kielen kuin muu sovellus.
+      //
+      // ======================================================
+
+      locale: Locale(languageCode),
+
+      supportedLocales: supportedLocales,
 
       // ======================================================
       // 🌌 STELLURIINI THEME
