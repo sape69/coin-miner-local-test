@@ -43,7 +43,7 @@ const Map<String, String> fiTranslations = {
   'timeRemaining': 'Aikaa jäljellä',
   'remaining': 'Aikaa jäljellä: {time}',
 
-  'streak': 'Putki',
+  'streak': 'Päiväputki',
   'days': 'päivää',
 
   // ============================================================
@@ -81,7 +81,7 @@ const Map<String, String> fiTranslations = {
       'Stella Power Boost on aktiivinen!',
 
   'powerBoostActiveMessage':
-      '+{amount} HR on käytössä louhintasiirron aikana.',
+      '+{amount} HR on käytössä louhintajakson aikana.',
 
   'powerBoostAlreadyActive':
       'Power Boost on jo aktiivinen.',
@@ -136,7 +136,8 @@ const Map<String, String> fiTranslations = {
   'stellaPower': 'Stella Power',
   'stellaMining': 'Stella Mining',
 
-  'stellaIsMining': 'Stella louhii',
+  'stellaIsMining':
+      'Stella louhii',
 
   'stellaMiningNow':
       'Stella louhii juuri nyt',
@@ -145,7 +146,7 @@ const Map<String, String> fiTranslations = {
       'Stella lepää',
 
   'stellaWaiting':
-      'Stella odottaa seuraavaa louhintaa',
+      'Stella odottaa seuraavaa louhintajaksoa',
 
   'stlReadyToCollect':
       'STL on valmis kerättäväksi',
@@ -289,7 +290,7 @@ const Map<String, String> fiTranslations = {
       'Salasana on liian heikko.',
 
   'registrationNotAllowed':
-      'Rekisteröityminen ei ole tällä hetkellä sallittu.',
+      'Rekisteröityminen ei ole tällä hetkellä sallittua.',
 
   'registrationFailed':
       'Tilin luominen epäonnistui.',
@@ -305,7 +306,7 @@ const Map<String, String> fiTranslations = {
       'Tälle sähköpostiosoitteelle ei löytynyt käyttäjätiliä.',
 
   'passwordResetNotAllowed':
-      'Salasanan palautus ei ole tällä hetkellä sallittu.',
+      'Salasanan palautus ei ole tällä hetkellä sallittua.',
 
   'passwordResetFailed':
       'Salasanan palautus epäonnistui.',
@@ -394,7 +395,7 @@ const Map<String, String> fiTranslations = {
       'Stella on Stelluriinin sydän ja projektin rakastettava kissamaskotti.',
 
   'aboutStellaDescription':
-      'Stella johdattaa käyttäjiä louhinnan, palkintojen ja Stelluriini-ekosysteemin pariin.',
+      'Stella kulkee käyttäjien mukana louhinnassa, palkinnoissa ja Stelluriini-ekosysteemissä.',
 
   'community':
       'Yhteisö',
@@ -422,7 +423,7 @@ const Map<String, String> fiTranslations = {
   // ============================================================
 
   'roadmapTitle':
-      'Stelluriini Tiekartta',
+      'Stelluriinin tiekartta',
 
   'roadmapSubtitle':
       'Stelluriinin matka vaihe vaiheelta.',
