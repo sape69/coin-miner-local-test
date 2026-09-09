@@ -886,9 +886,6 @@ const Map<String, String> fiTranslations = {
   'withdrawalsDisabled':
       'Nostot eivät ole tällä hetkellä käytössä.',
 
-  'futureWithdrawals':
-      'Mahdollinen tuleva nostojärjestelmä suunnitellaan erikseen ja sen ehdot ilmoitetaan ennen käyttöönottoa.',
-
   // ============================================================
   // 🐾 FOOTER
   // ============================================================
