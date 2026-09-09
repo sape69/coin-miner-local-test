@@ -11,16 +11,19 @@ const Color aboutPinkColor = Color(0xFFFFB7E8);
 const Color aboutGoldColor = Color(0xFFFFD166);
 
 class AboutPage extends StatelessWidget {
+  final String languageCode;
+
   const AboutPage({
     super.key,
+    this.languageCode = 'fi',
   });
 
   String _text(
-    BuildContext context,
+    AppLocalizations localization,
     String key, {
     String fallback = '',
   }) {
-    final value = AppLocalizations.of(context).get(key);
+    final value = localization.get(key);
 
     if (value.isEmpty || value == key) {
       return fallback;
@@ -31,111 +34,113 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations(languageCode);
+
     final aboutTitle = _text(
-      context,
+      localization,
       'aboutStelluriini',
-      fallback: 'About Stelluriini',
+      fallback: 'Tietoa Stelluriinista',
     );
 
     final welcomeTitle = _text(
-      context,
+      localization,
       'aboutWelcome',
-      fallback: 'Welcome to Stelluriini',
+      fallback: 'Tervetuloa Stelluriiniin',
     );
 
     final welcomeDescription = _text(
-      context,
+      localization,
       'aboutWelcomeDescription',
       fallback:
-          'A community-driven project inspired by a curious cat named Stella.',
+          'Yhteisölähtöinen projekti, jonka inspiraationa on utelias Stella-kissa.',
     );
 
     final aboutDescription = _text(
-      context,
+      localization,
       'aboutDescription',
       fallback:
-          'Stelluriini is a community-driven project built around Stella, '
-          'a curious cat with a big personality. The project combines a '
-          'playful cat theme with the Solana ecosystem and the STL token.',
+          'Stelluriini on yhteisölähtöinen projekti, joka rakentuu Stellan ympärille. '
+          'Stella on utelias kissa, jolla on suuri persoonallisuus. Projekti yhdistää '
+          'leikkisän kissateeman Solanan ekosysteemiin ja STL-tokeniin.',
     );
 
     final meetStella = _text(
-      context,
+      localization,
       'meetStella',
-      fallback: 'Meet Stella',
+      fallback: 'Tapaa Stella',
     );
 
     final stellaIntro = _text(
-      context,
+      localization,
       'aboutStellaIntro',
-      fallback: '🐱 Stella is the heart of Stelluriini.',
+      fallback: '🐱 Stella on Stelluriinin sydän.',
     );
 
     final stellaDescription = _text(
-      context,
+      localization,
       'aboutStellaDescription',
       fallback:
-          'She represents curiosity, community and the fun side of the '
-          'project. Stella accompanies you through the app while you mine, '
-          'collect rewards and explore the Stelluriini ecosystem.',
+          'Stella edustaa uteliaisuutta, yhteisöllisyyttä ja projektin hauskaa puolta. '
+          'Stella kulkee kanssasi sovelluksessa louhinnan, palkintojen ja '
+          'Stelluriini-ekosysteemin tutkimisen aikana.',
     );
 
     final community = _text(
-      context,
+      localization,
       'community',
-      fallback: 'Community',
+      fallback: 'Yhteisö',
     );
 
     final communityDescription = _text(
-      context,
+      localization,
       'aboutCommunityDescription',
       fallback:
-          'Stelluriini is designed to grow together with its community. '
-          'The goal is to create an enjoyable ecosystem where the community '
-          'can participate, share ideas and help shape the future of STL.',
+          'Stelluriini on suunniteltu kasvamaan yhdessä yhteisönsä kanssa. '
+          'Tavoitteena on luoda miellyttävä ekosysteemi, jossa yhteisö voi '
+          'osallistua, jakaa ideoita ja auttaa muovaamaan STL:n tulevaisuutta.',
     );
 
     final builtOnSolana = _text(
-      context,
+      localization,
       'builtOnSolana',
-      fallback: 'Built on Solana',
+      fallback: 'Rakennettu Solanan päälle',
     );
 
     final solanaDescription = _text(
-      context,
+      localization,
       'aboutSolanaDescription',
       fallback:
-          'Stelluriini is built around the Solana ecosystem. Solana provides '
-          'the blockchain foundation for the STL token and future '
-          'Stelluriini ecosystem features.',
+          'Stelluriini rakentuu Solanan ekosysteemin ympärille. Solana tarjoaa '
+          'lohkoketjupohjan STL-tokenille ja tuleville Stelluriini-ekosysteemin '
+          'ominaisuuksille.',
     );
 
     final stlToken = _text(
-      context,
+      localization,
       'stlToken',
-      fallback: 'Stelluriini Token',
+      fallback: 'Stelluriini-token',
     );
 
     final importantInformation = _text(
-      context,
+      localization,
       'importantInformation',
-      fallback: 'Important Information',
+      fallback: 'Tärkeää tietoa',
     );
 
     final importantDescription = _text(
-      context,
+      localization,
       'aboutImportantDescription',
       fallback:
-          'STL shown inside this application currently represents virtual '
-          'in-app points. The balance shown in the app is not automatically '
-          'a withdrawable cryptocurrency balance.',
+          'Sovelluksessa näkyvä STL edustaa tällä hetkellä virtuaalisia '
+          'sovelluksen sisäisiä pisteitä. Sovelluksessa näkyvä saldo ei ole '
+          'automaattisesti nostettavissa oleva kryptovaluuttasaldo.',
     );
 
     final footerTagline = _text(
-      context,
+      localization,
       'footerTagline',
       fallback:
-          'Stella is watching over the Stelluriini community',
+          'Stella pitää Stelluriinin yhteisöstä huolta',
     );
 
     return Scaffold(
