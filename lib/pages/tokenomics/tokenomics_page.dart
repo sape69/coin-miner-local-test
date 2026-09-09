@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../localization.dart';
 import '../../widgets/cat_avatar.dart';
 import '../../widgets/stelluriini_logo.dart';
 
@@ -20,7 +21,12 @@ const Color tokenomicsGoldColor = Color(0xFFFFD166);
 // ============================================================
 
 class TokenomicsPage extends StatelessWidget {
-  const TokenomicsPage({super.key});
+  final String languageCode;
+
+  const TokenomicsPage({
+    super.key,
+    this.languageCode = 'fi',
+  });
 
   // ==========================================================
   // TOTAL SUPPLY
@@ -245,8 +251,9 @@ class TokenomicsPage extends StatelessWidget {
               backgroundColor: Colors.white.withValues(
                 alpha: 0.06,
               ),
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(color),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                color,
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -272,7 +279,7 @@ class TokenomicsPage extends StatelessWidget {
   // DONUT CHART
   // ==========================================================
 
-  Widget _donutChart() {
+  Widget _donutChart(AppLocalizations l) {
     return SizedBox(
       width: 230,
       height: 230,
@@ -286,9 +293,9 @@ class TokenomicsPage extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'TOTAL SUPPLY',
-                style: TextStyle(
+              Text(
+                l.get('tokenomicsTotalSupply'),
+                style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -470,6 +477,10 @@ class TokenomicsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations(
+      languageCode,
+    );
+
     return Scaffold(
       backgroundColor: tokenomicsBackgroundColor,
 
@@ -484,9 +495,9 @@ class TokenomicsPage extends StatelessWidget {
         iconTheme: const IconThemeData(
           color: Colors.white,
         ),
-        title: const Text(
-          'TOKENOMICS',
-          style: TextStyle(
+        title: Text(
+          l.get('tokenomics'),
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             letterSpacing: 2,
@@ -551,9 +562,7 @@ class TokenomicsPage extends StatelessWidget {
                     const CatAvatar(
                       size: 110,
                     ),
-
                     const SizedBox(height: 18),
-
                     const Text(
                       'STELLURIINI',
                       style: TextStyle(
@@ -563,19 +572,15 @@ class TokenomicsPage extends StatelessWidget {
                         letterSpacing: 3,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
-                    const Text(
-                      'Official STL Tokenomics',
-                      style: TextStyle(
+                    Text(
+                      l.get('officialStlTokenomics'),
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
-
                     const SizedBox(height: 7),
-
                     const Text(
                       'STL • SOLANA',
                       style: TextStyle(
@@ -585,9 +590,7 @@ class TokenomicsPage extends StatelessWidget {
                         letterSpacing: 1,
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
@@ -624,12 +627,9 @@ class TokenomicsPage extends StatelessWidget {
 
               _section(
                 icon: Icons.info_outline_rounded,
-                title: 'Tokenomics Overview',
+                title: l.get('tokenomicsOverview'),
                 child: _paragraph(
-                  'The Stelluriini tokenomics structure describes '
-                  'the planned allocation of the total STL supply '
-                  'across community rewards, liquidity, ecosystem '
-                  'growth, development and marketing.',
+                  l.get('tokenomicsOverviewDescription'),
                 ),
               ),
 
@@ -639,42 +639,36 @@ class TokenomicsPage extends StatelessWidget {
 
               _section(
                 icon: Icons.pie_chart_rounded,
-                title: 'Token Distribution',
+                title: l.get('tokenDistribution'),
                 child: Column(
                   children: [
                     Center(
-                      child: _donutChart(),
+                      child: _donutChart(l),
                     ),
-
                     const SizedBox(height: 24),
-
                     _legendRow(
                       color: tokenomicsAccentColor,
-                      title: 'Community & Rewards',
+                      title: l.get('communityRewards'),
                       percentage: '40%',
                     ),
-
                     _legendRow(
                       color: const Color(0xFF72B7FF),
-                      title: 'Liquidity',
+                      title: l.get('liquidity'),
                       percentage: '20%',
                     ),
-
                     _legendRow(
                       color: const Color(0xFFC084FC),
-                      title: 'Ecosystem',
+                      title: l.get('ecosystem'),
                       percentage: '15%',
                     ),
-
                     _legendRow(
                       color: tokenomicsGoldColor,
-                      title: 'Development',
+                      title: l.get('development'),
                       percentage: '15%',
                     ),
-
                     _legendRow(
                       color: tokenomicsPinkColor,
-                      title: 'Marketing',
+                      title: l.get('marketing'),
                       percentage: '10%',
                     ),
                   ],
@@ -687,7 +681,7 @@ class TokenomicsPage extends StatelessWidget {
 
               _section(
                 icon: Icons.account_balance_wallet_rounded,
-                title: 'Total Supply',
+                title: l.get('totalSupply'),
                 accent: tokenomicsGoldColor,
                 child: Column(
                   children: [
@@ -700,12 +694,10 @@ class TokenomicsPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
-                    const Text(
-                      'STL TOKENS',
-                      style: TextStyle(
+                    Text(
+                      l.get('stlTokens'),
+                      style: const TextStyle(
                         color: Color.fromRGBO(
                           255,
                           255,
@@ -717,14 +709,9 @@ class TokenomicsPage extends StatelessWidget {
                         letterSpacing: 1.5,
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
                     _paragraph(
-                      'The total supply of Stelluriini is '
-                      '17 602 539 062 STL. The allocation '
-                      'structure below accounts for the complete '
-                      'planned token supply.',
+                      l.get('totalSupplyDescription'),
                     ),
                   ],
                 ),
@@ -736,72 +723,63 @@ class TokenomicsPage extends StatelessWidget {
 
               _section(
                 icon: Icons.account_tree_rounded,
-                title: 'Token Allocation',
+                title: l.get('tokenAllocation'),
                 child: Column(
                   children: [
                     _allocationCard(
                       emoji: '🐾',
-                      title: 'Community & Rewards',
+                      title: l.get('communityRewards'),
                       percentage: '40%',
                       chartValue: 0.40,
                       amount: communityRewards,
                       color: tokenomicsAccentColor,
-                      description:
-                          'Allocated to community initiatives, '
-                          'user rewards, engagement programs and '
-                          'future community-focused activities.',
+                      description: l.get(
+                        'communityRewardsDescription',
+                      ),
                     ),
-
                     _allocationCard(
                       emoji: '💧',
-                      title: 'Liquidity',
+                      title: l.get('liquidity'),
                       percentage: '20%',
                       chartValue: 0.20,
                       amount: liquidity,
                       color: const Color(0xFF72B7FF),
-                      description:
-                          'Reserved to support liquidity and help '
-                          'create a healthier and more accessible '
-                          'market environment for STL.',
+                      description: l.get(
+                        'liquidityDescription',
+                      ),
                     ),
-
                     _allocationCard(
                       emoji: '🚀',
-                      title: 'Ecosystem',
+                      title: l.get('ecosystem'),
                       percentage: '15%',
                       chartValue: 0.15,
                       amount: ecosystem,
                       color: const Color(0xFFC084FC),
-                      description:
-                          'Reserved for future ecosystem growth, '
-                          'applications, games, integrations and '
-                          'new digital experiences.',
+                      description: l.get(
+                        'ecosystemDescription',
+                      ),
                     ),
-
                     _allocationCard(
                       emoji: '🔧',
-                      title: 'Development',
+                      title: l.get('development'),
                       percentage: '15%',
                       chartValue: 0.15,
                       amount: development,
                       color: tokenomicsGoldColor,
-                      description:
-                          'Allocated to technical development, '
-                          'application development, infrastructure '
-                          'and future improvements.',
+                      description: l.get(
+                        'developmentDescription',
+                      ),
                     ),
-
                     _allocationCard(
                       emoji: '📢',
-                      title: 'Marketing',
+                      title: l.get('marketing'),
                       percentage: '10%',
                       chartValue: 0.10,
                       amount: marketing,
                       color: tokenomicsPinkColor,
-                      description:
-                          'Allocated to marketing, awareness, '
-                          'community growth and promotional '
-                          'activities.',
+                      description: l.get(
+                        'marketingDescription',
+                      ),
                     ),
                   ],
                 ),
@@ -813,39 +791,33 @@ class TokenomicsPage extends StatelessWidget {
 
               _section(
                 icon: Icons.verified_rounded,
-                title: 'Allocation Verification',
+                title: l.get('allocationVerification'),
                 child: Column(
                   children: [
                     _verificationRow(
-                      'Community & Rewards',
+                      l.get('communityRewards'),
                       _formatNumber(communityRewards),
                     ),
-
                     _verificationRow(
-                      'Liquidity',
+                      l.get('liquidity'),
                       _formatNumber(liquidity),
                     ),
-
                     _verificationRow(
-                      'Ecosystem',
+                      l.get('ecosystem'),
                       _formatNumber(ecosystem),
                     ),
-
                     _verificationRow(
-                      'Development',
+                      l.get('development'),
                       _formatNumber(development),
                     ),
-
                     _verificationRow(
-                      'Marketing',
+                      l.get('marketing'),
                       _formatNumber(marketing),
                     ),
-
                     const Divider(
                       color: Colors.white24,
                       height: 24,
                     ),
-
                     Row(
                       children: [
                         const Icon(
@@ -853,20 +825,17 @@ class TokenomicsPage extends StatelessWidget {
                           color: tokenomicsGoldColor,
                           size: 22,
                         ),
-
                         const SizedBox(width: 10),
-
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Total Allocated',
-                            style: TextStyle(
+                            l.get('totalAllocated'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-
                         Text(
                           _formatNumber(allocatedTotal),
                           style: const TextStyle(
@@ -877,9 +846,7 @@ class TokenomicsPage extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
@@ -900,14 +867,16 @@ class TokenomicsPage extends StatelessWidget {
                             Icons.check_circle_rounded,
                             color: tokenomicsAccentColor,
                           ),
-
                           const SizedBox(width: 10),
-
                           Expanded(
                             child: Text(
                               allocatedTotal == totalSupply
-                                  ? 'Allocation verified: the total allocation matches the complete STL supply.'
-                                  : 'Allocation requires verification.',
+                                  ? l.get(
+                                      'allocationVerified',
+                                    )
+                                  : l.get(
+                                      'allocationRequiresVerification',
+                                    ),
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -928,47 +897,41 @@ class TokenomicsPage extends StatelessWidget {
 
               _section(
                 icon: Icons.workspace_premium_rounded,
-                title: 'Allocation Principles',
+                title: l.get('allocationPrinciples'),
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
                     _paragraph(
-                      'The token allocation structure is designed '
-                      'to support the community, ecosystem growth '
-                      'and long-term development of Stelluriini.',
+                      l.get(
+                        'allocationPrinciplesDescription',
+                      ),
                     ),
-
                     const SizedBox(height: 18),
-
                     _principle(
                       Icons.groups_rounded,
-                      'Community First',
-                      'A significant portion of the planned supply '
-                      'is allocated to community initiatives and '
-                      'rewards.',
+                      l.get('communityFirst'),
+                      l.get(
+                        'communityFirstDescription',
+                      ),
                       accent: tokenomicsPinkColor,
                     ),
-
                     const SizedBox(height: 16),
-
                     _principle(
                       Icons.trending_up_rounded,
-                      'Long-Term Growth',
-                      'Ecosystem and development allocations are '
-                      'intended to support future expansion and '
-                      'new projects.',
+                      l.get('longTermGrowth'),
+                      l.get(
+                        'longTermGrowthDescription',
+                      ),
                       accent: tokenomicsAccentColor,
                     ),
-
                     const SizedBox(height: 16),
-
                     _principle(
                       Icons.public_rounded,
-                      'Accessibility',
-                      'Liquidity allocation is intended to support '
-                      'accessibility and market participation for '
-                      'the STL token.',
+                      l.get('accessibility'),
+                      l.get(
+                        'accessibilityDescription',
+                      ),
                       accent: tokenomicsGoldColor,
                     ),
                   ],
@@ -997,25 +960,21 @@ class TokenomicsPage extends StatelessWidget {
                     const StelluriiniLogo(
                       size: 72,
                     ),
-
                     const SizedBox(height: 14),
-
-                    const Text(
-                      '🐱 Stella & the STL Community',
+                    Text(
+                      '🐱 ${l.get('stellaStlCommunity')}',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: tokenomicsPinkColor,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
-                    const Text(
-                      'Community • Curiosity • Development • Solana',
+                    Text(
+                      l.get('communityCuriosityDevelopmentSolana'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 13,
                         height: 1.4,
@@ -1050,27 +1009,20 @@ class TokenomicsPage extends StatelessWidget {
                       color: Colors.orangeAccent,
                       size: 30,
                     ),
-
                     const SizedBox(height: 12),
-
-                    const Text(
-                      'Important Notice',
-                      style: TextStyle(
+                    Text(
+                      l.get('importantNotice'),
+                      style: const TextStyle(
                         color: Colors.orangeAccent,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
-                    const Text(
-                      'The token allocation structure describes '
-                      'the planned Stelluriini ecosystem model. '
-                      'Nothing on this page should be considered '
-                      'financial, investment or legal advice.',
+                    Text(
+                      l.get('tokenomicsImportantNotice'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 13,
                         height: 1.5,
@@ -1086,10 +1038,10 @@ class TokenomicsPage extends StatelessWidget {
               // FOOTER
               // ==================================================
 
-              const Text(
-                '🐾 STELLA • STELLURIINI • STL • SOLANA 🐾',
+              Text(
+                '🐾 ${l.get('stellaStelluriiniStlSolana')} 🐾',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: tokenomicsPinkColor,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
