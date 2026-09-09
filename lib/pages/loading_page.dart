@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 //
 // Käytetään samaa Stelluriini-teemaa kuin muualla sovelluksessa.
 // Ei riipu main.dart-tiedostosta.
+// Ei tarvitse lokalisaatiota.
 //
 // ============================================================
 
