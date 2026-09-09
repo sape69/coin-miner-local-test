@@ -224,7 +224,10 @@ class _ForgotPasswordPageState
   // ==========================================================
 
   Future<void> _openLanguageDialog() async {
-    if (widget.changeLanguage == null) {
+    final changeLanguage =
+        widget.changeLanguage;
+
+    if (changeLanguage == null) {
       return;
     }
 
@@ -266,8 +269,7 @@ class _ForgotPasswordPageState
                         onPressed: loading
                             ? null
                             : () async {
-                                await widget
-                                    .changeLanguage!(
+                                await changeLanguage(
                                   entry.key,
                                 );
 
@@ -660,7 +662,8 @@ class _ForgotPasswordPageState
 
                     const Text(
                       '🐱💜',
-                      style: TextStyle(
+                      style:
+                          TextStyle(
                         fontSize: 24,
                       ),
                     ),
