@@ -1480,6 +1480,9 @@ class _HomePageState extends State<HomePage>
           backgroundColor,
 
       drawer: HomeDrawer(
+        languageCode:
+            widget.languageCode,
+
         onLanguagePressed:
             _showLanguageDialog,
 
