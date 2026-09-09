@@ -1476,7 +1476,10 @@ class _HomePageState extends State<HomePage>
 
         onRoadmapPressed: () {
           _openPage(
-            const RoadmapPage(),
+            RoadmapPage(
+              languageCode:
+                  widget.languageCode,
+            ),
           );
         },
 
