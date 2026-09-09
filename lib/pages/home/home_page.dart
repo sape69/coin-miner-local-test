@@ -553,7 +553,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // The mining-start ad is required by the current app flow.
     if (_rewardedAd == null ||
         !_adReady) {
       _showMessage(
@@ -637,10 +636,6 @@ class _HomePageState extends State<HomePage>
         data['collected'],
       );
 
-      // ======================================================
-      // DAILY HASH RATE
-      // ======================================================
-
       final int returnedStreak =
           _toInt(
         data['dailyStreak'] ??
@@ -668,14 +663,9 @@ class _HomePageState extends State<HomePage>
         );
       }
 
-      // Daily Hash Rate is the base mining rate.
       _hashRate = _dailyHashRate;
 
       _recalculateMiningPerHour();
-
-      // ======================================================
-      // MESSAGE
-      // ======================================================
 
       if (alreadyMining) {
         _showMessage(
@@ -851,10 +841,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // ACTIVE BOOST
-    // ----------------------------------------------------------
-
     if (_adBoostActive &&
         _adBoostRemainingMs > 0) {
       _showMessage(
@@ -875,10 +861,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // DAILY LIMIT
-    // ----------------------------------------------------------
-
     if (_adsToday >= _maxAdsPerDay) {
       _showMessage(
         _localization.get(
@@ -888,10 +870,6 @@ class _HomePageState extends State<HomePage>
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // COOLDOWN
-    // ----------------------------------------------------------
 
     if (_cooldownRemainingMs > 0) {
       _showMessage(
@@ -909,10 +887,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // BACKEND AVAILABILITY
-    // ----------------------------------------------------------
-
     if (!_canWatchAd) {
       _showMessage(
         _localization.get(
@@ -924,10 +898,6 @@ class _HomePageState extends State<HomePage>
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // AD NOT READY
-    // ----------------------------------------------------------
 
     if (_rewardedAd == null ||
         !_adReady) {
@@ -1488,7 +1458,10 @@ class _HomePageState extends State<HomePage>
 
         onAboutPressed: () {
           _openPage(
-            const AboutPage(),
+            AboutPage(
+              languageCode:
+                  widget.languageCode,
+            ),
           );
         },
 
