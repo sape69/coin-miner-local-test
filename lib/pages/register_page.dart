@@ -16,6 +16,8 @@ import '../widgets/cat_avatar.dart';
 // - tukee Firebase Email/Password -rekisteröintiä
 // - tarkistaa salasanan vahvistuksen
 // - käsittelee yleisimmät Firebase Auth -virheet
+// - tukee kaikkia 8 sovelluksen kieltä
+// - tallentaa kielivalinnan SharedPreferencesin kautta
 //
 // ============================================================
 
@@ -276,7 +278,10 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
 
   Future<void> _openLanguageDialog() async {
-    if (widget.changeLanguage == null) {
+    final changeLanguage =
+        widget.changeLanguage;
+
+    if (changeLanguage == null) {
       return;
     }
 
@@ -318,8 +323,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         onPressed: loading
                             ? null
                             : () async {
-                                await widget
-                                    .changeLanguage!(
+                                await changeLanguage(
                                   entry.key,
                                 );
 
@@ -409,14 +413,12 @@ class _RegisterPageState extends State<RegisterPage> {
         foregroundColor: primaryTextColor,
         centerTitle: true,
         elevation: 0,
-
         title: Text(
           _t('createAccount'),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
-
         actions: [
           if (widget.changeLanguage != null)
             IconButton(
@@ -475,7 +477,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       textAlign:
                           TextAlign.center,
                       style: TextStyle(
-                        color: primaryTextColor,
+                        color:
+                            primaryTextColor,
                         fontSize: 28,
                         fontWeight:
                             FontWeight.bold,
