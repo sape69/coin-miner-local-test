@@ -22,18 +22,18 @@ const Map<String, String> enTranslations = {
   'balance': 'Balance',
   'mining': 'Mining',
   'miningRate': 'Mining Rate',
-  'hashRate': 'Hash Rate',
-  'effectiveHashRate': 'Effective Hash Rate',
-  'effectiveHashRateLabel': 'Effective Hash Rate',
+  'hashRate': 'Hashrate',
+  'effectiveHashRate': 'Effective Hashrate',
+  'effectiveHashRateLabel': 'Effective Hashrate',
 
-  'dailyHashRateLabel': 'Daily Hash Rate',
+  'dailyHashRateLabel': 'Daily Hashrate',
   'dailyHashRateDay': 'Day {day}',
   'dailyHashRateMaximum': 'Maximum: {rate} HR',
-  'dailyHashRateSuccess': 'Day {day} Hash Rate: {rate} HR',
+  'dailyHashRateSuccess': 'Day {day} Hashrate: {rate} HR',
 
   'stellaMiningProgress': 'Stella Mining Progress',
   'stlPerHour': 'STL per hour',
-  'hashRateBonus': 'Hash Rate Bonus',
+  'hashRateBonus': 'Hashrate Bonus',
 
   'startMining': 'START MINING',
   'claimMining': 'CLAIM STL',
@@ -54,7 +54,8 @@ const Map<String, String> enTranslations = {
   'dailyClaim': 'Claim Daily Bonus',
   'dailyReward': 'Daily Reward',
   'claimedToday': 'Claimed today',
-  'alreadyClaimed': 'You have already claimed today’s reward.',
+  'alreadyClaimed':
+      'You have already claimed today’s reward.',
 
   // ============================================================
   // 📺 ADS
@@ -188,7 +189,7 @@ const Map<String, String> enTranslations = {
       'Total STL',
 
   'points':
-      'points',
+      'Points',
 
   'pointsAdded':
       'Points added',
@@ -331,7 +332,7 @@ const Map<String, String> enTranslations = {
       'STELLA ACTIVITY',
 
   'latestTransactions':
-      '{count} latest transactions',
+      'Latest {count} transactions',
 
   'dailyStellaBonus':
       'Daily Stella Bonus',
@@ -343,7 +344,7 @@ const Map<String, String> enTranslations = {
       'Stella Ad Reward',
 
   'adRewardDescription':
-      'Rewarded ad bonus',
+      'Reward for watching an ad',
 
   'stlTransaction':
       'STL Transaction',
@@ -435,7 +436,7 @@ const Map<String, String> enTranslations = {
       'Building Stelluriini',
 
   'roadmapPhase1Description':
-      'Establishing the Stelluriini project, STL token and Stella mascot.',
+      'Building the Stelluriini project, STL token and Stella mascot.',
 
   'roadmapPhase2':
       'Phase 2 – App',
@@ -604,7 +605,7 @@ const Map<String, String> enTranslations = {
       'Withdrawals are not currently available.',
 
   'futureWithdrawals':
-      'A possible future withdrawal system will be designed separately, and its terms will be announced before implementation.',
+      'A possible future withdrawal system will be developed separately. Its terms will be announced before implementation.',
 
   // ============================================================
   // 🐾 FOOTER
