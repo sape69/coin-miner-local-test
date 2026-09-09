@@ -537,29 +537,131 @@ const Map<String, String> viTranslations = {
   'tokenomicsSubtitle':
       'Thông tin cơ bản và cấu trúc kinh tế của token Stelluriini STL.',
 
+  'tokenomicsOverview':
+      'Tổng quan Tokenomics',
+
+  'tokenomicsOverviewDescription':
+      'Cấu trúc tokenomics của Stelluriini mô tả kế hoạch phân bổ tổng nguồn cung STL cho phần thưởng cộng đồng, thanh khoản, tăng trưởng hệ sinh thái, phát triển và marketing.',
+
+  'officialStlTokenomics':
+      'Tokenomics chính thức của STL',
+
+  'tokenomicsTotalSupply':
+      'TỔNG NGUỒN CUNG',
+
   'totalSupply':
       'Tổng nguồn cung',
 
-  'tokenAllocation':
+  'tokenDistribution':
       'Phân bổ token',
 
   'communityAllocation':
       'Cộng đồng',
 
+  'communityRewards':
+      'Cộng đồng và phần thưởng',
+
   'ecosystemAllocation':
+      'Hệ sinh thái',
+
+  'ecosystem':
       'Hệ sinh thái',
 
   'developmentAllocation':
       'Phát triển',
 
+  'development':
+      'Phát triển',
+
   'liquidityAllocation':
+      'Thanh khoản',
+
+  'liquidity':
       'Thanh khoản',
 
   'marketingAllocation':
       'Marketing',
 
+  'marketing':
+      'Marketing',
+
+  'stlTokens':
+      'TOKEN STL',
+
+  'totalSupplyDescription':
+      'Tổng nguồn cung Stelluriini là 17 602 539 062 STL. Phân bổ được hiển thị bên dưới đại diện cho toàn bộ nguồn cung token theo kế hoạch.',
+
+  'communityRewardsDescription':
+      'Dành cho các sáng kiến cộng đồng, phần thưởng người dùng, chương trình tham gia và các hoạt động trong tương lai tập trung vào cộng đồng.',
+
+  'liquidityDescription':
+      'Được dành để hỗ trợ thanh khoản và góp phần tạo ra môi trường thị trường lành mạnh và dễ tiếp cận hơn cho STL.',
+
+  'ecosystemDescription':
+      'Được dành cho sự phát triển trong tương lai của hệ sinh thái, ứng dụng, trò chơi, tích hợp và các trải nghiệm kỹ thuật số mới.',
+
+  'developmentDescription':
+      'Dành cho phát triển kỹ thuật, phát triển ứng dụng, cơ sở hạ tầng và các cải tiến trong tương lai.',
+
+  'marketingDescription':
+      'Dành cho marketing, nâng cao nhận diện dự án, phát triển cộng đồng và các hoạt động quảng bá.',
+
+  'allocationVerification':
+      'Xác minh phân bổ token',
+
+  'totalAllocated':
+      'Tổng số đã phân bổ',
+
+  'allocationVerified':
+      'Đã xác minh phân bổ: tổng số phân bổ khớp với toàn bộ nguồn cung STL.',
+
+  'allocationRequiresVerification':
+      'Phân bổ token cần được xác minh.',
+
+  'allocationPrinciples':
+      'Nguyên tắc phân bổ',
+
+  'allocationPrinciplesDescription':
+      'Cấu trúc phân bổ token được thiết kế để hỗ trợ cộng đồng, tăng trưởng hệ sinh thái và sự phát triển lâu dài của Stelluriini.',
+
+  'communityFirst':
+      'Cộng đồng là ưu tiên',
+
+  'communityFirstDescription':
+      'Một phần đáng kể của nguồn cung theo kế hoạch được dành cho các sáng kiến và phần thưởng cộng đồng.',
+
+  'longTermGrowth':
+      'Tăng trưởng dài hạn',
+
+  'longTermGrowthDescription':
+      'Các khoản phân bổ cho hệ sinh thái và phát triển nhằm hỗ trợ mở rộng trong tương lai và các dự án mới.',
+
+  'accessibility':
+      'Khả năng tiếp cận',
+
+  'accessibilityDescription':
+      'Phân bổ thanh khoản nhằm hỗ trợ khả năng tiếp cận và sự tham gia vào thị trường của token STL.',
+
+  'stellaStlCommunity':
+      'Stella và cộng đồng STL',
+
+  'communityCuriosityDevelopmentSolana':
+      'Cộng đồng • Tò mò • Phát triển • Solana',
+
+  'tokenAllocation':
+      'Phân bổ token',
+
   'tokenomicsImportant':
       'Việc phân bổ token cụ thể có thể được cập nhật trong quá trình phát triển dự án. Mọi thay đổi nên được công bố minh bạch với cộng đồng.',
+
+  'importantNotice':
+      'Thông báo quan trọng',
+
+  'tokenomicsImportantNotice':
+      'Cấu trúc phân bổ token mô tả mô hình hệ sinh thái Stelluriini theo kế hoạch. Không có thông tin nào trên trang này được xem là lời khuyên tài chính, đầu tư hoặc pháp lý.',
+
+  'stellaStelluriiniStlSolana':
+      'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
   // 📄 WHITEPAPER
