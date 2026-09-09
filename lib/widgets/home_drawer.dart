@@ -21,18 +21,27 @@ import 'cat_avatar.dart';
 //   • Roadmap
 //   • Transaction History
 // - käyttää samaa Stella-visuaalista ilmettä kuin HomePage
+//
 // ============================================================
 
 // ============================================================
 // 🎨 STELLURIINI COLORS
 // ============================================================
 
-const Color backgroundColor = Color(0xFF120B24);
-const Color cardColor = Color(0xFF21113B);
+const Color backgroundColor =
+    Color(0xFF120B24);
 
-const Color accentColor = Color(0xFFB58CFF);
-const Color pinkAccentColor = Color(0xFFFFB7E8);
-const Color goldAccentColor = Color(0xFFFFD166);
+const Color cardColor =
+    Color(0xFF21113B);
+
+const Color accentColor =
+    Color(0xFFB58CFF);
+
+const Color pinkAccentColor =
+    Color(0xFFFFB7E8);
+
+const Color goldAccentColor =
+    Color(0xFFFFD166);
 
 // ============================================================
 // 🐱 HOME DRAWER
@@ -64,9 +73,7 @@ class HomeDrawer extends StatelessWidget {
   AppLocalizations get _localization =>
       AppLocalizations(languageCode);
 
-  String _t(
-    String key,
-  ) {
+  String _t(String key) {
     return _localization.get(key);
   }
 
@@ -87,12 +94,15 @@ class HomeDrawer extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
             ),
@@ -105,10 +115,14 @@ class HomeDrawer extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                  decoration:
+                      BoxDecoration(
+                    gradient:
+                        LinearGradient(
+                      begin:
+                          Alignment.topLeft,
+                      end:
+                          Alignment.bottomRight,
                       colors: [
                         accentColor.withValues(
                           alpha: 0.28,
@@ -118,16 +132,22 @@ class HomeDrawer extends StatelessWidget {
                         ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                      color: accentColor.withValues(
+                    borderRadius:
+                        BorderRadius.circular(
+                      13,
+                    ),
+                    border:
+                        Border.all(
+                      color:
+                          accentColor.withValues(
                         alpha: 0.20,
                       ),
                     ),
                   ),
                   child: Icon(
                     icon,
-                    color: pinkAccentColor,
+                    color:
+                        pinkAccentColor,
                     size: 23,
                   ),
                 ),
@@ -144,11 +164,15 @@ class HomeDrawer extends StatelessWidget {
                   child: Text(
                     title,
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(
+                      color:
+                          Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
                 ),
@@ -162,23 +186,35 @@ class HomeDrawer extends StatelessWidget {
                     width: 8,
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets
+                            .symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
-                    decoration: BoxDecoration(
-                      color: goldAccentColor.withValues(
+                    decoration:
+                        BoxDecoration(
+                      color:
+                          goldAccentColor
+                              .withValues(
                         alpha: 0.15,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius:
+                          BorderRadius.circular(
+                        20,
+                      ),
                     ),
                     child: Text(
                       badge,
-                      style: const TextStyle(
-                        color: goldAccentColor,
+                      style:
+                          const TextStyle(
+                        color:
+                            goldAccentColor,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        fontWeight:
+                            FontWeight.bold,
+                        letterSpacing:
+                            0.5,
                       ),
                     ),
                   ),
@@ -193,8 +229,11 @@ class HomeDrawer extends StatelessWidget {
                 // ==================================================
 
                 Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white.withValues(
+                  Icons
+                      .chevron_right_rounded,
+                  color:
+                      Colors.white
+                          .withValues(
                     alpha: 0.30,
                   ),
                 ),
@@ -211,9 +250,12 @@ class HomeDrawer extends StatelessWidget {
   // ==========================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Drawer(
-      backgroundColor: backgroundColor,
+      backgroundColor:
+          backgroundColor,
       child: SafeArea(
         child: Column(
           children: [
@@ -222,30 +264,43 @@ class HomeDrawer extends StatelessWidget {
             // ==================================================
 
             Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.symmetric(
+              width:
+                  double.infinity,
+              margin:
+                  const EdgeInsets.all(12),
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 20,
                 vertical: 22,
               ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+              decoration:
+                  BoxDecoration(
+                gradient:
+                    const LinearGradient(
+                  begin:
+                      Alignment.topLeft,
+                  end:
+                      Alignment.bottomRight,
                   colors: [
                     Color(0xFF2D174D),
                     Color(0xFF1B1033),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: accentColor.withValues(
+                borderRadius:
+                    BorderRadius.circular(
+                  24,
+                ),
+                border:
+                    Border.all(
+                  color:
+                      accentColor.withValues(
                     alpha: 0.45,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: accentColor.withValues(
+                    color:
+                        accentColor.withValues(
                       alpha: 0.14,
                     ),
                     blurRadius: 24,
@@ -261,28 +316,36 @@ class HomeDrawer extends StatelessWidget {
 
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        MainAxisAlignment
+                            .spaceBetween,
                     children: [
                       const Text(
                         '🐱',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 28,
                         ),
                       ),
                       Text(
                         '🐾 STL • SOLANA 🐾',
-                        style: TextStyle(
-                          color: pinkAccentColor.withValues(
+                        style:
+                            TextStyle(
+                          color:
+                              pinkAccentColor
+                                  .withValues(
                             alpha: 0.90,
                           ),
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing:
+                              1,
                         ),
                       ),
                       const Text(
                         '🐱',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 28,
                         ),
                       ),
@@ -311,11 +374,15 @@ class HomeDrawer extends StatelessWidget {
 
                   const Text(
                     'STELLURIINI',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
+                    textAlign:
+                        TextAlign.center,
+                    style:
+                        TextStyle(
+                      color:
+                          Colors.white,
                       fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       letterSpacing: 3,
                     ),
                   ),
@@ -332,13 +399,18 @@ class HomeDrawer extends StatelessWidget {
                     _t(
                       'stellaCommunity',
                     ),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: pinkAccentColor.withValues(
+                    textAlign:
+                        TextAlign.center,
+                    style:
+                        TextStyle(
+                      color:
+                          pinkAccentColor
+                              .withValues(
                         alpha: 0.85,
                       ),
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                       letterSpacing: 1,
                     ),
                   ),
@@ -352,7 +424,8 @@ class HomeDrawer extends StatelessWidget {
 
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(
+                padding:
+                    const EdgeInsets.only(
                   top: 4,
                   bottom: 8,
                 ),
@@ -362,11 +435,13 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon: Icons.language_rounded,
+                    icon:
+                        Icons.language_rounded,
                     title: _t(
                       'language',
                     ),
-                    onTap: onLanguagePressed,
+                    onTap:
+                        onLanguagePressed,
                   ),
 
                   // ------------------------------------------------
@@ -374,11 +449,13 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon: Icons.info_outline_rounded,
+                    icon:
+                        Icons.info_outline_rounded,
                     title: _t(
                       'aboutStelluriini',
                     ),
-                    onTap: onAboutPressed,
+                    onTap:
+                        onAboutPressed,
                   ),
 
                   // ------------------------------------------------
@@ -386,11 +463,13 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon: Icons.description_outlined,
+                    icon:
+                        Icons.description_outlined,
                     title: _t(
                       'whitePaper',
                     ),
-                    onTap: onWhitePaperPressed,
+                    onTap:
+                        onWhitePaperPressed,
                   ),
 
                   // ------------------------------------------------
@@ -398,11 +477,13 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon: Icons.map_outlined,
+                    icon:
+                        Icons.map_outlined,
                     title: _t(
                       'roadmap',
                     ),
-                    onTap: onRoadmapPressed,
+                    onTap:
+                        onRoadmapPressed,
                   ),
 
                   // ------------------------------------------------
@@ -410,11 +491,13 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon: Icons.history_rounded,
+                    icon:
+                        Icons.history_rounded,
                     title: _t(
                       'transactionHistory',
                     ),
-                    onTap: onTransactionHistoryPressed,
+                    onTap:
+                        onTransactionHistoryPressed,
                   ),
                 ],
               ),
@@ -425,22 +508,32 @@ class HomeDrawer extends StatelessWidget {
             // ==================================================
 
             Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(
+              width:
+                  double.infinity,
+              margin:
+                  const EdgeInsets.fromLTRB(
                 16,
                 4,
                 16,
                 16,
               ),
-              padding: const EdgeInsets.symmetric(
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: accentColor.withValues(
+              decoration:
+                  BoxDecoration(
+                color:
+                    cardColor,
+                borderRadius:
+                    BorderRadius.circular(
+                  18,
+                ),
+                border:
+                    Border.all(
+                  color:
+                      accentColor.withValues(
                     alpha: 0.16,
                   ),
                 ),
@@ -453,11 +546,13 @@ class HomeDrawer extends StatelessWidget {
 
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment.center,
+                        MainAxisAlignment
+                            .center,
                     children: [
                       const Text(
                         '🐾',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 16,
                         ),
                       ),
@@ -471,13 +566,18 @@ class HomeDrawer extends StatelessWidget {
                           _t(
                             'footerTagline',
                           ),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withValues(
+                          textAlign:
+                              TextAlign.center,
+                          style:
+                              TextStyle(
+                            color:
+                                Colors.white
+                                    .withValues(
                               alpha: 0.60,
                             ),
                             fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                            fontWeight:
+                                FontWeight.w600,
                           ),
                         ),
                       ),
@@ -488,7 +588,8 @@ class HomeDrawer extends StatelessWidget {
 
                       const Text(
                         '🐾',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 16,
                         ),
                       ),
@@ -507,13 +608,18 @@ class HomeDrawer extends StatelessWidget {
                     _t(
                       'footerToken',
                     ),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: pinkAccentColor.withValues(
+                    textAlign:
+                        TextAlign.center,
+                    style:
+                        TextStyle(
+                      color:
+                          pinkAccentColor
+                              .withValues(
                         alpha: 0.72,
                       ),
                       fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       letterSpacing: 1,
                     ),
                   ),
