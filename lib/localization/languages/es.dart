@@ -22,18 +22,18 @@ const Map<String, String> esTranslations = {
   'balance': 'Saldo',
   'mining': 'Minería',
   'miningRate': 'Tasa de minería',
-  'hashRate': 'Hash Rate',
-  'effectiveHashRate': 'Hash Rate efectivo',
-  'effectiveHashRateLabel': 'Hash Rate efectivo',
+  'hashRate': 'Tasa de hash',
+  'effectiveHashRate': 'Tasa de hash efectiva',
+  'effectiveHashRateLabel': 'Tasa de hash efectiva',
 
-  'dailyHashRateLabel': 'Hash Rate diario',
+  'dailyHashRateLabel': 'Tasa de hash diaria',
   'dailyHashRateDay': 'Día {day}',
   'dailyHashRateMaximum': 'Máximo: {rate} HR',
-  'dailyHashRateSuccess': 'Hash Rate del día {day}: {rate} HR',
+  'dailyHashRateSuccess': 'Tasa de hash del día {day}: {rate} HR',
 
   'stellaMiningProgress': 'Progreso de minería de Stella',
   'stlPerHour': 'STL por hora',
-  'hashRateBonus': 'Bono de Hash Rate',
+  'hashRateBonus': 'Bono de tasa de hash',
 
   'startMining': 'INICIAR MINERÍA',
   'claimMining': 'RECLAMAR STL',
@@ -359,7 +359,7 @@ const Map<String, String> esTranslations = {
       'Recompensa de anuncio de Stella',
 
   'adRewardDescription':
-      'Recompensa por anuncio visto',
+      'Recompensa por ver un anuncio',
 
   'stlTransaction':
       'Transacción STL',
