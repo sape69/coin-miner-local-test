@@ -22,18 +22,19 @@ const Map<String, String> frTranslations = {
   'balance': 'Solde',
   'mining': 'Minage',
   'miningRate': 'Taux de minage',
-  'hashRate': 'Hash Rate',
-  'effectiveHashRate': 'Hash Rate effectif',
-  'effectiveHashRateLabel': 'Hash Rate effectif',
+  'hashRate': 'Taux de hachage',
+  'effectiveHashRate': 'Taux de hachage effectif',
+  'effectiveHashRateLabel': 'Taux de hachage effectif',
 
-  'dailyHashRateLabel': 'Hash Rate quotidien',
+  'dailyHashRateLabel': 'Taux de hachage quotidien',
   'dailyHashRateDay': 'Jour {day}',
   'dailyHashRateMaximum': 'Maximum : {rate} HR',
-  'dailyHashRateSuccess': 'Hash Rate du jour {day} : {rate} HR',
+  'dailyHashRateSuccess':
+      'Taux de hachage du jour {day} : {rate} HR',
 
   'stellaMiningProgress': 'Progression du minage de Stella',
   'stlPerHour': 'STL par heure',
-  'hashRateBonus': 'Bonus de Hash Rate',
+  'hashRateBonus': 'Bonus de taux de hachage',
 
   'startMining': 'DÉMARRER LE MINAGE',
   'claimMining': 'RÉCLAMER STL',
@@ -132,8 +133,8 @@ const Map<String, String> frTranslations = {
   // 🐱 STELLA
   // ============================================================
 
-  'catFact': 'Fait sur les chats de Stella',
-  'stellaFacts': 'Fait sur les chats de Stella',
+  'catFact': 'Fait amusant sur les chats de Stella',
+  'stellaFacts': 'Fait amusant sur les chats de Stella',
   'stellaPower': 'Stella Power',
   'stellaMining': 'Stella Mining',
 
@@ -344,7 +345,7 @@ const Map<String, String> frTranslations = {
       'Récompense publicitaire de Stella',
 
   'adRewardDescription':
-      'Récompense pour publicité regardée',
+      'Récompense pour avoir regardé une publicité',
 
   'stlTransaction':
       'Transaction STL',
