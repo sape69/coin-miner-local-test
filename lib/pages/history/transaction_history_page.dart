@@ -20,8 +20,11 @@ const Color goldAccentColor = Color(0xFFFFD166);
 // ============================================================
 
 class TransactionHistoryPage extends StatefulWidget {
+  final String languageCode;
+
   const TransactionHistoryPage({
     super.key,
+    this.languageCode = 'fi',
   });
 
   @override
@@ -45,17 +48,20 @@ class _TransactionHistoryPageState
   // LOCALIZATION
   // ==========================================================
 
+  AppLocalizations get localization =>
+      AppLocalizations(widget.languageCode);
+
   String _t(
     String key,
   ) {
-    return AppLocalizations.of(context).get(key);
+    return localization.get(key);
   }
 
   String _tWithParams(
     String key,
     Map<String, dynamic> params,
   ) {
-    return AppLocalizations.of(context).getWithParams(
+    return localization.getWithParams(
       key,
       params: params,
     );
@@ -176,7 +182,8 @@ class _TransactionHistoryPageState
 
       final rawTransactions = data['transactions'];
 
-      final List<Map<String, dynamic>> loadedTransactions = [];
+      final List<Map<String, dynamic>>
+          loadedTransactions = [];
 
       if (rawTransactions is List) {
         for (final item in rawTransactions) {
@@ -801,12 +808,6 @@ class _TransactionHistoryPageState
                 ),
 
                 const SizedBox(height: 5),
-
-                // ------------------------------------------------
-                // FIX:
-                // Pass the actual transaction count to the
-                // localized text so {count} is replaced.
-                // ------------------------------------------------
 
                 Text(
                   _tWithParams(
