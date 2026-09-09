@@ -22,18 +22,18 @@ const Map<String, String> deTranslations = {
   'balance': 'Guthaben',
   'mining': 'Mining',
   'miningRate': 'Mining-Rate',
-  'hashRate': 'Hash Rate',
-  'effectiveHashRate': 'Effektive Hash Rate',
-  'effectiveHashRateLabel': 'Effektive Hash Rate',
+  'hashRate': 'Hashrate',
+  'effectiveHashRate': 'Effektive Hashrate',
+  'effectiveHashRateLabel': 'Effektive Hashrate',
 
-  'dailyHashRateLabel': 'Tägliche Hash Rate',
+  'dailyHashRateLabel': 'Tägliche Hashrate',
   'dailyHashRateDay': 'Tag {day}',
   'dailyHashRateMaximum': 'Maximum: {rate} HR',
-  'dailyHashRateSuccess': 'Hash Rate an Tag {day}: {rate} HR',
+  'dailyHashRateSuccess': 'Hashrate an Tag {day}: {rate} HR',
 
   'stellaMiningProgress': 'Stellas Mining-Fortschritt',
   'stlPerHour': 'STL pro Stunde',
-  'hashRateBonus': 'Hash-Rate-Bonus',
+  'hashRateBonus': 'Hashrate-Bonus',
 
   'startMining': 'MINING STARTEN',
   'claimMining': 'STL EINSAMMELN',
@@ -88,7 +88,7 @@ const Map<String, String> deTranslations = {
       'Power Boost ist bereits aktiv.',
 
   'nextPowerBoostMessage':
-      'Der nächste Power Boost ist verfügbar, wenn der aktuelle Boost endet.',
+      'Der nächste Power Boost ist verfügbar, sobald der aktuelle Boost endet.',
 
   'nextAdAfterBoost':
       'Die nächste Werbung ist nach Ende des Boosts verfügbar.',
@@ -106,10 +106,10 @@ const Map<String, String> deTranslations = {
       'Stella Power Boost: +{amount} HR',
 
   'adRewardDuplicate':
-      'Diese Werbeprämie wurde bereits verarbeitet.',
+      'Diese Werbebelohnung wurde bereits verarbeitet.',
 
   'testAdRewardFailed':
-      'Die Werbeprämie konnte nicht verarbeitet werden.',
+      'Die Werbebelohnung konnte nicht verarbeitet werden.',
 
   // ============================================================
   // 🌐 SERVER
@@ -138,10 +138,10 @@ const Map<String, String> deTranslations = {
   'stellaMining': 'Stella Mining',
 
   'stellaIsMining':
-      'Stella miniert',
+      'Stella ist beim Mining',
 
   'stellaMiningNow':
-      'Stella miniert gerade',
+      'Stella ist gerade beim Mining',
 
   'stellaIsResting':
       'Stella ruht sich aus',
@@ -150,7 +150,7 @@ const Map<String, String> deTranslations = {
       'Stella wartet auf den nächsten Mining-Zyklus',
 
   'stlReadyToCollect':
-      'STL kann gesammelt werden',
+      'STL kann eingesammelt werden',
 
   'stlMined':
       'STL GEMINT',
@@ -165,7 +165,7 @@ const Map<String, String> deTranslations = {
       'MINING AKTIV',
 
   'stellaAlreadyMining':
-      'Stella miniert bereits.',
+      'Stella ist bereits beim Mining.',
 
   'prepareAd':
       'Werbung wird vorbereitet...',
@@ -384,7 +384,7 @@ const Map<String, String> deTranslations = {
       'Willkommen bei Stelluriini',
 
   'aboutWelcomeDescription':
-      'Stelluriini ist ein gemeinschaftsorientiertes Solana-Projekt, bei dem Stella, die Katze, als Maskottchen und Begleiterin des Projekts dient.',
+      'Stelluriini ist ein community-orientiertes Solana-Projekt, bei dem Stella, die Katze, als Maskottchen und Begleiterin des Projekts dient.',
 
   'aboutDescription':
       'Stelluriini verbindet Community, einen digitalen Token und ein App-Erlebnis rund um Stella.',
@@ -500,7 +500,7 @@ const Map<String, String> deTranslations = {
       'Mint-Adresse',
 
   'tokenDescription':
-      'Stelluriini ist ein gemeinschaftsorientierter Token auf der Solana-Blockchain.',
+      'Stelluriini ist ein community-orientierter Token auf der Solana-Blockchain.',
 
   'solana':
       'Solana',
