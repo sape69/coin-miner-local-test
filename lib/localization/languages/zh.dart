@@ -140,10 +140,10 @@ const Map<String, String> zhTranslations = {
   // ============================================================
 
   'catFact':
-      'Stella 猫咪知识',
+      'Stella 的猫咪趣闻',
 
   'stellaFacts':
-      'Stella 猫咪知识',
+      'Stella 的猫咪趣闻',
 
   'stellaPower':
       'Stella Power',
@@ -167,7 +167,7 @@ const Map<String, String> zhTranslations = {
       'STL 已准备好领取',
 
   'stlMined':
-      '已挖出的 STL',
+      '已挖取的 STL',
 
   'waitingForStella':
       '正在等待 Stella',
@@ -411,7 +411,7 @@ const Map<String, String> zhTranslations = {
       'Stella 是 Stelluriini 的核心，也是项目可爱的猫咪吉祥物。',
 
   'aboutStellaDescription':
-      'Stella 将带领用户体验挖矿、奖励以及 Stelluriini 生态系统。',
+      'Stella 将陪伴用户体验挖矿、领取奖励并探索 Stelluriini 生态系统。',
 
   'community':
       '社区',
