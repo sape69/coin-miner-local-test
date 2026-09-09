@@ -597,6 +597,108 @@ const Map<String, String> jaTranslations = {
   'tokenomicsImportant':
       '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されるべきです。',
 
+  'tokenomicsOverview':
+      'トークノミクス概要',
+
+  'tokenomicsOverviewDescription':
+      'Stelluriiniのトークノミクス構造は、STLの総供給量をコミュニティ報酬、流動性、エコシステムの成長、開発、マーケティングに計画的に配分する内容を示しています。',
+
+  'officialStlTokenomics':
+      'STL公式トークノミクス',
+
+  'tokenomicsTotalSupply':
+      '総供給量',
+
+  'tokenDistribution':
+      'トークン配分',
+
+  'communityRewards':
+      'コミュニティと報酬',
+
+  'ecosystem':
+      'エコシステム',
+
+  'development':
+      '開発',
+
+  'liquidity':
+      '流動性',
+
+  'marketing':
+      'マーケティング',
+
+  'stlTokens':
+      'STLトークン',
+
+  'totalSupplyDescription':
+      'Stelluriiniの総供給量は17 602 539 062 STLです。以下に示す配分は、計画されているトークン総供給量のすべてを表しています。',
+
+  'communityRewardsDescription':
+      'コミュニティ活動、ユーザー報酬、参加プログラム、および将来のコミュニティ中心の活動に使用されます。',
+
+  'liquidityDescription':
+      '流動性を支援し、STLにとってより健全で参加しやすい市場環境の構築に貢献するために確保されます。',
+
+  'ecosystemDescription':
+      '将来のエコシステムの成長、アプリケーション、ゲーム、統合、新しいデジタル体験のために確保されます。',
+
+  'developmentDescription':
+      '技術開発、アプリ開発、インフラストラクチャ、将来の改善に使用されます。',
+
+  'marketingDescription':
+      'マーケティング、プロジェクトの認知度向上、コミュニティの成長、プロモーション活動に使用されます。',
+
+  'allocationVerification':
+      'トークン配分の確認',
+
+  'totalAllocated':
+      '総配分量',
+
+  'allocationVerified':
+      '配分を確認しました。総配分量はSTLの総供給量と一致しています。',
+
+  'allocationRequiresVerification':
+      'トークン配分の確認が必要です。',
+
+  'allocationPrinciples':
+      '配分の原則',
+
+  'allocationPrinciplesDescription':
+      'トークン配分の構造は、コミュニティ、エコシステムの成長、そしてStelluriiniの長期的な発展を支援するように設計されています。',
+
+  'communityFirst':
+      'コミュニティを最優先',
+
+  'communityFirstDescription':
+      '計画されている供給量の大部分は、コミュニティ活動とコミュニティ報酬のために確保されています。',
+
+  'longTermGrowth':
+      '長期的な成長',
+
+  'longTermGrowthDescription':
+      'エコシステムと開発への配分は、将来の拡大と新しいプロジェクトを支援することを目的としています。',
+
+  'accessibility':
+      'アクセス性',
+
+  'accessibilityDescription':
+      '流動性への配分は、STLトークンへのアクセス性と市場参加を支援することを目的としています。',
+
+  'stellaStlCommunity':
+      'StellaとSTLコミュニティ',
+
+  'communityCuriosityDevelopmentSolana':
+      'コミュニティ • 好奇心 • 開発 • Solana',
+
+  'importantNotice':
+      '重要なお知らせ',
+
+  'tokenomicsImportantNotice':
+      'トークン配分の構造は、計画されているStelluriiniエコシステムモデルを示すものです。本ページの情報はいずれも、金融、投資、または法律上の助言を構成するものではありません。',
+
+  'stellaStelluriiniStlSolana':
+      'STELLA • STELLURIINI • STL • SOLANA',
+
   // ============================================================
   // 📄 WHITEPAPER
   // ============================================================
