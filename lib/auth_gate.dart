@@ -5,27 +5,8 @@ import 'pages/home/home_page.dart';
 import 'pages/loading_page.dart';
 import 'pages/login_page.dart';
 
-// ============================================================
-// 🔐 STELLURIINI / AUTH GATE
-// ============================================================
-//
-// AuthGate päättää, mikä näkymä käyttäjälle näytetään:
-//
-// 1. Firebase Authentication latautuu
-//    → LoadingPage
-//
-// 2. Käyttäjä on kirjautunut
-//    → HomePage
-//
-// 3. Käyttäjä ei ole kirjautunut
-//    → LoginPage
-//
-// Firebase Auth seuraa kirjautumistilaa reaaliaikaisesti.
-// ============================================================
-
 class AuthGate extends StatelessWidget {
   final String languageCode;
-
   final Future<void> Function(String) changeLanguage;
 
   const AuthGate({
@@ -33,10 +14,6 @@ class AuthGate extends StatelessWidget {
     required this.languageCode,
     required this.changeLanguage,
   });
-
-  // ==========================================================
-  // 🏠 BUILD
-  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -46,30 +23,38 @@ class AuthGate extends StatelessWidget {
         BuildContext context,
         AsyncSnapshot<User?> snapshot,
       ) {
-        // ====================================================
-        // ⏳ FIREBASE AUTH LATAUTUU
-        // ====================================================
-
         if (snapshot.connectionState ==
             ConnectionState.waiting) {
           return const LoadingPage();
         }
 
-        // ====================================================
-        // 🏠 KÄYTTÄJÄ ON KIRJAUTUNUT
-        // ====================================================
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFF120B24),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Authentication error',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFF8F4FF),
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
 
-        if (snapshot.hasData &&
-            snapshot.data != null) {
+        final User? user = snapshot.data;
+
+        if (user != null) {
           return HomePage(
             languageCode: languageCode,
             changeLanguage: changeLanguage,
           );
         }
-
-        // ====================================================
-        // 🔐 KÄYTTÄJÄ EI OLE KIRJAUTUNUT
-        // ====================================================
 
         return LoginPage(
           languageCode: languageCode,
