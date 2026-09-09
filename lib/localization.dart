@@ -9,6 +9,29 @@ import 'localization/languages/ja.dart';
 import 'localization/languages/vi.dart';
 import 'localization/languages/zh.dart';
 
+// ============================================================
+// 🌍 STELLURIINI APP LOCALIZATIONS
+// ============================================================
+//
+// Keskitetty Stelluriini-käännösjärjestelmä.
+//
+// Tuetut kielet:
+// • Suomi
+// • English
+// • Deutsch
+// • Español
+// • Français
+// • 中文
+// • Tiếng Việt
+// • 日本語
+//
+// Sovelluksen pääasiallinen kieli tulee main.dartista
+// ja kulkee languageCode-arvona sivuille.
+//
+// Tämä tiedosto sisältää myös BuildContext-pohjaisen
+// fallback-menetelmän vanhempia widgettejä varten.
+// ============================================================
+
 class AppLocalizations {
   final String languageCode;
 
@@ -49,9 +72,32 @@ class AppLocalizations {
   // ============================================================
 
   String get(String key) {
-    return _translations[languageCode]?[key] ??
-        _translations['en']?[key] ??
-        key;
+    final Map<String, String>? languageTranslations =
+        _translations[languageCode];
+
+    final String? translatedValue =
+        languageTranslations?[key];
+
+    if (translatedValue != null) {
+      return translatedValue;
+    }
+
+    // ----------------------------------------------------------
+    // English fallback
+    // ----------------------------------------------------------
+
+    final String? englishValue =
+        _translations['en']?[key];
+
+    if (englishValue != null) {
+      return englishValue;
+    }
+
+    // ----------------------------------------------------------
+    // Final fallback
+    // ----------------------------------------------------------
+
+    return key;
   }
 
   // ============================================================
@@ -64,14 +110,21 @@ class AppLocalizations {
   }) {
     String value = get(key);
 
-    if (params != null) {
-      params.forEach((name, replacement) {
+    if (params == null || params.isEmpty) {
+      return value;
+    }
+
+    params.forEach(
+      (
+        String name,
+        dynamic replacement,
+      ) {
         value = value.replaceAll(
           '{$name}',
           replacement.toString(),
         );
-      });
-    }
+      },
+    );
 
     return value;
   }
@@ -86,32 +139,98 @@ class AppLocalizations {
   }) {
     String value = get(key);
 
-    if (params != null) {
-      params.forEach((name, replacement) {
+    if (params == null || params.isEmpty) {
+      return value;
+    }
+
+    params.forEach(
+      (
+        String name,
+        String replacement,
+      ) {
         value = value.replaceAll(
           '{$name}',
           replacement,
         );
-      });
-    }
+      },
+    );
 
     return value;
   }
 
   // ============================================================
-  // 🌍 BUILD CONTEXT
+  // 🌍 LANGUAGE VALIDATION
   // ============================================================
 
-  static AppLocalizations of(BuildContext context) {
-    final locale = Localizations.localeOf(context);
+  static bool isSupportedLanguage(
+    String? code,
+  ) {
+    if (code == null) {
+      return false;
+    }
 
-    final languageCode =
+    return supportedLanguages.containsKey(
+      code,
+    );
+  }
+
+  // ============================================================
+  // 🌍 SAFE LANGUAGE CODE
+  // ============================================================
+
+  static String normalizeLanguageCode(
+    String? code,
+  ) {
+    if (code != null &&
+        supportedLanguages.containsKey(code)) {
+      return code;
+    }
+
+    return 'fi';
+  }
+
+  // ============================================================
+  // 🌍 BUILD CONTEXT FALLBACK
+  // ============================================================
+  //
+  // Tätä voidaan käyttää widgeteissä, jotka eivät vielä
+  // saa languageCodea suoraan konstruktorissa.
+  //
+  // HUOM:
+  // Stelluriinin uusissa pääsivuissa suositellaan käyttämään:
+  //
+  // AppLocalizations(widget.languageCode)
+  //
+  // eikä tätä metodia.
+  //
+  // Tämä metodi käyttää Flutterin Locale-arvoa vain fallbackina.
+  // ============================================================
+
+  static AppLocalizations of(
+    BuildContext context,
+  ) {
+    final Locale locale =
+        Localizations.localeOf(context);
+
+    final String code =
         supportedLanguages.containsKey(
           locale.languageCode,
         )
             ? locale.languageCode
-            : 'en';
+            : 'fi';
 
-    return AppLocalizations(languageCode);
+    return AppLocalizations(code);
+  }
+
+  // ============================================================
+  // 🌍 DIRECT LANGUAGE ACCESS
+  // ============================================================
+
+  static AppLocalizations forLanguage(
+    String? code,
+  ) {
+    return AppLocalizations(
+      normalizeLanguageCode(code),
+    );
   }
 }
