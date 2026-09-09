@@ -6,14 +6,25 @@ const Map<String, String> fiTranslations = {
   'appTitle': 'STELLURIINI',
   'home': 'Etusivu',
   'about': 'Tietoa',
+  'aboutStelluriini': 'Tietoa Stelluriinista',
   'history': 'Tapahtumahistoria',
   'roadmap': 'Tiekartta',
   'token': 'STL Token',
   'tokenomics': 'Tokenomiikka',
   'whitepaper': 'Whitepaper',
+  'whitePaper': 'White Paper',
   'language': 'Kieli',
+  'selectLanguage': 'Valitse kieli',
   'logout': 'Kirjaudu ulos',
   'menu': 'Valikko',
+  'refresh': 'Päivitä',
+  'ready': 'Valmis',
+  'close': 'Sulje',
+  'cancel': 'Peruuta',
+  'error': 'Virhe',
+  'success': 'Onnistui',
+  'comingSoon': 'Tulossa pian',
+  'information': 'Tietoa',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -31,51 +42,104 @@ const Map<String, String> fiTranslations = {
   'dailyHashRateMaximum': 'Maksimi: {rate} HR',
   'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
 
-  'stellaMiningProgress': 'Stellan louhinnan edistyminen',
-  'stlPerHour': 'STL tunnissa',
-  'hashRateBonus': 'Hash Rate -bonus',
+  'stellaMiningProgress':
+      'Stellan louhinnan edistyminen',
 
-  'startMining': 'ALOITA LOUHINTA',
-  'claimMining': 'KERÄÄ STL',
-  'miningActive': 'Louhinta käynnissä',
-  'miningComplete': 'Louhintajakso valmis',
+  'stlPerHour':
+      'STL tunnissa',
 
-  'timeRemaining': 'Aikaa jäljellä',
-  'remaining': 'Aikaa jäljellä: {time}',
+  'hashRateBonus':
+      'Hash Rate -bonus',
 
-  'streak': 'Päiväputki',
-  'days': 'päivää',
+  'startMining':
+      'ALOITA LOUHINTA',
+
+  'claimMining':
+      'KERÄÄ STL',
+
+  'watchAdStartMining':
+      'KATSO MAINOS JA ALOITA LOUHINTA',
+
+  'watchAdCollectReward':
+      'KATSO MAINOS JA KERÄÄ PALKINTO',
+
+  'miningActive':
+      'Louhinta käynnissä',
+
+  'miningComplete':
+      'Louhintajakso valmis',
+
+  'miningFinished':
+      'Louhinta valmis',
+
+  'timeRemaining':
+      'Aikaa jäljellä',
+
+  'remaining':
+      'Aikaa jäljellä: {time}',
+
+  'waitingForStella':
+      'Odotetaan Stellaa',
+
+  'streak':
+      'Päiväputki',
+
+  'days':
+      'päivää',
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
-  'dailyBonus': 'Päivittäinen bonus',
-  'dailyClaim': 'Kerää päivittäinen bonus',
-  'dailyReward': 'Päivittäinen palkinto',
-  'claimedToday': 'Kerätty tänään',
-  'alreadyClaimed': 'Olet jo kerännyt tämän päivän palkinnon.',
+  'dailyBonus':
+      'Päivittäinen bonus',
+
+  'dailyClaim':
+      'Kerää päivittäinen bonus',
+
+  'dailyReward':
+      'Päivittäinen palkinto',
+
+  'claimedToday':
+      'Kerätty tänään',
+
+  'alreadyClaimed':
+      'Olet jo kerännyt tämän päivän palkinnon.',
 
   // ============================================================
   // 📺 ADS
   // ============================================================
 
-  'watchAd': 'KATSO MAINOS',
-  'watchAndEarn': 'KATSO & ANSAITSE',
-  'loadingAd': 'LADATAAN MAINOSTA...',
-  'adLoading': 'LADATAAN MAINOSTA...',
-  'adReward': '+{amount} HR',
+  'watchAd':
+      'KATSO MAINOS',
+
+  'watchAndEarn':
+      'KATSO & ANSAITSE',
+
+  'loadingAd':
+      'LADATAAN MAINOSTA...',
+
+  'adLoading':
+      'LADATAAN MAINOSTA...',
+
+  'prepareAd':
+      'Valmistellaan mainosta...',
+
+  'adReward':
+      '+{amount} HR',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
-  'powerBoost': 'Stella Power Boost',
+  'powerBoost':
+      'Stella Power Boost',
 
   'powerBoostOffer':
       'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
 
-  'powerBoostActive': 'Power Boost aktiivinen',
+  'powerBoostActive':
+      'Power Boost aktiivinen',
 
   'powerBoostActiveTitle':
       'Stella Power Boost on aktiivinen!',
@@ -117,24 +181,28 @@ const Map<String, String> fiTranslations = {
   'serverConnectionFailed':
       'Palvelinyhteys epäonnistui.',
 
-  'refresh': 'Päivitä',
-
   // ============================================================
   // 👤 GENERAL UI
   // ============================================================
 
-  'profile': 'Profiili',
-  'comingSoon': 'Tulossa pian',
-  'information': 'Tietoa',
+  'profile':
+      'Profiili',
 
   // ============================================================
   // 🐱 STELLA
   // ============================================================
 
-  'catFact': 'Stellan kissafakta',
-  'stellaFacts': 'Stellan kissafakta',
-  'stellaPower': 'Stella Power',
-  'stellaMining': 'Stella Mining',
+  'catFact':
+      'Stellan kissafakta',
+
+  'stellaFacts':
+      'Stellan kissafakta',
+
+  'stellaPower':
+      'Stella Power',
+
+  'stellaMining':
+      'Stella Mining',
 
   'stellaIsMining':
       'Stella louhii',
@@ -154,9 +222,6 @@ const Map<String, String> fiTranslations = {
   'stlMined':
       'LOUHITTU STL',
 
-  'waitingForStella':
-      'Odotetaan Stellaa',
-
   'stellaIsWorking':
       'STELLA TYÖSKENTELEE...',
 
@@ -166,8 +231,9 @@ const Map<String, String> fiTranslations = {
   'stellaAlreadyMining':
       'Stella louhii jo.',
 
-  'prepareAd':
-      'Valmistellaan mainosta...',
+  // ============================================================
+  // ⛏️ MINING MESSAGES
+  // ============================================================
 
   'miningCollected':
       'Kerätty {amount} STL',
@@ -179,7 +245,8 @@ const Map<String, String> fiTranslations = {
   // 💎 TRANSACTIONS
   // ============================================================
 
-  'transactions': 'Tapahtumat',
+  'transactions':
+      'Tapahtumat',
 
   'noTransactions':
       'Ei tapahtumia vielä.',
@@ -203,20 +270,8 @@ const Map<String, String> fiTranslations = {
   'resetConfirm':
       'Haluatko varmasti nollata testitilin?',
 
-  'cancel':
-      'Peruuta',
-
   'reset':
       'Nollaa',
-
-  'error':
-      'Virhe',
-
-  'success':
-      'Onnistui',
-
-  'close':
-      'Sulje',
 
   // ============================================================
   // 🔐 LOGIN
