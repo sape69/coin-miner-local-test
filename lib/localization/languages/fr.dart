@@ -522,29 +522,128 @@ const Map<String, String> frTranslations = {
   'tokenomicsSubtitle':
       'Informations de base et structure économique du token Stelluriini STL.',
 
+  'tokenomicsOverview':
+      'Aperçu de la tokenomics',
+
+  'tokenomicsOverviewDescription':
+      'La structure de tokenomics de Stelluriini décrit la répartition prévue de l’offre totale de STL entre les récompenses communautaires, la liquidité, la croissance de l’écosystème, le développement et le marketing.',
+
+  'officialStlTokenomics':
+      'Tokenomics officielle de STL',
+
+  'tokenomicsTotalSupply':
+      'OFFRE TOTALE',
+
   'totalSupply':
       'Offre totale',
 
-  'tokenAllocation':
+  'tokenDistribution':
       'Répartition des tokens',
 
   'communityAllocation':
       'Communauté',
 
+  'communityRewards':
+      'Communauté et récompenses',
+
   'ecosystemAllocation':
+      'Écosystème',
+
+  'ecosystem':
       'Écosystème',
 
   'developmentAllocation':
       'Développement',
 
+  'development':
+      'Développement',
+
   'liquidityAllocation':
+      'Liquidité',
+
+  'liquidity':
       'Liquidité',
 
   'marketingAllocation':
       'Marketing',
 
+  'marketing':
+      'Marketing',
+
+  'stlTokens':
+      'TOKENS STL',
+
+  'totalSupplyDescription':
+      'L’offre totale de Stelluriini est de 17 602 539 062 STL. La répartition présentée ci-dessous représente la totalité de l’offre de tokens prévue.',
+
+  'communityRewardsDescription':
+      'Destinée aux initiatives communautaires, aux récompenses des utilisateurs, aux programmes de participation et aux futures activités axées sur la communauté.',
+
+  'liquidityDescription':
+      'Réservée au soutien de la liquidité et à la création d’un environnement de marché plus sain et plus accessible pour STL.',
+
+  'ecosystemDescription':
+      'Réservée à la croissance future de l’écosystème, aux applications, aux jeux, aux intégrations et aux nouvelles expériences numériques.',
+
+  'developmentDescription':
+      'Destinée au développement technique, au développement de l’application, à l’infrastructure et aux futures améliorations.',
+
+  'marketingDescription':
+      'Destinée au marketing, à la notoriété du projet, à la croissance de la communauté et aux activités promotionnelles.',
+
+  'allocationVerification':
+      'Vérification de la répartition',
+
+  'totalAllocated':
+      'Total alloué',
+
+  'allocationVerified':
+      'Répartition vérifiée : la répartition totale correspond à l’offre complète de STL.',
+
+  'allocationRequiresVerification':
+      'La répartition des tokens doit être vérifiée.',
+
+  'allocationPrinciples':
+      'Principes de répartition',
+
+  'allocationPrinciplesDescription':
+      'La structure de répartition des tokens est conçue pour soutenir la communauté, la croissance de l’écosystème et le développement à long terme de Stelluriini.',
+
+  'communityFirst':
+      'La communauté d’abord',
+
+  'communityFirstDescription':
+      'Une part importante de l’offre prévue est destinée aux initiatives et aux récompenses communautaires.',
+
+  'longTermGrowth':
+      'Croissance à long terme',
+
+  'longTermGrowthDescription':
+      'Les allocations destinées à l’écosystème et au développement visent à soutenir l’expansion future et les nouveaux projets.',
+
+  'accessibility':
+      'Accessibilité',
+
+  'accessibilityDescription':
+      'L’allocation destinée à la liquidité vise à soutenir l’accessibilité et la participation au marché du token STL.',
+
+  'stellaStlCommunity':
+      'Stella et la communauté STL',
+
+  'communityCuriosityDevelopmentSolana':
+      'Communauté • Curiosité • Développement • Solana',
+
   'tokenomicsImportant':
       'Les allocations exactes de tokens peuvent être mises à jour pendant le développement du projet. Toute modification doit être communiquée de manière transparente à la communauté.',
+
+  'importantNotice':
+      'Avis important',
+
+  'tokenomicsImportantNotice':
+      'La structure de répartition des tokens décrit le modèle prévu de l’écosystème Stelluriini. Aucune information présentée sur cette page ne constitue un conseil financier, d’investissement ou juridique.',
+
+  'stellaStelluriiniStlSolana':
+      'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
   // 📄 WHITEPAPER
