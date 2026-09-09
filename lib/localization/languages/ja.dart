@@ -210,7 +210,7 @@ const Map<String, String> jaTranslations = {
       'Stellaを待っています',
 
   'stellaIsWorking':
-      'STELLA 作業中...',
+      'STELLA 作業中です...',
 
   'stellaIsMiningButton':
       'マイニング中',
@@ -244,7 +244,7 @@ const Map<String, String> jaTranslations = {
       'ポイント',
 
   'pointsAdded':
-      'ポイントを追加しました',
+      'ポイントが追加されました',
 
   // ============================================================
   // 🔄 TEST ACCOUNT
@@ -266,7 +266,7 @@ const Map<String, String> jaTranslations = {
       'エラー',
 
   'success':
-      '成功',
+      '完了',
 
   'close':
       '閉じる',
