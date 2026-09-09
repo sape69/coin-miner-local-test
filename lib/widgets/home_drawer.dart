@@ -11,6 +11,7 @@ import 'cat_avatar.dart';
 //
 // Tämä widget:
 // - käyttää Stelluriinin violetti/pinkki-teemaa
+// - käyttää samaa languageCode-arvoa kuin HomePage
 // - käyttää keskitettyä AppLocalizations-järjestelmää
 // - tukee kaikkia nykyisiä kieliä
 // - sisältää navigoinnit:
@@ -38,6 +39,8 @@ const Color goldAccentColor = Color(0xFFFFD166);
 // ============================================================
 
 class HomeDrawer extends StatelessWidget {
+  final String languageCode;
+
   final VoidCallback onLanguagePressed;
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
@@ -46,6 +49,7 @@ class HomeDrawer extends StatelessWidget {
 
   const HomeDrawer({
     super.key,
+    required this.languageCode,
     required this.onLanguagePressed,
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
@@ -57,11 +61,13 @@ class HomeDrawer extends StatelessWidget {
   // 🌍 LOCALIZATION
   // ==========================================================
 
+  AppLocalizations get _localization =>
+      AppLocalizations(languageCode);
+
   String _t(
-    BuildContext context,
     String key,
   ) {
-    return AppLocalizations.of(context).get(key);
+    return _localization.get(key);
   }
 
   // ==========================================================
@@ -324,7 +330,6 @@ class HomeDrawer extends StatelessWidget {
 
                   Text(
                     _t(
-                      context,
                       'stellaCommunity',
                     ),
                     textAlign: TextAlign.center,
@@ -359,7 +364,6 @@ class HomeDrawer extends StatelessWidget {
                   _menuItem(
                     icon: Icons.language_rounded,
                     title: _t(
-                      context,
                       'language',
                     ),
                     onTap: onLanguagePressed,
@@ -372,7 +376,6 @@ class HomeDrawer extends StatelessWidget {
                   _menuItem(
                     icon: Icons.info_outline_rounded,
                     title: _t(
-                      context,
                       'aboutStelluriini',
                     ),
                     onTap: onAboutPressed,
@@ -385,7 +388,6 @@ class HomeDrawer extends StatelessWidget {
                   _menuItem(
                     icon: Icons.description_outlined,
                     title: _t(
-                      context,
                       'whitePaper',
                     ),
                     onTap: onWhitePaperPressed,
@@ -398,7 +400,6 @@ class HomeDrawer extends StatelessWidget {
                   _menuItem(
                     icon: Icons.map_outlined,
                     title: _t(
-                      context,
                       'roadmap',
                     ),
                     onTap: onRoadmapPressed,
@@ -411,7 +412,6 @@ class HomeDrawer extends StatelessWidget {
                   _menuItem(
                     icon: Icons.history_rounded,
                     title: _t(
-                      context,
                       'transactionHistory',
                     ),
                     onTap: onTransactionHistoryPressed,
@@ -469,7 +469,6 @@ class HomeDrawer extends StatelessWidget {
                       Flexible(
                         child: Text(
                           _t(
-                            context,
                             'footerTagline',
                           ),
                           textAlign: TextAlign.center,
@@ -506,7 +505,6 @@ class HomeDrawer extends StatelessWidget {
 
                   Text(
                     _t(
-                      context,
                       'footerToken',
                     ),
                     textAlign: TextAlign.center,
