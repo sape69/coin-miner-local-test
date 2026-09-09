@@ -29,7 +29,8 @@ const Map<String, String> viTranslations = {
   'dailyHashRateLabel': 'Tốc độ băm hàng ngày',
   'dailyHashRateDay': 'Ngày {day}',
   'dailyHashRateMaximum': 'Tối đa: {rate} HR',
-  'dailyHashRateSuccess': 'Tốc độ băm ngày {day}: {rate} HR',
+  'dailyHashRateSuccess':
+      'Tốc độ băm ngày {day}: {rate} HR',
 
   'stellaMiningProgress': 'Tiến trình khai thác Stella',
   'stlPerHour': 'STL mỗi giờ',
@@ -140,10 +141,10 @@ const Map<String, String> viTranslations = {
   // ============================================================
 
   'catFact':
-      'Kiến thức về mèo Stella',
+      'Kiến thức thú vị về mèo của Stella',
 
   'stellaFacts':
-      'Kiến thức về mèo Stella',
+      'Kiến thức thú vị về mèo của Stella',
 
   'stellaPower':
       'Stella Power',
