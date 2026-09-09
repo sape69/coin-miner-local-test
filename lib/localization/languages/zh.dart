@@ -536,29 +536,131 @@ const Map<String, String> zhTranslations = {
   'tokenomicsSubtitle':
       'Stelluriini STL 代币的基本信息和经济结构。',
 
+  'tokenomicsOverview':
+      '代币经济学概览',
+
+  'tokenomicsOverviewDescription':
+      'Stelluriini 的代币经济学结构描述了 STL 总供应量在社区奖励、流动性、生态系统增长、开发和市场营销之间的计划分配。',
+
+  'officialStlTokenomics':
+      'STL 官方代币经济学',
+
+  'tokenomicsTotalSupply':
+      '总供应量',
+
   'totalSupply':
       '总供应量',
 
-  'tokenAllocation':
+  'tokenDistribution':
       '代币分配',
 
   'communityAllocation':
       '社区',
 
+  'communityRewards':
+      '社区与奖励',
+
   'ecosystemAllocation':
+      '生态系统',
+
+  'ecosystem':
       '生态系统',
 
   'developmentAllocation':
       '开发',
 
+  'development':
+      '开发',
+
   'liquidityAllocation':
+      '流动性',
+
+  'liquidity':
       '流动性',
 
   'marketingAllocation':
       '市场营销',
 
+  'marketing':
+      '市场营销',
+
+  'stlTokens':
+      'STL 代币',
+
+  'totalSupplyDescription':
+      'Stelluriini 的总供应量为 17 602 539 062 STL。下方所示的分配代表计划中的全部代币供应量。',
+
+  'communityRewardsDescription':
+      '用于社区活动、用户奖励、参与计划以及未来以社区为中心的活动。',
+
+  'liquidityDescription':
+      '预留用于支持流动性，并帮助为 STL 创建更加健康且易于参与的市场环境。',
+
+  'ecosystemDescription':
+      '预留用于未来生态系统的发展、应用程序、游戏、集成以及新的数字体验。',
+
+  'developmentDescription':
+      '用于技术开发、应用程序开发、基础设施以及未来的改进。',
+
+  'marketingDescription':
+      '用于市场营销、项目知名度、社区增长以及推广活动。',
+
+  'allocationVerification':
+      '代币分配验证',
+
+  'totalAllocated':
+      '总分配量',
+
+  'allocationVerified':
+      '分配已验证：总分配量与完整的 STL 总供应量一致。',
+
+  'allocationRequiresVerification':
+      '代币分配需要验证。',
+
+  'allocationPrinciples':
+      '分配原则',
+
+  'allocationPrinciplesDescription':
+      '代币分配结构旨在支持社区、生态系统增长以及 Stelluriini 的长期发展。',
+
+  'communityFirst':
+      '社区优先',
+
+  'communityFirstDescription':
+      '计划供应量中的重要部分将用于社区活动和社区奖励。',
+
+  'longTermGrowth':
+      '长期增长',
+
+  'longTermGrowthDescription':
+      '生态系统和开发部分的分配旨在支持未来的扩展和新项目。',
+
+  'accessibility':
+      '可访问性',
+
+  'accessibilityDescription':
+      '流动性分配旨在支持 STL 代币的可访问性和市场参与。',
+
+  'stellaStlCommunity':
+      'Stella 与 STL 社区',
+
+  'communityCuriosityDevelopmentSolana':
+      '社区 • 好奇心 • 开发 • Solana',
+
+  'tokenAllocation':
+      '代币分配',
+
   'tokenomicsImportant':
       '具体的代币分配可能会在项目开发过程中进行更新。所有更改都应向社区透明地公布。',
+
+  'importantNotice':
+      '重要提示',
+
+  'tokenomicsImportantNotice':
+      '代币分配结构描述的是 Stelluriini 生态系统的计划模型。本页面中的任何信息均不构成金融、投资或法律建议。',
+
+  'stellaStelluriiniStlSolana':
+      'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
   // 📄 WHITEPAPER
