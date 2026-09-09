@@ -1467,7 +1467,10 @@ class _HomePageState extends State<HomePage>
 
         onWhitePaperPressed: () {
           _openPage(
-            const WhitePaperPage(),
+            WhitePaperPage(
+              languageCode:
+                  widget.languageCode,
+            ),
           );
         },
 
