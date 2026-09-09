@@ -43,7 +43,7 @@ const Map<String, String> deTranslations = {
   'timeRemaining': 'Verbleibende Zeit',
   'remaining': 'Verbleibende Zeit: {time}',
 
-  'streak': 'Serie',
+  'streak': 'Tages-Serie',
   'days': 'Tage',
 
   // ============================================================
@@ -138,10 +138,10 @@ const Map<String, String> deTranslations = {
   'stellaMining': 'Stella Mining',
 
   'stellaIsMining':
-      'Stella ist beim Mining',
+      'Stella miniert',
 
   'stellaMiningNow':
-      'Stella ist gerade beim Mining',
+      'Stella miniert gerade',
 
   'stellaIsResting':
       'Stella ruht sich aus',
@@ -165,7 +165,7 @@ const Map<String, String> deTranslations = {
       'MINING AKTIV',
 
   'stellaAlreadyMining':
-      'Stella ist bereits beim Mining.',
+      'Stella miniert bereits.',
 
   'prepareAd':
       'Werbung wird vorbereitet...',
@@ -344,7 +344,7 @@ const Map<String, String> deTranslations = {
       'Stella-Werbebelohnung',
 
   'adRewardDescription':
-      'Belohnung für angesehene Werbung',
+      'Belohnung für das Ansehen einer Werbung',
 
   'stlTransaction':
       'STL-Transaktion',
