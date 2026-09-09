@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../localization.dart';
+import '../../localization/whitepaper/whitepaper_de.dart';
+import '../../localization/whitepaper/whitepaper_en.dart';
+import '../../localization/whitepaper/whitepaper_es.dart';
+import '../../localization/whitepaper/whitepaper_fi.dart';
+import '../../localization/whitepaper/whitepaper_fr.dart';
+import '../../localization/whitepaper/whitepaper_ja.dart';
+import '../../localization/whitepaper/whitepaper_vi.dart';
+import '../../localization/whitepaper/whitepaper_zh.dart';
 import '../../widgets/cat_avatar.dart';
 import '../../widgets/stelluriini_logo.dart';
 
-import '../../localization/whitepaper/whitepaper_fi.dart';
-import '../../localization/whitepaper/whitepaper_en.dart';
-import '../../localization/whitepaper/whitepaper_de.dart';
-import '../../localization/whitepaper/whitepaper_es.dart';
-import '../../localization/whitepaper/whitepaper_fr.dart';
-import '../../localization/whitepaper/whitepaper_zh.dart';
-import '../../localization/whitepaper/whitepaper_vi.dart';
-import '../../localization/whitepaper/whitepaper_ja.dart';
-
-import 'whitepaper_section.dart';
 import 'whitepaper_paragraph.dart';
+import 'whitepaper_section.dart';
 
 // ============================================================
 // STELLA THEME COLORS
@@ -31,8 +29,11 @@ const Color whitePaperGoldColor = Color(0xFFFFD166);
 // ============================================================
 
 class WhitePaperPage extends StatelessWidget {
+  final String languageCode;
+
   const WhitePaperPage({
     super.key,
+    this.languageCode = 'fi',
   });
 
   static const String tokenName = 'Stelluriini';
@@ -556,15 +557,12 @@ class WhitePaperPage extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
-    final localization =
-        AppLocalizations.of(context);
-
-    final languageCode =
-        localization.languageCode;
+    final String activeLanguage =
+        languageCode;
 
     String t(String key) {
       return _t(
-        languageCode,
+        activeLanguage,
         key,
       );
     }
@@ -599,7 +597,6 @@ class WhitePaperPage extends StatelessWidget {
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-
               // ==================================================
               // COVER
               // ==================================================
