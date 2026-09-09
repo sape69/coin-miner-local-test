@@ -264,10 +264,6 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          // ------------------------------------------------------
-          // MINING TIMER
-          // ------------------------------------------------------
-
           if (_miningActive &&
               _miningRemainingMs > 0) {
             _miningRemainingMs -= 1000;
@@ -277,10 +273,6 @@ class _HomePageState extends State<HomePage>
               _miningActive = false;
             }
           }
-
-          // ------------------------------------------------------
-          // POWER BOOST TIMER
-          // ------------------------------------------------------
 
           if (_adBoostActive &&
               _adBoostRemainingMs > 0) {
@@ -292,10 +284,6 @@ class _HomePageState extends State<HomePage>
             }
           }
 
-          // ------------------------------------------------------
-          // AD COOLDOWN
-          // ------------------------------------------------------
-
           if (!_adBoostActive &&
               _cooldownRemainingMs > 0) {
             _cooldownRemainingMs -= 1000;
@@ -304,10 +292,6 @@ class _HomePageState extends State<HomePage>
               _cooldownRemainingMs = 0;
             }
           }
-
-          // ------------------------------------------------------
-          // AD AVAILABILITY
-          // ------------------------------------------------------
 
           if (!_adBoostActive &&
               _cooldownRemainingMs <= 0 &&
@@ -371,18 +355,10 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
-        // ======================================================
-        // DAILY STREAK
-        // ======================================================
-
         _streak = _toInt(
           data['dailyStreak'] ??
               data['streak'],
         );
-
-        // ======================================================
-        // DAILY HASH RATE
-        // ======================================================
 
         final double backendDailyHashRate =
             _toDouble(
@@ -401,10 +377,6 @@ class _HomePageState extends State<HomePage>
           );
         }
 
-        // ======================================================
-        // BASE HASH RATE
-        // ======================================================
-
         final double backendHashRate =
             _toDouble(
           data['hashRate'],
@@ -417,10 +389,6 @@ class _HomePageState extends State<HomePage>
         } else {
           _hashRate = _dailyHashRate;
         }
-
-        // ======================================================
-        // MINING
-        // ======================================================
 
         _unclaimedMining =
             _toDouble(
@@ -449,10 +417,6 @@ class _HomePageState extends State<HomePage>
           _miningDurationMs =
               defaultMiningDurationMs;
         }
-
-        // ======================================================
-        // POWER BOOST
-        // ======================================================
 
         _adsToday =
             _toInt(
@@ -497,15 +461,7 @@ class _HomePageState extends State<HomePage>
           _adBoostActive = false;
         }
 
-        // ======================================================
-        // EFFECTIVE RATE
-        // ======================================================
-
         _recalculateMiningPerHour();
-
-        // ======================================================
-        // AD AVAILABILITY
-        // ======================================================
 
         _canWatchAd =
             data['canWatchAd'] == true;
@@ -1485,7 +1441,10 @@ class _HomePageState extends State<HomePage>
 
         onTransactionHistoryPressed: () {
           _openPage(
-            const TransactionHistoryPage(),
+            TransactionHistoryPage(
+              languageCode:
+                  widget.languageCode,
+            ),
           );
         },
       ),
