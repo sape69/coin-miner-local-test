@@ -1922,7 +1922,7 @@ class _HomePageState extends State<HomePage>
     } else if (completed) {
       text =
           _localization.get(
-        'watchAdCollectRestart',
+        'watchAdCollectReward',
       );
 
       icon =
