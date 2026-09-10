@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 
-import 'pages/login_page.dart';
+import 'auth_gate.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / DIRECT LOGIN TEST
+// 🐱 STELLURIINI / STELLA THEME
 // ============================================================
 //
-// VIANMÄÄRITYSTESTI
+// DIAGNOSTIIKKAVERSIO
 //
-// Tässä testissä:
+// Tässä testissä Firebase, AdMob ja SharedPreferences
+// eivät ole mukana.
 //
-// ❌ Firebase EI käynnisty
-// ❌ AuthGate EI ole mukana
-// ❌ SharedPreferences EI ole mukana
-// ❌ AdMob EI ole mukana
+// Tarkoitus on selvittää, syntyykö harmaa alue jo
+// sovelluksen perusrakenteessa.
 //
-// ✅ Nykyinen LoginPage avataan suoraan
-//
-// Tällä selvitetään, tuleeko harmaa alue LoginPage-tiedostosta
-// vai Auth/Firebase-ketjusta.
+// Kun testi on valmis, palautamme tarvittavat palvelut
+// takaisin yksi kerrallaan.
 //
 // ============================================================
 
@@ -63,57 +60,16 @@ void main() {
 }
 
 // ============================================================
-// APP
+// 🐱 STELLURIINI APP
 // ============================================================
 
-class StelluriiniApp extends StatefulWidget {
+class StelluriiniApp extends StatelessWidget {
   const StelluriiniApp({
     super.key,
   });
 
-  @override
-  State<StelluriiniApp> createState() =>
-      _StelluriiniAppState();
-}
-
-class _StelluriiniAppState
-    extends State<StelluriiniApp> {
-  String languageCode = 'fi';
-
   // ==========================================================
-  // LANGUAGE
-  // ==========================================================
-
-  Future<void> changeLanguage(
-    String language,
-  ) async {
-    const Set<String> supportedLanguages = {
-      'fi',
-      'en',
-      'de',
-      'es',
-      'fr',
-      'zh',
-      'vi',
-      'ja',
-    };
-
-    final String validLanguage =
-        supportedLanguages.contains(language)
-            ? language
-            : 'fi';
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      languageCode = validLanguage;
-    });
-  }
-
-  // ==========================================================
-  // SUPPORTED LOCALES
+  // 🌍 SUPPORTED LANGUAGES
   // ==========================================================
 
   List<Locale> get supportedLocales {
@@ -130,7 +86,260 @@ class _StelluriiniAppState
   }
 
   // ==========================================================
-  // BUILD
+  // 🌍 TEMPORARY LANGUAGE FUNCTION
+  // ==========================================================
+  //
+  // AuthGate tarvitsee changeLanguage-funktion.
+  //
+  // Tässä testissä kielenvaihto ei muuta sovellusta,
+  // koska testaamme tällä hetkellä vain renderöintiä
+  // ja tekstinsyöttöä.
+  //
+  // ==========================================================
+
+  Future<void> _changeLanguage(
+    String language,
+  ) async {
+    // Diagnostiikkatestissä ei tehdä mitään.
+  }
+
+  // ==========================================================
+  // 🎨 THEME
+  // ==========================================================
+
+  ThemeData get appTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      useMaterial3: true,
+
+      scaffoldBackgroundColor:
+          backgroundColor,
+
+      colorScheme:
+          ColorScheme.fromSeed(
+        seedColor:
+            stellaPurple,
+        brightness:
+            Brightness.dark,
+        primary:
+            stellaPurple,
+        secondary:
+            stellaPink,
+        tertiary:
+            starGold,
+        surface:
+            surfaceColor,
+      ),
+
+      // ========================================================
+      // APP BAR
+      // ========================================================
+
+      appBarTheme:
+          const AppBarTheme(
+        backgroundColor:
+            backgroundColor,
+        foregroundColor:
+            primaryTextColor,
+        centerTitle:
+            true,
+        elevation:
+            0,
+        titleTextStyle:
+            TextStyle(
+          color:
+              primaryTextColor,
+          fontSize:
+              20,
+          fontWeight:
+              FontWeight.bold,
+        ),
+      ),
+
+      // ========================================================
+      // CARD
+      // ========================================================
+
+      cardTheme:
+          const CardThemeData(
+        color:
+            cardColor,
+        elevation:
+            0,
+        margin:
+            EdgeInsets.zero,
+        shape:
+            RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.all(
+            Radius.circular(24),
+          ),
+        ),
+      ),
+
+      // ========================================================
+      // ELEVATED BUTTON
+      // ========================================================
+
+      elevatedButtonTheme:
+          ElevatedButtonThemeData(
+        style:
+            ElevatedButton.styleFrom(
+          backgroundColor:
+              stellaPurple,
+          foregroundColor:
+              Colors.white,
+          elevation:
+              0,
+          minimumSize:
+              const Size(
+            double.infinity,
+            54,
+          ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(18),
+          ),
+          textStyle:
+              const TextStyle(
+            fontWeight:
+                FontWeight.bold,
+            fontSize:
+                16,
+          ),
+        ),
+      ),
+
+      // ========================================================
+      // OUTLINED BUTTON
+      // ========================================================
+
+      outlinedButtonTheme:
+          OutlinedButtonThemeData(
+        style:
+            OutlinedButton.styleFrom(
+          foregroundColor:
+              primaryTextColor,
+          side:
+              const BorderSide(
+            color:
+                stellaPurple,
+            width:
+                1.5,
+          ),
+          minimumSize:
+              const Size(
+            double.infinity,
+            52,
+          ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(18),
+          ),
+        ),
+      ),
+
+      // ========================================================
+      // TEXT THEME
+      // ========================================================
+
+      textTheme:
+          const TextTheme(
+        headlineLarge:
+            TextStyle(
+          color:
+              primaryTextColor,
+          fontWeight:
+              FontWeight.bold,
+        ),
+        headlineMedium:
+            TextStyle(
+          color:
+              primaryTextColor,
+          fontWeight:
+              FontWeight.bold,
+        ),
+        titleLarge:
+            TextStyle(
+          color:
+              primaryTextColor,
+          fontWeight:
+              FontWeight.bold,
+        ),
+        titleMedium:
+            TextStyle(
+          color:
+              primaryTextColor,
+          fontWeight:
+              FontWeight.w600,
+        ),
+        bodyLarge:
+            TextStyle(
+          color:
+              primaryTextColor,
+        ),
+        bodyMedium:
+            TextStyle(
+          color:
+              secondaryTextColor,
+        ),
+        bodySmall:
+            TextStyle(
+          color:
+              secondaryTextColor,
+        ),
+      ),
+
+      // ========================================================
+      // SNACKBAR
+      // ========================================================
+
+      snackBarTheme:
+          SnackBarThemeData(
+        behavior:
+            SnackBarBehavior.floating,
+        backgroundColor:
+            cardColor,
+        contentTextStyle:
+            const TextStyle(
+          color:
+              primaryTextColor,
+        ),
+        shape:
+            RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(16),
+        ),
+      ),
+
+      // ========================================================
+      // PROGRESS INDICATOR
+      // ========================================================
+
+      progressIndicatorTheme:
+          const ProgressIndicatorThemeData(
+        color:
+            stellaPurple,
+      ),
+
+      // ========================================================
+      // DIVIDER
+      // ========================================================
+
+      dividerTheme:
+          const DividerThemeData(
+        color:
+            Color(0xFF352653),
+        thickness:
+            1,
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🖥️ BUILD
   // ==========================================================
 
   @override
@@ -138,271 +347,44 @@ class _StelluriiniAppState
     BuildContext context,
   ) {
     return MaterialApp(
-      title: 'Stelluriini',
+      title:
+          'Stelluriini',
 
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner:
+          false,
+
+      // ========================================================
+      // 🌍 TEST LANGUAGE
+      // ========================================================
 
       locale:
-          Locale(languageCode),
+          const Locale('fi'),
 
       supportedLocales:
           supportedLocales,
 
-      theme: ThemeData(
-        brightness:
-            Brightness.dark,
+      // ========================================================
+      // 🎨 THEME
+      // ========================================================
 
-        useMaterial3:
-            true,
-
-        scaffoldBackgroundColor:
-            backgroundColor,
-
-        colorScheme:
-            ColorScheme.fromSeed(
-          seedColor:
-              stellaPurple,
-
-          brightness:
-              Brightness.dark,
-
-          primary:
-              stellaPurple,
-
-          secondary:
-              stellaPink,
-
-          tertiary:
-              starGold,
-
-          surface:
-              surfaceColor,
-        ),
-
-        appBarTheme:
-            const AppBarTheme(
-          backgroundColor:
-              backgroundColor,
-
-          foregroundColor:
-              primaryTextColor,
-
-          centerTitle:
-              true,
-
-          elevation:
-              0,
-
-          titleTextStyle:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontSize:
-                20,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
-
-        cardTheme:
-            const CardThemeData(
-          color:
-              cardColor,
-
-          elevation:
-              0,
-
-          margin:
-              EdgeInsets.zero,
-
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.all(
-              Radius.circular(24),
-            ),
-          ),
-        ),
-
-        elevatedButtonTheme:
-            ElevatedButtonThemeData(
-          style:
-              ElevatedButton.styleFrom(
-            backgroundColor:
-                stellaPurple,
-
-            foregroundColor:
-                Colors.white,
-
-            elevation:
-                0,
-
-            minimumSize:
-                const Size(
-              double.infinity,
-              54,
-            ),
-
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
-            ),
-
-            textStyle:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-
-              fontSize:
-                  16,
-            ),
-          ),
-        ),
-
-        outlinedButtonTheme:
-            OutlinedButtonThemeData(
-          style:
-              OutlinedButton.styleFrom(
-            foregroundColor:
-                primaryTextColor,
-
-            side:
-                const BorderSide(
-              color:
-                  stellaPurple,
-
-              width:
-                  1.5,
-            ),
-
-            minimumSize:
-                const Size(
-              double.infinity,
-              52,
-            ),
-
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
-            ),
-          ),
-        ),
-
-        textTheme:
-            const TextTheme(
-          headlineLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-
-          headlineMedium:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-
-          titleLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-
-          titleMedium:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.w600,
-          ),
-
-          bodyLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-          ),
-
-          bodyMedium:
-              TextStyle(
-            color:
-                secondaryTextColor,
-          ),
-
-          bodySmall:
-              TextStyle(
-            color:
-                secondaryTextColor,
-          ),
-        ),
-
-        snackBarTheme:
-            SnackBarThemeData(
-          behavior:
-              SnackBarBehavior.floating,
-
-          backgroundColor:
-              cardColor,
-
-          contentTextStyle:
-              const TextStyle(
-            color:
-                primaryTextColor,
-          ),
-
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(16),
-          ),
-        ),
-
-        progressIndicatorTheme:
-            const ProgressIndicatorThemeData(
-          color:
-              stellaPurple,
-        ),
-
-        dividerTheme:
-            const DividerThemeData(
-          color:
-              Color(0xFF352653),
-
-          thickness:
-              1,
-        ),
-      ),
+      theme:
+          appTheme,
 
       // ========================================================
-      // 🔬 DIRECT LOGIN PAGE
+      // 🚪 AUTH GATE
       // ========================================================
       //
-      // Ei AuthGatea.
-      // Ei Firebaseä.
-      // Ei SharedPreferencesia.
-      // Ei AdMobiä.
+      // AuthGate on tällä hetkellä diagnostiikkaversio,
+      // joka näyttää suoraan LoginPage-sivun.
       //
       // ========================================================
 
-      home: LoginPage(
+      home:
+          AuthGate(
         languageCode:
-            languageCode,
-
+            'fi',
         changeLanguage:
-            changeLanguage,
+            _changeLanguage,
       ),
     );
   }
