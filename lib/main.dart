@@ -1,30 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'pages/text_input_test_page.dart';
+import 'auth_gate.dart';
+import 'pages/loading_page.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / TEXT INPUT TEST
-// ============================================================
-//
-// Tämä main.dart on VÄLIAIKAINEN vianmääritystesti.
-//
-// Tällä testillä poistamme kokonaan käytöstä:
-// - Firebase
-// - Firebase Auth
-// - Firestore
-// - Cloud Functions
-// - Google Mobile Ads
-// - AuthGate
-// - LoginPage
-// - RegisterPage
-//
-// Näin näemme, toimivatko Flutterin TextField-kentät
-// puhtaassa Flutter-näkymässä tällä Samsung-laitteella.
-//
-// ÄLÄ POISTA MUITA TIEDOSTOJA.
-// Tämä tiedosto palautetaan myöhemmin Stelluriinin
-// varsinaiseksi main.dart-tiedostoksi.
-//
+// 🐱 STELLURIINI / STELLA THEME
 // ============================================================
 
 const Color backgroundColor =
@@ -51,24 +34,149 @@ const Color primaryTextColor =
 const Color secondaryTextColor =
     Color(0xFFBDB4D1);
 
+// ============================================================
+// 🚀 MAIN
+// ============================================================
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp();
+
+  await MobileAds.instance.initialize();
+
   runApp(
-    const StelluriiniTestApp(),
+    const StelluriiniApp(),
   );
 }
 
-class StelluriiniTestApp extends StatelessWidget {
-  const StelluriiniTestApp({
+class StelluriiniApp extends StatefulWidget {
+  const StelluriiniApp({
     super.key,
   });
 
   @override
-  Widget build(BuildContext context) {
+  State<StelluriiniApp> createState() =>
+      _StelluriiniAppState();
+}
+
+class _StelluriiniAppState
+    extends State<StelluriiniApp> {
+  String languageCode = 'fi';
+
+  bool languageLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLanguage();
+  }
+
+  Future<void> _loadLanguage() async {
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      final savedLanguage =
+          prefs.getString('language') ?? 'fi';
+
+      const supportedLanguages = {
+        'fi',
+        'en',
+        'de',
+        'es',
+        'fr',
+        'zh',
+        'vi',
+        'ja',
+      };
+
+      final validLanguage =
+          supportedLanguages.contains(
+        savedLanguage,
+      )
+              ? savedLanguage
+              : 'fi';
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        languageCode = validLanguage;
+        languageLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        languageCode = 'fi';
+        languageLoaded = true;
+      });
+    }
+  }
+
+  Future<void> changeLanguage(
+    String language,
+  ) async {
+    const supportedLanguages = {
+      'fi',
+      'en',
+      'de',
+      'es',
+      'fr',
+      'zh',
+      'vi',
+      'ja',
+    };
+
+    final validLanguage =
+        supportedLanguages.contains(language)
+            ? language
+            : 'fi';
+
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      'language',
+      validLanguage,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      languageCode = validLanguage;
+    });
+  }
+
+  List<Locale> get supportedLocales {
+    return const [
+      Locale('fi'),
+      Locale('en'),
+      Locale('de'),
+      Locale('es'),
+      Locale('fr'),
+      Locale('zh'),
+      Locale('vi'),
+      Locale('ja'),
+    ];
+  }
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
     return MaterialApp(
-      title: 'Stelluriini Input Test',
+      title: 'Stelluriini',
       debugShowCheckedModeBanner: false,
+      locale: Locale(languageCode),
+      supportedLocales:
+          supportedLocales,
       theme: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
@@ -106,6 +214,21 @@ class StelluriiniTestApp extends StatelessWidget {
                 FontWeight.bold,
           ),
         ),
+        cardTheme:
+            const CardThemeData(
+          color:
+              cardColor,
+          elevation: 0,
+          margin:
+              EdgeInsets.zero,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.all(
+              Radius.circular(24),
+            ),
+          ),
+        ),
         elevatedButtonTheme:
             ElevatedButtonThemeData(
           style:
@@ -130,6 +253,30 @@ class StelluriiniTestApp extends StatelessWidget {
               fontWeight:
                   FontWeight.bold,
               fontSize: 16,
+            ),
+          ),
+        ),
+        outlinedButtonTheme:
+            OutlinedButtonThemeData(
+          style:
+              OutlinedButton.styleFrom(
+            foregroundColor:
+                primaryTextColor,
+            side:
+                const BorderSide(
+              color:
+                  stellaPurple,
+              width: 1.5,
+            ),
+            minimumSize:
+                const Size(
+              double.infinity,
+              52,
+            ),
+            shape:
+                RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(18),
             ),
           ),
         ),
@@ -209,7 +356,14 @@ class StelluriiniTestApp extends StatelessWidget {
         ),
       ),
       home:
-          const TextInputTestPage(),
+          languageLoaded
+              ? AuthGate(
+                  languageCode:
+                      languageCode,
+                  changeLanguage:
+                      changeLanguage,
+                )
+              : const LoadingPage(),
     );
   }
 }
