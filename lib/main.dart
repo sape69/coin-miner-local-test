@@ -1,9 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
-import 'pages/loading_page.dart';
 
 // ============================================================
 // 🐱 STELLURIINI / SHARED PREFERENCES ISOLATION TEST
@@ -16,13 +14,10 @@ import 'pages/loading_page.dart';
 // ✅ Firebase
 // ✅ AuthGate
 // ✅ LoginPage
-// ✅ shared_preferences-paketti on mukana
-// ❌ SharedPreferences.getInstance() EI kutsuta
-// ❌ SharedPreferences-arvoja EI lueta
-// ❌ SharedPreferences-arvoja EI tallenneta
-// ❌ AdMob
+// ❌ SharedPreferences ei ole käytössä
+// ❌ AdMob ei ole käytössä
 //
-// Kieliasetus on tässä testissä kiinteästi "fi".
+// Kieliasetus on kiinteästi "fi".
 //
 // ============================================================
 
@@ -64,14 +59,8 @@ Future<void> main() async {
   // Firebase pidetään mukana.
   await Firebase.initializeApp();
 
-  // ----------------------------------------------------------
-  // SharedPreferences on tarkoituksella vain importattuna.
-  //
-  // Tätä EI kutsuta:
-  //
-  // await SharedPreferences.getInstance();
-  //
-  // ----------------------------------------------------------
+  // SharedPreferences ei ole mukana tässä testissä.
+  // AdMob ei ole mukana tässä testissä.
 
   runApp(
     const StelluriiniApp(),
@@ -126,10 +115,6 @@ class _StelluriiniAppState
             ? language
             : 'fi';
 
-    // --------------------------------------------------------
-    // SharedPreferences EI käytetä tässä testissä.
-    // --------------------------------------------------------
-
     if (!mounted) {
       return;
     }
@@ -167,20 +152,12 @@ class _StelluriiniAppState
     return MaterialApp(
       title: 'Stelluriini',
       debugShowCheckedModeBanner: false,
-
-      locale:
-          Locale(languageCode),
-
-      supportedLocales:
-          supportedLocales,
+      locale: Locale(languageCode),
+      supportedLocales: supportedLocales,
 
       theme: ThemeData(
-        brightness:
-            Brightness.dark,
-
-        useMaterial3:
-            true,
-
+        brightness: Brightness.dark,
+        useMaterial3: true,
         scaffoldBackgroundColor:
             backgroundColor,
 
@@ -188,19 +165,14 @@ class _StelluriiniAppState
             ColorScheme.fromSeed(
           seedColor:
               stellaPurple,
-
           brightness:
               Brightness.dark,
-
           primary:
               stellaPurple,
-
           secondary:
               stellaPink,
-
           tertiary:
               starGold,
-
           surface:
               surfaceColor,
         ),
@@ -209,24 +181,15 @@ class _StelluriiniAppState
             const AppBarTheme(
           backgroundColor:
               backgroundColor,
-
           foregroundColor:
               primaryTextColor,
-
-          centerTitle:
-              true,
-
-          elevation:
-              0,
-
+          centerTitle: true,
+          elevation: 0,
           titleTextStyle:
               TextStyle(
             color:
                 primaryTextColor,
-
-            fontSize:
-                20,
-
+            fontSize: 20,
             fontWeight:
                 FontWeight.bold,
           ),
@@ -236,13 +199,9 @@ class _StelluriiniAppState
             const CardThemeData(
           color:
               cardColor,
-
-          elevation:
-              0,
-
+          elevation: 0,
           margin:
               EdgeInsets.zero,
-
           shape:
               RoundedRectangleBorder(
             borderRadius:
@@ -258,32 +217,24 @@ class _StelluriiniAppState
               ElevatedButton.styleFrom(
             backgroundColor:
                 stellaPurple,
-
             foregroundColor:
                 Colors.white,
-
-            elevation:
-                0,
-
+            elevation: 0,
             minimumSize:
                 const Size(
               double.infinity,
               54,
             ),
-
             shape:
                 RoundedRectangleBorder(
               borderRadius:
                   BorderRadius.circular(18),
             ),
-
             textStyle:
                 const TextStyle(
               fontWeight:
                   FontWeight.bold,
-
-              fontSize:
-                  16,
+              fontSize: 16,
             ),
           ),
         ),
@@ -294,22 +245,17 @@ class _StelluriiniAppState
               OutlinedButton.styleFrom(
             foregroundColor:
                 primaryTextColor,
-
             side:
                 const BorderSide(
               color:
                   stellaPurple,
-
-              width:
-                  1.5,
+              width: 1.5,
             ),
-
             minimumSize:
                 const Size(
               double.infinity,
               52,
             ),
-
             shape:
                 RoundedRectangleBorder(
               borderRadius:
@@ -324,50 +270,40 @@ class _StelluriiniAppState
               TextStyle(
             color:
                 primaryTextColor,
-
             fontWeight:
                 FontWeight.bold,
           ),
-
           headlineMedium:
               TextStyle(
             color:
                 primaryTextColor,
-
             fontWeight:
                 FontWeight.bold,
           ),
-
           titleLarge:
               TextStyle(
             color:
                 primaryTextColor,
-
             fontWeight:
                 FontWeight.bold,
           ),
-
           titleMedium:
               TextStyle(
             color:
                 primaryTextColor,
-
             fontWeight:
                 FontWeight.w600,
           ),
-
           bodyLarge:
               TextStyle(
             color:
                 primaryTextColor,
           ),
-
           bodyMedium:
               TextStyle(
             color:
                 secondaryTextColor,
           ),
-
           bodySmall:
               TextStyle(
             color:
@@ -379,16 +315,13 @@ class _StelluriiniAppState
             SnackBarThemeData(
           behavior:
               SnackBarBehavior.floating,
-
           backgroundColor:
               cardColor,
-
           contentTextStyle:
               const TextStyle(
             color:
                 primaryTextColor,
           ),
-
           shape:
               RoundedRectangleBorder(
             borderRadius:
@@ -406,9 +339,7 @@ class _StelluriiniAppState
             const DividerThemeData(
           color:
               Color(0xFF352653),
-
-          thickness:
-              1,
+          thickness: 1,
         ),
       ),
 
@@ -416,11 +347,9 @@ class _StelluriiniAppState
       // AUTH GATE
       // ========================================================
 
-      home:
-          AuthGate(
+      home: AuthGate(
         languageCode:
             languageCode,
-
         changeLanguage:
             changeLanguage,
       ),
