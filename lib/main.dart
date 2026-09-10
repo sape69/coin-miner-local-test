@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
 
@@ -49,59 +48,9 @@ class _StelluriiniAppState
     extends State<StelluriiniApp> {
   String languageCode = 'fi';
 
-  bool languageLoaded = false;
-
   @override
   void initState() {
     super.initState();
-
-    _loadLanguage();
-  }
-
-  Future<void> _loadLanguage() async {
-    try {
-      final prefs =
-          await SharedPreferences.getInstance();
-
-      final savedLanguage =
-          prefs.getString('language') ?? 'fi';
-
-      const supportedLanguages = {
-        'fi',
-        'en',
-        'de',
-        'es',
-        'fr',
-        'zh',
-        'vi',
-        'ja',
-      };
-
-      final validLanguage =
-          supportedLanguages.contains(
-        savedLanguage,
-      )
-              ? savedLanguage
-              : 'fi';
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = validLanguage;
-        languageLoaded = true;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = 'fi';
-        languageLoaded = true;
-      });
-    }
   }
 
   Future<void> changeLanguage(
@@ -122,14 +71,6 @@ class _StelluriiniAppState
         supportedLanguages.contains(language)
             ? language
             : 'fi';
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'language',
-      validLanguage,
-    );
 
     if (!mounted) {
       return;
@@ -342,24 +283,12 @@ class _StelluriiniAppState
           thickness: 1,
         ),
       ),
-      home: languageLoaded
-          ? AuthGate(
-              languageCode:
-                  languageCode,
-              changeLanguage:
-                  changeLanguage,
-            )
-          : const Scaffold(
-              backgroundColor:
-                  backgroundColor,
-              body: Center(
-                child:
-                    CircularProgressIndicator(
-                  color:
-                      stellaPurple,
-                ),
-              ),
-            ),
+      home: AuthGate(
+        languageCode:
+            languageCode,
+        changeLanguage:
+            changeLanguage,
+      ),
     );
   }
 }
