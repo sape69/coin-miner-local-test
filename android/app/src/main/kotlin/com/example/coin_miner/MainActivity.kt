@@ -1,5 +1,5 @@
-package com.example.coin_miner
+package com.example.stelluriini
 
 import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity: FlutterActivity()
+class MainActivity : FlutterActivity()
