@@ -69,26 +69,7 @@ class _LoginPageState extends State<LoginPage> {
       AppLocalizations(widget.languageCode);
 
   @override
-  void initState() {
-    super.initState();
-
-    _emailFocusNode.addListener(_refreshFields);
-    _passwordFocusNode.addListener(_refreshFields);
-  }
-
-  void _refreshFields() {
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {});
-  }
-
-  @override
   void dispose() {
-    _emailFocusNode.removeListener(_refreshFields);
-    _passwordFocusNode.removeListener(_refreshFields);
-
     _emailController.dispose();
     _passwordController.dispose();
 
@@ -271,42 +252,52 @@ class _LoginPageState extends State<LoginPage> {
     Widget? suffix,
     VoidCallback? onSubmitted,
   }) {
-    final bool focused =
-        focusNode.hasFocus;
+    return Container(
+      height: 64,
+      decoration: BoxDecoration(
+        color: fieldColor,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: focusNode.hasFocus
+              ? purple
+              : borderColor,
+          width: focusNode.hasFocus
+              ? 2
+              : 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
 
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        AnimatedContainer(
-          duration:
-              const Duration(milliseconds: 150),
-          height: 64,
-          decoration: BoxDecoration(
-            color: fieldColor,
-            borderRadius:
-                BorderRadius.circular(18),
-            border: Border.all(
-              color: focused
-                  ? purple
-                  : borderColor,
-              width: focused ? 2 : 1.5,
-            ),
+          Icon(
+            icon,
+            color: purple,
+            size: 28,
           ),
-          child: Row(
-            children: [
-              const SizedBox(width: 16),
 
-              Icon(
-                icon,
-                color: purple,
-                size: 28,
-              ),
+          const SizedBox(width: 14),
 
-              const SizedBox(width: 14),
+          Expanded(
+            child: Stack(
+              alignment:
+                  Alignment.centerLeft,
+              children: [
+                if (controller.text.isEmpty)
+                  IgnorePointer(
+                    child: Text(
+                      hint,
+                      style:
+                          const TextStyle(
+                        color:
+                            Color(0xFF766B89),
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
 
-              Expanded(
-                child: EditableText(
+                EditableText(
                   controller:
                       controller,
                   focusNode:
@@ -338,61 +329,17 @@ class _LoginPageState extends State<LoginPage> {
                       onSubmitted();
                     }
                   },
-                  onChanged: (_) {
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  },
                 ),
-              ),
-
-              if (controller.text.isEmpty &&
-                  !focused)
-                IgnorePointer(
-                  child: Align(
-                    alignment:
-                        Alignment.centerLeft,
-                    child: Text(
-                      hint,
-                      style:
-                          const TextStyle(
-                        color:
-                            Color(0xFF766B89),
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-                ),
-
-              if (suffix != null)
-                suffix,
-
-              const SizedBox(width: 8),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 5),
-
-        if (focused ||
-            controller.text.isNotEmpty)
-          Padding(
-            padding:
-                const EdgeInsets.only(
-              left: 18,
-            ),
-            child: Text(
-              label,
-              style:
-                  const TextStyle(
-                color: pink,
-                fontSize: 12,
-                fontWeight:
-                    FontWeight.w500,
-              ),
+              ],
             ),
           ),
-      ],
+
+          if (suffix != null)
+            suffix,
+
+          const SizedBox(width: 8),
+        ],
+      ),
     );
   }
 
@@ -612,7 +559,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
 
                         const SizedBox(
-                          height: 16,
+                          height: 18,
                         ),
 
                         // ==================================================
