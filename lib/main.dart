@@ -45,7 +45,7 @@ class StelluriiniApp extends StatefulWidget {
       _StelluriiniAppState();
 }
 
-class _StelluriiniiniAppState
+class _StelluriiniAppState
     extends State<StelluriiniApp> {
   String languageCode = 'fi';
 
