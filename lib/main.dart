@@ -6,7 +6,7 @@ import 'auth_gate.dart';
 import 'pages/loading_page.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / SHARED PREFERENCES TEST
+// 🐱 STELLURIINI / SHARED PREFERENCES ISOLATION TEST
 // ============================================================
 //
 // VÄLIAIKAINEN VIANMÄÄRITYSTESTI
@@ -14,10 +14,15 @@ import 'pages/loading_page.dart';
 // Tässä testissä:
 //
 // ✅ Firebase
-// ✅ SharedPreferences
-// ✅ kieliasetuksen lataus
 // ✅ AuthGate
+// ✅ LoginPage
+// ✅ shared_preferences-paketti on mukana
+// ❌ SharedPreferences.getInstance() EI kutsuta
+// ❌ SharedPreferences-arvoja EI lueta
+// ❌ SharedPreferences-arvoja EI tallenneta
 // ❌ AdMob
+//
+// Kieliasetus on tässä testissä kiinteästi "fi".
 //
 // ============================================================
 
@@ -59,7 +64,14 @@ Future<void> main() async {
   // Firebase pidetään mukana.
   await Firebase.initializeApp();
 
-  // AdMob EI ole mukana tässä testissä.
+  // ----------------------------------------------------------
+  // SharedPreferences on tarkoituksella vain importattuna.
+  //
+  // Tätä EI kutsuta:
+  //
+  // await SharedPreferences.getInstance();
+  //
+  // ----------------------------------------------------------
 
   runApp(
     const StelluriiniApp(),
@@ -82,69 +94,17 @@ class StelluriiniApp extends StatefulWidget {
 
 class _StelluriiniAppState
     extends State<StelluriiniApp> {
+  // ==========================================================
+  // KIINTEÄ TESTIKIELI
+  // ==========================================================
+
   String languageCode = 'fi';
 
-  bool languageLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadLanguage();
-  }
+  // Ei SharedPreferences-latausta.
+  bool languageLoaded = true;
 
   // ==========================================================
   // LANGUAGE
-  // ==========================================================
-
-  Future<void> _loadLanguage() async {
-    try {
-      final SharedPreferences prefs =
-          await SharedPreferences.getInstance();
-
-      final String savedLanguage =
-          prefs.getString('language') ?? 'fi';
-
-      const Set<String> supportedLanguages = {
-        'fi',
-        'en',
-        'de',
-        'es',
-        'fr',
-        'zh',
-        'vi',
-        'ja',
-      };
-
-      final String validLanguage =
-          supportedLanguages.contains(
-        savedLanguage,
-      )
-              ? savedLanguage
-              : 'fi';
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = validLanguage;
-        languageLoaded = true;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = 'fi';
-        languageLoaded = true;
-      });
-    }
-  }
-
-  // ==========================================================
-  // CHANGE LANGUAGE
   // ==========================================================
 
   Future<void> changeLanguage(
@@ -166,13 +126,9 @@ class _StelluriiniAppState
             ? language
             : 'fi';
 
-    final SharedPreferences prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'language',
-      validLanguage,
-    );
+    // --------------------------------------------------------
+    // SharedPreferences EI käytetä tässä testissä.
+    // --------------------------------------------------------
 
     if (!mounted) {
       return;
@@ -461,15 +417,13 @@ class _StelluriiniAppState
       // ========================================================
 
       home:
-          languageLoaded
-              ? AuthGate(
-                  languageCode:
-                      languageCode,
+          AuthGate(
+        languageCode:
+            languageCode,
 
-                  changeLanguage:
-                      changeLanguage,
-                )
-              : const LoadingPage(),
+        changeLanguage:
+            changeLanguage,
+      ),
     );
   }
 }
