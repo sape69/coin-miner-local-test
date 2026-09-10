@@ -1,29 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// 🐱 STELLURIINI LOGIN PAGE
-// ============================================================
-//
-// VIANMÄÄRITYSVERSIO
-//
-// Tässä versiossa:
-//
-// ❌ Firebase Auth
-// ❌ Localization
-// ❌ Forgot Password -navigointi
-// ❌ Register-navigointi
-// ❌ SharedPreferences
-// ❌ AdMob
-//
-// ✅ Stella
-// ✅ Stelluriini-ulkoasu
-// ✅ Sähköpostikenttä
-// ✅ Salasanakenttä
-// ✅ Salasanan näyttäminen/piilottaminen
-// ✅ Kirjautumispainike
-//
-// ============================================================
-
 class LoginPage extends StatefulWidget {
   final String languageCode;
   final Future<void> Function(String) changeLanguage;
@@ -39,52 +15,83 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController =
+  final TextEditingController _emailController =
       TextEditingController();
 
-  final TextEditingController passwordController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
-  bool obscurePassword = true;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  // ==========================================================
-  // EMAIL FIELD
-  // ==========================================================
+  // ============================================================
+  // 🐱 STELLURIINI COLORS
+  // ============================================================
 
-  Widget _emailField() {
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color fieldColor =
+      Color(0xFF18102D);
+
+  static const Color purple =
+      Color(0xFFB58CFF);
+
+  static const Color pink =
+      Color(0xFFFFB7E8);
+
+  static const Color gold =
+      Color(0xFFFFD166);
+
+  static const Color white =
+      Color(0xFFF8F4FF);
+
+  static const Color secondary =
+      Color(0xFFBDB4D1);
+
+  // ============================================================
+  // ✉️ EMAIL FIELD
+  // ============================================================
+
+  Widget _buildEmailField() {
     return TextField(
-      controller: emailController,
+      controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       autocorrect: false,
       enableSuggestions: false,
-      cursorColor: const Color(0xFFB58CFF),
+      cursorColor: purple,
       style: const TextStyle(
-        color: Color(0xFFF8F4FF),
-        fontSize: 16,
+        color: white,
+        fontSize: 17,
       ),
       decoration: InputDecoration(
         hintText: 'Sähköposti',
         hintStyle: const TextStyle(
-          color: Color(0xFF766B89),
-          fontSize: 16,
+          color: secondary,
+          fontSize: 17,
         ),
         prefixIcon: const Icon(
           Icons.email_outlined,
-          color: Color(0xFFB58CFF),
+          color: purple,
         ),
         filled: true,
-        fillColor: const Color(0xFF18102D),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
+        fillColor: fieldColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Color(0xFF352653),
+            width: 1.5,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
@@ -96,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: Color(0xFFB58CFF),
+            color: purple,
             width: 2,
           ),
         ),
@@ -104,50 +111,54 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ==========================================================
-  // PASSWORD FIELD
-  // ==========================================================
+  // ============================================================
+  // 🔐 PASSWORD FIELD
+  // ============================================================
 
-  Widget _passwordField() {
+  Widget _buildPasswordField() {
     return TextField(
-      controller: passwordController,
-      obscureText: obscurePassword,
+      controller: _passwordController,
+      obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
       autocorrect: false,
       enableSuggestions: false,
-      cursorColor: const Color(0xFFB58CFF),
+      cursorColor: purple,
       style: const TextStyle(
-        color: Color(0xFFF8F4FF),
-        fontSize: 16,
+        color: white,
+        fontSize: 17,
       ),
       decoration: InputDecoration(
         hintText: 'Salasana',
         hintStyle: const TextStyle(
-          color: Color(0xFF766B89),
-          fontSize: 16,
+          color: secondary,
+          fontSize: 17,
         ),
         prefixIcon: const Icon(
           Icons.lock_outline,
-          color: Color(0xFFB58CFF),
+          color: purple,
         ),
         suffixIcon: IconButton(
           onPressed: () {
             setState(() {
-              obscurePassword = !obscurePassword;
+              _obscurePassword =
+                  !_obscurePassword;
             });
           },
-          color: const Color(0xFFB58CFF),
+          color: purple,
           icon: Icon(
-            obscurePassword
+            _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
           ),
         ),
         filled: true,
-        fillColor: const Color(0xFF18102D),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
+        fillColor: fieldColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Color(0xFF352653),
+            width: 1.5,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
@@ -159,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: Color(0xFFB58CFF),
+            color: purple,
             width: 2,
           ),
         ),
@@ -167,87 +178,58 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ==========================================================
-  // BUILD
-  // ==========================================================
+  // ============================================================
+  // 🖥️ BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF120B24),
+      backgroundColor: backgroundColor,
       resizeToAvoidBottomInset: true,
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            24,
-            28,
-            24,
-            32,
-          ),
-
+          padding: const EdgeInsets.all(24),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(
                 maxWidth: 480,
               ),
-
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.stretch,
-
                 children: [
+
                   // ==================================================
-                  // STELLA
+                  // 🐾 STELLA LOGO
                   // ==================================================
+
+                  const SizedBox(height: 20),
 
                   Center(
                     child: Container(
-                      width: 110,
-                      height: 110,
-
+                      width: 140,
+                      height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF1A0E31),
-
+                        color: fieldColor,
                         border: Border.all(
-                          color: const Color(0xFFB58CFF),
+                          color: purple,
                           width: 2,
                         ),
-
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x55211B3B),
-                            blurRadius: 20,
-                            spreadRadius: 4,
-                          ),
-                        ],
                       ),
-
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/stella.jpg',
-                          fit: BoxFit.cover,
-
-                          errorBuilder: (
-                            context,
-                            error,
-                            stackTrace,
-                          ) {
-                            return const Icon(
-                              Icons.pets,
-                              size: 56,
-                              color: Color(0xFFFFB7E8),
-                            );
-                          },
+                      child: const Center(
+                        child: Icon(
+                          Icons.pets,
+                          size: 70,
+                          color: pink,
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 22,
-                  ),
+                  const SizedBox(height: 24),
 
                   // ==================================================
                   // TITLE
@@ -255,149 +237,116 @@ class _LoginPageState extends State<LoginPage> {
 
                   const Text(
                     'Stelluriini',
-
                     textAlign: TextAlign.center,
-
                     style: TextStyle(
-                      color: Color(0xFFF8F4FF),
-                      fontSize: 32,
+                      color: white,
+                      fontSize: 34,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 6,
-                  ),
+                  const SizedBox(height: 8),
 
                   const Text(
                     'STL',
-
                     textAlign: TextAlign.center,
-
                     style: TextStyle(
-                      color: Color(0xFFFFD166),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 3,
+                      color: gold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 30,
-                  ),
+                  const SizedBox(height: 32),
 
                   // ==================================================
                   // LOGIN CARD
                   // ==================================================
 
                   Container(
-                    width: double.infinity,
-
-                    padding: const EdgeInsets.fromLTRB(
-                      20,
-                      24,
-                      20,
-                      22,
-                    ),
-
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF21113B),
-
+                      color: cardColor,
                       borderRadius:
                           BorderRadius.circular(24),
-
                       border: Border.all(
-                        color: const Color(0xFFB58CFF)
-                            .withValues(alpha: 0.30),
-
+                        color: purple.withValues(
+                          alpha: 0.30,
+                        ),
                         width: 1,
                       ),
                     ),
-
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
-
                       crossAxisAlignment:
                           CrossAxisAlignment.stretch,
-
                       children: [
-                        // ==========================================
-                        // LOGIN TITLE
-                        // ==========================================
 
                         const Text(
                           'KIRJAUDU SISÄÄN',
-
-                          textAlign:
-                              TextAlign.center,
-
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color:
-                                Color(0xFFF8F4FF),
-
-                            fontSize: 25,
-
+                            color: white,
+                            fontSize: 26,
                             fontWeight:
                                 FontWeight.bold,
                           ),
                         ),
 
-                        const SizedBox(
-                          height: 24,
-                        ),
+                        const SizedBox(height: 28),
 
-                        // ==========================================
                         // EMAIL
-                        // ==========================================
 
-                        _emailField(),
+                        _buildEmailField(),
 
-                        const SizedBox(
-                          height: 18,
-                        ),
+                        const SizedBox(height: 18),
 
-                        // ==========================================
                         // PASSWORD
-                        // ==========================================
 
-                        _passwordField(),
+                        _buildPasswordField(),
 
-                        const SizedBox(
-                          height: 24,
-                        ),
+                        const SizedBox(height: 24),
 
-                        // ==========================================
-                        // LOGIN BUTTON
-                        // ==========================================
+                        // ==================================================
+                        // TEST BUTTON
+                        // ==================================================
 
                         SizedBox(
-                          width: double.infinity,
-                          height: 54,
-
+                          height: 56,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              FocusScope.of(context)
+                                  .unfocus();
 
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Kentät toimivat.',
+                                  ),
+                                ),
+                              );
+                            },
                             style:
                                 ElevatedButton.styleFrom(
                               backgroundColor:
-                                  const Color(0xFFB58CFF),
-
+                                  purple,
                               foregroundColor:
-                                  const Color(0xFF120B24),
-
+                                  backgroundColor,
                               elevation: 0,
-
                               shape:
                                   RoundedRectangleBorder(
                                 borderRadius:
-                                    BorderRadius.circular(16),
+                                    BorderRadius
+                                        .circular(
+                                  18,
+                                ),
                               ),
                             ),
-
                             child: const Text(
-                              'KIRJAUDU SISÄÄN',
-
+                              'TESTAA KIRJAUTUMISTA',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight:
@@ -407,81 +356,34 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                        const SizedBox(
-                          height: 18,
-                        ),
+                        const SizedBox(height: 20),
 
-                        // ==========================================
-                        // FORGOT PASSWORD
-                        // ==========================================
-
-                        TextButton(
-                          onPressed: () {},
-
-                          style:
-                              TextButton.styleFrom(
-                            foregroundColor:
-                                const Color(0xFFFFB7E8),
-                          ),
-
-                          child: const Text(
-                            'Unohditko salasanan?',
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 4,
-                        ),
-
-                        // ==========================================
-                        // CREATE ACCOUNT
-                        // ==========================================
-
-                        TextButton(
-                          onPressed: () {},
-
-                          style:
-                              TextButton.styleFrom(
-                            foregroundColor:
-                                const Color(0xFFFFD166),
-                          ),
-
-                          child: const Text(
-                            'Ei vielä tiliä? Luo uusi tili',
-
-                            style: TextStyle(
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
+                        const Text(
+                          'Tämä on väliaikainen '
+                          'diagnostiikkaversio.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: secondary,
+                            fontSize: 14,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // ==================================================
-                  // FOOTER
-                  // ==================================================
+                  const SizedBox(height: 24),
 
                   const Text(
                     'STELLA • STELLURIINI • STL • SOLANA',
-
-                    textAlign:
-                        TextAlign.center,
-
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color:
-                          Color(0xFFBDB4D1),
-
+                      color: secondary,
                       fontSize: 11,
-
                       letterSpacing: 1.1,
                     ),
                   ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
