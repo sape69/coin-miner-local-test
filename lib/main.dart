@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'pages/login_page.dart';
+import 'auth_gate.dart';
 
 const Color backgroundColor =
     Color(0xFF120B24);
@@ -47,7 +47,7 @@ class StelluriiniApp extends StatelessWidget {
               const Color(0xFF1A0E31),
         ),
       ),
-      home: LoginPage(
+      home: AuthGate(
         languageCode: 'fi',
         changeLanguage:
             (String language) async {},
