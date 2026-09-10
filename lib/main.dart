@@ -1,12 +1,32 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'auth_gate.dart';
-import 'pages/loading_page.dart';
+import 'pages/login_page.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / STELLA THEME
+// 🐱 STELLURIINI / LOGIN ISOLATION TEST
+// ============================================================
+//
+// VÄLIAIKAINEN VIANMÄÄRITYSTESTI
+//
+// Tässä testissä:
+// - Firebase alustetaan
+// - AdMobia EI alusteta
+// - SharedPreferencesia EI käytetä
+// - AuthGatea EI käytetä
+// - LoadingPagea EI käytetä
+//
+// LoginPage avataan SUORAAN.
+//
+// Tämän avulla selvitetään, tuleeko harmaa alue:
+// 1. AuthGate-rakenteesta
+// 2. Firebase-alustuksesta
+// 3. vai LoginPageen liittyvästä muusta rakenteesta.
+//
+// ============================================================
+
+// ============================================================
+// 🎨 STELLURIINI COLORS
 // ============================================================
 
 const Color backgroundColor =
@@ -40,150 +60,33 @@ const Color secondaryTextColor =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase pidetään mukana tässä testissä.
+  // Firebase pidetään mukana testissä.
   await Firebase.initializeApp();
 
-  // ==========================================================
-  // AdMob on tarkoituksella POIS käytöstä tässä testissä.
-  //
-  // MobileAds.instance.initialize();
-  //
-  // Jos tekstikentät toimivat nyt, ongelma liittyy AdMobiin
-  // tai sen alustukseen.
-  // ==========================================================
+  // AdMobia EI alusteta.
+  // SharedPreferencesia EI alusteta.
+  // AuthGatea EI käytetä.
 
   runApp(
-    const StelluriiniApp(),
+    const StelluriiniLoginTestApp(),
   );
 }
 
-class StelluriiniApp extends StatefulWidget {
-  const StelluriiniApp({
+// ============================================================
+// APP
+// ============================================================
+
+class StelluriiniLoginTestApp
+    extends StatelessWidget {
+  const StelluriiniLoginTestApp({
     super.key,
   });
 
   @override
-  State<StelluriiniApp> createState() =>
-      _StelluriiniAppState();
-}
-
-class _StelluriiniAppState
-    extends State<StelluriiniApp> {
-  String languageCode = 'fi';
-
-  bool languageLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLanguage();
-  }
-
-  Future<void> _loadLanguage() async {
-    try {
-      final prefs =
-          await SharedPreferences.getInstance();
-
-      final savedLanguage =
-          prefs.getString('language') ?? 'fi';
-
-      const supportedLanguages = {
-        'fi',
-        'en',
-        'de',
-        'es',
-        'fr',
-        'zh',
-        'vi',
-        'ja',
-      };
-
-      final validLanguage =
-          supportedLanguages.contains(
-        savedLanguage,
-      )
-              ? savedLanguage
-              : 'fi';
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = validLanguage;
-        languageLoaded = true;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = 'fi';
-        languageLoaded = true;
-      });
-    }
-  }
-
-  Future<void> changeLanguage(
-    String language,
-  ) async {
-    const supportedLanguages = {
-      'fi',
-      'en',
-      'de',
-      'es',
-      'fr',
-      'zh',
-      'vi',
-      'ja',
-    };
-
-    final validLanguage =
-        supportedLanguages.contains(language)
-            ? language
-            : 'fi';
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'language',
-      validLanguage,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      languageCode = validLanguage;
-    });
-  }
-
-  List<Locale> get supportedLocales {
-    return const [
-      Locale('fi'),
-      Locale('en'),
-      Locale('de'),
-      Locale('es'),
-      Locale('fr'),
-      Locale('zh'),
-      Locale('vi'),
-      Locale('ja'),
-    ];
-  }
-
-  @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Stelluriini',
       debugShowCheckedModeBanner: false,
-      locale: Locale(languageCode),
-      supportedLocales:
-          supportedLocales,
       theme: ThemeData(
         brightness:
             Brightness.dark,
@@ -271,31 +174,6 @@ class _StelluriiniAppState
             ),
           ),
         ),
-        outlinedButtonTheme:
-            OutlinedButtonThemeData(
-          style:
-              OutlinedButton.styleFrom(
-            foregroundColor:
-                primaryTextColor,
-            side:
-                const BorderSide(
-              color:
-                  stellaPurple,
-              width:
-                  1.5,
-            ),
-            minimumSize:
-                const Size(
-              double.infinity,
-              52,
-            ),
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
-            ),
-          ),
-        ),
         textTheme:
             const TextTheme(
           headlineLarge:
@@ -372,15 +250,25 @@ class _StelluriiniAppState
               1,
         ),
       ),
-      home:
-          languageLoaded
-              ? AuthGate(
-                  languageCode:
-                      languageCode,
-                  changeLanguage:
-                      changeLanguage,
-                )
-              : const LoadingPage(),
+
+      // ========================================================
+      // LOGIN AVATAAN SUORAAN
+      // ========================================================
+
+      home: LoginPage(
+        languageCode: 'fi',
+        changeLanguage:
+            _testChangeLanguage,
+      ),
     );
+  }
+
+  static Future<void> _testChangeLanguage(
+    String language,
+  ) async {
+    // Ei tehdä mitään.
+    //
+    // Tämä on vain testin vuoksi.
+    // SharedPreferences ei ole mukana tässä testissä.
   }
 }
