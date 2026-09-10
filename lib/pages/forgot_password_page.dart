@@ -17,6 +17,8 @@ import '../widgets/cat_avatar.dart';
 // - tukee kaikkia sovelluksen kieliä
 // - sisältää kielivalinnan
 // - käsittelee yleisimmät Firebase Auth -virheet
+// - käyttää eksplisiittisiä TextField-värejä
+//   jotta kentät eivät muutu harmaiksi Androidissa
 //
 // ============================================================
 
@@ -57,6 +59,9 @@ class _ForgotPasswordPageState
   static const Color cardColor =
       Color(0xFF21113B);
 
+  static const Color fieldColor =
+      Color(0xFF18102D);
+
   static const Color accentColor =
       Color(0xFFB58CFF);
 
@@ -90,7 +95,6 @@ class _ForgotPasswordPageState
   @override
   void dispose() {
     emailController.dispose();
-
     super.dispose();
   }
 
@@ -110,6 +114,7 @@ class _ForgotPasswordPageState
           content: Text(
             text,
             style: const TextStyle(
+              color: primaryTextColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -127,6 +132,8 @@ class _ForgotPasswordPageState
   // ==========================================================
 
   Future<void> _resetPassword() async {
+    FocusScope.of(context).unfocus();
+
     final String email =
         emailController.text.trim();
 
@@ -200,9 +207,9 @@ class _ForgotPasswordPageState
           break;
 
         default:
-          message =
-              '${_t('passwordResetFailed')}: '
-              '${error.message ?? error.code}';
+          message = _t(
+            'passwordResetFailed',
+          );
       }
 
       _message(message);
@@ -236,6 +243,7 @@ class _ForgotPasswordPageState
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: cardColor,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
@@ -289,7 +297,9 @@ class _ForgotPasswordPageState
                                       0xFF35204F,
                                     ),
                           foregroundColor:
-                              Colors.white,
+                              const Color(
+                            0xFF120B24,
+                          ),
                           padding:
                               const EdgeInsets
                                   .symmetric(
@@ -311,12 +321,15 @@ class _ForgotPasswordPageState
                                 textAlign:
                                     TextAlign.center,
                                 style: TextStyle(
+                                  color: selected
+                                      ? const Color(
+                                          0xFF120B24,
+                                        )
+                                      : primaryTextColor,
                                   fontWeight:
                                       selected
-                                          ? FontWeight
-                                              .bold
-                                          : FontWeight
-                                              .normal,
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -357,11 +370,13 @@ class _ForgotPasswordPageState
       appBar: AppBar(
         backgroundColor: backgroundColor,
         foregroundColor: primaryTextColor,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
         title: Text(
           _t('forgotPassword'),
           style: const TextStyle(
+            color: primaryTextColor,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -369,6 +384,7 @@ class _ForgotPasswordPageState
           if (widget.changeLanguage != null)
             IconButton(
               tooltip: _t('language'),
+              color: primaryTextColor,
               icon: const Icon(
                 Icons.language,
               ),
@@ -387,287 +403,439 @@ class _ForgotPasswordPageState
         child: Center(
           child: SingleChildScrollView(
             padding:
-                const EdgeInsets.all(24),
-            child: Card(
-              color: cardColor,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(24),
+                const EdgeInsets.fromLTRB(
+              24,
+              12,
+              24,
+              32,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 480,
               ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.all(28),
-                child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min,
-                  children: [
-                    // ==================================================
-                    // 🐱 STELLA
-                    // ==================================================
-
-                    const CatAvatar(
-                      size: 120,
+              child: Card(
+                color: cardColor,
+                surfaceTintColor:
+                    Colors.transparent,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(24),
+                  side: BorderSide(
+                    color:
+                        accentColor.withValues(
+                      alpha: 0.18,
                     ),
+                    width: 1,
+                  ),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(28),
+                  child: Column(
+                    mainAxisSize:
+                        MainAxisSize.min,
+                    children: [
+                      // ==================================================
+                      // 🐱 STELLA
+                      // ==================================================
 
-                    const SizedBox(
-                      height: 20,
-                    ),
-
-                    // ==================================================
-                    // APP NAME
-                    // ==================================================
-
-                    const Text(
-                      'STELLURIINI',
-                      textAlign:
-                          TextAlign.center,
-                      style: TextStyle(
-                        color:
-                            primaryTextColor,
-                        fontSize: 30,
-                        fontWeight:
-                            FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 8,
-                    ),
-
-                    const Text(
-                      'STL',
-                      style: TextStyle(
-                        color: pinkColor,
-                        fontSize: 16,
-                        fontWeight:
-                            FontWeight.w600,
-                        letterSpacing: 4,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 18,
-                    ),
-
-                    // ==================================================
-                    // TITLE
-                    // ==================================================
-
-                    Text(
-                      _t('forgotPassword'),
-                      textAlign:
-                          TextAlign.center,
-                      style: const TextStyle(
-                        color:
-                            primaryTextColor,
-                        fontSize: 22,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    // ==================================================
-                    // DESCRIPTION
-                    // ==================================================
-
-                    Text(
-                      _t(
-                        'passwordResetDescription',
-                      ),
-                      textAlign:
-                          TextAlign.center,
-                      style: const TextStyle(
-                        color:
-                            secondaryTextColor,
-                        fontSize: 15,
-                        height: 1.4,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 28,
-                    ),
-
-                    // ==================================================
-                    // EMAIL
-                    // ==================================================
-
-                    TextField(
-                      controller:
-                          emailController,
-                      enabled:
-                          !loading,
-                      keyboardType:
-                          TextInputType.emailAddress,
-                      textInputAction:
-                          TextInputAction.done,
-                      onSubmitted: (_) {
-                        if (!loading) {
-                          _resetPassword();
-                        }
-                      },
-                      style:
-                          const TextStyle(
-                        color:
-                            primaryTextColor,
-                      ),
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            _t('email'),
-                        prefixIcon:
-                            const Icon(
-                          Icons
-                              .email_outlined,
-                        ),
-                        filled: true,
-                        fillColor:
-                            const Color(
-                          0xFF18102D,
-                        ),
-                        border:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration:
+                            BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: accentColor,
+                            width: 2,
                           ),
-                          borderSide:
-                              BorderSide.none,
+                          boxShadow: const [
+                            BoxShadow(
+                              color:
+                                  Color(0x55211B3B),
+                              blurRadius: 20,
+                              spreadRadius: 3,
+                            ),
+                          ],
                         ),
-                        enabledBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
+                        child:
+                            const ClipOval(
+                          child: CatAvatar(
+                            size: 120,
                           ),
-                          borderSide:
-                              BorderSide(
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 20,
+                      ),
+
+                      // ==================================================
+                      // APP NAME
+                      // ==================================================
+
+                      const Text(
+                        'STELLURIINI',
+                        textAlign:
+                            TextAlign.center,
+                        style: TextStyle(
+                          color:
+                              primaryTextColor,
+                          fontSize: 30,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 8,
+                      ),
+
+                      const Text(
+                        'STL',
+                        style: TextStyle(
+                          color: pinkColor,
+                          fontSize: 16,
+                          fontWeight:
+                              FontWeight.w600,
+                          letterSpacing: 4,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 20,
+                      ),
+
+                      // ==================================================
+                      // TITLE
+                      // ==================================================
+
+                      Text(
+                        _t('forgotPassword'),
+                        textAlign:
+                            TextAlign.center,
+                        style: const TextStyle(
+                          color:
+                              primaryTextColor,
+                          fontSize: 22,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
+                      // ==================================================
+                      // DESCRIPTION
+                      // ==================================================
+
+                      Text(
+                        _t(
+                          'passwordResetDescription',
+                        ),
+                        textAlign:
+                            TextAlign.center,
+                        style: const TextStyle(
+                          color:
+                              secondaryTextColor,
+                          fontSize: 15,
+                          height: 1.5,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 28,
+                      ),
+
+                      // ==================================================
+                      // EMAIL FIELD
+                      // ==================================================
+
+                      TextField(
+                        controller:
+                            emailController,
+                        enabled: !loading,
+                        keyboardType:
+                            TextInputType
+                                .emailAddress,
+                        textInputAction:
+                            TextInputAction.done,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        cursorColor:
+                            accentColor,
+                        style:
+                            const TextStyle(
+                          color:
+                              primaryTextColor,
+                          fontSize: 16,
+                        ),
+                        onSubmitted: (_) {
+                          if (!loading) {
+                            _resetPassword();
+                          }
+                        },
+                        decoration:
+                            InputDecoration(
+                          labelText:
+                              _t('email'),
+                          labelStyle:
+                              const TextStyle(
                             color:
+                                secondaryTextColor,
+                          ),
+                          floatingLabelStyle:
+                              const TextStyle(
+                            color:
+                                accentColor,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                          hintStyle:
+                              const TextStyle(
+                            color:
+                                secondaryTextColor,
+                          ),
+                          prefixIcon:
+                              const Icon(
+                            Icons
+                                .email_outlined,
+                            color:
+                                secondaryTextColor,
+                          ),
+                          filled: true,
+                          fillColor:
+                              fieldColor,
+
+                          // ------------------------------------------------
+                          // NORMAL BORDER
+                          // ------------------------------------------------
+
+                          border:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+                            borderSide:
+                                BorderSide(
+                              color:
+                                  accentColor
+                                      .withValues(
+                                alpha: 0.20,
+                              ),
+                              width: 1,
+                            ),
+                          ),
+
+                          // ------------------------------------------------
+                          // ENABLED BORDER
+                          // ------------------------------------------------
+
+                          enabledBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+                            borderSide:
+                                BorderSide(
+                              color:
+                                  accentColor
+                                      .withValues(
+                                alpha: 0.25,
+                              ),
+                              width: 1,
+                            ),
+                          ),
+
+                          // ------------------------------------------------
+                          // FOCUSED BORDER
+                          // ------------------------------------------------
+
+                          focusedBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+                            borderSide:
+                                const BorderSide(
+                              color:
+                                  accentColor,
+                              width: 1.8,
+                            ),
+                          ),
+
+                          // ------------------------------------------------
+                          // DISABLED BORDER
+                          // ------------------------------------------------
+
+                          disabledBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+                            borderSide:
+                                BorderSide(
+                              color:
+                                  accentColor
+                                      .withValues(
+                                alpha: 0.10,
+                              ),
+                              width: 1,
+                            ),
+                          ),
+
+                          contentPadding:
+                              const EdgeInsets
+                                  .symmetric(
+                            horizontal: 18,
+                            vertical: 18,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 24,
+                      ),
+
+                      // ==================================================
+                      // RESET BUTTON
+                      // ==================================================
+
+                      SizedBox(
+                        width:
+                            double.infinity,
+                        height: 56,
+                        child:
+                            ElevatedButton.icon(
+                          onPressed: loading
+                              ? null
+                              : _resetPassword,
+                          style:
+                              ElevatedButton
+                                  .styleFrom(
+                            backgroundColor:
+                                accentColor,
+                            foregroundColor:
+                                const Color(
+                              0xFF120B24,
+                            ),
+                            disabledBackgroundColor:
                                 accentColor
                                     .withValues(
-                              alpha: 0.25,
+                              alpha: 0.45,
+                            ),
+                            disabledForegroundColor:
+                                const Color(
+                              0xFF120B24,
+                            ),
+                            elevation: 0,
+                            shape:
+                                RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(
+                                16,
+                              ),
+                            ),
+                          ),
+                          icon: loading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color:
+                                        Color(
+                                      0xFF120B24,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons
+                                      .mark_email_read_rounded,
+                                ),
+                          label: Text(
+                            loading
+                                ? _t(
+                                    'sending',
+                                  )
+                                : _t(
+                                    'sendPasswordReset',
+                                  ),
+                            style:
+                                const TextStyle(
+                              fontWeight:
+                                  FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ),
-                        focusedBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              const BorderSide(
-                            color:
-                                accentColor,
-                            width: 1.5,
-                          ),
-                        ),
                       ),
-                    ),
 
-                    const SizedBox(
-                      height: 24,
-                    ),
+                      const SizedBox(
+                        height: 12,
+                      ),
 
-                    // ==================================================
-                    // RESET BUTTON
-                    // ==================================================
+                      // ==================================================
+                      // BACK TO LOGIN
+                      // ==================================================
 
-                    SizedBox(
-                      width:
-                          double.infinity,
-                      height: 56,
-                      child:
-                          ElevatedButton.icon(
+                      TextButton.icon(
                         onPressed: loading
                             ? null
-                            : _resetPassword,
-                        icon: loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color:
-                                      Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons
-                                    .mark_email_read_rounded,
-                              ),
+                            : () {
+                                Navigator.of(
+                                  context,
+                                ).pop();
+                              },
+                        style:
+                            TextButton.styleFrom(
+                          foregroundColor:
+                              pinkColor,
+                        ),
+                        icon: const Icon(
+                          Icons
+                              .arrow_back_rounded,
+                        ),
                         label: Text(
-                          loading
-                              ? _t(
-                                  'sending',
-                                )
-                              : _t(
-                                  'sendPasswordReset',
-                                ),
+                          _t('login'),
                           style:
                               const TextStyle(
                             fontWeight:
-                                FontWeight.bold,
-                            fontSize: 16,
+                                FontWeight.w600,
                           ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(
-                      height: 12,
-                    ),
-
-                    // ==================================================
-                    // BACK TO LOGIN
-                    // ==================================================
-
-                    TextButton.icon(
-                      onPressed:
-                          loading
-                              ? null
-                              : () {
-                                  Navigator.of(
-                                    context,
-                                  ).pop();
-                                },
-                      icon:
-                          const Icon(
-                        Icons
-                            .arrow_back_rounded,
+                      const SizedBox(
+                        height: 10,
                       ),
-                      label:
-                          Text(
-                        _t('login'),
+
+                      // ==================================================
+                      // STELLA FOOTER
+                      // ==================================================
+
+                      const Text(
+                        '🐱💜',
+                        style: TextStyle(
+                          fontSize: 24,
+                        ),
                       ),
-                    ),
-
-                    const SizedBox(
-                      height: 8,
-                    ),
-
-                    // ==================================================
-                    // STELLA FOOTER
-                    // ==================================================
-
-                    const Text(
-                      '🐱💜',
-                      style:
-                          TextStyle(
-                        fontSize: 24,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
