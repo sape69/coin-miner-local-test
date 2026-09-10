@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
@@ -41,9 +40,17 @@ const Color secondaryTextColor =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Firebase pidetään mukana tässä testissä.
   await Firebase.initializeApp();
 
-  await MobileAds.instance.initialize();
+  // ==========================================================
+  // AdMob on tarkoituksella POIS käytöstä tässä testissä.
+  //
+  // MobileAds.instance.initialize();
+  //
+  // Jos tekstikentät toimivat nyt, ongelma liittyy AdMobiin
+  // tai sen alustukseen.
+  // ==========================================================
 
   runApp(
     const StelluriiniApp(),
@@ -178,8 +185,10 @@ class _StelluriiniAppState
       supportedLocales:
           supportedLocales,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        useMaterial3: true,
+        brightness:
+            Brightness.dark,
+        useMaterial3:
+            true,
         scaffoldBackgroundColor:
             backgroundColor,
         colorScheme:
@@ -203,13 +212,16 @@ class _StelluriiniAppState
               backgroundColor,
           foregroundColor:
               primaryTextColor,
-          centerTitle: true,
-          elevation: 0,
+          centerTitle:
+              true,
+          elevation:
+              0,
           titleTextStyle:
               TextStyle(
             color:
                 primaryTextColor,
-            fontSize: 20,
+            fontSize:
+                20,
             fontWeight:
                 FontWeight.bold,
           ),
@@ -218,7 +230,8 @@ class _StelluriiniAppState
             const CardThemeData(
           color:
               cardColor,
-          elevation: 0,
+          elevation:
+              0,
           margin:
               EdgeInsets.zero,
           shape:
@@ -237,7 +250,8 @@ class _StelluriiniAppState
                 stellaPurple,
             foregroundColor:
                 Colors.white,
-            elevation: 0,
+            elevation:
+                0,
             minimumSize:
                 const Size(
               double.infinity,
@@ -252,7 +266,8 @@ class _StelluriiniAppState
                 const TextStyle(
               fontWeight:
                   FontWeight.bold,
-              fontSize: 16,
+              fontSize:
+                  16,
             ),
           ),
         ),
@@ -266,7 +281,8 @@ class _StelluriiniAppState
                 const BorderSide(
               color:
                   stellaPurple,
-              width: 1.5,
+              width:
+                  1.5,
             ),
             minimumSize:
                 const Size(
@@ -352,7 +368,8 @@ class _StelluriiniAppState
             const DividerThemeData(
           color:
               Color(0xFF352653),
-          thickness: 1,
+          thickness:
+              1,
         ),
       ),
       home:
