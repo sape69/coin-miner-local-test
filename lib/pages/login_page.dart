@@ -42,8 +42,11 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
 
-    final String email = _emailController.text.trim();
-    final String password = _passwordController.text;
+    final String email =
+        _emailController.text.trim();
+
+    final String password =
+        _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       _showMessage(
@@ -57,16 +60,19 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
         email: email,
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      String message = _l10n.get('loginFailed');
+      String message =
+          _l10n.get('loginFailed');
 
       switch (e.code) {
         case 'user-not-found':
-          message = _l10n.get('loginUserNotFound');
+          message =
+              _l10n.get('loginUserNotFound');
           break;
 
         case 'wrong-password':
@@ -128,8 +134,10 @@ class _LoginPageState extends State<LoginPage> {
             color: Color(0xFFF8F4FF),
           ),
         ),
-        backgroundColor: const Color(0xFF21113B),
-        behavior: SnackBarBehavior.floating,
+        backgroundColor:
+            const Color(0xFF21113B),
+        behavior:
+            SnackBarBehavior.floating,
       ),
     );
   }
@@ -138,8 +146,10 @@ class _LoginPageState extends State<LoginPage> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RegisterPage(
-          languageCode: widget.languageCode,
-          changeLanguage: widget.changeLanguage,
+          languageCode:
+              widget.languageCode,
+          changeLanguage:
+              widget.changeLanguage,
         ),
       ),
     );
@@ -149,51 +159,112 @@ class _LoginPageState extends State<LoginPage> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ForgotPasswordPage(
-          languageCode: widget.languageCode,
-          changeLanguage: widget.changeLanguage,
+          languageCode:
+              widget.languageCode,
+          changeLanguage:
+              widget.changeLanguage,
         ),
       ),
     );
   }
 
-  InputDecoration _fieldDecoration({
-    required String label,
-    required IconData icon,
-    Widget? suffixIcon,
-  }) {
+  InputDecoration _emailDecoration() {
     return InputDecoration(
-      labelText: label,
+      labelText: _l10n.get('email'),
+      hintText: _l10n.get('email'),
       labelStyle: const TextStyle(
         color: Color(0xFFBDB4D1),
       ),
-      floatingLabelStyle: const TextStyle(
+      floatingLabelStyle:
+          const TextStyle(
         color: Color(0xFFFFB7E8),
       ),
-      prefixIcon: Icon(
-        icon,
+      hintStyle: const TextStyle(
+        color: Color(0xFF766B89),
+      ),
+      prefixIcon: const Icon(
+        Icons.email_outlined,
         color: Color(0xFFB58CFF),
       ),
-      suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFF120B24),
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: const Color(0xFFB58CFF)
-              .withValues(alpha: 0.30),
-          width: 1,
+      fillColor:
+          const Color(0xFF18102D),
+      enabledBorder:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(18),
+        borderSide:
+            const BorderSide(
+          color: Color(0xFF352653),
+          width: 1.5,
         ),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: Color(0xFFFFB7E8),
+      focusedBorder:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(18),
+        borderSide:
+            const BorderSide(
+          color: Color(0xFFB58CFF),
+          width: 2,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _passwordDecoration() {
+    return InputDecoration(
+      labelText: _l10n.get('password'),
+      hintText: _l10n.get('password'),
+      labelStyle: const TextStyle(
+        color: Color(0xFFBDB4D1),
+      ),
+      floatingLabelStyle:
+          const TextStyle(
+        color: Color(0xFFFFB7E8),
+      ),
+      hintStyle: const TextStyle(
+        color: Color(0xFF766B89),
+      ),
+      prefixIcon: const Icon(
+        Icons.lock_outline,
+        color: Color(0xFFB58CFF),
+      ),
+      suffixIcon: IconButton(
+        onPressed: () {
+          setState(() {
+            _obscurePassword =
+                !_obscurePassword;
+          });
+        },
+        color: const Color(0xFFB58CFF),
+        icon: Icon(
+          _obscurePassword
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
+        ),
+      ),
+      filled: true,
+      fillColor:
+          const Color(0xFF18102D),
+      enabledBorder:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(18),
+        borderSide:
+            const BorderSide(
+          color: Color(0xFF352653),
           width: 1.5,
+        ),
+      ),
+      focusedBorder:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(18),
+        borderSide:
+            const BorderSide(
+          color: Color(0xFFB58CFF),
+          width: 2,
         ),
       ),
     );
@@ -202,267 +273,346 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF120B24),
+      backgroundColor:
+          const Color(0xFF120B24),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(
-              24,
-              28,
-              24,
-              32,
-            ),
+        child: SingleChildScrollView(
+          padding:
+              const EdgeInsets.fromLTRB(
+            24,
+            28,
+            24,
+            32,
+          ),
+          child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
+              constraints:
+                  const BoxConstraints(
                 maxWidth: 480,
               ),
               child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.stretch,
                 children: [
                   // ==================================================
-                  // STELLA LOGO
+                  // STELLA
                   // ==================================================
 
-                  Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF1A0E31),
-                      border: Border.all(
-                        color: const Color(0xFFB58CFF),
-                        width: 2,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x55211B3B),
-                          blurRadius: 20,
-                          spreadRadius: 4,
+                  Center(
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration:
+                          BoxDecoration(
+                        shape:
+                            BoxShape.circle,
+                        color:
+                            const Color(
+                          0xFF1A0E31,
                         ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/stella.jpg',
-                        fit: BoxFit.cover,
-                        errorBuilder: (
-                          context,
-                          error,
-                          stackTrace,
-                        ) {
-                          return const Icon(
-                            Icons.pets,
-                            size: 56,
-                            color: Color(0xFFFFB7E8),
-                          );
-                        },
+                        border:
+                            Border.all(
+                          color:
+                              const Color(
+                            0xFFB58CFF,
+                          ),
+                          width: 2,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color:
+                                Color(
+                              0x55211B3B,
+                            ),
+                            blurRadius: 20,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child:
+                            Image.asset(
+                          'assets/stella.jpg',
+                          fit:
+                              BoxFit.cover,
+                          errorBuilder:
+                              (
+                            context,
+                            error,
+                            stackTrace,
+                          ) {
+                            return const Icon(
+                              Icons.pets,
+                              size: 56,
+                              color:
+                                  Color(
+                                0xFFFFB7E8,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 22),
-
-                  // ==================================================
-                  // TITLE
-                  // ==================================================
+                  const SizedBox(
+                    height: 22,
+                  ),
 
                   const Text(
                     'Stelluriini',
-                    textAlign: TextAlign.center,
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFF8F4FF),
+                      color:
+                          Color(0xFFF8F4FF),
                       fontSize: 32,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       letterSpacing: 1.2,
                     ),
                   ),
 
-                  const SizedBox(height: 6),
+                  const SizedBox(
+                    height: 6,
+                  ),
 
                   const Text(
                     'STL',
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFFFD166),
+                      color:
+                          Color(0xFFFFD166),
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontWeight:
+                          FontWeight.w700,
                       letterSpacing: 3,
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(
+                    height: 30,
+                  ),
 
                   // ==================================================
                   // LOGIN CARD
                   // ==================================================
 
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(
+                    width:
+                        double.infinity,
+                    padding:
+                        const EdgeInsets.fromLTRB(
                       20,
                       24,
                       20,
                       22,
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF21113B),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: const Color(0xFFB58CFF)
-                            .withValues(alpha: 0.30),
+                    decoration:
+                        BoxDecoration(
+                      color:
+                          const Color(
+                        0xFF21113B,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(
+                        24,
+                      ),
+                      border:
+                          Border.all(
+                        color:
+                            const Color(
+                          0xFFB58CFF,
+                        ).withValues(
+                          alpha: 0.30,
+                        ),
                         width: 1,
                       ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x331A0E31),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize:
+                          MainAxisSize.min,
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .stretch,
                       children: [
                         Text(
                           _l10n.get('login'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFFF8F4FF),
+                          textAlign:
+                              TextAlign.center,
+                          style:
+                              const TextStyle(
+                            color:
+                                Color(
+                              0xFFF8F4FF,
+                            ),
                             fontSize: 25,
-                            fontWeight: FontWeight.bold,
+                            fontWeight:
+                                FontWeight.bold,
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(
+                          height: 24,
+                        ),
 
                         // ==================================================
                         // EMAIL
                         // ==================================================
 
-                        SizedBox(
-                          height: 58,
-                          child: TextField(
-                            controller: _emailController,
-                            keyboardType:
-                                TextInputType.emailAddress,
-                            textInputAction:
-                                TextInputAction.next,
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            style: const TextStyle(
-                              color: Color(0xFFF8F4FF),
-                              fontSize: 16,
-                            ),
-                            decoration: _fieldDecoration(
-                              label: _l10n.get('email'),
-                              icon: Icons.email_outlined,
-                            ),
+                        TextField(
+                          controller:
+                              _emailController,
+                          keyboardType:
+                              TextInputType
+                                  .emailAddress,
+                          textInputAction:
+                              TextInputAction
+                                  .next,
+                          autocorrect:
+                              false,
+                          enableSuggestions:
+                              false,
+                          cursorColor:
+                              const Color(
+                            0xFFB58CFF,
                           ),
+                          style:
+                              const TextStyle(
+                            color:
+                                Color(
+                              0xFFF8F4FF,
+                            ),
+                            fontSize: 16,
+                          ),
+                          decoration:
+                              _emailDecoration(),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(
+                          height: 18,
+                        ),
 
                         // ==================================================
                         // PASSWORD
                         // ==================================================
 
-                        SizedBox(
-                          height: 58,
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            textInputAction:
-                                TextInputAction.done,
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            style: const TextStyle(
-                              color: Color(0xFFF8F4FF),
-                              fontSize: 16,
-                            ),
-                            onSubmitted: (_) {
-                              if (!_isLoading) {
-                                _login();
-                              }
-                            },
-                            decoration: _fieldDecoration(
-                              label: _l10n.get('password'),
-                              icon: Icons.lock_outline,
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword =
-                                        !_obscurePassword;
-                                  });
-                                },
-                                color: const Color(0xFFB58CFF),
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons
-                                          .visibility_outlined
-                                      : Icons
-                                          .visibility_off_outlined,
-                                ),
-                              ),
-                            ),
+                        TextField(
+                          controller:
+                              _passwordController,
+                          obscureText:
+                              _obscurePassword,
+                          textInputAction:
+                              TextInputAction
+                                  .done,
+                          autocorrect:
+                              false,
+                          enableSuggestions:
+                              false,
+                          cursorColor:
+                              const Color(
+                            0xFFB58CFF,
                           ),
+                          style:
+                              const TextStyle(
+                            color:
+                                Color(
+                              0xFFF8F4FF,
+                            ),
+                            fontSize: 16,
+                          ),
+                          onSubmitted:
+                              (_) {
+                            if (!_isLoading) {
+                              _login();
+                            }
+                          },
+                          decoration:
+                              _passwordDecoration(),
                         ),
 
-                        const SizedBox(height: 6),
+                        const SizedBox(
+                          height: 6,
+                        ),
 
                         // ==================================================
                         // FORGOT PASSWORD
                         // ==================================================
 
                         Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : _openForgotPassword,
-                            style: TextButton.styleFrom(
+                          alignment:
+                              Alignment
+                                  .centerRight,
+                          child:
+                              TextButton(
+                            onPressed:
+                                _isLoading
+                                    ? null
+                                    : _openForgotPassword,
+                            style:
+                                TextButton
+                                    .styleFrom(
                               foregroundColor:
-                                  const Color(0xFFFFB7E8),
-                              padding:
-                                  const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 4,
+                                  const Color(
+                                0xFFFFB7E8,
                               ),
                             ),
-                            child: Text(
-                              _l10n.get('forgotPassword'),
-                              style: const TextStyle(
-                                fontSize: 14,
+                            child:
+                                Text(
+                              _l10n.get(
+                                'forgotPassword',
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(
+                          height: 10,
+                        ),
 
                         // ==================================================
                         // LOGIN BUTTON
                         // ==================================================
 
                         SizedBox(
-                          width: double.infinity,
+                          width:
+                              double.infinity,
                           height: 54,
-                          child: ElevatedButton(
+                          child:
+                              ElevatedButton(
                             onPressed:
-                                _isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
+                                _isLoading
+                                    ? null
+                                    : _login,
+                            style:
+                                ElevatedButton
+                                    .styleFrom(
                               backgroundColor:
-                                  const Color(0xFFB58CFF),
+                                  const Color(
+                                0xFFB58CFF,
+                              ),
                               foregroundColor:
-                                  const Color(0xFF120B24),
+                                  const Color(
+                                0xFF120B24,
+                              ),
                               disabledBackgroundColor:
-                                  const Color(0xFF6E6380),
+                                  const Color(
+                                0xFF6E6380,
+                              ),
                               disabledForegroundColor:
-                                  const Color(0xFFD8D0E2),
+                                  const Color(
+                                0xFFD8D0E2,
+                              ),
                               elevation: 0,
-                              shape: RoundedRectangleBorder(
+                              shape:
+                                  RoundedRectangleBorder(
                                 borderRadius:
-                                    BorderRadius.circular(16),
+                                    BorderRadius
+                                        .circular(
+                                  16,
+                                ),
                               ),
                             ),
                             child: _isLoading
@@ -471,54 +621,77 @@ class _LoginPageState extends State<LoginPage> {
                                     height: 24,
                                     child:
                                         CircularProgressIndicator(
-                                      strokeWidth: 2.5,
+                                      strokeWidth:
+                                          2.5,
                                       valueColor:
                                           AlwaysStoppedAnimation<
                                               Color>(
-                                        Color(0xFF120B24),
+                                        Color(
+                                          0xFF120B24,
+                                        ),
                                       ),
                                     ),
                                   )
                                 : Text(
-                                    _l10n.get('login'),
-                                    style: const TextStyle(
-                                      fontSize: 16,
+                                    _l10n.get(
+                                      'login',
+                                    ),
+                                    style:
+                                        const TextStyle(
+                                      fontSize:
+                                          16,
                                       fontWeight:
-                                          FontWeight.bold,
+                                          FontWeight
+                                              .bold,
                                     ),
                                   ),
                           ),
                         ),
 
-                        const SizedBox(height: 18),
-
-                        // ==================================================
-                        // CREATE ACCOUNT
-                        // ==================================================
+                        const SizedBox(
+                          height: 18,
+                        ),
 
                         Text(
-                          _l10n.get('createAccount'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFFBDB4D1),
+                          _l10n.get(
+                            'createAccount',
+                          ),
+                          textAlign:
+                              TextAlign.center,
+                          style:
+                              const TextStyle(
+                            color:
+                                Color(
+                              0xFFBDB4D1,
+                            ),
                             fontSize: 14,
                           ),
                         ),
 
-                        const SizedBox(height: 4),
+                        const SizedBox(
+                          height: 4,
+                        ),
 
                         TextButton(
                           onPressed:
-                              _isLoading ? null : _openRegister,
-                          style: TextButton.styleFrom(
+                              _isLoading
+                                  ? null
+                                  : _openRegister,
+                          style:
+                              TextButton.styleFrom(
                             foregroundColor:
-                                const Color(0xFFFFD166),
+                                const Color(
+                              0xFFFFD166,
+                            ),
                           ),
                           child: Text(
-                            _l10n.get('createAccount'),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
+                            _l10n.get(
+                              'createAccount',
+                            ),
+                            style:
+                                const TextStyle(
+                              fontWeight:
+                                  FontWeight.bold,
                             ),
                           ),
                         ),
@@ -526,13 +699,17 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(
+                    height: 24,
+                  ),
 
                   const Text(
                     'STELLA • STELLURIINI • STL • SOLANA',
-                    textAlign: TextAlign.center,
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFBDB4D1),
+                      color:
+                          Color(0xFFBDB4D1),
                       fontSize: 11,
                       letterSpacing: 1.1,
                     ),
