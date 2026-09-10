@@ -1,27 +1,24 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'pages/login_page.dart';
+import 'auth_gate.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / LOGIN ISOLATION TEST
+// 🐱 STELLURIINI / AUTH GATE TEST
 // ============================================================
 //
 // VÄLIAIKAINEN VIANMÄÄRITYSTESTI
 //
 // Tässä testissä:
-// - Firebase alustetaan
-// - AdMobia EI alusteta
-// - SharedPreferencesia EI käytetä
-// - AuthGatea EI käytetä
-// - LoadingPagea EI käytetä
 //
-// LoginPage avataan SUORAAN.
+// ✅ Firebase alustetaan
+// ❌ AdMobia ei alusteta
+// ❌ SharedPreferencesia ei käytetä
+// ✅ AuthGate käytetään
 //
-// Tämän avulla selvitetään, tuleeko harmaa alue:
-// 1. AuthGate-rakenteesta
-// 2. Firebase-alustuksesta
-// 3. vai LoginPageen liittyvästä muusta rakenteesta.
+// Tarkoitus:
+//
+// Selvitetään, aiheuttaako AuthGate-rakenne ongelman.
 //
 // ============================================================
 
@@ -60,15 +57,14 @@ const Color secondaryTextColor =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase pidetään mukana testissä.
+  // Firebase pidetään mukana.
   await Firebase.initializeApp();
 
-  // AdMobia EI alusteta.
-  // SharedPreferencesia EI alusteta.
-  // AuthGatea EI käytetä.
+  // AdMobia ei alusteta.
+  // SharedPreferencesia ei käytetä.
 
   runApp(
-    const StelluriiniLoginTestApp(),
+    const StelluriiniAuthTestApp(),
   );
 }
 
@@ -76,9 +72,9 @@ Future<void> main() async {
 // APP
 // ============================================================
 
-class StelluriiniLoginTestApp
+class StelluriiniAuthTestApp
     extends StatelessWidget {
-  const StelluriiniLoginTestApp({
+  const StelluriiniAuthTestApp({
     super.key,
   });
 
@@ -165,13 +161,6 @@ class StelluriiniLoginTestApp
               borderRadius:
                   BorderRadius.circular(18),
             ),
-            textStyle:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-              fontSize:
-                  16,
-            ),
           ),
         ),
         textTheme:
@@ -252,10 +241,10 @@ class StelluriiniLoginTestApp
       ),
 
       // ========================================================
-      // LOGIN AVATAAN SUORAAN
+      // AUTHGATE TEST
       // ========================================================
 
-      home: LoginPage(
+      home: AuthGate(
         languageCode: 'fi',
         changeLanguage:
             _testChangeLanguage,
@@ -266,9 +255,8 @@ class StelluriiniLoginTestApp
   static Future<void> _testChangeLanguage(
     String language,
   ) async {
-    // Ei tehdä mitään.
+    // Ei tehdä tässä testissä mitään.
     //
-    // Tämä on vain testin vuoksi.
-    // SharedPreferences ei ole mukana tässä testissä.
+    // SharedPreferences ei ole mukana.
   }
 }
