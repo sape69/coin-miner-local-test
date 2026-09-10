@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
@@ -31,8 +30,6 @@ Future<void> main() async {
 
   await Firebase.initializeApp();
 
-  await MobileAds.instance.initialize();
-
   runApp(
     const StelluriiniApp(),
   );
@@ -48,7 +45,7 @@ class StelluriiniApp extends StatefulWidget {
       _StelluriiniAppState();
 }
 
-class _StelluriiniAppState
+class _StelluriiniiniAppState
     extends State<StelluriiniApp> {
   String languageCode = 'fi';
 
@@ -163,20 +160,15 @@ class _StelluriiniAppState
     return MaterialApp(
       title: 'Stelluriini',
       debugShowCheckedModeBanner: false,
-
       locale: Locale(languageCode),
-
       supportedLocales:
           supportedLocales,
-
       theme: ThemeData(
         brightness:
             Brightness.dark,
         useMaterial3: true,
-
         scaffoldBackgroundColor:
             backgroundColor,
-
         colorScheme:
             ColorScheme.fromSeed(
           seedColor:
@@ -192,7 +184,6 @@ class _StelluriiniAppState
           surface:
               surfaceColor,
         ),
-
         appBarTheme:
             const AppBarTheme(
           backgroundColor:
@@ -210,7 +201,6 @@ class _StelluriiniAppState
                 FontWeight.bold,
           ),
         ),
-
         cardTheme:
             const CardThemeData(
           color:
@@ -226,7 +216,6 @@ class _StelluriiniAppState
             ),
           ),
         ),
-
         elevatedButtonTheme:
             ElevatedButtonThemeData(
           style:
@@ -254,7 +243,6 @@ class _StelluriiniAppState
             ),
           ),
         ),
-
         outlinedButtonTheme:
             OutlinedButtonThemeData(
           style:
@@ -279,7 +267,6 @@ class _StelluriiniAppState
             ),
           ),
         ),
-
         textTheme:
             const TextTheme(
           headlineLarge:
@@ -326,13 +313,12 @@ class _StelluriiniAppState
                 secondaryTextColor,
           ),
         ),
-
         snackBarTheme:
             SnackBarThemeData(
           behavior:
               SnackBarBehavior.floating,
           backgroundColor:
-              const Color(0xFF21113B),
+              Color(0xFF21113B),
           contentTextStyle:
               const TextStyle(
             color:
@@ -344,13 +330,11 @@ class _StelluriiniAppState
                 BorderRadius.circular(16),
           ),
         ),
-
         progressIndicatorTheme:
             const ProgressIndicatorThemeData(
           color:
               stellaPurple,
         ),
-
         dividerTheme:
             const DividerThemeData(
           color:
@@ -358,7 +342,6 @@ class _StelluriiniAppState
           thickness: 1,
         ),
       ),
-
       home: languageLoaded
           ? AuthGate(
               languageCode:
