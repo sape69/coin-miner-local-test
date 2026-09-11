@@ -1,9 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import '../localization.dart';
-import 'forgot_password_page.dart';
-import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String languageCode;
@@ -26,194 +21,32 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController =
       TextEditingController();
 
-  final FocusNode _emailFocusNode =
+  final FocusNode _emailFocus =
       FocusNode();
 
-  final FocusNode _passwordFocusNode =
+  final FocusNode _passwordFocus =
       FocusNode();
 
-  bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
+
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+
     super.dispose();
   }
 
-  AppLocalizations get _l10n =>
-      AppLocalizations(widget.languageCode);
+  Widget _emailField() {
+    return TextField(
+      controller: _emailController,
+      focusNode: _emailFocus,
 
-  // ==========================================================
-  // LOGIN
-  // ==========================================================
-
-  Future<void> _login() async {
-    FocusScope.of(context).unfocus();
-
-    final String email =
-        _emailController.text.trim();
-
-    final String password =
-        _passwordController.text;
-
-    if (email.isEmpty || password.isEmpty) {
-      _showMessage(
-        _l10n.get('loginFillFields'),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } on FirebaseAuthException catch (e) {
-      String message =
-          _l10n.get('loginFailed');
-
-      switch (e.code) {
-        case 'user-not-found':
-          message =
-              _l10n.get('loginUserNotFound');
-          break;
-
-        case 'wrong-password':
-        case 'invalid-credential':
-          message =
-              _l10n.get(
-            'loginInvalidCredentials',
-          );
-          break;
-
-        case 'invalid-email':
-          message =
-              _l10n.get(
-            'loginInvalidEmail',
-          );
-          break;
-
-        case 'user-disabled':
-          message =
-              _l10n.get(
-            'loginUserDisabled',
-          );
-          break;
-
-        case 'too-many-requests':
-          message =
-              _l10n.get(
-            'loginTooManyRequests',
-          );
-          break;
-
-        case 'network-request-failed':
-          message =
-              _l10n.get(
-            'loginNetworkError',
-          );
-          break;
-      }
-
-      _showMessage(message);
-    } catch (_) {
-      _showMessage(
-        _l10n.get('loginFailed'),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // ==========================================================
-  // MESSAGE
-  // ==========================================================
-
-  void _showMessage(String message) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Color(0xFFF8F4FF),
-          ),
-        ),
-        backgroundColor:
-            const Color(0xFF21113B),
-        behavior:
-            SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  // ==========================================================
-  // REGISTER
-  // ==========================================================
-
-  Future<void> _openRegister() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => RegisterPage(
-          languageCode:
-              widget.languageCode,
-          changeLanguage:
-              widget.changeLanguage,
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // FORGOT PASSWORD
-  // ==========================================================
-
-  Future<void> _openForgotPassword() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ForgotPasswordPage(
-          languageCode:
-              widget.languageCode,
-          changeLanguage:
-              widget.changeLanguage,
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // EMAIL FIELD
-  // ==========================================================
-
-  Widget _buildEmailField() {
-    return TextFormField(
-      controller:
-          _emailController,
-
-      focusNode:
-          _emailFocusNode,
-
-      enabled:
-          true,
-
-      readOnly:
-          false,
+      enabled: true,
+      readOnly: false,
 
       keyboardType:
           TextInputType.emailAddress,
@@ -221,177 +54,105 @@ class _LoginPageState extends State<LoginPage> {
       textInputAction:
           TextInputAction.next,
 
-      autocorrect:
-          false,
-
-      enableSuggestions:
-          false,
-
       cursorColor:
           const Color(0xFFB58CFF),
 
-      style:
-          const TextStyle(
-        color:
-            Color(0xFFF8F4FF),
-        fontSize:
-            16,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
       ),
 
-      decoration:
-          InputDecoration(
-        labelText:
-            _l10n.get('email'),
+      decoration: InputDecoration(
+        hintText: 'Sähköposti',
 
-        hintText:
-            _l10n.get('email'),
-
-        labelStyle:
-            const TextStyle(
-          color:
-              Color(0xFFBDB4D1),
+        hintStyle: const TextStyle(
+          color: Color(0xFF9B91AD),
         ),
 
-        floatingLabelStyle:
-            const TextStyle(
-          color:
-              Color(0xFFFFB7E8),
-        ),
-
-        hintStyle:
-            const TextStyle(
-          color:
-              Color(0xFF766B89),
-        ),
-
-        prefixIcon:
-            const Icon(
+        prefixIcon: const Icon(
           Icons.email_outlined,
-          color:
-              Color(0xFFB58CFF),
+          color: Color(0xFFB58CFF),
+          size: 30,
         ),
 
-        filled:
-            true,
+        filled: true,
 
         fillColor:
             const Color(0xFF18102D),
 
-        enabledBorder:
-            OutlineInputBorder(
+        border: OutlineInputBorder(
           borderRadius:
-              BorderRadius.circular(18),
+              BorderRadius.circular(20),
 
           borderSide:
               const BorderSide(
-            color:
-                Color(0xFF352653),
-            width:
-                1.5,
+            color: Color(0xFF352653),
+            width: 2,
+          ),
+        ),
+
+        enabledBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(20),
+
+          borderSide:
+              const BorderSide(
+            color: Color(0xFF352653),
+            width: 2,
           ),
         ),
 
         focusedBorder:
             OutlineInputBorder(
           borderRadius:
-              BorderRadius.circular(18),
+              BorderRadius.circular(20),
 
           borderSide:
               const BorderSide(
-            color:
-                Color(0xFFB58CFF),
-            width:
-                2,
+            color: Color(0xFFB58CFF),
+            width: 3,
           ),
         ),
       ),
-
-      onTap: () {
-        _emailFocusNode.requestFocus();
-      },
-
-      onFieldSubmitted: (_) {
-        _passwordFocusNode.requestFocus();
-      },
     );
   }
 
-  // ==========================================================
-  // PASSWORD FIELD
-  // ==========================================================
+  Widget _passwordField() {
+    return TextField(
+      controller: _passwordController,
+      focusNode: _passwordFocus,
 
-  Widget _buildPasswordField() {
-    return TextFormField(
-      controller:
-          _passwordController,
+      enabled: true,
+      readOnly: false,
 
-      focusNode:
-          _passwordFocusNode,
-
-      enabled:
-          true,
-
-      readOnly:
-          false,
-
-      obscureText:
-          _obscurePassword,
+      obscureText: _obscurePassword,
 
       textInputAction:
           TextInputAction.done,
 
-      autocorrect:
-          false,
-
-      enableSuggestions:
-          false,
-
       cursorColor:
           const Color(0xFFB58CFF),
 
-      style:
-          const TextStyle(
-        color:
-            Color(0xFFF8F4FF),
-        fontSize:
-            16,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
       ),
 
-      decoration:
-          InputDecoration(
-        labelText:
-            _l10n.get('password'),
+      decoration: InputDecoration(
+        hintText: 'Salasana',
 
-        hintText:
-            _l10n.get('password'),
-
-        labelStyle:
-            const TextStyle(
-          color:
-              Color(0xFFBDB4D1),
+        hintStyle: const TextStyle(
+          color: Color(0xFF9B91AD),
         ),
 
-        floatingLabelStyle:
-            const TextStyle(
-          color:
-              Color(0xFFFFB7E8),
-        ),
-
-        hintStyle:
-            const TextStyle(
-          color:
-              Color(0xFF766B89),
-        ),
-
-        prefixIcon:
-            const Icon(
+        prefixIcon: const Icon(
           Icons.lock_outline,
-          color:
-              Color(0xFFB58CFF),
+          color: Color(0xFFB58CFF),
+          size: 30,
         ),
 
-        suffixIcon:
-            IconButton(
+        suffixIcon: IconButton(
           onPressed: () {
             setState(() {
               _obscurePassword =
@@ -399,77 +160,67 @@ class _LoginPageState extends State<LoginPage> {
             });
 
             WidgetsBinding.instance
-                .addPostFrameCallback(
-              (_) {
-                if (mounted) {
-                  _passwordFocusNode
-                      .requestFocus();
-                }
-              },
-            );
+                .addPostFrameCallback((_) {
+              if (mounted) {
+                _passwordFocus.requestFocus();
+              }
+            });
           },
 
-          color:
-              const Color(0xFFB58CFF),
-
-          icon:
-              Icon(
+          icon: Icon(
             _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
+
+            color:
+                const Color(0xFFB58CFF),
+
+            size: 30,
           ),
         ),
 
-        filled:
-            true,
+        filled: true,
 
         fillColor:
             const Color(0xFF18102D),
 
-        enabledBorder:
-            OutlineInputBorder(
+        border: OutlineInputBorder(
           borderRadius:
-              BorderRadius.circular(18),
+              BorderRadius.circular(20),
 
           borderSide:
               const BorderSide(
-            color:
-                Color(0xFF352653),
-            width:
-                1.5,
+            color: Color(0xFF352653),
+            width: 2,
+          ),
+        ),
+
+        enabledBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(20),
+
+          borderSide:
+              const BorderSide(
+            color: Color(0xFF352653),
+            width: 2,
           ),
         ),
 
         focusedBorder:
             OutlineInputBorder(
           borderRadius:
-              BorderRadius.circular(18),
+              BorderRadius.circular(20),
 
           borderSide:
               const BorderSide(
-            color:
-                Color(0xFFB58CFF),
-            width:
-                2,
+            color: Color(0xFFB58CFF),
+            width: 3,
           ),
         ),
       ),
-
-      onTap: () {
-        _passwordFocusNode.requestFocus();
-      },
-
-      onFieldSubmitted: (_) {
-        if (!_isLoading) {
-          _login();
-        }
-      },
     );
   }
-
-  // ==========================================================
-  // BUILD
-  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -481,479 +232,285 @@ class _LoginPageState extends State<LoginPage> {
           true,
 
       body: SafeArea(
-        child: ListView(
+        child: SingleChildScrollView(
           padding:
               const EdgeInsets.fromLTRB(
             24,
-            28,
+            40,
             24,
-            32,
+            40,
           ),
 
-          children: [
-            // ==================================================
-            // STELLA
-            // ==================================================
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 20,
+              ),
 
-            Center(
-              child: Container(
-                width:
-                    110,
+              // ================================================
+              // LOGO
+              // ================================================
 
-                height:
-                    110,
+              Container(
+                width: 120,
+                height: 120,
 
                 decoration:
                     BoxDecoration(
-                  shape:
-                      BoxShape.circle,
+                  shape: BoxShape.circle,
 
                   color:
-                      const Color(
-                    0xFF1A0E31,
-                  ),
+                      const Color(0xFF1A0E31),
 
                   border:
                       Border.all(
                     color:
-                        const Color(
-                      0xFFB58CFF,
-                    ),
-
-                    width:
-                        2,
+                        const Color(0xFFB58CFF),
+                    width: 3,
                   ),
-
-                  boxShadow: const [
-                    BoxShadow(
-                      color:
-                          Color(
-                        0x55211B3B,
-                      ),
-                      blurRadius:
-                          20,
-                      spreadRadius:
-                          4,
-                    ),
-                  ],
                 ),
 
-                child:
-                    ClipOval(
-                  child:
-                      Image.asset(
-                    'assets/stella.jpg',
-
-                    fit:
-                        BoxFit.cover,
-
-                    errorBuilder:
-                        (
-                      context,
-                      error,
-                      stackTrace,
-                    ) {
-                      return const Icon(
-                        Icons.pets,
-                        size:
-                            56,
-                        color:
-                            Color(
-                          0xFFFFB7E8,
-                        ),
-                      );
-                    },
+                child: const Center(
+                  child: Icon(
+                    Icons.pets,
+                    color:
+                        Color(0xFFFFB7E8),
+                    size: 62,
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(
-              height:
-                  22,
-            ),
-
-            // ==================================================
-            // STELLURIINI
-            // ==================================================
-
-            const Text(
-              'Stelluriini',
-
-              textAlign:
-                  TextAlign.center,
-
-              style:
-                  TextStyle(
-                color:
-                    Color(0xFFF8F4FF),
-
-                fontSize:
-                    32,
-
-                fontWeight:
-                    FontWeight.bold,
-
-                letterSpacing:
-                    1.2,
-              ),
-            ),
-
-            const SizedBox(
-              height:
-                  6,
-            ),
-
-            const Text(
-              'STL',
-
-              textAlign:
-                  TextAlign.center,
-
-              style:
-                  TextStyle(
-                color:
-                    Color(0xFFFFD166),
-
-                fontSize:
-                    16,
-
-                fontWeight:
-                    FontWeight.w700,
-
-                letterSpacing:
-                    3,
-              ),
-            ),
-
-            const SizedBox(
-              height:
-                  30,
-            ),
-
-            // ==================================================
-            // LOGIN CARD
-            // ==================================================
-
-            Container(
-              width:
-                  double.infinity,
-
-              padding:
-                  const EdgeInsets.fromLTRB(
-                20,
-                24,
-                20,
-                22,
+              const SizedBox(
+                height: 24,
               ),
 
-              decoration:
-                  BoxDecoration(
-                color:
-                    const Color(
-                  0xFF21113B,
-                ),
+              const Text(
+                'Stelluriini',
 
-                borderRadius:
-                    BorderRadius.circular(
-                  24,
-                ),
-
-                border:
-                    Border.all(
+                style: TextStyle(
                   color:
-                      const Color(
-                    0xFFB58CFF,
-                  ).withValues(
-                    alpha:
-                        0.30,
-                  ),
+                      Color(0xFFF8F4FF),
 
-                  width:
-                      1,
+                  fontSize: 38,
+
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
 
-              child:
-                  Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+              const SizedBox(
+                height: 8,
+              ),
 
-                children: [
-                  // ==================================================
-                  // TITLE
-                  // ==================================================
+              const Text(
+                'STL',
 
-                  Text(
-                    _l10n.get('login'),
+                style: TextStyle(
+                  color:
+                      Color(0xFFFFD166),
 
-                    textAlign:
-                        TextAlign.center,
+                  fontSize: 22,
 
-                    style:
-                        const TextStyle(
-                      color:
-                          Color(
-                        0xFFF8F4FF,
-                      ),
+                  fontWeight:
+                      FontWeight.bold,
 
-                      fontSize:
-                          25,
+                  letterSpacing: 4,
+                ),
+              ),
 
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
+              const SizedBox(
+                height: 40,
+              ),
 
-                  const SizedBox(
-                    height:
-                        24,
-                  ),
+              // ================================================
+              // LOGIN CARD
+              // ================================================
 
-                  // ==================================================
-                  // EMAIL
-                  // ==================================================
+              Container(
+                width: double.infinity,
 
-                  _buildEmailField(),
+                padding:
+                    const EdgeInsets.all(28),
 
-                  const SizedBox(
-                    height:
-                        18,
-                  ),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      const Color(0xFF21113B),
 
-                  // ==================================================
-                  // PASSWORD
-                  // ==================================================
+                  borderRadius:
+                      BorderRadius.circular(26),
 
-                  _buildPasswordField(),
-
-                  const SizedBox(
-                    height:
-                        6,
-                  ),
-
-                  // ==================================================
-                  // FORGOT PASSWORD
-                  // ==================================================
-
-                  Align(
-                    alignment:
-                        Alignment.centerRight,
-
-                    child:
-                        TextButton(
-                      onPressed:
-                          _isLoading
-                              ? null
-                              : _openForgotPassword,
-
-                      style:
-                          TextButton.styleFrom(
-                        foregroundColor:
-                            const Color(
-                          0xFFFFB7E8,
-                        ),
-                      ),
-
-                      child:
-                          Text(
-                        _l10n.get(
-                          'forgotPassword',
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height:
-                        10,
-                  ),
-
-                  // ==================================================
-                  // LOGIN BUTTON
-                  // ==================================================
-
-                  SizedBox(
-                    width:
-                        double.infinity,
-
-                    height:
-                        54,
-
-                    child:
-                        ElevatedButton(
-                      onPressed:
-                          _isLoading
-                              ? null
-                              : _login,
-
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(
-                          0xFFB58CFF,
-                        ),
-
-                        foregroundColor:
-                            const Color(
-                          0xFF120B24,
-                        ),
-
-                        disabledBackgroundColor:
-                            const Color(
-                          0xFF6E6380,
-                        ),
-
-                        disabledForegroundColor:
-                            const Color(
-                          0xFFD8D0E2,
-                        ),
-
-                        elevation:
-                            0,
-
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(
-                            16,
-                          ),
-                        ),
-                      ),
-
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                  width:
-                                      24,
-
-                                  height:
-                                      24,
-
-                                  child:
-                                      CircularProgressIndicator(
-                                    strokeWidth:
-                                        2.5,
-
-                                    valueColor:
-                                        AlwaysStoppedAnimation<
-                                            Color>(
-                                      Color(
-                                        0xFF120B24,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  _l10n.get(
-                                    'login',
-                                  ),
-
-                                  style:
-                                      const TextStyle(
-                                    fontSize:
-                                        16,
-
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height:
-                        18,
-                  ),
-
-                  // ==================================================
-                  // CREATE ACCOUNT
-                  // ==================================================
-
-                  Text(
-                    _l10n.get(
-                      'createAccount',
+                  border:
+                      Border.all(
+                    color:
+                        const Color(0xFFB58CFF)
+                            .withValues(
+                      alpha: 0.35,
                     ),
 
-                    textAlign:
-                        TextAlign.center,
-
-                    style:
-                        const TextStyle(
-                      color:
-                          Color(
-                        0xFFBDB4D1,
-                      ),
-
-                      fontSize:
-                          14,
-                    ),
+                    width: 1.5,
                   ),
+                ),
 
-                  const SizedBox(
-                    height:
-                        4,
-                  ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'KIRJAUDU SISÄÄN',
 
-                  TextButton(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : _openRegister,
+                      textAlign:
+                          TextAlign.center,
 
-                    style:
-                        TextButton.styleFrom(
-                      foregroundColor:
-                          const Color(
-                        0xFFFFD166,
-                      ),
-                    ),
+                      style: TextStyle(
+                        color:
+                            Color(0xFFF8F4FF),
 
-                    child:
-                        Text(
-                      _l10n.get(
-                        'createAccount',
-                      ),
+                        fontSize: 27,
 
-                      style:
-                          const TextStyle(
                         fontWeight:
                             FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(
+                      height: 30,
+                    ),
+
+                    // ==========================================
+                    // EMAIL
+                    // ==========================================
+
+                    _emailField(),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+                    // ==========================================
+                    // PASSWORD
+                    // ==========================================
+
+                    _passwordField(),
+
+                    const SizedBox(
+                      height: 28,
+                    ),
+
+                    // ==========================================
+                    // TEST BUTTON
+                    // ==========================================
+
+                    SizedBox(
+                      width:
+                          double.infinity,
+
+                      height: 56,
+
+                      child:
+                          ElevatedButton(
+                        onPressed: () {
+                          FocusScope.of(
+                            context,
+                          ).unfocus();
+
+                          ScaffoldMessenger
+                              .of(context)
+                              .showSnackBar(
+                            SnackBar(
+                              backgroundColor:
+                                  const Color(
+                                0xFF21113B,
+                              ),
+
+                              content:
+                                  Text(
+                                'Sähköposti: ${_emailController.text}\n'
+                                'Salasana: ${_passwordController.text}',
+                              ),
+                            ),
+                          );
+                        },
+
+                        style:
+                            ElevatedButton
+                                .styleFrom(
+                          backgroundColor:
+                              const Color(
+                            0xFFB58CFF,
+                          ),
+
+                          foregroundColor:
+                              const Color(
+                            0xFF120B24,
+                          ),
+
+                          elevation: 0,
+
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                              18,
+                            ),
+                          ),
+                        ),
+
+                        child:
+                            const Text(
+                          'TESTAA KENTÄT',
+
+                          style:
+                              TextStyle(
+                            fontSize: 17,
+
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 24,
+                    ),
+
+                    const Text(
+                      'Tämä on puhdas tekstikenttätesti.',
+
+                      textAlign:
+                          TextAlign.center,
+
+                      style: TextStyle(
+                        color:
+                            Color(0xFFBDB4D1),
+
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(
-              height:
-                  24,
-            ),
-
-            // ==================================================
-            // FOOTER
-            // ==================================================
-
-            const Text(
-              'STELLA • STELLURIINI • STL • SOLANA',
-
-              textAlign:
-                  TextAlign.center,
-
-              style:
-                  TextStyle(
-                color:
-                    Color(0xFFBDB4D1),
-
-                fontSize:
-                    11,
-
-                letterSpacing:
-                    1.1,
+              const SizedBox(
+                height: 30,
               ),
-            ),
-          ],
+
+              const Text(
+                'STELLA • STELLURIINI • STL • SOLANA',
+
+                textAlign:
+                    TextAlign.center,
+
+                style: TextStyle(
+                  color:
+                      Color(0xFFBDB4D1),
+
+                  fontSize: 12,
+
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
