@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 
+import 'pages/login_page.dart';
+
+// ============================================================
+// STELLURIINI - LOGIN PAGE TEST
+// ============================================================
+//
+// Tässä vaiheessa testataan vain LoginPagea.
+//
+// EI:
+// - Firebasea
+// - AdMobia
+// - SharedPreferencesia
+// - AuthGatea
+// - LoadingPagea
+//
+// ============================================================
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const StelluriiniTestApp());
+  runApp(
+    const StelluriiniApp(),
+  );
 }
 
 // ============================================================
-// STELLURIINI - MINIMAL TEXTFIELD TEST
+// APP
 // ============================================================
 
-class StelluriiniTestApp extends StatelessWidget {
-  const StelluriiniTestApp({
+class StelluriiniApp extends StatelessWidget {
+  const StelluriiniApp({
     super.key,
   });
 
@@ -20,133 +39,42 @@ class StelluriiniTestApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
+      title: 'Stelluriini',
+
       theme: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
+
+        scaffoldBackgroundColor:
+            const Color(0xFF120B24),
+
+        colorScheme:
+            ColorScheme.fromSeed(
+          seedColor:
+              const Color(0xFFB58CFF),
+
+          brightness:
+              Brightness.dark,
+
+          primary:
+              const Color(0xFFB58CFF),
+
+          secondary:
+              const Color(0xFFFFB7E8),
+        ),
       ),
 
-      home: const MinimalTestPage(),
-    );
-  }
-}
+      // ========================================================
+      // SUORAAN LOGINPAGEEN
+      // ========================================================
 
-// ============================================================
-// MINIMAL TEST PAGE
-// ============================================================
+      home: LoginPage(
+        languageCode: 'fi',
 
-class MinimalTestPage extends StatefulWidget {
-  const MinimalTestPage({
-    super.key,
-  });
-
-  @override
-  State<MinimalTestPage> createState() =>
-      _MinimalTestPageState();
-}
-
-class _MinimalTestPageState
-    extends State<MinimalTestPage> {
-  final TextEditingController _controller =
-      TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF120B24),
-
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'STELLURIINI TEST',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // ==================================================
-                // AINOA TEXTFIELD KOKO SOVELLUKSESSA
-                // ==================================================
-
-                TextField(
-                  controller: _controller,
-
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
-
-                  decoration: InputDecoration(
-                    hintText: 'NAPAUTA JA KIRJOITA',
-
-                    hintStyle: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 18,
-                    ),
-
-                    filled: true,
-
-                    fillColor: const Color(0xFF21113B),
-
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(16),
-
-                      borderSide:
-                          const BorderSide(
-                        color: Color(0xFFB58CFF),
-                        width: 2,
-                      ),
-                    ),
-
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(16),
-
-                      borderSide:
-                          const BorderSide(
-                        color: Colors.white,
-                        width: 3,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Kirjoitit: ${_controller.text}',
-                        ),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'TESTAA',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        changeLanguage:
+            (String language) async {
+          // Kielenvaihto otetaan käyttöön myöhemmin.
+        },
       ),
     );
   }
