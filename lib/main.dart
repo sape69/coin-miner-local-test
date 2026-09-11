@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
@@ -47,7 +46,18 @@ Future<void> main() async {
 
   await Firebase.initializeApp();
 
-  await MobileAds.instance.initialize();
+  // ==========================================================
+  // ⚠️ ADMOB POIS KÄYTÖSTÄ VÄLIAIKAISESTI
+  // ==========================================================
+  //
+  // Tämä on diagnostiikkatesti.
+  //
+  // MobileAds.instance.initialize() EI käynnistetä tässä.
+  //
+  // Jos harmaa alue katoaa tämän jälkeen, tiedämme että
+  // ongelma liittyy AdMob-integraatioon.
+  //
+  // ==========================================================
 
   runApp(
     const StelluriiniApp(),
