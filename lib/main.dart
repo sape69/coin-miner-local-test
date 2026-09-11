@@ -1,16 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'auth_gate.dart';
 import 'pages/loading_page.dart';
+import 'pages/login_page.dart';
 
 // ============================================================
 // 🐱 STELLURIINI / STELLA THEME
-// ============================================================
-
-// ============================================================
-// 🎨 STELLURIINI COLORS
 // ============================================================
 
 const Color backgroundColor =
@@ -43,21 +38,6 @@ const Color secondaryTextColor =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp();
-
-  // ==========================================================
-  // ⚠️ ADMOB POIS KÄYTÖSTÄ VÄLIAIKAISESTI
-  // ==========================================================
-  //
-  // Tämä on diagnostiikkatesti.
-  //
-  // MobileAds.instance.initialize() EI käynnistetä tässä.
-  //
-  // Jos harmaa alue katoaa tämän jälkeen, tiedämme että
-  // ongelma liittyy AdMob-integraatioon.
-  //
-  // ==========================================================
 
   runApp(
     const StelluriiniApp(),
@@ -168,13 +148,17 @@ class _StelluriiniAppState
             ? language
             : 'fi';
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
 
-    await prefs.setString(
-      'language',
-      validLanguage,
-    );
+      await prefs.setString(
+        'language',
+        validLanguage,
+      );
+    } catch (_) {
+      // Kieliasetuksen tallennus ei estä käyttöliittymää.
+    }
 
     if (!mounted) {
       return;
@@ -467,9 +451,23 @@ class _StelluriiniAppState
         ),
       ),
 
+      // ========================================================
+      // ⚠️ DIAGNOSTIIKKATESTI
+      // ========================================================
+      //
+      // AuthGate on tarkoituksella ohitettu.
+      //
+      // Firebasea ei alusteta.
+      //
+      // AdMobiä ei alusteta.
+      //
+      // Näytetään suoraan oikea LoginPage.
+      //
+      // ========================================================
+
       home:
           languageLoaded
-              ? AuthGate(
+              ? LoginPage(
                   languageCode:
                       languageCode,
 
