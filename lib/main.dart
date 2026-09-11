@@ -1,24 +1,44 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'pages/login_page.dart';
 
 // ============================================================
-// STELLURIINI - LOGIN PAGE TEST
+// 🐱 STELLURIINI - FIREBASE LOGIN TEST
 // ============================================================
 //
-// Tässä vaiheessa testataan vain LoginPagea.
+// VAIHE 3
 //
-// EI:
-// - Firebasea
-// - AdMobia
-// - SharedPreferencesia
-// - AuthGatea
-// - LoadingPagea
+// Tässä vaiheessa käytössä:
+// - Firebase Core
+// - Firebase Authentication
+// - LoginPage
+//
+// Ei vielä:
+// - AdMob
+// - Firestore
+// - Cloud Functions
+// - AuthGate
+// - SharedPreferences
 //
 // ============================================================
 
-void main() {
+Future<void> main() async {
+  // ----------------------------------------------------------
+  // Flutter alustetaan ensin.
+  // ----------------------------------------------------------
+
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ----------------------------------------------------------
+  // Firebase alustetaan ennen LoginPagea.
+  // ----------------------------------------------------------
+
+  await Firebase.initializeApp();
+
+  // ----------------------------------------------------------
+  // Käynnistetään sovellus.
+  // ----------------------------------------------------------
 
   runApp(
     const StelluriiniApp(),
@@ -43,6 +63,7 @@ class StelluriiniApp extends StatelessWidget {
 
       theme: ThemeData(
         brightness: Brightness.dark,
+
         useMaterial3: true,
 
         scaffoldBackgroundColor:
@@ -61,11 +82,14 @@ class StelluriiniApp extends StatelessWidget {
 
           secondary:
               const Color(0xFFFFB7E8),
+
+          tertiary:
+              const Color(0xFFFFD166),
         ),
       ),
 
       // ========================================================
-      // SUORAAN LOGINPAGEEN
+      // LOGIN PAGE
       // ========================================================
 
       home: LoginPage(
@@ -73,7 +97,7 @@ class StelluriiniApp extends StatelessWidget {
 
         changeLanguage:
             (String language) async {
-          // Kielenvaihto otetaan käyttöön myöhemmin.
+          // Kielenvaihto palautetaan myöhemmin.
         },
       ),
     );
