@@ -12,8 +12,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ==========================================================
+      # CHECKOUT
+      # ==========================================================
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ==========================================================
+      # VERIFY GIT VERSION
+      # ==========================================================
+
+      - name: Verify Git source
+        run: |
+          echo "========================================"
+          echo "GIT SOURCE VERIFICATION"
+          echo "========================================"
+
+          echo "Repository:"
+          git remote -v
+
+          echo ""
+          echo "Branch:"
+          git branch --show-current
+
+          echo ""
+          echo "Commit:"
+          git rev-parse HEAD
+
+          echo ""
+          echo "Commit message:"
+          git log -1 --oneline
+
+          echo ""
+          echo "Working tree:"
+          git status --short
+
+          echo ""
+          echo "========================================"
+
+      # ==========================================================
+      # SETUP FLUTTER
+      # ==========================================================
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -22,11 +65,19 @@ jobs:
           channel: stable
           cache: true
 
+      # ==========================================================
+      # SETUP JAVA
+      # ==========================================================
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      # ==========================================================
+      # SETUP ANDROID
+      # ==========================================================
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -37,76 +88,232 @@ jobs:
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.1"
 
+      # ==========================================================
+      # VERIFY FIREBASE
+      # ==========================================================
+
       - name: Verify Firebase configuration
         run: |
           echo "Checking Firebase configuration..."
+
           test -f android/app/google-services.json
+
           echo "google-services.json found."
-          grep -o '"package_name": "[^"]*"' android/app/google-services.json
+
+          grep -o '"package_name": "[^"]*"' \
+            android/app/google-services.json
+
           echo "Firebase configuration OK."
+
+      # ==========================================================
+      # VERIFY LOGO
+      # ==========================================================
 
       - name: Check Stelluriini logo
         run: |
           echo "Checking logo..."
+
           test -f assets/images/stelluriini_logo.png
+
           echo "========================================"
           echo "STELLURIINI LOGO FOUND"
           echo "========================================"
 
-      - name: Verify Flutter source files
+      # ==========================================================
+      # VERIFY MAIN.DART
+      # ==========================================================
+
+      - name: Verify main.dart
         run: |
-          echo "===== lib/main.dart ====="
-          sed -n '1,260p' lib/main.dart
+          echo "========================================"
+          echo "CURRENT lib/main.dart"
+          echo "========================================"
 
-          echo "===== lib/pages/login_page.dart ====="
-          sed -n '1,360p' lib/pages/login_page.dart
+          cat lib/main.dart
 
-          echo "Flutter source files verified."
+          echo ""
+          echo "========================================"
+          echo "CHECKING FOR OLD MINIMAL TEST"
+          echo "========================================"
+
+          if grep -q "MinimalTestPage" lib/main.dart; then
+            echo ""
+            echo "ERROR:"
+            echo "lib/main.dart still contains MinimalTestPage."
+            echo ""
+            echo "GitHub is building the old test version."
+            echo ""
+            exit 1
+          fi
+
+          echo "MinimalTestPage NOT found."
+
+          echo ""
+          echo "========================================"
+          echo "CHECKING FOR LOGINPAGE"
+          echo "========================================"
+
+          if ! grep -q "LoginPage" lib/main.dart; then
+            echo ""
+            echo "ERROR:"
+            echo "LoginPage was not found in lib/main.dart."
+            echo ""
+            exit 1
+          fi
+
+          echo "LoginPage FOUND."
+
+          echo ""
+          echo "main.dart verification PASSED."
+
+      # ==========================================================
+      # VERIFY LOGIN PAGE
+      # ==========================================================
+
+      - name: Verify login_page.dart
+        run: |
+          echo "========================================"
+          echo "CURRENT lib/pages/login_page.dart"
+          echo "========================================"
+
+          cat lib/pages/login_page.dart
+
+          echo ""
+          echo "========================================"
+          echo "CHECKING LOGIN PAGE"
+          echo "========================================"
+
+          if ! grep -q "class LoginPage" \
+            lib/pages/login_page.dart; then
+
+            echo "ERROR: LoginPage class not found."
+
+            exit 1
+          fi
+
+          if ! grep -q "TextField" \
+            lib/pages/login_page.dart; then
+
+            echo "ERROR: TextField not found."
+
+            exit 1
+          fi
+
+          echo "LoginPage verification PASSED."
+
+      # ==========================================================
+      # VERIFY MAIN ACTIVITY
+      # ==========================================================
 
       - name: Verify Android MainActivity
         run: |
-          echo "===== MainActivity.kt ====="
-          cat android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
+          echo "========================================"
+          echo "MainActivity.kt"
+          echo "========================================"
+
+          cat \
+            android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
+
+          echo ""
           echo "MainActivity verified."
+
+      # ==========================================================
+      # VERIFY ANDROID PROJECT
+      # ==========================================================
 
       - name: Verify Android project
         run: |
-          echo "===== settings.gradle ====="
+          echo "========================================"
+          echo "settings.gradle"
+          echo "========================================"
+
           cat android/settings.gradle
 
-          echo "===== app/build.gradle ====="
+          echo ""
+          echo "========================================"
+          echo "app/build.gradle"
+          echo "========================================"
+
           cat android/app/build.gradle
 
-          echo "===== Firebase ====="
+          echo ""
+          echo "========================================"
+          echo "Firebase"
+          echo "========================================"
+
           test -f android/app/google-services.json
 
           echo "Android project OK."
 
+      # ==========================================================
+      # SET APPLICATION NAME
+      # ==========================================================
+
       - name: Set application name
         run: |
-          sed -i 's/android:label="[^"]*"/android:label="Stelluriini"/' android/app/src/main/AndroidManifest.xml
+          sed -i \
+            's/android:label="[^"]*"/android:label="Stelluriini"/' \
+            android/app/src/main/AndroidManifest.xml
+
           echo "Application name set to Stelluriini."
+
+      # ==========================================================
+      # ANDROIDX
+      # ==========================================================
 
       - name: Configure AndroidX
         run: |
           touch android/gradle.properties
 
-          sed -i '/^android.useAndroidX=/d' android/gradle.properties
-          sed -i '/^android.enableJetifier=/d' android/gradle.properties
+          sed -i '/^android.useAndroidX=/d' \
+            android/gradle.properties
 
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=false" >> android/gradle.properties
+          sed -i '/^android.enableJetifier=/d' \
+            android/gradle.properties
 
-          echo "===== gradle.properties ====="
+          echo "android.useAndroidX=true" \
+            >> android/gradle.properties
+
+          echo "android.enableJetifier=false" \
+            >> android/gradle.properties
+
+          echo ""
+          echo "========================================"
+          echo "gradle.properties"
+          echo "========================================"
+
           cat android/gradle.properties
+
+      # ==========================================================
+      # FLUTTER CLEAN
+      # ==========================================================
 
       - name: Flutter clean
         run: |
           flutter clean
 
+      # ==========================================================
+      # REMOVE BUILD OUTPUTS
+      # ==========================================================
+
+      - name: Remove old build output
+        run: |
+          rm -rf build
+          rm -rf .dart_tool
+
+          echo "Old build output removed."
+
+      # ==========================================================
+      # PUB GET
+      # ==========================================================
+
       - name: Flutter pub get
         run: |
           flutter pub get
+
+      # ==========================================================
+      # GENERATE APP ICON
+      # ==========================================================
 
       - name: Generate Stelluriini app icon
         run: |
@@ -116,23 +323,85 @@ jobs:
           echo "STELLURIINI APP ICON GENERATED"
           echo "========================================"
 
+      # ==========================================================
+      # REMOVE GENERATED TESTS
+      # ==========================================================
+
       - name: Remove generated Flutter tests
         run: |
           rm -rf test
+
+      # ==========================================================
+      # ANALYZE
+      # ==========================================================
 
       - name: Flutter analyze
         run: |
           flutter analyze
 
+      # ==========================================================
+      # FINAL SOURCE CHECK BEFORE BUILD
+      # ==========================================================
+
+      - name: Final source verification
+        run: |
+          echo "========================================"
+          echo "FINAL SOURCE CHECK"
+          echo "========================================"
+
+          echo ""
+          echo "main.dart:"
+          grep -n "LoginPage" lib/main.dart
+
+          echo ""
+          echo "Checking that old test is gone..."
+
+          if grep -q "MinimalTestPage" lib/main.dart; then
+            echo "ERROR: OLD TEST STILL PRESENT."
+            exit 1
+          fi
+
+          echo ""
+          echo "FINAL SOURCE CHECK PASSED."
+
+      # ==========================================================
+      # BUILD APK
+      # ==========================================================
+
       - name: Build Stelluriini APK
         run: |
           flutter build apk --release
+
+      # ==========================================================
+      # VERIFY APK
+      # ==========================================================
+
+      - name: Verify APK
+        run: |
+          echo "========================================"
+          echo "APK VERIFICATION"
+          echo "========================================"
+
+          test -f \
+            build/app/outputs/flutter-apk/app-release.apk
+
+          ls -lh \
+            build/app/outputs/flutter-apk/app-release.apk
+
+          echo ""
+          echo "APK exists."
+
+      # ==========================================================
+      # PREPARE APK
+      # ==========================================================
 
       - name: Prepare Stelluriini APK
         run: |
           mkdir -p build
 
-          cp build/app/outputs/flutter-apk/app-release.apk build/Stelluriini.apk
+          cp \
+            build/app/outputs/flutter-apk/app-release.apk \
+            build/Stelluriini.apk
 
           echo "========================================"
           echo "STELLURIINI APK CREATED SUCCESSFULLY"
@@ -140,8 +409,13 @@ jobs:
 
           ls -lh build/Stelluriini.apk
 
+      # ==========================================================
+      # UPLOAD APK
+      # ==========================================================
+
       - name: Upload Stelluriini APK
         uses: actions/upload-artifact@v4
         with:
-          name: Stelluriini
+          name: Stelluriini-${{ github.run_number }}
           path: build/Stelluriini.apk
+          if-no-files-found: error
