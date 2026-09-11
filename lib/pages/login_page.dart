@@ -26,6 +26,12 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController =
       TextEditingController();
 
+  final FocusNode _emailFocusNode =
+      FocusNode();
+
+  final FocusNode _passwordFocusNode =
+      FocusNode();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -33,6 +39,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -81,31 +89,36 @@ class _LoginPageState extends State<LoginPage> {
 
         case 'wrong-password':
         case 'invalid-credential':
-          message = _l10n.get(
+          message =
+              _l10n.get(
             'loginInvalidCredentials',
           );
           break;
 
         case 'invalid-email':
-          message = _l10n.get(
+          message =
+              _l10n.get(
             'loginInvalidEmail',
           );
           break;
 
         case 'user-disabled':
-          message = _l10n.get(
+          message =
+              _l10n.get(
             'loginUserDisabled',
           );
           break;
 
         case 'too-many-requests':
-          message = _l10n.get(
+          message =
+              _l10n.get(
             'loginTooManyRequests',
           );
           break;
 
         case 'network-request-failed':
-          message = _l10n.get(
+          message =
+              _l10n.get(
             'loginNetworkError',
           );
           break;
@@ -185,166 +198,272 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // EMAIL DECORATION
+  // EMAIL FIELD
   // ==========================================================
 
-  InputDecoration _emailDecoration() {
-    return InputDecoration(
-      labelText:
-          _l10n.get('email'),
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller:
+          _emailController,
 
-      hintText:
-          _l10n.get('email'),
+      focusNode:
+          _emailFocusNode,
 
-      labelStyle:
+      enabled:
+          true,
+
+      readOnly:
+          false,
+
+      keyboardType:
+          TextInputType.emailAddress,
+
+      textInputAction:
+          TextInputAction.next,
+
+      autocorrect:
+          false,
+
+      enableSuggestions:
+          false,
+
+      cursorColor:
+          const Color(0xFFB58CFF),
+
+      style:
           const TextStyle(
         color:
-            Color(0xFFBDB4D1),
+            Color(0xFFF8F4FF),
+        fontSize:
+            16,
       ),
 
-      floatingLabelStyle:
-          const TextStyle(
-        color:
-            Color(0xFFFFB7E8),
-      ),
+      decoration:
+          InputDecoration(
+        labelText:
+            _l10n.get('email'),
 
-      hintStyle:
-          const TextStyle(
-        color:
-            Color(0xFF766B89),
-      ),
+        hintText:
+            _l10n.get('email'),
 
-      prefixIcon:
-          const Icon(
-        Icons.email_outlined,
-        color:
-            Color(0xFFB58CFF),
-      ),
-
-      filled: true,
-
-      fillColor:
-          const Color(0xFF18102D),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(18),
-
-        borderSide:
-            const BorderSide(
+        labelStyle:
+            const TextStyle(
           color:
-              Color(0xFF352653),
-          width:
-              1.5,
+              Color(0xFFBDB4D1),
         ),
-      ),
 
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(18),
+        floatingLabelStyle:
+            const TextStyle(
+          color:
+              Color(0xFFFFB7E8),
+        ),
 
-        borderSide:
-            const BorderSide(
+        hintStyle:
+            const TextStyle(
+          color:
+              Color(0xFF766B89),
+        ),
+
+        prefixIcon:
+            const Icon(
+          Icons.email_outlined,
           color:
               Color(0xFFB58CFF),
-          width:
-              2,
+        ),
+
+        filled:
+            true,
+
+        fillColor:
+            const Color(0xFF18102D),
+
+        enabledBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(18),
+
+          borderSide:
+              const BorderSide(
+            color:
+                Color(0xFF352653),
+            width:
+                1.5,
+          ),
+        ),
+
+        focusedBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(18),
+
+          borderSide:
+              const BorderSide(
+            color:
+                Color(0xFFB58CFF),
+            width:
+                2,
+          ),
         ),
       ),
+
+      onTap: () {
+        _emailFocusNode.requestFocus();
+      },
+
+      onFieldSubmitted: (_) {
+        _passwordFocusNode.requestFocus();
+      },
     );
   }
 
   // ==========================================================
-  // PASSWORD DECORATION
+  // PASSWORD FIELD
   // ==========================================================
 
-  InputDecoration _passwordDecoration() {
-    return InputDecoration(
-      labelText:
-          _l10n.get('password'),
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller:
+          _passwordController,
 
-      hintText:
-          _l10n.get('password'),
+      focusNode:
+          _passwordFocusNode,
 
-      labelStyle:
+      enabled:
+          true,
+
+      readOnly:
+          false,
+
+      obscureText:
+          _obscurePassword,
+
+      textInputAction:
+          TextInputAction.done,
+
+      autocorrect:
+          false,
+
+      enableSuggestions:
+          false,
+
+      cursorColor:
+          const Color(0xFFB58CFF),
+
+      style:
           const TextStyle(
         color:
-            Color(0xFFBDB4D1),
+            Color(0xFFF8F4FF),
+        fontSize:
+            16,
       ),
 
-      floatingLabelStyle:
-          const TextStyle(
-        color:
-            Color(0xFFFFB7E8),
-      ),
+      decoration:
+          InputDecoration(
+        labelText:
+            _l10n.get('password'),
 
-      hintStyle:
-          const TextStyle(
-        color:
-            Color(0xFF766B89),
-      ),
+        hintText:
+            _l10n.get('password'),
 
-      prefixIcon:
-          const Icon(
-        Icons.lock_outline,
-        color:
-            Color(0xFFB58CFF),
-      ),
-
-      suffixIcon:
-          IconButton(
-        onPressed: () {
-          setState(() {
-            _obscurePassword =
-                !_obscurePassword;
-          });
-        },
-
-        color:
-            const Color(0xFFB58CFF),
-
-        icon:
-            Icon(
-          _obscurePassword
-              ? Icons.visibility_outlined
-              : Icons.visibility_off_outlined,
-        ),
-      ),
-
-      filled: true,
-
-      fillColor:
-          const Color(0xFF18102D),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(18),
-
-        borderSide:
-            const BorderSide(
+        labelStyle:
+            const TextStyle(
           color:
-              Color(0xFF352653),
-          width:
-              1.5,
+              Color(0xFFBDB4D1),
         ),
-      ),
 
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(18),
+        floatingLabelStyle:
+            const TextStyle(
+          color:
+              Color(0xFFFFB7E8),
+        ),
 
-        borderSide:
-            const BorderSide(
+        hintStyle:
+            const TextStyle(
+          color:
+              Color(0xFF766B89),
+        ),
+
+        prefixIcon:
+            const Icon(
+          Icons.lock_outline,
           color:
               Color(0xFFB58CFF),
-          width:
-              2,
+        ),
+
+        suffixIcon:
+            IconButton(
+          onPressed: () {
+            setState(() {
+              _obscurePassword =
+                  !_obscurePassword;
+            });
+
+            WidgetsBinding.instance
+                .addPostFrameCallback(
+              (_) {
+                if (mounted) {
+                  _passwordFocusNode
+                      .requestFocus();
+                }
+              },
+            );
+          },
+
+          color:
+              const Color(0xFFB58CFF),
+
+          icon:
+              Icon(
+            _obscurePassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
+        ),
+
+        filled:
+            true,
+
+        fillColor:
+            const Color(0xFF18102D),
+
+        enabledBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(18),
+
+          borderSide:
+              const BorderSide(
+            color:
+                Color(0xFF352653),
+            width:
+                1.5,
+          ),
+        ),
+
+        focusedBorder:
+            OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(18),
+
+          borderSide:
+              const BorderSide(
+            color:
+                Color(0xFFB58CFF),
+            width:
+                2,
+          ),
         ),
       ),
+
+      onTap: () {
+        _passwordFocusNode.requestFocus();
+      },
+
+      onFieldSubmitted: (_) {
+        if (!_isLoading) {
+          _login();
+        }
+      },
     );
   }
 
@@ -363,9 +482,6 @@ class _LoginPageState extends State<LoginPage> {
 
       body: SafeArea(
         child: ListView(
-          keyboardDismissBehavior:
-              ScrollViewKeyboardDismissBehavior.manual,
-
           padding:
               const EdgeInsets.fromLTRB(
             24,
@@ -381,8 +497,11 @@ class _LoginPageState extends State<LoginPage> {
 
             Center(
               child: Container(
-                width: 110,
-                height: 110,
+                width:
+                    110,
+
+                height:
+                    110,
 
                 decoration:
                     BoxDecoration(
@@ -400,6 +519,7 @@ class _LoginPageState extends State<LoginPage> {
                         const Color(
                       0xFFB58CFF,
                     ),
+
                     width:
                         2,
                   ),
@@ -407,7 +527,9 @@ class _LoginPageState extends State<LoginPage> {
                   boxShadow: const [
                     BoxShadow(
                       color:
-                          Color(0x55211B3B),
+                          Color(
+                        0x55211B3B,
+                      ),
                       blurRadius:
                           20,
                       spreadRadius:
@@ -447,11 +569,12 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(
-              height: 22,
+              height:
+                  22,
             ),
 
             // ==================================================
-            // TITLE
+            // STELLURIINI
             // ==================================================
 
             const Text(
@@ -477,7 +600,8 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(
-              height: 6,
+              height:
+                  6,
             ),
 
             const Text(
@@ -503,7 +627,8 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(
-              height: 30,
+              height:
+                  30,
             ),
 
             // ==================================================
@@ -556,7 +681,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 children: [
                   // ==================================================
-                  // LOGIN TITLE
+                  // TITLE
                   // ==================================================
 
                   Text(
@@ -581,112 +706,30 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                   const SizedBox(
-                    height: 24,
+                    height:
+                        24,
                   ),
 
                   // ==================================================
                   // EMAIL
                   // ==================================================
 
-                  SizedBox(
-                    height: 64,
-
-                    child:
-                        TextField(
-                      controller:
-                          _emailController,
-
-                      keyboardType:
-                          TextInputType.emailAddress,
-
-                      textInputAction:
-                          TextInputAction.next,
-
-                      autocorrect:
-                          false,
-
-                      enableSuggestions:
-                          false,
-
-                      cursorColor:
-                          const Color(
-                        0xFFB58CFF,
-                      ),
-
-                      style:
-                          const TextStyle(
-                        color:
-                            Color(
-                          0xFFF8F4FF,
-                        ),
-
-                        fontSize:
-                            16,
-                      ),
-
-                      decoration:
-                          _emailDecoration(),
-                    ),
-                  ),
+                  _buildEmailField(),
 
                   const SizedBox(
-                    height: 18,
+                    height:
+                        18,
                   ),
 
                   // ==================================================
                   // PASSWORD
                   // ==================================================
 
-                  SizedBox(
-                    height: 64,
-
-                    child:
-                        TextField(
-                      controller:
-                          _passwordController,
-
-                      obscureText:
-                          _obscurePassword,
-
-                      textInputAction:
-                          TextInputAction.done,
-
-                      autocorrect:
-                          false,
-
-                      enableSuggestions:
-                          false,
-
-                      cursorColor:
-                          const Color(
-                        0xFFB58CFF,
-                      ),
-
-                      style:
-                          const TextStyle(
-                        color:
-                            Color(
-                          0xFFF8F4FF,
-                        ),
-
-                        fontSize:
-                            16,
-                      ),
-
-                      onSubmitted:
-                          (_) {
-                        if (!_isLoading) {
-                          _login();
-                        }
-                      },
-
-                      decoration:
-                          _passwordDecoration(),
-                    ),
-                  ),
+                  _buildPasswordField(),
 
                   const SizedBox(
-                    height: 6,
+                    height:
+                        6,
                   ),
 
                   // ==================================================
@@ -722,7 +765,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                   const SizedBox(
-                    height: 10,
+                    height:
+                        10,
                   ),
 
                   // ==================================================
@@ -782,6 +826,7 @@ class _LoginPageState extends State<LoginPage> {
                               ? const SizedBox(
                                   width:
                                       24,
+
                                   height:
                                       24,
 
@@ -817,11 +862,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                   const SizedBox(
-                    height: 18,
+                    height:
+                        18,
                   ),
 
                   // ==================================================
-                  // CREATE ACCOUNT TEXT
+                  // CREATE ACCOUNT
                   // ==================================================
 
                   Text(
@@ -845,7 +891,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                   const SizedBox(
-                    height: 4,
+                    height:
+                        4,
                   ),
 
                   TextButton(
@@ -880,7 +927,8 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(
-              height: 24,
+              height:
+                  24,
             ),
 
             // ==================================================
