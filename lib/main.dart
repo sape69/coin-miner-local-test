@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'auth_gate.dart';
+import 'pages/login_page.dart';
 
 const Color backgroundColor =
     Color(0xFF120B24);
@@ -47,11 +47,6 @@ class StelluriiniApp extends StatefulWidget {
 class _StelluriiniAppState
     extends State<StelluriiniApp> {
   String languageCode = 'fi';
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   Future<void> changeLanguage(
     String language,
@@ -283,7 +278,19 @@ class _StelluriiniAppState
           thickness: 1,
         ),
       ),
-      home: AuthGate(
+
+      // ============================================================
+      // VÄLIAIKAINEN TESTI
+      // ============================================================
+      //
+      // AuthGate ohitetaan tarkoituksella.
+      // LoginPage avataan suoraan.
+      //
+      // Firebase alustetaan edelleen ennen tätä.
+      //
+      // ============================================================
+
+      home: LoginPage(
         languageCode:
             languageCode,
         changeLanguage:
