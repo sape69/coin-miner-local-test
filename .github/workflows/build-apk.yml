@@ -12,56 +12,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # ==========================================
-      # CHECKOUT
-      # ==========================================
-
       - name: Checkout
         uses: actions/checkout@v4
-
-
-      # ==========================================
-      # VERIFY SOURCE FILES
-      # ==========================================
-
-      - name: Verify Flutter source files
-        run: |
-          echo "========================================"
-          echo "VERIFYING CURRENT STELLURIINI SOURCE"
-          echo "========================================"
-
-          echo ""
-          echo "===== main.dart ====="
-          test -f lib/main.dart
-          sed -n '1,260p' lib/main.dart
-
-          echo ""
-          echo "===== login_page.dart ====="
-          test -f lib/pages/login_page.dart
-          sed -n '1,420p' lib/pages/login_page.dart
-
-          echo ""
-          echo "========================================"
-          echo "SOURCE FILES FOUND"
-          echo "========================================"
-
-
-      # ==========================================
-      # FLUTTER
-      # ==========================================
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.29.3'
           channel: stable
           cache: true
-
-
-      # ==========================================
-      # JAVA
-      # ==========================================
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -69,14 +28,8 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-
-      # ==========================================
-      # ANDROID SDK
-      # ==========================================
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
 
       - name: Install Android SDK
         run: |
@@ -84,43 +37,37 @@ jobs:
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.1"
 
-
-      # ==========================================
-      # VERIFY FIREBASE
-      # ==========================================
-
       - name: Verify Firebase configuration
         run: |
           echo "Checking Firebase configuration..."
-
           test -f android/app/google-services.json
-
           echo "google-services.json found."
-
-          grep -o '"package_name": "[^"]*"' \
-            android/app/google-services.json
-
+          grep -o '"package_name": "[^"]*"' android/app/google-services.json
           echo "Firebase configuration OK."
-
-
-      # ==========================================
-      # VERIFY STELLURIINI LOGO
-      # ==========================================
 
       - name: Check Stelluriini logo
         run: |
           echo "Checking logo..."
-
           test -f assets/images/stelluriini_logo.png
-
           echo "========================================"
           echo "STELLURIINI LOGO FOUND"
           echo "========================================"
 
+      - name: Verify Flutter source files
+        run: |
+          echo "===== lib/main.dart ====="
+          sed -n '1,260p' lib/main.dart
 
-      # ==========================================
-      # VERIFY ANDROID PROJECT
-      # ==========================================
+          echo "===== lib/pages/login_page.dart ====="
+          sed -n '1,360p' lib/pages/login_page.dart
+
+          echo "Flutter source files verified."
+
+      - name: Verify Android MainActivity
+        run: |
+          echo "===== MainActivity.kt ====="
+          cat android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
+          echo "MainActivity verified."
 
       - name: Verify Android project
         run: |
@@ -135,96 +82,31 @@ jobs:
 
           echo "Android project OK."
 
-
-      # ==========================================
-      # VERIFY MAIN ACTIVITY
-      # ==========================================
-
-      - name: Verify MainActivity
-        run: |
-          echo "========================================"
-          echo "CHECKING MAIN ACTIVITY"
-          echo "========================================"
-
-          test -f \
-            android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
-
-          echo ""
-          echo "===== Stelluriini MainActivity.kt ====="
-
-          cat \
-            android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
-
-          echo ""
-          echo "===== Old coin_miner MainActivity check ====="
-
-          if [ -f \
-            android/app/src/main/kotlin/com/example/coin_miner/MainActivity.kt
-          ]; then
-            echo "WARNING: OLD coin_miner/MainActivity.kt STILL EXISTS"
-          else
-            echo "OK: OLD coin_miner/MainActivity.kt NOT FOUND"
-          fi
-
-
-      # ==========================================
-      # APP NAME
-      # ==========================================
-
       - name: Set application name
         run: |
-          sed -i \
-            's/android:label="[^"]*"/android:label="Stelluriini"/' \
-            android/app/src/main/AndroidManifest.xml
-
+          sed -i 's/android:label="[^"]*"/android:label="Stelluriini"/' android/app/src/main/AndroidManifest.xml
           echo "Application name set to Stelluriini."
-
-
-      # ==========================================
-      # ANDROIDX
-      # ==========================================
 
       - name: Configure AndroidX
         run: |
           touch android/gradle.properties
 
-          sed -i '/^android.useAndroidX=/d' \
-            android/gradle.properties
+          sed -i '/^android.useAndroidX=/d' android/gradle.properties
+          sed -i '/^android.enableJetifier=/d' android/gradle.properties
 
-          sed -i '/^android.enableJetifier=/d' \
-            android/gradle.properties
-
-          echo "android.useAndroidX=true" >> \
-            android/gradle.properties
-
-          echo "android.enableJetifier=false" >> \
-            android/gradle.properties
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=false" >> android/gradle.properties
 
           echo "===== gradle.properties ====="
           cat android/gradle.properties
-
-
-      # ==========================================
-      # FLUTTER CLEAN
-      # ==========================================
 
       - name: Flutter clean
         run: |
           flutter clean
 
-
-      # ==========================================
-      # FLUTTER PUB GET
-      # ==========================================
-
       - name: Flutter pub get
         run: |
           flutter pub get
-
-
-      # ==========================================
-      # GENERATE APP ICON
-      # ==========================================
 
       - name: Generate Stelluriini app icon
         run: |
@@ -234,56 +116,29 @@ jobs:
           echo "STELLURIINI APP ICON GENERATED"
           echo "========================================"
 
-
-      # ==========================================
-      # REMOVE GENERATED TESTS
-      # ==========================================
-
       - name: Remove generated Flutter tests
         run: |
           rm -rf test
-
-
-      # ==========================================
-      # FLUTTER ANALYZE
-      # ==========================================
 
       - name: Flutter analyze
         run: |
           flutter analyze
 
-
-      # ==========================================
-      # BUILD APK
-      # ==========================================
-
       - name: Build Stelluriini APK
         run: |
           flutter build apk --release
-
-
-      # ==========================================
-      # PREPARE APK
-      # ==========================================
 
       - name: Prepare Stelluriini APK
         run: |
           mkdir -p build
 
-          cp \
-            build/app/outputs/flutter-apk/app-release.apk \
-            build/Stelluriini.apk
+          cp build/app/outputs/flutter-apk/app-release.apk build/Stelluriini.apk
 
           echo "========================================"
           echo "STELLURIINI APK CREATED SUCCESSFULLY"
           echo "========================================"
 
           ls -lh build/Stelluriini.apk
-
-
-      # ==========================================
-      # UPLOAD APK
-      # ==========================================
 
       - name: Upload Stelluriini APK
         uses: actions/upload-artifact@v4
