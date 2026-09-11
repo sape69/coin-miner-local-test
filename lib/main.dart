@@ -1,480 +1,153 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'pages/loading_page.dart';
-import 'pages/login_page.dart';
-
-// ============================================================
-// 🐱 STELLURIINI / STELLA THEME
-// ============================================================
-
-const Color backgroundColor =
-    Color(0xFF120B24);
-
-const Color surfaceColor =
-    Color(0xFF1A0E31);
-
-const Color cardColor =
-    Color(0xFF21113B);
-
-const Color stellaPurple =
-    Color(0xFFB58CFF);
-
-const Color stellaPink =
-    Color(0xFFFFB7E8);
-
-const Color starGold =
-    Color(0xFFFFD166);
-
-const Color primaryTextColor =
-    Color(0xFFF8F4FF);
-
-const Color secondaryTextColor =
-    Color(0xFFBDB4D1);
-
-// ============================================================
-// 🚀 MAIN
-// ============================================================
-
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(
-    const StelluriiniApp(),
-  );
+  runApp(const StelluriiniTestApp());
 }
 
 // ============================================================
-// 📱 APP
+// STELLURIINI - MINIMAL TEXTFIELD TEST
 // ============================================================
 
-class StelluriiniApp extends StatefulWidget {
-  const StelluriiniApp({
+class StelluriiniTestApp extends StatelessWidget {
+  const StelluriiniTestApp({
     super.key,
   });
 
   @override
-  State<StelluriiniApp> createState() =>
-      _StelluriiniAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        useMaterial3: true,
+      ),
+
+      home: const MinimalTestPage(),
+    );
+  }
 }
 
 // ============================================================
-// 📱 APP STATE
+// MINIMAL TEST PAGE
 // ============================================================
 
-class _StelluriiniAppState
-    extends State<StelluriiniApp> {
-  String languageCode = 'fi';
-
-  bool languageLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadLanguage();
-  }
-
-  // ==========================================================
-  // 🌍 LOAD LANGUAGE
-  // ==========================================================
-
-  Future<void> _loadLanguage() async {
-    try {
-      final prefs =
-          await SharedPreferences.getInstance();
-
-      final savedLanguage =
-          prefs.getString('language') ?? 'fi';
-
-      const supportedLanguages = {
-        'fi',
-        'en',
-        'de',
-        'es',
-        'fr',
-        'zh',
-        'vi',
-        'ja',
-      };
-
-      final validLanguage =
-          supportedLanguages.contains(
-            savedLanguage,
-          )
-              ? savedLanguage
-              : 'fi';
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = validLanguage;
-        languageLoaded = true;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        languageCode = 'fi';
-        languageLoaded = true;
-      });
-    }
-  }
-
-  // ==========================================================
-  // 🌍 CHANGE LANGUAGE
-  // ==========================================================
-
-  Future<void> changeLanguage(
-    String language,
-  ) async {
-    const supportedLanguages = {
-      'fi',
-      'en',
-      'de',
-      'es',
-      'fr',
-      'zh',
-      'vi',
-      'ja',
-    };
-
-    final validLanguage =
-        supportedLanguages.contains(language)
-            ? language
-            : 'fi';
-
-    try {
-      final prefs =
-          await SharedPreferences.getInstance();
-
-      await prefs.setString(
-        'language',
-        validLanguage,
-      );
-    } catch (_) {
-      // Kieliasetuksen tallennus ei estä käyttöliittymää.
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      languageCode = validLanguage;
-    });
-  }
-
-  // ==========================================================
-  // 🌍 SUPPORTED LOCALES
-  // ==========================================================
-
-  List<Locale> get supportedLocales {
-    return const [
-      Locale('fi'),
-      Locale('en'),
-      Locale('de'),
-      Locale('es'),
-      Locale('fr'),
-      Locale('zh'),
-      Locale('vi'),
-      Locale('ja'),
-    ];
-  }
-
-  // ==========================================================
-  // 🎨 BUILD
-  // ==========================================================
+class MinimalTestPage extends StatefulWidget {
+  const MinimalTestPage({
+    super.key,
+  });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    return MaterialApp(
-      title: 'Stelluriini',
+  State<MinimalTestPage> createState() =>
+      _MinimalTestPageState();
+}
 
-      debugShowCheckedModeBanner: false,
+class _MinimalTestPageState
+    extends State<MinimalTestPage> {
+  final TextEditingController _controller =
+      TextEditingController();
 
-      locale:
-          Locale(languageCode),
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-      supportedLocales:
-          supportedLocales,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF120B24),
 
-      theme: ThemeData(
-        brightness:
-            Brightness.dark,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'STELLURIINI TEST',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-        useMaterial3:
-            true,
+                const SizedBox(height: 40),
 
-        scaffoldBackgroundColor:
-            backgroundColor,
+                // ==================================================
+                // AINOA TEXTFIELD KOKO SOVELLUKSESSA
+                // ==================================================
 
-        colorScheme:
-            ColorScheme.fromSeed(
-          seedColor:
-              stellaPurple,
+                TextField(
+                  controller: _controller,
 
-          brightness:
-              Brightness.dark,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ),
 
-          primary:
-              stellaPurple,
+                  decoration: InputDecoration(
+                    hintText: 'NAPAUTA JA KIRJOITA',
 
-          secondary:
-              stellaPink,
+                    hintStyle: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                    ),
 
-          tertiary:
-              starGold,
+                    filled: true,
 
-          surface:
-              surfaceColor,
-        ),
+                    fillColor: const Color(0xFF21113B),
 
-        appBarTheme:
-            const AppBarTheme(
-          backgroundColor:
-              backgroundColor,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
 
-          foregroundColor:
-              primaryTextColor,
+                      borderSide:
+                          const BorderSide(
+                        color: Color(0xFFB58CFF),
+                        width: 2,
+                      ),
+                    ),
 
-          centerTitle:
-              true,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
 
-          elevation:
-              0,
+                      borderSide:
+                          const BorderSide(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                ),
 
-          titleTextStyle:
-              TextStyle(
-            color:
-                primaryTextColor,
+                const SizedBox(height: 30),
 
-            fontSize:
-                20,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
-
-        cardTheme:
-            const CardThemeData(
-          color:
-              cardColor,
-
-          elevation:
-              0,
-
-          margin:
-              EdgeInsets.zero,
-
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.all(
-              Radius.circular(
-                24,
-              ),
+                ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Kirjoitit: ${_controller.text}',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'TESTAA',
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-
-        elevatedButtonTheme:
-            ElevatedButtonThemeData(
-          style:
-              ElevatedButton.styleFrom(
-            backgroundColor:
-                stellaPurple,
-
-            foregroundColor:
-                Colors.white,
-
-            elevation:
-                0,
-
-            minimumSize:
-                const Size(
-              double.infinity,
-              54,
-            ),
-
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                18,
-              ),
-            ),
-
-            textStyle:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-
-              fontSize:
-                  16,
-            ),
-          ),
-        ),
-
-        outlinedButtonTheme:
-            OutlinedButtonThemeData(
-          style:
-              OutlinedButton.styleFrom(
-            foregroundColor:
-                primaryTextColor,
-
-            side:
-                const BorderSide(
-              color:
-                  stellaPurple,
-
-              width:
-                  1.5,
-            ),
-
-            minimumSize:
-                const Size(
-              double.infinity,
-              52,
-            ),
-
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                18,
-              ),
-            ),
-          ),
-        ),
-
-        textTheme:
-            const TextTheme(
-          headlineLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-
-          headlineMedium:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-
-          titleLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.bold,
-          ),
-
-          titleMedium:
-              TextStyle(
-            color:
-                primaryTextColor,
-
-            fontWeight:
-                FontWeight.w600,
-          ),
-
-          bodyLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-          ),
-
-          bodyMedium:
-              TextStyle(
-            color:
-                secondaryTextColor,
-          ),
-
-          bodySmall:
-              TextStyle(
-            color:
-                secondaryTextColor,
-          ),
-        ),
-
-        snackBarTheme:
-            SnackBarThemeData(
-          behavior:
-              SnackBarBehavior.floating,
-
-          backgroundColor:
-              cardColor,
-
-          contentTextStyle:
-              const TextStyle(
-            color:
-                primaryTextColor,
-          ),
-
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              16,
-            ),
-          ),
-        ),
-
-        progressIndicatorTheme:
-            const ProgressIndicatorThemeData(
-          color:
-              stellaPurple,
-        ),
-
-        dividerTheme:
-            const DividerThemeData(
-          color:
-              Color(0xFF352653),
-
-          thickness:
-              1,
         ),
       ),
-
-      // ========================================================
-      // ⚠️ DIAGNOSTIIKKATESTI
-      // ========================================================
-      //
-      // AuthGate on tarkoituksella ohitettu.
-      //
-      // Firebasea ei alusteta.
-      //
-      // AdMobiä ei alusteta.
-      //
-      // Näytetään suoraan oikea LoginPage.
-      //
-      // ========================================================
-
-      home:
-          languageLoaded
-              ? LoginPage(
-                  languageCode:
-                      languageCode,
-
-                  changeLanguage:
-                      changeLanguage,
-                )
-              : const LoadingPage(),
     );
   }
 }
