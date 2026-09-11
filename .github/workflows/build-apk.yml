@@ -22,6 +22,32 @@ jobs:
 
 
       # ==========================================
+      # VERIFY SOURCE FILES
+      # ==========================================
+
+      - name: Verify Flutter source files
+        run: |
+          echo "========================================"
+          echo "VERIFYING CURRENT STELLURIINI SOURCE"
+          echo "========================================"
+
+          echo ""
+          echo "===== main.dart ====="
+          test -f lib/main.dart
+          sed -n '1,260p' lib/main.dart
+
+          echo ""
+          echo "===== login_page.dart ====="
+          test -f lib/pages/login_page.dart
+          sed -n '1,420p' lib/pages/login_page.dart
+
+          echo ""
+          echo "========================================"
+          echo "SOURCE FILES FOUND"
+          echo "========================================"
+
+
+      # ==========================================
       # FLUTTER
       # ==========================================
 
@@ -108,6 +134,37 @@ jobs:
           test -f android/app/google-services.json
 
           echo "Android project OK."
+
+
+      # ==========================================
+      # VERIFY MAIN ACTIVITY
+      # ==========================================
+
+      - name: Verify MainActivity
+        run: |
+          echo "========================================"
+          echo "CHECKING MAIN ACTIVITY"
+          echo "========================================"
+
+          test -f \
+            android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
+
+          echo ""
+          echo "===== Stelluriini MainActivity.kt ====="
+
+          cat \
+            android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
+
+          echo ""
+          echo "===== Old coin_miner MainActivity check ====="
+
+          if [ -f \
+            android/app/src/main/kotlin/com/example/coin_miner/MainActivity.kt
+          ]; then
+            echo "WARNING: OLD coin_miner/MainActivity.kt STILL EXISTS"
+          else
+            echo "OK: OLD coin_miner/MainActivity.kt NOT FOUND"
+          fi
 
 
       # ==========================================
