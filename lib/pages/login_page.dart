@@ -1,21 +1,7 @@
 import 'package:flutter/material.dart';
 
 // ============================================================
-// 🐱 STELLURIINI LOGIN PAGE
-// ============================================================
-//
-// PUHDAS TEXTFIELD-TESTI
-//
-// Ei Firebasea
-// Ei AdMobia
-// Ei AuthGatea
-// Ei Stack-widgettejä
-// Ei Overlay-widgettejä
-// Ei FocusNodeja
-//
-// Tämän version tarkoitus on testata ainoastaan sitä,
-// toimivatko Flutterin tekstikentät Androidissa.
-//
+// STELLURIINI - PUHDAS ANDROID TEXTFIELD TESTI
 // ============================================================
 
 class LoginPage extends StatefulWidget {
@@ -33,25 +19,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // ==========================================================
-  // CONTROLLERS
-  // ==========================================================
-
   final TextEditingController _emailController =
       TextEditingController();
 
   final TextEditingController _passwordController =
       TextEditingController();
 
-  // ==========================================================
-  // STATE
-  // ==========================================================
-
   bool _obscurePassword = true;
-
-  // ==========================================================
-  // DISPOSE
-  // ==========================================================
 
   @override
   void dispose() {
@@ -60,391 +34,189 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // ==========================================================
-  // EMAIL FIELD
-  // ==========================================================
-
-  Widget _buildEmailField() {
-    return TextField(
-      controller: _emailController,
-
-      enabled: true,
-      readOnly: false,
-
-      keyboardType: TextInputType.emailAddress,
-      textInputAction: TextInputAction.next,
-
-      cursorColor: const Color(0xFFB58CFF),
-
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-      ),
-
-      decoration: InputDecoration(
-        hintText: 'Sähköposti',
-
-        hintStyle: const TextStyle(
-          color: Color(0xFF9B91AD),
-          fontSize: 18,
-        ),
-
-        prefixIcon: const Icon(
-          Icons.email_outlined,
-          color: Color(0xFFB58CFF),
-          size: 28,
-        ),
-
-        filled: true,
-
-        fillColor: const Color(0xFF18102D),
-
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
-        ),
-
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(
-            color: Color(0xFF352653),
-            width: 2,
-          ),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(
-            color: Color(0xFFB58CFF),
-            width: 3,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // PASSWORD FIELD
-  // ==========================================================
-
-  Widget _buildPasswordField() {
-    return TextField(
-      controller: _passwordController,
-
-      enabled: true,
-      readOnly: false,
-
-      obscureText: _obscurePassword,
-
-      keyboardType: TextInputType.visiblePassword,
-      textInputAction: TextInputAction.done,
-
-      cursorColor: const Color(0xFFB58CFF),
-
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-      ),
-
-      decoration: InputDecoration(
-        hintText: 'Salasana',
-
-        hintStyle: const TextStyle(
-          color: Color(0xFF9B91AD),
-          fontSize: 18,
-        ),
-
-        prefixIcon: const Icon(
-          Icons.lock_outline,
-          color: Color(0xFFB58CFF),
-          size: 28,
-        ),
-
-        suffixIcon: IconButton(
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          },
-          icon: Icon(
-            _obscurePassword
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-            color: const Color(0xFFB58CFF),
-            size: 28,
-          ),
-        ),
-
-        filled: true,
-
-        fillColor: const Color(0xFF18102D),
-
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
-        ),
-
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(
-            color: Color(0xFF352653),
-            width: 2,
-          ),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(
-            color: Color(0xFFB58CFF),
-            width: 3,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // TEST BUTTON
-  // ==========================================================
-
   void _testFields() {
-    FocusManager.instance.primaryFocus?.unfocus();
-
     final email = _emailController.text;
     final password = _passwordController.text;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: const Color(0xFF21113B),
         content: Text(
-          'Sähköposti: $email\nSalasana: $password',
-          style: const TextStyle(
-            color: Colors.white,
-          ),
+          'Email: $email\nPassword: $password',
         ),
       ),
     );
   }
-
-  // ==========================================================
-  // BUILD
-  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF120B24),
 
-      resizeToAvoidBottomInset: true,
-
       body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-
-          onTap: () {
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
-
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              24,
-              32,
-              24,
-              40,
-            ),
-
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // ==================================================
-                // LOGO
-                // ==================================================
-
-                Container(
-                  width: 120,
-                  height: 120,
-
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-
-                    color: const Color(0xFF1A0E31),
-
-                    border: Border.all(
-                      color: const Color(0xFFB58CFF),
-                      width: 3,
-                    ),
-                  ),
-
-                  child: const Center(
-                    child: Icon(
-                      Icons.pets,
-                      color: Color(0xFFFFB7E8),
-                      size: 62,
-                    ),
-                  ),
+                const Icon(
+                  Icons.pets,
+                  color: Color(0xFFFFB7E8),
+                  size: 70,
                 ),
 
-                const SizedBox(height: 24),
-
-                // ==================================================
-                // TITLE
-                // ==================================================
+                const SizedBox(height: 20),
 
                 const Text(
-                  'Stelluriini',
-
+                  'STELLURIINI',
                   style: TextStyle(
-                    color: Color(0xFFF8F4FF),
-                    fontSize: 38,
+                    color: Colors.white,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 35),
 
-                const Text(
-                  'STL',
+                // ==================================================
+                // EMAIL
+                // ==================================================
 
-                  style: TextStyle(
-                    color: Color(0xFFFFD166),
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
+                TextField(
+                  controller: _emailController,
+
+                  enabled: true,
+                  readOnly: false,
+
+                  keyboardType: TextInputType.emailAddress,
+
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+
+                  decoration: InputDecoration(
+                    hintText: 'Sähköposti',
+
+                    hintStyle: const TextStyle(
+                      color: Colors.white54,
+                    ),
+
+                    prefixIcon: const Icon(
+                      Icons.email,
+                      color: Color(0xFFB58CFF),
+                    ),
+
+                    filled: true,
+
+                    fillColor: const Color(0xFF21113B),
+
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFB58CFF),
+                        width: 2,
+                      ),
+                    ),
+
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
                 // ==================================================
-                // LOGIN CARD
+                // PASSWORD
                 // ==================================================
 
-                Container(
+                TextField(
+                  controller: _passwordController,
+
+                  enabled: true,
+                  readOnly: false,
+
+                  obscureText: _obscurePassword,
+
+                  keyboardType: TextInputType.visiblePassword,
+
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+
+                  decoration: InputDecoration(
+                    hintText: 'Salasana',
+
+                    hintStyle: const TextStyle(
+                      color: Colors.white54,
+                    ),
+
+                    prefixIcon: const Icon(
+                      Icons.lock,
+                      color: Color(0xFFB58CFF),
+                    ),
+
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword =
+                              !_obscurePassword;
+                        });
+                      },
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color(0xFFB58CFF),
+                      ),
+                    ),
+
+                    filled: true,
+
+                    fillColor: const Color(0xFF21113B),
+
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFB58CFF),
+                        width: 2,
+                      ),
+                    ),
+
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // ==================================================
+                // TEST BUTTON
+                // ==================================================
+
+                SizedBox(
                   width: double.infinity,
-
-                  padding: const EdgeInsets.all(28),
-
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF21113B),
-
-                    borderRadius: BorderRadius.circular(26),
-
-                    border: Border.all(
-                      color: const Color(
-                        0xFFB58CFF,
-                      ).withValues(alpha: 0.35),
-                      width: 1.5,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _testFields,
+                    child: const Text(
+                      'TESTAA KENTÄT',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-
-                  child: Column(
-                    children: [
-                      // ============================================
-                      // HEADING
-                      // ============================================
-
-                      const Text(
-                        'KIRJAUDU SISÄÄN',
-
-                        textAlign: TextAlign.center,
-
-                        style: TextStyle(
-                          color: Color(0xFFF8F4FF),
-                          fontSize: 27,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // ============================================
-                      // EMAIL
-                      // ============================================
-
-                      _buildEmailField(),
-
-                      const SizedBox(height: 20),
-
-                      // ============================================
-                      // PASSWORD
-                      // ============================================
-
-                      _buildPasswordField(),
-
-                      const SizedBox(height: 28),
-
-                      // ============================================
-                      // TEST BUTTON
-                      // ============================================
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-
-                        child: ElevatedButton(
-                          onPressed: _testFields,
-
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFFB58CFF),
-
-                            foregroundColor:
-                                const Color(0xFF120B24),
-
-                            elevation: 0,
-
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(18),
-                            ),
-                          ),
-
-                          child: const Text(
-                            'TESTAA KENTÄT',
-
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // ============================================
-                      // TEST INSTRUCTION
-                      // ============================================
-
-                      const Text(
-                        'Napauta ensin sähköpostikenttää ja kirjoita tekstiä.',
-
-                        textAlign: TextAlign.center,
-
-                        style: TextStyle(
-                          color: Color(0xFFBDB4D1),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // ==================================================
-                // FOOTER
-                // ==================================================
-
-                const Text(
-                  'STELLA • STELLURIINI • STL • SOLANA',
-
-                  textAlign: TextAlign.center,
-
-                  style: TextStyle(
-                    color: Color(0xFFBDB4D1),
-                    fontSize: 12,
-                    letterSpacing: 1.1,
                   ),
                 ),
               ],
