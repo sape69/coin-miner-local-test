@@ -1,301 +1,46 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'pages/login_page.dart';
+import 'pages/input_test_page.dart';
 
-const Color backgroundColor =
-    Color(0xFF120B24);
-
-const Color surfaceColor =
-    Color(0xFF1A0E31);
-
-const Color stellaPurple =
-    Color(0xFFB58CFF);
-
-const Color stellaPink =
-    Color(0xFFFFB7E8);
-
-const Color starGold =
-    Color(0xFFFFD166);
-
-const Color primaryTextColor =
-    Color(0xFFF8F4FF);
-
-const Color secondaryTextColor =
-    Color(0xFFBDB4D1);
-
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
-
   runApp(
-    const StelluriiniApp(),
+    const StelluriiniTestApp(),
   );
 }
 
-class StelluriiniApp extends StatefulWidget {
-  const StelluriiniApp({
+class StelluriiniTestApp extends StatelessWidget {
+  const StelluriiniTestApp({
     super.key,
   });
 
   @override
-  State<StelluriiniApp> createState() =>
-      _StelluriiniAppState();
-}
-
-class _StelluriiniAppState
-    extends State<StelluriiniApp> {
-  String languageCode = 'fi';
-
-  Future<void> changeLanguage(
-    String language,
-  ) async {
-    const supportedLanguages = {
-      'fi',
-      'en',
-      'de',
-      'es',
-      'fr',
-      'zh',
-      'vi',
-      'ja',
-    };
-
-    final validLanguage =
-        supportedLanguages.contains(language)
-            ? language
-            : 'fi';
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      languageCode = validLanguage;
-    });
-  }
-
-  List<Locale> get supportedLocales {
-    return const [
-      Locale('fi'),
-      Locale('en'),
-      Locale('de'),
-      Locale('es'),
-      Locale('fr'),
-      Locale('zh'),
-      Locale('vi'),
-      Locale('ja'),
-    ];
-  }
-
-  @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Stelluriini',
+      title: 'Stelluriini Input Test',
       debugShowCheckedModeBanner: false,
-      locale: Locale(languageCode),
-      supportedLocales:
-          supportedLocales,
       theme: ThemeData(
-        brightness:
-            Brightness.dark,
+        brightness: Brightness.dark,
         useMaterial3: true,
         scaffoldBackgroundColor:
-            backgroundColor,
+            const Color(0xFF120B24),
         colorScheme:
             ColorScheme.fromSeed(
           seedColor:
-              stellaPurple,
+              const Color(0xFFB58CFF),
           brightness:
               Brightness.dark,
           primary:
-              stellaPurple,
+              const Color(0xFFB58CFF),
           secondary:
-              stellaPink,
+              const Color(0xFFFFB7E8),
           tertiary:
-              starGold,
-          surface:
-              surfaceColor,
-        ),
-        appBarTheme:
-            const AppBarTheme(
-          backgroundColor:
-              backgroundColor,
-          foregroundColor:
-              primaryTextColor,
-          centerTitle: true,
-          elevation: 0,
-          titleTextStyle:
-              TextStyle(
-            color:
-                primaryTextColor,
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
-        cardTheme:
-            const CardThemeData(
-          color:
-              Color(0xFF21113B),
-          elevation: 0,
-          margin:
-              EdgeInsets.zero,
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.all(
-              Radius.circular(24),
-            ),
-          ),
-        ),
-        elevatedButtonTheme:
-            ElevatedButtonThemeData(
-          style:
-              ElevatedButton.styleFrom(
-            backgroundColor:
-                stellaPurple,
-            foregroundColor:
-                Colors.white,
-            elevation: 0,
-            minimumSize:
-                const Size(
-              double.infinity,
-              54,
-            ),
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
-            ),
-            textStyle:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        outlinedButtonTheme:
-            OutlinedButtonThemeData(
-          style:
-              OutlinedButton.styleFrom(
-            foregroundColor:
-                primaryTextColor,
-            side:
-                const BorderSide(
-              color:
-                  stellaPurple,
-              width: 1.5,
-            ),
-            minimumSize:
-                const Size(
-              double.infinity,
-              52,
-            ),
-            shape:
-                RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
-            ),
-          ),
-        ),
-        textTheme:
-            const TextTheme(
-          headlineLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-            fontWeight:
-                FontWeight.bold,
-          ),
-          headlineMedium:
-              TextStyle(
-            color:
-                primaryTextColor,
-            fontWeight:
-                FontWeight.bold,
-          ),
-          titleLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-            fontWeight:
-                FontWeight.bold,
-          ),
-          titleMedium:
-              TextStyle(
-            color:
-                primaryTextColor,
-            fontWeight:
-                FontWeight.w600,
-          ),
-          bodyLarge:
-              TextStyle(
-            color:
-                primaryTextColor,
-          ),
-          bodyMedium:
-              TextStyle(
-            color:
-                secondaryTextColor,
-          ),
-          bodySmall:
-              TextStyle(
-            color:
-                secondaryTextColor,
-          ),
-        ),
-        snackBarTheme:
-            SnackBarThemeData(
-          behavior:
-              SnackBarBehavior.floating,
-          backgroundColor:
-              Color(0xFF21113B),
-          contentTextStyle:
-              const TextStyle(
-            color:
-                primaryTextColor,
-          ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(16),
-          ),
-        ),
-        progressIndicatorTheme:
-            const ProgressIndicatorThemeData(
-          color:
-              stellaPurple,
-        ),
-        dividerTheme:
-            const DividerThemeData(
-          color:
-              Color(0xFF352653),
-          thickness: 1,
+              const Color(0xFFFFD166),
         ),
       ),
-
-      // ============================================================
-      // VÄLIAIKAINEN TESTI
-      // ============================================================
-      //
-      // AuthGate ohitetaan tarkoituksella.
-      // LoginPage avataan suoraan.
-      //
-      // Firebase alustetaan edelleen ennen tätä.
-      //
-      // ============================================================
-
-      home: LoginPage(
-        languageCode:
-            languageCode,
-        changeLanguage:
-            changeLanguage,
-      ),
+      home:
+          const InputTestPage(),
     );
   }
 }
