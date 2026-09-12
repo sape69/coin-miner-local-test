@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'register_page.dart';
 
@@ -58,6 +59,68 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
   bool _loginLoading = false;
+
+  bool _accountCreatedOnDevice = false;
+  bool _accountStatusLoading = true;
+
+  // ==========================================================
+  // SHARED PREFERENCES KEY
+  // ==========================================================
+
+  static const String _accountCreatedKey =
+      'stelluriini_account_created';
+
+  // ==========================================================
+  // INIT
+  // ==========================================================
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadAccountStatus();
+  }
+
+  // ==========================================================
+  // LOAD ACCOUNT STATUS
+  // ==========================================================
+
+  Future<void> _loadAccountStatus() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      final bool accountCreated =
+          preferences.getBool(
+                _accountCreatedKey,
+              ) ??
+              false;
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _accountCreatedOnDevice =
+            accountCreated;
+
+        _accountStatusLoading = false;
+      });
+    } catch (error) {
+      debugPrint(
+        'Account status load error: $error',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _accountCreatedOnDevice = false;
+        _accountStatusLoading = false;
+      });
+    }
+  }
 
   // ==========================================================
   // DISPOSE
@@ -129,8 +192,29 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // ======================================================
-      // SUCCESS
+      // SAVE ACCOUNT EXISTENCE
       // ======================================================
+      //
+      // Jos käyttäjä kirjautuu onnistuneesti,
+      // tiedämme että tällä laitteella on käytössä
+      // olemassa oleva Stelluriini-tili.
+      //
+      // Tämä varmistaa myös vanhojen käyttäjien kohdalla,
+      // että LUO UUSI TILI poistuu seuraavalla kerralla.
+
+      try {
+        final SharedPreferences preferences =
+            await SharedPreferences.getInstance();
+
+        await preferences.setBool(
+          _accountCreatedKey,
+          true,
+        );
+      } catch (error) {
+        debugPrint(
+          'Account status save after login error: $error',
+        );
+      }
 
       if (mounted) {
         _showMessage(
@@ -193,6 +277,12 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
     );
+
+    // ========================================================
+    // PÄIVITÄ TILIN TILA PALUUN JÄLKEEN
+    // ========================================================
+
+    await _loadAccountStatus();
   }
 
   // ==========================================================
@@ -753,65 +843,76 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 14,
-                      ),
-
                       // ==================================================
                       // REGISTER BUTTON
                       // ==================================================
+                      //
+                      // Näytetään vain jos tällä laitteella
+                      // ei ole vielä luotu Stelluriini-tiliä.
+                      //
+                      // Ensimmäisen onnistuneen kirjautumisen jälkeen
+                      // tieto tallennetaan myös täällä.
+                      //
+                      // ==================================================
 
-                      SizedBox(
-                        width:
-                            double.infinity,
+                      if (!_accountStatusLoading &&
+                          !_accountCreatedOnDevice) ...[
+                        const SizedBox(
+                          height: 14,
+                        ),
 
-                        height: 50,
+                        SizedBox(
+                          width:
+                              double.infinity,
 
-                        child:
-                            OutlinedButton(
-                          onPressed:
-                              _loginLoading
-                                  ? null
-                                  : _openRegisterPage,
-
-                          style:
-                              OutlinedButton.styleFrom(
-                            foregroundColor:
-                                const Color(
-                              0xFF35D0A0,
-                            ),
-
-                            side:
-                                const BorderSide(
-                              color:
-                                  Color(
-                                0xFF35D0A0,
-                              ),
-                              width: 2,
-                            ),
-
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                16,
-                              ),
-                            ),
-                          ),
+                          height: 50,
 
                           child:
-                              const Text(
-                            'LUO UUSI TILI',
+                              OutlinedButton(
+                            onPressed:
+                                _loginLoading
+                                    ? null
+                                    : _openRegisterPage,
 
                             style:
-                                TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold,
+                                OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  const Color(
+                                0xFF35D0A0,
+                              ),
+
+                              side:
+                                  const BorderSide(
+                                color:
+                                    Color(
+                                  0xFF35D0A0,
+                                ),
+                                width: 2,
+                              ),
+
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  16,
+                                ),
+                              ),
+                            ),
+
+                            child:
+                                const Text(
+                              'LUO UUSI TILI',
+
+                              style:
+                                  TextStyle(
+                                fontSize: 16,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
 
                       const SizedBox(
                         height: 20,
