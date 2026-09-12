@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../localization.dart';
 import '../widgets/cat_avatar.dart';
@@ -19,6 +20,7 @@ import '../widgets/cat_avatar.dart';
 // - tarkistaa salasanan vahvistuksen
 // - käsittelee yleisimmät Firebase Auth -virheet
 // - tukee sovelluksen kielijärjestelmää
+// - tallentaa laitteen muistiin, että tili on luotu
 //
 // ============================================================
 
@@ -97,6 +99,19 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
+  // 📱 ACCOUNT STATUS
+  // ==========================================================
+  //
+  // Sama avain jota LoginPage käyttää.
+  //
+  // true = laitteella on jo luotu Stelluriini-tili.
+  //
+  // ==========================================================
+
+  static const String _accountCreatedKey =
+      'stelluriini_account_created';
+
+  // ==========================================================
   // DISPOSE
   // ==========================================================
 
@@ -139,10 +154,38 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
+  // 📱 SAVE ACCOUNT STATUS
+  // ==========================================================
+
+  Future<void> _saveAccountCreatedStatus() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      await preferences.setBool(
+        _accountCreatedKey,
+        true,
+      );
+
+      debugPrint(
+        'Stelluriini account status saved: created',
+      );
+    } catch (error) {
+      debugPrint(
+        'Account status save error: $error',
+      );
+    }
+  }
+
+  // ==========================================================
   // 🔐 REGISTER
   // ==========================================================
 
   Future<void> _register() async {
+    if (loading) {
+      return;
+    }
+
     final String username =
         usernameController.text.trim();
 
@@ -233,6 +276,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
         await user.reload();
       }
+
+      // ------------------------------------------------------
+      // SAVE ACCOUNT CREATED STATUS
+      // ------------------------------------------------------
+      //
+      // Firebase-tili on luotu onnistuneesti.
+      //
+      // Tallennetaan tieto laitteen SharedPreferences-muistiin,
+      // jotta LoginPage tietää jatkossa, ettei uuden tilin
+      // luomispainiketta tarvitse enää näyttää.
+      //
+      // ------------------------------------------------------
+
+      await _saveAccountCreatedStatus();
 
       if (!mounted) {
         return;
