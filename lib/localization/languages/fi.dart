@@ -691,9 +691,6 @@ const Map<String, String> fiTranslations = {
   'communityCuriositySolana':
       'Yhteisö • Uteliaisuus • Solana',
 
-  'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
-
   // ============================================================
   // 📊 TOKENOMICS
   // ============================================================
