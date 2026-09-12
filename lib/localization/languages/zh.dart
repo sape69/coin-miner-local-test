@@ -14,8 +14,10 @@ const Map<String, String> zhTranslations = {
   'whitepaper': '白皮书',
   'whitePaper': '白皮书',
   'language': '语言',
+  'selectLanguage': '选择语言',
   'logout': '退出登录',
   'menu': '菜单',
+  'ready': '准备就绪',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -56,8 +58,7 @@ const Map<String, String> zhTranslations = {
   'dailyClaim': '领取每日奖励',
   'dailyReward': '每日奖励',
   'claimedToday': '今日已领取',
-  'alreadyClaimed':
-      '您今天已经领取过奖励。',
+  'alreadyClaimed': '您今天已经领取过奖励。',
 
   // ============================================================
   // 📺 ADS
@@ -449,6 +450,9 @@ const Map<String, String> zhTranslations = {
   'roadmapSubtitle':
       'Stelluriini 的发展之旅，一步一步向前。',
 
+  'roadmapJourney':
+      'Stelluriini 的发展历程',
+
   'roadmapPhase1':
       '阶段 1 – 基础',
 
@@ -494,6 +498,30 @@ const Map<String, String> zhTranslations = {
   'roadmapPhase5Description':
       '探索新功能、潜在合作伙伴关系以及社区提出的想法。',
 
+  'roadmapPhase6':
+      '阶段 6 – 扩展',
+
+  'roadmapPhase6Title':
+      '扩展 Stelluriini',
+
+  'roadmapPhase6Description':
+      '继续发展 Stelluriini 生态系统、集成、STL 代币的实用功能以及社区的新机会。',
+
+  'roadmapStatusCompleted':
+      '已完成',
+
+  'roadmapStatusCurrent':
+      '进行中',
+
+  'roadmapStatusPlanned':
+      '已计划',
+
+  'roadmapDevelopmentPrinciples':
+      '发展原则',
+
+  'plannedWithdrawalModel':
+      '如果未来推出 STL 提现模式，该模式将单独设计，并在实施前向社区透明公布。',
+
   // ============================================================
   // 🪙 TOKEN
   // ============================================================
@@ -530,6 +558,46 @@ const Map<String, String> zhTranslations = {
 
   'addressCopied':
       '地址已复制。',
+
+  // ============================================================
+  // 🪙 SOLANA COMMUNITY TOKEN
+  // ============================================================
+
+  'solanaCommunityToken':
+      'Solana 社区代币',
+
+  'tokenInformation':
+      '代币信息',
+
+  'name':
+      '名称',
+
+  'symbol':
+      '符号',
+
+  'blockchain':
+      '区块链',
+
+  'decimals':
+      '小数位数',
+
+  'officialMintAddress':
+      '官方 Mint 地址',
+
+  'officialMintDescription':
+      '此地址用于标识 Solana 区块链上的官方 STL 代币。',
+
+  'mintAddressCopied':
+      'Mint 地址已复制。',
+
+  'copyMintAddress':
+      '复制 MINT 地址',
+
+  'viewOnSolscan':
+      '在 SOLSCAN 上查看',
+
+  'couldNotOpenSolscan':
+      '无法打开 Solscan。',
 
   // ============================================================
   // 📊 TOKENOMICS
@@ -652,6 +720,9 @@ const Map<String, String> zhTranslations = {
   'communityCuriosityDevelopmentSolana':
       '社区 • 好奇心 • 开发 • Solana',
 
+  'communityCuriositySolana':
+      '社区 • 好奇心 • Solana',
+
   'tokenAllocation':
       '代币分配',
 
@@ -723,11 +794,14 @@ const Map<String, String> zhTranslations = {
   'virtualPointsNotice':
       '应用中显示的 STL 奖励目前是应用内虚拟积分。',
 
+  'virtualPointsInformation':
+      '应用中显示的 STL 目前代表应用内虚拟积分。这些积分并不自动代表可提取的加密货币。',
+
   'withdrawalsDisabled':
       '目前无法进行提现。',
 
   'futureWithdrawals':
-      '未来可能推出的提现系统将单独设计，并会在实施之前公布相关条件。',
+      '未来可能推出的 STL 提现系统将单独设计，并会在实施之前公布相关条件。',
 
   // ============================================================
   // 🐾 FOOTER
@@ -738,4 +812,7 @@ const Map<String, String> zhTranslations = {
 
   'footerToken':
       'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
 };
