@@ -305,8 +305,8 @@ class _LoginPageState extends State<LoginPage> {
                               color:
                                   const Color(
                                 0xFF35D0A0,
-                              ).withOpacity(
-                                0.25,
+                              ).withValues(
+                                alpha: 0.25,
                               ),
                               blurRadius: 25,
                               spreadRadius: 4,
