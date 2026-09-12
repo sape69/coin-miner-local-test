@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'auth_gate.dart';
@@ -6,18 +7,34 @@ import 'auth_gate.dart';
 // 🐱 STELLURIINI
 // ============================================================
 //
-// VAIHE 3
+// VAIHE 4
 //
-// LoginPage on testattu toimivaksi.
-// AuthGate otetaan nyt käyttöön.
+// Firebase alustetaan ennen AuthGatea ja HomePagea.
 //
-// AuthGate ohjaa tällä hetkellä suoraan HomePageen.
-// Firebase Auth palautetaan myöhemmin AuthGateen.
+// Ketju:
+//
+// main.dart
+//    ↓
+// Firebase.initializeApp()
+//    ↓
+// AuthGate
+//    ↓
+// HomePage
 //
 // ============================================================
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ==========================================================
+  // FIREBASE
+  // ==========================================================
+
+  await Firebase.initializeApp();
+
+  // ==========================================================
+  // APP
+  // ==========================================================
 
   runApp(
     const StelluriiniApp(),
@@ -45,6 +62,10 @@ class _StelluriiniAppState
   // ==========================================================
 
   String _languageCode = 'fi';
+
+  // ==========================================================
+  // CHANGE LANGUAGE
+  // ==========================================================
 
   Future<void> _changeLanguage(
     String language,
