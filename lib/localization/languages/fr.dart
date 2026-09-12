@@ -6,11 +6,13 @@ const Map<String, String> frTranslations = {
   'appTitle': 'STELLURIINI',
   'home': 'Accueil',
   'about': 'À propos',
+  'aboutStelluriini': 'À propos de Stelluriini',
   'history': 'Historique des transactions',
   'roadmap': 'Feuille de route',
   'token': 'Token STL',
   'tokenomics': 'Tokenomics',
   'whitepaper': 'Whitepaper',
+  'whitePaper': 'White Paper',
   'language': 'Langue',
   'logout': 'Se déconnecter',
   'menu': 'Menu',
@@ -402,6 +404,9 @@ const Map<String, String> frTranslations = {
   'community':
       'Communauté',
 
+  'stellaCommunity':
+      'Stella • Communauté Stelluriini',
+
   'aboutCommunityDescription':
       'Stelluriini est construit autour de sa communauté. L’objectif est de créer un écosystème ouvert, amusant et accessible.',
 
@@ -632,6 +637,9 @@ const Map<String, String> frTranslations = {
 
   'communityCuriosityDevelopmentSolana':
       'Communauté • Curiosité • Développement • Solana',
+
+  'tokenAllocation':
+      'Répartition des tokens',
 
   'tokenomicsImportant':
       'Les allocations exactes de tokens peuvent être mises à jour pendant le développement du projet. Toute modification doit être communiquée de manière transparente à la communauté.',
