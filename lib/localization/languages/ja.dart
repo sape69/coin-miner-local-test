@@ -6,11 +6,13 @@ const Map<String, String> jaTranslations = {
   'appTitle': 'STELLURIINI',
   'home': 'ホーム',
   'about': '概要',
+  'aboutStelluriini': 'Stelluriiniについて',
   'history': '取引履歴',
   'roadmap': 'ロードマップ',
   'token': 'STLトークン',
   'tokenomics': 'トークノミクス',
   'whitepaper': 'ホワイトペーパー',
+  'whitePaper': 'ホワイトペーパー',
   'language': '言語',
   'logout': 'ログアウト',
   'menu': 'メニュー',
@@ -452,6 +454,9 @@ const Map<String, String> jaTranslations = {
 
   'community':
       'コミュニティ',
+
+  'stellaCommunity':
+      'Stella • Stelluriiniコミュニティ',
 
   'aboutCommunityDescription':
       'Stelluriiniはコミュニティを中心に構築されています。オープンで楽しく、誰でも参加しやすいエコシステムを目指しています。',
