@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'register_page.dart';
+
 // ============================================================
 // 🐱 STELLURIINI LOGIN PAGE
 // ============================================================
@@ -170,6 +172,27 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
     }
+  }
+
+  // ==========================================================
+  // OPEN REGISTER PAGE
+  // ==========================================================
+
+  Future<void> _openRegisterPage() async {
+    if (_loginLoading) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          return RegisterPage(
+            languageCode: widget.languageCode,
+            changeLanguage: widget.changeLanguage,
+          );
+        },
+      ),
+    );
   }
 
   // ==========================================================
@@ -727,6 +750,66 @@ class _LoginPageState extends State<LoginPage> {
                                             FontWeight.bold,
                                       ),
                                     ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 14,
+                      ),
+
+                      // ==================================================
+                      // REGISTER BUTTON
+                      // ==================================================
+
+                      SizedBox(
+                        width:
+                            double.infinity,
+
+                        height: 50,
+
+                        child:
+                            OutlinedButton(
+                          onPressed:
+                              _loginLoading
+                                  ? null
+                                  : _openRegisterPage,
+
+                          style:
+                              OutlinedButton.styleFrom(
+                            foregroundColor:
+                                const Color(
+                              0xFF35D0A0,
+                            ),
+
+                            side:
+                                const BorderSide(
+                              color:
+                                  Color(
+                                0xFF35D0A0,
+                              ),
+                              width: 2,
+                            ),
+
+                            shape:
+                                RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(
+                                16,
+                              ),
+                            ),
+                          ),
+
+                          child:
+                              const Text(
+                            'LUO UUSI TILI',
+
+                            style:
+                                TextStyle(
+                              fontSize: 16,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
 
