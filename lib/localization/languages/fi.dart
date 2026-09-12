@@ -171,6 +171,9 @@ const Map<String, String> fiTranslations = {
   'adRewardDuplicate':
       'Tämä mainospalkinto on jo käsitelty.',
 
+  'powerBoostFailed':
+      'Power Boostin aktivointi epäonnistui.',
+
   'testAdRewardFailed':
       'Mainospalkinnon käsittely epäonnistui.',
 
@@ -688,9 +691,6 @@ const Map<String, String> fiTranslations = {
   'communityCuriositySolana':
       'Yhteisö • Uteliaisuus • Solana',
 
-  'virtualPointsInformation':
-      'Sovelluksessa näkyvä STL-saldo edustaa tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä. Se ei ole automaattisesti nostettavissa olevaa kryptovaluuttaa.',
-
   'stelluriiniStlSolanaFooter':
       'STELLURIINI • STL • SOLANA',
 
@@ -891,9 +891,6 @@ const Map<String, String> fiTranslations = {
 
   'withdrawalsDisabled':
       'Nostot eivät ole tällä hetkellä käytössä.',
-
-  'futureWithdrawals':
-      'Mahdollinen tuleva nostojärjestelmä suunnitellaan erikseen ja sen ehdot ilmoitetaan ennen käyttöönottoa.',
 
   // ============================================================
   // 🐾 FOOTER
