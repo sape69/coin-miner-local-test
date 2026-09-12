@@ -886,8 +886,14 @@ const Map<String, String> fiTranslations = {
   'virtualPointsNotice':
       'Sovelluksessa näkyvät STL-palkinnot ovat tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä.',
 
+  'virtualPointsInformation':
+      'Sovelluksessa näkyvä STL-saldo edustaa tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä. Se ei ole automaattisesti nostettavissa olevaa kryptovaluuttaa.',
+
   'withdrawalsDisabled':
       'Nostot eivät ole tällä hetkellä käytössä.',
+
+  'futureWithdrawals':
+      'Mahdollinen tuleva nostojärjestelmä suunnitellaan erikseen ja sen ehdot ilmoitetaan ennen käyttöönottoa.',
 
   // ============================================================
   // 🐾 FOOTER
@@ -898,4 +904,7 @@ const Map<String, String> fiTranslations = {
 
   'footerToken':
       'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
 };
