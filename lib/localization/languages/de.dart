@@ -6,11 +6,13 @@ const Map<String, String> deTranslations = {
   'appTitle': 'STELLURIINI',
   'home': 'Startseite',
   'about': 'Über uns',
+  'aboutStelluriini': 'Über Stelluriini',
   'history': 'Transaktionsverlauf',
   'roadmap': 'Roadmap',
   'token': 'STL Token',
   'tokenomics': 'Tokenomics',
   'whitepaper': 'Whitepaper',
+  'whitePaper': 'Whitepaper',
   'language': 'Sprache',
   'logout': 'Abmelden',
   'menu': 'Menü',
@@ -411,7 +413,7 @@ const Map<String, String> deTranslations = {
       'Auf Solana aufgebaut',
 
   'aboutSolanaDescription':
-      'Stelluriini nutzt die Solana-Blockchain und bietet damit eine schnelle und kosteneffiziente Umgebung für den STL-Token.',
+      'Stelluriini nutzt die Solana-Blockchain und bietet damit eine schnelle und kostengünstige Umgebung für den STL-Token.',
 
   'stlToken':
       'STL Token',
@@ -477,6 +479,9 @@ const Map<String, String> deTranslations = {
   'roadmapPhase5Description':
       'Erkundung neuer Funktionen, möglicher Partnerschaften und Ideen aus der Community.',
 
+  'plannedWithdrawalModel':
+      'Geplantes zukünftiges Auszahlungsmodell',
+
   // ============================================================
   // 🪙 TOKEN
   // ============================================================
@@ -513,6 +518,45 @@ const Map<String, String> deTranslations = {
 
   'addressCopied':
       'Adresse kopiert.',
+
+  'solanaCommunityToken':
+      'Solana Community Token',
+
+  'tokenInformation':
+      'Token-Informationen',
+
+  'name':
+      'Name',
+
+  'symbol':
+      'Symbol',
+
+  'blockchain':
+      'Blockchain',
+
+  'decimals':
+      'Dezimalstellen',
+
+  'officialMintAddress':
+      'Offizielle Mint-Adresse',
+
+  'officialMintDescription':
+      'Dies ist die offizielle Mint-Adresse des Stelluriini STL-Tokens.',
+
+  'mintAddressCopied':
+      'Mint-Adresse kopiert.',
+
+  'copyMintAddress':
+      'Mint-Adresse kopieren',
+
+  'viewOnSolscan':
+      'Auf Solscan anzeigen',
+
+  'couldNotOpenSolscan':
+      'Solscan konnte nicht geöffnet werden.',
+
+  'communityCuriositySolana':
+      'Community • Neugier • Solana',
 
   // ============================================================
   // 📊 TOKENOMICS
@@ -701,6 +745,9 @@ const Map<String, String> deTranslations = {
   'virtualPointsNotice':
       'Die in der App angezeigten STL-Belohnungen sind derzeit virtuelle In-App-Punkte.',
 
+  'virtualPointsInformation':
+      'Die in der App angezeigten STL-Belohnungen stellen derzeit virtuelle In-App-Punkte dar. Sie sind nicht automatisch mit einer Auszahlung von Kryptowährung verbunden.',
+
   'withdrawalsDisabled':
       'Auszahlungen sind derzeit nicht verfügbar.',
 
@@ -716,4 +763,7 @@ const Map<String, String> deTranslations = {
 
   'footerToken':
       'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
 };
