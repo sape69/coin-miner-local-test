@@ -5,11 +5,7 @@ import 'package:flutter/material.dart';
 // 🐱 STELLURIINI LOGIN PAGE
 // ============================================================
 //
-// VAIHE 7
-//
 // OIKEA FIREBASE-KIRJAUTUMINEN
-//
-// Ketju:
 //
 // LoginPage
 //     ↓
@@ -20,15 +16,6 @@ import 'package:flutter/material.dart';
 // AuthGate huomaa kirjautumisen
 //     ↓
 // HomePage
-//
-// Lisäksi:
-//
-// - Sähköpostikenttä toimii
-// - Salasanakenttä toimii
-// - Salasanan näyttäminen/piilottaminen toimii
-// - Sivua voi vierittää näppäimistön kanssa
-// - Kirjautumisvirheet näytetään käyttäjälle
-// - Kirjautumisen aikana nappi lukitaan
 //
 // ============================================================
 
@@ -51,8 +38,7 @@ class _LoginPageState extends State<LoginPage> {
   // FIREBASE AUTH
   // ==========================================================
 
-  final FirebaseAuth _auth =
-      FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // ==========================================================
   // CONTROLLERS
@@ -69,7 +55,6 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   bool _obscurePassword = true;
-
   bool _loginLoading = false;
 
   // ==========================================================
@@ -148,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
       // AuthGate huomaa Firebase Authentication -tilan
       // muuttuneen ja avaa HomePagen automaattisesti.
       //
-      // Emme tee tässä Navigator.push()-kutsua.
+      // Navigator.push()-kutsua ei tarvita.
       //
       // ======================================================
 
@@ -158,10 +143,6 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } on FirebaseAuthException catch (error) {
-      // ======================================================
-      // FIREBASE ERROR
-      // ======================================================
-
       debugPrint(
         'Firebase login error: '
         '${error.code} - ${error.message}',
@@ -177,10 +158,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } catch (error) {
-      // ======================================================
-      // UNKNOWN ERROR
-      // ======================================================
-
       debugPrint(
         'Login error: $error',
       );
@@ -223,16 +200,20 @@ class _LoginPageState extends State<LoginPage> {
         return 'Sähköposti tai salasana on väärin.';
 
       case 'too-many-requests':
-        return 'Liian monta kirjautumisyritystä. Yritä myöhemmin uudelleen.';
+        return 'Liian monta kirjautumisyritystä. '
+            'Yritä myöhemmin uudelleen.';
 
       case 'network-request-failed':
-        return 'Verkkoyhteys epäonnistui. Tarkista internetyhteys.';
+        return 'Verkkoyhteys epäonnistui. '
+            'Tarkista internetyhteys.';
 
       case 'operation-not-allowed':
-        return 'Sähköposti- ja salasanakirjautuminen ei ole käytössä.';
+        return 'Sähköposti- ja salasanakirjautuminen '
+            'ei ole käytössä.';
 
       default:
-        return 'Kirjautuminen epäonnistui. Yritä uudelleen.';
+        return 'Kirjautuminen epäonnistui. '
+            'Yritä uudelleen.';
     }
   }
 
@@ -290,8 +271,7 @@ class _LoginPageState extends State<LoginPage> {
           ) {
             return SingleChildScrollView(
               keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior
-                      .onDrag,
+                  ScrollViewKeyboardDismissBehavior.onDrag,
 
               physics:
                   const AlwaysScrollableScrollPhysics(),
@@ -305,16 +285,14 @@ class _LoginPageState extends State<LoginPage> {
                 constraints:
                     BoxConstraints(
                   minHeight:
-                      constraints.maxHeight -
-                          48,
+                      constraints.maxHeight - 48,
                 ),
 
-                child: Center(
+                child: IntrinsicHeight(
                   child: Column(
-                    mainAxisSize:
-                        MainAxisSize.min,
-
                     children: [
+                      const Spacer(),
+
                       // ==================================================
                       // LOGO
                       // ==================================================
@@ -440,12 +418,8 @@ class _LoginPageState extends State<LoginPage> {
                         enabled:
                             !_loginLoading,
 
-                        readOnly:
-                            false,
-
                         keyboardType:
-                            TextInputType
-                                .emailAddress,
+                            TextInputType.emailAddress,
 
                         textInputAction:
                             TextInputAction.next,
@@ -482,8 +456,7 @@ class _LoginPageState extends State<LoginPage> {
 
                           prefixIcon:
                               const Icon(
-                            Icons
-                                .email_outlined,
+                            Icons.email_outlined,
                             color:
                                 Color(
                               0xFFB58CFF,
@@ -501,8 +474,7 @@ class _LoginPageState extends State<LoginPage> {
                           enabledBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
 
@@ -519,8 +491,7 @@ class _LoginPageState extends State<LoginPage> {
                           focusedBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
 
@@ -549,15 +520,11 @@ class _LoginPageState extends State<LoginPage> {
                         enabled:
                             !_loginLoading,
 
-                        readOnly:
-                            false,
-
                         obscureText:
                             _obscurePassword,
 
                         keyboardType:
-                            TextInputType
-                                .visiblePassword,
+                            TextInputType.visiblePassword,
 
                         textInputAction:
                             TextInputAction.done,
@@ -592,8 +559,7 @@ class _LoginPageState extends State<LoginPage> {
 
                           prefixIcon:
                               const Icon(
-                            Icons
-                                .lock_outline,
+                            Icons.lock_outline,
                             color:
                                 Color(
                               0xFFB58CFF,
@@ -638,8 +604,7 @@ class _LoginPageState extends State<LoginPage> {
                           enabledBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
 
@@ -656,8 +621,7 @@ class _LoginPageState extends State<LoginPage> {
                           focusedBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
 
@@ -693,8 +657,7 @@ class _LoginPageState extends State<LoginPage> {
                                   : _login,
 
                           style:
-                              ElevatedButton
-                                  .styleFrom(
+                              ElevatedButton.styleFrom(
                             backgroundColor:
                                 const Color(
                               0xFFB58CFF,
@@ -721,8 +684,7 @@ class _LoginPageState extends State<LoginPage> {
                             shape:
                                 RoundedRectangleBorder(
                               borderRadius:
-                                  BorderRadius
-                                      .circular(
+                                  BorderRadius.circular(
                                 16,
                               ),
                             ),
@@ -751,8 +713,7 @@ class _LoginPageState extends State<LoginPage> {
                                         fontSize:
                                             17,
                                         fontWeight:
-                                            FontWeight
-                                                .bold,
+                                            FontWeight.bold,
                                       ),
                                     ),
                         ),
@@ -784,8 +745,10 @@ class _LoginPageState extends State<LoginPage> {
                       ),
 
                       const SizedBox(
-                        height: 80,
+                        height: 40,
                       ),
+
+                      const Spacer(),
                     ],
                   ),
                 ),
