@@ -129,13 +129,6 @@ class _LoginPageState extends State<LoginPage> {
       // ======================================================
       // SUCCESS
       // ======================================================
-      //
-      // AuthGate huomaa Firebase Authentication -tilan
-      // muuttuneen ja avaa HomePagen automaattisesti.
-      //
-      // Navigator.push()-kutsua ei tarvita.
-      //
-      // ======================================================
 
       if (mounted) {
         _showMessage(
@@ -167,7 +160,8 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        'Kirjautuminen epäonnistui. Yritä uudelleen.',
+        'Kirjautuminen epäonnistui. '
+        'Yritä uudelleen.',
       );
     } finally {
       if (mounted) {
@@ -294,42 +288,59 @@ class _LoginPageState extends State<LoginPage> {
                       const Spacer(),
 
                       // ==================================================
-                      // LOGO
+                      // STELLURIINI LOGO
                       // ==================================================
 
                       Container(
-                        width: 100,
-                        height: 100,
+                        width: 190,
+                        height: 190,
 
                         decoration:
                             BoxDecoration(
                           shape:
                               BoxShape.circle,
 
-                          color:
-                              const Color(
-                            0xFF1A0E31,
-                          ),
-
-                          border:
-                              Border.all(
-                            color:
-                                const Color(
-                              0xFFB58CFF,
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  const Color(
+                                0xFF35D0A0,
+                              ).withOpacity(
+                                0.25,
+                              ),
+                              blurRadius: 25,
+                              spreadRadius: 4,
                             ),
-                            width: 3,
-                          ),
+                          ],
                         ),
 
                         child:
-                            const Center(
-                          child: Icon(
-                            Icons.pets,
-                            color:
-                                Color(
-                              0xFFFFB7E8,
-                            ),
-                            size: 58,
+                            ClipOval(
+                          child:
+                              Image.asset(
+                            'assets/images/stelluriini_logo.png',
+
+                            width: 190,
+                            height: 190,
+
+                            fit:
+                                BoxFit.cover,
+
+                            errorBuilder:
+                                (
+                              BuildContext context,
+                              Object error,
+                              StackTrace? stackTrace,
+                            ) {
+                              return const Icon(
+                                Icons.pets,
+                                color:
+                                    Color(
+                                  0xFF35D0A0,
+                                ),
+                                size: 80,
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -368,7 +379,7 @@ class _LoginPageState extends State<LoginPage> {
                             TextStyle(
                           color:
                               Color(
-                            0xFFFFD166,
+                            0xFF35D0A0,
                           ),
                           fontSize: 21,
                           fontWeight:
@@ -459,7 +470,7 @@ class _LoginPageState extends State<LoginPage> {
                             Icons.email_outlined,
                             color:
                                 Color(
-                              0xFFB58CFF,
+                              0xFF35D0A0,
                             ),
                           ),
 
@@ -482,7 +493,7 @@ class _LoginPageState extends State<LoginPage> {
                                 const BorderSide(
                               color:
                                   Color(
-                                0xFFB58CFF,
+                                0xFF35D0A0,
                               ),
                               width: 2,
                             ),
@@ -562,7 +573,7 @@ class _LoginPageState extends State<LoginPage> {
                             Icons.lock_outline,
                             color:
                                 Color(
-                              0xFFB58CFF,
+                              0xFF35D0A0,
                             ),
                           ),
 
@@ -588,7 +599,7 @@ class _LoginPageState extends State<LoginPage> {
 
                               color:
                                   const Color(
-                                0xFFB58CFF,
+                                0xFF35D0A0,
                               ),
                             ),
                           ),
@@ -612,7 +623,7 @@ class _LoginPageState extends State<LoginPage> {
                                 const BorderSide(
                               color:
                                   Color(
-                                0xFFB58CFF,
+                                0xFF35D0A0,
                               ),
                               width: 2,
                             ),
@@ -660,7 +671,7 @@ class _LoginPageState extends State<LoginPage> {
                               ElevatedButton.styleFrom(
                             backgroundColor:
                                 const Color(
-                              0xFFB58CFF,
+                              0xFF35D0A0,
                             ),
 
                             foregroundColor:
@@ -670,7 +681,7 @@ class _LoginPageState extends State<LoginPage> {
 
                             disabledBackgroundColor:
                                 const Color(
-                              0xFF6F5A8C,
+                              0xFF587D72,
                             ),
 
                             disabledForegroundColor:
