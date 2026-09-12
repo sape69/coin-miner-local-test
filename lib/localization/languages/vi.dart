@@ -6,11 +6,13 @@ const Map<String, String> viTranslations = {
   'appTitle': 'STELLURIINI',
   'home': 'Trang chủ',
   'about': 'Giới thiệu',
+  'aboutStelluriini': 'Giới thiệu về Stelluriini',
   'history': 'Lịch sử giao dịch',
   'roadmap': 'Lộ trình',
   'token': 'Token STL',
   'tokenomics': 'Tokenomics',
   'whitepaper': 'Whitepaper',
+  'whitePaper': 'Whitepaper',
   'language': 'Ngôn ngữ',
   'logout': 'Đăng xuất',
   'menu': 'Menu',
@@ -416,6 +418,9 @@ const Map<String, String> viTranslations = {
 
   'community':
       'Cộng đồng',
+
+  'stellaCommunity':
+      'Stella • Cộng đồng Stelluriini',
 
   'aboutCommunityDescription':
       'Stelluriini được xây dựng xoay quanh cộng đồng. Mục tiêu là tạo ra một hệ sinh thái cởi mở, thú vị và dễ tham gia.',
