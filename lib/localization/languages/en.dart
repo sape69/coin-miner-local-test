@@ -649,6 +649,45 @@ const Map<String, String> enTranslations = {
   'addressCopied':
       'Address copied.',
 
+  'solanaCommunityToken':
+      'Solana Community Token',
+
+  'tokenInformation':
+      'Token Information',
+
+  'name':
+      'Name',
+
+  'symbol':
+      'Symbol',
+
+  'blockchain':
+      'Blockchain',
+
+  'decimals':
+      'Decimals',
+
+  'officialMintAddress':
+      'Official Mint Address',
+
+  'officialMintDescription':
+      'This is the official mint address of the Stelluriini STL token.',
+
+  'mintAddressCopied':
+      'Mint address copied.',
+
+  'copyMintAddress':
+      'Copy Mint Address',
+
+  'viewOnSolscan':
+      'View on Solscan',
+
+  'couldNotOpenSolscan':
+      'Could not open Solscan.',
+
+  'communityCuriositySolana':
+      'Community • Curiosity • Solana',
+
   // ============================================================
   // 📊 TOKENOMICS
   // ============================================================
@@ -841,6 +880,9 @@ const Map<String, String> enTranslations = {
   'virtualPointsNotice':
       'STL rewards shown in the app are currently virtual in-app points.',
 
+  'virtualPointsInformation':
+      'STL rewards shown in the app currently represent virtual in-app points. They are not automatically connected to a cryptocurrency withdrawal.',
+
   'withdrawalsDisabled':
       'Withdrawals are not currently available.',
 
@@ -853,4 +895,7 @@ const Map<String, String> enTranslations = {
 
   'footerToken':
       'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
 };
