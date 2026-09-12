@@ -266,19 +266,21 @@ class _HomePageState extends State<HomePage>
               24,
             ),
           ),
-          title: const Text(
-            '🚪 Kirjaudu ulos',
+          title: Text(
+            '🚪 ${_localization.get('logout')}',
             style:
-                TextStyle(
+                const TextStyle(
               color: Colors.white,
               fontWeight:
                   FontWeight.bold,
             ),
           ),
-          content: const Text(
-            'Haluatko varmasti kirjautua ulos Stelluriinista?',
+          content: Text(
+            _localization.get(
+              'information',
+            ),
             style:
-                TextStyle(
+                const TextStyle(
               color: Colors.white70,
               fontSize: 15,
             ),
@@ -290,10 +292,12 @@ class _HomePageState extends State<HomePage>
                   dialogContext,
                 ).pop(false);
               },
-              child: const Text(
-                'PERUUTA',
+              child: Text(
+                _localization.get(
+                  'cancel',
+                ),
                 style:
-                    TextStyle(
+                    const TextStyle(
                   color: pinkColor,
                   fontWeight:
                       FontWeight.bold,
@@ -320,10 +324,12 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              child: const Text(
-                'KIRJAUDU ULOS',
+              child: Text(
+                _localization.get(
+                  'logout',
+                ),
                 style:
-                    TextStyle(
+                    const TextStyle(
                   fontWeight:
                       FontWeight.bold,
                 ),
@@ -350,7 +356,9 @@ class _HomePageState extends State<HomePage>
       }
 
       _showMessage(
-        'Uloskirjautuminen epäonnistui.',
+        _localization.get(
+          'loginFailed',
+        ),
       );
     }
   }
