@@ -1,6 +1,23 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'pages/home_page.dart';
 import 'pages/login_page.dart';
+
+// ============================================================
+// 🐱 STELLURIINI AUTH GATE
+// ============================================================
+//
+// VAIHE 4
+//
+// AuthGate tarkistaa Firebase Authentication -tilan.
+//
+// Ei vielä:
+// - AdMob
+// - Firestore
+// - Cloud Functions
+//
+// ============================================================
 
 class AuthGate extends StatelessWidget {
   final String languageCode;
@@ -14,25 +31,49 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ============================================================
-    // 🧪 DIAGNOSTIIKKATESTI
-    // ============================================================
-    //
-    // FirebaseAuth on tarkoituksella pois käytöstä tässä testissä.
-    //
-    // Jos LoginPage toimii tämän jälkeen:
-    //
-    // → ongelma liittyy AuthGate/Firebase Auth -ketjuun.
-    //
-    // Jos harmaa alue näkyy edelleen:
-    //
-    // → ongelma ei ole Firebase Authissa.
-    //
-    // ============================================================
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
 
-    return LoginPage(
-      languageCode: languageCode,
-      changeLanguage: changeLanguage,
+      builder: (
+        BuildContext context,
+        AsyncSnapshot<User?> snapshot,
+      ) {
+        // ========================================================
+        // FIREBASE AUTH TARKISTAA KIRJAUTUMISTILAN
+        // ========================================================
+
+        if (snapshot.connectionState ==
+            ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF120B24),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFB58CFF),
+              ),
+            ),
+          );
+        }
+
+        // ========================================================
+        // KIRJAUTUNUT
+        // ========================================================
+
+        if (snapshot.hasData) {
+          return HomePage(
+            languageCode: languageCode,
+            changeLanguage: changeLanguage,
+          );
+        }
+
+        // ========================================================
+        // EI KIRJAUTUNUT
+        // ========================================================
+
+        return LoginPage(
+          languageCode: languageCode,
+          changeLanguage: changeLanguage,
+        );
+      },
     );
   }
 }
