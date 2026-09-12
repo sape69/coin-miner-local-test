@@ -6,11 +6,13 @@ const Map<String, String> zhTranslations = {
   'appTitle': 'STELLURIINI',
   'home': '首页',
   'about': '关于',
+  'aboutStelluriini': '关于 Stelluriini',
   'history': '交易历史',
   'roadmap': '路线图',
   'token': 'STL 代币',
   'tokenomics': '代币经济学',
   'whitepaper': '白皮书',
+  'whitePaper': '白皮书',
   'language': '语言',
   'logout': '退出登录',
   'menu': '菜单',
@@ -415,6 +417,9 @@ const Map<String, String> zhTranslations = {
 
   'community':
       '社区',
+
+  'stellaCommunity':
+      'Stella • Stelluriini 社区',
 
   'aboutCommunityDescription':
       'Stelluriini 围绕社区建设。我们的目标是打造一个开放、有趣且易于参与的生态系统。',
