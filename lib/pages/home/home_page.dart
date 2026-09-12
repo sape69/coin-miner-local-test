@@ -54,7 +54,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   static const double defaultAdHashRateBonus = 0.5833;
-
   static const int defaultMaxAdsPerDay = 6;
 
   static const int defaultAdBoostDurationMs =
@@ -65,9 +64,7 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   static const double defaultDailyHashRate = 0.5;
-
   static const double dailyHashRateStep = 0.5;
-
   static const double maximumDailyHashRate = 3.5;
 
   // ============================================================
@@ -117,13 +114,11 @@ class _HomePageState extends State<HomePage>
   bool _miningActive = false;
 
   double _hashRate = defaultDailyHashRate;
-
   double _unclaimedMining = 0.0;
   double _estimatedTotal = 0.0;
   double _miningPerHour = 0.0;
 
   int _miningRemainingMs = 0;
-
   int _miningDurationMs = defaultMiningDurationMs;
 
   // ============================================================
@@ -131,7 +126,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   int _streak = 0;
-
   double _dailyHashRate = defaultDailyHashRate;
 
   // ============================================================
@@ -139,7 +133,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   int _adsToday = 0;
-
   int _maxAdsPerDay = defaultMaxAdsPerDay;
 
   double _adHashRateBonus = defaultAdHashRateBonus;
@@ -149,7 +142,6 @@ class _HomePageState extends State<HomePage>
   int _cooldownRemainingMs = 0;
 
   bool _adBoostActive = false;
-
   int _adBoostRemainingMs = 0;
 
   double _effectiveHashRate = defaultDailyHashRate;
@@ -199,7 +191,6 @@ class _HomePageState extends State<HomePage>
     );
 
     _loadUsername();
-
     _initialize();
   }
 
@@ -228,10 +219,6 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _initialize() async {
     try {
-      await _ensureSignedIn();
-
-      _loadUsername();
-
       await _loadMiningStatus();
 
       if (!mounted) {
@@ -264,18 +251,6 @@ class _HomePageState extends State<HomePage>
         ),
       );
     }
-  }
-
-  // ============================================================
-  // AUTH
-  // ============================================================
-
-  Future<void> _ensureSignedIn() async {
-    if (_auth.currentUser != null) {
-      return;
-    }
-
-    await _auth.signInAnonymously();
   }
 
   // ============================================================
@@ -1654,10 +1629,6 @@ class _HomePageState extends State<HomePage>
                   fontSize: 14,
                 ),
               ),
-
-              // ==================================================
-              // 👤 USERNAME
-              // ==================================================
 
               if (_username.isNotEmpty) ...[
                 const SizedBox(
