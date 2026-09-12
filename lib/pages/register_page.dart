@@ -584,7 +584,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText:
                             'Käyttäjänimi',
                         hintText:
-                            'Esimerkiksi Sape',
+                            'Esimerkiksi Stella',
                         prefixIcon:
                             const Icon(
                           Icons
