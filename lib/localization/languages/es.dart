@@ -6,11 +6,13 @@ const Map<String, String> esTranslations = {
   'appTitle': 'STELLURIINI',
   'home': 'Inicio',
   'about': 'Acerca de',
+  'aboutStelluriini': 'Acerca de Stelluriini',
   'history': 'Historial de transacciones',
   'roadmap': 'Hoja de ruta',
   'token': 'Token STL',
   'tokenomics': 'Tokenómica',
   'whitepaper': 'Whitepaper',
+  'whitePaper': 'White Paper',
   'language': 'Idioma',
   'logout': 'Cerrar sesión',
   'menu': 'Menú',
@@ -415,6 +417,9 @@ const Map<String, String> esTranslations = {
 
   'community':
       'Comunidad',
+
+  'stellaCommunity':
+      'Stella • Comunidad Stelluriini',
 
   'aboutCommunityDescription':
       'Stelluriini se construye alrededor de su comunidad. El objetivo es crear un ecosistema abierto, divertido y accesible.',
