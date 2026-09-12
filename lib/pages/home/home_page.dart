@@ -190,27 +190,52 @@ class _HomePageState extends State<HomePage>
       ),
     );
 
-    _loadUsername();
     _initialize();
   }
 
   // ============================================================
   // 👤 LOAD USERNAME
   // ============================================================
+  //
+  // Firebase may notify AuthGate about the new login before
+  // displayName has finished propagating locally.
+  //
+  // Therefore we explicitly reload the Firebase user first.
+  // ============================================================
 
-  void _loadUsername() {
-    final User? user = _auth.currentUser;
+  Future<void> _loadUsername() async {
+    try {
+      final User? user = _auth.currentUser;
 
-    final String displayName =
-        user?.displayName?.trim() ?? '';
+      if (user == null) {
+        return;
+      }
 
-    if (!mounted) {
-      return;
+      await user.reload();
+
+      final User? refreshedUser =
+          _auth.currentUser;
+
+      final String name =
+          refreshedUser?.displayName?.trim() ?? '';
+
+      debugPrint(
+        'Stelluriini username loaded: '
+        '${name.isEmpty ? '(empty)' : name}',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _username = name;
+      });
+    } catch (error) {
+      debugPrint(
+        'Username load error: $error',
+      );
     }
-
-    setState(() {
-      _username = displayName;
-    });
   }
 
   // ============================================================
@@ -219,17 +244,35 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _initialize() async {
     try {
+      // ========================================================
+      // USERNAME MUST BE LOADED FIRST
+      // ========================================================
+
+      await _loadUsername();
+
+      // ========================================================
+      // MINING STATUS
+      // ========================================================
+
       await _loadMiningStatus();
 
       if (!mounted) {
         return;
       }
 
+      // ========================================================
+      // REWARDED AD
+      // ========================================================
+
       await _loadRewardedAd();
 
       if (!mounted) {
         return;
       }
+
+      // ========================================================
+      // TIMERS
+      // ========================================================
 
       _startTimers();
     } catch (error) {
