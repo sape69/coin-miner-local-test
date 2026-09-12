@@ -1,24 +1,34 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 // ============================================================
 // 🐱 STELLURIINI LOGIN PAGE
 // ============================================================
 //
-// VAIHE 6
+// VAIHE 7
 //
-// Kirjautumissivu.
+// OIKEA FIREBASE-KIRJAUTUMINEN
 //
-// TÄSSÄ VERSIOSSA:
+// Ketju:
+//
+// LoginPage
+//     ↓
+// FirebaseAuth.signInWithEmailAndPassword()
+//     ↓
+// onnistunut kirjautuminen
+//     ↓
+// AuthGate huomaa kirjautumisen
+//     ↓
+// HomePage
+//
+// Lisäksi:
 //
 // - Sähköpostikenttä toimii
 // - Salasanakenttä toimii
 // - Salasanan näyttäminen/piilottaminen toimii
-// - Kirjautumispainike toimii testitilassa
-// - Sivu on vieritettävä näppäimistön kanssa
-//
-// Kun näppäimistö avautuu, käyttäjä voi liu'uttaa sivua
-// ylöspäin ja päästä helposti salasanakenttään sekä
-// kirjautumispainikkeeseen.
+// - Sivua voi vierittää näppäimistön kanssa
+// - Kirjautumisvirheet näytetään käyttäjälle
+// - Kirjautumisen aikana nappi lukitaan
 //
 // ============================================================
 
@@ -38,6 +48,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   // ==========================================================
+  // FIREBASE AUTH
+  // ==========================================================
+
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance;
+
+  // ==========================================================
   // CONTROLLERS
   // ==========================================================
 
@@ -53,6 +70,8 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
 
+  bool _loginLoading = false;
+
   // ==========================================================
   // DISPOSE
   // ==========================================================
@@ -61,51 +80,193 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
   // ==========================================================
-  // TEST LOGIN
+  // FIREBASE LOGIN
   // ==========================================================
 
-  void _testLogin() {
+  Future<void> _login() async {
+    if (_loginLoading) {
+      return;
+    }
+
     final String email =
         _emailController.text.trim();
 
     final String password =
         _passwordController.text;
 
+    // ========================================================
+    // EMAIL CHECK
+    // ========================================================
+
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Kirjoita sähköpostiosoite.',
-          ),
-        ),
+      _showMessage(
+        'Kirjoita sähköpostiosoite.',
       );
 
       return;
     }
+
+    // ========================================================
+    // PASSWORD CHECK
+    // ========================================================
 
     if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Kirjoita salasana.',
-          ),
-        ),
+      _showMessage(
+        'Kirjoita salasana.',
       );
 
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
+    // ========================================================
+    // START LOGIN
+    // ========================================================
+
+    setState(() {
+      _loginLoading = true;
+    });
+
+    try {
+      // ======================================================
+      // FIREBASE EMAIL/PASSWORD LOGIN
+      // ======================================================
+
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // ======================================================
+      // SUCCESS
+      // ======================================================
+      //
+      // AuthGate huomaa Firebase Authentication -tilan
+      // muuttuneen ja avaa HomePagen automaattisesti.
+      //
+      // Emme tee tässä Navigator.push()-kutsua.
+      //
+      // ======================================================
+
+      if (mounted) {
+        _showMessage(
           'Kirjautuminen onnistui!',
+        );
+      }
+    } on FirebaseAuthException catch (error) {
+      // ======================================================
+      // FIREBASE ERROR
+      // ======================================================
+
+      debugPrint(
+        'Firebase login error: '
+        '${error.code} - ${error.message}',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        _firebaseErrorMessage(
+          error.code,
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      // ======================================================
+      // UNKNOWN ERROR
+      // ======================================================
+
+      debugPrint(
+        'Login error: $error',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Kirjautuminen epäonnistui. Yritä uudelleen.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loginLoading = false;
+        });
+      }
+    }
+  }
+
+  // ==========================================================
+  // FIREBASE ERROR MESSAGES
+  // ==========================================================
+
+  String _firebaseErrorMessage(
+    String code,
+  ) {
+    switch (code) {
+      case 'invalid-email':
+        return 'Sähköpostiosoite ei ole kelvollinen.';
+
+      case 'user-disabled':
+        return 'Tämä käyttäjätili on poistettu käytöstä.';
+
+      case 'user-not-found':
+        return 'Käyttäjää ei löytynyt.';
+
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Sähköposti tai salasana on väärin.';
+
+      case 'too-many-requests':
+        return 'Liian monta kirjautumisyritystä. Yritä myöhemmin uudelleen.';
+
+      case 'network-request-failed':
+        return 'Verkkoyhteys epäonnistui. Tarkista internetyhteys.';
+
+      case 'operation-not-allowed':
+        return 'Sähköposti- ja salasanakirjautuminen ei ole käytössä.';
+
+      default:
+        return 'Kirjautuminen epäonnistui. Yritä uudelleen.';
+    }
+  }
+
+  // ==========================================================
+  // MESSAGE
+  // ==========================================================
+
+  void _showMessage(
+    String message,
+  ) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+          ),
+          behavior:
+              SnackBarBehavior.floating,
+          backgroundColor:
+              const Color(0xFF21113B),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              14,
+            ),
+          ),
+        ),
+      );
   }
 
   // ==========================================================
@@ -118,17 +279,8 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor:
           const Color(0xFF120B24),
 
-      // ========================================================
-      // KEYBOARD
-      // ========================================================
-      //
-      // Kun näppäimistö avautuu, Scaffold pienentää käytettävissä
-      // olevaa aluetta.
-      //
-      // SingleChildScrollView mahdollistaa sen jälkeen
-      // sisällön vierittämisen.
-      //
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset:
+          true,
 
       body: SafeArea(
         child: LayoutBuilder(
@@ -138,13 +290,16 @@ class _LoginPageState extends State<LoginPage> {
           ) {
             return SingleChildScrollView(
               keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
+                  ScrollViewKeyboardDismissBehavior
+                      .onDrag,
 
               physics:
                   const AlwaysScrollableScrollPhysics(),
 
               padding:
-                  const EdgeInsets.all(24),
+                  const EdgeInsets.all(
+                24,
+              ),
 
               child: ConstrainedBox(
                 constraints:
@@ -282,8 +437,11 @@ class _LoginPageState extends State<LoginPage> {
                         controller:
                             _emailController,
 
-                        enabled: true,
-                        readOnly: false,
+                        enabled:
+                            !_loginLoading,
+
+                        readOnly:
+                            false,
 
                         keyboardType:
                             TextInputType
@@ -291,6 +449,15 @@ class _LoginPageState extends State<LoginPage> {
 
                         textInputAction:
                             TextInputAction.next,
+
+                        onSubmitted:
+                            (_) {
+                          if (!_loginLoading) {
+                            FocusScope.of(
+                              context,
+                            ).nextFocus();
+                          }
+                        },
 
                         style:
                             const TextStyle(
@@ -323,7 +490,8 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
 
-                          filled: true,
+                          filled:
+                              true,
 
                           fillColor:
                               const Color(
@@ -378,8 +546,11 @@ class _LoginPageState extends State<LoginPage> {
                         controller:
                             _passwordController,
 
-                        enabled: true,
-                        readOnly: false,
+                        enabled:
+                            !_loginLoading,
+
+                        readOnly:
+                            false,
 
                         obscureText:
                             _obscurePassword,
@@ -390,6 +561,13 @@ class _LoginPageState extends State<LoginPage> {
 
                         textInputAction:
                             TextInputAction.done,
+
+                        onSubmitted:
+                            (_) {
+                          if (!_loginLoading) {
+                            _login();
+                          }
+                        },
 
                         style:
                             const TextStyle(
@@ -424,12 +602,15 @@ class _LoginPageState extends State<LoginPage> {
 
                           suffixIcon:
                               IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword =
-                                    !_obscurePassword;
-                              });
-                            },
+                            onPressed:
+                                _loginLoading
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _obscurePassword =
+                                              !_obscurePassword;
+                                        });
+                                      },
 
                             icon:
                                 Icon(
@@ -446,7 +627,8 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
 
-                          filled: true,
+                          filled:
+                              true,
 
                           fillColor:
                               const Color(
@@ -506,7 +688,9 @@ class _LoginPageState extends State<LoginPage> {
                         child:
                             ElevatedButton(
                           onPressed:
-                              _testLogin,
+                              _loginLoading
+                                  ? null
+                                  : _login,
 
                           style:
                               ElevatedButton
@@ -521,7 +705,18 @@ class _LoginPageState extends State<LoginPage> {
                               0xFF120B24,
                             ),
 
-                            elevation: 0,
+                            disabledBackgroundColor:
+                                const Color(
+                              0xFF6F5A8C,
+                            ),
+
+                            disabledForegroundColor:
+                                const Color(
+                              0xFFD9D0E5,
+                            ),
+
+                            elevation:
+                                0,
 
                             shape:
                                 RoundedRectangleBorder(
@@ -534,16 +729,32 @@ class _LoginPageState extends State<LoginPage> {
                           ),
 
                           child:
-                              const Text(
-                            'KIRJAUDU SISÄÄN',
+                              _loginLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child:
+                                          CircularProgressIndicator(
+                                        strokeWidth:
+                                            2.5,
+                                        color:
+                                            Color(
+                                          0xFF120B24,
+                                        ),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'KIRJAUDU SISÄÄN',
 
-                            style:
-                                TextStyle(
-                              fontSize: 17,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
+                                      style:
+                                          TextStyle(
+                                        fontSize:
+                                            17,
+                                        fontWeight:
+                                            FontWeight
+                                                .bold,
+                                      ),
+                                    ),
                         ),
                       ),
 
@@ -572,13 +783,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      // ==================================================
-                      // EXTRA SPACE
-                      // ==================================================
-                      //
-                      // Tämä antaa hieman lisää vieritysvaraa silloin,
-                      // kun Androidin näppäimistö on auki.
-                      //
                       const SizedBox(
                         height: 80,
                       ),
