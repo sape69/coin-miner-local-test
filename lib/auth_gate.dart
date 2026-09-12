@@ -1,21 +1,26 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'pages/home_page.dart';
+import 'pages/home/home_page.dart';
 import 'pages/login_page.dart';
 
 // ============================================================
 // 🐱 STELLURIINI AUTH GATE
 // ============================================================
 //
-// VAIHE 4
+// Tässä vaiheessa:
+// - LoginPage toimii
+// - HomePage on olemassa
+// - HomePage sijaitsee kansiossa pages/home/
+// - Firebase Auth voidaan ottaa käyttöön seuraavassa vaiheessa
 //
-// AuthGate tarkistaa Firebase Authentication -tilan.
+// Tärkeä korjaus:
+// HomePage sijaitsee:
 //
-// Ei vielä:
-// - AdMob
-// - Firestore
-// - Cloud Functions
+// lib/pages/home/home_page.dart
+//
+// eikä:
+//
+// lib/pages/home_page.dart
 //
 // ============================================================
 
@@ -31,49 +36,20 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    // ==========================================================
+    // VÄLIAIKAINEN TESTITILA
+    // ==========================================================
+    //
+    // Kirjautuminen on juuri testattu onnistuneesti.
+    //
+    // Seuraavassa vaiheessa voidaan palauttaa FirebaseAuth-
+    // kuuntelu tähän kohtaan.
+    //
+    // ==========================================================
 
-      builder: (
-        BuildContext context,
-        AsyncSnapshot<User?> snapshot,
-      ) {
-        // ========================================================
-        // FIREBASE AUTH TARKISTAA KIRJAUTUMISTILAN
-        // ========================================================
-
-        if (snapshot.connectionState ==
-            ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF120B24),
-            body: Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFB58CFF),
-              ),
-            ),
-          );
-        }
-
-        // ========================================================
-        // KIRJAUTUNUT
-        // ========================================================
-
-        if (snapshot.hasData) {
-          return HomePage(
-            languageCode: languageCode,
-            changeLanguage: changeLanguage,
-          );
-        }
-
-        // ========================================================
-        // EI KIRJAUTUNUT
-        // ========================================================
-
-        return LoginPage(
-          languageCode: languageCode,
-          changeLanguage: changeLanguage,
-        );
-      },
+    return HomePage(
+      languageCode: languageCode,
+      changeLanguage: changeLanguage,
     );
   }
 }
