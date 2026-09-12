@@ -504,4 +504,343 @@ const Map<String, String> esTranslations = {
       'Un posible sistema futuro de retiros se diseñará por separado y sus condiciones se anunciarán antes de su implementación.',
 
   'plannedWithdrawalModel':
-      'Un posible
+      'Un posible modelo de retiros se definirá por separado antes de implementar la función.',
+
+  'developmentPrinciples':
+      'Principios de desarrollo',
+
+  'roadmapCommunity':
+      'Comunidad',
+
+  'roadmapCommunityDescription':
+      'La comunidad está en el corazón del desarrollo de Stelluriini. Los comentarios y las ideas de los usuarios ayudan a orientar el desarrollo futuro.',
+
+  'roadmapStella':
+      'Stella',
+
+  'roadmapStellaDescription':
+      'Stella seguirá siendo la mascota visual de Stelluriini y una parte importante de la experiencia del usuario.',
+
+  'roadmapSecurity':
+      'Seguridad',
+
+  'roadmapSecurityDescription':
+      'La seguridad, la infraestructura del servidor y la fiabilidad de la aplicación se mejorarán continuamente.',
+
+  'roadmapInnovation':
+      'Innovación',
+
+  'roadmapInnovationDescription':
+      'Se explorarán nuevos casos de uso, funciones y tecnologías a medida que el proyecto avance.',
+
+  'roadmapLongTermGrowth':
+      'Crecimiento a largo plazo',
+
+  'roadmapLongTermGrowthDescription':
+      'El objetivo es construir un ecosistema Stelluriini sostenible y en evolución gradual.',
+
+  'roadmapNotice':
+      'Aviso importante',
+
+  'roadmapNoticeDescription':
+      'La hoja de ruta describe la dirección de desarrollo prevista de Stelluriini. Las fases, funciones y plazos pueden cambiar durante el desarrollo del proyecto.',
+
+  'roadmapStellaJourney':
+      'El viaje de Stella',
+
+  'roadmapEcosystemDescription':
+      'El ecosistema Stelluriini se desarrollará paso a paso en torno a la comunidad, la aplicación y el token STL.',
+
+  'roadmapStellaIntro':
+      'Stella acompañará a Stelluriini durante cada etapa de su desarrollo.',
+
+  'roadmapFooter':
+      'STELLA • STELLURIINI • STL • SOLANA',
+
+  // ============================================================
+  // 🪙 TOKEN
+  // ============================================================
+
+  'tokenTitle':
+      'Stelluriini STL',
+
+  'tokenSubtitle':
+      'El token oficial de Stelluriini en la red Solana.',
+
+  'tokenName':
+      'Nombre',
+
+  'tokenSymbol':
+      'Símbolo',
+
+  'tokenBlockchain':
+      'Blockchain',
+
+  'tokenSupply':
+      'Suministro total',
+
+  'tokenMint':
+      'Dirección Mint',
+
+  'tokenDescription':
+      'Stelluriini es un token impulsado por la comunidad en la blockchain de Solana.',
+
+  'solana':
+      'Solana',
+
+  'copyAddress':
+      'Copiar dirección',
+
+  'addressCopied':
+      'Dirección copiada.',
+
+  'solanaCommunityToken':
+      'Token comunitario de Solana',
+
+  'tokenInformation':
+      'Información del token',
+
+  'name':
+      'Nombre',
+
+  'symbol':
+      'Símbolo',
+
+  'blockchain':
+      'Blockchain',
+
+  'decimals':
+      'Decimales',
+
+  'officialMintAddress':
+      'Dirección Mint oficial',
+
+  'officialMintDescription':
+      'Esta es la dirección Mint oficial del token Stelluriini STL.',
+
+  'mintAddressCopied':
+      'Dirección Mint copiada.',
+
+  'copyMintAddress':
+      'Copiar dirección Mint',
+
+  'viewOnSolscan':
+      'Ver en Solscan',
+
+  'couldNotOpenSolscan':
+      'No se pudo abrir Solscan.',
+
+  'communityCuriositySolana':
+      'Comunidad • Curiosidad • Solana',
+
+  // ============================================================
+  // 📊 TOKENOMICS
+  // ============================================================
+
+  'tokenomicsTitle':
+      'Tokenómica de STL',
+
+  'tokenomicsSubtitle':
+      'Información básica y estructura económica del token Stelluriini STL.',
+
+  'tokenomicsOverview':
+      'Resumen de Tokenómica',
+
+  'tokenomicsOverviewDescription':
+      'La estructura de tokenómica de Stelluriini describe la asignación prevista del suministro total de STL para recompensas de la comunidad, liquidez, crecimiento del ecosistema, desarrollo y marketing.',
+
+  'officialStlTokenomics':
+      'Tokenómica oficial de STL',
+
+  'tokenomicsTotalSupply':
+      'SUMINISTRO TOTAL',
+
+  'totalSupply':
+      'Suministro total',
+
+  'tokenDistribution':
+      'Distribución de tokens',
+
+  'tokenAllocation':
+      'Asignación de tokens',
+
+  'communityRewards':
+      'Comunidad y recompensas',
+
+  'liquidity':
+      'Liquidez',
+
+  'ecosystem':
+      'Ecosistema',
+
+  'development':
+      'Desarrollo',
+
+  'marketing':
+      'Marketing',
+
+  'stlTokens':
+      'TOKENS STL',
+
+  'communityAllocation':
+      'Comunidad',
+
+  'ecosystemAllocation':
+      'Ecosistema',
+
+  'developmentAllocation':
+      'Desarrollo',
+
+  'liquidityAllocation':
+      'Liquidez',
+
+  'marketingAllocation':
+      'Marketing',
+
+  'totalSupplyDescription':
+      'El suministro total de Stelluriini es de 17.602.539.062 STL. La asignación mostrada a continuación representa el suministro total planificado.',
+
+  'communityRewardsDescription':
+      'Reservado para iniciativas comunitarias, recompensas de usuarios, programas de participación y futuras actividades impulsadas por la comunidad.',
+
+  'liquidityDescription':
+      'Reservado para apoyar la liquidez y ayudar a construir un entorno de mercado más saludable y accesible para STL.',
+
+  'ecosystemDescription':
+      'Reservado para el crecimiento futuro del ecosistema, aplicaciones, juegos, integraciones y nuevas experiencias digitales.',
+
+  'developmentDescription':
+      'Reservado para el desarrollo técnico, desarrollo de aplicaciones, infraestructura y futuras mejoras.',
+
+  'marketingDescription':
+      'Reservado para marketing, aumento de la visibilidad del proyecto, crecimiento de la comunidad y actividades promocionales.',
+
+  'allocationVerification':
+      'Verificación de la asignación de tokens',
+
+  'totalAllocated':
+      'Total asignado',
+
+  'allocationVerified':
+      'Asignación verificada: el total asignado coincide con el suministro total de STL.',
+
+  'allocationRequiresVerification':
+      'La asignación de tokens requiere verificación.',
+
+  'allocationPrinciples':
+      'Principios de asignación',
+
+  'allocationPrinciplesDescription':
+      'La asignación de tokens está diseñada para apoyar a la comunidad, el crecimiento del ecosistema y el desarrollo a largo plazo de Stelluriini.',
+
+  'communityFirst':
+      'La comunidad primero',
+
+  'communityFirstDescription':
+      'Una parte significativa del suministro planificado está reservada para iniciativas y recompensas de la comunidad.',
+
+  'longTermGrowth':
+      'Crecimiento a largo plazo',
+
+  'longTermGrowthDescription':
+      'Las partes reservadas para el ecosistema y el desarrollo están destinadas a apoyar la expansión futura y nuevos proyectos.',
+
+  'accessibility':
+      'Accesibilidad',
+
+  'accessibilityDescription':
+      'La parte reservada para liquidez está destinada a apoyar la accesibilidad del token STL y la participación en el mercado.',
+
+  'stellaStlCommunity':
+      'Comunidad de Stella y STL',
+
+  'communityCuriosityDevelopmentSolana':
+      'Comunidad • Curiosidad • Desarrollo • Solana',
+
+  'importantNotice':
+      'Aviso importante',
+
+  'tokenomicsImportantNotice':
+      'La asignación de tokens describe el modelo planificado del ecosistema Stelluriini. Nada de lo indicado en esta página debe considerarse asesoramiento financiero, de inversión o legal.',
+
+  'stellaStelluriiniStlSolana':
+      'STELLA • STELLURIINI • STL • SOLANA',
+
+  'tokenomicsImportant':
+      'Las asignaciones exactas de tokens pueden actualizarse durante el desarrollo del proyecto. Todos los cambios deben comunicarse de forma transparente a la comunidad.',
+
+  // ============================================================
+  // 📄 WHITEPAPER
+  // ============================================================
+
+  'whitepaperTitle':
+      'Whitepaper de Stelluriini',
+
+  'whitepaperSubtitle':
+      'La visión, tecnología y dirección futura del proyecto Stelluriini.',
+
+  'whitepaperIntroduction':
+      'Introducción',
+
+  'whitepaperVision':
+      'Visión',
+
+  'whitepaperMission':
+      'Misión',
+
+  'whitepaperTechnology':
+      'Tecnología',
+
+  'whitepaperMining':
+      'Sistema de minería',
+
+  'whitepaperStella':
+      'Stella',
+
+  'whitepaperToken':
+      'Token STL',
+
+  'whitepaperTokenomics':
+      'Tokenómica',
+
+  'whitepaperCommunity':
+      'Comunidad',
+
+  'whitepaperRoadmap':
+      'Hoja de ruta',
+
+  'whitepaperSecurity':
+      'Seguridad',
+
+  'whitepaperFuture':
+      'Futuro',
+
+  'whitepaperDisclaimer':
+      'Este whitepaper es una descripción informativa del proyecto Stelluriini. Las funciones y los planes pueden cambiar durante el desarrollo.',
+
+  // ============================================================
+  // ⚠️ IMPORTANT INFORMATION
+  // ============================================================
+
+  'virtualPointsNotice':
+      'Las recompensas STL mostradas en la aplicación son actualmente puntos virtuales dentro de la aplicación.',
+
+  'virtualPointsInformation':
+      'Las recompensas STL mostradas en la aplicación representan actualmente puntos virtuales dentro de la aplicación. No están conectadas automáticamente a un sistema de retiro de criptomonedas.',
+
+  'withdrawalsDisabled':
+      'Los retiros no están disponibles actualmente.',
+
+  // ============================================================
+  // 🐾 FOOTER
+  // ============================================================
+
+  'footerTagline':
+      'Minando juntos por el futuro de Stelluriini.',
+
+  'footerToken':
+      'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
+};
