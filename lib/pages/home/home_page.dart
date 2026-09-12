@@ -91,6 +91,12 @@ class _HomePageState extends State<HomePage>
   );
 
   // ============================================================
+  // 👤 USERNAME
+  // ============================================================
+
+  String _username = '';
+
+  // ============================================================
   // 📺 REWARDED AD
   // ============================================================
 
@@ -192,7 +198,28 @@ class _HomePageState extends State<HomePage>
       ),
     );
 
+    _loadUsername();
+
     _initialize();
+  }
+
+  // ============================================================
+  // 👤 LOAD USERNAME
+  // ============================================================
+
+  void _loadUsername() {
+    final User? user = _auth.currentUser;
+
+    final String displayName =
+        user?.displayName?.trim() ?? '';
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _username = displayName;
+    });
   }
 
   // ============================================================
@@ -202,6 +229,8 @@ class _HomePageState extends State<HomePage>
   Future<void> _initialize() async {
     try {
       await _ensureSignedIn();
+
+      _loadUsername();
 
       await _loadMiningStatus();
 
@@ -1625,6 +1654,31 @@ class _HomePageState extends State<HomePage>
                   fontSize: 14,
                 ),
               ),
+
+              // ==================================================
+              // 👤 USERNAME
+              // ==================================================
+
+              if (_username.isNotEmpty) ...[
+                const SizedBox(
+                  height: 4,
+                ),
+
+                Text(
+                  '👋 $_username',
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(
+                    color:
+                        goldColor,
+                    fontSize: 14,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
