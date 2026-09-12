@@ -196,12 +196,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // 👤 LOAD USERNAME
   // ============================================================
-  //
-  // Firebase may notify AuthGate about the new login before
-  // displayName has finished propagating locally.
-  //
-  // Therefore we explicitly reload the Firebase user first.
-  // ============================================================
 
   Future<void> _loadUsername() async {
     try {
@@ -239,20 +233,135 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 🚪 LOGOUT
+  // ============================================================
+
+  Future<void> _logout() async {
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pop();
+
+    await Future<void>.delayed(
+      Duration.zero,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final bool? confirmed =
+        await showDialog<bool>(
+      context: context,
+      builder: (
+        BuildContext dialogContext,
+      ) {
+        return AlertDialog(
+          backgroundColor: cardColor,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              24,
+            ),
+          ),
+          title: const Text(
+            '🚪 Kirjaudu ulos',
+            style:
+                TextStyle(
+              color: Colors.white,
+              fontWeight:
+                  FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Haluatko varmasti kirjautua ulos Stelluriinista?',
+            style:
+                TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(false);
+              },
+              child: const Text(
+                'PERUUTA',
+                style:
+                    TextStyle(
+                  color: pinkColor,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(true);
+              },
+              style:
+                  ElevatedButton.styleFrom(
+                backgroundColor:
+                    accentColor,
+                foregroundColor:
+                    Colors.white,
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    14,
+                  ),
+                ),
+              ),
+              child: const Text(
+                'KIRJAUDU ULOS',
+                style:
+                    TextStyle(
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await _auth.signOut();
+    } catch (error) {
+      debugPrint(
+        'Logout error: $error',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Uloskirjautuminen epäonnistui.',
+      );
+    }
+  }
+
+  // ============================================================
   // INITIALIZE
   // ============================================================
 
   Future<void> _initialize() async {
     try {
-      // ========================================================
-      // USERNAME MUST BE LOADED FIRST
-      // ========================================================
-
       await _loadUsername();
-
-      // ========================================================
-      // MINING STATUS
-      // ========================================================
 
       await _loadMiningStatus();
 
@@ -260,19 +369,11 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      // ========================================================
-      // REWARDED AD
-      // ========================================================
-
       await _loadRewardedAd();
 
       if (!mounted) {
         return;
       }
-
-      // ========================================================
-      // TIMERS
-      // ========================================================
 
       _startTimers();
     } catch (error) {
@@ -1494,6 +1595,9 @@ class _HomePageState extends State<HomePage>
             ),
           );
         },
+
+        onLogoutPressed:
+            _logout,
       ),
 
       body: SafeArea(
