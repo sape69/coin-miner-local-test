@@ -844,8 +844,8 @@ const Map<String, String> enTranslations = {
   'withdrawalsDisabled':
       'Withdrawals are not currently available.',
 
-  'futureWithdrawals':
-      'A possible future withdrawal system will be developed separately. Its terms will be announced before implementation.',
+  'plannedWithdrawalModel':
+      'A possible withdrawal model will be defined separately before the feature is implemented.',
 
   // ============================================================
   // 🐾 FOOTER
