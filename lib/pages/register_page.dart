@@ -14,10 +14,11 @@ import '../widgets/cat_avatar.dart';
 // - käyttää Stelluriinin Stella-teemaa
 // - käyttää keskitettyä localization.dart-järjestelmää
 // - tukee Firebase Email/Password -rekisteröintiä
+// - pyytää käyttäjänimen
+// - tallentaa käyttäjänimen Firebase Auth displayName -kenttään
 // - tarkistaa salasanan vahvistuksen
 // - käsittelee yleisimmät Firebase Auth -virheet
-// - tukee kaikkia 8 sovelluksen kieltä
-// - tallentaa kielivalinnan SharedPreferencesin kautta
+// - tukee sovelluksen kielijärjestelmää
 //
 // ============================================================
 
@@ -41,6 +42,9 @@ class RegisterPage extends StatefulWidget {
 // ============================================================
 
 class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController usernameController =
+      TextEditingController();
+
   final TextEditingController emailController =
       TextEditingController();
 
@@ -98,6 +102,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
+    usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmController.dispose();
@@ -138,6 +143,9 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
 
   Future<void> _register() async {
+    final String username =
+        usernameController.text.trim();
+
     final String email =
         emailController.text.trim();
 
@@ -151,11 +159,24 @@ class _RegisterPageState extends State<RegisterPage> {
     // EMPTY FIELDS
     // --------------------------------------------------------
 
-    if (email.isEmpty ||
+    if (username.isEmpty ||
+        email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
       _message(
         _t('loginFillFields'),
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------------
+    // USERNAME LENGTH
+    // --------------------------------------------------------
+
+    if (username.length < 3) {
+      _message(
+        'Käyttäjänimen täytyy sisältää vähintään 3 merkkiä.',
       );
 
       return;
@@ -190,11 +211,28 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
+      // ------------------------------------------------------
+      // CREATE FIREBASE ACCOUNT
+      // ------------------------------------------------------
+
+      final UserCredential credential =
+          await FirebaseAuth.instance
+              .createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // ------------------------------------------------------
+      // SAVE USERNAME TO FIREBASE AUTH PROFILE
+      // ------------------------------------------------------
+
+      final User? user = credential.user;
+
+      if (user != null) {
+        await user.updateDisplayName(username);
+
+        await user.reload();
+      }
 
       if (!mounted) {
         return;
@@ -521,6 +559,91 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
 
                     // ==================================================
+                    // 👤 USERNAME
+                    // ==================================================
+
+                    TextField(
+                      controller:
+                          usernameController,
+                      enabled:
+                          !loading,
+                      keyboardType:
+                          TextInputType.text,
+                      textInputAction:
+                          TextInputAction.next,
+                      textCapitalization:
+                          TextCapitalization.words,
+                      maxLength: 30,
+                      style:
+                          const TextStyle(
+                        color:
+                            primaryTextColor,
+                      ),
+                      decoration:
+                          InputDecoration(
+                        labelText:
+                            'Käyttäjänimi',
+                        hintText:
+                            'Esimerkiksi Sape',
+                        prefixIcon:
+                            const Icon(
+                          Icons
+                              .person_outline_rounded,
+                        ),
+                        counterText: '',
+                        filled: true,
+                        fillColor:
+                            const Color(
+                          0xFF18102D,
+                        ),
+                        border:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              BorderSide.none,
+                        ),
+                        enabledBorder:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              BorderSide(
+                            color:
+                                accentColor
+                                    .withValues(
+                              alpha: 0.25,
+                            ),
+                          ),
+                        ),
+                        focusedBorder:
+                            OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            16,
+                          ),
+                          borderSide:
+                              const BorderSide(
+                            color:
+                                accentColor,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    // ==================================================
                     // EMAIL
                     // ==================================================
 
@@ -530,8 +653,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       enabled:
                           !loading,
                       keyboardType:
-                          TextInputType
-                              .emailAddress,
+                          TextInputType.emailAddress,
                       textInputAction:
                           TextInputAction.next,
                       style:
