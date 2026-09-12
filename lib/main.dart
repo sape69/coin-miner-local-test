@@ -1,44 +1,23 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'pages/login_page.dart';
+import 'auth_gate.dart';
 
 // ============================================================
-// 🐱 STELLURIINI - FIREBASE LOGIN TEST
+// 🐱 STELLURIINI
 // ============================================================
 //
 // VAIHE 3
 //
-// Tässä vaiheessa käytössä:
-// - Firebase Core
-// - Firebase Authentication
-// - LoginPage
+// LoginPage on testattu toimivaksi.
+// AuthGate otetaan nyt käyttöön.
 //
-// Ei vielä:
-// - AdMob
-// - Firestore
-// - Cloud Functions
-// - AuthGate
-// - SharedPreferences
+// AuthGate ohjaa tällä hetkellä suoraan HomePageen.
+// Firebase Auth palautetaan myöhemmin AuthGateen.
 //
 // ============================================================
 
-Future<void> main() async {
-  // ----------------------------------------------------------
-  // Flutter alustetaan ensin.
-  // ----------------------------------------------------------
-
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ----------------------------------------------------------
-  // Firebase alustetaan ennen LoginPagea.
-  // ----------------------------------------------------------
-
-  await Firebase.initializeApp();
-
-  // ----------------------------------------------------------
-  // Käynnistetään sovellus.
-  // ----------------------------------------------------------
 
   runApp(
     const StelluriiniApp(),
@@ -49,10 +28,39 @@ Future<void> main() async {
 // APP
 // ============================================================
 
-class StelluriiniApp extends StatelessWidget {
+class StelluriiniApp extends StatefulWidget {
   const StelluriiniApp({
     super.key,
   });
+
+  @override
+  State<StelluriiniApp> createState() =>
+      _StelluriiniAppState();
+}
+
+class _StelluriiniAppState
+    extends State<StelluriiniApp> {
+  // ==========================================================
+  // LANGUAGE
+  // ==========================================================
+
+  String _languageCode = 'fi';
+
+  Future<void> _changeLanguage(
+    String language,
+  ) async {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _languageCode = language;
+    });
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -82,23 +90,19 @@ class StelluriiniApp extends StatelessWidget {
 
           secondary:
               const Color(0xFFFFB7E8),
-
-          tertiary:
-              const Color(0xFFFFD166),
         ),
       ),
 
       // ========================================================
-      // LOGIN PAGE
+      // AUTH GATE
       // ========================================================
 
-      home: LoginPage(
-        languageCode: 'fi',
+      home: AuthGate(
+        languageCode:
+            _languageCode,
 
         changeLanguage:
-            (String language) async {
-          // Kielenvaihto palautetaan myöhemmin.
-        },
+            _changeLanguage,
       ),
     );
   }
