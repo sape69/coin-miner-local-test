@@ -14,8 +14,10 @@ const Map<String, String> jaTranslations = {
   'whitepaper': 'ホワイトペーパー',
   'whitePaper': 'ホワイトペーパー',
   'language': '言語',
+  'selectLanguage': '言語を選択',
   'logout': 'ログアウト',
   'menu': 'メニュー',
+  'ready': '準備完了',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -486,6 +488,9 @@ const Map<String, String> jaTranslations = {
   'roadmapSubtitle':
       'Stelluriiniの開発ロードマップ。一歩ずつ未来へ進みます。',
 
+  'roadmapJourney':
+      'Stelluriiniの歩み',
+
   'roadmapPhase1':
       'フェーズ1 – 基盤',
 
@@ -531,6 +536,30 @@ const Map<String, String> jaTranslations = {
   'roadmapPhase5Description':
       '新機能、将来的なパートナーシップ、コミュニティからのアイデアを探求します。',
 
+  'roadmapPhase6':
+      'フェーズ6 – 拡張',
+
+  'roadmapPhase6Title':
+      'Stelluriiniをさらに広げる',
+
+  'roadmapPhase6Description':
+      'Stelluriiniエコシステム、統合、STLトークンのユーティリティ、そしてコミュニティに提供される新しい可能性をさらに発展させます。',
+
+  'roadmapStatusCompleted':
+      '完了',
+
+  'roadmapStatusCurrent':
+      '進行中',
+
+  'roadmapStatusPlanned':
+      '予定',
+
+  'roadmapDevelopmentPrinciples':
+      '開発の原則',
+
+  'plannedWithdrawalModel':
+      '将来的な出金モデルを導入する場合は、個別に設計し、実装前にコミュニティへ透明性を持って公開します。',
+
   // ============================================================
   // 🪙 TOKEN
   // ============================================================
@@ -569,6 +598,46 @@ const Map<String, String> jaTranslations = {
       'アドレスをコピーしました。',
 
   // ============================================================
+  // 🪙 SOLANA COMMUNITY TOKEN
+  // ============================================================
+
+  'solanaCommunityToken':
+      'Solanaコミュニティトークン',
+
+  'tokenInformation':
+      'トークン情報',
+
+  'name':
+      '名前',
+
+  'symbol':
+      'シンボル',
+
+  'blockchain':
+      'ブロックチェーン',
+
+  'decimals':
+      '小数点桁数',
+
+  'officialMintAddress':
+      '公式Mintアドレス',
+
+  'officialMintDescription':
+      'このアドレスはSolanaブロックチェーン上の公式STLトークンを識別します。',
+
+  'mintAddressCopied':
+      'Mintアドレスをコピーしました。',
+
+  'copyMintAddress':
+      'MINTアドレスをコピー',
+
+  'viewOnSolscan':
+      'SOLSCANで見る',
+
+  'couldNotOpenSolscan':
+      'Solscanを開けませんでした。',
+
+  // ============================================================
   // 📊 TOKENOMICS
   // ============================================================
 
@@ -577,30 +646,6 @@ const Map<String, String> jaTranslations = {
 
   'tokenomicsSubtitle':
       'Stelluriini STLトークンの基本情報とトークンエコノミー。',
-
-  'totalSupply':
-      '総供給量',
-
-  'tokenAllocation':
-      'トークン配分',
-
-  'communityAllocation':
-      'コミュニティ',
-
-  'ecosystemAllocation':
-      'エコシステム',
-
-  'developmentAllocation':
-      '開発',
-
-  'liquidityAllocation':
-      '流動性',
-
-  'marketingAllocation':
-      'マーケティング',
-
-  'tokenomicsImportant':
-      '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されるべきです。',
 
   'tokenomicsOverview':
       'トークノミクス概要',
@@ -614,20 +659,38 @@ const Map<String, String> jaTranslations = {
   'tokenomicsTotalSupply':
       '総供給量',
 
+  'totalSupply':
+      '総供給量',
+
   'tokenDistribution':
       'トークン配分',
+
+  'communityAllocation':
+      'コミュニティ',
 
   'communityRewards':
       'コミュニティと報酬',
 
+  'ecosystemAllocation':
+      'エコシステム',
+
   'ecosystem':
       'エコシステム',
+
+  'developmentAllocation':
+      '開発',
 
   'development':
       '開発',
 
+  'liquidityAllocation':
+      '流動性',
+
   'liquidity':
       '流動性',
+
+  'marketingAllocation':
+      'マーケティング',
 
   'marketing':
       'マーケティング',
@@ -695,6 +758,15 @@ const Map<String, String> jaTranslations = {
   'communityCuriosityDevelopmentSolana':
       'コミュニティ • 好奇心 • 開発 • Solana',
 
+  'communityCuriositySolana':
+      'コミュニティ • 好奇心 • Solana',
+
+  'tokenAllocation':
+      'トークン配分',
+
+  'tokenomicsImportant':
+      '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されるべきです。',
+
   'importantNotice':
       '重要なお知らせ',
 
@@ -760,6 +832,9 @@ const Map<String, String> jaTranslations = {
   'virtualPointsNotice':
       'アプリに表示されるSTL報酬は、現在アプリ内の仮想ポイントです。',
 
+  'virtualPointsInformation':
+      'アプリに表示されるSTLは現在、アプリ内の仮想ポイントを表しています。自動的に出金可能な暗号資産を意味するものではありません。',
+
   'withdrawalsDisabled':
       '現在、出金機能は利用できません。',
 
@@ -775,4 +850,7 @@ const Map<String, String> jaTranslations = {
 
   'footerToken':
       'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
 };
