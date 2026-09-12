@@ -1,25 +1,24 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 // ============================================================
 // 🐱 STELLURIINI LOGIN PAGE
 // ============================================================
 //
-// VAIHE 3 - FIREBASE AUTHENTICATION
+// VAIHE 6
 //
-// Tässä versiossa:
-// - Firebase Authentication
-// - Sähköposti + salasana
-// - Salasanan näyttäminen/piilottaminen
-// - Kirjautumisen lataustila
-// - Selkeät virheilmoitukset
+// Kirjautumissivu.
 //
-// Ei vielä:
-// - AdMob
-// - Firestore
-// - Cloud Functions
-// - Stack
-// - Overlay
+// TÄSSÄ VERSIOSSA:
+//
+// - Sähköpostikenttä toimii
+// - Salasanakenttä toimii
+// - Salasanan näyttäminen/piilottaminen toimii
+// - Kirjautumispainike toimii testitilassa
+// - Sivu on vieritettävä näppäimistön kanssa
+//
+// Kun näppäimistö avautuu, käyttäjä voi liu'uttaa sivua
+// ylöspäin ja päästä helposti salasanakenttään sekä
+// kirjautumispainikkeeseen.
 //
 // ============================================================
 
@@ -54,8 +53,6 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
 
-  bool _isLoading = false;
-
   // ==========================================================
   // DISPOSE
   // ==========================================================
@@ -64,175 +61,51 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-
     super.dispose();
   }
 
   // ==========================================================
-  // FIREBASE LOGIN
+  // TEST LOGIN
   // ==========================================================
 
-  Future<void> _login() async {
-    if (_isLoading) {
-      return;
-    }
+  void _testLogin() {
+    final String email =
+        _emailController.text.trim();
 
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    // ----------------------------------------------------------
-    // VALIDATE EMAIL
-    // ----------------------------------------------------------
+    final String password =
+        _passwordController.text;
 
     if (email.isEmpty) {
-      _showMessage(
-        'Kirjoita sähköpostiosoite.',
-      );
-
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // VALIDATE PASSWORD
-    // ----------------------------------------------------------
-
-    if (password.isEmpty) {
-      _showMessage(
-        'Kirjoita salasana.',
-      );
-
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // START LOADING
-    // ----------------------------------------------------------
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // --------------------------------------------------------
-      // FIREBASE AUTH
-      // --------------------------------------------------------
-
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      // --------------------------------------------------------
-      // SUCCESS
-      // --------------------------------------------------------
-
-      _showMessage(
-        'Kirjautuminen onnistui!',
-      );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      _showFirebaseError(e);
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      _showMessage(
-        'Kirjautuminen epäonnistui.',
-      );
-    } finally {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  // ==========================================================
-  // FIREBASE ERROR
-  // ==========================================================
-
-  void _showFirebaseError(
-    FirebaseAuthException error,
-  ) {
-    String message;
-
-    switch (error.code) {
-      case 'invalid-email':
-        message =
-            'Sähköpostiosoite ei ole kelvollinen.';
-        break;
-
-      case 'user-disabled':
-        message =
-            'Tämä käyttäjätili on poistettu käytöstä.';
-        break;
-
-      case 'user-not-found':
-        message =
-            'Käyttäjää ei löytynyt.';
-        break;
-
-      case 'wrong-password':
-      case 'invalid-credential':
-        message =
-            'Sähköposti tai salasana on väärin.';
-        break;
-
-      case 'too-many-requests':
-        message =
-            'Liian monta yritystä. Yritä myöhemmin uudelleen.';
-        break;
-
-      case 'network-request-failed':
-        message =
-            'Verkkoyhteys epäonnistui.';
-        break;
-
-      case 'operation-not-allowed':
-        message =
-            'Sähköposti- ja salasanakirjautuminen ei ole käytössä Firebase Consolessa.';
-        break;
-
-      default:
-        message =
-            'Kirjautuminen epäonnistui.\n'
-            'Virhe: ${error.code}';
-    }
-
-    _showMessage(message);
-  }
-
-  // ==========================================================
-  // MESSAGE
-  // ==========================================================
-
-  void _showMessage(
-    String message,
-  ) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text(
-            message,
+            'Kirjoita sähköpostiosoite.',
           ),
         ),
       );
+
+      return;
+    }
+
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Kirjoita salasana.',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Kirjautuminen onnistui!',
+        ),
+      ),
+    );
   }
 
   // ==========================================================
@@ -245,535 +118,476 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor:
           const Color(0xFF120B24),
 
-      resizeToAvoidBottomInset:
-          true,
+      // ========================================================
+      // KEYBOARD
+      // ========================================================
+      //
+      // Kun näppäimistö avautuu, Scaffold pienentää käytettävissä
+      // olevaa aluetta.
+      //
+      // SingleChildScrollView mahdollistaa sen jälkeen
+      // sisällön vierittämisen.
+      //
+      resizeToAvoidBottomInset: true,
 
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding:
-                const EdgeInsets.all(24),
+        child: LayoutBuilder(
+          builder: (
+            BuildContext context,
+            BoxConstraints constraints,
+          ) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
 
-            child: Column(
-              mainAxisSize:
-                  MainAxisSize.min,
+              physics:
+                  const AlwaysScrollableScrollPhysics(),
 
-              children: [
-                // ==================================================
-                // LOGO
-                // ==================================================
+              padding:
+                  const EdgeInsets.all(24),
 
-                Container(
-                  width: 100,
-                  height: 100,
-
-                  decoration:
-                      BoxDecoration(
-                    shape:
-                        BoxShape.circle,
-
-                    color:
-                        const Color(
-                      0xFF1A0E31,
-                    ),
-
-                    border:
-                        Border.all(
-                      color:
-                          const Color(
-                        0xFFB58CFF,
-                      ),
-                      width: 3,
-                    ),
-                  ),
-
-                  child:
-                      const Center(
-                    child:
-                        Icon(
-                      Icons.pets,
-
-                      color:
-                          Color(
-                        0xFFFFB7E8,
-                      ),
-
-                      size: 58,
-                    ),
-                  ),
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(
+                  minHeight:
+                      constraints.maxHeight -
+                          48,
                 ),
 
-                const SizedBox(
-                  height: 20,
-                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize:
+                        MainAxisSize.min,
 
-                // ==================================================
-                // TITLE
-                // ==================================================
+                    children: [
+                      // ==================================================
+                      // LOGO
+                      // ==================================================
 
-                const Text(
-                  'Stelluriini',
+                      Container(
+                        width: 100,
+                        height: 100,
 
-                  style:
-                      TextStyle(
-                    color:
-                        Color(
-                      0xFFF8F4FF,
-                    ),
+                        decoration:
+                            BoxDecoration(
+                          shape:
+                              BoxShape.circle,
 
-                    fontSize:
-                        36,
+                          color:
+                              const Color(
+                            0xFF1A0E31,
+                          ),
 
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 6,
-                ),
-
-                const Text(
-                  'STL',
-
-                  style:
-                      TextStyle(
-                    color:
-                        Color(
-                      0xFFFFD166,
-                    ),
-
-                    fontSize:
-                        21,
-
-                    fontWeight:
-                        FontWeight.bold,
-
-                    letterSpacing:
-                        4,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 30,
-                ),
-
-                // ==================================================
-                // LOGIN TITLE
-                // ==================================================
-
-                const Text(
-                  'KIRJAUDU SISÄÄN',
-
-                  textAlign:
-                      TextAlign.center,
-
-                  style:
-                      TextStyle(
-                    color:
-                        Color(
-                      0xFFF8F4FF,
-                    ),
-
-                    fontSize:
-                        25,
-
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 25,
-                ),
-
-                // ==================================================
-                // EMAIL
-                // ==================================================
-
-                TextField(
-                  controller:
-                      _emailController,
-
-                  enabled:
-                      !_isLoading,
-
-                  readOnly:
-                      false,
-
-                  keyboardType:
-                      TextInputType.emailAddress,
-
-                  textInputAction:
-                      TextInputAction.next,
-
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-
-                    fontSize:
-                        18,
-                  ),
-
-                  decoration:
-                      InputDecoration(
-                    hintText:
-                        'Sähköposti',
-
-                    hintStyle:
-                        const TextStyle(
-                      color:
-                          Color(
-                        0xFFBDB4D1,
-                      ),
-
-                      fontSize:
-                          18,
-                    ),
-
-                    prefixIcon:
-                        const Icon(
-                      Icons.email_outlined,
-
-                      color:
-                          Color(
-                        0xFFB58CFF,
-                      ),
-                    ),
-
-                    filled:
-                        true,
-
-                    fillColor:
-                        const Color(
-                      0xFF21113B,
-                    ),
-
-                    enabledBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
-
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Color(
-                          0xFFB58CFF,
+                          border:
+                              Border.all(
+                            color:
+                                const Color(
+                              0xFFB58CFF,
+                            ),
+                            width: 3,
+                          ),
                         ),
 
-                        width:
-                            2,
-                      ),
-                    ),
-
-                    focusedBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
-
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Colors.white,
-
-                        width:
-                            3,
-                      ),
-                    ),
-
-                    disabledBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
-
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Color(
-                          0xFF6F6382,
-                        ),
-
-                        width:
-                            2,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 18,
-                ),
-
-                // ==================================================
-                // PASSWORD
-                // ==================================================
-
-                TextField(
-                  controller:
-                      _passwordController,
-
-                  enabled:
-                      !_isLoading,
-
-                  readOnly:
-                      false,
-
-                  obscureText:
-                      _obscurePassword,
-
-                  keyboardType:
-                      TextInputType.visiblePassword,
-
-                  textInputAction:
-                      TextInputAction.done,
-
-                  onSubmitted:
-                      (_) {
-                    _login();
-                  },
-
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-
-                    fontSize:
-                        18,
-                  ),
-
-                  decoration:
-                      InputDecoration(
-                    hintText:
-                        'Salasana',
-
-                    hintStyle:
-                        const TextStyle(
-                      color:
-                          Color(
-                        0xFFBDB4D1,
-                      ),
-
-                      fontSize:
-                          18,
-                    ),
-
-                    prefixIcon:
-                        const Icon(
-                      Icons.lock_outline,
-
-                      color:
-                          Color(
-                        0xFFB58CFF,
-                      ),
-                    ),
-
-                    suffixIcon:
-                        IconButton(
-                      onPressed:
-                          _isLoading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _obscurePassword =
-                                        !_obscurePassword;
-                                  });
-                                },
-
-                      icon:
-                          Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-
-                        color:
-                            const Color(
-                          0xFFB58CFF,
+                        child:
+                            const Center(
+                          child: Icon(
+                            Icons.pets,
+                            color:
+                                Color(
+                              0xFFFFB7E8,
+                            ),
+                            size: 58,
+                          ),
                         ),
                       ),
-                    ),
 
-                    filled:
-                        true,
-
-                    fillColor:
-                        const Color(
-                      0xFF21113B,
-                    ),
-
-                    enabledBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
+                      const SizedBox(
+                        height: 20,
                       ),
 
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Color(
-                          0xFFB58CFF,
-                        ),
+                      // ==================================================
+                      // TITLE
+                      // ==================================================
 
-                        width:
-                            2,
-                      ),
-                    ),
+                      const Text(
+                        'Stelluriini',
 
-                    focusedBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
-
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Colors.white,
-
-                        width:
-                            3,
-                      ),
-                    ),
-
-                    disabledBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
-
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Color(
-                          0xFF6F6382,
-                        ),
-
-                        width:
-                            2,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 25,
-                ),
-
-                // ==================================================
-                // LOGIN BUTTON
-                // ==================================================
-
-                SizedBox(
-                  width:
-                      double.infinity,
-
-                  height:
-                      55,
-
-                  child:
-                      ElevatedButton(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : _login,
-
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(
-                        0xFFB58CFF,
-                      ),
-
-                      disabledBackgroundColor:
-                          const Color(
-                        0xFF66547D,
-                      ),
-
-                      foregroundColor:
-                          const Color(
-                        0xFF120B24,
-                      ),
-
-                      elevation:
-                          0,
-
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                          16,
+                        style:
+                            TextStyle(
+                          color:
+                              Color(
+                            0xFFF8F4FF,
+                          ),
+                          fontSize: 36,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
-                    ),
 
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
+                      const SizedBox(
+                        height: 6,
+                      ),
 
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth:
-                                      2.5,
+                      const Text(
+                        'STL',
 
-                                  color:
-                                      Color(
-                                    0xFF120B24,
-                                  ),
-                                ),
-                              )
-                            : const Text(
-                                'KIRJAUDU SISÄÄN',
+                        style:
+                            TextStyle(
+                          color:
+                              Color(
+                            0xFFFFD166,
+                          ),
+                          fontSize: 21,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing: 4,
+                        ),
+                      ),
 
-                                style:
-                                    TextStyle(
-                                  fontSize:
-                                      17,
+                      const SizedBox(
+                        height: 30,
+                      ),
 
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
+                      // ==================================================
+                      // LOGIN TITLE
+                      // ==================================================
+
+                      const Text(
+                        'KIRJAUDU SISÄÄN',
+
+                        textAlign:
+                            TextAlign.center,
+
+                        style:
+                            TextStyle(
+                          color:
+                              Color(
+                            0xFFF8F4FF,
+                          ),
+                          fontSize: 25,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 25,
+                      ),
+
+                      // ==================================================
+                      // EMAIL
+                      // ==================================================
+
+                      TextField(
+                        controller:
+                            _emailController,
+
+                        enabled: true,
+                        readOnly: false,
+
+                        keyboardType:
+                            TextInputType
+                                .emailAddress,
+
+                        textInputAction:
+                            TextInputAction.next,
+
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white,
+                          fontSize: 18,
+                        ),
+
+                        decoration:
+                            InputDecoration(
+                          hintText:
+                              'Sähköposti',
+
+                          hintStyle:
+                              const TextStyle(
+                            color:
+                                Color(
+                              0xFFBDB4D1,
+                            ),
+                            fontSize: 18,
+                          ),
+
+                          prefixIcon:
+                              const Icon(
+                            Icons
+                                .email_outlined,
+                            color:
+                                Color(
+                              0xFFB58CFF,
+                            ),
+                          ),
+
+                          filled: true,
+
+                          fillColor:
+                              const Color(
+                            0xFF21113B,
+                          ),
+
+                          enabledBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+
+                            borderSide:
+                                const BorderSide(
+                              color:
+                                  Color(
+                                0xFFB58CFF,
                               ),
+                              width: 2,
+                            ),
+                          ),
+
+                          focusedBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+
+                            borderSide:
+                                const BorderSide(
+                              color:
+                                  Colors.white,
+                              width: 3,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 18,
+                      ),
+
+                      // ==================================================
+                      // PASSWORD
+                      // ==================================================
+
+                      TextField(
+                        controller:
+                            _passwordController,
+
+                        enabled: true,
+                        readOnly: false,
+
+                        obscureText:
+                            _obscurePassword,
+
+                        keyboardType:
+                            TextInputType
+                                .visiblePassword,
+
+                        textInputAction:
+                            TextInputAction.done,
+
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white,
+                          fontSize: 18,
+                        ),
+
+                        decoration:
+                            InputDecoration(
+                          hintText:
+                              'Salasana',
+
+                          hintStyle:
+                              const TextStyle(
+                            color:
+                                Color(
+                              0xFFBDB4D1,
+                            ),
+                            fontSize: 18,
+                          ),
+
+                          prefixIcon:
+                              const Icon(
+                            Icons
+                                .lock_outline,
+                            color:
+                                Color(
+                              0xFFB58CFF,
+                            ),
+                          ),
+
+                          suffixIcon:
+                              IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword =
+                                    !_obscurePassword;
+                              });
+                            },
+
+                            icon:
+                                Icon(
+                              _obscurePassword
+                                  ? Icons
+                                      .visibility_outlined
+                                  : Icons
+                                      .visibility_off_outlined,
+
+                              color:
+                                  const Color(
+                                0xFFB58CFF,
+                              ),
+                            ),
+                          ),
+
+                          filled: true,
+
+                          fillColor:
+                              const Color(
+                            0xFF21113B,
+                          ),
+
+                          enabledBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+
+                            borderSide:
+                                const BorderSide(
+                              color:
+                                  Color(
+                                0xFFB58CFF,
+                              ),
+                              width: 2,
+                            ),
+                          ),
+
+                          focusedBorder:
+                              OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
+
+                            borderSide:
+                                const BorderSide(
+                              color:
+                                  Colors.white,
+                              width: 3,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 25,
+                      ),
+
+                      // ==================================================
+                      // LOGIN BUTTON
+                      // ==================================================
+
+                      SizedBox(
+                        width:
+                            double.infinity,
+
+                        height: 55,
+
+                        child:
+                            ElevatedButton(
+                          onPressed:
+                              _testLogin,
+
+                          style:
+                              ElevatedButton
+                                  .styleFrom(
+                            backgroundColor:
+                                const Color(
+                              0xFFB58CFF,
+                            ),
+
+                            foregroundColor:
+                                const Color(
+                              0xFF120B24,
+                            ),
+
+                            elevation: 0,
+
+                            shape:
+                                RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(
+                                16,
+                              ),
+                            ),
+                          ),
+
+                          child:
+                              const Text(
+                            'KIRJAUDU SISÄÄN',
+
+                            style:
+                                TextStyle(
+                              fontSize: 17,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 20,
+                      ),
+
+                      // ==================================================
+                      // FOOTER
+                      // ==================================================
+
+                      const Text(
+                        'STELLA • STELLURIINI • STL',
+
+                        textAlign:
+                            TextAlign.center,
+
+                        style:
+                            TextStyle(
+                          color:
+                              Color(
+                            0xFFBDB4D1,
+                          ),
+                          fontSize: 12,
+                          letterSpacing: 1,
+                        ),
+                      ),
+
+                      // ==================================================
+                      // EXTRA SPACE
+                      // ==================================================
+                      //
+                      // Tämä antaa hieman lisää vieritysvaraa silloin,
+                      // kun Androidin näppäimistö on auki.
+                      //
+                      const SizedBox(
+                        height: 80,
+                      ),
+                    ],
                   ),
                 ),
-
-                const SizedBox(
-                  height: 20,
-                ),
-
-                const Text(
-                  'STELLA • STELLURIINI • STL',
-
-                  textAlign:
-                      TextAlign.center,
-
-                  style:
-                      TextStyle(
-                    color:
-                        Color(
-                      0xFFBDB4D1,
-                    ),
-
-                    fontSize:
-                        12,
-
-                    letterSpacing:
-                        1,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
