@@ -401,6 +401,9 @@ const Map<String, String> deTranslations = {
   'community':
       'Community',
 
+  'stellaCommunity':
+      'Stella • Stelluriini-Community',
+
   'aboutCommunityDescription':
       'Stelluriini wird rund um seine Community aufgebaut. Das Ziel ist ein offenes, unterhaltsames und leicht zugängliches Ökosystem.',
 
