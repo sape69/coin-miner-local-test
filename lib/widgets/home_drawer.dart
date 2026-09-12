@@ -20,6 +20,7 @@ import 'cat_avatar.dart';
 //   • White Paper
 //   • Roadmap
 //   • Transaction History
+//   • Logout
 // - käyttää samaa Stella-visuaalista ilmettä kuin HomePage
 //
 // ============================================================
@@ -43,6 +44,9 @@ const Color pinkAccentColor =
 const Color goldAccentColor =
     Color(0xFFFFD166);
 
+const Color logoutColor =
+    Color(0xFFFF8A8A);
+
 // ============================================================
 // 🐱 HOME DRAWER
 // ============================================================
@@ -55,6 +59,7 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
   final VoidCallback onTransactionHistoryPressed;
+  final VoidCallback onLogoutPressed;
 
   const HomeDrawer({
     super.key,
@@ -64,6 +69,7 @@ class HomeDrawer extends StatelessWidget {
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
     required this.onTransactionHistoryPressed,
+    required this.onLogoutPressed,
   });
 
   // ==========================================================
@@ -86,7 +92,11 @@ class HomeDrawer extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
     String? badge,
+    Color? iconColor,
   }) {
+    final Color currentIconColor =
+        iconColor ?? pinkAccentColor;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
@@ -127,7 +137,7 @@ class HomeDrawer extends StatelessWidget {
                         accentColor.withValues(
                           alpha: 0.28,
                         ),
-                        pinkAccentColor.withValues(
+                        currentIconColor.withValues(
                           alpha: 0.16,
                         ),
                       ],
@@ -139,7 +149,7 @@ class HomeDrawer extends StatelessWidget {
                     border:
                         Border.all(
                       color:
-                          accentColor.withValues(
+                          currentIconColor.withValues(
                         alpha: 0.20,
                       ),
                     ),
@@ -147,7 +157,7 @@ class HomeDrawer extends StatelessWidget {
                   child: Icon(
                     icon,
                     color:
-                        pinkAccentColor,
+                        currentIconColor,
                     size: 23,
                   ),
                 ),
@@ -236,6 +246,108 @@ class HomeDrawer extends StatelessWidget {
                           .withValues(
                     alpha: 0.30,
                   ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🚪 LOGOUT MENU ITEM
+  // ==========================================================
+
+  Widget _logoutItem() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 4,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius:
+            BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius:
+              BorderRadius.circular(16),
+          onTap: onLogoutPressed,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
+            child: Row(
+              children: [
+                // ==================================================
+                // LOGOUT ICON
+                // ==================================================
+
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        logoutColor.withValues(
+                      alpha: 0.10,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      13,
+                    ),
+                    border:
+                        Border.all(
+                      color:
+                          logoutColor.withValues(
+                        alpha: 0.20,
+                      ),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color:
+                        logoutColor,
+                    size: 23,
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 14,
+                ),
+
+                // ==================================================
+                // LOGOUT TITLE
+                // ==================================================
+
+                Expanded(
+                  child: Text(
+                    _t('logout'),
+                    maxLines: 2,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(
+                      color:
+                          Colors.white,
+                      fontSize: 16,
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 4,
+                ),
+
+                const Icon(
+                  Icons
+                      .chevron_right_rounded,
+                  color:
+                      Colors.white30,
                 ),
               ],
             ),
@@ -499,6 +611,12 @@ class HomeDrawer extends StatelessWidget {
                     onTap:
                         onTransactionHistoryPressed,
                   ),
+
+                  // ------------------------------------------------
+                  // LOGOUT
+                  // ------------------------------------------------
+
+                  _logoutItem(),
                 ],
               ),
             ),
