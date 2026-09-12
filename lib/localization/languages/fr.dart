@@ -14,8 +14,10 @@ const Map<String, String> frTranslations = {
   'whitepaper': 'Whitepaper',
   'whitePaper': 'White Paper',
   'language': 'Langue',
+  'selectLanguage': 'Sélectionner la langue',
   'logout': 'Se déconnecter',
   'menu': 'Menu',
+  'ready': 'Prêt',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -435,6 +437,9 @@ const Map<String, String> frTranslations = {
   'roadmapSubtitle':
       'Le parcours de Stelluriini, étape par étape.',
 
+  'roadmapJourney':
+      'Le parcours de Stelluriini',
+
   'roadmapPhase1':
       'Phase 1 – Fondation',
 
@@ -480,6 +485,30 @@ const Map<String, String> frTranslations = {
   'roadmapPhase5Description':
       'Explorer de nouvelles fonctionnalités, des partenariats potentiels et les idées de la communauté.',
 
+  'roadmapPhase6':
+      'Phase 6 – Expansion',
+
+  'roadmapPhase6Title':
+      'Étendre Stelluriini',
+
+  'roadmapPhase6Description':
+      'Développer davantage l’écosystème Stelluriini, les intégrations, les utilités du token et les possibilités offertes à la communauté.',
+
+  'roadmapStatusCompleted':
+      'Terminé',
+
+  'roadmapStatusCurrent':
+      'En cours',
+
+  'roadmapStatusPlanned':
+      'Prévu',
+
+  'roadmapDevelopmentPrinciples':
+      'Principes de développement',
+
+  'plannedWithdrawalModel':
+      'Un éventuel futur modèle de retrait sera conçu séparément et annoncé de manière transparente avant toute mise en œuvre.',
+
   // ============================================================
   // 🪙 TOKEN
   // ============================================================
@@ -516,6 +545,46 @@ const Map<String, String> frTranslations = {
 
   'addressCopied':
       'Adresse copiée.',
+
+  // ============================================================
+  // 🪙 SOLANA COMMUNITY TOKEN
+  // ============================================================
+
+  'solanaCommunityToken':
+      'Token communautaire Solana',
+
+  'tokenInformation':
+      'Informations sur le token',
+
+  'name':
+      'Nom',
+
+  'symbol':
+      'Symbole',
+
+  'blockchain':
+      'Blockchain',
+
+  'decimals':
+      'Décimales',
+
+  'officialMintAddress':
+      'Adresse Mint officielle',
+
+  'officialMintDescription':
+      'Cette adresse identifie le token STL officiel sur la blockchain Solana.',
+
+  'mintAddressCopied':
+      'Adresse Mint copiée.',
+
+  'copyMintAddress':
+      'COPIER L’ADRESSE MINT',
+
+  'viewOnSolscan':
+      'VOIR SUR SOLSCAN',
+
+  'couldNotOpenSolscan':
+      'Impossible d’ouvrir Solscan.',
 
   // ============================================================
   // 📊 TOKENOMICS
@@ -638,6 +707,9 @@ const Map<String, String> frTranslations = {
   'communityCuriosityDevelopmentSolana':
       'Communauté • Curiosité • Développement • Solana',
 
+  'communityCuriositySolana':
+      'Communauté • Curiosité • Solana',
+
   'tokenAllocation':
       'Répartition des tokens',
 
@@ -709,6 +781,9 @@ const Map<String, String> frTranslations = {
   'virtualPointsNotice':
       'Les récompenses STL affichées dans l’application sont actuellement des points virtuels intégrés à l’application.',
 
+  'virtualPointsInformation':
+      'Les STL affichés dans l’application représentent actuellement des points virtuels. Ils ne constituent pas automatiquement des tokens de cryptomonnaie retirables.',
+
   'withdrawalsDisabled':
       'Les retraits ne sont actuellement pas disponibles.',
 
@@ -724,4 +799,7 @@ const Map<String, String> frTranslations = {
 
   'footerToken':
       'STL • STELLURIINI',
+
+  'stelluriiniStlSolanaFooter':
+      'STELLURIINI • STL • SOLANA',
 };
