@@ -1,21 +1,36 @@
 import 'package:flutter/material.dart';
 
-import 'pages/home/home_page.dart';
+import 'pages/login_page.dart';
 
 // ============================================================
 // 🐱 STELLURIINI AUTH GATE
 // ============================================================
 //
+// VAIHE 5
+//
 // Tässä vaiheessa:
 //
 // - LoginPage on testattu toimivaksi
 // - HomePage on olemassa
-// - HomePage sijaitsee kansiossa pages/home/
-// - Firebase Auth palautetaan myöhemmin tähän ketjuun
+// - LoginPage toimii käyttöliittymänä
+// - HomePage ei saa enää aueta suoraan
 //
-// HomePage:n oikea polku:
+// TÄRKEÄÄ:
 //
-// lib/pages/home/home_page.dart
+// AuthGate näyttää nyt kirjautumissivun.
+//
+// Seuraavassa vaiheessa LoginPage yhdistetään oikeaan
+// Firebase Authentication -kirjautumiseen.
+//
+// Kun Firebase-kirjautuminen on valmis:
+//
+// kirjautumaton käyttäjä
+//        ↓
+//     LoginPage
+//        ↓
+// onnistunut Firebase-kirjautuminen
+//        ↓
+//      HomePage
 //
 // ============================================================
 
@@ -32,18 +47,19 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // ==========================================================
-    // VÄLIAIKAINEN TESTITILA
+    // 🔐 LOGIN PAGE
     // ==========================================================
     //
-    // LoginPage ja tekstikentät on jo testattu onnistuneesti.
+    // ÄLÄ AVAA HOMEPAGEA SUORAAN.
     //
-    // Nyt siirrytään HomePageen.
+    // Tässä vaiheessa AuthGate näyttää aina LoginPagen.
     //
-    // Firebase Auth voidaan palauttaa myöhemmin tähän kohtaan.
+    // Firebase Authentication liitetään seuraavassa vaiheessa
+    // LoginPageen.
     //
     // ==========================================================
 
-    return HomePage(
+    return LoginPage(
       languageCode: languageCode,
       changeLanguage: changeLanguage,
     );
