@@ -455,6 +455,9 @@ const Map<String, String> fiTranslations = {
   'community':
       'Yhteisö',
 
+  'stellaCommunity':
+      'Stella • Stelluriini-yhteisö',
+
   'aboutCommunityDescription':
       'Stelluriini rakentuu yhteisön ympärille. Tavoitteena on luoda avoin, hauska ja helposti lähestyttävä ekosysteemi.',
 
