@@ -9,7 +9,6 @@ import '../../localization/whitepaper/whitepaper_ja.dart';
 import '../../localization/whitepaper/whitepaper_vi.dart';
 import '../../localization/whitepaper/whitepaper_zh.dart';
 import '../../widgets/cat_avatar.dart';
-import '../../widgets/stelluriini_logo.dart';
 
 import 'whitepaper_paragraph.dart';
 import 'whitepaper_section.dart';
@@ -875,10 +874,60 @@ class WhitePaperPage extends StatelessWidget {
                     whitePaperPinkColor,
                 child: Column(
                   children: [
-                    const StelluriiniLogo(
-                      size: 80,
+                    // ==================================================
+                    // 🐱 STELLA — OIKEA VALOKUVA
+                    // ==================================================
+
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color:
+                              whitePaperPinkColor
+                                  .withValues(
+                            alpha: 0.35,
+                          ),
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                whitePaperPinkColor
+                                    .withValues(
+                              alpha: 0.18,
+                            ),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/stella_real.jpg',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (
+                            BuildContext context,
+                            Object error,
+                            StackTrace? stackTrace,
+                          ) {
+                            return const Icon(
+                              Icons.pets_rounded,
+                              color:
+                                  whitePaperPinkColor,
+                              size: 48,
+                            );
+                          },
+                        ),
+                      ),
                     ),
+
                     const SizedBox(height: 14),
+
                     Text(
                       t('04_heading'),
                       textAlign:
@@ -892,7 +941,9 @@ class WhitePaperPage extends StatelessWidget {
                             FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     WhitePaperParagraph(
                       text: t('04_text'),
                     ),
