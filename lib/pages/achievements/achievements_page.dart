@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../localization.dart';
 import '../../widgets/cat_avatar.dart';
+import '../../localization/achievements/achievements_localization.dart';
 import 'achievement_card.dart';
 import 'achievement_model.dart';
 import 'achievements_service.dart';
@@ -69,10 +69,11 @@ class _AchievementsPageState
   // 🌍 LOCALIZATION
   // ==========================================================
 
-  AppLocalizations get _localization =>
-      AppLocalizations(
-        widget.languageCode,
-      );
+  AchievementsLocalization
+      get _localization =>
+          AchievementsLocalization(
+            widget.languageCode,
+          );
 
   // ==========================================================
   // 🚀 INIT
@@ -171,7 +172,8 @@ class _AchievementsPageState
       return 0;
     }
 
-    return _completedCount / _totalCount;
+    return _completedCount /
+        _totalCount;
   }
 
   // ==========================================================
@@ -637,7 +639,9 @@ class _AchievementsPageState
                           // ====================================
 
                           Text(
-                            '🐾  Stella is proud of you  🐾',
+                            _localization.get(
+                              'achievementsStellaProud',
+                            ),
                             textAlign:
                                 TextAlign.center,
                             style:
