@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mining_progress_card.dart';
+
 // ============================================================
 // 🐱 STELLURIINI STELLA MINING CARD
 // ============================================================
@@ -11,6 +13,21 @@ class StellaMiningCard extends StatelessWidget {
   final String timerText;
   final String timerLabel;
   final Animation<double> catAnimation;
+
+  // ============================================================
+  // ⛏️ MINING PROGRESS
+  // ============================================================
+
+  final bool miningActive;
+  final int miningRemainingMs;
+  final int miningDurationMs;
+
+  final String miningProgressTitle;
+  final String stlPerHourText;
+  final String dailyHashRateText;
+  final String dailyHashRateDayText;
+  final String hashRateBonusText;
+  final String effectiveHashRateText;
 
   // ============================================================
   // 🎨 STELLA COLORS
@@ -46,6 +63,15 @@ class StellaMiningCard extends StatelessWidget {
     required this.timerText,
     required this.timerLabel,
     required this.catAnimation,
+    required this.miningActive,
+    required this.miningRemainingMs,
+    required this.miningDurationMs,
+    required this.miningProgressTitle,
+    required this.stlPerHourText,
+    required this.dailyHashRateText,
+    required this.dailyHashRateDayText,
+    required this.hashRateBonusText,
+    required this.effectiveHashRateText,
   });
 
   // ============================================================
@@ -71,7 +97,6 @@ class StellaMiningCard extends StatelessWidget {
           BoxDecoration(
         borderRadius:
             BorderRadius.circular(30),
-
         gradient:
             const LinearGradient(
           begin:
@@ -83,7 +108,6 @@ class StellaMiningCard extends StatelessWidget {
             Color(0xFF1B1033),
           ],
         ),
-
         border:
             Border.all(
           color:
@@ -91,7 +115,6 @@ class StellaMiningCard extends StatelessWidget {
             alpha: 0.40,
           ),
         ),
-
         boxShadow:
             const [
           BoxShadow(
@@ -306,11 +329,9 @@ class StellaMiningCard extends StatelessWidget {
                         FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(
                   height: 5,
                 ),
-
                 Text(
                   timerLabel,
                   textAlign:
@@ -327,6 +348,35 @@ class StellaMiningCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+
+          const SizedBox(
+            height: 20,
+          ),
+
+          // ====================================================
+          // ⛏️ 24 H MINING PROGRESS
+          // ====================================================
+
+          MiningProgressCard(
+            miningActive:
+                miningActive,
+            miningRemainingMs:
+                miningRemainingMs,
+            miningDurationMs:
+                miningDurationMs,
+            title:
+                miningProgressTitle,
+            stlPerHourText:
+                stlPerHourText,
+            dailyHashRateText:
+                dailyHashRateText,
+            dailyHashRateDayText:
+                dailyHashRateDayText,
+            hashRateBonusText:
+                hashRateBonusText,
+            effectiveHashRateText:
+                effectiveHashRateText,
           ),
         ],
       ),
