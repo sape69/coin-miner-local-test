@@ -1,224 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import 'achievement_model.dart';
-
-// ============================================================
-// 🏆 STELLURIINI ACHIEVEMENTS SERVICE
-// ============================================================
-//
-// Flutter-sovellus käyttää tätä palvelua saavutusten LUKEMISEEN.
-//
-// TÄRKEÄ TURVALLISUUSMALLI:
-//
-// Flutter EI kirjoita achievements-dokumentteihin.
-//
-// Saavutusten:
-// - progress
-// - unlock
-// - reward
-// - rewardClaimed
-//
-// käsittely tapahtuu Cloud Functions -puolella.
-//
-// Firestore:
-// users/{userId}/achievements/{achievementId}
-//
-// ============================================================
-
-class AchievementsService {
-  AchievementsService({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore =
-            firestore ?? FirebaseFirestore.instance,
-        _auth =
-            auth ?? FirebaseAuth.instance;
-
-  final FirebaseFirestore _firestore;
-  final FirebaseAuth _auth;
-
-  // ============================================================
-  // 👤 CURRENT USER
-  // ============================================================
-
-  User? get _currentUser {
-    return _auth.currentUser;
-  }
-
-  String? get _userId {
-    return _currentUser?.uid;
-  }
-
-  // ============================================================
-  // 📁 ACHIEVEMENTS COLLECTION
-  // ============================================================
-
-  CollectionReference<Map<String, dynamic>>?
-      get _achievementsCollection {
-    final String? userId = _userId;
-
-    if (userId == null || userId.isEmpty) {
-      return null;
-    }
-
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('achievements');
-  }
-
-  // ============================================================
-  // 📖 GET ALL USER ACHIEVEMENTS
-  // ============================================================
-  //
-  // Flutter saa lukea omat saavutuksensa.
-  //
-  // Kirjoituksia ei tehdä tässä metodissa.
-  //
-  // ============================================================
-
-  Future<Map<String, AchievementProgress>>
-      getAchievements() async {
-    final CollectionReference<Map<String, dynamic>>?
-        collection = _achievementsCollection;
-
-    if (collection == null) {
-      return {};
-    }
-
-    final QuerySnapshot<Map<String, dynamic>> snapshot =
-        await collection.get();
-
-    final Map<String, AchievementProgress> result =
-        <String, AchievementProgress>{};
-
-    for (final QueryDocumentSnapshot<Map<String, dynamic>>
-        document in snapshot.docs) {
-      result[document.id] =
-          AchievementProgress.fromMap(
-        document.id,
-        document.data(),
-      );
-    }
-
-    return result;
-  }
-
-  // ============================================================
-  // 📖 GET ONE ACHIEVEMENT
-  // ============================================================
-
-  Future<AchievementProgress> getAchievement(
-    Achievement achievement,
-  ) async {
-    final CollectionReference<Map<String, dynamic>>?
-        collection = _achievementsCollection;
-
-    if (collection == null) {
-      return AchievementProgress.empty(
-        achievement.id,
-      );
-    }
-
-    final DocumentSnapshot<Map<String, dynamic>> document =
-        await collection
-            .doc(achievement.id)
-            .get();
-
-    if (!document.exists || document.data() == null) {
-      return AchievementProgress.empty(
-        achievement.id,
-      );
-    }
-
-    return AchievementProgress.fromMap(
-      document.id,
-      document.data()!,
-    );
-  }
-
-  // ============================================================
-  // 🔄 INITIALIZE
-  // ============================================================
-  //
-  // Achievementit luodaan nykyisessä arkkitehtuurissa
-  // Cloud Functions -puolella.
-  //
-  // Tätä metodia ei poisteta, koska AchievementsPage voi
-  // edelleen kutsua sitä.
-  //
-  // Se ei kuitenkaan tee mitään asiakaspuolella.
-  //
-  // Tämä estää Flutteria kirjoittamasta Firestoreen.
-  //
-  // ============================================================
-
-  Future<void> initializeAchievements() async {
-    // Ei asiakaspuolen Firestore-kirjoituksia.
-    //
-    // Cloud Functions luo ja päivittää achievementit
-    // tarvittaessa.
-    return;
-  }
-
-  // ============================================================
-  // 📊 GET COMPLETED COUNT
-  // ============================================================
-
-  Future<int> getCompletedCount() async {
-    final Map<String, AchievementProgress> achievements =
-        await getAchievements();
-
-    return achievements.values
-        .where(
-          (AchievementProgress achievement) =>
-              achievement.unlocked,
-        )
-        .length;
-  }
-
-  // ============================================================
-  // 📋 GET ALL DEFINED ACHIEVEMENTS WITH PROGRESS
-  // ============================================================
-  //
-  // Tämä on käyttöliittymälle hyödyllinen apumetodi.
-  //
-  // Firestoresta löytyvät achievementit yhdistetään
-  // StelluriiniAchievements.all-listaan.
-  //
-  // Jos jotakin achievementia ei vielä ole Firestoressa,
-  // käyttöliittymä saa sille turvallisen tyhjän arvon.
-  //
-  // Näin uusi käyttäjä voi avata Achievements-sivun
-  // vaikka yksikään achievement ei olisi vielä aktivoitunut.
-  //
-  // ============================================================
-
-  Future<Map<String, AchievementProgress>>
-      getAllWithDefaults() async {
-    final Map<String, AchievementProgress> existing =
-        await getAchievements();
-
-    final Map<String, AchievementProgress> result =
-        <String, AchievementProgress>{};
-
-    for (final Achievement achievement
-        in StelluriiniAchievements.all) {
-      result[achievement.id] =
-          existing[achievement.id] ??
-              AchievementProgress.fromAchievement(
-                achievement,
-              );
-    }
-
-    return result;
-  }
-}
-
-// ============================================================
-// 📊 ACHIEVEMENT PROGRESS
-// ============================================================
 
 class AchievementProgress {
   final String achievementId;
@@ -243,136 +24,56 @@ class AchievementProgress {
     this.updatedAt,
   });
 
-  // ============================================================
-  // 🆕 CREATE FROM ACHIEVEMENT DEFINITION
-  // ============================================================
-  //
-  // Käytetään silloin, kun achievement-dokumenttia ei vielä
-  // ole Firestoressa.
-  //
-  // ============================================================
-
-  factory AchievementProgress.fromAchievement(
-    Achievement achievement,
-  ) {
-    return AchievementProgress(
-      achievementId: achievement.id,
-      progress: 0,
-      target: achievement.target,
-      reward: achievement.reward,
-      unlocked: false,
-      rewardClaimed: false,
-    );
-  }
-
-  // ============================================================
-  // EMPTY
-  // ============================================================
-
-  factory AchievementProgress.empty(
-    String achievementId,
-  ) {
-    return AchievementProgress(
-      achievementId: achievementId,
-      progress: 0,
-      target: 0,
-      reward: 0,
-      unlocked: false,
-      rewardClaimed: false,
-    );
-  }
-
-  // ============================================================
-  // FROM FIRESTORE
-  // ============================================================
+  const AchievementProgress.empty({
+    required this.achievementId,
+    required this.target,
+    required this.reward,
+  })  : progress = 0,
+        unlocked = false,
+        rewardClaimed = false,
+        unlockedAt = null,
+        rewardClaimedAt = null,
+        updatedAt = null;
 
   factory AchievementProgress.fromMap(
-    String achievementId,
-    Map<String, dynamic> data,
+    Map<String, dynamic> map,
   ) {
     return AchievementProgress(
-      achievementId: achievementId,
-      progress: _readInt(
-        data['progress'],
-      ),
-      target: _readInt(
-        data['target'],
-      ),
-      reward: _readInt(
-        data['reward'],
-      ),
-      unlocked: data['unlocked'] == true,
-      rewardClaimed: data['rewardClaimed'] == true,
-      unlockedAt: _readDateTime(
-        data['unlockedAt'],
-      ),
-      rewardClaimedAt: _readDateTime(
-        data['rewardClaimedAt'],
-      ),
-      updatedAt: _readDateTime(
-        data['updatedAt'],
-      ),
+      achievementId:
+          map['achievementId']?.toString() ?? '',
+      progress: _toInt(map['progress']),
+      target: _toInt(map['target']),
+      reward: _toInt(map['reward']),
+      unlocked: map['unlocked'] == true,
+      rewardClaimed:
+          map['rewardClaimed'] == true,
+      unlockedAt:
+          _toDateTime(map['unlockedAt']),
+      rewardClaimedAt:
+          _toDateTime(map['rewardClaimedAt']),
+      updatedAt:
+          _toDateTime(map['updatedAt']),
     );
   }
-
-  // ============================================================
-  // 🔢 READ INTEGER
-  // ============================================================
-
-  static int _readInt(
-    dynamic value,
-  ) {
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return 0;
-  }
-
-  // ============================================================
-  // 🕒 READ DATETIME
-  // ============================================================
-
-  static DateTime? _readDateTime(
-    dynamic value,
-  ) {
-    if (value is Timestamp) {
-      return value.toDate();
-    }
-
-    if (value is DateTime) {
-      return value;
-    }
-
-    return null;
-  }
-
-  // ============================================================
-  // 📈 PROGRESS VALUE
-  // ============================================================
 
   double get progressValue {
-    if (unlocked) {
-      return 1.0;
-    }
-
     if (target <= 0) {
-      return 0.0;
+      return 0;
     }
 
-    return (progress / target).clamp(
-      0.0,
-      1.0,
-    );
-  }
+    final double value =
+        progress / target;
 
-  // ============================================================
-  // 📊 DISPLAY PROGRESS
-  // ============================================================
+    if (value < 0) {
+      return 0;
+    }
+
+    if (value > 1) {
+      return 1;
+    }
+
+    return value;
+  }
 
   int get safeProgress {
     if (progress < 0) {
@@ -384,5 +85,188 @@ class AchievementProgress {
     }
 
     return progress;
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  static DateTime? _toDateTime(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+
+    return null;
+  }
+}
+
+class AchievementsService {
+  static const String _region =
+      'us-central1';
+
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instanceFor(
+    region: _region,
+  );
+
+  Future<List<AchievementProgress>>
+      getAchievements() async {
+    _requireUser();
+
+    final HttpsCallable callable =
+        _functions.httpsCallable(
+      'getAchievements',
+    );
+
+    final HttpsCallableResult<dynamic>
+        result = await callable.call();
+
+    final dynamic data = result.data;
+
+    if (data is! Map) {
+      throw Exception(
+        'Virheellinen saavutustietojen vastaus.',
+      );
+    }
+
+    final dynamic achievementsData =
+        data['achievements'];
+
+    if (achievementsData is! List) {
+      throw Exception(
+        'Saavutustietoja ei löytynyt.',
+      );
+    }
+
+    return achievementsData
+        .whereType<Map>()
+        .map(
+          (item) =>
+              AchievementProgress.fromMap(
+            Map<String, dynamic>.from(
+              item,
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  Future<AchievementProgress?>
+      getAchievement(
+    String achievementId,
+  ) async {
+    final List<AchievementProgress>
+        achievements =
+        await getAchievements();
+
+    for (final AchievementProgress achievement
+        in achievements) {
+      if (achievement.achievementId ==
+          achievementId) {
+        return achievement;
+      }
+    }
+
+    return null;
+  }
+
+  Future<int> getCompletedCount() async {
+    _requireUser();
+
+    final HttpsCallable callable =
+        _functions.httpsCallable(
+      'getAchievementsCompleted',
+    );
+
+    final HttpsCallableResult<dynamic>
+        result = await callable.call();
+
+    final dynamic data = result.data;
+
+    if (data is! Map) {
+      throw Exception(
+        'Virheellinen saavutusten määrän vastaus.',
+      );
+    }
+
+    final dynamic completed =
+        data['completed'];
+
+    if (completed is int) {
+      return completed;
+    }
+
+    if (completed is num) {
+      return completed.toInt();
+    }
+
+    return int.tryParse(
+          completed?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  Future<void> updateProgress({
+    required String achievementId,
+    required int progress,
+  }) async {
+    throw UnsupportedError(
+      'Saavutusten eteneminen päivitetään '
+      'turvallisesti palvelinpuolella.',
+    );
+  }
+
+  Future<void> unlockAchievement(
+    String achievementId,
+  ) async {
+    throw UnsupportedError(
+      'Saavutusten avaaminen käsitellään '
+      'palvelinpuolella.',
+    );
+  }
+
+  Future<void> markRewardClaimed(
+    String achievementId,
+  ) async {
+    throw UnsupportedError(
+      'Saavutuspalkinnon lunastus käsitellään '
+      'erillisellä turvallisella palvelinfunktiolla.',
+    );
+  }
+
+  Future<void> initializeAchievements() async {
+    await getAchievements();
+  }
+
+  void _requireUser() {
+    final User? user =
+        FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception(
+        'Kirjautuminen vaaditaan.',
+      );
+    }
   }
 }
