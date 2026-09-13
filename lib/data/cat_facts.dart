@@ -19,10 +19,10 @@
 // ja = 日本語
 //
 // Päivän fakta vaihtuu automaattisesti UTC-päivän perusteella.
+// Faktat valitaan deterministisesti sekoitetusta järjestyksestä.
 // ============================================================
 
 class CatFacts {
-
   // ==========================================================
   // 🇫🇮 FI
   // ==========================================================
@@ -1287,7 +1287,8 @@ class CatFacts {
     required String languageCode,
     DateTime? date,
   }) {
-    final DateTime inputDate = (date ?? DateTime.now()).toUtc();
+    final DateTime inputDate =
+        (date ?? DateTime.now()).toUtc();
 
     final DateTime utcDay = DateTime.utc(
       inputDate.year,
@@ -1301,16 +1302,43 @@ class CatFacts {
       1,
     );
 
-    final int dayIndex = utcDay.difference(startDay).inDays;
+    final int dayIndex =
+        utcDay.difference(startDay).inDays;
 
-    final List<String> facts = _factsForLanguage(languageCode);
+    final List<String> facts =
+        _factsForLanguage(languageCode);
 
     if (facts.isEmpty) {
       return '';
     }
 
+    // ----------------------------------------------------------
+    // Deterministinen sekoitus.
+    //
+    // Sama UTC-päivä = sama fakta kaikille käyttäjille.
+    // Faktat eivät kuitenkaan enää seuraa listan järjestystä.
+    //
+    // Näin myös listan loppupään faktat voivat tulla käyttöön
+    // heti ensimmäisinä päivinä.
+    // ----------------------------------------------------------
+
+    int seed =
+        dayIndex ^ 0x5F3759DF;
+
+    seed =
+        ((seed ^ (seed >> 16)) * 0x45D9F3B) &
+            0x7FFFFFFF;
+
+    seed =
+        ((seed ^ (seed >> 16)) * 0x45D9F3B) &
+            0x7FFFFFFF;
+
+    seed =
+        (seed ^ (seed >> 16)) &
+            0x7FFFFFFF;
+
     final int index =
-        ((dayIndex % facts.length) + facts.length) % facts.length;
+        seed % facts.length;
 
     return facts[index];
   }
