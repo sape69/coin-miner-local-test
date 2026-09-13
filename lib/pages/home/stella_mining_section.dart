@@ -17,6 +17,12 @@ class StellaMiningSection extends StatelessWidget {
   final int miningDurationMs;
 
   // ============================================================
+  // 🎁 DAILY STREAK
+  // ============================================================
+
+  final int dailyStreak;
+
+  // ============================================================
   // 📊 MINING PROGRESS TEXTS
   // ============================================================
 
@@ -65,6 +71,7 @@ class StellaMiningSection extends StatelessWidget {
     required this.unclaimedMining,
     required this.miningRemainingMs,
     required this.miningDurationMs,
+    required this.dailyStreak,
     required this.miningProgressTitle,
     required this.stlPerHourText,
     required this.dailyHashRateText,
@@ -144,20 +151,43 @@ class StellaMiningSection extends StatelessWidget {
     // ==========================================================
 
     return StellaMiningCard(
-      unclaimedMining: unclaimedMining,
-      miningTitle: title,
-      miningSubtitle: subtitle,
-      timerText: timerText,
-      timerLabel: timerLabel,
-      catAnimation: catAnimation,
+      unclaimedMining:
+          unclaimedMining,
+
+      miningTitle:
+          title,
+
+      miningSubtitle:
+          subtitle,
+
+      timerText:
+          timerText,
+
+      timerLabel:
+          timerLabel,
+
+      catAnimation:
+          catAnimation,
 
       // ========================================================
       // ⛏️ 24H MINING PROGRESS
       // ========================================================
 
-      miningActive: miningActive,
-      miningRemainingMs: miningRemainingMs,
-      miningDurationMs: miningDurationMs,
+      miningActive:
+          miningActive,
+
+      miningRemainingMs:
+          miningRemainingMs,
+
+      miningDurationMs:
+          miningDurationMs,
+
+      // ========================================================
+      // 🎁 DAILY STREAK
+      // ========================================================
+
+      dailyStreak:
+          dailyStreak,
 
       miningProgressTitle:
           miningProgressTitle,
