@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../localization.dart';
+import '../localization/achievements/achievements_localization.dart';
 import 'cat_avatar.dart';
 
 // ============================================================
@@ -13,12 +14,14 @@ import 'cat_avatar.dart';
 // - käyttää Stelluriinin violetti/pinkki-teemaa
 // - käyttää samaa languageCode-arvoa kuin HomePage
 // - käyttää keskitettyä AppLocalizations-järjestelmää
+// - käyttää Achievementsin omaa lokalisaatiota
 // - tukee kaikkia nykyisiä kieliä
 // - sisältää navigoinnit:
 //   • Language
 //   • About Stelluriini
 //   • White Paper
 //   • Roadmap
+//   • Achievements
 //   • Transaction History
 //   • Logout
 // - käyttää samaa Stella-visuaalista ilmettä kuin HomePage
@@ -58,6 +61,7 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
+  final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onLogoutPressed;
 
@@ -68,12 +72,13 @@ class HomeDrawer extends StatelessWidget {
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
+    required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onLogoutPressed,
   });
 
   // ==========================================================
-  // 🌍 LOCALIZATION
+  // 🌍 MAIN LOCALIZATION
   // ==========================================================
 
   AppLocalizations get _localization =>
@@ -82,6 +87,16 @@ class HomeDrawer extends StatelessWidget {
   String _t(String key) {
     return _localization.get(key);
   }
+
+  // ==========================================================
+  // 🏆 ACHIEVEMENTS LOCALIZATION
+  // ==========================================================
+
+  AchievementsLocalization
+      get _achievementsLocalization =>
+          AchievementsLocalization(
+            languageCode,
+          );
 
   // ==========================================================
   // 📋 MENU ITEM
@@ -596,6 +611,24 @@ class HomeDrawer extends StatelessWidget {
                     ),
                     onTap:
                         onRoadmapPressed,
+                  ),
+
+                  // ------------------------------------------------
+                  // ACHIEVEMENTS
+                  // ------------------------------------------------
+
+                  _menuItem(
+                    icon:
+                        Icons.emoji_events_rounded,
+                    title:
+                        _achievementsLocalization
+                            .get(
+                      'achievementsTitle',
+                    ),
+                    onTap:
+                        onAchievementsPressed,
+                    iconColor:
+                        goldAccentColor,
                   ),
 
                   // ------------------------------------------------
