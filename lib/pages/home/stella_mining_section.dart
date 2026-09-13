@@ -24,8 +24,6 @@ class StellaMiningSection extends StatelessWidget {
   final String stlPerHourText;
   final String dailyHashRateText;
   final String dailyHashRateDayText;
-  final String hashRateBonusText;
-  final String effectiveHashRateText;
 
   // ============================================================
   // 📝 MINING STATUS TEXTS
@@ -71,8 +69,6 @@ class StellaMiningSection extends StatelessWidget {
     required this.stlPerHourText,
     required this.dailyHashRateText,
     required this.dailyHashRateDayText,
-    required this.hashRateBonusText,
-    required this.effectiveHashRateText,
     required this.miningActiveTitle,
     required this.miningActiveSubtitle,
     required this.miningCompleteTitle,
@@ -174,12 +170,6 @@ class StellaMiningSection extends StatelessWidget {
 
       dailyHashRateDayText:
           dailyHashRateDayText,
-
-      hashRateBonusText:
-          hashRateBonusText,
-
-      effectiveHashRateText:
-          effectiveHashRateText,
     );
   }
 }
