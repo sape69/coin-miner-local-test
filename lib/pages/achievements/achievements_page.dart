@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/cat_avatar.dart';
 import '../../localization/achievements/achievements_localization.dart';
+import '../../widgets/cat_avatar.dart';
 import 'achievement_card.dart';
 import 'achievement_model.dart';
 import 'achievements_service.dart';
@@ -69,11 +69,10 @@ class _AchievementsPageState
   // 🌍 LOCALIZATION
   // ==========================================================
 
-  AchievementsLocalization
-      get _localization =>
-          AchievementsLocalization(
-            widget.languageCode,
-          );
+  AchievementsLocalization get _localization =>
+      AchievementsLocalization(
+        widget.languageCode,
+      );
 
   // ==========================================================
   // 🚀 INIT
@@ -156,6 +155,10 @@ class _AchievementsPageState
         )
         .length;
   }
+
+  // ==========================================================
+  // 🏆 TOTAL COUNT
+  // ==========================================================
 
   int get _totalCount {
     return StelluriiniAchievements
@@ -402,8 +405,7 @@ class _AchievementsPageState
   Widget _buildAchievementList() {
     return Column(
       children:
-          StelluriiniAchievements
-              .all
+          StelluriiniAchievements.all
               .map(
                 (
                   Achievement achievement,
@@ -421,6 +423,8 @@ class _AchievementsPageState
                         progress.safeProgress,
                     unlocked:
                         progress.unlocked,
+                    localization:
+                        _localization,
                   );
                 },
               )
