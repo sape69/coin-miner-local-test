@@ -7,11 +7,19 @@ import 'achievement_model.dart';
 // 🏆 STELLURIINI ACHIEVEMENTS SERVICE
 // ============================================================
 //
-// Vastaa:
-// - käyttäjän saavutusten lukemisesta
-// - saavutuksen avaamisesta
-// - saavutuksen etenemisestä
-// - palkintojen käsittelystä
+// Flutter-sovellus käyttää tätä palvelua saavutusten LUKEMISEEN.
+//
+// TÄRKEÄ TURVALLISUUSMALLI:
+//
+// Flutter EI kirjoita achievements-dokumentteihin.
+//
+// Saavutusten:
+// - progress
+// - unlock
+// - reward
+// - rewardClaimed
+//
+// käsittely tapahtuu Cloud Functions -puolella.
 //
 // Firestore:
 // users/{userId}/achievements/{achievementId}
@@ -34,11 +42,13 @@ class AchievementsService {
   // 👤 CURRENT USER
   // ============================================================
 
-  User? get _currentUser =>
-      _auth.currentUser;
+  User? get _currentUser {
+    return _auth.currentUser;
+  }
 
-  String? get _userId =>
-      _currentUser?.uid;
+  String? get _userId {
+    return _currentUser?.uid;
+  }
 
   // ============================================================
   // 📁 ACHIEVEMENTS COLLECTION
@@ -48,8 +58,7 @@ class AchievementsService {
       get _achievementsCollection {
     final String? userId = _userId;
 
-    if (userId == null ||
-        userId.isEmpty) {
+    if (userId == null || userId.isEmpty) {
       return null;
     }
 
@@ -62,30 +71,30 @@ class AchievementsService {
   // ============================================================
   // 📖 GET ALL USER ACHIEVEMENTS
   // ============================================================
+  //
+  // Flutter saa lukea omat saavutuksensa.
+  //
+  // Kirjoituksia ei tehdä tässä metodissa.
+  //
+  // ============================================================
 
   Future<Map<String, AchievementProgress>>
       getAchievements() async {
-    final CollectionReference<
-            Map<String, dynamic>>?
-        collection =
-        _achievementsCollection;
+    final CollectionReference<Map<String, dynamic>>?
+        collection = _achievementsCollection;
 
     if (collection == null) {
       return {};
     }
 
-    final QuerySnapshot<
-            Map<String, dynamic>>
-        snapshot =
+    final QuerySnapshot<Map<String, dynamic>> snapshot =
         await collection.get();
 
-    final Map<String, AchievementProgress>
-        result = {};
+    final Map<String, AchievementProgress> result =
+        <String, AchievementProgress>{};
 
-    for (final QueryDocumentSnapshot<
-            Map<String, dynamic>>
-        document
-        in snapshot.docs) {
+    for (final QueryDocumentSnapshot<Map<String, dynamic>>
+        document in snapshot.docs) {
       result[document.id] =
           AchievementProgress.fromMap(
         document.id,
@@ -100,14 +109,11 @@ class AchievementsService {
   // 📖 GET ONE ACHIEVEMENT
   // ============================================================
 
-  Future<AchievementProgress>
-      getAchievement(
+  Future<AchievementProgress> getAchievement(
     Achievement achievement,
   ) async {
-    final CollectionReference<
-            Map<String, dynamic>>?
-        collection =
-        _achievementsCollection;
+    final CollectionReference<Map<String, dynamic>>?
+        collection = _achievementsCollection;
 
     if (collection == null) {
       return AchievementProgress.empty(
@@ -115,15 +121,12 @@ class AchievementsService {
       );
     }
 
-    final DocumentSnapshot<
-            Map<String, dynamic>>
-        document =
+    final DocumentSnapshot<Map<String, dynamic>> document =
         await collection
             .doc(achievement.id)
             .get();
 
-    if (!document.exists ||
-        document.data() == null) {
+    if (!document.exists || document.data() == null) {
       return AchievementProgress.empty(
         achievement.id,
       );
@@ -136,258 +139,35 @@ class AchievementsService {
   }
 
   // ============================================================
-  // 📈 UPDATE PROGRESS
+  // 🔄 INITIALIZE
   // ============================================================
   //
-  // Tämä päivittää saavutuksen etenemisen.
+  // Achievementit luodaan nykyisessä arkkitehtuurissa
+  // Cloud Functions -puolella.
   //
-  // Jos target saavutetaan:
-  // - achievement merkitään avatuksi
-  // - reward merkitään lunastettavaksi
+  // Tätä metodia ei poisteta, koska AchievementsPage voi
+  // edelleen kutsua sitä.
   //
-  // Palkintoa EI vielä lisätä saldoon tässä vaiheessa.
-  // Se tehdään erillisellä turvallisella toiminnolla.
+  // Se ei kuitenkaan tee mitään asiakaspuolella.
   //
-  // ============================================================
-
-  Future<AchievementProgress>
-      updateProgress({
-    required Achievement achievement,
-    required int progress,
-  }) async {
-    final CollectionReference<
-            Map<String, dynamic>>?
-        collection =
-        _achievementsCollection;
-
-    if (collection == null) {
-      return AchievementProgress.empty(
-        achievement.id,
-      );
-    }
-
-    final DocumentReference<
-            Map<String, dynamic>>
-        document =
-        collection.doc(
-      achievement.id,
-    );
-
-    final int safeProgress =
-        progress.clamp(
-      0,
-      achievement.target,
-    );
-
-    final bool unlocked =
-        safeProgress >=
-            achievement.target;
-
-    final DocumentSnapshot<
-            Map<String, dynamic>>
-        existing =
-        await document.get();
-
-    final Map<String, dynamic>
-        data =
-        existing.data() ??
-            <String, dynamic>{};
-
-    final bool alreadyUnlocked =
-        data['unlocked'] == true;
-
-    final bool rewardClaimed =
-        data['rewardClaimed'] == true;
-
-    final Timestamp now =
-        Timestamp.now();
-
-    await document.set(
-      <String, dynamic>{
-        'achievementId':
-            achievement.id,
-        'progress':
-            safeProgress,
-        'target':
-            achievement.target,
-        'reward':
-            achievement.reward,
-        'unlocked':
-            alreadyUnlocked || unlocked,
-        'rewardClaimed':
-            rewardClaimed,
-        if (unlocked &&
-            !alreadyUnlocked)
-          'unlockedAt':
-              now,
-        'updatedAt':
-            now,
-      },
-      SetOptions(
-        merge: true,
-      ),
-    );
-
-    return getAchievement(
-      achievement,
-    );
-  }
-
-  // ============================================================
-  // 🏆 UNLOCK ACHIEVEMENT
-  // ============================================================
-
-  Future<AchievementProgress>
-      unlockAchievement(
-    Achievement achievement,
-  ) async {
-    return updateProgress(
-      achievement: achievement,
-      progress: achievement.target,
-    );
-  }
-
-  // ============================================================
-  // 🎁 MARK REWARD AS CLAIMED
-  // ============================================================
-  //
-  // Tämä vain merkitsee palkinnon lunastetuksi.
-  //
-  // Varsinainen STL-saldon muuttaminen kannattaa tehdä
-  // Cloud Functions -puolella, jotta käyttäjä ei voi
-  // manipuloida saldoa suoraan sovelluksesta.
+  // Tämä estää Flutteria kirjoittamasta Firestoreen.
   //
   // ============================================================
 
-  Future<bool> markRewardClaimed(
-    Achievement achievement,
-  ) async {
-    final CollectionReference<
-            Map<String, dynamic>>?
-        collection =
-        _achievementsCollection;
-
-    if (collection == null) {
-      return false;
-    }
-
-    final DocumentReference<
-            Map<String, dynamic>>
-        document =
-        collection.doc(
-      achievement.id,
-    );
-
-    final DocumentSnapshot<
-            Map<String, dynamic>>
-        snapshot =
-        await document.get();
-
-    final Map<String, dynamic>?
-        data =
-        snapshot.data();
-
-    if (data == null) {
-      return false;
-    }
-
-    if (data['unlocked'] != true) {
-      return false;
-    }
-
-    if (data['rewardClaimed'] == true) {
-      return false;
-    }
-
-    await document.set(
-      <String, dynamic>{
-        'rewardClaimed':
-            true,
-        'rewardClaimedAt':
-            Timestamp.now(),
-      },
-      SetOptions(
-        merge: true,
-      ),
-    );
-
-    return true;
-  }
-
-  // ============================================================
-  // 🔄 INITIALIZE MISSING ACHIEVEMENTS
-  // ============================================================
-  //
-  // Luo Firestoreen puuttuvat saavutukset.
-  // Olemassa olevia tietoja ei ylikirjoiteta.
-  //
-  // ============================================================
-
-  Future<void>
-      initializeAchievements() async {
-    final CollectionReference<
-            Map<String, dynamic>>?
-        collection =
-        _achievementsCollection;
-
-    if (collection == null) {
-      return;
-    }
-
-    final WriteBatch batch =
-        _firestore.batch();
-
-    final Map<String, AchievementProgress>
-        existing =
-        await getAchievements();
-
-    for (final Achievement achievement
-        in StelluriiniAchievements.all) {
-      if (existing.containsKey(
-        achievement.id,
-      )) {
-        continue;
-      }
-
-      final DocumentReference<
-              Map<String, dynamic>>
-          document =
-          collection.doc(
-        achievement.id,
-      );
-
-      batch.set(
-        document,
-        <String, dynamic>{
-          'achievementId':
-              achievement.id,
-          'progress':
-              0,
-          'target':
-              achievement.target,
-          'reward':
-              achievement.reward,
-          'unlocked':
-              false,
-          'rewardClaimed':
-              false,
-          'updatedAt':
-              Timestamp.now(),
-        },
-      );
-    }
-
-    await batch.commit();
+  Future<void> initializeAchievements() async {
+    // Ei asiakaspuolen Firestore-kirjoituksia.
+    //
+    // Cloud Functions luo ja päivittää achievementit
+    // tarvittaessa.
+    return;
   }
 
   // ============================================================
   // 📊 GET COMPLETED COUNT
   // ============================================================
 
-  Future<int> getCompletedCount()
-      async {
-    final Map<String, AchievementProgress>
-        achievements =
+  Future<int> getCompletedCount() async {
+    final Map<String, AchievementProgress> achievements =
         await getAchievements();
 
     return achievements.values
@@ -396,6 +176,43 @@ class AchievementsService {
               achievement.unlocked,
         )
         .length;
+  }
+
+  // ============================================================
+  // 📋 GET ALL DEFINED ACHIEVEMENTS WITH PROGRESS
+  // ============================================================
+  //
+  // Tämä on käyttöliittymälle hyödyllinen apumetodi.
+  //
+  // Firestoresta löytyvät achievementit yhdistetään
+  // StelluriiniAchievements.all-listaan.
+  //
+  // Jos jotakin achievementia ei vielä ole Firestoressa,
+  // käyttöliittymä saa sille turvallisen tyhjän arvon.
+  //
+  // Näin uusi käyttäjä voi avata Achievements-sivun
+  // vaikka yksikään achievement ei olisi vielä aktivoitunut.
+  //
+  // ============================================================
+
+  Future<Map<String, AchievementProgress>>
+      getAllWithDefaults() async {
+    final Map<String, AchievementProgress> existing =
+        await getAchievements();
+
+    final Map<String, AchievementProgress> result =
+        <String, AchievementProgress>{};
+
+    for (final Achievement achievement
+        in StelluriiniAchievements.all) {
+      result[achievement.id] =
+          existing[achievement.id] ??
+              AchievementProgress.fromAchievement(
+                achievement,
+              );
+    }
+
+    return result;
   }
 }
 
@@ -427,6 +244,28 @@ class AchievementProgress {
   });
 
   // ============================================================
+  // 🆕 CREATE FROM ACHIEVEMENT DEFINITION
+  // ============================================================
+  //
+  // Käytetään silloin, kun achievement-dokumenttia ei vielä
+  // ole Firestoressa.
+  //
+  // ============================================================
+
+  factory AchievementProgress.fromAchievement(
+    Achievement achievement,
+  ) {
+    return AchievementProgress(
+      achievementId: achievement.id,
+      progress: 0,
+      target: achievement.target,
+      reward: achievement.reward,
+      unlocked: false,
+      rewardClaimed: false,
+    );
+  }
+
+  // ============================================================
   // EMPTY
   // ============================================================
 
@@ -434,8 +273,7 @@ class AchievementProgress {
     String achievementId,
   ) {
     return AchievementProgress(
-      achievementId:
-          achievementId,
+      achievementId: achievementId,
       progress: 0,
       target: 0,
       reward: 0,
@@ -453,41 +291,32 @@ class AchievementProgress {
     Map<String, dynamic> data,
   ) {
     return AchievementProgress(
-      achievementId:
-          achievementId,
-      progress:
-          _readInt(
+      achievementId: achievementId,
+      progress: _readInt(
         data['progress'],
       ),
-      target:
-          _readInt(
+      target: _readInt(
         data['target'],
       ),
-      reward:
-          _readInt(
+      reward: _readInt(
         data['reward'],
       ),
-      unlocked:
-          data['unlocked'] == true,
-      rewardClaimed:
-          data['rewardClaimed'] == true,
-      unlockedAt:
-          _readDateTime(
+      unlocked: data['unlocked'] == true,
+      rewardClaimed: data['rewardClaimed'] == true,
+      unlockedAt: _readDateTime(
         data['unlockedAt'],
       ),
-      rewardClaimedAt:
-          _readDateTime(
+      rewardClaimedAt: _readDateTime(
         data['rewardClaimedAt'],
       ),
-      updatedAt:
-          _readDateTime(
+      updatedAt: _readDateTime(
         data['updatedAt'],
       ),
     );
   }
 
   // ============================================================
-  // HELPERS
+  // 🔢 READ INTEGER
   // ============================================================
 
   static int _readInt(
@@ -504,6 +333,10 @@ class AchievementProgress {
     return 0;
   }
 
+  // ============================================================
+  // 🕒 READ DATETIME
+  // ============================================================
+
   static DateTime? _readDateTime(
     dynamic value,
   ) {
@@ -519,7 +352,7 @@ class AchievementProgress {
   }
 
   // ============================================================
-  // PROGRESS VALUE
+  // 📈 PROGRESS VALUE
   // ============================================================
 
   double get progressValue {
@@ -531,12 +364,14 @@ class AchievementProgress {
       return 0.0;
     }
 
-    return (progress / target)
-        .clamp(0.0, 1.0);
+    return (progress / target).clamp(
+      0.0,
+      1.0,
+    );
   }
 
   // ============================================================
-  // DISPLAY PROGRESS
+  // 📊 DISPLAY PROGRESS
   // ============================================================
 
   int get safeProgress {
@@ -544,8 +379,7 @@ class AchievementProgress {
       return 0;
     }
 
-    if (target > 0 &&
-        progress > target) {
+    if (target > 0 && progress > target) {
       return target;
     }
 
