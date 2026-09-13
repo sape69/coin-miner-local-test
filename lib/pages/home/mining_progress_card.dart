@@ -13,8 +13,6 @@ class MiningProgressCard extends StatelessWidget {
   final String stlPerHourText;
   final String dailyHashRateText;
   final String dailyHashRateDayText;
-  final String hashRateBonusText;
-  final String effectiveHashRateText;
 
   // ============================================================
   // 🎨 STELLA COLORS
@@ -54,8 +52,6 @@ class MiningProgressCard extends StatelessWidget {
     required this.stlPerHourText,
     required this.dailyHashRateText,
     required this.dailyHashRateDayText,
-    required this.hashRateBonusText,
-    required this.effectiveHashRateText,
   });
 
   // ============================================================
@@ -92,9 +88,6 @@ class MiningProgressCard extends StatelessWidget {
 
     final String progressText =
         '${(progress * 100).toStringAsFixed(1)}%';
-
-    final bool hasPowerBoost =
-        hashRateBonusText.isNotEmpty;
 
     return Container(
       padding:
@@ -296,98 +289,6 @@ class MiningProgressCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // ====================================================
-          // POWER BOOST
-          // ====================================================
-
-          if (hasPowerBoost) ...[
-            const SizedBox(
-              height: 10,
-            ),
-
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              decoration:
-                  BoxDecoration(
-                color:
-                    goldColor.withValues(
-                  alpha: 0.06,
-                ),
-                borderRadius:
-                    BorderRadius.circular(
-                  14,
-                ),
-                border:
-                    Border.all(
-                  color:
-                      goldColor.withValues(
-                    alpha: 0.12,
-                  ),
-                ),
-              ),
-              child:
-                  Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        '⚡',
-                        style:
-                            TextStyle(
-                          fontSize:
-                              15,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        width: 7,
-                      ),
-
-                      Expanded(
-                        child:
-                            Text(
-                          hashRateBonusText,
-                          style:
-                              const TextStyle(
-                            color:
-                                goldColor,
-                            fontSize:
-                                12,
-                            fontWeight:
-                                FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 6,
-                  ),
-
-                  Text(
-                    effectiveHashRateText,
-                    style:
-                        const TextStyle(
-                      color:
-                          goldColor,
-                      fontSize:
-                          12,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
