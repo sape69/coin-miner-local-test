@@ -2297,25 +2297,28 @@ class _HomePageState extends State<HomePage>
       },
     );
 
+    // ==========================================================
+    // ⚡ POWER BOOST HR VALUES
+    // ==========================================================
+    //
+    // Lokalisaation avaimet ovat otsikoita.
+    // Lisätään varsinainen arvo tässä, jotta se näkyy
+    // varmasti kaikilla kielillä.
+    //
+    // Esimerkiksi:
+    //
+    // Hashrate Bonus: +0.5833 HR
+    // Effective Hashrate: 1.5833 HR
+    //
+    // ==========================================================
+
     final String hashRateBonusText =
-        _localization.getWithParams(
-      'hashRateBonus',
-      params: {
-        'amount':
-            _adHashRateBonus
-                .toStringAsFixed(4),
-      },
-    );
+        '${_localization.get('hashRateBonus')}: '
+        '+${_adHashRateBonus.toStringAsFixed(4)} HR';
 
     final String effectiveHashRateText =
-        _localization.getWithParams(
-      'effectiveHashRateLabel',
-      params: {
-        'amount':
-            _effectiveHashRate
-                .toStringAsFixed(4),
-      },
-    );
+        '${_localization.get('effectiveHashRateLabel')}: '
+        '${_effectiveHashRate.toStringAsFixed(4)} HR';
 
     final String nextAdAfterBoostText =
         _localization.get(
