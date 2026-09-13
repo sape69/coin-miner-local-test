@@ -9,6 +9,7 @@
 // ⚡ Daily Streak Hash Rate
 // 🛡️ Tuplabonuksen esto
 // 📜 Daily-tapahtumahistoria
+// 🏆 Stella Achievements
 //
 // Daily Hash Rate:
 //
@@ -116,12 +117,10 @@ const {
 // ============================================================
 
 function calculateDailyHashRate(streak) {
-
   const safeStreak =
     Number.isFinite(streak) && streak > 0
       ? Math.floor(streak)
       : 1;
-
 
   const effectiveDay =
     Math.min(
@@ -129,17 +128,243 @@ function calculateDailyHashRate(streak) {
       DAILY_HASH_RATE_MAX_DAY
     );
 
-
   const calculatedHashRate =
     DAILY_HASH_RATE_START +
     ((effectiveDay - 1) * DAILY_HASH_RATE_STEP);
-
 
   return Math.min(
     calculatedHashRate,
     MAX_DAILY_HASH_RATE
   );
+}
 
+
+// ============================================================
+// 🏆 ACHIEVEMENT COLLECTION
+// ============================================================
+
+function getAchievementCollection(uid) {
+  return getUserRef(uid)
+    .collection(
+      "achievements"
+    );
+}
+
+
+// ============================================================
+// 🏆 READ ACHIEVEMENT
+// ============================================================
+//
+// Achievement-documentit luetaan ennen transactionin
+// ensimmäisiä kirjoituksia.
+//
+// ============================================================
+
+async function getAchievementData(
+  transaction,
+  uid,
+  achievementId
+) {
+  const ref =
+    getAchievementCollection(uid)
+      .doc(achievementId);
+
+  const snapshot =
+    await transaction.get(ref);
+
+  return {
+    ref,
+    data:
+      snapshot.exists
+        ? snapshot.data() || {}
+        : {},
+  };
+}
+
+
+// ============================================================
+// 🏆 BUILD ACHIEVEMENT UPDATE
+// ============================================================
+
+function buildAchievementUpdate(
+  achievementId,
+  target,
+  reward,
+  progress,
+  existingData,
+  now
+) {
+  const safeTarget =
+    Math.max(
+      0,
+      Math.floor(
+        Number(target) || 0
+      )
+    );
+
+  const oldProgress =
+    Math.max(
+      0,
+      Math.floor(
+        Number(existingData.progress) || 0
+      )
+    );
+
+  const requestedProgress =
+    Math.max(
+      0,
+      Math.floor(
+        Number(progress) || 0
+      )
+    );
+
+  const safeProgress =
+    Math.min(
+      safeTarget,
+      Math.max(
+        oldProgress,
+        requestedProgress
+      )
+    );
+
+  const alreadyUnlocked =
+    existingData.unlocked === true;
+
+  const unlocked =
+    alreadyUnlocked ||
+    (
+      safeTarget > 0 &&
+      safeProgress >= safeTarget
+    );
+
+  const update = {
+    achievementId,
+    progress: safeProgress,
+    target: safeTarget,
+    reward,
+    unlocked,
+    rewardClaimed:
+      existingData.rewardClaimed === true,
+    updatedAt: now,
+  };
+
+  if (
+    unlocked &&
+    !alreadyUnlocked &&
+    !existingData.unlockedAt
+  ) {
+    update.unlockedAt = now;
+  }
+
+  return update;
+}
+
+
+// ============================================================
+// 🏆 UPDATE DAILY ACHIEVEMENTS
+// ============================================================
+//
+// 🔥 Hot Streak
+//     Target = 7
+//     Progress = current Daily Streak
+//
+// 🐱 Stella's Friend
+//     Target = 10
+//     Progress = onnistuneiden Daily Check-Inien määrä
+//
+// Palkintoja ei lisätä saldoon tässä vaiheessa.
+//
+// ============================================================
+
+async function updateDailyAchievements(
+  transaction,
+  uid,
+  newDailyStreak,
+  now
+) {
+  // ----------------------------------------------------------
+  // 🔥 READ HOT STREAK
+  // ----------------------------------------------------------
+
+  const hotStreak =
+    await getAchievementData(
+      transaction,
+      uid,
+      "hot_streak"
+    );
+
+  // ----------------------------------------------------------
+  // 🐱 READ STELLA'S FRIEND
+  // ----------------------------------------------------------
+
+  const stellasFriend =
+    await getAchievementData(
+      transaction,
+      uid,
+      "stellas_friend"
+    );
+
+  // ----------------------------------------------------------
+  // 🔥 HOT STREAK
+  // ----------------------------------------------------------
+
+  const hotStreakUpdate =
+    buildAchievementUpdate(
+      "hot_streak",
+      7,
+      50,
+      newDailyStreak,
+      hotStreak.data,
+      now
+    );
+
+  transaction.set(
+    hotStreak.ref,
+    hotStreakUpdate,
+    {
+      merge: true,
+    }
+  );
+
+  // ----------------------------------------------------------
+  // 🐱 STELLA'S FRIEND
+  // ----------------------------------------------------------
+  //
+  // Jokainen onnistunut Daily Check-In kasvattaa
+  // progressia yhdellä.
+  //
+  // ----------------------------------------------------------
+
+  const previousCheckIns =
+    Math.max(
+      0,
+      Math.floor(
+        Number(
+          stellasFriend.data.progress
+        ) || 0
+      )
+    );
+
+  const newCheckIns =
+    previousCheckIns + 1;
+
+  const stellasFriendUpdate =
+    buildAchievementUpdate(
+      "stellas_friend",
+      10,
+      30,
+      newCheckIns,
+      stellasFriend.data,
+      now
+    );
+
+  transaction.set(
+    stellasFriend.ref,
+    stellasFriendUpdate,
+    {
+      merge: true,
+    }
+  );
 }
 
 
@@ -354,6 +579,26 @@ const dailyCheckIn =
 
             const newHashRate =
               dailyHashRate;
+
+
+            // ==================================================
+            // 🏆 ACHIEVEMENTS
+            // ==================================================
+            //
+            // Luetaan Hot Streak ja Stella's Friend ennen
+            // transactionin ensimmäisiä kirjoituksia.
+            //
+            // ==================================================
+
+            const achievementNow =
+              new Date();
+
+            await updateDailyAchievements(
+              transaction,
+              uid,
+              newDailyStreak,
+              achievementNow
+            );
 
 
             // ==================================================
