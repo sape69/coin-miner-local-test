@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
 
@@ -7,19 +8,17 @@ import 'auth_gate.dart';
 // 🐱 STELLURIINI
 // ============================================================
 //
-// VAIHE 4
+// LANGUAGE
 //
-// Firebase alustetaan ennen AuthGatea ja HomePagea.
+// Ensimmäisellä asennuksella oletuskieli on englanti.
 //
-// Ketju:
+// Jos käyttäjä vaihtaa kieltä:
+//    ↓
+// valinta tallennetaan SharedPreferencesiin
 //
-// main.dart
+// Seuraavalla käynnistyksellä:
 //    ↓
-// Firebase.initializeApp()
-//    ↓
-// AuthGate
-//    ↓
-// HomePage
+// viimeksi valittu kieli ladataan
 //
 // ============================================================
 
@@ -61,7 +60,49 @@ class _StelluriiniAppState
   // LANGUAGE
   // ==========================================================
 
-  String _languageCode = 'fi';
+  // Ensimmäisellä asennuksella englanti.
+  String _languageCode = 'en';
+
+  // Käytetään samaa avainta aina kielen tallennukseen.
+  static const String _languageKey =
+      'stelluriini_language';
+
+  // ==========================================================
+  // INIT
+  // ==========================================================
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadLanguage();
+  }
+
+  // ==========================================================
+  // LOAD LANGUAGE
+  // ==========================================================
+
+  Future<void> _loadLanguage() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      final String savedLanguage =
+          preferences.getString(_languageKey) ?? 'en';
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _languageCode = savedLanguage;
+      });
+    } catch (error) {
+      debugPrint(
+        'Language load error: $error',
+      );
+    }
+  }
 
   // ==========================================================
   // CHANGE LANGUAGE
@@ -70,13 +111,27 @@ class _StelluriiniAppState
   Future<void> _changeLanguage(
     String language,
   ) async {
-    if (!mounted) {
-      return;
-    }
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
 
-    setState(() {
-      _languageCode = language;
-    });
+      await preferences.setString(
+        _languageKey,
+        language,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _languageCode = language;
+      });
+    } catch (error) {
+      debugPrint(
+        'Language save error: $error',
+      );
+    }
   }
 
   // ==========================================================
