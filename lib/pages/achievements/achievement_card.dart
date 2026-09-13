@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../localization/achievements/achievements_localization.dart';
 import 'achievement_model.dart';
 
 // ============================================================
@@ -10,12 +11,14 @@ class AchievementCard extends StatelessWidget {
   final Achievement achievement;
   final int progress;
   final bool unlocked;
+  final AchievementsLocalization localization;
 
   const AchievementCard({
     super.key,
     required this.achievement,
     required this.progress,
     required this.unlocked,
+    required this.localization,
   });
 
   // ============================================================
@@ -73,6 +76,26 @@ class AchievementCard extends StatelessWidget {
     }
 
     return progress;
+  }
+
+  // ============================================================
+  // 🏆 LOCALIZED TITLE
+  // ============================================================
+
+  String get _title {
+    return localization.achievementTitle(
+      achievement.id,
+    );
+  }
+
+  // ============================================================
+  // 📝 LOCALIZED DESCRIPTION
+  // ============================================================
+
+  String get _description {
+    return localization.achievementDescription(
+      achievement.id,
+    );
   }
 
   // ============================================================
@@ -210,7 +233,7 @@ class AchievementCard extends StatelessWidget {
                       CrossAxisAlignment.start,
                   children: [
                     Text(
-                      achievement.title,
+                      _title,
                       maxLines: 2,
                       overflow:
                           TextOverflow.ellipsis,
@@ -230,7 +253,7 @@ class AchievementCard extends StatelessWidget {
                     ),
 
                     Text(
-                      achievement.description,
+                      _description,
                       style:
                           const TextStyle(
                         color:
@@ -350,8 +373,12 @@ class AchievementCard extends StatelessWidget {
 
               Text(
                 unlocked
-                    ? 'Achievement unlocked!'
-                    : 'Reward',
+                    ? localization.get(
+                        'achievementUnlocked',
+                      )
+                    : localization.get(
+                        'achievementReward',
+                      ),
                 style:
                     const TextStyle(
                   color:
