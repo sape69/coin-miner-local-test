@@ -1595,10 +1595,6 @@ class _HomePageState extends State<HomePage>
           );
         },
 
-        // ======================================================
-        // 🏆 ACHIEVEMENTS
-        // ======================================================
-
         onAchievementsPressed: () {
           _openPage(
             AchievementsPage(
@@ -1908,6 +1904,32 @@ class _HomePageState extends State<HomePage>
       );
     }
 
+    // ==========================================================
+    // 📊 MINING INFORMATION VALUES
+    // ==========================================================
+
+    final String stlPerHourText =
+        '${_localization.get('stlPerHour')}: '
+        '${_miningPerHour.toStringAsFixed(4)} STL';
+
+    final String dailyHashRateText =
+        '${_localization.get('dailyHashRateLabel')}: '
+        '${_dailyHashRate.toStringAsFixed(4)} HR';
+
+    final String dailyHashRateDayText =
+        '${_localization.get('dailyHashRateDay')} • '
+        '${_dailyHashRate.toStringAsFixed(4)} HR';
+
+    final String hashRateBonusText =
+        _adBoostActive
+            ? '${_localization.get('hashRateBonus')}: '
+                '+${_adHashRateBonus.toStringAsFixed(4)} HR'
+            : '';
+
+    final String effectiveHashRateText =
+        '${_localization.get('effectiveHashRateLabel')}: '
+        '${_effectiveHashRate.toStringAsFixed(4)} HR';
+
     return StellaMiningCard(
       unclaimedMining:
           _unclaimedMining,
@@ -1941,60 +1963,19 @@ class _HomePageState extends State<HomePage>
       ),
 
       stlPerHourText:
-          _localization.getWithParams(
-        'stlPerHour',
-        params: {
-          'amount':
-              _miningPerHour
-                  .toStringAsFixed(4),
-        },
-      ),
+          stlPerHourText,
 
       dailyHashRateText:
-          _localization.getWithParams(
-        'dailyHashRateLabel',
-        params: {
-          'amount':
-              _dailyHashRate
-                  .toStringAsFixed(1),
-        },
-      ),
+          dailyHashRateText,
 
       dailyHashRateDayText:
-          _localization.getWithParams(
-        'dailyHashRateDay',
-        params: {
-          'day':
-              _streak.toString(),
-          'amount':
-              _dailyHashRate
-                  .toStringAsFixed(1),
-        },
-      ),
+          dailyHashRateDayText,
 
       hashRateBonusText:
-          _adBoostActive
-              ? _localization.getWithParams(
-                  'hashRateBonus',
-                  params: {
-                    'amount':
-                        _adHashRateBonus
-                            .toStringAsFixed(4),
-                  },
-                )
-              : '',
+          hashRateBonusText,
 
       effectiveHashRateText:
-          _adBoostActive
-              ? _localization.getWithParams(
-                  'effectiveHashRateLabel',
-                  params: {
-                    'amount':
-                        _effectiveHashRate
-                            .toStringAsFixed(4),
-                  },
-                )
-              : '',
+          effectiveHashRateText,
     );
   }
 
