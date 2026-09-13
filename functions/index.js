@@ -1,89 +1,37 @@
 "use strict";
 
-
-// ============================================================
-// 🐱 STELLURIINI FIREBASE FUNCTIONS
-// ============================================================
-//
-// Stella Mining Backend
-//
-// ⛏️ Mining
-// 🎁 Daily Bonus
-// 📺 Ad Rewards
-// 📜 Transaction History
-//
-// ============================================================
-
-
-// ============================================================
-// ⛏️ STELLA MINING FUNCTIONS
-// ============================================================
-
 const {
   getMiningStatus,
   claimMining,
-} = require(
-  "./src/functions/miningFunctions"
-);
-
-
-// ============================================================
-// 🎁 STELLA DAILY FUNCTIONS
-// ============================================================
+} = require("./src/functions/miningFunctions");
 
 const {
   dailyCheckIn,
-} = require(
-  "./src/functions/dailyFunctions"
-);
-
-
-// ============================================================
-// 📺 STELLA AD FUNCTIONS
-// ============================================================
+} = require("./src/functions/dailyFunctions");
 
 const {
   testAdReward,
   adMobReward,
-} = require(
-  "./src/functions/adFunctions"
-);
-
-
-// ============================================================
-// 📜 STELLA HISTORY FUNCTIONS
-// ============================================================
+} = require("./src/functions/adFunctions");
 
 const {
   getTransactionHistory,
-} = require(
-  "./src/functions/historyFunctions"
-);
+} = require("./src/functions/historyFunctions");
 
+const {
+  getAchievements,
+  getAchievementsCompleted,
+} = require("./src/functions/achievementFunctions");
 
-// ============================================================
-// 🚀 FIREBASE EXPORTS
-// ============================================================
+exports.getMiningStatus = getMiningStatus;
+exports.claimMining = claimMining;
 
-exports.getMiningStatus =
-  getMiningStatus;
+exports.dailyCheckIn = dailyCheckIn;
 
+exports.testAdReward = testAdReward;
+exports.adMobReward = adMobReward;
 
-exports.claimMining =
-  claimMining;
+exports.getTransactionHistory = getTransactionHistory;
 
-
-exports.dailyCheckIn =
-  dailyCheckIn;
-
-
-exports.testAdReward =
-  testAdReward;
-
-
-exports.adMobReward =
-  adMobReward;
-
-
-exports.getTransactionHistory =
-  getTransactionHistory;
+exports.getAchievements = getAchievements;
+exports.getAchievementsCompleted = getAchievementsCompleted;
