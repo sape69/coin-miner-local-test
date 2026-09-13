@@ -10,6 +10,7 @@ import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_logo.dart';
 import '../about/about_page.dart';
+import '../achievements/achievements_page.dart';
 import '../history/transaction_history_page.dart';
 import '../roadmap/roadmap_page.dart';
 import '../whitepaper/whitepaper_page.dart';
@@ -1588,6 +1589,19 @@ class _HomePageState extends State<HomePage>
         onRoadmapPressed: () {
           _openPage(
             RoadmapPage(
+              languageCode:
+                  widget.languageCode,
+            ),
+          );
+        },
+
+        // ======================================================
+        // 🏆 ACHIEVEMENTS
+        // ======================================================
+
+        onAchievementsPressed: () {
+          _openPage(
+            AchievementsPage(
               languageCode:
                   widget.languageCode,
             ),
