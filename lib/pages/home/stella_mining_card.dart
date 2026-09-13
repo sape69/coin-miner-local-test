@@ -88,10 +88,185 @@ class StellaMiningCard extends StatelessWidget {
   }
 
   // ============================================================
+  // LOCALIZED MINING DAY TEXT
+  // ============================================================
+
+  String _dayText(
+    String languageCode,
+    int day,
+  ) {
+    switch (languageCode) {
+      case 'fi':
+        return 'PÄIVÄ $day';
+
+      case 'de':
+        return 'TAG $day';
+
+      case 'es':
+        return 'DÍA $day';
+
+      case 'fr':
+        return 'JOUR $day';
+
+      case 'zh':
+        return '第 $day 天';
+
+      case 'vi':
+        return 'NGÀY $day';
+
+      case 'ja':
+        return 'DAY $day';
+
+      case 'en':
+      default:
+        return 'DAY $day';
+    }
+  }
+
+  // ============================================================
+  // LOCALIZED CURRENT DAY
+  // ============================================================
+
+  String _currentDayText(
+    String languageCode,
+    int day,
+  ) {
+    switch (languageCode) {
+      case 'fi':
+        return 'NYKYINEN PÄIVÄ: $day / 7';
+
+      case 'de':
+        return 'AKTUELLER TAG: $day / 7';
+
+      case 'es':
+        return 'DÍA ACTUAL: $day / 7';
+
+      case 'fr':
+        return 'JOUR ACTUEL : $day / 7';
+
+      case 'zh':
+        return '当前天数：$day / 7';
+
+      case 'vi':
+        return 'NGÀY HIỆN TẠI: $day / 7';
+
+      case 'ja':
+        return '現在の日: $day / 7';
+
+      case 'en':
+      default:
+        return 'CURRENT DAY: $day / 7';
+    }
+  }
+
+  // ============================================================
+  // LOCALIZED MINING DAYS TITLE
+  // ============================================================
+
+  String _miningDaysTitle(
+    String languageCode,
+  ) {
+    switch (languageCode) {
+      case 'fi':
+        return 'STELLAN LOUHINTAPÄIVÄT';
+
+      case 'de':
+        return 'STELLAS MINING-TAGE';
+
+      case 'es':
+        return 'DÍAS DE MINERÍA DE STELLA';
+
+      case 'fr':
+        return 'JOURS DE MINAGE DE STELLA';
+
+      case 'zh':
+        return 'STELLA 挖矿天数';
+
+      case 'vi':
+        return 'NGÀY ĐÀO CỦA STELLA';
+
+      case 'ja':
+        return 'STELLA MINING DAYS';
+
+      case 'en':
+      default:
+        return 'STELLA MINING DAYS';
+    }
+  }
+
+  // ============================================================
+  // LOCALIZED DAY INDICATOR
+  // ============================================================
+
+  String _dayIndicator(
+    String languageCode,
+    int currentDay,
+  ) {
+    switch (languageCode) {
+      case 'fi':
+        return 'PÄIVÄ $currentDay / 7';
+
+      case 'de':
+        return 'TAG $currentDay / 7';
+
+      case 'es':
+        return 'DÍA $currentDay / 7';
+
+      case 'fr':
+        return 'JOUR $currentDay / 7';
+
+      case 'zh':
+        return '第 $currentDay / 7 天';
+
+      case 'vi':
+        return 'NGÀY $currentDay / 7';
+
+      case 'ja':
+        return 'DAY $currentDay / 7';
+
+      case 'en':
+      default:
+        return 'DAY $currentDay / 7';
+    }
+  }
+
+  // ============================================================
+  // GET APP LANGUAGE
+  // ============================================================
+
+  String _getLanguageCode(
+    BuildContext context,
+  ) {
+    final String languageCode =
+        Localizations.localeOf(
+          context,
+        ).languageCode
+            .trim()
+            .toLowerCase();
+
+    switch (languageCode) {
+      case 'fi':
+      case 'en':
+      case 'de':
+      case 'es':
+      case 'fr':
+      case 'zh':
+      case 'vi':
+      case 'ja':
+        return languageCode;
+
+      default:
+        return 'en';
+    }
+  }
+
+  // ============================================================
   // BUILD HR DAY GRID
   // ============================================================
 
-  Widget _buildHrDayGrid() {
+  Widget _buildHrDayGrid(
+    BuildContext context,
+  ) {
     // ----------------------------------------------------------
     // Stella's 7 daily HR levels.
     //
@@ -117,10 +292,16 @@ class StellaMiningCard extends StatelessWidget {
     ];
 
     // ----------------------------------------------------------
-    // Current streak is supplied directly by HomePage.
-    //
-    // 0 means the user has not started a streak yet.
-    // We show Day 1 as the starting/current level.
+    // Current language
+    // ----------------------------------------------------------
+
+    final String languageCode =
+        _getLanguageCode(
+      context,
+    );
+
+    // ----------------------------------------------------------
+    // Current streak
     // ----------------------------------------------------------
 
     final int currentDay =
@@ -150,10 +331,12 @@ class StellaMiningCard extends StatelessWidget {
             const SizedBox(
               width: 8,
             ),
-            const Expanded(
+            Expanded(
               child: Text(
-                'STELLA MINING DAYS',
-                style: TextStyle(
+                _miningDaysTitle(
+                  languageCode,
+                ),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -162,7 +345,10 @@ class StellaMiningCard extends StatelessWidget {
               ),
             ),
             Text(
-              'DAY $currentDay / 7',
+              _dayIndicator(
+                languageCode,
+                currentDay,
+              ),
               style: const TextStyle(
                 color: goldColor,
                 fontSize: 11,
@@ -330,7 +516,10 @@ class StellaMiningCard extends StatelessWidget {
                           CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'DAY $day',
+                          _dayText(
+                            languageCode,
+                            day,
+                          ),
                           maxLines: 1,
                           overflow:
                               TextOverflow.ellipsis,
@@ -442,7 +631,10 @@ class StellaMiningCard extends StatelessWidget {
               Expanded(
                 child:
                     Text(
-                  'CURRENT DAY: $currentDay / 7',
+                  _currentDayText(
+                    languageCode,
+                    currentDay,
+                  ),
                   style:
                       const TextStyle(
                     color:
@@ -749,7 +941,9 @@ class StellaMiningCard extends StatelessWidget {
           // ⛏️ STELLA MINING DAYS
           // ====================================================
 
-          _buildHrDayGrid(),
+          _buildHrDayGrid(
+            context,
+          ),
 
           const SizedBox(
             height: 20,
