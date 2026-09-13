@@ -194,13 +194,6 @@ class _LoginPageState extends State<LoginPage> {
       // ======================================================
       // SAVE ACCOUNT EXISTENCE
       // ======================================================
-      //
-      // Jos käyttäjä kirjautuu onnistuneesti,
-      // tiedämme että tällä laitteella on käytössä
-      // olemassa oleva Stelluriini-tili.
-      //
-      // Tämä varmistaa myös vanhojen käyttäjien kohdalla,
-      // että LUO UUSI TILI poistuu seuraavalla kerralla.
 
       try {
         final SharedPreferences preferences =
@@ -277,10 +270,6 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
     );
-
-    // ========================================================
-    // PÄIVITÄ TILIN TILA PALUUN JÄLKEEN
-    // ========================================================
 
     await _loadAccountStatus();
   }
@@ -371,585 +360,569 @@ class _LoginPageState extends State<LoginPage> {
           true,
 
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (
-            BuildContext context,
-            BoxConstraints constraints,
-          ) {
-            return SingleChildScrollView(
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior.onDrag,
 
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
+          physics:
+              const AlwaysScrollableScrollPhysics(),
 
-              padding:
-                  const EdgeInsets.all(
-                24,
-              ),
+          padding:
+              const EdgeInsets.fromLTRB(
+            24,
+            35,
+            24,
+            60,
+          ),
 
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(
-                  minHeight:
-                      constraints.maxHeight - 48,
+          child: Column(
+            children: [
+              // ==================================================
+              // STELLURIINI LOGO
+              // ==================================================
+
+              Container(
+                width: 190,
+                height: 190,
+
+                decoration:
+                    BoxDecoration(
+                  shape:
+                      BoxShape.circle,
+
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          const Color(
+                        0xFF35D0A0,
+                      ).withValues(
+                        alpha: 0.25,
+                      ),
+                      blurRadius: 25,
+                      spreadRadius: 4,
+                    ),
+                  ],
                 ),
 
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const Spacer(),
+                child:
+                    ClipOval(
+                  child:
+                      Image.asset(
+                    'assets/images/stelluriini_logo.png',
 
-                      // ==================================================
-                      // STELLURIINI LOGO
-                      // ==================================================
+                    width: 190,
+                    height: 190,
 
-                      Container(
-                        width: 190,
-                        height: 190,
+                    fit:
+                        BoxFit.cover,
 
-                        decoration:
-                            BoxDecoration(
-                          shape:
-                              BoxShape.circle,
-
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  const Color(
-                                0xFF35D0A0,
-                              ).withValues(
-                                alpha: 0.25,
-                              ),
-                              blurRadius: 25,
-                              spreadRadius: 4,
-                            ),
-                          ],
+                    errorBuilder:
+                        (
+                      BuildContext context,
+                      Object error,
+                      StackTrace? stackTrace,
+                    ) {
+                      return const Icon(
+                        Icons.pets,
+                        color:
+                            Color(
+                          0xFF35D0A0,
                         ),
+                        size: 80,
+                      );
+                    },
+                  ),
+                ),
+              ),
 
-                        child:
-                            ClipOval(
-                          child:
-                              Image.asset(
-                            'assets/images/stelluriini_logo.png',
+              const SizedBox(
+                height: 20,
+              ),
 
-                            width: 190,
-                            height: 190,
+              // ==================================================
+              // TITLE
+              // ==================================================
 
-                            fit:
-                                BoxFit.cover,
+              const Text(
+                'Stelluriini',
 
-                            errorBuilder:
-                                (
-                              BuildContext context,
-                              Object error,
-                              StackTrace? stackTrace,
-                            ) {
-                              return const Icon(
-                                Icons.pets,
+                style:
+                    TextStyle(
+                  color:
+                      Color(
+                    0xFFF8F4FF,
+                  ),
+                  fontSize: 36,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(
+                height: 6,
+              ),
+
+              const Text(
+                'STL',
+
+                style:
+                    TextStyle(
+                  color:
+                      Color(
+                    0xFF35D0A0,
+                  ),
+                  fontSize: 21,
+                  fontWeight:
+                      FontWeight.bold,
+                  letterSpacing: 4,
+                ),
+              ),
+
+              const SizedBox(
+                height: 35,
+              ),
+
+              // ==================================================
+              // LOGIN TITLE
+              // ==================================================
+
+              const Text(
+                'KIRJAUDU SISÄÄN',
+
+                textAlign:
+                    TextAlign.center,
+
+                style:
+                    TextStyle(
+                  color:
+                      Color(
+                    0xFFF8F4FF,
+                  ),
+                  fontSize: 25,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(
+                height: 28,
+              ),
+
+              // ==================================================
+              // EMAIL
+              // ==================================================
+
+              TextField(
+                controller:
+                    _emailController,
+
+                enabled:
+                    !_loginLoading,
+
+                keyboardType:
+                    TextInputType.emailAddress,
+
+                textInputAction:
+                    TextInputAction.next,
+
+                onSubmitted:
+                    (_) {
+                  if (!_loginLoading) {
+                    FocusScope.of(
+                      context,
+                    ).nextFocus();
+                  }
+                },
+
+                style:
+                    const TextStyle(
+                  color:
+                      Colors.white,
+                  fontSize: 18,
+                ),
+
+                decoration:
+                    InputDecoration(
+                  hintText:
+                      'Sähköposti',
+
+                  hintStyle:
+                      const TextStyle(
+                    color:
+                        Color(
+                      0xFFBDB4D1,
+                    ),
+                    fontSize: 18,
+                  ),
+
+                  prefixIcon:
+                      const Icon(
+                    Icons.email_outlined,
+                    color:
+                        Color(
+                      0xFF35D0A0,
+                    ),
+                  ),
+
+                  filled:
+                      true,
+
+                  fillColor:
+                      const Color(
+                    0xFF21113B,
+                  ),
+
+                  enabledBorder:
+                      OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      16,
+                    ),
+
+                    borderSide:
+                        const BorderSide(
+                      color:
+                          Color(
+                        0xFF35D0A0,
+                      ),
+                      width: 2,
+                    ),
+                  ),
+
+                  focusedBorder:
+                      OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      16,
+                    ),
+
+                    borderSide:
+                        const BorderSide(
+                      color:
+                          Colors.white,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(
+                height: 20,
+              ),
+
+              // ==================================================
+              // PASSWORD
+              // ==================================================
+
+              TextField(
+                controller:
+                    _passwordController,
+
+                enabled:
+                    !_loginLoading,
+
+                obscureText:
+                    _obscurePassword,
+
+                keyboardType:
+                    TextInputType.visiblePassword,
+
+                textInputAction:
+                    TextInputAction.done,
+
+                onSubmitted:
+                    (_) {
+                  if (!_loginLoading) {
+                    _login();
+                  }
+                },
+
+                style:
+                    const TextStyle(
+                  color:
+                      Colors.white,
+                  fontSize: 18,
+                ),
+
+                decoration:
+                    InputDecoration(
+                  hintText:
+                      'Salasana',
+
+                  hintStyle:
+                      const TextStyle(
+                    color:
+                        Color(
+                      0xFFBDB4D1,
+                    ),
+                    fontSize: 18,
+                  ),
+
+                  prefixIcon:
+                      const Icon(
+                    Icons.lock_outline,
+                    color:
+                        Color(
+                      0xFF35D0A0,
+                    ),
+                  ),
+
+                  suffixIcon:
+                      IconButton(
+                    onPressed:
+                        _loginLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _obscurePassword =
+                                      !_obscurePassword;
+                                });
+                              },
+
+                    icon:
+                        Icon(
+                      _obscurePassword
+                          ? Icons
+                              .visibility_outlined
+                          : Icons
+                              .visibility_off_outlined,
+
+                      color:
+                          const Color(
+                        0xFF35D0A0,
+                      ),
+                    ),
+                  ),
+
+                  filled:
+                      true,
+
+                  fillColor:
+                      const Color(
+                    0xFF21113B,
+                  ),
+
+                  enabledBorder:
+                      OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      16,
+                    ),
+
+                    borderSide:
+                        const BorderSide(
+                      color:
+                          Color(
+                        0xFF35D0A0,
+                      ),
+                      width: 2,
+                    ),
+                  ),
+
+                  focusedBorder:
+                      OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      16,
+                    ),
+
+                    borderSide:
+                        const BorderSide(
+                      color:
+                          Colors.white,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(
+                height: 28,
+              ),
+
+              // ==================================================
+              // LOGIN BUTTON
+              // ==================================================
+
+              SizedBox(
+                width:
+                    double.infinity,
+
+                height: 55,
+
+                child:
+                    ElevatedButton(
+                  onPressed:
+                      _loginLoading
+                          ? null
+                          : _login,
+
+                  style:
+                      ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(
+                      0xFF35D0A0,
+                    ),
+
+                    foregroundColor:
+                        const Color(
+                      0xFF120B24,
+                    ),
+
+                    disabledBackgroundColor:
+                        const Color(
+                      0xFF587D72,
+                    ),
+
+                    disabledForegroundColor:
+                        const Color(
+                      0xFFD9D0E5,
+                    ),
+
+                    elevation:
+                        0,
+
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                        16,
+                      ),
+                    ),
+                  ),
+
+                  child:
+                      _loginLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth:
+                                    2.5,
                                 color:
                                     Color(
-                                  0xFF35D0A0,
-                                ),
-                                size: 80,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 20,
-                      ),
-
-                      // ==================================================
-                      // TITLE
-                      // ==================================================
-
-                      const Text(
-                        'Stelluriini',
-
-                        style:
-                            TextStyle(
-                          color:
-                              Color(
-                            0xFFF8F4FF,
-                          ),
-                          fontSize: 36,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 6,
-                      ),
-
-                      const Text(
-                        'STL',
-
-                        style:
-                            TextStyle(
-                          color:
-                              Color(
-                            0xFF35D0A0,
-                          ),
-                          fontSize: 21,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing: 4,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 30,
-                      ),
-
-                      // ==================================================
-                      // LOGIN TITLE
-                      // ==================================================
-
-                      const Text(
-                        'KIRJAUDU SISÄÄN',
-
-                        textAlign:
-                            TextAlign.center,
-
-                        style:
-                            TextStyle(
-                          color:
-                              Color(
-                            0xFFF8F4FF,
-                          ),
-                          fontSize: 25,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 25,
-                      ),
-
-                      // ==================================================
-                      // EMAIL
-                      // ==================================================
-
-                      TextField(
-                        controller:
-                            _emailController,
-
-                        enabled:
-                            !_loginLoading,
-
-                        keyboardType:
-                            TextInputType.emailAddress,
-
-                        textInputAction:
-                            TextInputAction.next,
-
-                        onSubmitted:
-                            (_) {
-                          if (!_loginLoading) {
-                            FocusScope.of(
-                              context,
-                            ).nextFocus();
-                          }
-                        },
-
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white,
-                          fontSize: 18,
-                        ),
-
-                        decoration:
-                            InputDecoration(
-                          hintText:
-                              'Sähköposti',
-
-                          hintStyle:
-                              const TextStyle(
-                            color:
-                                Color(
-                              0xFFBDB4D1,
-                            ),
-                            fontSize: 18,
-                          ),
-
-                          prefixIcon:
-                              const Icon(
-                            Icons.email_outlined,
-                            color:
-                                Color(
-                              0xFF35D0A0,
-                            ),
-                          ),
-
-                          filled:
-                              true,
-
-                          fillColor:
-                              const Color(
-                            0xFF21113B,
-                          ),
-
-                          enabledBorder:
-                              OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              16,
-                            ),
-
-                            borderSide:
-                                const BorderSide(
-                              color:
-                                  Color(
-                                0xFF35D0A0,
-                              ),
-                              width: 2,
-                            ),
-                          ),
-
-                          focusedBorder:
-                              OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              16,
-                            ),
-
-                            borderSide:
-                                const BorderSide(
-                              color:
-                                  Colors.white,
-                              width: 3,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 18,
-                      ),
-
-                      // ==================================================
-                      // PASSWORD
-                      // ==================================================
-
-                      TextField(
-                        controller:
-                            _passwordController,
-
-                        enabled:
-                            !_loginLoading,
-
-                        obscureText:
-                            _obscurePassword,
-
-                        keyboardType:
-                            TextInputType.visiblePassword,
-
-                        textInputAction:
-                            TextInputAction.done,
-
-                        onSubmitted:
-                            (_) {
-                          if (!_loginLoading) {
-                            _login();
-                          }
-                        },
-
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white,
-                          fontSize: 18,
-                        ),
-
-                        decoration:
-                            InputDecoration(
-                          hintText:
-                              'Salasana',
-
-                          hintStyle:
-                              const TextStyle(
-                            color:
-                                Color(
-                              0xFFBDB4D1,
-                            ),
-                            fontSize: 18,
-                          ),
-
-                          prefixIcon:
-                              const Icon(
-                            Icons.lock_outline,
-                            color:
-                                Color(
-                              0xFF35D0A0,
-                            ),
-                          ),
-
-                          suffixIcon:
-                              IconButton(
-                            onPressed:
-                                _loginLoading
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _obscurePassword =
-                                              !_obscurePassword;
-                                        });
-                                      },
-
-                            icon:
-                                Icon(
-                              _obscurePassword
-                                  ? Icons
-                                      .visibility_outlined
-                                  : Icons
-                                      .visibility_off_outlined,
-
-                              color:
-                                  const Color(
-                                0xFF35D0A0,
-                              ),
-                            ),
-                          ),
-
-                          filled:
-                              true,
-
-                          fillColor:
-                              const Color(
-                            0xFF21113B,
-                          ),
-
-                          enabledBorder:
-                              OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              16,
-                            ),
-
-                            borderSide:
-                                const BorderSide(
-                              color:
-                                  Color(
-                                0xFF35D0A0,
-                              ),
-                              width: 2,
-                            ),
-                          ),
-
-                          focusedBorder:
-                              OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(
-                              16,
-                            ),
-
-                            borderSide:
-                                const BorderSide(
-                              color:
-                                  Colors.white,
-                              width: 3,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 25,
-                      ),
-
-                      // ==================================================
-                      // LOGIN BUTTON
-                      // ==================================================
-
-                      SizedBox(
-                        width:
-                            double.infinity,
-
-                        height: 55,
-
-                        child:
-                            ElevatedButton(
-                          onPressed:
-                              _loginLoading
-                                  ? null
-                                  : _login,
-
-                          style:
-                              ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(
-                              0xFF35D0A0,
-                            ),
-
-                            foregroundColor:
-                                const Color(
-                              0xFF120B24,
-                            ),
-
-                            disabledBackgroundColor:
-                                const Color(
-                              0xFF587D72,
-                            ),
-
-                            disabledForegroundColor:
-                                const Color(
-                              0xFFD9D0E5,
-                            ),
-
-                            elevation:
-                                0,
-
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                16,
-                              ),
-                            ),
-                          ),
-
-                          child:
-                              _loginLoading
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child:
-                                          CircularProgressIndicator(
-                                        strokeWidth:
-                                            2.5,
-                                        color:
-                                            Color(
-                                          0xFF120B24,
-                                        ),
-                                      ),
-                                    )
-                                  : const Text(
-                                      'KIRJAUDU SISÄÄN',
-
-                                      style:
-                                          TextStyle(
-                                        fontSize:
-                                            17,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    ),
-                        ),
-                      ),
-
-                      // ==================================================
-                      // REGISTER BUTTON
-                      // ==================================================
-                      //
-                      // Näytetään vain jos tällä laitteella
-                      // ei ole vielä luotu Stelluriini-tiliä.
-                      //
-                      // Ensimmäisen onnistuneen kirjautumisen jälkeen
-                      // tieto tallennetaan myös täällä.
-                      //
-                      // ==================================================
-
-                      if (!_accountStatusLoading &&
-                          !_accountCreatedOnDevice) ...[
-                        const SizedBox(
-                          height: 14,
-                        ),
-
-                        SizedBox(
-                          width:
-                              double.infinity,
-
-                          height: 50,
-
-                          child:
-                              OutlinedButton(
-                            onPressed:
-                                _loginLoading
-                                    ? null
-                                    : _openRegisterPage,
-
-                            style:
-                                OutlinedButton.styleFrom(
-                              foregroundColor:
-                                  const Color(
-                                0xFF35D0A0,
-                              ),
-
-                              side:
-                                  const BorderSide(
-                                color:
-                                    Color(
-                                  0xFF35D0A0,
-                                ),
-                                width: 2,
-                              ),
-
-                              shape:
-                                  RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                  16,
+                                  0xFF120B24,
                                 ),
                               ),
-                            ),
-
-                            child:
-                                const Text(
-                              'LUO UUSI TILI',
+                            )
+                          : const Text(
+                              'KIRJAUDU SISÄÄN',
 
                               style:
                                   TextStyle(
-                                fontSize: 16,
+                                fontSize:
+                                    17,
                                 fontWeight:
                                     FontWeight.bold,
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(
-                        height: 20,
-                      ),
-
-                      // ==================================================
-                      // FOOTER
-                      // ==================================================
-
-                      const Text(
-                        'STELLA • STELLURIINI • STL',
-
-                        textAlign:
-                            TextAlign.center,
-
-                        style:
-                            TextStyle(
-                          color:
-                              Color(
-                            0xFFBDB4D1,
-                          ),
-                          fontSize: 12,
-                          letterSpacing: 1,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 40,
-                      ),
-
-                      const Spacer(),
-                    ],
-                  ),
                 ),
               ),
-            );
-          },
+
+              // ==================================================
+              // REGISTER BUTTON
+              // ==================================================
+
+              if (!_accountStatusLoading &&
+                  !_accountCreatedOnDevice) ...[
+                const SizedBox(
+                  height: 16,
+                ),
+
+                SizedBox(
+                  width:
+                      double.infinity,
+
+                  height: 50,
+
+                  child:
+                      OutlinedButton(
+                    onPressed:
+                        _loginLoading
+                            ? null
+                            : _openRegisterPage,
+
+                    style:
+                        OutlinedButton.styleFrom(
+                      foregroundColor:
+                          const Color(
+                        0xFF35D0A0,
+                      ),
+
+                      side:
+                          const BorderSide(
+                        color:
+                            Color(
+                          0xFF35D0A0,
+                        ),
+                        width: 2,
+                      ),
+
+                      shape:
+                          RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(
+                          16,
+                        ),
+                      ),
+                    ),
+
+                    child:
+                        const Text(
+                      'LUO UUSI TILI',
+
+                      style:
+                          TextStyle(
+                        fontSize: 16,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
+              // ==================================================
+              // EXTRA VERTICAL SPACE
+              // ==================================================
+              //
+              // Tämä tekee sivusta hieman pidemmän ja antaa
+              // käyttäjälle enemmän vieritysvaraa näppäimistön
+              // ollessa auki.
+              //
+              // ==================================================
+
+              const SizedBox(
+                height: 70,
+              ),
+
+              // ==================================================
+              // FOOTER
+              // ==================================================
+
+              const Text(
+                'STELLA • STELLURIINI • STL',
+
+                textAlign:
+                    TextAlign.center,
+
+                style:
+                    TextStyle(
+                  color:
+                      Color(
+                    0xFFBDB4D1,
+                  ),
+                  fontSize: 12,
+                  letterSpacing: 1,
+                ),
+              ),
+
+              const SizedBox(
+                height: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );
