@@ -37,7 +37,7 @@ class StelluriiniAchievements {
     title: 'First Paw',
     description: 'Start mining for the first time.',
     target: 1,
-    reward: 5,
+    reward: 2,
   );
 
   // ==========================================================
@@ -50,7 +50,7 @@ class StelluriiniAchievements {
     title: 'Little Miner',
     description: 'Mine your first 10 STL.',
     target: 10,
-    reward: 10,
+    reward: 5,
   );
 
   // ==========================================================
@@ -63,7 +63,7 @@ class StelluriiniAchievements {
     title: 'STL Hunter',
     description: 'Mine 100 STL.',
     target: 100,
-    reward: 25,
+    reward: 10,
   );
 
   // ==========================================================
@@ -76,7 +76,7 @@ class StelluriiniAchievements {
     title: 'Hot Streak',
     description: 'Reach a 7 day mining streak.',
     target: 7,
-    reward: 50,
+    reward: 20,
   );
 
   // ==========================================================
@@ -89,7 +89,7 @@ class StelluriiniAchievements {
     title: "Stella's Friend",
     description: 'Complete 10 daily check-ins.',
     target: 10,
-    reward: 30,
+    reward: 15,
   );
 
   // ==========================================================
