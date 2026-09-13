@@ -12,6 +12,7 @@
 // 📜 Mining-historia
 // 🎁 Daily Hash Rate
 // 📺 Stella Power Boost
+// 🏆 Stella Achievements
 //
 // ============================================================
 
@@ -654,6 +655,273 @@ function calculateAdBoostMilliseconds(
     0,
     totalMs
   );
+}
+
+// ============================================================
+// 🏆 ACHIEVEMENT REFERENCES
+// ============================================================
+
+function getAchievementCollection(
+  uid
+) {
+  return getUserRef(uid)
+    .collection(
+      "achievements"
+    );
+}
+
+// ============================================================
+// 🏆 READ ACHIEVEMENT DATA
+// ============================================================
+//
+// Kaikki achievement-readit tehdään ennen transactionin
+// ensimmäisiä kirjoituksia.
+// Tämä pitää Firestore-transaktion turvallisena.
+//
+// ============================================================
+
+async function getAchievementData(
+  transaction,
+  uid,
+  achievementId
+) {
+  const ref =
+    getAchievementCollection(uid)
+      .doc(achievementId);
+
+  const snapshot =
+    await transaction.get(ref);
+
+  return {
+    ref,
+    data:
+      snapshot.exists
+        ? snapshot.data() || {}
+        : {},
+  };
+}
+
+// ============================================================
+// 🏆 BUILD ACHIEVEMENT UPDATE
+// ============================================================
+
+function buildAchievementUpdate(
+  achievementId,
+  target,
+  reward,
+  progress,
+  existingData,
+  now
+) {
+  const oldProgress =
+    Math.max(
+      0,
+      Math.floor(
+        getSafeNumber(
+          existingData.progress,
+          0
+        )
+      )
+    );
+
+  const safeTarget =
+    Math.max(
+      0,
+      Math.floor(
+        getSafeNumber(
+          target,
+          0
+        )
+      )
+    );
+
+  const safeProgress =
+    Math.min(
+      safeTarget,
+      Math.max(
+        oldProgress,
+        Math.floor(
+          getSafeNumber(
+            progress,
+            0
+          )
+        )
+      )
+    );
+
+  const alreadyUnlocked =
+    existingData.unlocked === true;
+
+  const unlocked =
+    alreadyUnlocked ||
+    (
+      safeTarget > 0 &&
+      safeProgress >= safeTarget
+    );
+
+  const update = {
+    achievementId,
+    progress: safeProgress,
+    target: safeTarget,
+    reward,
+    unlocked,
+    rewardClaimed:
+      existingData.rewardClaimed === true,
+    updatedAt: now,
+  };
+
+  if (
+    unlocked &&
+    !alreadyUnlocked &&
+    !existingData.unlockedAt
+  ) {
+    update.unlockedAt = now;
+  }
+
+  return update;
+}
+
+// ============================================================
+// 🏆 UPDATE MINING ACHIEVEMENTS
+// ============================================================
+//
+// Ensimmäiset kolme achievementia:
+// 🐾 First Paw
+// ⛏️ Little Miner
+// 💎 STL Hunter
+//
+// Progress tallennetaan käyttäjän achievement-documenttiin.
+// Palkintoa ei lisätä saldoon tässä funktiossa.
+//
+// ============================================================
+
+async function updateMiningAchievements(
+  transaction,
+  uid,
+  collected,
+  startedMining,
+  now
+) {
+  const firstPaw =
+    await getAchievementData(
+      transaction,
+      uid,
+      "first_paw"
+    );
+
+  const littleMiner =
+    await getAchievementData(
+      transaction,
+      uid,
+      "little_miner"
+    );
+
+  const stlHunter =
+    await getAchievementData(
+      transaction,
+      uid,
+      "stl_hunter"
+    );
+
+  // ----------------------------------------------------------
+  // 🐾 FIRST PAW
+  // ----------------------------------------------------------
+
+  if (startedMining) {
+    const update =
+      buildAchievementUpdate(
+        "first_paw",
+        1,
+        5,
+        1,
+        firstPaw.data,
+        now
+      );
+
+    transaction.set(
+      firstPaw.ref,
+      update,
+      {
+        merge: true,
+      }
+    );
+  }
+
+  // ----------------------------------------------------------
+  // ⛏️ LITTLE MINER
+  // ----------------------------------------------------------
+
+  if (collected > 0) {
+    const oldLittleProgress =
+      Math.max(
+        0,
+        getSafeNumber(
+          littleMiner.data.progress,
+          0
+        )
+      );
+
+    const newLittleProgress =
+      oldLittleProgress +
+      collected;
+
+    const littleUpdate =
+      buildAchievementUpdate(
+        "little_miner",
+        10,
+        10,
+        Math.floor(
+          newLittleProgress
+        ),
+        littleMiner.data,
+        now
+      );
+
+    transaction.set(
+      littleMiner.ref,
+      littleUpdate,
+      {
+        merge: true,
+      }
+    );
+
+    // --------------------------------------------------------
+    // 💎 STL HUNTER
+    // --------------------------------------------------------
+
+    const oldHunterProgress =
+      Math.max(
+        0,
+        getSafeNumber(
+          stlHunter.data.progress,
+          0
+        )
+      );
+
+    const newHunterProgress =
+      oldHunterProgress +
+      collected;
+
+    const hunterUpdate =
+      buildAchievementUpdate(
+        "stl_hunter",
+        100,
+        25,
+        Math.floor(
+          newHunterProgress
+        ),
+        stlHunter.data,
+        now
+      );
+
+    transaction.set(
+      stlHunter.ref,
+      hunterUpdate,
+      {
+        merge: true,
+      }
+    );
+  }
 }
 
 // ============================================================
@@ -1307,6 +1575,23 @@ const claimMining =
             }
 
             // ==================================================
+            // 🏆 ACHIEVEMENT DATA
+            // ==================================================
+            //
+            // Readataan achievement-documentit ennen kuin
+            // transaction tekee ensimmäisiä kirjoituksia.
+            //
+            // ==================================================
+
+            await updateMiningAchievements(
+              transaction,
+              uid,
+              collected,
+              true,
+              now
+            );
+
+            // ==================================================
             // 🐱 START NEW MINING CYCLE
             // ==================================================
 
@@ -1409,11 +1694,6 @@ const claimMining =
             // ==================================================
             // 📜 HISTORY: DAILY HASH RATE
             // ==================================================
-            //
-            // Flutter transaction_history_page.dart käyttää
-            // tyyppiä "dailyHashRate".
-            //
-            // ==================================================
 
             if (
               !dailyClaim.claimedToday
@@ -1461,10 +1741,6 @@ const claimMining =
 
             // ==================================================
             // 📜 HISTORY: COMPLETED MINING
-            // ==================================================
-            //
-            // Flutter tunnistaa tämän mining-tapahtumana.
-            //
             // ==================================================
 
             if (
