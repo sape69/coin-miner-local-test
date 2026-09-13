@@ -28,6 +28,12 @@ class StellaMiningCard extends StatelessWidget {
   final String dailyHashRateDayText;
 
   // ============================================================
+  // 🎁 DAILY STREAK
+  // ============================================================
+
+  final int dailyStreak;
+
+  // ============================================================
   // 🎨 STELLA COLORS
   // ============================================================
 
@@ -68,6 +74,7 @@ class StellaMiningCard extends StatelessWidget {
     required this.stlPerHourText,
     required this.dailyHashRateText,
     required this.dailyHashRateDayText,
+    required this.dailyStreak,
   });
 
   // ============================================================
@@ -85,6 +92,20 @@ class StellaMiningCard extends StatelessWidget {
   // ============================================================
 
   Widget _buildHrDayGrid() {
+    // ----------------------------------------------------------
+    // Stella's 7 daily HR levels.
+    //
+    // Day 1 = 0.5000 HR
+    // Day 2 = 1.0000 HR
+    // Day 3 = 1.5000 HR
+    // Day 4 = 2.0000 HR
+    // Day 5 = 2.5000 HR
+    // Day 6 = 3.0000 HR
+    // Day 7 = 3.5000 HR
+    //
+    // Day 8 onward remains at Day 7 / 3.5000 HR.
+    // ----------------------------------------------------------
+
     final List<double> rates = [
       0.5,
       1.0,
@@ -96,56 +117,19 @@ class StellaMiningCard extends StatelessWidget {
     ];
 
     // ----------------------------------------------------------
-    // Selvitetään nykyinen HR ruudukkoa varten.
+    // Current streak is supplied directly by HomePage.
     //
-    // dailyHashRateDayText sisältää esimerkiksi:
-    // "Daily Hash Rate • 1.5000 HR"
-    //
-    // Poimitaan siitä numero, jotta nykyinen päivä voidaan
-    // korostaa.
+    // 0 means the user has not started a streak yet.
+    // We show Day 1 as the starting/current level.
     // ----------------------------------------------------------
 
-    double currentRate = 0.5;
-
-    final RegExpMatch? match =
-        RegExp(
-      r'(\d+(?:\.\d+)?)\s*HR',
-      caseSensitive: false,
-    ).firstMatch(
-      dailyHashRateDayText,
-    );
-
-    if (match != null) {
-      currentRate =
-          double.tryParse(
-                match.group(1) ?? '',
-              ) ??
-              0.5;
-    }
-
-    // ----------------------------------------------------------
-    // Muutetaan HR lähimpään päiväarvoon.
-    // ----------------------------------------------------------
-
-    int currentDay = 1;
-
-    double smallestDifference =
-        double.infinity;
-
-    for (int index = 0;
-        index < rates.length;
-        index++) {
-      final double difference =
-          (rates[index] - currentRate).abs();
-
-      if (difference <
-          smallestDifference) {
-        smallestDifference =
-            difference;
-        currentDay =
-            index + 1;
-      }
-    }
+    final int currentDay =
+        dailyStreak <= 0
+            ? 1
+            : dailyStreak.clamp(
+                1,
+                7,
+              );
 
     return Column(
       crossAxisAlignment:
@@ -159,41 +143,30 @@ class StellaMiningCard extends StatelessWidget {
           children: [
             const Text(
               '🐾',
-              style:
-                  TextStyle(
+              style: TextStyle(
                 fontSize: 18,
               ),
             ),
             const SizedBox(
               width: 8,
             ),
-            Expanded(
-              child:
-                  Text(
+            const Expanded(
+              child: Text(
                 'STELLA MINING DAYS',
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white,
-                  fontSize:
-                      13,
-                  fontWeight:
-                      FontWeight.bold,
-                  letterSpacing:
-                      1,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
             ),
             Text(
               'DAY $currentDay / 7',
-              style:
-                  const TextStyle(
-                color:
-                    goldColor,
-                fontSize:
-                    11,
-                fontWeight:
-                    FontWeight.bold,
+              style: const TextStyle(
+                color: goldColor,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -215,17 +188,12 @@ class StellaMiningCard extends StatelessWidget {
               rates.length,
           gridDelegate:
               const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount:
-                2,
-            crossAxisSpacing:
-                10,
-            mainAxisSpacing:
-                10,
-            childAspectRatio:
-                2.15,
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 2.15,
           ),
-          itemBuilder:
-              (
+          itemBuilder: (
             BuildContext context,
             int index,
           ) {
@@ -296,8 +264,7 @@ class StellaMiningCard extends StatelessWidget {
                                   goldColor.withValues(
                                 alpha: 0.12,
                               ),
-                              blurRadius:
-                                  10,
+                              blurRadius: 10,
                             ),
                           ]
                         : null,
@@ -310,10 +277,8 @@ class StellaMiningCard extends StatelessWidget {
                   // --------------------------------------------
 
                   Container(
-                    width:
-                        32,
-                    height:
-                        32,
+                    width: 32,
+                    height: 32,
                     decoration:
                         BoxDecoration(
                       shape:
@@ -340,8 +305,7 @@ class StellaMiningCard extends StatelessWidget {
                               isCurrentDay
                                   ? backgroundColor
                                   : Colors.white,
-                          fontSize:
-                              12,
+                          fontSize: 12,
                           fontWeight:
                               FontWeight.bold,
                         ),
@@ -367,8 +331,7 @@ class StellaMiningCard extends StatelessWidget {
                       children: [
                         Text(
                           'DAY $day',
-                          maxLines:
-                              1,
+                          maxLines: 1,
                           overflow:
                               TextOverflow.ellipsis,
                           style:
@@ -377,8 +340,7 @@ class StellaMiningCard extends StatelessWidget {
                                 isCurrentDay
                                     ? goldColor
                                     : secondaryTextColor,
-                            fontSize:
-                                9,
+                            fontSize: 9,
                             fontWeight:
                                 FontWeight.bold,
                           ),
@@ -388,8 +350,7 @@ class StellaMiningCard extends StatelessWidget {
                         ),
                         Text(
                           '${rate.toStringAsFixed(4)} HR',
-                          maxLines:
-                              1,
+                          maxLines: 1,
                           overflow:
                               TextOverflow.ellipsis,
                           style:
@@ -398,8 +359,7 @@ class StellaMiningCard extends StatelessWidget {
                                 isCurrentDay
                                     ? Colors.white
                                     : Colors.white70,
-                            fontSize:
-                                13,
+                            fontSize: 13,
                             fontWeight:
                                 FontWeight.bold,
                           ),
@@ -409,7 +369,7 @@ class StellaMiningCard extends StatelessWidget {
                   ),
 
                   // --------------------------------------------
-                  // CURRENT INDICATOR
+                  // CURRENT / COMPLETED INDICATOR
                   // --------------------------------------------
 
                   if (isCurrentDay)
@@ -417,17 +377,14 @@ class StellaMiningCard extends StatelessWidget {
                       '🐱',
                       style:
                           TextStyle(
-                        fontSize:
-                            16,
+                        fontSize: 16,
                       ),
                     )
                   else if (isCompletedDay)
                     const Icon(
                       Icons.check_circle_rounded,
-                      color:
-                          pinkColor,
-                      size:
-                          16,
+                      color: pinkColor,
+                      size: 16,
                     ),
                 ],
               ),
@@ -476,8 +433,7 @@ class StellaMiningCard extends StatelessWidget {
                 '🐱',
                 style:
                     TextStyle(
-                  fontSize:
-                      20,
+                  fontSize: 20,
                 ),
               ),
               const SizedBox(
@@ -522,7 +478,9 @@ class StellaMiningCard extends StatelessWidget {
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Container(
       padding:
           const EdgeInsets.all(24),
