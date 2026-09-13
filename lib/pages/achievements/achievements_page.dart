@@ -40,8 +40,7 @@ class _AchievementsPageState
 
   String? _error;
 
-  Map<String, AchievementProgress>
-      _progress = {};
+  Map<String, AchievementProgress> _progress = {};
 
   // ==========================================================
   // 🎨 STELLA COLORS
@@ -100,16 +99,22 @@ class _AchievementsPageState
     try {
       await _service.initializeAchievements();
 
-      final Map<String, AchievementProgress>
-          progress =
+      final List<AchievementProgress> achievements =
           await _service.getAchievements();
+
+      final Map<String, AchievementProgress>
+          progressMap = {
+        for (final AchievementProgress achievement
+            in achievements)
+          achievement.achievementId: achievement,
+      };
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _progress = progress;
+        _progress = progressMap;
         _loading = false;
       });
     } catch (error) {
@@ -137,7 +142,9 @@ class _AchievementsPageState
   ) {
     return _progress[achievement.id] ??
         AchievementProgress.empty(
-          achievement.id,
+          achievementId: achievement.id,
+          target: achievement.target,
+          reward: achievement.reward,
         );
   }
 
@@ -161,9 +168,7 @@ class _AchievementsPageState
   // ==========================================================
 
   int get _totalCount {
-    return StelluriiniAchievements
-        .all
-        .length;
+    return StelluriiniAchievements.all.length;
   }
 
   // ==========================================================
@@ -175,8 +180,7 @@ class _AchievementsPageState
       return 0;
     }
 
-    return _completedCount /
-        _totalCount;
+    return _completedCount / _totalCount;
   }
 
   // ==========================================================
@@ -186,49 +190,36 @@ class _AchievementsPageState
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(22),
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(28),
-        gradient:
-            const LinearGradient(
-          begin:
-              Alignment.topLeft,
-          end:
-              Alignment.bottomRight,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Color(0xFF34204F),
             Color(0xFF1D1034),
           ],
         ),
-        border:
-            Border.all(
-          color:
-              accentColor.withValues(
+        border: Border.all(
+          color: accentColor.withValues(
             alpha: 0.30,
           ),
         ),
-        boxShadow:
-            [
+        boxShadow: [
           BoxShadow(
-            color:
-                accentColor.withValues(
+            color: accentColor.withValues(
               alpha: 0.08,
             ),
-            blurRadius:
-                22,
-            offset:
-                const Offset(
+            blurRadius: 22,
+            offset: const Offset(
               0,
               8,
             ),
           ),
         ],
       ),
-      child:
-          Column(
+      child: Column(
         children: [
           // ====================================================
           // 🐱 STELLA
@@ -237,38 +228,28 @@ class _AchievementsPageState
           Container(
             width: 100,
             height: 100,
-            decoration:
-                BoxDecoration(
-              shape:
-                  BoxShape.circle,
-              color:
-                  accentColor.withValues(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accentColor.withValues(
                 alpha: 0.12,
               ),
-              border:
-                  Border.all(
-                color:
-                    pinkColor.withValues(
+              border: Border.all(
+                color: pinkColor.withValues(
                   alpha: 0.30,
                 ),
                 width: 2,
               ),
-              boxShadow:
-                  [
-                    BoxShadow(
-                      color:
-                          pinkColor.withValues(
-                        alpha: 0.10,
-                      ),
-                      blurRadius:
-                          20,
-                    ),
-                  ],
+              boxShadow: [
+                BoxShadow(
+                  color: pinkColor.withValues(
+                    alpha: 0.10,
+                  ),
+                  blurRadius: 20,
+                ),
+              ],
             ),
-            child:
-                const Center(
-              child:
-                  CatAvatar(
+            child: const Center(
+              child: CatAvatar(
                 size: 82,
               ),
             ),
@@ -286,18 +267,12 @@ class _AchievementsPageState
             _localization.get(
               'achievementsTitle',
             ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
-              fontSize:
-                  25,
-              fontWeight:
-                  FontWeight.bold,
-              letterSpacing:
-                  0.5,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
           ),
 
@@ -309,16 +284,11 @@ class _AchievementsPageState
             _localization.get(
               'achievementsSubtitle',
             ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
-              fontSize:
-                  13,
-              height:
-                  1.4,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: secondaryTextColor,
+              fontSize: 13,
+              height: 1.4,
             ),
           ),
 
@@ -333,18 +303,14 @@ class _AchievementsPageState
           Row(
             children: [
               Expanded(
-                child:
-                    ClipRRect(
+                child: ClipRRect(
                   borderRadius:
                       BorderRadius.circular(
                     20,
                   ),
-                  child:
-                      LinearProgressIndicator(
-                    minHeight:
-                        10,
-                    value:
-                        _completion,
+                  child: LinearProgressIndicator(
+                    minHeight: 10,
+                    value: _completion,
                     backgroundColor:
                         Colors.white.withValues(
                       alpha: 0.08,
@@ -364,14 +330,10 @@ class _AchievementsPageState
 
               Text(
                 '$_completedCount/$_totalCount',
-                style:
-                    const TextStyle(
-                  color:
-                      goldColor,
-                  fontSize:
-                      14,
-                  fontWeight:
-                      FontWeight.bold,
+                style: const TextStyle(
+                  color: goldColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -385,12 +347,9 @@ class _AchievementsPageState
             _localization.get(
               'achievementsCompleted',
             ),
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
-              fontSize:
-                  11,
+            style: const TextStyle(
+              color: secondaryTextColor,
+              fontSize: 11,
             ),
           ),
         ],
@@ -404,31 +363,25 @@ class _AchievementsPageState
 
   Widget _buildAchievementList() {
     return Column(
-      children:
-          StelluriiniAchievements.all
-              .map(
-                (
-                  Achievement achievement,
-                ) {
-                  final AchievementProgress
-                      progress =
-                      _getProgress(
-                    achievement,
-                  );
+      children: StelluriiniAchievements.all
+          .map(
+            (
+              Achievement achievement,
+            ) {
+              final AchievementProgress progress =
+                  _getProgress(
+                achievement,
+              );
 
-                  return AchievementCard(
-                    achievement:
-                        achievement,
-                    progress:
-                        progress.safeProgress,
-                    unlocked:
-                        progress.unlocked,
-                    localization:
-                        _localization,
-                  );
-                },
-              )
-              .toList(),
+              return AchievementCard(
+                achievement: achievement,
+                progress: progress.safeProgress,
+                unlocked: progress.unlocked,
+                localization: _localization,
+              );
+            },
+          )
+          .toList(),
     );
   }
 
@@ -439,31 +392,23 @@ class _AchievementsPageState
   Widget _buildError() {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(20),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
         borderRadius:
             BorderRadius.circular(22),
-        border:
-            Border.all(
-          color:
-              Colors.redAccent.withValues(
+        border: Border.all(
+          color: Colors.redAccent.withValues(
             alpha: 0.25,
           ),
         ),
       ),
-      child:
-          Column(
+      child: Column(
         children: [
           const Text(
             '🐱💔',
-            style:
-                TextStyle(
-              fontSize:
-                  38,
+            style: TextStyle(
+              fontSize: 38,
             ),
           ),
 
@@ -475,16 +420,11 @@ class _AchievementsPageState
             _localization.get(
               'achievementsLoadError',
             ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
-              fontSize:
-                  15,
-              fontWeight:
-                  FontWeight.w600,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
@@ -493,14 +433,11 @@ class _AchievementsPageState
           ),
 
           OutlinedButton.icon(
-            onPressed:
-                _loadAchievements,
-            icon:
-                const Icon(
+            onPressed: _loadAchievements,
+            icon: const Icon(
               Icons.refresh,
             ),
-            label:
-                Text(
+            label: Text(
               _localization.get(
                 'retry',
               ),
@@ -509,8 +446,7 @@ class _AchievementsPageState
                 OutlinedButton.styleFrom(
               foregroundColor:
                   accentColor,
-              side:
-                  BorderSide(
+              side: BorderSide(
                 color:
                     accentColor.withValues(
                   alpha: 0.40,
@@ -528,9 +464,7 @@ class _AchievementsPageState
   // ==========================================================
 
   void _goBack() {
-    Navigator.of(
-      context,
-    ).pop();
+    Navigator.of(context).pop();
   }
 
   // ==========================================================
@@ -542,128 +476,100 @@ class _AchievementsPageState
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor:
-          backgroundColor,
-
-      appBar:
-          AppBar(
-        backgroundColor:
-            backgroundColor,
-        elevation:
-            0,
-        centerTitle:
-            true,
-        leading:
-            IconButton(
-          onPressed:
-              _goBack,
-          icon:
-              const Icon(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          onPressed: _goBack,
+          icon: const Icon(
             Icons.arrow_back_ios_new,
-            color:
-                Colors.white,
+            color: Colors.white,
           ),
         ),
-        title:
-            Text(
+        title: Text(
           _localization.get(
             'achievementsTitle',
           ),
-          style:
-              const TextStyle(
-            color:
-                Colors.white,
-            fontWeight:
-                FontWeight.bold,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            onPressed:
-                _loadAchievements,
-            icon:
-                const Icon(
+            onPressed: _loadAchievements,
+            icon: const Icon(
               Icons.refresh,
-              color:
-                  accentColor,
+              color: accentColor,
             ),
           ),
         ],
       ),
-
-      body:
-          SafeArea(
-        child:
-            _loading
-                ? const Center(
-                    child:
-                        CircularProgressIndicator(
-                      color:
-                          accentColor,
-                    ),
-                  )
-                : RefreshIndicator(
-                    color:
-                        accentColor,
-                    backgroundColor:
-                        cardColor,
-                    onRefresh:
-                        _loadAchievements,
-                    child:
-                        SingleChildScrollView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(),
-                      padding:
-                          const EdgeInsets.fromLTRB(
-                        16,
-                        8,
-                        16,
-                        30,
-                      ),
-                      child:
-                          Column(
-                        children: [
-                          _buildHeader(),
-
-                          const SizedBox(
-                            height: 22,
-                          ),
-
-                          if (_error != null)
-                            _buildError()
-                          else
-                            _buildAchievementList(),
-
-                          const SizedBox(
-                            height: 8,
-                          ),
-
-                          // ====================================
-                          // 🐾 STELLA FOOTER
-                          // ====================================
-
-                          Text(
-                            _localization.get(
-                              'achievementsStellaProud',
-                            ),
-                            textAlign:
-                                TextAlign.center,
-                            style:
-                                TextStyle(
-                              color:
-                                  pinkColor.withValues(
-                                alpha: 0.70,
-                              ),
-                              fontSize:
-                                  12,
-                              fontWeight:
-                                  FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+      body: SafeArea(
+        child: _loading
+            ? const Center(
+                child:
+                    CircularProgressIndicator(
+                  color: accentColor,
+                ),
+              )
+            : RefreshIndicator(
+                color: accentColor,
+                backgroundColor: cardColor,
+                onRefresh: _loadAchievements,
+                child: SingleChildScrollView(
+                  physics:
+                      const AlwaysScrollableScrollPhysics(),
+                  padding:
+                      const EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    30,
                   ),
+                  child: Column(
+                    children: [
+                      _buildHeader(),
+
+                      const SizedBox(
+                        height: 22,
+                      ),
+
+                      if (_error != null)
+                        _buildError()
+                      else
+                        _buildAchievementList(),
+
+                      const SizedBox(
+                        height: 8,
+                      ),
+
+                      // ====================================
+                      // 🐾 STELLA FOOTER
+                      // ====================================
+
+                      Text(
+                        _localization.get(
+                          'achievementsStellaProud',
+                        ),
+                        textAlign:
+                            TextAlign.center,
+                        style: TextStyle(
+                          color:
+                              pinkColor.withValues(
+                            alpha: 0.70,
+                          ),
+                          fontSize: 12,
+                          fontWeight:
+                              FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
