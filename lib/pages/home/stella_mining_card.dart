@@ -26,8 +26,6 @@ class StellaMiningCard extends StatelessWidget {
   final String stlPerHourText;
   final String dailyHashRateText;
   final String dailyHashRateDayText;
-  final String hashRateBonusText;
-  final String effectiveHashRateText;
 
   // ============================================================
   // 🎨 STELLA COLORS
@@ -70,8 +68,6 @@ class StellaMiningCard extends StatelessWidget {
     required this.stlPerHourText,
     required this.dailyHashRateText,
     required this.dailyHashRateDayText,
-    required this.hashRateBonusText,
-    required this.effectiveHashRateText,
   });
 
   // ============================================================
@@ -373,10 +369,6 @@ class StellaMiningCard extends StatelessWidget {
                 dailyHashRateText,
             dailyHashRateDayText:
                 dailyHashRateDayText,
-            hashRateBonusText:
-                hashRateBonusText,
-            effectiveHashRateText:
-                effectiveHashRateText,
           ),
         ],
       ),
