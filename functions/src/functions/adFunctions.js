@@ -1213,10 +1213,15 @@ async function applyAdReward(
 // Varsinainen SSV-callback sisältää allekirjoitetut
 // query-parametrit.
 //
-// AdMobin Verify URL -toimintoa varten endpoint antaa
-// turvallisen 200 OK -vastauksen silloin, kun kyseessä
-// on pelkkä endpointin saavutettavuustarkistus eikä
-// palkkiocallback.
+// AdMobin Verify URL -toimintoa varten endpoint käsittelee
+// myös testicallbackin, jossa custom_data voi puuttua.
+//
+// TÄRKEÄÄ:
+//
+// - Verify URL -testi ei saa antaa käyttäjälle palkkiota.
+// - Oikea tuotannon callback vaatii custom_data-arvon.
+// - Oikea tuotannon callback käsitellään edelleen
+//   verifyAdMobCallback()-tarkistuksen kautta.
 //
 // ============================================================
 
@@ -1250,18 +1255,7 @@ const adMobReward =
 
 
         // ======================================================
-        // 🩺 ADMOB URL VERIFICATION / HEALTH CHECK
-        // ======================================================
-        //
-        // Jos endpoint kutsutaan ilman SSV-parametreja,
-        // palautetaan 200 OK.
-        //
-        // Tämä ei koskaan myönnä palkkiota.
-        //
-        // Varsinainen palkkio käsitellään vasta, kun
-        // allekirjoitettu AdMob SSV callback sisältää
-        // tarvittavat parametrit.
-        //
+        // 🩺 BASIC HEALTH CHECK
         // ======================================================
 
         const queryKeys =
@@ -1286,6 +1280,80 @@ const adMobReward =
 
             message:
               "Stelluriini AdMob SSV endpoint is reachable.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
+        // 🧪 ADMOB VERIFY URL TEST
+        // ======================================================
+        //
+        // AdMobin Verify URL -testissä custom_data voidaan
+        // jättää tyhjäksi.
+        //
+        // Jos Google lähettää SSV-testipyynnön ilman
+        // custom_data-parametria, emme saa yrittää antaa
+        // palkkiota eikä pyytää Stelluriini-käyttäjää.
+        //
+        // Palautamme 200 OK, jotta AdMob voi vahvistaa
+        // endpointin.
+        //
+        // Oikeassa Stelluriini-mainospyynnössä Flutter
+        // lähettää aina:
+        //
+        // UID:power_boost
+        //
+        // tai:
+        //
+        // UID:mining_start
+        //
+        // ======================================================
+
+        const hasCustomData =
+          typeof req.query.custom_data ===
+            "string" &&
+          req.query.custom_data.trim()
+            .length > 0;
+
+
+        const hasSignature =
+          typeof req.query.signature ===
+            "string" &&
+          req.query.signature.trim()
+            .length > 0;
+
+
+        const hasKeyId =
+          typeof req.query.key_id ===
+            "string" &&
+          req.query.key_id.trim()
+            .length > 0;
+
+
+        if (
+          !hasCustomData &&
+          hasSignature &&
+          hasKeyId
+        ) {
+
+          console.log(
+            "🐱 AdMob Verify URL test detected without custom_data. No reward granted."
+          );
+
+          res.status(200).json({
+            success:
+              true,
+
+            verificationOnly:
+              true,
+
+            rewarded:
+              false,
+
+            message:
+              "Stelluriini AdMob SSV verification endpoint is reachable.",
           });
 
           return;
