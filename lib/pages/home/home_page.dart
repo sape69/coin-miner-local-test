@@ -761,7 +761,20 @@ class _HomePageState extends State<HomePage>
 
   Future<HttpsCallableResult<dynamic>>
       _claimMiningWithSsvRetry() async {
-    const int maxAttempts = 8;
+    // ==========================================================
+    // AdMob SSV may arrive a few seconds after the client-side
+    // reward callback.
+    //
+    // We therefore allow up to 15 attempts with a 2-second
+    // interval.
+    //
+    // First attempt is also delayed by 2 seconds.
+    //
+    // Maximum waiting time:
+    // approximately 30 seconds.
+    // ==========================================================
+
+    const int maxAttempts = 15;
 
     const Duration retryDelay =
         Duration(
@@ -775,6 +788,48 @@ class _HomePageState extends State<HomePage>
       attempt <= maxAttempts;
       attempt++
     ) {
+      if (!mounted) {
+        throw Exception(
+          'HomePage was disposed while waiting for AdMob SSV.',
+        );
+      }
+
+      // --------------------------------------------------------
+      // Give AdMob SSV time to reach the backend before the
+      // first claimMining request.
+      // --------------------------------------------------------
+
+      debugPrint(
+        '==================================================',
+      );
+
+      debugPrint(
+        'STELLURIINI WAITING FOR ADMOB SSV',
+      );
+
+      debugPrint(
+        'Attempt: $attempt/$maxAttempts',
+      );
+
+      debugPrint(
+        'Waiting ${retryDelay.inSeconds} seconds '
+        'before claimMining...',
+      );
+
+      debugPrint(
+        '==================================================',
+      );
+
+      await Future<void>.delayed(
+        retryDelay,
+      );
+
+      if (!mounted) {
+        throw Exception(
+          'HomePage was disposed while waiting for AdMob SSV.',
+        );
+      }
+
       try {
         debugPrint(
           '==================================================',
@@ -866,11 +921,7 @@ class _HomePageState extends State<HomePage>
 
         debugPrint(
           'AdMob SSV may not have arrived yet. '
-          'Waiting ${retryDelay.inSeconds} seconds...',
-        );
-
-        await Future<void>.delayed(
-          retryDelay,
+          'Retrying after ${retryDelay.inSeconds} seconds...',
         );
       }
     }
