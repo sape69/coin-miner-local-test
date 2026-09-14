@@ -13,6 +13,7 @@
 // 🎁 Daily Hash Rate
 // 📺 Stella Power Boost
 // 🏆 Stella Achievements
+// 🔐 AdMob SSV -varmistettu Mining Start
 //
 // ============================================================
 
@@ -132,6 +133,148 @@ function getSafePositiveNumber(
   }
 
   return fallback;
+}
+
+// ============================================================
+// 🔐 VALIDATE ADMOB TRANSACTION ID
+// ============================================================
+
+function validateAdMobTransactionId(
+  value
+) {
+  if (
+    typeof value !== "string"
+  ) {
+    return "";
+  }
+
+  const transactionId =
+    value.trim();
+
+  if (
+    transactionId.length === 0 ||
+    transactionId.length > 256
+  ) {
+    return "";
+  }
+
+  return transactionId;
+}
+
+// ============================================================
+// 🔐 GET ADMOB REWARD REFERENCE
+// ============================================================
+
+function getAdMobRewardRef(
+  transactionId
+) {
+  return db
+    .collection("admobRewards")
+    .doc(transactionId);
+}
+
+// ============================================================
+// 🔐 VERIFY MINING START ADMOB REWARD
+// ============================================================
+//
+// Tämä tarkistus varmistaa, että:
+// 1. AdMob SSV on luonut reward-documentin.
+// 2. Reward kuuluu kirjautuneelle käyttäjälle.
+// 3. Reward on oikea AdMob reward.
+// 4. Rewardia ei ole jo käytetty Mining Startiin.
+//
+// Tärkeää:
+// Flutterin lähettämään transactionId:hen ei luoteta
+// sellaisenaan. Firestore-documentti tarkistetaan palvelimella.
+//
+// ============================================================
+
+async function getVerifiedMiningStartReward(
+  transaction,
+  uid,
+  transactionId
+) {
+  const safeTransactionId =
+    validateAdMobTransactionId(
+      transactionId
+    );
+
+  if (!safeTransactionId) {
+    throw new HttpsError(
+      "invalid-argument",
+      "🐱 Kelvollinen AdMob-tapahtuma vaaditaan."
+    );
+  }
+
+  const rewardRef =
+    getAdMobRewardRef(
+      safeTransactionId
+    );
+
+  const rewardSnapshot =
+    await transaction.get(
+      rewardRef
+    );
+
+  if (
+    !rewardSnapshot.exists
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-mainoksen vahvistusta ei löytynyt. Odota hetki ja yritä uudelleen."
+    );
+  }
+
+  const rewardData =
+    rewardSnapshot.data() || {};
+
+  // ----------------------------------------------------------
+  // 👤 USER
+  // ----------------------------------------------------------
+
+  if (
+    typeof rewardData.uid !== "string" ||
+    rewardData.uid !== uid
+  ) {
+    throw new HttpsError(
+      "permission-denied",
+      "🐱 AdMob-tapahtuma ei kuulu tälle käyttäjälle."
+    );
+  }
+
+  // ----------------------------------------------------------
+  // 🎁 REWARD TYPE
+  // ----------------------------------------------------------
+
+  if (
+    typeof rewardData.rewardType === "string" &&
+    rewardData.rewardType !== "admob"
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-tapahtuman tyyppi ei ole kelvollinen."
+    );
+  }
+
+  // ----------------------------------------------------------
+  // 🔒 ALREADY USED
+  // ----------------------------------------------------------
+
+  if (
+    rewardData.miningStartClaimedAt
+  ) {
+    throw new HttpsError(
+      "already-exists",
+      "🐱 Tätä AdMob-mainosta on jo käytetty louhinnan käynnistämiseen."
+    );
+  }
+
+  return {
+    ref: rewardRef,
+    data: rewardData,
+    transactionId:
+      safeTransactionId,
+  };
 }
 
 // ============================================================
@@ -569,7 +712,9 @@ async function getAdBoostHistory(
 
   if (transaction) {
     snapshot =
-      await transaction.get(query);
+      await transaction.get(
+        query
+      );
   } else {
     snapshot =
       await query.get();
@@ -673,12 +818,6 @@ function getAchievementCollection(
 // ============================================================
 // 🏆 READ ACHIEVEMENT DATA
 // ============================================================
-//
-// Kaikki achievement-readit tehdään ennen transactionin
-// ensimmäisiä kirjoituksia.
-// Tämä pitää Firestore-transaktion turvallisena.
-//
-// ============================================================
 
 async function getAchievementData(
   transaction,
@@ -690,7 +829,9 @@ async function getAchievementData(
       .doc(achievementId);
 
   const snapshot =
-    await transaction.get(ref);
+    await transaction.get(
+      ref
+    );
 
   return {
     ref,
@@ -783,16 +924,6 @@ function buildAchievementUpdate(
 
 // ============================================================
 // 🏆 UPDATE MINING ACHIEVEMENTS
-// ============================================================
-//
-// Ensimmäiset kolme achievementia:
-// 🐾 First Paw
-// ⛏️ Little Miner
-// 💎 STL Hunter
-//
-// Progress tallennetaan käyttäjän achievement-documenttiin.
-// Palkintoa ei lisätä saldoon tässä funktiossa.
-//
 // ============================================================
 
 async function updateMiningAchievements(
@@ -1327,6 +1458,29 @@ const claimMining =
         const uid =
           request.auth.uid;
 
+        // ====================================================
+        // 🔐 ADMOB TRANSACTION ID
+        // ====================================================
+        //
+        // Mining Start vaatii nyt palvelimella vahvistetun
+        // AdMob SSV rewardin.
+        //
+        // ====================================================
+
+        const adRewardTransactionId =
+          validateAdMobTransactionId(
+            request.data?.adRewardTransactionId
+          );
+
+        if (
+          !adRewardTransactionId
+        ) {
+          throw new HttpsError(
+            "invalid-argument",
+            "🐱 AdMob-vahvistus puuttuu. Katso mainos loppuun ja yritä uudelleen."
+          );
+        }
+
         const userRef =
           getUserRef(uid);
 
@@ -1362,6 +1516,17 @@ const claimMining =
               snapshot.exists
                 ? snapshot.data() || {}
                 : {};
+
+            // ==================================================
+            // 🔐 VERIFY ADMOB REWARD
+            // ==================================================
+
+            const verifiedReward =
+              await getVerifiedMiningStartReward(
+                transaction,
+                uid,
+                adRewardTransactionId
+              );
 
             // ==================================================
             // 🎁 DAILY HASH RATE
@@ -1411,7 +1576,7 @@ const claimMining =
 
             // ==================================================
             // 🐱 ALREADY MINING
-            // ==================================================
+            // ====================================================
 
             if (
               miningStatus.miningActive
@@ -1577,11 +1742,6 @@ const claimMining =
             // ==================================================
             // 🏆 ACHIEVEMENT DATA
             // ==================================================
-            //
-            // Readataan achievement-documentit ennen kuin
-            // transaction tekee ensimmäisiä kirjoituksia.
-            //
-            // ==================================================
 
             await updateMiningAchievements(
               transaction,
@@ -1613,7 +1773,7 @@ const claimMining =
 
             // ==================================================
             // 👤 UPDATE USER
-            // ==================================================
+            // ====================================================
 
             const userUpdate = {
               // ==============================================
@@ -1679,13 +1839,35 @@ const claimMining =
                 FieldValue.serverTimestamp(),
             };
 
-            // --------------------------------------------------
-            // Power Boost -kenttiä ei poisteta.
-            // --------------------------------------------------
-
             transaction.set(
               userRef,
               userUpdate,
+              {
+                merge: true,
+              }
+            );
+
+            // ==================================================
+            // 🔐 CONSUME ADMOB MINING START REWARD
+            // ==================================================
+            //
+            // Tämän jälkeen sama transactionId ei voi
+            // käynnistää toista Mining Startia.
+            //
+            // ==================================================
+
+            transaction.set(
+              verifiedReward.ref,
+              {
+                miningStartClaimedAt:
+                  FieldValue.serverTimestamp(),
+
+                miningStartClaimedBy:
+                  uid,
+
+                miningStartClaimed:
+                  true,
+              },
               {
                 merge: true,
               }
@@ -1823,6 +2005,9 @@ const claimMining =
                 miningDurationMs:
                   MINING_DURATION_MS,
 
+                adRewardTransactionId:
+                  adRewardTransactionId,
+
                 createdAt:
                   FieldValue.serverTimestamp(),
               }
@@ -1936,6 +2121,13 @@ const claimMining =
                 AD_HASH_RATE_BONUS,
 
               effectiveHashRate,
+
+              // ==================================================
+              // 🔐 ADMOB
+              // ==================================================
+
+              adRewardTransactionId:
+                adRewardTransactionId,
 
               // ==================================================
               // 🐱 MESSAGE
