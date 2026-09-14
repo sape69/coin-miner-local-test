@@ -113,7 +113,6 @@ class _HomePageState extends State<HomePage>
   // 📺 REWARDED ADS
   // ============================================================
 
-  // Production AdMob Rewarded Ad Unit ID.
   static const String _rewardedAdUnitId =
       'ca-app-pub-1131012057145658/2252768949';
 
@@ -1194,7 +1193,7 @@ class _HomePageState extends State<HomePage>
                     false;
 
                 _adLoadError =
-                    'SSV_SETUP_FAILED';
+                    'SSV_SETUP_FAILED: $error';
               });
             }
 
@@ -1248,8 +1247,6 @@ class _HomePageState extends State<HomePage>
                 setState(() {});
               }
 
-              // After any rewarded ad,
-              // prepare a normal Power Boost ad.
               Future<void>.delayed(
                 Duration.zero,
                 () async {
@@ -1282,7 +1279,19 @@ class _HomePageState extends State<HomePage>
               );
 
               debugPrint(
-                'Error: $error',
+                'Code: ${error.code}',
+              );
+
+              debugPrint(
+                'Domain: ${error.domain}',
+              );
+
+              debugPrint(
+                'Message: ${error.message}',
+              );
+
+              debugPrint(
+                'Response info: ${error.responseInfo}',
               );
 
               debugPrint(
@@ -1305,7 +1314,10 @@ class _HomePageState extends State<HomePage>
               if (mounted) {
                 setState(() {
                   _adLoadError =
-                      'SHOW_FAILED';
+                      'SHOW_FAILED | '
+                      'Code: ${error.code} | '
+                      'Domain: ${error.domain} | '
+                      'Message: ${error.message}';
                 });
               }
 
@@ -1332,6 +1344,16 @@ class _HomePageState extends State<HomePage>
         onAdFailedToLoad: (
           LoadAdError error,
         ) {
+          // ======================================================
+          // ⚠️ TÄRKEÄ:
+          // Näytetään koko AdMob-virhe myös puhelimessa.
+          // ======================================================
+
+          final String detailedError =
+              'Code: ${error.code}\n'
+              'Domain: ${error.domain}\n'
+              'Message: ${error.message}';
+
           debugPrint(
             '==================================================',
           );
@@ -1374,15 +1396,31 @@ class _HomePageState extends State<HomePage>
               false;
 
           _adLoadError =
-              '${error.code}:${error.message}';
+              detailedError;
 
           if (mounted) {
             setState(() {});
           }
 
+          // ------------------------------------------------------
+          // Näytetään virhe suoraan käyttäjälle.
+          // ------------------------------------------------------
+
+          if (mounted) {
+            _showDetailedAdLoadError(
+              purpose:
+                  purpose,
+              error:
+                  error,
+            );
+          }
+
+          // ------------------------------------------------------
           // Retry only the normal Power Boost ad.
           // Mining Start will retry when the user presses
           // the mining button again.
+          // ------------------------------------------------------
+
           if (purpose ==
               _powerBoostPurpose) {
             Future<void>.delayed(
@@ -1646,6 +1684,77 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // ⚠️ DETAILED ADMOB LOAD ERROR
+  // ============================================================
+
+  void _showDetailedAdLoadError({
+    required String purpose,
+    required LoadAdError error,
+  }) {
+    if (!mounted) {
+      return;
+    }
+
+    final String purposeText =
+        purpose ==
+                _miningStartPurpose
+            ? 'Mining Start'
+            : 'Power Boost';
+
+    final String message =
+        '⚠️ AdMob-mainosta ei voitu ladata\n\n'
+        'Purpose: $purposeText\n'
+        'Code: ${error.code}\n'
+        'Domain: ${error.domain}\n'
+        'Message: ${error.message}';
+
+    ScaffoldMessenger.of(
+      context,
+    )
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content:
+              SingleChildScrollView(
+            child: Text(
+              message,
+              style:
+                  const TextStyle(
+                color:
+                    Colors.white,
+                fontWeight:
+                    FontWeight.w600,
+                fontSize:
+                    13,
+              ),
+            ),
+          ),
+          behavior:
+              SnackBarBehavior.floating,
+          backgroundColor:
+              const Color(
+            0xFF301A4F,
+          ),
+          duration:
+              const Duration(
+            seconds: 10,
+          ),
+          margin:
+              const EdgeInsets.all(
+            16,
+          ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              16,
+            ),
+          ),
+        ),
+      );
+  }
+
+  // ============================================================
   // ⚠️ ADMOB LOAD ERROR MESSAGE
   // ============================================================
 
@@ -1668,10 +1777,51 @@ class _HomePageState extends State<HomePage>
       'Current AdMob load error: $_adLoadError',
     );
 
-    _showMessage(
-      '⚠️ Mainosta ei voitu ladata juuri nyt. '
-      'Yritä hetken kuluttua uudelleen.',
-    );
+    ScaffoldMessenger.of(
+      context,
+    )
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content:
+              SingleChildScrollView(
+            child: Text(
+              '⚠️ MAINOSVIRHE\n\n'
+              '$_adLoadError',
+              style:
+                  const TextStyle(
+                color:
+                    Colors.white,
+                fontWeight:
+                    FontWeight.w600,
+                fontSize:
+                    13,
+              ),
+            ),
+          ),
+          behavior:
+              SnackBarBehavior.floating,
+          backgroundColor:
+              const Color(
+            0xFF301A4F,
+          ),
+          duration:
+              const Duration(
+            seconds: 10,
+          ),
+          margin:
+              const EdgeInsets.all(
+            16,
+          ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              16,
+            ),
+          ),
+        ),
+      );
   }
 
   // ============================================================
