@@ -15,6 +15,12 @@ class StellaMiningCard extends StatelessWidget {
   final Animation<double> catAnimation;
 
   // ============================================================
+  // 🌍 APP LANGUAGE
+  // ============================================================
+
+  final String languageCode;
+
+  // ============================================================
   // ⛏️ MINING PROGRESS
   // ============================================================
 
@@ -67,6 +73,7 @@ class StellaMiningCard extends StatelessWidget {
     required this.timerText,
     required this.timerLabel,
     required this.catAnimation,
+    required this.languageCode,
     required this.miningActive,
     required this.miningRemainingMs,
     required this.miningDurationMs,
@@ -88,14 +95,42 @@ class StellaMiningCard extends StatelessWidget {
   }
 
   // ============================================================
+  // NORMALIZE LANGUAGE
+  // ============================================================
+
+  String _getLanguageCode() {
+    final String normalizedCode =
+        languageCode
+            .trim()
+            .toLowerCase()
+            .split('-')
+            .first;
+
+    switch (normalizedCode) {
+      case 'fi':
+      case 'en':
+      case 'de':
+      case 'es':
+      case 'fr':
+      case 'zh':
+      case 'vi':
+      case 'ja':
+        return normalizedCode;
+
+      default:
+        return 'en';
+    }
+  }
+
+  // ============================================================
   // LOCALIZED MINING DAY TEXT
   // ============================================================
 
   String _dayText(
-    String languageCode,
+    String language,
     int day,
   ) {
-    switch (languageCode) {
+    switch (language) {
       case 'fi':
         return 'PÄIVÄ $day';
 
@@ -128,10 +163,10 @@ class StellaMiningCard extends StatelessWidget {
   // ============================================================
 
   String _currentDayText(
-    String languageCode,
+    String language,
     int day,
   ) {
-    switch (languageCode) {
+    switch (language) {
       case 'fi':
         return 'NYKYINEN PÄIVÄ: $day / 7';
 
@@ -164,9 +199,9 @@ class StellaMiningCard extends StatelessWidget {
   // ============================================================
 
   String _miningDaysTitle(
-    String languageCode,
+    String language,
   ) {
-    switch (languageCode) {
+    switch (language) {
       case 'fi':
         return 'STELLAN LOUHINTAPÄIVÄT';
 
@@ -199,10 +234,10 @@ class StellaMiningCard extends StatelessWidget {
   // ============================================================
 
   String _dayIndicator(
-    String languageCode,
+    String language,
     int currentDay,
   ) {
-    switch (languageCode) {
+    switch (language) {
       case 'fi':
         return 'PÄIVÄ $currentDay / 7';
 
@@ -227,36 +262,6 @@ class StellaMiningCard extends StatelessWidget {
       case 'en':
       default:
         return 'DAY $currentDay / 7';
-    }
-  }
-
-  // ============================================================
-  // GET APP LANGUAGE
-  // ============================================================
-
-  String _getLanguageCode(
-    BuildContext context,
-  ) {
-    final String languageCode =
-        Localizations.localeOf(
-          context,
-        ).languageCode
-            .trim()
-            .toLowerCase();
-
-    switch (languageCode) {
-      case 'fi':
-      case 'en':
-      case 'de':
-      case 'es':
-      case 'fr':
-      case 'zh':
-      case 'vi':
-      case 'ja':
-        return languageCode;
-
-      default:
-        return 'en';
     }
   }
 
@@ -292,13 +297,11 @@ class StellaMiningCard extends StatelessWidget {
     ];
 
     // ----------------------------------------------------------
-    // Current language
+    // Use Stelluriini's actual selected language.
     // ----------------------------------------------------------
 
-    final String languageCode =
-        _getLanguageCode(
-      context,
-    );
+    final String language =
+        _getLanguageCode();
 
     // ----------------------------------------------------------
     // Current streak
@@ -334,7 +337,7 @@ class StellaMiningCard extends StatelessWidget {
             Expanded(
               child: Text(
                 _miningDaysTitle(
-                  languageCode,
+                  language,
                 ),
                 style: const TextStyle(
                   color: Colors.white,
@@ -346,7 +349,7 @@ class StellaMiningCard extends StatelessWidget {
             ),
             Text(
               _dayIndicator(
-                languageCode,
+                language,
                 currentDay,
               ),
               style: const TextStyle(
@@ -517,7 +520,7 @@ class StellaMiningCard extends StatelessWidget {
                       children: [
                         Text(
                           _dayText(
-                            languageCode,
+                            language,
                             day,
                           ),
                           maxLines: 1,
@@ -632,7 +635,7 @@ class StellaMiningCard extends StatelessWidget {
                 child:
                     Text(
                   _currentDayText(
-                    languageCode,
+                    language,
                     currentDay,
                   ),
                   style:
