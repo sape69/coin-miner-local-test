@@ -1888,6 +1888,13 @@ class _HomePageState extends State<HomePage>
           _catAnimation,
 
       // ========================================================
+      // 🌍 APP LANGUAGE
+      // ========================================================
+
+      languageCode:
+          widget.languageCode,
+
+      // ========================================================
       // ⛏️ 24 H MINING DATA
       // ========================================================
 
@@ -1917,10 +1924,7 @@ class _HomePageState extends State<HomePage>
       // ========================================================
       // 🎁 DAILY STREAK
       // ========================================================
-      //
-      // StellaMiningCard käyttää tätä suoraan
-      // nykyisen louhintapäivän määrittämiseen.
-      //
+
       dailyStreak:
           _streak,
     );
