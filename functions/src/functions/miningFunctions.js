@@ -312,12 +312,6 @@ async function getVerifiedMiningStartReward(
   // ----------------------------------------------------------
   // 🔎 SEARCH ADMOB REWARDS
   // ----------------------------------------------------------
-  //
-  // Käytämme vain equality-suodattimia.
-  //
-  // Tämä vähentää tarpeettomien composite-indexien tarvetta.
-  //
-  // ----------------------------------------------------------
 
   const rewardsQuery =
     db
@@ -364,14 +358,6 @@ async function getVerifiedMiningStartReward(
 
   // ----------------------------------------------------------
   // 🔎 FIND NEWEST VALID REWARD
-  // ----------------------------------------------------------
-  //
-  // Koska query ei käytä orderBy-kenttää, valitsemme uusimman
-  // palkinnon palvelimella.
-  //
-  // Tämä toimii myös silloin, jos vanhoissa reward-dokumenteissa
-  // createdAt puuttuu.
-  //
   // ----------------------------------------------------------
 
   const candidates = [];
@@ -522,16 +508,6 @@ async function getVerifiedMiningStartReward(
 // ============================================================
 // 🎁 CALCULATE DAILY HASH RATE
 // ============================================================
-//
-// Day 1  = 0.5 HR
-// Day 2  = 1.0 HR
-// Day 3  = 1.5 HR
-// Day 4  = 2.0 HR
-// Day 5  = 2.5 HR
-// Day 6  = 3.0 HR
-// Day 7+ = 3.5 HR
-//
-// ============================================================
 
 function calculateDailyHashRate(
   streak
@@ -641,10 +617,6 @@ function calculateNextDailyClaim(
   const currentStreak =
     getDailyStreak(data);
 
-  // ----------------------------------------------------------
-  // Tämän päivän bonus on jo käsitelty.
-  // ----------------------------------------------------------
-
   if (
     lastDailyDate === today
   ) {
@@ -663,10 +635,6 @@ function calculateNextDailyClaim(
     };
   }
 
-  // ----------------------------------------------------------
-  // Tarkistetaan eilinen päivä.
-  // ----------------------------------------------------------
-
   const yesterday =
     new Date(
       `${today}T00:00:00.000Z`
@@ -684,16 +652,7 @@ function calculateNextDailyClaim(
         10
       );
 
-  // ----------------------------------------------------------
-  // Oletuksena uusi streak alkaa päivästä 1.
-  // ----------------------------------------------------------
-
   let newStreak = 1;
-
-  // ----------------------------------------------------------
-  // Jos käyttäjä kävi sovelluksessa eilen,
-  // streak jatkuu.
-  // ----------------------------------------------------------
 
   if (
     lastDailyDate === yesterdayString &&
@@ -1667,17 +1626,24 @@ const claimMining =
                 userRef
               );
 
-            if (
-              !snapshot.exists
-            ) {
-              throw new HttpsError(
-                "failed-precondition",
-                "🐱 Stella-käyttäjää ei löytynyt."
-              );
-            }
+            // ==================================================
+            // 👤 USER DATA
+            // ==================================================
+            //
+            // Jos users/{uid}-dokumenttia ei vielä ole,
+            // käytetään tyhjää käyttäjädataa.
+            //
+            // Myöhemmin transaction.set(..., { merge: true })
+            // luo dokumentin automaattisesti.
+            //
+            // Tämä vastaa dailyCheckIn-funktion toimintaa.
+            //
+            // ==================================================
 
             const data =
-              snapshot.data() || {};
+              snapshot.exists
+                ? snapshot.data() || {}
+                : {};
 
             // ==================================================
             // ⛏️ CHECK ACTIVE MINING FIRST
@@ -1773,22 +1739,6 @@ const claimMining =
 
             // ==================================================
             // 🔐 FIND VERIFIED ADMOB MINING START REWARD
-            // ==================================================
-            //
-            // TÄRKEÄ TURVAMUUTOS:
-            //
-            // Flutter EI lähetä transaction ID:tä.
-            //
-            // Palvelin etsii itse SSV:n luoman reward-documentin.
-            //
-            // Hyväksytty reward:
-            //
-            // rewardType = admob
-            // rewardPurpose = mining_start
-            // miningStartClaimed = false
-            //
-            // Power Boost -reward ei kelpaa.
-            //
             // ==================================================
 
             const verifiedReward =
@@ -1993,27 +1943,15 @@ const claimMining =
             // ====================================================
 
             const userUpdate = {
-              // ==============================================
-              // ⚡ CURRENT DAILY HASH RATE
-              // ==============================================
-
               hashRate:
                 dailyHashRate,
 
               dailyHashRate,
 
-              // ==============================================
-              // 🎁 DAILY STREAK
-              // ==============================================
-
               dailyStreak,
 
               streak:
                 dailyStreak,
-
-              // ==============================================
-              // 📅 DAILY CLAIM DATE
-              // ==============================================
 
               lastDailyDate:
                 dailyClaim.claimedToday
@@ -2024,23 +1962,11 @@ const claimMining =
                     )
                   : today,
 
-              // ==============================================
-              // ⛏️ HASH RATE LOCKED FOR THIS CYCLE
-              // ==============================================
-
               miningHashRate:
                 newMiningHashRate,
 
-              // ==============================================
-              // 💰 BALANCE
-              // ==============================================
-
               miningBalance:
                 newBalance,
-
-              // ==============================================
-              // ⛏️ MINING TIME
-              // ==============================================
 
               miningStartedAt:
                 newMiningStartedAt,
@@ -2048,13 +1974,13 @@ const claimMining =
               miningEndsAt:
                 newMiningEndsAt,
 
-              // ==============================================
-              // 🕒 METADATA
-              // ==============================================
-
               updatedAt:
                 FieldValue.serverTimestamp(),
             };
+
+            // ==================================================
+            // 👤 CREATE OR UPDATE USER
+            // ==================================================
 
             transaction.set(
               userRef,
@@ -2066,10 +1992,6 @@ const claimMining =
 
             // ==================================================
             // 🔐 CONSUME ADMOB MINING START REWARD
-            // ==================================================
-            //
-            // Sama AdMob transaction voidaan käyttää vain kerran.
-            //
             // ==================================================
 
             transaction.set(
@@ -2227,15 +2149,6 @@ const claimMining =
                 miningDurationMs:
                   MINING_DURATION_MS,
 
-                // ==================================================
-                // 🔐 VERIFIED ADMOB TRANSACTION
-                // ==================================================
-                //
-                // Tämä ID tulee palvelimen löytämästä SSV rewardista,
-                // ei Flutterilta.
-                //
-                // ==================================================
-
                 adRewardTransactionId:
                   verifiedReward.transactionId,
 
@@ -2307,10 +2220,6 @@ const claimMining =
               miningBalance:
                 newBalance,
 
-              // ==================================================
-              // ⚡ DAILY HASH RATE
-              // ==================================================
-
               hashRate:
                 dailyHashRate,
 
@@ -2323,10 +2232,6 @@ const claimMining =
 
               streak:
                 dailyStreak,
-
-              // ==================================================
-              // ⛏️ MINING
-              // ==================================================
 
               miningHashRate:
                 newMiningHashRate,
@@ -2343,10 +2248,6 @@ const claimMining =
               miningEndsAt:
                 newMiningEndsAt.toISOString(),
 
-              // ==================================================
-              // ⚡ POWER BOOST
-              // ==================================================
-
               adBoostActive,
 
               adBoostRemainingMs,
@@ -2356,23 +2257,8 @@ const claimMining =
 
               effectiveHashRate,
 
-              // ==================================================
-              // 🔐 ADMOB
-              // ==================================================
-              //
-              // Tämä tieto tulee palvelimen itse löytämästä
-              // varmennetusta rewardista.
-              //
-              // Flutter ei lähettänyt sitä.
-              //
-              // ==================================================
-
               adRewardTransactionId:
                 verifiedReward.transactionId,
-
-              // ==================================================
-              // 🐱 MESSAGE
-              // ==================================================
 
               message:
                 completedPreviousCycle
