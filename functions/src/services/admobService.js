@@ -39,6 +39,10 @@ async function getAdMobPublicKeys() {
     return cachedKeys;
   }
 
+  console.log(
+    "🐱 Downloading AdMob SSV public keys..."
+  );
+
   const response =
     await fetch(
       ADMOB_PUBLIC_KEYS_URL
@@ -69,14 +73,15 @@ async function getAdMobPublicKeys() {
   ) {
     if (
       !key ||
-      !key.keyId ||
+      key.keyId === undefined ||
+      key.keyId === null ||
       !key.pem
     ) {
       continue;
     }
 
     keys[String(key.keyId)] =
-      key.pem;
+      String(key.pem);
   }
 
   if (
@@ -103,10 +108,16 @@ async function getAdMobPublicKeys() {
 
 
 // ==========================================
-// Base64URL decoder
+// Base64 decoder
 // ==========================================
+//
+// AdMob SSV signatures are Base64 encoded.
+// This decoder also supports Base64URL just
+// in case the transport representation uses
+// URL-safe characters.
+//
 
-function base64UrlToBuffer(
+function base64ToBuffer(
   value
 ) {
   if (
@@ -114,14 +125,27 @@ function base64UrlToBuffer(
     typeof value !== "string"
   ) {
     throw new Error(
-      "Invalid base64url value."
+      "Invalid AdMob signature value."
     );
   }
 
   let normalized =
-    value
+    value.trim();
+
+  // Convert URL-safe Base64 to standard
+  // Base64.
+  normalized =
+    normalized
       .replace(/-/g, "+")
       .replace(/_/g, "/");
+
+  // Remove whitespace that could have been
+  // introduced by transport.
+  normalized =
+    normalized.replace(
+      /\s/g,
+      ""
+    );
 
   while (
     normalized.length % 4 !== 0
@@ -129,29 +153,99 @@ function base64UrlToBuffer(
     normalized += "=";
   }
 
-  return Buffer.from(
-    normalized,
-    "base64"
+  const buffer =
+    Buffer.from(
+      normalized,
+      "base64"
+    );
+
+  if (
+    !buffer ||
+    buffer.length === 0
+  ) {
+    throw new Error(
+      "AdMob signature could not be decoded."
+    );
+  }
+
+  return buffer;
+}
+
+
+// ==========================================
+// Get raw request URL
+// ==========================================
+//
+// We deliberately prefer the raw URL
+// representation because AdMob signs the
+// exact query string.
+//
+// Possible sources in Firebase / Express:
+//
+//   req.originalUrl
+//   req.url
+//   req.rawUrl
+//
+// We never rebuild the signed query from
+// req.query because that could change:
+//   - encoding
+//   - parameter order
+//   - escaped characters
+//
+// ==========================================
+
+function getCandidateUrls(
+  req
+) {
+  const candidates = [];
+
+  const addCandidate = (
+    name,
+    value
+  ) => {
+    if (
+      typeof value !== "string" ||
+      value.length === 0
+    ) {
+      return;
+    }
+
+    if (
+      candidates.some(
+        (candidate) =>
+          candidate.value === value
+      )
+    ) {
+      return;
+    }
+
+    candidates.push({
+      name,
+      value,
+    });
+  };
+
+  addCandidate(
+    "req.originalUrl",
+    req.originalUrl
   );
+
+  addCandidate(
+    "req.url",
+    req.url
+  );
+
+  addCandidate(
+    "req.rawUrl",
+    req.rawUrl
+  );
+
+  return candidates;
 }
 
 
 // ==========================================
 // Get raw query string
-// ==========================================
-//
-// IMPORTANT:
-//
-// AdMob SSV signatures are calculated from
-// the exact query string received from AdMob.
-//
-// We must NOT:
-//
-// - reorder parameters
-// - decode parameters
-// - encode parameters again
-// - parse and rebuild the query
-//
 // ==========================================
 
 function getRawQueryString(
@@ -173,9 +267,18 @@ function getRawQueryString(
     return null;
   }
 
-  return url.substring(
-    questionMarkIndex + 1
-  );
+  const queryString =
+    url.substring(
+      questionMarkIndex + 1
+    );
+
+  if (
+    queryString.length === 0
+  ) {
+    return null;
+  }
+
+  return queryString;
 }
 
 
@@ -183,18 +286,20 @@ function getRawQueryString(
 // Extract signed query string
 // ==========================================
 //
-// Google AdMob SSV:
+// According to Google AdMob SSV:
 //
-// Everything BEFORE:
+// The signature is calculated over all
+// query parameters BEFORE:
 //
-// &signature=
+//   &signature=
 //
-// is the signed content.
+// The signature and key_id themselves are
+// NOT part of the signed content.
 //
-// signature and key_id are not part of the
-// signed content.
+// IMPORTANT:
+// We return the exact raw characters from
+// the incoming URL.
 //
-// ==========================================
 
 function buildSignedQueryString(
   url
@@ -224,7 +329,7 @@ function buildSignedQueryString(
     signatureIndex === -1
   ) {
     throw new Error(
-      "AdMob signature parameter not found."
+      "AdMob signature parameter not found in raw query string."
     );
   }
 
@@ -248,14 +353,6 @@ function buildSignedQueryString(
 
 // ==========================================
 // Extract raw signature
-// ==========================================
-//
-// The signature itself is taken directly
-// from the raw URL.
-//
-// This avoids possible differences between
-// Express req.query and the original query.
-//
 // ==========================================
 
 function extractRawSignature(
@@ -292,7 +389,8 @@ function extractRawSignature(
         signatureMarker.length
     );
 
-  // key_id is expected after signature.
+  // According to AdMob SSV the key_id
+  // parameter follows the signature.
   const keyIdMarker =
     "&key_id=";
 
@@ -317,6 +415,8 @@ function extractRawSignature(
     return null;
   }
 
+  // The signature value itself is URL
+  // encoded in the HTTP request.
   try {
     return decodeURIComponent(
       signature
@@ -330,8 +430,68 @@ function extractRawSignature(
 
 
 // ==========================================
-// Verify one signed query
+// Get signature from request
 // ==========================================
+//
+// Raw URL is preferred.
+// req.query is only a fallback.
+//
+
+function getAdMobSignature(
+  req,
+  candidateUrls
+) {
+  for (
+    const candidate of candidateUrls
+  ) {
+    const rawSignature =
+      extractRawSignature(
+        candidate.value
+      );
+
+    if (
+      rawSignature
+    ) {
+      return {
+        value:
+          rawSignature,
+
+        source:
+          candidate.name,
+      };
+    }
+  }
+
+  const querySignature =
+    req.query?.signature;
+
+  if (
+    querySignature !== undefined &&
+    querySignature !== null &&
+    String(querySignature).length > 0
+  ) {
+    return {
+      value:
+        String(
+          querySignature
+        ),
+
+      source:
+        "req.query.signature",
+    };
+  }
+
+  return null;
+}
+
+
+// ==========================================
+// Verify ECDSA / SHA256 signature
+// ==========================================
+//
+// AdMob SSV uses SHA256 with ECDSA.
+// Google's SSV signature uses DER encoding.
+//
 
 function verifySignedQuery(
   signedQueryString,
@@ -364,7 +524,7 @@ function verifySignedQuery(
 
 
 // ==========================================
-// Verify cryptographic signature
+// Cryptographic signature verification
 // ==========================================
 
 async function verifyAdMobSignature(
@@ -375,14 +535,16 @@ async function verifyAdMobSignature(
   );
 
   // ----------------------------------------
-  // Get key ID
+  // Key ID
   // ----------------------------------------
 
   const keyId =
     req.query?.key_id;
 
   if (
-    !keyId
+    keyId === undefined ||
+    keyId === null ||
+    String(keyId).trim().length === 0
   ) {
     throw new Error(
       "Missing AdMob key_id."
@@ -400,7 +562,7 @@ async function verifyAdMobSignature(
   );
 
   // ----------------------------------------
-  // Get AdMob public keys
+  // Load Google public keys
   // ----------------------------------------
 
   const publicKeys =
@@ -419,47 +581,19 @@ async function verifyAdMobSignature(
     );
   }
 
+  console.log(
+    "🐱 AdMob public key found for key_id:",
+    normalizedKeyId
+  );
+
   // ----------------------------------------
-  // Collect possible raw URLs
-  // ----------------------------------------
-  //
-  // Cloud Functions / Express may expose
-  // the incoming URL through either req.url
-  // or req.originalUrl.
-  //
-  // We test both representations.
-  //
-  // No security is weakened because the
-  // cryptographic signature MUST still pass.
+  // Candidate raw URLs
   // ----------------------------------------
 
-  const candidateUrls = [];
-
-  if (
-    typeof req.url === "string" &&
-    req.url.length > 0
-  ) {
-    candidateUrls.push(
-      {
-        name: "req.url",
-        value: req.url,
-      }
+  const candidateUrls =
+    getCandidateUrls(
+      req
     );
-  }
-
-  if (
-    typeof req.originalUrl === "string" &&
-    req.originalUrl.length > 0 &&
-    req.originalUrl !== req.url
-  ) {
-    candidateUrls.push(
-      {
-        name: "req.originalUrl",
-        value:
-          req.originalUrl,
-      }
-    );
-  }
 
   if (
     candidateUrls.length === 0
@@ -469,70 +603,44 @@ async function verifyAdMobSignature(
     );
   }
 
+  console.log(
+    "🐱 AdMob SSV URL candidates:",
+    candidateUrls.map(
+      (candidate) =>
+        candidate.name
+    )
+  );
+
   // ----------------------------------------
-  // Get signature
-  // ----------------------------------------
-  //
-  // Prefer the raw signature from the URL.
-  // Fall back to req.query only if necessary.
-  //
+  // Signature
   // ----------------------------------------
 
-  let rawSignature = null;
-
-  for (
-    const candidate of candidateUrls
-  ) {
-    const extracted =
-      extractRawSignature(
-        candidate.value
-      );
-
-    if (
-      extracted
-    ) {
-      rawSignature =
-        extracted;
-
-      break;
-    }
-  }
+  const signatureInfo =
+    getAdMobSignature(
+      req,
+      candidateUrls
+    );
 
   if (
-    !rawSignature
-  ) {
-    const querySignature =
-      req.query?.signature;
-
-    if (
-      querySignature
-    ) {
-      rawSignature =
-        String(
-          querySignature
-        );
-    }
-  }
-
-  if (
-    !rawSignature
+    !signatureInfo
   ) {
     throw new Error(
       "Missing AdMob signature."
     );
   }
 
-  // ----------------------------------------
-  // Decode signature
-  // ----------------------------------------
+  console.log(
+    "🐱 AdMob SSV signature source:",
+    signatureInfo.source
+  );
 
   const signatureBuffer =
-    base64UrlToBuffer(
-      rawSignature
+    base64ToBuffer(
+      signatureInfo.value
     );
 
   console.log(
-    "🐱 AdMob SSV signature received:",
+    "🐱 AdMob SSV signature decoded:",
     {
       length:
         signatureBuffer.length,
@@ -541,18 +649,12 @@ async function verifyAdMobSignature(
         signatureBuffer.length > 0
           ? signatureBuffer[0]
           : null,
-
-      candidateUrlCount:
-        candidateUrls.length,
     }
   );
 
   // ----------------------------------------
-  // Try each raw URL representation
+  // Verify each possible raw URL
   // ----------------------------------------
-
-  let successfulSource =
-    null;
 
   for (
     const candidate of candidateUrls
@@ -564,11 +666,11 @@ async function verifyAdMobSignature(
         );
 
       // ------------------------------------
-      // Diagnostic hash only.
+      // Diagnostic hash.
       //
-      // We do NOT log the actual signed
-      // query because it may contain UID
-      // or other callback data.
+      // We intentionally do NOT log the
+      // actual signed query because it can
+      // contain user/custom data.
       // ------------------------------------
 
       const queryHash =
@@ -608,14 +710,14 @@ async function verifyAdMobSignature(
       if (
         isValid
       ) {
-        successfulSource =
-          candidate.name;
-
         console.log(
-          "🐱✅ AdMob SSV cryptographic signature is valid.",
+          "🐱✅ AdMob SSV cryptographic signature is VALID.",
           {
             source:
-              successfulSource,
+              candidate.name,
+
+            keyId:
+              normalizedKeyId,
           }
         );
 
@@ -623,7 +725,7 @@ async function verifyAdMobSignature(
       }
 
       console.log(
-        "🐱 AdMob SSV signature did not match candidate:",
+        "🐱❌ AdMob SSV signature did not match:",
         candidate.name
       );
     } catch (
@@ -669,7 +771,9 @@ function normalizeCustomData(
   }
 
   let normalized =
-    String(value).trim();
+    String(
+      value
+    ).trim();
 
   if (
     normalized.length === 0
@@ -679,9 +783,7 @@ function normalizeCustomData(
     );
   }
 
-  // Decode percent-encoded custom data
-  // BEFORE checking the final length.
-
+  // Decode percent-encoded custom data.
   if (
     normalized.includes("%")
   ) {
@@ -718,10 +820,8 @@ function normalizeCustomData(
     );
   }
 
-  // ----------------------------------------
-  // Validate format
-  // ----------------------------------------
-
+  // Only allow the characters our
+  // application uses for UID and purpose.
   if (
     !/^[A-Za-z0-9._:-]+$/.test(
       normalized
@@ -797,16 +897,16 @@ function validateAdMobCallbackData(
       hasCustomData:
         customData !== undefined &&
         customData !== null &&
-        String(customData)
-          .trim()
-          .length > 0,
+        String(
+          customData
+        ).trim().length > 0,
 
       hasUserId:
         userId !== undefined &&
         userId !== null &&
-        String(userId)
-          .trim()
-          .length > 0,
+        String(
+          userId
+        ).trim().length > 0,
 
       keyId:
         query.key_id ||
@@ -1058,14 +1158,15 @@ function validateAdMobCallbackData(
 // Main SSV verification
 // ==========================================
 //
-// Returns callback data ONLY after:
+// The callback is accepted ONLY when:
 //
-// 1. Cryptographic verification succeeds.
-// 2. Ad unit is correct.
-// 3. Reward amount is correct.
-// 4. Reward item is correct.
-// 5. Transaction ID exists.
-// 6. Signed custom_data exists.
+// 1. The AdMob cryptographic signature is
+//    valid.
+// 2. The AdMob ad unit is correct.
+// 3. The reward amount is correct.
+// 4. The reward item is correct.
+// 5. A transaction ID exists.
+// 6. Valid custom_data exists.
 //
 // ==========================================
 
@@ -1081,7 +1182,7 @@ async function verifyAdMobCallback(
   );
 
   console.log(
-    "🐱 AdMob SSV signature verified."
+    "🐱✅ AdMob SSV signature verified."
   );
 
   return validateAdMobCallbackData(
