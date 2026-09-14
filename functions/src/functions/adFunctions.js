@@ -501,6 +501,10 @@ async function applyAdReward(
       if (
         rewardSnapshot.exists
       ) {
+        console.log(
+          `🐱 Duplicate AdMob transaction ignored: ${transactionId}`
+        );
+
         return {
           success:
             true,
@@ -531,20 +535,30 @@ async function applyAdReward(
 
 
       // ======================================================
-      // 🛡️ USER MUST EXIST
+      // 👤 USER DATA
       // ======================================================
+      //
+      // Käyttäjä voidaan luoda tarvittaessa.
+      //
+      // Tämä estää AdMob SSV -callbackia kaatumasta tilanteessa,
+      // jossa Firebase Authentication -käyttäjä on olemassa,
+      // mutta users/{uid}-dokumenttia ei vielä ole.
+      //
+      // ======================================================
+
+      const data =
+        userSnapshot.exists
+          ? userSnapshot.data() || {}
+          : {};
+
 
       if (
         !userSnapshot.exists
       ) {
-        throw new Error(
-          "Stelluriini user does not exist."
+        console.log(
+          `🐱 users/${uid} does not exist. Creating it from verified AdMob callback.`
         );
       }
-
-
-      const data =
-        userSnapshot.data() || {};
 
 
       // ======================================================
@@ -606,6 +620,7 @@ async function applyAdReward(
       // ======================================================
 
       if (
+        rewardPurpose === "power_boost" &&
         adStatus.adBoostRemainingMs > 0
       ) {
         return {
@@ -665,14 +680,11 @@ async function applyAdReward(
           adsToday:
             adStatus.adsToday,
 
-          maxAdsPerDay:
-            MAX_ADS_PER_DAY,
-
           cooldownRemainingMs:
             adStatus.cooldownRemainingMs,
 
           adBoostRemainingMs:
-            0,
+            adStatus.adBoostRemainingMs,
 
           canWatchAd:
             false,
@@ -713,6 +725,11 @@ async function applyAdReward(
       if (
         rewardPurpose === "mining_start"
       ) {
+
+        console.log(
+          `🐱⛏️ Processing verified Mining Start AdMob reward. UID=${uid}, transaction=${transactionId}`
+        );
+
 
         // ----------------------------------------------------
         // 🔐 SAVE VERIFIED MINING START REWARD
@@ -1216,19 +1233,13 @@ async function applyAdReward(
 // AdMobin Verify URL -toimintoa varten endpoint käsittelee
 // myös testicallbackin, jossa custom_data voi puuttua.
 //
-// TÄRKEÄÄ:
-//
-// - Verify URL -testi ei saa antaa käyttäjälle palkkiota.
-// - Oikea tuotannon callback vaatii custom_data-arvon.
-// - Oikea tuotannon callback käsitellään edelleen
-//   verifyAdMobCallback()-tarkistuksen kautta.
-//
 // ============================================================
 
 const adMobReward =
   onRequest(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (req, res) => {
 
@@ -1293,21 +1304,7 @@ const adMobReward =
         // AdMobin Verify URL -testissä custom_data voidaan
         // jättää tyhjäksi.
         //
-        // Jos Google lähettää SSV-testipyynnön ilman
-        // custom_data-parametria, emme saa yrittää antaa
-        // palkkiota eikä pyytää Stelluriini-käyttäjää.
-        //
-        // Palautamme 200 OK, jotta AdMob voi vahvistaa
-        // endpointin.
-        //
-        // Oikeassa Stelluriini-mainospyynnössä Flutter
-        // lähettää aina:
-        //
-        // UID:power_boost
-        //
-        // tai:
-        //
-        // UID:mining_start
+        // Emme koskaan anna palkkiota tässä tapauksessa.
         //
         // ======================================================
 
@@ -1364,6 +1361,17 @@ const adMobReward =
         // 🔐 VERIFY GOOGLE CALLBACK
         // ======================================================
 
+        console.log(
+          "🐱 AdMob SSV callback received."
+        );
+
+
+        console.log(
+          "🐱 AdMob SSV query keys:",
+          queryKeys
+        );
+
+
         const verifiedAd =
           await verifyAdMobCallback(
             req
@@ -1385,7 +1393,7 @@ const adMobReward =
         ) {
 
           console.error(
-            "Invalid AdMob custom_data."
+            "❌ Invalid AdMob custom_data."
           );
 
           res.status(400).json({
@@ -1436,7 +1444,7 @@ const adMobReward =
         ) {
 
           console.error(
-            "AdMob SSV missing transaction_id."
+            "❌ AdMob SSV missing transaction_id."
           );
 
           res.status(400).json({
@@ -1456,7 +1464,7 @@ const adMobReward =
         ) {
 
           console.error(
-            "Invalid AdMob transaction_id."
+            "❌ Invalid AdMob transaction_id."
           );
 
           res.status(400).json({
@@ -1488,7 +1496,7 @@ const adMobReward =
         ) {
 
           console.error(
-            "AdMob user_id does not match custom_data UID."
+            "❌ AdMob user_id does not match custom_data UID."
           );
 
           res.status(400).json({
@@ -1545,6 +1553,17 @@ const adMobReward =
         // 📤 RESPONSE
         // ======================================================
 
+        console.log(
+          "🐱 AdMob SSV processed successfully:",
+          {
+            uid,
+            transactionId,
+            rewardPurpose,
+            result,
+          }
+        );
+
+
         res.status(200).json(
           result
         );
@@ -1552,7 +1571,7 @@ const adMobReward =
       } catch (error) {
 
         console.error(
-          "AdMob reward verification failed:",
+          "❌ AdMob reward verification failed:",
           error
         );
 
