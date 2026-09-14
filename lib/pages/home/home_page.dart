@@ -941,11 +941,29 @@ class _HomePageState extends State<HomePage>
           }
 
           try {
+            // ========================================================
+            // 🔐 ADMOB SERVER-SIDE VERIFICATION
+            // ========================================================
+            //
+            // The SSV customData contains only trusted application
+            // context. The backend still verifies the actual AdMob
+            // callback signature before granting anything.
+            //
+            // The purpose is changed immediately before displaying
+            // the ad:
+            //
+            // UID:power_boost
+            // UID:mining_start
+            //
+            // This allows the backend to distinguish the two
+            // different rewarded-ad actions.
+            // ========================================================
+
             final ServerSideVerificationOptions
                 serverSideOptions =
                 ServerSideVerificationOptions(
               customData:
-                  user.uid,
+                  '${user.uid}:power_boost',
             );
 
             ad.setServerSideOptions(
@@ -1152,14 +1170,13 @@ class _HomePageState extends State<HomePage>
         // 🔐 IMPORTANT
         // ========================================================
         //
-        // We DO NOT call testAdReward here anymore.
+        // We DO NOT grant the Power Boost from the client callback.
         //
-        // The actual Power Boost is granted by the backend only
-        // after Google AdMob has sent and the server has verified
-        // the SSV callback.
+        // Google AdMob sends the SSV callback to the backend.
+        // The backend verifies the signature and then grants the
+        // actual Power Boost.
         //
-        // The client-side reward callback is therefore only used
-        // to refresh the UI and wait briefly for the SSV result.
+        // The client only waits for the backend state to change.
         // ========================================================
 
         await _waitForServerSidePowerBoost();
