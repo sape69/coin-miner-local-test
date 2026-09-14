@@ -7,22 +7,26 @@
 // Tämä tiedosto hallitsee:
 //
 // 🎁 Stella Power Boost
+// ⛏️ Stella Mining Start
 // ⚡ Väliaikainen Hash Rate -boost
 // ⏳ 4 tunnin boost
 // 🔢 Päivittäinen mainosraja
 // 📜 Ad-tapahtumahistoria
 // 🔐 AdMob SSV -callback
 //
-// TÄRKEÄÄ:
+// ============================================================
 //
-// Test Ad Reward on poistettu tuotantoversiosta.
+// AdMob custom_data -muoto:
 //
-// Oikea Power Boost syntyy vain:
+// UID:power_boost
+// UID:mining_start
 //
-// 🔐 varmennetun AdMob SSV -callbackin kautta.
+// Vanha pelkkä UID hyväksytään edelleen ja tulkitaan:
 //
-// AdMob reward on tarkoitettu Power Boostiin.
-// Se EI itsessään luo erillistä Mining Start -oikeutta.
+// UID → power_boost
+//
+// Tämä mahdollistaa turvallisen siirtymän vanhasta
+// Flutter-versiosta uuteen.
 //
 // ============================================================
 
@@ -181,6 +185,117 @@ function getTimestampMilliseconds(
 
 
 // ============================================================
+// 🔐 PARSE ADMOB CUSTOM DATA
+// ============================================================
+//
+// Tuetut muodot:
+//
+// UID
+// UID:power_boost
+// UID:mining_start
+//
+// Vanha pelkkä UID tarkoittaa power_boost.
+//
+// ============================================================
+
+function parseAdMobCustomData(
+  customData
+) {
+  if (
+    typeof customData !== "string"
+  ) {
+    return null;
+  }
+
+  const value =
+    customData.trim();
+
+  if (
+    value.length === 0 ||
+    value.length > 128
+  ) {
+    return null;
+  }
+
+  // ----------------------------------------------------------
+  // 🐱 VANHA MUOTO
+  // ----------------------------------------------------------
+
+  if (
+    !value.includes(":")
+  ) {
+    if (
+      !/^[A-Za-z0-9._:-]+$/.test(value)
+    ) {
+      return null;
+    }
+
+    return {
+      uid:
+        value,
+
+      rewardPurpose:
+        "power_boost",
+    };
+  }
+
+  // ----------------------------------------------------------
+  // 🎯 UUSI MUOTO
+  // ----------------------------------------------------------
+
+  const separatorIndex =
+    value.lastIndexOf(":");
+
+  if (
+    separatorIndex <= 0 ||
+    separatorIndex >=
+      value.length - 1
+  ) {
+    return null;
+  }
+
+  const uid =
+    value.substring(
+      0,
+      separatorIndex
+    );
+
+  const rewardPurpose =
+    value.substring(
+      separatorIndex + 1
+    );
+
+  // ----------------------------------------------------------
+  // 🛡️ UID VALIDATION
+  // ----------------------------------------------------------
+
+  if (
+    uid.length === 0 ||
+    uid.length > 128 ||
+    !/^[A-Za-z0-9._:-]+$/.test(uid)
+  ) {
+    return null;
+  }
+
+  // ----------------------------------------------------------
+  // 🛡️ PURPOSE VALIDATION
+  // ----------------------------------------------------------
+
+  if (
+    rewardPurpose !== "power_boost" &&
+    rewardPurpose !== "mining_start"
+  ) {
+    return null;
+  }
+
+  return {
+    uid,
+    rewardPurpose,
+  };
+}
+
+
+// ============================================================
 // 📺 GET AD STATUS
 // ============================================================
 //
@@ -295,11 +410,6 @@ function getAdStatus(
   // ==========================================================
   // 📺 CAN WATCH
   // ==========================================================
-  //
-  // Uusi mainos voidaan katsoa vasta,
-  // kun edellinen 4 h boost on päättynyt.
-  //
-  // ==========================================================
 
   const canWatchAd =
     adsToday < MAX_ADS_PER_DAY &&
@@ -336,22 +446,14 @@ function getAdStatus(
 // 🎁 APPLY ADMOB REWARD
 // ============================================================
 //
-// Oikea Power Boost:
+// Reward-purpose:
 //
-// 📺 +0.5833 HR
-// ⏳ 4 tunniksi
+// power_boost
+//     → +0.5833 HR / 4 h
 //
-// TÄMÄ FUNKTIO KUTSUTAAN VAIN:
-//
-// 🔐 AdMob SSV -callbackista.
-//
-// Mainosboosti EI lisää pysyvästi käyttäjän
-// Daily Hash Ratea.
-//
-// TÄRKEÄÄ:
-//
-// AdMob reward ei luo tässä vaiheessa erillistä
-// Mining Start -oikeutta.
+// mining_start
+//     → antaa vain vahvistetun Mining Start -oikeuden
+//       eikä aktivoi Power Boostia
 //
 // ============================================================
 
@@ -359,7 +461,8 @@ async function applyAdReward(
   uid,
   transactionId,
   rewardType,
-  adData = {}
+  adData = {},
+  rewardPurpose = "power_boost"
 ) {
   // ==========================================================
   // 🛡️ BASIC INPUT VALIDATION
@@ -393,6 +496,20 @@ async function applyAdReward(
   ) {
     throw new Error(
       "Only verified AdMob rewards are allowed."
+    );
+  }
+
+
+  // ==========================================================
+  // 🎯 VALIDATE PURPOSE
+  // ==========================================================
+
+  if (
+    rewardPurpose !== "power_boost" &&
+    rewardPurpose !== "mining_start"
+  ) {
+    throw new Error(
+      "Invalid AdMob reward purpose."
     );
   }
 
@@ -481,13 +598,6 @@ async function applyAdReward(
       // ======================================================
       // 🛡️ USER MUST EXIST
       // ======================================================
-      //
-      // AdMob SSV:n custom_data sisältää käyttäjän UID:n.
-      //
-      // Emme luo uutta Firestore-käyttäjää pelkän
-      // mainoscallbackin perusteella.
-      //
-      // ======================================================
 
       if (
         !userSnapshot.exists
@@ -551,13 +661,21 @@ async function applyAdReward(
             false,
 
           message:
-            "🐱📺 Päivän Stella Power Boost -raja on saavutettu.",
+            "🐱📺 Päivän Stella-mainosraja on saavutettu.",
         };
       }
 
 
       // ======================================================
       // ⏳ ACTIVE BOOST
+      // ======================================================
+      //
+      // Power Boost -mainosta ei voi käyttää uuden
+      // Power Boostin luomiseen aktiivisen boostin aikana.
+      //
+      // Myös Mining Start -mainos noudattaa tällä hetkellä
+      // samaa mainosrajoitusta.
+      //
       // ======================================================
 
       if (
@@ -633,20 +751,13 @@ async function applyAdReward(
             false,
 
           message:
-            "🐱⏳ Stella Power Boost on vielä cooldownissa.",
+            "🐱⏳ Stella-mainoksen cooldown on vielä aktiivinen.",
         };
       }
 
 
       // ======================================================
       // ⚡ DAILY HASH RATE
-      // ======================================================
-      //
-      // Daily Hash Rate on käyttäjän pysyvä
-      // streak-pohjainen louhintateho.
-      //
-      // Mainos ei muuta tätä arvoa.
-      //
       // ======================================================
 
       const dailyHashRate =
@@ -660,7 +771,269 @@ async function applyAdReward(
 
 
       // ======================================================
-      // 🎁 AD BOOST
+      // 🔢 NEW AD COUNT
+      // ======================================================
+
+      const newAdsToday =
+        adStatus.adsToday +
+        1;
+
+
+      // ======================================================
+      // ======================================================
+      // 🎯 MINING START
+      // ======================================================
+      // ======================================================
+      //
+      // Mining Start -reward:
+      //
+      // • ei aktivoi Power Boostia
+      // • ei muuta hash ratea
+      // • tallennetaan Mining Start -oikeutena
+      // • claimMining käyttää myöhemmin samaa
+      //   transactionId:tä
+      //
+      // ======================================================
+
+      if (
+        rewardPurpose === "mining_start"
+      ) {
+        // ----------------------------------------------------
+        // 🔐 SAVE VERIFIED MINING START REWARD
+        // ----------------------------------------------------
+
+        transaction.set(
+          rewardRef,
+          {
+            uid,
+
+            transactionId,
+
+            rewardType:
+              "admob",
+
+            rewardPurpose:
+              "mining_start",
+
+            // ------------------------------------------------
+            // AdMob verified metadata
+            // ------------------------------------------------
+
+            adNetwork:
+              typeof adData.adNetwork === "string"
+                ? adData.adNetwork
+                : "admob",
+
+            adUnit:
+              typeof adData.adUnit === "string"
+                ? adData.adUnit
+                : "",
+
+            rewardAmount:
+              getSafeNumber(
+                adData.rewardAmount,
+                0
+              ),
+
+            rewardItem:
+              typeof adData.rewardItem === "string"
+                ? adData.rewardItem
+                : "",
+
+            timestamp:
+              getSafeNumber(
+                adData.timestamp,
+                nowMs
+              ),
+
+            keyId:
+              typeof adData.keyId === "string"
+                ? adData.keyId
+                : "",
+
+            customData:
+              typeof adData.customData === "string"
+                ? adData.customData
+                : `${uid}:mining_start`,
+
+            userId:
+              typeof adData.userId === "string"
+                ? adData.userId
+                : "",
+
+            // ------------------------------------------------
+            // 🔐 MINING START USAGE
+            // ------------------------------------------------
+
+            miningClaimed:
+              false,
+
+            miningClaimedAt:
+              null,
+
+            miningStartClaimed:
+              false,
+
+            miningStartClaimedAt:
+              null,
+
+            miningStartClaimedBy:
+              null,
+
+            // ------------------------------------------------
+            // 📺 AD COUNT
+            // ------------------------------------------------
+
+            adsToday:
+              newAdsToday,
+
+            // ------------------------------------------------
+            // 🕒 METADATA
+            // ------------------------------------------------
+
+            createdAt:
+              FieldValue.serverTimestamp(),
+          }
+        );
+
+
+        // ----------------------------------------------------
+        // 👤 UPDATE USER
+        // ----------------------------------------------------
+        //
+        // Mining Start -mainos kuluttaa yhden mainoskerran,
+        // mutta EI aktivoi Power Boostia.
+        //
+        // ----------------------------------------------------
+
+        transaction.set(
+          userRef,
+          {
+            hashRate:
+              dailyHashRate,
+
+            lastAdDate:
+              today,
+
+            adsToday:
+              newAdsToday,
+
+            lastAdRewardAt:
+              now,
+
+            updatedAt:
+              FieldValue.serverTimestamp(),
+          },
+          {
+            merge:
+              true,
+          }
+        );
+
+
+        // ----------------------------------------------------
+        // 📜 HISTORY
+        // ----------------------------------------------------
+
+        const historyRef =
+          getHistoryCollection(uid)
+            .doc();
+
+
+        transaction.set(
+          historyRef,
+          {
+            type:
+              "ad_reward",
+
+            title:
+              "Stella Mining Start 🐱⛏️📺",
+
+            amount:
+              0,
+
+            hashRateBefore:
+              dailyHashRate,
+
+            hashRateAfter:
+              dailyHashRate,
+
+            dailyHashRate,
+
+            rewardType:
+              "admob",
+
+            rewardPurpose:
+              "mining_start",
+
+            adMobTransactionId:
+              transactionId,
+
+            adsToday:
+              newAdsToday,
+
+            createdAt:
+              FieldValue.serverTimestamp(),
+          }
+        );
+
+
+        // ----------------------------------------------------
+        // 📤 RESPONSE
+        // ----------------------------------------------------
+
+        return {
+          success:
+            true,
+
+          rewarded:
+            true,
+
+          duplicate:
+            false,
+
+          reason:
+            null,
+
+          rewardPurpose:
+            "mining_start",
+
+          dailyHashRate,
+
+          hashRate:
+            dailyHashRate,
+
+          effectiveHashRate:
+            dailyHashRate,
+
+          adsToday:
+            newAdsToday,
+
+          maxAdsPerDay:
+            MAX_ADS_PER_DAY,
+
+          cooldownRemainingMs:
+            AD_COOLDOWN_MS,
+
+          canWatchAd:
+            false,
+
+          miningStartReady:
+            true,
+
+          adRewardTransactionId:
+            transactionId,
+
+          message:
+            "🐱⛏️ Stella Mining Start -mainos vahvistettu!",
+        };
+      }
+
+
+      // ======================================================
+      // ======================================================
+      // 🎁 POWER BOOST
+      // ======================================================
       // ======================================================
 
       const bonus =
@@ -694,15 +1067,6 @@ async function applyAdReward(
       const effectiveHashRate =
         dailyHashRate +
         bonus;
-
-
-      // ======================================================
-      // 🔢 NEW AD COUNT
-      // ======================================================
-
-      const newAdsToday =
-        adStatus.adsToday +
-        1;
 
 
       // ======================================================
@@ -768,17 +1132,7 @@ async function applyAdReward(
 
 
       // ======================================================
-      // 🔐 SAVE VERIFIED ADMOB REWARD
-      // ======================================================
-      //
-      // Tämä dokumentti on auditointia ja duplicate-suojausta
-      // varten.
-      //
-      // TÄRKEÄÄ:
-      //
-      // miningClaimed-kenttää EI käytetä enää Mining Start
-      // -oikeutena tässä rewardissa.
-      //
+      // 🔐 SAVE VERIFIED POWER BOOST REWARD
       // ======================================================
 
       transaction.set(
@@ -831,7 +1185,9 @@ async function applyAdReward(
               : "",
 
           customData:
-            uid,
+            typeof adData.customData === "string"
+              ? adData.customData
+              : `${uid}:power_boost`,
 
           userId:
             typeof adData.userId === "string"
@@ -854,12 +1210,6 @@ async function applyAdReward(
 
           // --------------------------------------------------
           // 🔐 REWARD USAGE
-          // --------------------------------------------------
-          //
-          // Tämä reward on Power Boost -reward.
-          //
-          // Se ei anna erillistä Mining Start -oikeutta.
-          //
           // --------------------------------------------------
 
           miningClaimed:
@@ -932,7 +1282,7 @@ async function applyAdReward(
 
       // ======================================================
       // 📤 SUCCESS RESPONSE
-      // ============================================================
+      // ======================================================
 
       return {
         success:
@@ -947,6 +1297,8 @@ async function applyAdReward(
         reason:
           null,
 
+        rewardPurpose:
+          "power_boost",
 
         // ====================================================
         // 🎁 BOOST
@@ -1040,18 +1392,14 @@ async function applyAdReward(
 //
 // Google AdMob SSV kutsuu tätä endpointia.
 //
-// Flutterissa käytetään:
+// Uusi Flutter lähettää:
 //
-// ServerSideVerificationOptions(
-//   customData: Firebase UID,
-// )
+// custom_data=<Firebase UID>:<purpose>
 //
-// AdMob palauttaa:
+// Esimerkiksi:
 //
-// custom_data=<Firebase UID>
-//
-// Koko callback tarkistetaan ensin AdMobin
-// kryptografisella allekirjoituksella.
+// UID123:power_boost
+// UID123:mining_start
 //
 // ============================================================
 
@@ -1086,16 +1434,6 @@ const adMobReward =
         // ======================================================
         // 🔐 VERIFY GOOGLE CALLBACK
         // ======================================================
-        //
-        // Tarkistaa:
-        //
-        // 1. AdMobin kryptografisen allekirjoituksen
-        // 2. Oikean ad_unitin
-        // 3. Oikean reward_amountin
-        // 4. Oikean reward_itemin
-        // 5. Pakolliset tunnisteet
-        //
-        // ======================================================
 
         const verifiedAd =
           await verifyAdMobCallback(
@@ -1104,18 +1442,49 @@ const adMobReward =
 
 
         // ======================================================
-        // 👤 TRUSTED USER ID
+        // 🎯 PARSE CUSTOM DATA
         // ======================================================
-        //
-        // Käytetään AdMobin allekirjoittamaa custom_data-arvoa.
-        //
+
+        const parsedCustomData =
+          parseAdMobCustomData(
+            verifiedAd.customData
+          );
+
+
+        if (
+          !parsedCustomData
+        ) {
+
+          console.error(
+            "Invalid AdMob custom_data."
+          );
+
+          res.status(400).json({
+            success:
+              false,
+
+            error:
+              "Invalid AdMob custom_data.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
+        // 👤 TRUSTED USER ID
         // ======================================================
 
         const uid =
-          typeof verifiedAd.customData ===
-              "string"
-            ? verifiedAd.customData.trim()
-            : "";
+          parsedCustomData.uid;
+
+
+        // ======================================================
+        // 🎯 REWARD PURPOSE
+        // ======================================================
+
+        const rewardPurpose =
+          parsedCustomData.rewardPurpose;
 
 
         // ======================================================
@@ -1130,28 +1499,12 @@ const adMobReward =
 
 
         // ======================================================
-        // 🛡️ VALIDATE TRUSTED DATA
+        // 🛡️ VALIDATE TRANSACTION ID
         // ======================================================
 
-        if (!uid) {
-
-          console.error(
-            "AdMob SSV missing custom_data."
-          );
-
-          res.status(400).json({
-            success:
-              false,
-
-            error:
-              "Missing AdMob custom_data.",
-          });
-
-          return;
-        }
-
-
-        if (!transactionId) {
+        if (
+          !transactionId
+        ) {
 
           console.error(
             "AdMob SSV missing transaction_id."
@@ -1168,35 +1521,6 @@ const adMobReward =
           return;
         }
 
-
-        // ======================================================
-        // 🛡️ BASIC UID VALIDATION
-        // ======================================================
-
-        if (
-          uid.length > 128 ||
-          !/^[A-Za-z0-9._:-]+$/.test(uid)
-        ) {
-
-          console.error(
-            "Invalid AdMob custom_data UID."
-          );
-
-          res.status(400).json({
-            success:
-              false,
-
-            error:
-              "Invalid AdMob custom_data.",
-          });
-
-          return;
-        }
-
-
-        // ======================================================
-        // 🛡️ TRANSACTION ID VALIDATION
-        // ======================================================
 
         if (
           transactionId.length > 256
@@ -1235,7 +1559,7 @@ const adMobReward =
         ) {
 
           console.error(
-            "AdMob user_id does not match custom_data."
+            "AdMob user_id does not match custom_data UID."
           );
 
           res.status(400).json({
@@ -1283,7 +1607,8 @@ const adMobReward =
 
               userId:
                 verifiedAd.userId,
-            }
+            },
+            rewardPurpose
           );
 
 
