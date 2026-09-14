@@ -105,11 +105,11 @@ class _HomePageState extends State<HomePage>
   // ⚠️ TEST MODE
   // ============================================================
   //
-  // Tämä on Googlen virallinen Rewarded-testimainos.
+  // Googlen virallinen Rewarded-testimainos.
   //
-  // Käytämme tätä VAIN testaukseen.
+  // Käytämme tätä tässä vaiheessa testaamiseen.
   //
-  // Kun testi toimii, palautetaan tähän tuotannon ID:
+  // Kun kaikki toimii:
   //
   // ca-app-pub-1131012057145658/7225738491
   //
@@ -137,6 +137,19 @@ class _HomePageState extends State<HomePage>
   String _rewardedAdPurpose = _powerBoostPurpose;
 
   String _adLoadError = '';
+
+  // ============================================================
+  // 🔒 AD FLOW STATE
+  // ============================================================
+  //
+  // Estää toistuvat napautukset silloin kun mainosta
+  // ollaan parhaillaan lataamassa tai näyttämässä.
+  //
+  // ============================================================
+
+  bool _miningAdFlowActive = false;
+
+  bool _powerBoostAdFlowActive = false;
 
   // ============================================================
   // ⛏️ MINING STATE
@@ -681,10 +694,116 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 📺 WAIT FOR REWARDED AD TO BECOME READY
+  // ============================================================
+
+  Future<bool> _waitForRewardedAd({
+    required String purpose,
+  }) async {
+    // ----------------------------------------------------------
+    // Already ready.
+    // ----------------------------------------------------------
+
+    if (_rewardedAd != null &&
+        _adReady &&
+        _rewardedAdPurpose == purpose) {
+      debugPrint(
+        'Rewarded ad already ready for $purpose.',
+      );
+
+      return true;
+    }
+
+    // ----------------------------------------------------------
+    // Start loading.
+    // ----------------------------------------------------------
+
+    await _loadRewardedAd(
+      purpose: purpose,
+    );
+
+    // ----------------------------------------------------------
+    // IMPORTANT:
+    //
+    // RewardedAd.load() is asynchronous.
+    //
+    // _loadRewardedAd() starts the load, but the actual
+    // onAdLoaded callback happens later.
+    //
+    // Therefore we wait here until the callback has finished.
+    //
+    // This fixes:
+    //
+    // First tap  -> "Prepare ad"
+    // Second tap -> ad opens
+    //
+    // and changes it to:
+    //
+    // First tap -> wait -> ad opens automatically
+    // ----------------------------------------------------------
+
+    const int maxWaitChecks = 150;
+
+    const Duration checkInterval =
+        Duration(
+      milliseconds: 200,
+    );
+
+    for (
+      int check = 0;
+      check < maxWaitChecks;
+      check++
+    ) {
+      if (!mounted) {
+        return false;
+      }
+
+      if (_rewardedAd != null &&
+          _adReady &&
+          _rewardedAdPurpose == purpose) {
+        debugPrint(
+          'Rewarded ad became ready automatically: $purpose',
+        );
+
+        return true;
+      }
+
+      if (!_adLoading) {
+        break;
+      }
+
+      await Future<void>.delayed(
+        checkInterval,
+      );
+    }
+
+    final bool ready =
+        _rewardedAd != null &&
+            _adReady &&
+            _rewardedAdPurpose == purpose;
+
+    debugPrint(
+      'Rewarded ad wait finished. '
+      'Purpose: $purpose '
+      'Ready: $ready',
+    );
+
+    return ready;
+  }
+
+  // ============================================================
   // ⛏️ START MINING
   // ============================================================
 
   Future<void> _startMining() async {
+    if (_miningAdFlowActive) {
+      debugPrint(
+        'Mining Start already in progress.',
+      );
+
+      return;
+    }
+
     if (_actionLoading) {
       return;
     }
@@ -699,60 +818,163 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd == null ||
-        !_adReady ||
-        _rewardedAdPurpose !=
-            _miningStartPurpose) {
-      _showMessage(
-        _localization.get(
-          'prepareAd',
-        ),
-      );
+    _miningAdFlowActive = true;
 
-      await _loadRewardedAd(
+    if (mounted) {
+      setState(() {
+        _actionLoading = true;
+        _adLoadError = '';
+      });
+    }
+
+    try {
+      // --------------------------------------------------------
+      // Make sure the Mining Start rewarded ad is loaded.
+      //
+      // IMPORTANT:
+      // The first button press now waits for the ad to finish
+      // loading instead of returning to the user.
+      // --------------------------------------------------------
+
+      final bool ready =
+          await _waitForRewardedAd(
         purpose: _miningStartPurpose,
       );
-    }
 
-    if (!mounted) {
-      return;
-    }
+      if (!mounted) {
+        return;
+      }
 
-    if (_rewardedAd == null ||
-        !_adReady ||
-        _rewardedAdPurpose !=
-            _miningStartPurpose) {
-      _showAdLoadError();
+      if (!ready ||
+          _rewardedAd == null ||
+          !_adReady ||
+          _rewardedAdPurpose !=
+              _miningStartPurpose) {
+        _showAdLoadError();
 
-      return;
-    }
+        return;
+      }
 
-    final RewardedAd ad = _rewardedAd!;
+      final RewardedAd ad =
+          _rewardedAd!;
 
-    _rewardedAd = null;
+      _rewardedAd = null;
 
-    _adReady = false;
+      _adReady = false;
 
-    bool rewardEarned = false;
+      bool rewardEarned = false;
 
-    ad.show(
-      onUserEarnedReward: (
-        AdWithoutView adWithoutView,
-        RewardItem reward,
-      ) async {
-        if (rewardEarned) {
-          return;
+      // --------------------------------------------------------
+      // Show immediately after the first load completes.
+      // --------------------------------------------------------
+
+      debugPrint(
+        'Showing Mining Start rewarded ad automatically.',
+      );
+
+      ad.show(
+        onUserEarnedReward: (
+          AdWithoutView adWithoutView,
+          RewardItem reward,
+        ) async {
+          if (rewardEarned) {
+            return;
+          }
+
+          rewardEarned = true;
+
+          debugPrint(
+            'Mining Start client reward callback received.',
+          );
+
+          await _startMiningAfterAd();
+        },
+      );
+    } catch (error) {
+      debugPrint(
+        'Start Mining ad flow error: $error',
+      );
+
+      if (mounted) {
+        if (error is FirebaseFunctionsException) {
+          final String message =
+              'Mining Start failed\n\n'
+              'Code: ${error.code}\n'
+              'Message: '
+              '${error.message ?? 'No message'}';
+
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content:
+                    SingleChildScrollView(
+                  child: Text(
+                    message,
+                    style:
+                        const TextStyle(
+                      color: Colors.white,
+                      fontWeight:
+                          FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                behavior:
+                    SnackBarBehavior.floating,
+                backgroundColor:
+                    const Color(
+                  0xFF301A4F,
+                ),
+                duration:
+                    const Duration(
+                  seconds: 10,
+                ),
+                margin:
+                    const EdgeInsets.all(
+                  16,
+                ),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    16,
+                  ),
+                ),
+              ),
+            );
+        } else {
+          _showMessage(
+            _localization.get(
+              'miningStartFailed',
+            ),
+          );
         }
+      }
+    } finally {
+      // --------------------------------------------------------
+      // Do NOT reset _actionLoading here if the rewarded ad was
+      // successfully shown.
+      //
+      // _startMiningAfterAd() owns the rest of the flow and
+      // resets the state after the SSV/claim operation.
+      //
+      // If the ad was not shown, reset it here.
+      // --------------------------------------------------------
 
-        rewardEarned = true;
+      if (mounted &&
+          (_rewardedAd == null ||
+              !_adReady)) {
+        // The rewarded ad has been handed over to AdMob.
+        //
+        // Keep action loading active while the ad is running
+        // and while SSV is being processed.
+        //
+        // _startMiningAfterAd() will reset it.
+      }
 
-        debugPrint(
-          'Mining Start client reward callback received.',
-        );
-
-        await _startMiningAfterAd();
-      },
-    );
+      _miningAdFlowActive = false;
+    }
   }
 
   // ============================================================
@@ -793,11 +1015,6 @@ class _HomePageState extends State<HomePage>
           'HomePage was disposed while waiting for AdMob SSV.',
         );
       }
-
-      // --------------------------------------------------------
-      // Give AdMob SSV time to reach the backend before the
-      // first claimMining request.
-      // --------------------------------------------------------
 
       debugPrint(
         '==================================================',
@@ -937,10 +1154,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _startMiningAfterAd() async {
-    if (_actionLoading) {
-      return;
-    }
-
     if (!mounted) {
       return;
     }
@@ -1068,7 +1281,8 @@ class _HomePageState extends State<HomePage>
         final String message =
             'Mining Start failed\n\n'
             'Code: ${error.code}\n'
-            'Message: ${error.message ?? 'No message'}';
+            'Message: '
+            '${error.message ?? 'No message'}';
 
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -1089,13 +1303,17 @@ class _HomePageState extends State<HomePage>
               behavior:
                   SnackBarBehavior.floating,
               backgroundColor:
-                  const Color(0xFF301A4F),
+                  const Color(
+                0xFF301A4F,
+              ),
               duration:
                   const Duration(
                 seconds: 10,
               ),
               margin:
-                  const EdgeInsets.all(16),
+                  const EdgeInsets.all(
+                16,
+              ),
               shape:
                   RoundedRectangleBorder(
                 borderRadius:
@@ -1327,6 +1545,14 @@ class _HomePageState extends State<HomePage>
                 _adReady = false;
               }
 
+              if (purpose ==
+                  _miningStartPurpose) {
+                if (mounted &&
+                    !_actionLoading) {
+                  setState(() {});
+                }
+              }
+
               if (mounted) {
                 setState(() {});
               }
@@ -1389,14 +1615,31 @@ class _HomePageState extends State<HomePage>
                 _adReady = false;
               }
 
-              if (mounted) {
-                setState(() {
-                  _adLoadError =
-                      'SHOW_FAILED | '
-                      'Code: ${error.code} | '
-                      'Domain: ${error.domain} | '
-                      'Message: ${error.message}';
-                });
+              if (purpose ==
+                  _miningStartPurpose) {
+                _miningAdFlowActive = false;
+
+                if (mounted) {
+                  setState(() {
+                    _actionLoading = false;
+
+                    _adLoadError =
+                        'SHOW_FAILED | '
+                        'Code: ${error.code} | '
+                        'Domain: ${error.domain} | '
+                        'Message: ${error.message}';
+                  });
+                }
+              } else {
+                if (mounted) {
+                  setState(() {
+                    _adLoadError =
+                        'SHOW_FAILED | '
+                        'Code: ${error.code} | '
+                        'Domain: ${error.domain} | '
+                        'Message: ${error.message}';
+                  });
+                }
               }
 
               Future<void>.delayed(
@@ -1467,8 +1710,18 @@ class _HomePageState extends State<HomePage>
 
           _adLoadError = detailedError;
 
+          if (purpose ==
+              _miningStartPurpose) {
+            _miningAdFlowActive = false;
+          }
+
           if (mounted) {
-            setState(() {});
+            setState(() {
+              if (purpose ==
+                  _miningStartPurpose) {
+                _actionLoading = false;
+              }
+            });
           }
 
           if (mounted) {
@@ -1511,6 +1764,14 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _watchAd() async {
+    if (_powerBoostAdFlowActive) {
+      debugPrint(
+        'Power Boost ad flow already active.',
+      );
+
+      return;
+    }
+
     if (_actionLoading) {
       return;
     }
@@ -1574,61 +1835,95 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_rewardedAd == null ||
-        !_adReady ||
-        _rewardedAdPurpose !=
-            _powerBoostPurpose) {
-      _showMessage(
-        _localization.get(
-          'prepareAd',
-        ),
-      );
+    _powerBoostAdFlowActive = true;
 
-      await _loadRewardedAd(
+    if (mounted) {
+      setState(() {
+        _actionLoading = true;
+        _adLoadError = '';
+      });
+    }
+
+    try {
+      // --------------------------------------------------------
+      // First tap waits for the ad to actually load.
+      // --------------------------------------------------------
+
+      final bool ready =
+          await _waitForRewardedAd(
         purpose: _powerBoostPurpose,
       );
-    }
 
-    if (!mounted) {
-      return;
-    }
+      if (!mounted) {
+        return;
+      }
 
-    if (_rewardedAd == null ||
-        !_adReady ||
-        _rewardedAdPurpose !=
-            _powerBoostPurpose) {
-      _showAdLoadError();
+      if (!ready ||
+          _rewardedAd == null ||
+          !_adReady ||
+          _rewardedAdPurpose !=
+              _powerBoostPurpose) {
+        _showAdLoadError();
 
-      return;
-    }
-
-    final RewardedAd ad =
-        _rewardedAd!;
-
-    _rewardedAd = null;
-
-    _adReady = false;
-
-    bool rewardProcessed = false;
-
-    ad.show(
-      onUserEarnedReward: (
-        AdWithoutView adWithoutView,
-        RewardItem reward,
-      ) async {
-        if (rewardProcessed) {
-          return;
+        if (mounted) {
+          setState(() {
+            _actionLoading = false;
+          });
         }
 
-        rewardProcessed = true;
+        return;
+      }
 
-        debugPrint(
-          'Power Boost client reward callback received.',
+      final RewardedAd ad =
+          _rewardedAd!;
+
+      _rewardedAd = null;
+
+      _adReady = false;
+
+      bool rewardProcessed = false;
+
+      debugPrint(
+        'Showing Power Boost rewarded ad automatically.',
+      );
+
+      ad.show(
+        onUserEarnedReward: (
+          AdWithoutView adWithoutView,
+          RewardItem reward,
+        ) async {
+          if (rewardProcessed) {
+            return;
+          }
+
+          rewardProcessed = true;
+
+          debugPrint(
+            'Power Boost client reward callback received.',
+          );
+
+          await _waitForServerSidePowerBoost();
+        },
+      );
+    } catch (error) {
+      debugPrint(
+        'Power Boost ad flow error: $error',
+      );
+
+      if (mounted) {
+        _showMessage(
+          _localization.get(
+            'powerBoostFailed',
+          ),
         );
 
-        await _waitForServerSidePowerBoost();
-      },
-    );
+        setState(() {
+          _actionLoading = false;
+        });
+      }
+    } finally {
+      _powerBoostAdFlowActive = false;
+    }
   }
 
   // ============================================================
