@@ -857,9 +857,154 @@ class _HomePageState extends State<HomePage>
 
         rewardEarned = true;
 
+        debugPrint(
+          'Mining Start client reward callback received.',
+        );
+
         await _startMiningAfterAd();
       },
     );
+  }
+
+  // ============================================================
+  // 🔐 CLAIM MINING WITH ADMOB SSV RETRY
+  // ============================================================
+
+  Future<HttpsCallableResult<dynamic>>
+      _claimMiningWithSsvRetry() async {
+    const int maxAttempts = 8;
+
+    const Duration retryDelay =
+        Duration(
+      seconds: 2,
+    );
+
+    FirebaseFunctionsException?
+        lastError;
+
+    for (
+      int attempt = 1;
+      attempt <= maxAttempts;
+      attempt++
+    ) {
+      try {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI MINING CLAIM',
+        );
+
+        debugPrint(
+          'Attempt: $attempt/$maxAttempts',
+        );
+
+        debugPrint(
+          'Calling claimMining...',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        final HttpsCallable
+            callable =
+            _functions
+                .httpsCallable(
+          'claimMining',
+        );
+
+        final HttpsCallableResult<
+            dynamic> result =
+            await callable.call();
+
+        debugPrint(
+          'claimMining SUCCESS '
+          'on attempt $attempt/$maxAttempts',
+        );
+
+        return result;
+      } on FirebaseFunctionsException
+          catch (error) {
+        lastError = error;
+
+        final String errorText =
+            '${error.code} '
+            '${error.message ?? ''} '
+            '${error.details ?? ''}'
+                .toLowerCase();
+
+        final bool likelySsvDelay =
+            errorText.contains(
+                  'admob',
+                ) ||
+            errorText.contains(
+              'reward',
+            ) ||
+            errorText.contains(
+              'mining_start',
+            ) ||
+            errorText.contains(
+              'mining start',
+            ) ||
+            errorText.contains(
+              'verified',
+            );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI MINING CLAIM FAILED',
+        );
+
+        debugPrint(
+          'Attempt: $attempt/$maxAttempts',
+        );
+
+        debugPrint(
+          'Code: ${error.code}',
+        );
+
+        debugPrint(
+          'Message: ${error.message}',
+        );
+
+        debugPrint(
+          'Details: ${error.details}',
+        );
+
+        debugPrint(
+          'Likely SSV delay: $likelySsvDelay',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        if (!likelySsvDelay ||
+            attempt ==
+                maxAttempts) {
+          rethrow;
+        }
+
+        debugPrint(
+          'AdMob SSV may not have arrived yet. '
+          'Waiting ${retryDelay.inSeconds} seconds...',
+        );
+
+        await Future<void>.delayed(
+          retryDelay,
+        );
+      }
+    }
+
+    throw lastError ??
+        Exception(
+          'Mining claim failed without a Firebase Functions error.',
+        );
   }
 
   // ============================================================
@@ -881,16 +1026,16 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final HttpsCallable
-          callable =
-          _functions
-              .httpsCallable(
-        'claimMining',
-      );
-
+      // IMPORTANT:
+      //
+      // AdMob client reward callback can arrive before
+      // the AdMob Server-Side Verification callback.
+      //
+      // Therefore claimMining is retried when the backend
+      // indicates that the verified reward has not arrived yet.
       final HttpsCallableResult<
           dynamic> result =
-          await callable.call();
+          await _claimMiningWithSsvRetry();
 
       final Map<String, dynamic>
           data =
@@ -1013,7 +1158,62 @@ class _HomePageState extends State<HomePage>
         'Start mining after ad error: $error',
       );
 
-      if (mounted) {
+      if (!mounted) {
+        return;
+      }
+
+      if (error
+          is FirebaseFunctionsException) {
+        final String message =
+            'Mining Start failed\n\n'
+            'Code: ${error.code}\n'
+            'Message: ${error.message ?? 'No message'}';
+
+        ScaffoldMessenger.of(
+          context,
+        )
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content:
+                  SingleChildScrollView(
+                child: Text(
+                  message,
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.white,
+                    fontWeight:
+                        FontWeight.w600,
+                    fontSize:
+                        13,
+                  ),
+                ),
+              ),
+              behavior:
+                  SnackBarBehavior.floating,
+              backgroundColor:
+                  const Color(
+                0xFF301A4F,
+              ),
+              duration:
+                  const Duration(
+                seconds: 10,
+              ),
+              margin:
+                  const EdgeInsets.all(
+                16,
+              ),
+              shape:
+                  RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(
+                  16,
+                ),
+              ),
+            ),
+          );
+      } else {
         _showMessage(
           _localization.get(
             'miningStartFailed',
