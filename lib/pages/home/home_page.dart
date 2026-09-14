@@ -1057,10 +1057,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ----------------------------------------------------------
-    // Dispose an existing ad if it has the wrong purpose.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _rewardedAdPurpose !=
             purpose) {
@@ -1290,9 +1286,9 @@ class _HomePageState extends State<HomePage>
                 'Message: ${error.message}',
               );
 
-              debugPrint(
-                'Response info: ${error.responseInfo}',
-              );
+              // NOTE:
+              // AdError ei sisällä responseInfo-kenttää.
+              // Siksi sitä ei käytetä tässä kohdassa.
 
               debugPrint(
                 '==================================================',
@@ -1346,7 +1342,7 @@ class _HomePageState extends State<HomePage>
         ) {
           // ======================================================
           // ⚠️ TÄRKEÄ:
-          // Näytetään koko AdMob-virhe myös puhelimessa.
+          // LoadAdError sisältää responseInfo-kentän.
           // ======================================================
 
           final String detailedError =
@@ -1402,10 +1398,6 @@ class _HomePageState extends State<HomePage>
             setState(() {});
           }
 
-          // ------------------------------------------------------
-          // Näytetään virhe suoraan käyttäjälle.
-          // ------------------------------------------------------
-
           if (mounted) {
             _showDetailedAdLoadError(
               purpose:
@@ -1414,12 +1406,6 @@ class _HomePageState extends State<HomePage>
                   error,
             );
           }
-
-          // ------------------------------------------------------
-          // Retry only the normal Power Boost ad.
-          // Mining Start will retry when the user presses
-          // the mining button again.
-          // ------------------------------------------------------
 
           if (purpose ==
               _powerBoostPurpose) {
