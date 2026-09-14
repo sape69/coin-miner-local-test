@@ -263,6 +263,15 @@ function validateAdMobCallbackData(
   const transactionId =
     query.transaction_id;
 
+  // AdMob custom_data is the user identifier
+  // that our Flutter app sends when loading
+  // the rewarded ad.
+  const customData =
+    query.custom_data;
+
+  // user_id is optional in our implementation.
+  // It may be absent when Flutter only sets
+  // ServerSideVerificationOptions.customData.
   const userId =
     query.user_id;
 
@@ -347,14 +356,100 @@ function validateAdMobCallbackData(
     );
   }
 
+  const normalizedTransactionId =
+    String(transactionId).trim();
+
+  if (
+    normalizedTransactionId.length === 0
+  ) {
+    throw new Error(
+      "Invalid AdMob transaction_id."
+    );
+  }
+
+  if (
+    normalizedTransactionId.length > 256
+  ) {
+    throw new Error(
+      "AdMob transaction_id is too long."
+    );
+  }
+
   // ----------------------------------------
-  // User ID
+  // Custom data / user identifier
+  // ----------------------------------------
+  //
+  // Our Flutter app sets:
+  //
+  // ServerSideVerificationOptions(
+  //   customData: user.uid,
+  // )
+  //
+  // Therefore custom_data is the trusted
+  // identifier after SSV signature verification.
+  //
+
+  if (
+    customData === undefined ||
+    customData === null
+  ) {
+    throw new Error(
+      "Missing AdMob custom_data."
+    );
+  }
+
+  const normalizedCustomData =
+    String(customData).trim();
+
+  if (
+    normalizedCustomData.length === 0
+  ) {
+    throw new Error(
+      "Invalid AdMob custom_data."
+    );
+  }
+
+  if (
+    normalizedCustomData.length > 128
+  ) {
+    throw new Error(
+      "AdMob custom_data is too long."
+    );
+  }
+
+  // Firebase UID normally uses letters,
+  // numbers, hyphens and underscores.
+  //
+  // We also allow dot and colon for safety
+  // with compatible Firebase identifiers.
+  //
+
+  if (
+    !/^[A-Za-z0-9._:-]+$/.test(
+      normalizedCustomData
+    )
+  ) {
+    throw new Error(
+      "Invalid AdMob custom_data format."
+    );
+  }
+
+  // ----------------------------------------
+  // Optional user_id
   // ----------------------------------------
 
-  if (!userId) {
-    throw new Error(
-      "Missing AdMob user_id."
-    );
+  let normalizedUserId = null;
+
+  if (
+    userId !== undefined &&
+    userId !== null
+  ) {
+    const value =
+      String(userId).trim();
+
+    if (value.length > 0) {
+      normalizedUserId = value;
+    }
   }
 
   // ----------------------------------------
@@ -396,7 +491,7 @@ function validateAdMobCallbackData(
       String(adUnit),
 
     customData:
-      query.custom_data || null,
+      normalizedCustomData,
 
     keyId:
       String(query.key_id),
@@ -411,10 +506,10 @@ function validateAdMobCallbackData(
       numericTimestamp,
 
     transactionId:
-      String(transactionId),
+      normalizedTransactionId,
 
     userId:
-      String(userId),
+      normalizedUserId,
   };
 }
 
@@ -427,7 +522,8 @@ function validateAdMobCallbackData(
 // 2. Ad unit is correct.
 // 3. Reward amount is correct.
 // 4. Reward item is correct.
-// 5. Required identifiers exist.
+// 5. Transaction ID exists.
+// 6. Signed custom_data exists.
 //
 
 async function verifyAdMobCallback(
