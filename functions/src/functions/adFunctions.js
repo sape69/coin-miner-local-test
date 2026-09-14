@@ -6,13 +6,17 @@
 //
 // Tämä tiedosto hallitsee:
 //
-// 📺 Test Ad Reward
 // 🎁 Stella Power Boost
 // ⚡ Väliaikainen Hash Rate -boost
 // ⏳ 4 tunnin boost
 // 🔢 Päivittäinen mainosraja
 // 📜 Ad-tapahtumahistoria
 // 🔐 AdMob SSV -callback
+//
+// TÄRKEÄÄ:
+// Test Ad Reward on poistettu tuotantoversiosta.
+//
+// Oikea Power Boost syntyy vain AdMob SSV -callbackin kautta.
 //
 // ============================================================
 
@@ -22,9 +26,7 @@
 // ============================================================
 
 const {
-  onCall,
   onRequest,
-  HttpsError,
 } = require(
   "firebase-functions/v2/https"
 );
@@ -122,13 +124,27 @@ function getTimestampMilliseconds(
     const date =
       value.toDate();
 
-    return date.getTime();
+    const milliseconds =
+      date.getTime();
+
+    return Number.isFinite(
+      milliseconds
+    )
+      ? milliseconds
+      : 0;
   }
 
   if (
     value instanceof Date
   ) {
-    return value.getTime();
+    const milliseconds =
+      value.getTime();
+
+    return Number.isFinite(
+      milliseconds
+    )
+      ? milliseconds
+      : 0;
   }
 
   if (
@@ -137,13 +153,21 @@ function getTimestampMilliseconds(
     const parsedDate =
       new Date(value);
 
-    if (
-      !Number.isNaN(
-        parsedDate.getTime()
-      )
-    ) {
-      return parsedDate.getTime();
-    }
+    const milliseconds =
+      parsedDate.getTime();
+
+    return Number.isFinite(
+      milliseconds
+    )
+      ? milliseconds
+      : 0;
+  }
+
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
+    return value;
   }
 
   return 0;
@@ -303,22 +327,27 @@ function getAdStatus(
 
 
 // ============================================================
-// 🎁 APPLY AD REWARD
+// 🎁 APPLY ADMOB REWARD
 // ============================================================
 //
-// Mainos:
+// Oikea Power Boost:
 //
 // 📺 +0.5833 HR
 // ⏳ 4 tunniksi
 //
-// Mainosboosti EI lisää pysyvästi käyttäjän Daily Hash Ratea.
+// TÄMÄ FUNKTIO KUTSUTAAN VAIN:
+// 🔐 AdMob SSV -callbackista.
+//
+// Mainosboosti EI lisää pysyvästi käyttäjän
+// Daily Hash Ratea.
 //
 // ============================================================
 
 async function applyAdReward(
   uid,
   transactionId,
-  rewardType
+  rewardType,
+  adData = {}
 ) {
   // ==========================================================
   // 🛡️ BASIC INPUT VALIDATION
@@ -339,6 +368,18 @@ async function applyAdReward(
   ) {
     throw new Error(
       "Invalid transaction ID."
+    );
+  }
+
+  // ----------------------------------------------------------
+  // 🔐 ONLY ADMOB
+  // ----------------------------------------------------------
+
+  if (
+    rewardType !== "admob"
+  ) {
+    throw new Error(
+      "Only verified AdMob rewards are allowed."
     );
   }
 
@@ -704,7 +745,13 @@ async function applyAdReward(
 
 
       // ======================================================
-      // 🔐 SAVE REWARD
+      // 🔐 SAVE VERIFIED ADMOB REWARD
+      // ======================================================
+      //
+      // Tallennetaan myös AdMobin varmennetut tiedot.
+      // Näitä käytetään myöhemmin Mining Startin
+      // turvalliseen tarkistukseen.
+      //
       // ======================================================
 
       transaction.set(
@@ -714,7 +761,56 @@ async function applyAdReward(
 
           transactionId,
 
-          rewardType,
+          rewardType:
+            "admob",
+
+          // --------------------------------------------------
+          // AdMob verified metadata
+          // --------------------------------------------------
+
+          adNetwork:
+            typeof adData.adNetwork === "string"
+              ? adData.adNetwork
+              : "admob",
+
+          adUnit:
+            typeof adData.adUnit === "string"
+              ? adData.adUnit
+              : "",
+
+          rewardAmount:
+            getSafeNumber(
+              adData.rewardAmount,
+              0
+            ),
+
+          rewardItem:
+            typeof adData.rewardItem === "string"
+              ? adData.rewardItem
+              : "",
+
+          timestamp:
+            getSafeNumber(
+              adData.timestamp,
+              nowMs
+            ),
+
+          keyId:
+            typeof adData.keyId === "string"
+              ? adData.keyId
+              : "",
+
+          customData:
+            uid,
+
+          userId:
+            typeof adData.userId === "string"
+              ? adData.userId
+              : "",
+
+          // --------------------------------------------------
+          // Stella Power Boost
+          // --------------------------------------------------
 
           bonus,
 
@@ -770,7 +866,11 @@ async function applyAdReward(
 
           boostEndsAt,
 
-          rewardType,
+          rewardType:
+            "admob",
+
+          adMobTransactionId:
+            transactionId,
 
           adsToday:
             newAdsToday,
@@ -886,111 +986,23 @@ async function applyAdReward(
 
 
 // ============================================================
-// 🧪 TEST AD REWARD
-// ============================================================
-//
-// Flutter käyttää tätä tällä hetkellä kehityksen aikana.
-//
-// Tätä EI ole tarkoitus käyttää tuotannossa.
-// Poistamme tämän myöhemmin, kun oikea AdMob SSV -ketju
-// on täysin testattu.
-//
-// ============================================================
-
-const testAdReward =
-  onCall(
-    {
-      region: "us-central1",
-    },
-    async (request) => {
-
-      // ========================================================
-      // 🔐 AUTH
-      // ========================================================
-
-      if (!request.auth) {
-        throw new HttpsError(
-          "unauthenticated",
-          "🐱 Kirjaudu sisään saadaksesi Stella Power Boostin."
-        );
-      }
-
-
-      // ========================================================
-      // 👤 USER
-      // ========================================================
-
-      const uid =
-        request.auth.uid;
-
-
-      // ========================================================
-      // 🔐 UNIQUE TEST TRANSACTION
-      // ========================================================
-
-      const transactionId =
-        `test_${uid}_${Date.now()}_${Math.random()
-          .toString(36)
-          .substring(2, 10)}`;
-
-
-      // ========================================================
-      // 🎁 APPLY REWARD
-      // ========================================================
-
-      try {
-        return await applyAdReward(
-          uid,
-          transactionId,
-          "test"
-        );
-
-      } catch (error) {
-
-        console.error(
-          "testAdReward error:",
-          error
-        );
-
-
-        if (
-          error instanceof HttpsError
-        ) {
-          throw error;
-        }
-
-
-        throw new HttpsError(
-          "internal",
-          "🐱 Stella Power Boostin käsittely epäonnistui."
-        );
-      }
-    }
-  );
-
-
-// ============================================================
 // 🔐 ADMOB REWARD CALLBACK
 // ============================================================
 //
 // Google AdMob SSV kutsuu tätä endpointia.
 //
-// TÄRKEÄÄ:
-//
-// AdMobin SSV-palvelu allekirjoittaa callbackin.
-//
-// Flutterissa asetimme:
+// Flutterissa käytetään:
 //
 // ServerSideVerificationOptions(
 //   customData: Firebase UID,
 // )
 //
-// Tämä tulee AdMobilta takaisin:
+// AdMob palauttaa:
 //
 // custom_data=<Firebase UID>
 //
-// Koska koko SSV-kutsu on allekirjoitettu,
-// backend voi käyttää tätä UID:tä palkinnon kohdentamiseen.
+// Koko callback tarkistetaan ensin AdMobin
+// kryptografisella allekirjoituksella.
 //
 // ============================================================
 
@@ -1007,7 +1019,7 @@ const adMobReward =
         // 🔐 VERIFY GOOGLE CALLBACK
         // ======================================================
         //
-        // Tämä tarkistaa sekä:
+        // Tarkistaa:
         //
         // 1. AdMobin kryptografisen allekirjoituksen
         // 2. Oikean ad_unitin
@@ -1096,12 +1108,6 @@ const adMobReward =
         // ======================================================
         // 🛡️ BASIC UID VALIDATION
         // ======================================================
-        //
-        // Firebase Auth UIDs normally contain a limited set
-        // of characters. This prevents obviously malformed
-        // values from being used as Firestore document paths.
-        //
-        // ======================================================
 
         if (
           uid.length > 128 ||
@@ -1155,9 +1161,6 @@ const adMobReward =
         // Jos AdMob lähettää myös user_id:n, tarkistetaan
         // että se vastaa custom_dataa.
         //
-        // Nykyinen Flutter-versio käyttää custom_dataa,
-        // joten user_id voi olla tyhjä.
-        //
         // ======================================================
 
         const callbackUserId =
@@ -1189,14 +1192,39 @@ const adMobReward =
 
 
         // ======================================================
-        // 🎁 APPLY REWARD
+        // 🎁 APPLY VERIFIED ADMOB REWARD
         // ======================================================
 
         const result =
           await applyAdReward(
             uid,
             transactionId,
-            "admob"
+            "admob",
+            {
+              adNetwork:
+                verifiedAd.adNetwork,
+
+              adUnit:
+                verifiedAd.adUnit,
+
+              rewardAmount:
+                verifiedAd.rewardAmount,
+
+              rewardItem:
+                verifiedAd.rewardItem,
+
+              timestamp:
+                verifiedAd.timestamp,
+
+              keyId:
+                verifiedAd.keyId,
+
+              customData:
+                verifiedAd.customData,
+
+              userId:
+                verifiedAd.userId,
+            }
           );
 
 
@@ -1242,6 +1270,5 @@ const adMobReward =
 // ============================================================
 
 module.exports = {
-  testAdReward,
   adMobReward,
 };
