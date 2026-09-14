@@ -43,39 +43,50 @@ class _HomePageState extends State<HomePage>
   // 🎨 STELLA COLORS
   // ============================================================
 
-  static const Color backgroundColor = Color(0xFF120B24);
+  static const Color backgroundColor =
+      Color(0xFF120B24);
 
-  static const Color cardColor = Color(0xFF21113B);
+  static const Color cardColor =
+      Color(0xFF21113B);
 
-  static const Color accentColor = Color(0xFFB58CFF);
+  static const Color accentColor =
+      Color(0xFFB58CFF);
 
-  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
 
-  static const Color goldColor = Color(0xFFFFD166);
+  static const Color goldColor =
+      Color(0xFFFFD166);
 
   // ============================================================
   // ⚡ POWER BOOST CONFIG
   // ============================================================
 
-  static const double defaultAdHashRateBonus = 0.5833;
+  static const double defaultAdHashRateBonus =
+      0.5833;
 
-  static const int defaultMaxAdsPerDay = 6;
+  static const int defaultMaxAdsPerDay =
+      6;
 
   // ============================================================
   // ⛏️ DAILY HASH RATE CONFIG
   // ============================================================
 
-  static const double defaultDailyHashRate = 0.5;
+  static const double defaultDailyHashRate =
+      0.5;
 
-  static const double dailyHashRateStep = 0.5;
+  static const double dailyHashRateStep =
+      0.5;
 
-  static const double maximumDailyHashRate = 3.5;
+  static const double maximumDailyHashRate =
+      3.5;
 
   // ============================================================
   // 💰 MINING CONFIG
   // ============================================================
 
-  static const double miningPerHashPerHour = 0.10;
+  static const double miningPerHashPerHour =
+      0.10;
 
   static const int defaultMiningDurationMs =
       24 * 60 * 60 * 1000;
@@ -84,7 +95,8 @@ class _HomePageState extends State<HomePage>
   // 🐱 FIREBASE
   // ============================================================
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance;
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(
@@ -118,26 +130,31 @@ class _HomePageState extends State<HomePage>
   RewardedAd? _rewardedAd;
 
   bool _adReady = false;
+
   bool _adLoading = false;
 
   String _rewardedAdPurpose =
       _powerBoostPurpose;
 
-  Future<void>? _adLoadFuture;
+  String _adLoadError = '';
 
   // ============================================================
   // ⛏️ MINING STATE
   // ============================================================
 
   bool _loading = true;
+
   bool _actionLoading = false;
+
   bool _miningActive = false;
 
   double _hashRate =
       defaultDailyHashRate;
 
   double _unclaimedMining = 0.0;
+
   double _estimatedTotal = 0.0;
+
   double _miningPerHour = 0.0;
 
   int _miningRemainingMs = 0;
@@ -182,6 +199,7 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Timer? _uiTimer;
+
   Timer? _refreshTimer;
 
   // ============================================================
@@ -209,9 +227,11 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
 
-    _catController = AnimationController(
+    _catController =
+        AnimationController(
       vsync: this,
-      duration: const Duration(
+      duration:
+          const Duration(
         seconds: 2,
       ),
     )..repeat(
@@ -224,8 +244,10 @@ class _HomePageState extends State<HomePage>
       end: 8,
     ).animate(
       CurvedAnimation(
-        parent: _catController,
-        curve: Curves.easeInOut,
+        parent:
+            _catController,
+        curve:
+            Curves.easeInOut,
       ),
     );
 
@@ -251,7 +273,8 @@ class _HomePageState extends State<HomePage>
           _auth.currentUser;
 
       final String name =
-          refreshedUser?.displayName
+          refreshedUser
+                  ?.displayName
                   ?.trim() ??
               '';
 
@@ -296,12 +319,15 @@ class _HomePageState extends State<HomePage>
     final bool? confirmed =
         await showDialog<bool>(
       context: context,
-      builder: (
+      builder:
+          (
         BuildContext dialogContext,
       ) {
         return AlertDialog(
-          backgroundColor: cardColor,
-          shape: RoundedRectangleBorder(
+          backgroundColor:
+              cardColor,
+          shape:
+              RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.circular(
               24,
@@ -311,8 +337,10 @@ class _HomePageState extends State<HomePage>
             '🚪 ${_localization.get(
               'logout',
             )}',
-            style: const TextStyle(
-              color: Colors.white,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white,
               fontWeight:
                   FontWeight.bold,
             ),
@@ -321,8 +349,10 @@ class _HomePageState extends State<HomePage>
             _localization.get(
               'information',
             ),
-            style: const TextStyle(
-              color: Colors.white70,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white70,
               fontSize: 15,
             ),
           ),
@@ -337,8 +367,10 @@ class _HomePageState extends State<HomePage>
                 _localization.get(
                   'cancel',
                 ),
-                style: const TextStyle(
-                  color: pinkColor,
+                style:
+                    const TextStyle(
+                  color:
+                      pinkColor,
                   fontWeight:
                       FontWeight.bold,
                 ),
@@ -351,7 +383,8 @@ class _HomePageState extends State<HomePage>
                 ).pop(true);
               },
               style:
-                  ElevatedButton.styleFrom(
+                  ElevatedButton
+                      .styleFrom(
                 backgroundColor:
                     accentColor,
                 foregroundColor:
@@ -418,7 +451,8 @@ class _HomePageState extends State<HomePage>
       }
 
       await _loadRewardedAd(
-        purpose: _powerBoostPurpose,
+        purpose:
+            _powerBoostPurpose,
       );
 
       if (!mounted) {
@@ -454,7 +488,8 @@ class _HomePageState extends State<HomePage>
   void _startTimers() {
     _uiTimer?.cancel();
 
-    _uiTimer = Timer.periodic(
+    _uiTimer =
+        Timer.periodic(
       const Duration(
         seconds: 1,
       ),
@@ -465,36 +500,51 @@ class _HomePageState extends State<HomePage>
 
         setState(() {
           if (_miningActive &&
-              _miningRemainingMs > 0) {
-            _miningRemainingMs -= 1000;
+              _miningRemainingMs >
+                  0) {
+            _miningRemainingMs -=
+                1000;
 
-            if (_miningRemainingMs <= 0) {
-              _miningRemainingMs = 0;
-              _miningActive = false;
+            if (_miningRemainingMs <=
+                0) {
+              _miningRemainingMs =
+                  0;
+              _miningActive =
+                  false;
             }
           }
 
           if (_adBoostActive &&
-              _adBoostRemainingMs > 0) {
-            _adBoostRemainingMs -= 1000;
+              _adBoostRemainingMs >
+                  0) {
+            _adBoostRemainingMs -=
+                1000;
 
-            if (_adBoostRemainingMs <= 0) {
-              _adBoostRemainingMs = 0;
-              _adBoostActive = false;
+            if (_adBoostRemainingMs <=
+                0) {
+              _adBoostRemainingMs =
+                  0;
+              _adBoostActive =
+                  false;
             }
           }
 
           if (!_adBoostActive &&
-              _cooldownRemainingMs > 0) {
-            _cooldownRemainingMs -= 1000;
+              _cooldownRemainingMs >
+                  0) {
+            _cooldownRemainingMs -=
+                1000;
 
-            if (_cooldownRemainingMs <= 0) {
-              _cooldownRemainingMs = 0;
+            if (_cooldownRemainingMs <=
+                0) {
+              _cooldownRemainingMs =
+                  0;
             }
           }
 
           if (!_adBoostActive &&
-              _cooldownRemainingMs <= 0 &&
+              _cooldownRemainingMs <=
+                  0 &&
               _adsToday <
                   _maxAdsPerDay) {
             _canWatchAd = true;
@@ -512,7 +562,8 @@ class _HomePageState extends State<HomePage>
 
     _refreshTimer?.cancel();
 
-    _refreshTimer = Timer.periodic(
+    _refreshTimer =
+        Timer.periodic(
       const Duration(
         seconds: 30,
       ),
@@ -542,18 +593,22 @@ class _HomePageState extends State<HomePage>
   // 📡 LOAD MINING STATUS
   // ============================================================
 
-  Future<void> _loadMiningStatus() async {
+  Future<void>
+      _loadMiningStatus() async {
     try {
-      final HttpsCallable callable =
-          _functions.httpsCallable(
+      final HttpsCallable
+          callable =
+          _functions
+              .httpsCallable(
         'getMiningStatus',
       );
 
-      final HttpsCallableResult<dynamic>
-          result =
+      final HttpsCallableResult<
+          dynamic> result =
           await callable.call();
 
-      final Map<String, dynamic> data =
+      final Map<String, dynamic>
+          data =
           Map<String, dynamic>.from(
         result.data as Map,
       );
@@ -563,7 +618,8 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
-        _streak = _toInt(
+        _streak =
+            _toInt(
           data['dailyStreak'] ??
               data['streak'],
         );
@@ -571,7 +627,8 @@ class _HomePageState extends State<HomePage>
         final double
             backendDailyHashRate =
             _toDouble(
-          data['dailyHashRate'],
+          data[
+              'dailyHashRate'],
         );
 
         if (_isValidDailyHashRate(
@@ -586,7 +643,8 @@ class _HomePageState extends State<HomePage>
           );
         }
 
-        final double backendHashRate =
+        final double
+            backendHashRate =
             _toDouble(
           data['hashRate'],
         );
@@ -603,41 +661,52 @@ class _HomePageState extends State<HomePage>
 
         _unclaimedMining =
             _toDouble(
-          data['unclaimedMining'],
+          data[
+              'unclaimedMining'],
         );
 
         _estimatedTotal =
             _toDouble(
-          data['estimatedTotal'],
+          data[
+              'estimatedTotal'],
         );
 
         _miningActive =
-            data['miningActive'] == true;
+            data[
+                    'miningActive'] ==
+                true;
 
         _miningRemainingMs =
             _toInt(
-          data['miningRemainingMs'],
+          data[
+              'miningRemainingMs'],
         );
 
         _miningDurationMs =
             _toInt(
-          data['miningDurationMs'],
+          data[
+              'miningDurationMs'],
         );
 
-        if (_miningDurationMs <= 0) {
+        if (_miningDurationMs <=
+            0) {
           _miningDurationMs =
               defaultMiningDurationMs;
         }
 
-        _adsToday = _toInt(
+        _adsToday =
+            _toInt(
           data['adsToday'],
         );
 
-        _maxAdsPerDay = _toInt(
-          data['maxAdsPerDay'],
+        _maxAdsPerDay =
+            _toInt(
+          data[
+              'maxAdsPerDay'],
         );
 
-        if (_maxAdsPerDay <= 0) {
+        if (_maxAdsPerDay <=
+            0) {
           _maxAdsPerDay =
               defaultMaxAdsPerDay;
         }
@@ -645,43 +714,57 @@ class _HomePageState extends State<HomePage>
         final double
             backendAdBonus =
             _toDouble(
-          data['adHashRateBonus'],
+          data[
+              'adHashRateBonus'],
         );
 
         _adHashRateBonus =
-            backendAdBonus > 0
+            backendAdBonus >
+                    0
                 ? backendAdBonus
                 : defaultAdHashRateBonus;
 
         _adBoostActive =
-            data['adBoostActive'] == true;
+            data[
+                    'adBoostActive'] ==
+                true;
 
         _adBoostRemainingMs =
             _toInt(
-          data['adBoostRemainingMs'],
+          data[
+              'adBoostRemainingMs'],
         );
 
         _cooldownRemainingMs =
             _toInt(
-          data['cooldownRemainingMs'],
+          data[
+              'cooldownRemainingMs'],
         );
 
-        if (_adBoostRemainingMs <= 0) {
-          _adBoostRemainingMs = 0;
-          _adBoostActive = false;
+        if (_adBoostRemainingMs <=
+            0) {
+          _adBoostRemainingMs =
+              0;
+          _adBoostActive =
+              false;
         }
 
         _recalculateMiningPerHour();
 
         _canWatchAd =
-            data['canWatchAd'] == true;
+            data[
+                    'canWatchAd'] ==
+                true;
 
         if (_adBoostActive ||
-            _adBoostRemainingMs > 0 ||
-            _cooldownRemainingMs > 0 ||
+            _adBoostRemainingMs >
+                0 ||
+            _cooldownRemainingMs >
+                0 ||
             _adsToday >=
                 _maxAdsPerDay) {
-          _canWatchAd = false;
+          _canWatchAd =
+              false;
         }
 
         _loading = false;
@@ -720,21 +803,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ==========================================================
-    // 🔐 IMPORTANT
-    // ==========================================================
-    //
-    // Mining requires a DIFFERENT AdMob SSV purpose:
-    //
-    // UID:mining_start
-    //
-    // The previously loaded Power Boost ad cannot be reused
-    // because its customData is already fixed when the ad is
-    // loaded.
-    //
-    // Therefore we explicitly prepare a mining_start ad here.
-    // ==========================================================
-
     if (_rewardedAd == null ||
         !_adReady ||
         _rewardedAdPurpose !=
@@ -746,7 +814,8 @@ class _HomePageState extends State<HomePage>
       );
 
       await _loadRewardedAd(
-        purpose: _miningStartPurpose,
+        purpose:
+            _miningStartPurpose,
       );
     }
 
@@ -758,11 +827,7 @@ class _HomePageState extends State<HomePage>
         !_adReady ||
         _rewardedAdPurpose !=
             _miningStartPurpose) {
-      _showMessage(
-        _localization.get(
-          'prepareAd',
-        ),
-      );
+      _showAdLoadError();
 
       return;
     }
@@ -771,12 +836,14 @@ class _HomePageState extends State<HomePage>
         _rewardedAd!;
 
     _rewardedAd = null;
+
     _adReady = false;
 
     bool rewardEarned = false;
 
     ad.show(
-      onUserEarnedReward: (
+      onUserEarnedReward:
+          (
         AdWithoutView adWithoutView,
         RewardItem reward,
       ) async {
@@ -795,7 +862,8 @@ class _HomePageState extends State<HomePage>
   // ⛏️ CLAIM / START MINING AFTER AD
   // ============================================================
 
-  Future<void> _startMiningAfterAd() async {
+  Future<void>
+      _startMiningAfterAd() async {
     if (_actionLoading) {
       return;
     }
@@ -809,16 +877,19 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final HttpsCallable callable =
-          _functions.httpsCallable(
+      final HttpsCallable
+          callable =
+          _functions
+              .httpsCallable(
         'claimMining',
       );
 
-      final HttpsCallableResult<dynamic>
-          result =
+      final HttpsCallableResult<
+          dynamic> result =
           await callable.call();
 
-      final Map<String, dynamic> data =
+      final Map<String, dynamic>
+          data =
           Map<String, dynamic>.from(
         result.data as Map,
       );
@@ -828,11 +899,14 @@ class _HomePageState extends State<HomePage>
       }
 
       final bool started =
-          data['started'] == true;
+          data['started'] ==
+              true;
 
       final bool alreadyMining =
-          data['miningActive'] == true &&
-              !started;
+          data[
+                  'miningActive'] ==
+              true &&
+          !started;
 
       final double collected =
           _toDouble(
@@ -848,10 +922,12 @@ class _HomePageState extends State<HomePage>
       final double
           returnedDailyHashRate =
           _toDouble(
-        data['dailyHashRate'],
+        data[
+            'dailyHashRate'],
       );
 
-      if (returnedStreak > 0) {
+      if (returnedStreak >
+          0) {
         _streak =
             returnedStreak;
       }
@@ -879,10 +955,12 @@ class _HomePageState extends State<HomePage>
             'stellaAlreadyMining',
           ),
         );
-      } else if (collected > 0 &&
+      } else if (collected >
+              0 &&
           started) {
         _showMessage(
-          _localization.getWithParams(
+          _localization
+              .getWithParams(
             'miningCollected',
             params: {
               'amount':
@@ -894,23 +972,26 @@ class _HomePageState extends State<HomePage>
         );
       } else if (started) {
         _showMessage(
-          _localization.getWithParams(
+          _localization
+              .getWithParams(
             'dailyHashRateSuccess',
             params: {
               'day':
-                  _streak.toString(),
+                  _streak
+                      .toString(),
               'rate':
                   _dailyHashRate
                       .toStringAsFixed(
-                    1,
-                  ),
+                1,
+              ),
               'amount':
                   _dailyHashRate
                       .toStringAsFixed(
-                    1,
-                  ),
+                1,
+              ),
               'streak':
-                  _streak.toString(),
+                  _streak
+                      .toString(),
             },
           ),
         );
@@ -938,14 +1019,14 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
       }
 
-      // After the mining-start ad has been consumed,
-      // prepare a normal Power Boost ad again.
       await _loadRewardedAd(
-        purpose: _powerBoostPurpose,
+        purpose:
+            _powerBoostPurpose,
       );
     }
   }
@@ -957,300 +1038,378 @@ class _HomePageState extends State<HomePage>
   Future<void> _loadRewardedAd({
     required String purpose,
   }) async {
-    // ----------------------------------------------------------
-    // If the currently loaded ad already has the correct purpose,
-    // there is nothing else to do.
-    // ----------------------------------------------------------
+    if (_adLoading) {
+      debugPrint(
+        'Ad load already in progress. '
+        'Requested purpose: $purpose',
+      );
+
+      return;
+    }
 
     if (_rewardedAd != null &&
         _adReady &&
         _rewardedAdPurpose ==
             purpose) {
+      debugPrint(
+        'Rewarded ad already ready: $purpose',
+      );
+
       return;
     }
 
     // ----------------------------------------------------------
-    // If another load operation is already running, wait for it.
-    // ----------------------------------------------------------
-
-    if (_adLoadFuture != null) {
-      try {
-        await _adLoadFuture;
-      } catch (_) {
-        // The original load operation already logged the error.
-      }
-
-      // --------------------------------------------------------
-      // Check again after waiting.
-      // --------------------------------------------------------
-
-      if (_rewardedAd != null &&
-          _adReady &&
-          _rewardedAdPurpose ==
-              purpose) {
-        return;
-      }
-    }
-
-    // ----------------------------------------------------------
-    // Dispose an ad with the wrong SSV purpose.
+    // Dispose an existing ad if it has the wrong purpose.
     // ----------------------------------------------------------
 
     if (_rewardedAd != null &&
         _rewardedAdPurpose !=
             purpose) {
+      debugPrint(
+        'Disposing old rewarded ad. '
+        'Old purpose: $_rewardedAdPurpose, '
+        'new purpose: $purpose',
+      );
+
       _rewardedAd?.dispose();
 
       _rewardedAd = null;
+
       _adReady = false;
     }
 
-    if (_adLoading) {
+    final User? user =
+        _auth.currentUser;
+
+    if (user == null) {
+      debugPrint(
+        'Cannot load rewarded ad: '
+        'no authenticated Firebase user.',
+      );
+
+      if (mounted) {
+        setState(() {
+          _adLoading = false;
+
+          _adReady = false;
+
+          _adLoadError =
+              'NO_AUTH_USER';
+        });
+      }
+
       return;
     }
 
     _adLoading = true;
 
-    final Completer<void> completer =
-        Completer<void>();
+    _adLoadError = '';
 
-    _adLoadFuture =
-        completer.future;
+    if (mounted) {
+      setState(() {});
+    }
 
-    try {
-      await RewardedAd.load(
-        adUnitId:
-            _rewardedAdUnitId,
-        request:
-            const AdRequest(),
-        rewardedAdLoadCallback:
-            RewardedAdLoadCallback(
-          onAdLoaded: (
-            RewardedAd ad,
-          ) {
-            final User? user =
-                _auth.currentUser;
+    debugPrint(
+      '==================================================',
+    );
 
-            if (user == null) {
+    debugPrint(
+      'STELLURIINI ADMOB LOAD START',
+    );
+
+    debugPrint(
+      'Ad Unit: $_rewardedAdUnitId',
+    );
+
+    debugPrint(
+      'Purpose: $purpose',
+    );
+
+    debugPrint(
+      'User UID length: ${user.uid.length}',
+    );
+
+    debugPrint(
+      '==================================================',
+    );
+
+    RewardedAd.load(
+      adUnitId:
+          _rewardedAdUnitId,
+      request:
+          const AdRequest(),
+      rewardedAdLoadCallback:
+          RewardedAdLoadCallback(
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
+          debugPrint(
+            '==================================================',
+          );
+
+          debugPrint(
+            'STELLURIINI ADMOB LOAD SUCCESS',
+          );
+
+          debugPrint(
+            'Purpose: $purpose',
+          );
+
+          debugPrint(
+            '==================================================',
+          );
+
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+
+          try {
+            final ServerSideVerificationOptions
+                serverSideOptions =
+                ServerSideVerificationOptions(
+              customData:
+                  '${user.uid}:$purpose',
+            );
+
+            ad.setServerSideOptions(
+              serverSideOptions,
+            );
+          } catch (error) {
+            debugPrint(
+              'AdMob SSV setup failed: $error',
+            );
+
+            ad.dispose();
+
+            if (mounted) {
+              setState(() {
+                _rewardedAd =
+                    null;
+
+                _adReady =
+                    false;
+
+                _adLoading =
+                    false;
+
+                _adLoadError =
+                    'SSV_SETUP_FAILED';
+              });
+            }
+
+            return;
+          }
+
+          _rewardedAd =
+              ad;
+
+          _rewardedAdPurpose =
+              purpose;
+
+          _adReady = true;
+
+          _adLoading = false;
+
+          _adLoadError = '';
+
+          ad.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdShowedFullScreenContent:
+                (
+              RewardedAd showedAd,
+            ) {
               debugPrint(
-                'Rewarded ad loaded without authenticated user.',
+                'Rewarded ad showed: $purpose',
+              );
+            },
+            onAdDismissedFullScreenContent:
+                (
+              RewardedAd dismissedAd,
+            ) {
+              debugPrint(
+                'Rewarded ad dismissed: $purpose',
               );
 
-              ad.dispose();
+              dismissedAd.dispose();
 
-              _rewardedAd = null;
-              _adReady = false;
-              _adLoading = false;
+              if (identical(
+                _rewardedAd,
+                dismissedAd,
+              )) {
+                _rewardedAd =
+                    null;
 
-              if (!completer.isCompleted) {
-                completer.complete();
+                _adReady =
+                    false;
               }
 
               if (mounted) {
                 setState(() {});
               }
 
-              return;
-            }
+              // After any rewarded ad,
+              // prepare a normal Power Boost ad.
+              Future<void>.delayed(
+                Duration.zero,
+                () async {
+                  if (!mounted) {
+                    return;
+                  }
 
-            // ==================================================
-            // 🔐 ADMOB SERVER-SIDE VERIFICATION
-            // ==================================================
-            //
-            // IMPORTANT:
-            //
-            // customData MUST be set on the RewardedAd object
-            // BEFORE the ad is shown.
-            //
-            // We cannot change the SSV purpose at show() time.
-            //
-            // Therefore:
-            //
-            // Power Boost:
-            // UID:power_boost
-            //
-            // Mining Start:
-            // UID:mining_start
-            //
-            // The backend verifies the AdMob SSV signature and
-            // then processes the corresponding purpose.
-            // ==================================================
-
-            try {
-              final ServerSideVerificationOptions
-                  serverSideOptions =
-                  ServerSideVerificationOptions(
-                customData:
-                    '${user.uid}:$purpose',
+                  await _loadRewardedAd(
+                    purpose:
+                        _powerBoostPurpose,
+                  );
+                },
               );
-
-              ad.setServerSideOptions(
-                serverSideOptions,
-              );
-            } catch (error) {
+            },
+            onAdFailedToShowFullScreenContent:
+                (
+              RewardedAd failedAd,
+              AdError error,
+            ) {
               debugPrint(
-                'Failed to set AdMob SSV options: $error',
+                '==================================================',
               );
 
-              ad.dispose();
+              debugPrint(
+                'STELLURIINI ADMOB SHOW FAILED',
+              );
 
-              _rewardedAd = null;
-              _adReady = false;
-              _adLoading = false;
+              debugPrint(
+                'Purpose: $purpose',
+              );
 
-              if (!completer.isCompleted) {
-                completer.complete();
+              debugPrint(
+                'Error: $error',
+              );
+
+              debugPrint(
+                '==================================================',
+              );
+
+              failedAd.dispose();
+
+              if (identical(
+                _rewardedAd,
+                failedAd,
+              )) {
+                _rewardedAd =
+                    null;
+
+                _adReady =
+                    false;
               }
 
               if (mounted) {
-                setState(() {});
+                setState(() {
+                  _adLoadError =
+                      'SHOW_FAILED';
+                });
               }
 
-              return;
-            }
+              Future<void>.delayed(
+                Duration.zero,
+                () async {
+                  if (!mounted) {
+                    return;
+                  }
 
-            _rewardedAd = ad;
-
-            _rewardedAdPurpose =
-                purpose;
-
-            _adReady = true;
-            _adLoading = false;
-
-            // Capture the purpose belonging to THIS ad.
-            final String loadedPurpose =
-                purpose;
-
-            ad.fullScreenContentCallback =
-                FullScreenContentCallback(
-              onAdDismissedFullScreenContent:
-                  (
-                RewardedAd dismissedAd,
-              ) {
-                dismissedAd.dispose();
-
-                if (identical(
-                  _rewardedAd,
-                  dismissedAd,
-                )) {
-                  _rewardedAd = null;
-                  _adReady = false;
-                }
-
-                if (mounted) {
-                  setState(() {});
-                }
-
-                // Always return to the normal Power Boost ad
-                // after a displayed rewarded ad.
-                if (loadedPurpose ==
-                    _miningStartPurpose) {
-                  _loadRewardedAd(
+                  await _loadRewardedAd(
                     purpose:
                         _powerBoostPurpose,
                   );
-                } else {
-                  _loadRewardedAd(
-                    purpose:
-                        _powerBoostPurpose,
-                  );
+                },
+              );
+            },
+          );
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
+          debugPrint(
+            '==================================================',
+          );
+
+          debugPrint(
+            'STELLURIINI ADMOB LOAD FAILED',
+          );
+
+          debugPrint(
+            'Purpose: $purpose',
+          );
+
+          debugPrint(
+            'Code: ${error.code}',
+          );
+
+          debugPrint(
+            'Domain: ${error.domain}',
+          );
+
+          debugPrint(
+            'Message: ${error.message}',
+          );
+
+          debugPrint(
+            'Response info: ${error.responseInfo}',
+          );
+
+          debugPrint(
+            '==================================================',
+          );
+
+          _rewardedAd =
+              null;
+
+          _adReady =
+              false;
+
+          _adLoading =
+              false;
+
+          _adLoadError =
+              '${error.code}:${error.message}';
+
+          if (mounted) {
+            setState(() {});
+          }
+
+          // Retry only the normal Power Boost ad.
+          // Mining Start will retry when the user presses
+          // the mining button again.
+          if (purpose ==
+              _powerBoostPurpose) {
+            Future<void>.delayed(
+              const Duration(
+                seconds: 15,
+              ),
+              () async {
+                if (!mounted) {
+                  return;
                 }
-              },
-              onAdFailedToShowFullScreenContent:
-                  (
-                RewardedAd failedAd,
-                AdError error,
-              ) {
-                debugPrint(
-                  'Ad failed to show: $error',
-                );
 
-                failedAd.dispose();
-
-                if (identical(
-                  _rewardedAd,
-                  failedAd,
-                )) {
-                  _rewardedAd = null;
-                  _adReady = false;
+                if (_rewardedAd !=
+                        null ||
+                    _adLoading) {
+                  return;
                 }
 
-                if (mounted) {
-                  setState(() {});
-                }
-
-                _loadRewardedAd(
+                await _loadRewardedAd(
                   purpose:
                       _powerBoostPurpose,
                 );
               },
             );
-
-            if (!completer.isCompleted) {
-              completer.complete();
-            }
-
-            if (mounted) {
-              setState(() {});
-            }
-          },
-          onAdFailedToLoad: (
-            LoadAdError error,
-          ) {
-            debugPrint(
-              'Ad failed to load: $error',
-            );
-
-            _rewardedAd = null;
-            _adReady = false;
-            _adLoading = false;
-
-            if (!completer.isCompleted) {
-              completer.complete();
-            }
-
-            if (mounted) {
-              setState(() {});
-            }
-
-            // Retry later only for the normal Power Boost ad.
-            if (purpose ==
-                _powerBoostPurpose) {
-              Future.delayed(
-                const Duration(
-                  seconds: 10,
-                ),
-                () {
-                  if (mounted &&
-                      _rewardedAd ==
-                          null &&
-                      !_adLoading) {
-                    _loadRewardedAd(
-                      purpose:
-                          _powerBoostPurpose,
-                    );
-                  }
-                },
-              );
-            }
-          },
-        ),
-      );
-    } catch (error) {
-      debugPrint(
-        'Rewarded ad load exception: $error',
-      );
-
-      _rewardedAd = null;
-      _adReady = false;
-      _adLoading = false;
-
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
-    } finally {
-      _adLoadFuture = null;
-    }
+          }
+        },
+      ),
+    );
   }
 
   // ============================================================
@@ -1263,9 +1422,11 @@ class _HomePageState extends State<HomePage>
     }
 
     if (_adBoostActive &&
-        _adBoostRemainingMs > 0) {
+        _adBoostRemainingMs >
+            0) {
       _showMessage(
-        _localization.getWithParams(
+        _localization
+            .getWithParams(
           'powerBoostActiveMessage',
           params: {
             'amount':
@@ -1295,9 +1456,11 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (_cooldownRemainingMs > 0) {
+    if (_cooldownRemainingMs >
+        0) {
       _showMessage(
-        _localization.getWithParams(
+        _localization
+            .getWithParams(
           'nextPowerBoostMessage',
           params: {
             'time':
@@ -1323,10 +1486,6 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    // ==========================================================
-    // 🔐 Make sure this is specifically a Power Boost ad.
-    // ==========================================================
-
     if (_rewardedAd == null ||
         !_adReady ||
         _rewardedAdPurpose !=
@@ -1338,7 +1497,8 @@ class _HomePageState extends State<HomePage>
       );
 
       await _loadRewardedAd(
-        purpose: _powerBoostPurpose,
+        purpose:
+            _powerBoostPurpose,
       );
     }
 
@@ -1350,11 +1510,7 @@ class _HomePageState extends State<HomePage>
         !_adReady ||
         _rewardedAdPurpose !=
             _powerBoostPurpose) {
-      _showMessage(
-        _localization.get(
-          'prepareAd',
-        ),
-      );
+      _showAdLoadError();
 
       return;
     }
@@ -1363,12 +1519,15 @@ class _HomePageState extends State<HomePage>
         _rewardedAd!;
 
     _rewardedAd = null;
+
     _adReady = false;
 
-    bool rewardProcessed = false;
+    bool rewardProcessed =
+        false;
 
     ad.show(
-      onUserEarnedReward: (
+      onUserEarnedReward:
+          (
         AdWithoutView adWithoutView,
         RewardItem reward,
       ) async {
@@ -1378,19 +1537,9 @@ class _HomePageState extends State<HomePage>
 
         rewardProcessed = true;
 
-        // ========================================================
-        // 🔐 IMPORTANT
-        // ========================================================
-        //
-        // We DO NOT grant the Power Boost from the client
-        // callback.
-        //
-        // Google AdMob sends the SSV callback to the backend.
-        // The backend verifies the signature and grants the
-        // actual Power Boost.
-        //
-        // The client only waits for the backend state to change.
-        // ========================================================
+        debugPrint(
+          'Power Boost client reward callback received.',
+        );
 
         await _waitForServerSidePowerBoost();
       },
@@ -1408,18 +1557,26 @@ class _HomePageState extends State<HomePage>
     }
 
     setState(() {
-      _actionLoading = true;
+      _actionLoading =
+          true;
     });
 
     try {
-      const int maxAttempts = 6;
+      const int maxAttempts =
+          6;
 
       for (int attempt = 0;
-          attempt < maxAttempts;
+          attempt <
+              maxAttempts;
           attempt++) {
         if (!mounted) {
           return;
         }
+
+        debugPrint(
+          'Waiting for Power Boost SSV. '
+          'Attempt ${attempt + 1}/$maxAttempts',
+        );
 
         await Future<void>.delayed(
           const Duration(
@@ -1434,9 +1591,11 @@ class _HomePageState extends State<HomePage>
         await _loadMiningStatus();
 
         if (_adBoostActive &&
-            _adBoostRemainingMs > 0) {
+            _adBoostRemainingMs >
+                0) {
           _showMessage(
-            _localization.getWithParams(
+            _localization
+                .getWithParams(
               'powerBoostReward',
               params: {
                 'amount':
@@ -1474,14 +1633,45 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
       }
 
       await _loadRewardedAd(
-        purpose: _powerBoostPurpose,
+        purpose:
+            _powerBoostPurpose,
       );
     }
+  }
+
+  // ============================================================
+  // ⚠️ ADMOB LOAD ERROR MESSAGE
+  // ============================================================
+
+  void _showAdLoadError() {
+    if (!mounted) {
+      return;
+    }
+
+    if (_adLoadError.isEmpty) {
+      _showMessage(
+        _localization.get(
+          'prepareAd',
+        ),
+      );
+
+      return;
+    }
+
+    debugPrint(
+      'Current AdMob load error: $_adLoadError',
+    );
+
+    _showMessage(
+      '⚠️ Mainosta ei voitu ladata juuri nyt. '
+      'Yritä hetken kuluttua uudelleen.',
+    );
   }
 
   // ============================================================
@@ -1496,9 +1686,11 @@ class _HomePageState extends State<HomePage>
 
     await showDialog(
       context: context,
-      builder: (dialogContext) {
+      builder:
+          (dialogContext) {
         return AlertDialog(
-          backgroundColor: cardColor,
+          backgroundColor:
+              cardColor,
           shape:
               RoundedRectangleBorder(
             borderRadius:
@@ -1510,15 +1702,18 @@ class _HomePageState extends State<HomePage>
             '🐱 ${localization.get(
               'selectLanguage',
             )}',
-            style: const TextStyle(
-              color: Colors.white,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white,
               fontWeight:
                   FontWeight.bold,
             ),
           ),
           content:
               SingleChildScrollView(
-            child: Column(
+            child:
+                Column(
               mainAxisSize:
                   MainAxisSize.min,
               children:
@@ -1562,12 +1757,18 @@ class _HomePageState extends State<HomePage>
             code;
 
     return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () async {
-          Navigator.pop(context);
+      width:
+          double.infinity,
+      child:
+          ElevatedButton(
+        onPressed:
+            () async {
+          Navigator.pop(
+            context,
+          );
 
-          await widget.changeLanguage(
+          await widget
+              .changeLanguage(
             code,
           );
 
@@ -1580,12 +1781,14 @@ class _HomePageState extends State<HomePage>
           }
         },
         style:
-            ElevatedButton.styleFrom(
-          backgroundColor: selected
-              ? accentColor
-              : const Color(
-                  0xFF35204F,
-                ),
+            ElevatedButton
+                .styleFrom(
+          backgroundColor:
+              selected
+                  ? accentColor
+                  : const Color(
+                      0xFF35204F,
+                    ),
           foregroundColor:
               Colors.white,
           padding:
@@ -1608,10 +1811,14 @@ class _HomePageState extends State<HomePage>
                 title,
                 textAlign:
                     TextAlign.center,
-                style: TextStyle(
-                  fontWeight: selected
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                style:
+                    TextStyle(
+                  fontWeight:
+                      selected
+                          ? FontWeight
+                              .bold
+                          : FontWeight
+                              .normal,
                 ),
               ),
             ),
@@ -1619,7 +1826,8 @@ class _HomePageState extends State<HomePage>
               const Icon(
                 Icons
                     .check_circle_rounded,
-                color: goldColor,
+                color:
+                    goldColor,
                 size: 20,
               ),
           ],
@@ -1680,7 +1888,9 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    await Navigator.of(context).push(
+    await Navigator.of(
+      context,
+    ).push(
       MaterialPageRoute<void>(
         builder: (_) => page,
       ),
@@ -1725,7 +1935,8 @@ class _HomePageState extends State<HomePage>
     }
 
     return double.tryParse(
-          value?.toString() ?? '',
+          value?.toString() ??
+              '',
         ) ??
         0.0;
   }
@@ -1738,7 +1949,8 @@ class _HomePageState extends State<HomePage>
     }
 
     return int.tryParse(
-          value?.toString() ?? '',
+          value?.toString() ??
+              '',
         ) ??
         0;
   }
@@ -1800,7 +2012,8 @@ class _HomePageState extends State<HomePage>
             );
 
     final String minutes =
-        (duration.inMinutes % 60)
+        (duration.inMinutes %
+                60)
             .toString()
             .padLeft(
               2,
@@ -1808,7 +2021,8 @@ class _HomePageState extends State<HomePage>
             );
 
     final String seconds =
-        (duration.inSeconds % 60)
+        (duration.inSeconds %
+                60)
             .toString()
             .padLeft(
               2,
@@ -1829,13 +2043,16 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    ScaffoldMessenger.of(context)
+    ScaffoldMessenger.of(
+      context,
+    )
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(
             message,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               fontWeight:
                   FontWeight.w600,
             ),
@@ -1862,6 +2079,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _uiTimer?.cancel();
+
     _refreshTimer?.cancel();
 
     _rewardedAd?.dispose();
@@ -1895,7 +2113,8 @@ class _HomePageState extends State<HomePage>
             ),
           );
         },
-        onWhitePaperPressed: () {
+        onWhitePaperPressed:
+            () {
           _openPage(
             WhitePaperPage(
               languageCode:
@@ -1911,7 +2130,8 @@ class _HomePageState extends State<HomePage>
             ),
           );
         },
-        onAchievementsPressed: () {
+        onAchievementsPressed:
+            () {
           _openPage(
             AchievementsPage(
               languageCode:
@@ -1941,10 +2161,12 @@ class _HomePageState extends State<HomePage>
                 ),
               )
             : RefreshIndicator(
-                color: accentColor,
+                color:
+                    accentColor,
                 onRefresh:
                     _loadMiningStatus,
-                child: ListView(
+                child:
+                    ListView(
                   physics:
                       const AlwaysScrollableScrollPhysics(),
                   padding:
@@ -2008,37 +2230,47 @@ class _HomePageState extends State<HomePage>
     return Row(
       children: [
         Builder(
-          builder: (context) {
+          builder:
+              (context) {
             return Container(
               width: 52,
               height: 52,
               decoration:
                   BoxDecoration(
-                color: cardColor,
+                color:
+                    cardColor,
                 borderRadius:
                     BorderRadius.circular(
                   17,
                 ),
-                border: Border.all(
+                border:
+                    Border.all(
                   color:
-                      accentColor.withValues(
-                    alpha: 0.45,
+                      accentColor
+                          .withValues(
+                    alpha:
+                        0.45,
                   ),
                 ),
               ),
-              child: IconButton(
+              child:
+                  IconButton(
                 onPressed: () {
                   Scaffold.of(
                     context,
                   ).openDrawer();
                 },
-                icon: const Icon(
-                  Icons.menu_rounded,
-                  color: pinkColor,
+                icon:
+                    const Icon(
+                  Icons
+                      .menu_rounded,
+                  color:
+                      pinkColor,
                   size: 29,
                 ),
                 tooltip:
-                    _localization.get(
+                    _localization
+                        .get(
                   'menu',
                 ),
               ),
@@ -2061,16 +2293,21 @@ class _HomePageState extends State<HomePage>
         Expanded(
           child: Column(
             crossAxisAlignment:
-                CrossAxisAlignment.start,
+                CrossAxisAlignment
+                    .start,
             children: [
               const Text(
                 'STELLURIINI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
+                style:
+                    TextStyle(
+                  color:
+                      Colors.white,
+                  fontSize:
+                      22,
                   fontWeight:
                       FontWeight.bold,
-                  letterSpacing: 1.2,
+                  letterSpacing:
+                      1.2,
                 ),
               ),
 
@@ -2079,30 +2316,40 @@ class _HomePageState extends State<HomePage>
               ),
 
               Text(
-                _localization.get(
+                _localization
+                    .get(
                   'stellaMining',
                 ),
-                style: const TextStyle(
-                  color: pinkColor,
-                  fontSize: 14,
+                style:
+                    const TextStyle(
+                  color:
+                      pinkColor,
+                  fontSize:
+                      14,
                 ),
               ),
 
-              if (_username.isNotEmpty) ...[
+              if (_username
+                  .isNotEmpty) ...[
                 const SizedBox(
                   height: 4,
                 ),
                 Text(
                   '👋 $_username',
-                  maxLines: 1,
+                  maxLines:
+                      1,
                   overflow:
-                      TextOverflow.ellipsis,
+                      TextOverflow
+                          .ellipsis,
                   style:
                       const TextStyle(
-                    color: goldColor,
-                    fontSize: 14,
+                    color:
+                        goldColor,
+                    fontSize:
+                        14,
                     fontWeight:
-                        FontWeight.bold,
+                        FontWeight
+                            .bold,
                   ),
                 ),
               ],
@@ -2113,9 +2360,12 @@ class _HomePageState extends State<HomePage>
         IconButton(
           onPressed:
               _loadMiningStatus,
-          icon: const Icon(
-            Icons.refresh_rounded,
-            color: Colors.white,
+          icon:
+              const Icon(
+            Icons
+                .refresh_rounded,
+            color:
+                Colors.white,
           ),
           tooltip:
               _localization.get(
@@ -2133,11 +2383,15 @@ class _HomePageState extends State<HomePage>
   Widget _buildStellaMiningCard() {
     final bool completed =
         !_miningActive &&
-            _unclaimedMining > 0;
+            _unclaimedMining >
+                0;
 
     final String title;
+
     final String subtitle;
+
     final String timerText;
+
     final String timerLabel;
 
     if (_miningActive) {
@@ -2278,10 +2532,13 @@ class _HomePageState extends State<HomePage>
   Widget _buildMiningButton() {
     final bool completed =
         !_miningActive &&
-            _unclaimedMining > 0;
+            _unclaimedMining >
+                0;
 
     String text;
+
     IconData icon;
+
     VoidCallback? onPressed;
 
     if (_actionLoading) {
@@ -2291,9 +2548,11 @@ class _HomePageState extends State<HomePage>
       );
 
       icon =
-          Icons.hourglass_top_rounded;
+          Icons
+              .hourglass_top_rounded;
 
-      onPressed = null;
+      onPressed =
+          null;
     } else if (_miningActive) {
       text =
           _localization.get(
@@ -2335,14 +2594,17 @@ class _HomePageState extends State<HomePage>
     }
 
     return SizedBox(
-      width: double.infinity,
+      width:
+          double.infinity,
       height: 62,
       child:
           ElevatedButton.icon(
         onPressed:
             onPressed,
-        icon: Icon(icon),
-        label: Text(
+        icon:
+            Icon(icon),
+        label:
+            Text(
           text,
           textAlign:
               TextAlign.center,
@@ -2355,15 +2617,16 @@ class _HomePageState extends State<HomePage>
           ),
         ),
         style:
-            ElevatedButton.styleFrom(
+            ElevatedButton
+                .styleFrom(
           backgroundColor:
               accentColor,
           foregroundColor:
               Colors.white,
           disabledBackgroundColor:
               const Color(
-                0xFF4A315F,
-              ),
+            0xFF4A315F,
+          ),
           shape:
               RoundedRectangleBorder(
             borderRadius:
@@ -2383,7 +2646,8 @@ class _HomePageState extends State<HomePage>
   Widget _buildAdButton() {
     final bool boostActive =
         _adBoostActive &&
-            _adBoostRemainingMs > 0;
+            _adBoostRemainingMs >
+                0;
 
     final bool canUse =
         _canWatchAd &&
@@ -2416,6 +2680,15 @@ class _HomePageState extends State<HomePage>
           _formatDuration(
         _cooldownRemainingMs,
       );
+    } else if (_adLoading) {
+      subtitle =
+          _localization.get(
+        'adLoading',
+      );
+    } else if (_adLoadError
+        .isNotEmpty) {
+      subtitle =
+          '⚠️ Mainosta ei saatavilla';
     } else if (!_adReady ||
         _rewardedAdPurpose !=
             _powerBoostPurpose) {
@@ -2425,7 +2698,8 @@ class _HomePageState extends State<HomePage>
       );
     } else {
       subtitle =
-          _localization.getWithParams(
+          _localization
+              .getWithParams(
         'powerBoostOffer',
         params: {
           'amount':
@@ -2449,7 +2723,8 @@ class _HomePageState extends State<HomePage>
     );
 
     final String remainingText =
-        _localization.getWithParams(
+        _localization
+            .getWithParams(
       'remaining',
       params: {
         'time':
@@ -2478,22 +2753,26 @@ class _HomePageState extends State<HomePage>
     );
 
     final String adsTodayText =
-        _localization.getWithParams(
+        _localization
+            .getWithParams(
       'adsToday',
       params: {
         'current':
             _adsToday.toString(),
         'max':
-            _maxAdsPerDay.toString(),
+            _maxAdsPerDay
+                .toString(),
       },
     );
 
     final String maxBoostsInfoText =
-        _localization.getWithParams(
+        _localization
+            .getWithParams(
       'maxBoostsInfo',
       params: {
         'count':
-            _maxAdsPerDay.toString(),
+            _maxAdsPerDay
+                .toString(),
       },
     );
 
@@ -2547,7 +2826,8 @@ class _HomePageState extends State<HomePage>
         children: [
           const Text(
             '🐱💜⛏️',
-            style: TextStyle(
+            style:
+                TextStyle(
               fontSize: 28,
             ),
           ),
@@ -2562,9 +2842,12 @@ class _HomePageState extends State<HomePage>
             ),
             textAlign:
                 TextAlign.center,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color:
-                  Color(0xFF8D7BA8),
+                  Color(
+                0xFF8D7BA8,
+              ),
               fontStyle:
                   FontStyle.italic,
             ),
@@ -2578,11 +2861,15 @@ class _HomePageState extends State<HomePage>
             _localization.get(
               'footerToken',
             ),
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color:
-                  Color(0xFF5F4D70),
+                  Color(
+                0xFF5F4D70,
+              ),
               fontSize: 11,
-              letterSpacing: 2,
+              letterSpacing:
+                  2,
             ),
           ),
         ],
