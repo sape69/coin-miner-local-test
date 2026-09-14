@@ -23,6 +23,7 @@ const PUBLIC_KEY_CACHE_MS =
 let cachedKeys = null;
 let cachedKeysAt = 0;
 
+
 // ==========================================
 // Get AdMob public keys
 // ==========================================
@@ -32,14 +33,16 @@ async function getAdMobPublicKeys() {
 
   if (
     cachedKeys &&
-    now - cachedKeysAt < PUBLIC_KEY_CACHE_MS
+    now - cachedKeysAt <
+      PUBLIC_KEY_CACHE_MS
   ) {
     return cachedKeys;
   }
 
-  const response = await fetch(
-    ADMOB_PUBLIC_KEYS_URL
-  );
+  const response =
+    await fetch(
+      ADMOB_PUBLIC_KEYS_URL
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -93,6 +96,7 @@ async function getAdMobPublicKeys() {
   return keys;
 }
 
+
 // ==========================================
 // Base64URL decoder
 // ==========================================
@@ -126,113 +130,31 @@ function base64UrlToBuffer(
   );
 }
 
-// ==========================================
-// Decode AdMob custom data safely
-// ==========================================
-//
-// Google notes that custom_data can be
-// percent escaped.
-//
-// Express normally decodes query values,
-// but this helper also handles a remaining
-// escaped value safely.
-//
-
-function normalizeCustomData(
-  value
-) {
-  if (
-    value === undefined ||
-    value === null
-  ) {
-    throw new Error(
-      "Missing AdMob custom_data."
-    );
-  }
-
-  let normalized =
-    String(value).trim();
-
-  if (
-    normalized.length === 0
-  ) {
-    throw new Error(
-      "Invalid AdMob custom_data."
-    );
-  }
-
-  if (
-    normalized.length > 128
-  ) {
-    throw new Error(
-      "AdMob custom_data is too long."
-    );
-  }
-
-  // Try percent decoding only when
-  // an encoded value is actually present.
-  //
-  // If decoding fails, keep the original
-  // value and let the format validation
-  // below reject it if necessary.
-  if (
-    normalized.includes("%")
-  ) {
-    try {
-      normalized =
-        decodeURIComponent(
-          normalized
-        );
-    } catch (error) {
-      throw new Error(
-        "Invalid percent-encoded AdMob custom_data."
-      );
-    }
-  }
-
-  normalized =
-    normalized.trim();
-
-  if (
-    normalized.length === 0
-  ) {
-    throw new Error(
-      "Invalid AdMob custom_data."
-    );
-  }
-
-  if (
-    normalized.length > 128
-  ) {
-    throw new Error(
-      "AdMob custom_data is too long."
-    );
-  }
-
-  if (
-    !/^[A-Za-z0-9._:-]+$/.test(
-      normalized
-    )
-  ) {
-    throw new Error(
-      "Invalid AdMob custom_data format."
-    );
-  }
-
-  return normalized;
-}
 
 // ==========================================
-// Get signed content
+// Get signed query string
 // ==========================================
-//
-// AdMob signs everything before
-// &signature=
 //
 // IMPORTANT:
-// The original query parameter order
-// must NOT be changed.
 //
+// AdMob signs ONLY the query string.
+//
+// Example:
+//
+// ad_network=...
+// &ad_unit=...
+// &reward_amount=...
+// &reward_item=...
+// &timestamp=...
+// &transaction_id=...
+// &user_id=...
+//
+// The URL path/domain must NOT be included.
+//
+// The query parameter order and encoding
+// must remain exactly as received.
+//
+// ==========================================
 
 function buildSignedQueryString(
   originalUrl
@@ -246,11 +168,42 @@ function buildSignedQueryString(
     );
   }
 
+  // ----------------------------------------
+  // Find query string
+  // ----------------------------------------
+
+  const questionMarkIndex =
+    originalUrl.indexOf("?");
+
+  if (
+    questionMarkIndex === -1
+  ) {
+    throw new Error(
+      "Missing query string in AdMob callback URL."
+    );
+  }
+
+  const queryString =
+    originalUrl.substring(
+      questionMarkIndex + 1
+    );
+
+  // ----------------------------------------
+  // Find signature
+  // ----------------------------------------
+  //
+  // Google specifies that signature and
+  // key_id are the final parameters.
+  //
+  // Therefore everything before
+  // &signature= is the signed content.
+  // ----------------------------------------
+
   const signatureMarker =
     "&signature=";
 
   const signatureIndex =
-    originalUrl.indexOf(
+    queryString.indexOf(
       signatureMarker
     );
 
@@ -258,15 +211,27 @@ function buildSignedQueryString(
     signatureIndex === -1
   ) {
     throw new Error(
-      "AdMob signature parameter not found in original URL."
+      "AdMob signature parameter not found."
     );
   }
 
-  return originalUrl.substring(
-    0,
-    signatureIndex
-  );
+  const signedQueryString =
+    queryString.substring(
+      0,
+      signatureIndex
+    );
+
+  if (
+    signedQueryString.length === 0
+  ) {
+    throw new Error(
+      "Empty AdMob signed query string."
+    );
+  }
+
+  return signedQueryString;
 }
+
 
 // ==========================================
 // Verify cryptographic signature
@@ -275,14 +240,15 @@ function buildSignedQueryString(
 async function verifyAdMobSignature(
   req
 ) {
-  // Firebase Functions / Express exposes
-  // the original unmodified request URL
-  // through originalUrl.
+  // ----------------------------------------
+  // IMPORTANT
+  // ----------------------------------------
   //
-  // This URL must be used for SSV signature
-  // verification because changing the query
-  // parameter order or encoding invalidates
-  // the signature.
+  // Use the original URL because the exact
+  // query parameter order and encoding must
+  // remain unchanged.
+  //
+  // ----------------------------------------
 
   const originalUrl =
     req.originalUrl ||
@@ -327,6 +293,10 @@ async function verifyAdMobSignature(
     String(keyId)
   );
 
+  // ----------------------------------------
+  // Get Google's public keys
+  // ----------------------------------------
+
   const publicKeys =
     await getAdMobPublicKeys();
 
@@ -343,15 +313,31 @@ async function verifyAdMobSignature(
     );
   }
 
+  // ----------------------------------------
+  // Extract ONLY the signed query string
+  // ----------------------------------------
+
   const signedQueryString =
     buildSignedQueryString(
       originalUrl
     );
 
+  console.log(
+    "🐱 AdMob SSV signed query extracted."
+  );
+
+  // ----------------------------------------
+  // Decode signature
+  // ----------------------------------------
+
   const signatureBuffer =
     base64UrlToBuffer(
       String(signature)
     );
+
+  // ----------------------------------------
+  // Verify ECDSA SHA-256
+  // ----------------------------------------
 
   const verifier =
     crypto.createVerify(
@@ -359,14 +345,21 @@ async function verifyAdMobSignature(
     );
 
   verifier.update(
-    signedQueryString
+    signedQueryString,
+    "utf8"
   );
 
   verifier.end();
 
   const isValid =
     verifier.verify(
-      publicKey,
+      {
+        key:
+          publicKey,
+
+        dsaEncoding:
+          "der",
+      },
       signatureBuffer
     );
 
@@ -384,6 +377,100 @@ async function verifyAdMobSignature(
 
   return true;
 }
+
+
+// ==========================================
+// Normalize custom data
+// ==========================================
+
+function normalizeCustomData(
+  value
+) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    throw new Error(
+      "Missing AdMob custom_data."
+    );
+  }
+
+  let normalized =
+    String(value).trim();
+
+  if (
+    normalized.length === 0
+  ) {
+    throw new Error(
+      "Invalid AdMob custom_data."
+    );
+  }
+
+  if (
+    normalized.length > 128
+  ) {
+    throw new Error(
+      "AdMob custom_data is too long."
+    );
+  }
+
+  // ----------------------------------------
+  // Decode percent-encoded custom data
+  // ----------------------------------------
+
+  if (
+    normalized.includes("%")
+  ) {
+    try {
+      normalized =
+        decodeURIComponent(
+          normalized
+        );
+    } catch (
+      error
+    ) {
+      throw new Error(
+        "Invalid percent-encoded AdMob custom_data."
+      );
+    }
+  }
+
+  normalized =
+    normalized.trim();
+
+  if (
+    normalized.length === 0
+  ) {
+    throw new Error(
+      "Invalid AdMob custom_data."
+    );
+  }
+
+  if (
+    normalized.length > 128
+  ) {
+    throw new Error(
+      "AdMob custom_data is too long."
+    );
+  }
+
+  // ----------------------------------------
+  // Validate format
+  // ----------------------------------------
+
+  if (
+    !/^[A-Za-z0-9._:-]+$/.test(
+      normalized
+    )
+  ) {
+    throw new Error(
+      "Invalid AdMob custom_data format."
+    );
+  }
+
+  return normalized;
+}
+
 
 // ==========================================
 // Validate callback data
@@ -416,51 +503,62 @@ function validateAdMobCallbackData(
   const timestamp =
     query.timestamp;
 
-  // ----------------------------------------
+
+  // ========================================
   // Diagnostic logging
-  // ----------------------------------------
+  // ========================================
 
   console.log(
     "🐱 AdMob SSV callback parameters received:",
     {
       adNetwork:
-        query.ad_network || null,
+        query.ad_network ||
+        null,
 
       adUnit:
-        adUnit || null,
+        adUnit ||
+        null,
 
       rewardAmount:
-        rewardAmount ?? null,
+        rewardAmount ??
+        null,
 
       rewardItem:
-        rewardItem || null,
+        rewardItem ||
+        null,
 
       transactionId:
-        transactionId || null,
+        transactionId ||
+        null,
 
       hasCustomData:
         customData !== undefined &&
         customData !== null &&
-        String(customData).trim()
+        String(customData)
+          .trim()
           .length > 0,
 
       hasUserId:
         userId !== undefined &&
         userId !== null &&
-        String(userId).trim()
+        String(userId)
+          .trim()
           .length > 0,
 
       keyId:
-        query.key_id || null,
+        query.key_id ||
+        null,
 
       timestamp:
-        timestamp || null,
+        timestamp ||
+        null,
     }
   );
 
-  // ----------------------------------------
+
+  // ========================================
   // Ad Unit
-  // ----------------------------------------
+  // ========================================
 
   if (
     !adUnit
@@ -469,14 +567,6 @@ function validateAdMobCallbackData(
       "Missing AdMob ad_unit."
     );
   }
-
-  //
-  // AdMob SSV sends the numeric Ad Unit ID.
-  //
-  // Example:
-  //
-  // 7225738491
-  //
 
   if (
     String(adUnit) !==
@@ -487,9 +577,10 @@ function validateAdMobCallbackData(
     );
   }
 
-  // ----------------------------------------
+
+  // ========================================
   // Reward amount
-  // ----------------------------------------
+  // ========================================
 
   if (
     rewardAmount === undefined ||
@@ -519,9 +610,10 @@ function validateAdMobCallbackData(
     );
   }
 
-  // ----------------------------------------
+
+  // ========================================
   // Reward item
-  // ----------------------------------------
+  // ========================================
 
   if (
     !rewardItem
@@ -540,9 +632,10 @@ function validateAdMobCallbackData(
     );
   }
 
-  // ----------------------------------------
+
+  // ========================================
   // Transaction ID
-  // ----------------------------------------
+  // ========================================
 
   if (
     !transactionId
@@ -573,18 +666,20 @@ function validateAdMobCallbackData(
     );
   }
 
-  // ----------------------------------------
+
+  // ========================================
   // Custom data
-  // ----------------------------------------
+  // ========================================
 
   const normalizedCustomData =
     normalizeCustomData(
       customData
     );
 
-  // ----------------------------------------
-  // Optional user_id
-  // ----------------------------------------
+
+  // ========================================
+  // Optional user ID
+  // ========================================
 
   let normalizedUserId =
     null;
@@ -606,9 +701,10 @@ function validateAdMobCallbackData(
     }
   }
 
-  // ----------------------------------------
+
+  // ========================================
   // Timestamp
-  // ----------------------------------------
+  // ========================================
 
   if (
     timestamp === undefined ||
@@ -634,6 +730,7 @@ function validateAdMobCallbackData(
       `Invalid AdMob timestamp: ${timestamp}`
     );
   }
+
 
   // ========================================
   // Return trusted callback data
@@ -675,6 +772,7 @@ function validateAdMobCallbackData(
       normalizedUserId,
   };
 
+
   console.log(
     "🐱✅ AdMob SSV callback data validated:",
     {
@@ -700,6 +798,7 @@ function validateAdMobCallbackData(
 
   return result;
 }
+
 
 // ==========================================
 // Main SSV verification
@@ -735,6 +834,7 @@ async function verifyAdMobCallback(
     req
   );
 }
+
 
 // ==========================================
 // Export
