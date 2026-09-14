@@ -98,17 +98,32 @@ class _HomePageState extends State<HomePage>
   String _username = '';
 
   // ============================================================
-  // 📺 REWARDED AD
+  // 📺 REWARDED ADS
   // ============================================================
 
   // Production AdMob Rewarded Ad Unit ID.
   static const String _rewardedAdUnitId =
       'ca-app-pub-1131012057145658/2252768949';
 
+  // ============================================================
+  // 🔐 ADMOB SSV PURPOSES
+  // ============================================================
+
+  static const String _powerBoostPurpose =
+      'power_boost';
+
+  static const String _miningStartPurpose =
+      'mining_start';
+
   RewardedAd? _rewardedAd;
 
   bool _adReady = false;
   bool _adLoading = false;
+
+  String _rewardedAdPurpose =
+      _powerBoostPurpose;
+
+  Future<void>? _adLoadFuture;
 
   // ============================================================
   // ⛏️ MINING STATE
@@ -118,7 +133,8 @@ class _HomePageState extends State<HomePage>
   bool _actionLoading = false;
   bool _miningActive = false;
 
-  double _hashRate = defaultDailyHashRate;
+  double _hashRate =
+      defaultDailyHashRate;
 
   double _unclaimedMining = 0.0;
   double _estimatedTotal = 0.0;
@@ -401,7 +417,9 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      await _loadRewardedAd();
+      await _loadRewardedAd(
+        purpose: _powerBoostPurpose,
+      );
 
       if (!mounted) {
         return;
@@ -702,15 +720,49 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // ==========================================================
+    // 🔐 IMPORTANT
+    // ==========================================================
+    //
+    // Mining requires a DIFFERENT AdMob SSV purpose:
+    //
+    // UID:mining_start
+    //
+    // The previously loaded Power Boost ad cannot be reused
+    // because its customData is already fixed when the ad is
+    // loaded.
+    //
+    // Therefore we explicitly prepare a mining_start ad here.
+    // ==========================================================
+
     if (_rewardedAd == null ||
-        !_adReady) {
+        !_adReady ||
+        _rewardedAdPurpose !=
+            _miningStartPurpose) {
       _showMessage(
         _localization.get(
           'prepareAd',
         ),
       );
 
-      await _loadRewardedAd();
+      await _loadRewardedAd(
+        purpose: _miningStartPurpose,
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (_rewardedAd == null ||
+        !_adReady ||
+        _rewardedAdPurpose !=
+            _miningStartPurpose) {
+      _showMessage(
+        _localization.get(
+          'prepareAd',
+        ),
+      );
 
       return;
     }
@@ -890,7 +942,11 @@ class _HomePageState extends State<HomePage>
         });
       }
 
-      await _loadRewardedAd();
+      // After the mining-start ad has been consumed,
+      // prepare a normal Power Boost ad again.
+      await _loadRewardedAd(
+        purpose: _powerBoostPurpose,
+      );
     }
   }
 
@@ -898,170 +954,303 @@ class _HomePageState extends State<HomePage>
   // 📺 LOAD REWARDED AD
   // ============================================================
 
-  Future<void> _loadRewardedAd() async {
-    if (_adLoading) {
+  Future<void> _loadRewardedAd({
+    required String purpose,
+  }) async {
+    // ----------------------------------------------------------
+    // If the currently loaded ad already has the correct purpose,
+    // there is nothing else to do.
+    // ----------------------------------------------------------
+
+    if (_rewardedAd != null &&
+        _adReady &&
+        _rewardedAdPurpose ==
+            purpose) {
       return;
     }
 
-    if (_rewardedAd != null) {
+    // ----------------------------------------------------------
+    // If another load operation is already running, wait for it.
+    // ----------------------------------------------------------
+
+    if (_adLoadFuture != null) {
+      try {
+        await _adLoadFuture;
+      } catch (_) {
+        // The original load operation already logged the error.
+      }
+
+      // --------------------------------------------------------
+      // Check again after waiting.
+      // --------------------------------------------------------
+
+      if (_rewardedAd != null &&
+          _adReady &&
+          _rewardedAdPurpose ==
+              purpose) {
+        return;
+      }
+    }
+
+    // ----------------------------------------------------------
+    // Dispose an ad with the wrong SSV purpose.
+    // ----------------------------------------------------------
+
+    if (_rewardedAd != null &&
+        _rewardedAdPurpose !=
+            purpose) {
+      _rewardedAd?.dispose();
+
+      _rewardedAd = null;
+      _adReady = false;
+    }
+
+    if (_adLoading) {
       return;
     }
 
     _adLoading = true;
 
-    await RewardedAd.load(
-      adUnitId:
-          _rewardedAdUnitId,
-      request:
-          const AdRequest(),
-      rewardedAdLoadCallback:
-          RewardedAdLoadCallback(
-        onAdLoaded: (
-          RewardedAd ad,
-        ) async {
-          final User? user =
-              _auth.currentUser;
+    final Completer<void> completer =
+        Completer<void>();
 
-          if (user == null) {
-            debugPrint(
-              'Rewarded ad loaded without authenticated user.',
-            );
+    _adLoadFuture =
+        completer.future;
 
-            ad.dispose();
+    try {
+      await RewardedAd.load(
+        adUnitId:
+            _rewardedAdUnitId,
+        request:
+            const AdRequest(),
+        rewardedAdLoadCallback:
+            RewardedAdLoadCallback(
+          onAdLoaded: (
+            RewardedAd ad,
+          ) {
+            final User? user =
+                _auth.currentUser;
 
-            _rewardedAd = null;
-            _adReady = false;
-            _adLoading = false;
-
-            if (mounted) {
-              setState(() {});
-            }
-
-            return;
-          }
-
-          try {
-            // ========================================================
-            // 🔐 ADMOB SERVER-SIDE VERIFICATION
-            // ========================================================
-            //
-            // The SSV customData contains only trusted application
-            // context. The backend still verifies the actual AdMob
-            // callback signature before granting anything.
-            //
-            // The purpose is changed immediately before displaying
-            // the ad:
-            //
-            // UID:power_boost
-            // UID:mining_start
-            //
-            // This allows the backend to distinguish the two
-            // different rewarded-ad actions.
-            // ========================================================
-
-            final ServerSideVerificationOptions
-                serverSideOptions =
-                ServerSideVerificationOptions(
-              customData:
-                  '${user.uid}:power_boost',
-            );
-
-            ad.setServerSideOptions(
-              serverSideOptions,
-            );
-          } catch (error) {
-            debugPrint(
-              'Failed to set AdMob SSV options: $error',
-            );
-
-            ad.dispose();
-
-            _rewardedAd = null;
-            _adReady = false;
-            _adLoading = false;
-
-            if (mounted) {
-              setState(() {});
-            }
-
-            return;
-          }
-
-          _rewardedAd = ad;
-          _adReady = true;
-          _adLoading = false;
-
-          ad.fullScreenContentCallback =
-              FullScreenContentCallback(
-            onAdDismissedFullScreenContent:
-                (
-              RewardedAd dismissedAd,
-            ) {
-              dismissedAd.dispose();
-
-              _rewardedAd = null;
-              _adReady = false;
-
-              if (mounted) {
-                setState(() {});
-              }
-
-              _loadRewardedAd();
-            },
-            onAdFailedToShowFullScreenContent:
-                (
-              RewardedAd failedAd,
-              AdError error,
-            ) {
+            if (user == null) {
               debugPrint(
-                'Ad failed to show: $error',
+                'Rewarded ad loaded without authenticated user.',
               );
 
-              failedAd.dispose();
+              ad.dispose();
 
               _rewardedAd = null;
               _adReady = false;
+              _adLoading = false;
+
+              if (!completer.isCompleted) {
+                completer.complete();
+              }
 
               if (mounted) {
                 setState(() {});
               }
 
-              _loadRewardedAd();
-            },
-          );
+              return;
+            }
 
-          if (mounted) {
-            setState(() {});
-          }
-        },
-        onAdFailedToLoad: (
-          LoadAdError error,
-        ) {
-          debugPrint(
-            'Ad failed to load: $error',
-          );
+            // ==================================================
+            // 🔐 ADMOB SERVER-SIDE VERIFICATION
+            // ==================================================
+            //
+            // IMPORTANT:
+            //
+            // customData MUST be set on the RewardedAd object
+            // BEFORE the ad is shown.
+            //
+            // We cannot change the SSV purpose at show() time.
+            //
+            // Therefore:
+            //
+            // Power Boost:
+            // UID:power_boost
+            //
+            // Mining Start:
+            // UID:mining_start
+            //
+            // The backend verifies the AdMob SSV signature and
+            // then processes the corresponding purpose.
+            // ==================================================
 
-          _rewardedAd = null;
-          _adReady = false;
-          _adLoading = false;
+            try {
+              final ServerSideVerificationOptions
+                  serverSideOptions =
+                  ServerSideVerificationOptions(
+                customData:
+                    '${user.uid}:$purpose',
+              );
 
-          if (mounted) {
-            setState(() {});
-          }
+              ad.setServerSideOptions(
+                serverSideOptions,
+              );
+            } catch (error) {
+              debugPrint(
+                'Failed to set AdMob SSV options: $error',
+              );
 
-          Future.delayed(
-            const Duration(
-              seconds: 10,
-            ),
-            () {
-              if (mounted) {
-                _loadRewardedAd();
+              ad.dispose();
+
+              _rewardedAd = null;
+              _adReady = false;
+              _adLoading = false;
+
+              if (!completer.isCompleted) {
+                completer.complete();
               }
-            },
-          );
-        },
-      ),
-    );
+
+              if (mounted) {
+                setState(() {});
+              }
+
+              return;
+            }
+
+            _rewardedAd = ad;
+
+            _rewardedAdPurpose =
+                purpose;
+
+            _adReady = true;
+            _adLoading = false;
+
+            // Capture the purpose belonging to THIS ad.
+            final String loadedPurpose =
+                purpose;
+
+            ad.fullScreenContentCallback =
+                FullScreenContentCallback(
+              onAdDismissedFullScreenContent:
+                  (
+                RewardedAd dismissedAd,
+              ) {
+                dismissedAd.dispose();
+
+                if (identical(
+                  _rewardedAd,
+                  dismissedAd,
+                )) {
+                  _rewardedAd = null;
+                  _adReady = false;
+                }
+
+                if (mounted) {
+                  setState(() {});
+                }
+
+                // Always return to the normal Power Boost ad
+                // after a displayed rewarded ad.
+                if (loadedPurpose ==
+                    _miningStartPurpose) {
+                  _loadRewardedAd(
+                    purpose:
+                        _powerBoostPurpose,
+                  );
+                } else {
+                  _loadRewardedAd(
+                    purpose:
+                        _powerBoostPurpose,
+                  );
+                }
+              },
+              onAdFailedToShowFullScreenContent:
+                  (
+                RewardedAd failedAd,
+                AdError error,
+              ) {
+                debugPrint(
+                  'Ad failed to show: $error',
+                );
+
+                failedAd.dispose();
+
+                if (identical(
+                  _rewardedAd,
+                  failedAd,
+                )) {
+                  _rewardedAd = null;
+                  _adReady = false;
+                }
+
+                if (mounted) {
+                  setState(() {});
+                }
+
+                _loadRewardedAd(
+                  purpose:
+                      _powerBoostPurpose,
+                );
+              },
+            );
+
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+
+            if (mounted) {
+              setState(() {});
+            }
+          },
+          onAdFailedToLoad: (
+            LoadAdError error,
+          ) {
+            debugPrint(
+              'Ad failed to load: $error',
+            );
+
+            _rewardedAd = null;
+            _adReady = false;
+            _adLoading = false;
+
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+
+            if (mounted) {
+              setState(() {});
+            }
+
+            // Retry later only for the normal Power Boost ad.
+            if (purpose ==
+                _powerBoostPurpose) {
+              Future.delayed(
+                const Duration(
+                  seconds: 10,
+                ),
+                () {
+                  if (mounted &&
+                      _rewardedAd ==
+                          null &&
+                      !_adLoading) {
+                    _loadRewardedAd(
+                      purpose:
+                          _powerBoostPurpose,
+                    );
+                  }
+                },
+              );
+            }
+          },
+        ),
+      );
+    } catch (error) {
+      debugPrint(
+        'Rewarded ad load exception: $error',
+      );
+
+      _rewardedAd = null;
+      _adReady = false;
+      _adLoading = false;
+
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    } finally {
+      _adLoadFuture = null;
+    }
   }
 
   // ============================================================
@@ -1134,15 +1323,38 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // ==========================================================
+    // 🔐 Make sure this is specifically a Power Boost ad.
+    // ==========================================================
+
     if (_rewardedAd == null ||
-        !_adReady) {
+        !_adReady ||
+        _rewardedAdPurpose !=
+            _powerBoostPurpose) {
       _showMessage(
         _localization.get(
           'prepareAd',
         ),
       );
 
-      await _loadRewardedAd();
+      await _loadRewardedAd(
+        purpose: _powerBoostPurpose,
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (_rewardedAd == null ||
+        !_adReady ||
+        _rewardedAdPurpose !=
+            _powerBoostPurpose) {
+      _showMessage(
+        _localization.get(
+          'prepareAd',
+        ),
+      );
 
       return;
     }
@@ -1170,10 +1382,11 @@ class _HomePageState extends State<HomePage>
         // 🔐 IMPORTANT
         // ========================================================
         //
-        // We DO NOT grant the Power Boost from the client callback.
+        // We DO NOT grant the Power Boost from the client
+        // callback.
         //
         // Google AdMob sends the SSV callback to the backend.
-        // The backend verifies the signature and then grants the
+        // The backend verifies the signature and grants the
         // actual Power Boost.
         //
         // The client only waits for the backend state to change.
@@ -1265,7 +1478,9 @@ class _HomePageState extends State<HomePage>
         });
       }
 
-      await _loadRewardedAd();
+      await _loadRewardedAd(
+        purpose: _powerBoostPurpose,
+      );
     }
   }
 
@@ -2173,6 +2388,8 @@ class _HomePageState extends State<HomePage>
     final bool canUse =
         _canWatchAd &&
             _adReady &&
+            _rewardedAdPurpose ==
+                _powerBoostPurpose &&
             !_actionLoading &&
             !boostActive &&
             _adsToday <
@@ -2199,7 +2416,9 @@ class _HomePageState extends State<HomePage>
           _formatDuration(
         _cooldownRemainingMs,
       );
-    } else if (!_adReady) {
+    } else if (!_adReady ||
+        _rewardedAdPurpose !=
+            _powerBoostPurpose) {
       subtitle =
           _localization.get(
         'adLoading',
