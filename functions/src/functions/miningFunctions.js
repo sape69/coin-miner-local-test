@@ -174,7 +174,7 @@ function getAdMobRewardRef(
 }
 
 // ============================================================
-// 🔐 VERIFY MINING START ADMOB REWARD
+// 🔐 VERIFY ADMOB MINING START REWARD
 // ============================================================
 //
 // Tämä tarkistus varmistaa, että:
@@ -182,13 +182,15 @@ function getAdMobRewardRef(
 // 1. AdMob SSV on luonut reward-documentin.
 // 2. Reward kuuluu kirjautuneelle käyttäjälle.
 // 3. Reward on oikea AdMob reward.
-// 4. Rewardia ei ole jo käytetty Mining Startiin.
+// 4. Rewardin tarkoitus on Mining Start.
+// 5. Rewardia ei ole jo käytetty.
 //
-// Tärkeää:
+// TÄRKEÄ:
 //
-// Flutterin lähettämään transactionId:hen ei luoteta
-// sellaisenaan. Firestore-documentti tarkistetaan
-// palvelimella.
+// Power Boost -rewardia ei hyväksytä Mining Startiin.
+//
+// Tämä estää tilanteen, jossa Power Boost -mainoksen
+// transactionId yritetään käyttää louhinnan käynnistämiseen.
 //
 // ============================================================
 
@@ -250,12 +252,6 @@ async function getVerifiedMiningStartReward(
   // ----------------------------------------------------------
   // 🎁 REWARD TYPE
   // ----------------------------------------------------------
-  //
-  // Reward-tyypin täytyy olla täsmälleen "admob".
-  //
-  // Puuttuva rewardType ei ole kelvollinen.
-  //
-  // ----------------------------------------------------------
 
   if (
     rewardData.rewardType !== "admob"
@@ -267,14 +263,31 @@ async function getVerifiedMiningStartReward(
   }
 
   // ----------------------------------------------------------
-  // 🔒 ALREADY USED
+  // 🎯 REWARD PURPOSE
   // ----------------------------------------------------------
   //
-  // Uusi rakenne käyttää miningClaimed-kenttää.
+  // Vain rewardPurpose = "mining_start" voidaan käyttää
+  // louhinnan käynnistämiseen.
   //
-  // miningStartClaimedAt säilytetään myös yhteensopivuuden
-  // vuoksi vanhojen reward-documenttien kanssa.
+  // Power Boost -reward:
   //
+  // rewardPurpose = "power_boost"
+  //
+  // EI saa koskaan käynnistää louhintaa.
+  //
+  // ----------------------------------------------------------
+
+  if (
+    rewardData.rewardPurpose !== "mining_start"
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 Tätä AdMob-palkintoa ei ole tarkoitettu louhinnan käynnistämiseen."
+    );
+  }
+
+  // ----------------------------------------------------------
+  // 🔒 ALREADY USED
   // ----------------------------------------------------------
 
   if (
@@ -290,11 +303,6 @@ async function getVerifiedMiningStartReward(
 
   // ----------------------------------------------------------
   // 🔐 VERIFIED ADMOB METADATA
-  // ----------------------------------------------------------
-  //
-  // Reward-documentin tulee sisältää palvelimen
-  // SSV-käsittelyssä tallennetut AdMob-tiedot.
-  //
   // ----------------------------------------------------------
 
   if (
@@ -1579,7 +1587,109 @@ const claimMining =
               snapshot.data() || {};
 
             // ==================================================
+            // ⛏️ CHECK ACTIVE MINING FIRST
+            // ==================================================
+            //
+            // Tärkeää:
+            //
+            // Jos louhinta on jo käynnissä, emme edes tarkista
+            // tai kuluta AdMob Mining Start -rewardia.
+            //
+            // Näin käyttäjä ei menetä mainospalkkiota
+            // turhaan.
+            //
+            // ==================================================
+
+            const existingMiningHashRate =
+              getMiningHashRate(
+                data,
+                calculateDailyHashRate(
+                  getDailyStreak(data) > 0
+                    ? getDailyStreak(data)
+                    : 1
+                )
+              );
+
+            const existingMiningStatus =
+              calculateMiningStatus(
+                {
+                  ...data,
+                  hashRate:
+                    existingMiningHashRate,
+                },
+                now
+              );
+
+            if (
+              existingMiningStatus.miningActive
+            ) {
+              return {
+                success: true,
+
+                started: false,
+
+                collected: 0,
+
+                miningActive: true,
+
+                hashRate:
+                  calculateDailyHashRate(
+                    getDailyStreak(data) > 0
+                      ? getDailyStreak(data)
+                      : 1
+                  ),
+
+                miningHashRate:
+                  existingMiningHashRate,
+
+                dailyHashRate:
+                  calculateDailyHashRate(
+                    getDailyStreak(data) > 0
+                      ? getDailyStreak(data)
+                      : 1
+                  ),
+
+                dailyStreak:
+                  getDailyStreak(data),
+
+                streak:
+                  getDailyStreak(data),
+
+                unclaimedMining:
+                  Math.max(
+                    0,
+                    getSafeNumber(
+                      existingMiningStatus.minedAmount,
+                      0
+                    )
+                  ),
+
+                miningRemainingMs:
+                  Math.max(
+                    0,
+                    getSafeNumber(
+                      existingMiningStatus.miningRemainingMs,
+                      0
+                    )
+                  ),
+
+                message:
+                  "🐱⛏️ Stella louhii jo STL:ää!",
+              };
+            }
+
+            // ==================================================
             // 🔐 VERIFY ADMOB REWARD
+            // ==================================================
+            //
+            // Tarkistus tehdään vasta sen jälkeen, kun
+            // aktiivinen louhinta on varmistettu.
+            //
+            // Lisäksi getVerifiedMiningStartReward()
+            // vaatii:
+            //
+            // rewardPurpose === "mining_start"
+            //
             // ==================================================
 
             const verifiedReward =
@@ -1634,58 +1744,6 @@ const claimMining =
                 },
                 now
               );
-
-            // ==================================================
-            // 🐱 ALREADY MINING
-            // ==================================================
-
-            if (
-              miningStatus.miningActive
-            ) {
-              return {
-                success: true,
-
-                started: false,
-
-                collected: 0,
-
-                miningActive: true,
-
-                hashRate:
-                  dailyHashRate,
-
-                miningHashRate:
-                  previousMiningHashRate,
-
-                dailyHashRate,
-
-                dailyStreak,
-
-                streak:
-                  dailyStreak,
-
-                unclaimedMining:
-                  Math.max(
-                    0,
-                    getSafeNumber(
-                      miningStatus.minedAmount,
-                      0
-                    )
-                  ),
-
-                miningRemainingMs:
-                  Math.max(
-                    0,
-                    getSafeNumber(
-                      miningStatus.miningRemainingMs,
-                      0
-                    )
-                  ),
-
-                message:
-                  "🐱⛏️ Stella louhii jo STL:ää!",
-              };
-            }
 
             // ==================================================
             // 🕒 PREVIOUS MINING CYCLE
@@ -1834,7 +1892,7 @@ const claimMining =
 
             // ==================================================
             // 👤 UPDATE USER
-            // ==================================================
+            // ====================================================
 
             const userUpdate = {
               // ==============================================
@@ -1913,9 +1971,6 @@ const claimMining =
             // ==================================================
             //
             // Sama transactionId voidaan käyttää vain kerran.
-            //
-            // Tallennetaan sekä miningClaimed että
-            // miningStartClaimedAt yhteensopivuuden vuoksi.
             //
             // ==================================================
 
@@ -2076,6 +2131,9 @@ const claimMining =
 
                 adRewardTransactionId:
                   adRewardTransactionId,
+
+                rewardPurpose:
+                  "mining_start",
 
                 createdAt:
                   FieldValue.serverTimestamp(),
