@@ -36,11 +36,11 @@ const AD_COOLDOWN_MS =
 
 // Full AdMob Rewarded Ad Unit ID used by Flutter.
 const ADMOB_REWARDED_AD_UNIT_ID =
-  "ca-app-pub-1131012057145658/2252768949";
+  "ca-app-pub-1131012057145658/7225738491";
 
 // Numeric Ad Unit ID received in AdMob SSV callback.
 const ADMOB_SSV_AD_UNIT_ID =
-  "2252768949";
+  "7225738491";
 
 // AdMob reward configuration.
 //
