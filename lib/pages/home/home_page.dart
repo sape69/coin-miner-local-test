@@ -792,8 +792,9 @@ class _HomePageState extends State<HomePage>
 
       final int returnedStreak =
           _toInt(
-        data['dailyStreak'] ??
-            data['streak'],
+        data['dailyHashRate'] != null
+            ? data['dailyStreak']
+            : data['streak'],
       );
 
       final double
@@ -922,21 +923,6 @@ class _HomePageState extends State<HomePage>
         onAdLoaded: (
           RewardedAd ad,
         ) async {
-          // ======================================================
-          // 🔐 FIREBASE USER ID
-          // ======================================================
-          //
-          // Google sends customData to the AdMob SSV callback
-          // as the "custom_data" parameter.
-          //
-          // We use the Firebase UID here so the backend can
-          // later verify that the rewarded ad belongs to the
-          // authenticated Stelluriini user.
-          //
-          // The backend validation will be updated in the
-          // following step.
-          // ======================================================
-
           final User? user =
               _auth.currentUser;
 
@@ -1166,20 +1152,43 @@ class _HomePageState extends State<HomePage>
 
         rewardProcessed = true;
 
-        await _giveTestAdReward();
+        // ========================================================
+        // 🔐 IMPORTANT
+        // ========================================================
+        //
+        // We DO NOT call testAdReward here anymore.
+        //
+        // The actual Power Boost is granted by the backend only
+        // after Google AdMob has sent and the server has verified
+        // the SSV callback.
+        //
+        // The client-side reward callback is therefore only used
+        // to refresh the UI and wait briefly for the SSV result.
+        // ========================================================
+
+        await _waitForServerSidePowerBoost();
       },
     );
   }
 
   // ============================================================
-  // 🎁 POWER BOOST REWARD
+  // 🔐 WAIT FOR ADMOB SSV POWER BOOST
+  // ============================================================
+  //
+  // AdMob SSV is asynchronous.
+  //
+  // After the user earns the reward, Google sends the signed
+  // callback to our Cloud Function.
+  //
+  // We poll the server for a short period so the UI can update
+  // quickly when the verified Power Boost arrives.
+  //
+  // The normal 30-second refresh timer continues to act as a
+  // fallback if the SSV callback takes longer.
   // ============================================================
 
-  Future<void> _giveTestAdReward() async {
-    if (_actionLoading) {
-      return;
-    }
-
+  Future<void>
+      _waitForServerSidePowerBoost() async {
     if (!mounted) {
       return;
     }
@@ -1189,115 +1198,62 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final HttpsCallable callable =
-          _functions.httpsCallable(
-        'testAdReward',
-      );
+      const int maxAttempts = 6;
 
-      final HttpsCallableResult<dynamic>
-          result =
-          await callable.call();
+      for (int attempt = 0;
+          attempt < maxAttempts;
+          attempt++) {
+        if (!mounted) {
+          return;
+        }
 
-      final Map<String, dynamic> data =
-          Map<String, dynamic>.from(
-        result.data as Map,
-      );
+        await Future<void>.delayed(
+          const Duration(
+            seconds: 2,
+          ),
+        );
 
-      if (!mounted) {
-        return;
+        if (!mounted) {
+          return;
+        }
+
+        await _loadMiningStatus();
+
+        if (_adBoostActive &&
+            _adBoostRemainingMs > 0) {
+          _showMessage(
+            _localization.getWithParams(
+              'powerBoostReward',
+              params: {
+                'amount':
+                    _adHashRateBonus
+                        .toStringAsFixed(
+                  4,
+                ),
+              },
+            ),
+          );
+
+          return;
+        }
       }
 
-      final bool rewarded =
-          data['rewarded'] == true;
-
-      final bool duplicate =
-          data['duplicate'] == true;
-
-      final bool boostActive =
-          data['adBoostActive'] == true;
-
-      final double bonus =
-          _toDouble(
-        data['bonus'],
-      );
-
-      final double boostAmount =
-          bonus > 0
-              ? bonus
-              : defaultAdHashRateBonus;
-
-      if (rewarded) {
-        final int backendDuration =
-            _toInt(
-          data['adBoostDurationMs'],
-        );
-
-        final int duration =
-            backendDuration > 0
-                ? backendDuration
-                : defaultAdBoostDurationMs;
-
-        setState(() {
-          _adBoostActive = true;
-
-          _adBoostRemainingMs =
-              duration;
-
-          _adHashRateBonus =
-              boostAmount;
-
-          _cooldownRemainingMs =
-              duration;
-
-          _canWatchAd = false;
-
-          _recalculateMiningPerHour();
-        });
-
-        _showMessage(
-          _localization.getWithParams(
-            'powerBoostReward',
-            params: {
-              'amount':
-                  boostAmount
-                      .toStringAsFixed(
-                4,
-              ),
-            },
-          ),
-        );
-      } else if (duplicate) {
+      if (mounted) {
         _showMessage(
           _localization.get(
-            'adRewardDuplicate',
+            'prepareAd',
           ),
-        );
-      } else if (boostActive) {
-        _showMessage(
-          _localization.get(
-            'powerBoostAlreadyActive',
-          ),
-        );
-      } else {
-        _showMessage(
-          data['message']
-                  ?.toString() ??
-              _localization.get(
-                'powerBoostFailed',
-              ),
         );
       }
-
-      await _loadMiningStatus();
     } catch (error) {
       debugPrint(
-        'Test ad reward error: $error',
+        'Waiting for AdMob SSV error: $error',
       );
 
       if (mounted) {
         _showMessage(
           _localization.get(
-            'testAdRewardFailed',
+            'powerBoostFailed',
           ),
         );
       }
@@ -2027,10 +1983,6 @@ class _HomePageState extends State<HomePage>
         'waitingForStella',
       );
     }
-
-    // ==========================================================
-    // 📊 MINING INFORMATION VALUES
-    // ==========================================================
 
     final String stlPerHourText =
         '${_localization.get('stlPerHour')}: '
