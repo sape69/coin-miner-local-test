@@ -115,31 +115,25 @@ function getSafeNumber(
 function getTimestampMilliseconds(
   value
 ) {
-
   if (
     value &&
     typeof value.toDate === "function"
   ) {
-
     const date =
       value.toDate();
 
     return date.getTime();
   }
 
-
   if (
     value instanceof Date
   ) {
-
     return value.getTime();
   }
-
 
   if (
     typeof value === "string"
   ) {
-
     const parsedDate =
       new Date(value);
 
@@ -151,7 +145,6 @@ function getTimestampMilliseconds(
       return parsedDate.getTime();
     }
   }
-
 
   return 0;
 }
@@ -175,7 +168,6 @@ function getAdStatus(
   nowMs,
   today
 ) {
-
   // ==========================================================
   // 📅 STORED DATE
   // ==========================================================
@@ -290,7 +282,6 @@ function getAdStatus(
   // ==========================================================
 
   return {
-
     adsToday,
 
     maxAdsPerDay:
@@ -307,9 +298,7 @@ function getAdStatus(
     adBoostActive,
 
     canWatchAd,
-
   };
-
 }
 
 
@@ -331,6 +320,28 @@ async function applyAdReward(
   transactionId,
   rewardType
 ) {
+  // ==========================================================
+  // 🛡️ BASIC INPUT VALIDATION
+  // ==========================================================
+
+  if (
+    typeof uid !== "string" ||
+    uid.trim().length === 0
+  ) {
+    throw new Error(
+      "Invalid user ID."
+    );
+  }
+
+  if (
+    typeof transactionId !== "string" ||
+    transactionId.trim().length === 0
+  ) {
+    throw new Error(
+      "Invalid transaction ID."
+    );
+  }
+
 
   // ==========================================================
   // 👤 USER
@@ -384,9 +395,7 @@ async function applyAdReward(
       if (
         rewardSnapshot.exists
       ) {
-
         return {
-
           success:
             true,
 
@@ -401,9 +410,7 @@ async function applyAdReward(
 
           message:
             "🐱📺 Tämä mainospalkinto on jo käsitelty.",
-
         };
-
       }
 
 
@@ -443,9 +450,7 @@ async function applyAdReward(
         adStatus.adsToday >=
         MAX_ADS_PER_DAY
       ) {
-
         return {
-
           success:
             false,
 
@@ -475,9 +480,7 @@ async function applyAdReward(
 
           message:
             "🐱📺 Päivän Stella Power Boost -raja on saavutettu.",
-
         };
-
       }
 
 
@@ -488,9 +491,7 @@ async function applyAdReward(
       if (
         adStatus.adBoostRemainingMs > 0
       ) {
-
         return {
-
           success:
             false,
 
@@ -520,9 +521,7 @@ async function applyAdReward(
 
           message:
             "🐱⏳ Stella Power Boost on vielä aktiivinen.",
-
         };
-
       }
 
 
@@ -533,9 +532,7 @@ async function applyAdReward(
       if (
         adStatus.cooldownRemainingMs > 0
       ) {
-
         return {
-
           success:
             false,
 
@@ -565,9 +562,7 @@ async function applyAdReward(
 
           message:
             "🐱⏳ Stella Power Boost on vielä cooldownissa.",
-
         };
-
       }
 
 
@@ -613,7 +608,6 @@ async function applyAdReward(
       const boostStartedAt =
         now;
 
-
       const boostEndsAt =
         new Date(
           nowMs +
@@ -652,7 +646,6 @@ async function applyAdReward(
       transaction.set(
         userRef,
         {
-
           // ==================================================
           // ⚡ DAILY HASH RATE
           // ==================================================
@@ -702,7 +695,6 @@ async function applyAdReward(
 
           updatedAt:
             FieldValue.serverTimestamp(),
-
         },
         {
           merge:
@@ -718,7 +710,6 @@ async function applyAdReward(
       transaction.set(
         rewardRef,
         {
-
           uid,
 
           transactionId,
@@ -737,7 +728,6 @@ async function applyAdReward(
 
           createdAt:
             FieldValue.serverTimestamp(),
-
         }
       );
 
@@ -754,7 +744,6 @@ async function applyAdReward(
       transaction.set(
         historyRef,
         {
-
           type:
             "ad_reward",
 
@@ -788,7 +777,6 @@ async function applyAdReward(
 
           createdAt:
             FieldValue.serverTimestamp(),
-
         }
       );
 
@@ -798,7 +786,6 @@ async function applyAdReward(
       // ======================================================
 
       return {
-
         success:
           true,
 
@@ -818,10 +805,8 @@ async function applyAdReward(
 
         bonus,
 
-
         adBoostHashRate:
           bonus,
-
 
         adBoostDurationMs:
           AD_BOOST_DURATION_MS,
@@ -840,7 +825,6 @@ async function applyAdReward(
 
         hashRate:
           effectiveHashRate,
-
 
         effectiveHashRate,
 
@@ -895,12 +879,9 @@ async function applyAdReward(
 
         message:
           `🐱📺⚡ Stella Power Boost +${bonus} HR 4 tunniksi!`,
-
       };
-
     }
   );
-
 }
 
 
@@ -908,11 +889,11 @@ async function applyAdReward(
 // 🧪 TEST AD REWARD
 // ============================================================
 //
-// Flutter kutsuu:
+// Flutter käyttää tätä tällä hetkellä kehityksen aikana.
 //
-// testAdReward()
-//
-// Tätä käytetään testimainoksen jälkeen.
+// Tätä EI ole tarkoitus käyttää tuotannossa.
+// Poistamme tämän myöhemmin, kun oikea AdMob SSV -ketju
+// on täysin testattu.
 //
 // ============================================================
 
@@ -928,12 +909,10 @@ const testAdReward =
       // ========================================================
 
       if (!request.auth) {
-
         throw new HttpsError(
           "unauthenticated",
           "🐱 Kirjaudu sisään saadaksesi Stella Power Boostin."
         );
-
       }
 
 
@@ -960,7 +939,6 @@ const testAdReward =
       // ========================================================
 
       try {
-
         return await applyAdReward(
           uid,
           transactionId,
@@ -978,9 +956,7 @@ const testAdReward =
         if (
           error instanceof HttpsError
         ) {
-
           throw error;
-
         }
 
 
@@ -988,9 +964,7 @@ const testAdReward =
           "internal",
           "🐱 Stella Power Boostin käsittely epäonnistui."
         );
-
       }
-
     }
   );
 
@@ -1000,6 +974,23 @@ const testAdReward =
 // ============================================================
 //
 // Google AdMob SSV kutsuu tätä endpointia.
+//
+// TÄRKEÄÄ:
+//
+// AdMobin SSV-palvelu allekirjoittaa callbackin.
+//
+// Flutterissa asetimme:
+//
+// ServerSideVerificationOptions(
+//   customData: Firebase UID,
+// )
+//
+// Tämä tulee AdMobilta takaisin:
+//
+// custom_data=<Firebase UID>
+//
+// Koska koko SSV-kutsu on allekirjoitettu,
+// backend voi käyttää tätä UID:tä palkinnon kohdentamiseen.
 //
 // ============================================================
 
@@ -1015,21 +1006,40 @@ const adMobReward =
         // ======================================================
         // 🔐 VERIFY GOOGLE CALLBACK
         // ======================================================
+        //
+        // Tämä tarkistaa sekä:
+        //
+        // 1. AdMobin kryptografisen allekirjoituksen
+        // 2. Oikean ad_unitin
+        // 3. Oikean reward_amountin
+        // 4. Oikean reward_itemin
+        // 5. Pakolliset tunnisteet
+        //
+        // ======================================================
 
-        await verifyAdMobCallback(
-          req
-        );
+        const verifiedAd =
+          await verifyAdMobCallback(
+            req
+          );
 
 
         // ======================================================
-        // 👤 USER ID
+        // 👤 TRUSTED USER ID
+        // ======================================================
+        //
+        // ÄLÄ käytä suoraan:
+        //
+        // req.query.user_id
+        //
+        // vaan AdMobin allekirjoittamaa custom_data-arvoa.
+        //
         // ======================================================
 
         const uid =
-          typeof req.query.user_id ===
-          "string"
-            ? req.query.user_id
-            : null;
+          typeof verifiedAd.customData ===
+              "string"
+            ? verifiedAd.customData.trim()
+            : "";
 
 
         // ======================================================
@@ -1037,33 +1047,144 @@ const adMobReward =
         // ======================================================
 
         const transactionId =
-          typeof req.query.transaction_id ===
-          "string"
-            ? req.query.transaction_id
-            : null;
+          typeof verifiedAd.transactionId ===
+              "string"
+            ? verifiedAd.transactionId.trim()
+            : "";
 
 
         // ======================================================
-        // 🛡️ VALIDATE
+        // 🛡️ VALIDATE TRUSTED DATA
         // ======================================================
 
-        if (
-          !uid ||
-          !transactionId
-        ) {
+        if (!uid) {
+
+          console.error(
+            "AdMob SSV missing custom_data."
+          );
 
           res.status(400).json({
-
             success:
               false,
 
             error:
-              "Missing user_id or transaction_id.",
-
+              "Missing AdMob custom_data.",
           });
 
           return;
+        }
 
+
+        if (!transactionId) {
+
+          console.error(
+            "AdMob SSV missing transaction_id."
+          );
+
+          res.status(400).json({
+            success:
+              false,
+
+            error:
+              "Missing AdMob transaction_id.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
+        // 🛡️ BASIC UID VALIDATION
+        // ======================================================
+        //
+        // Firebase Auth UIDs normally contain a limited set
+        // of characters. This prevents obviously malformed
+        // values from being used as Firestore document paths.
+        //
+        // ======================================================
+
+        if (
+          uid.length > 128 ||
+          !/^[A-Za-z0-9._:-]+$/.test(uid)
+        ) {
+
+          console.error(
+            "Invalid AdMob custom_data UID."
+          );
+
+          res.status(400).json({
+            success:
+              false,
+
+            error:
+              "Invalid AdMob custom_data.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
+        // 🛡️ TRANSACTION ID VALIDATION
+        // ======================================================
+
+        if (
+          transactionId.length > 256
+        ) {
+
+          console.error(
+            "Invalid AdMob transaction_id."
+          );
+
+          res.status(400).json({
+            success:
+              false,
+
+            error:
+              "Invalid AdMob transaction_id.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
+        // 🔎 OPTIONAL CONSISTENCY CHECK
+        // ======================================================
+        //
+        // Jos AdMob lähettää myös user_id:n, tarkistetaan
+        // että se vastaa custom_dataa.
+        //
+        // Nykyinen Flutter-versio käyttää custom_dataa,
+        // joten user_id voi olla tyhjä.
+        //
+        // ======================================================
+
+        const callbackUserId =
+          typeof verifiedAd.userId ===
+              "string"
+            ? verifiedAd.userId.trim()
+            : "";
+
+
+        if (
+          callbackUserId &&
+          callbackUserId !== uid
+        ) {
+
+          console.error(
+            "AdMob user_id does not match custom_data."
+          );
+
+          res.status(400).json({
+            success:
+              false,
+
+            error:
+              "AdMob user identity mismatch.",
+          });
+
+          return;
         }
 
 
@@ -1095,20 +1216,23 @@ const adMobReward =
         );
 
 
-        res.status(400).json({
+        // ======================================================
+        // 🔐 SECURITY RESPONSE
+        // ======================================================
+        //
+        // Emme paljasta asiakkaalle liikaa sisäisestä
+        // palvelinlogiikasta.
+        //
+        // ======================================================
 
+        res.status(400).json({
           success:
             false,
 
           error:
-            error instanceof Error
-              ? error.message
-              : "Unknown error",
-
+            "Invalid AdMob SSV callback.",
         });
-
       }
-
     }
   );
 
@@ -1118,9 +1242,6 @@ const adMobReward =
 // ============================================================
 
 module.exports = {
-
   testAdReward,
-
   adMobReward,
-
 };
