@@ -100,23 +100,26 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // 📺 REWARDED ADS
   // ============================================================
-
-  // ============================================================
-  // ⚠️ TEST MODE
-  // ============================================================
   //
-  // Googlen virallinen Rewarded-testimainos.
+  // Oma tuotannon Rewarded-mainosyksikkö.
   //
-  // Käytämme tätä tässä vaiheessa testaamiseen.
+  // AdMob:
+  // Stelluriini Power Boost
   //
-  // Kun kaikki toimii:
+  // Mainosmuoto:
+  // Palkkion tarjoava
   //
-  // ca-app-pub-1131012057145658/7225738491
+  // Tämä vastaa backendin SSV-asetusta:
+  //
+  // 7225738491
+  //
+  // Vanhaa Rewarded Interstitial -mainosyksikköä
+  // ei käytetä tässä tiedostossa.
   //
   // ============================================================
 
   static const String _rewardedAdUnitId =
-      'ca-app-pub-3940256099942544/5224354917';
+      'ca-app-pub-1131012057145658/7225738491';
 
   // ============================================================
   // 🔐 ADMOB SSV PURPOSES
@@ -700,10 +703,6 @@ class _HomePageState extends State<HomePage>
   Future<bool> _waitForRewardedAd({
     required String purpose,
   }) async {
-    // ----------------------------------------------------------
-    // Already ready.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _adReady &&
         _rewardedAdPurpose == purpose) {
@@ -714,33 +713,9 @@ class _HomePageState extends State<HomePage>
       return true;
     }
 
-    // ----------------------------------------------------------
-    // Start loading.
-    // ----------------------------------------------------------
-
     await _loadRewardedAd(
       purpose: purpose,
     );
-
-    // ----------------------------------------------------------
-    // IMPORTANT:
-    //
-    // RewardedAd.load() is asynchronous.
-    //
-    // _loadRewardedAd() starts the load, but the actual
-    // onAdLoaded callback happens later.
-    //
-    // Therefore we wait here until the callback has finished.
-    //
-    // This fixes:
-    //
-    // First tap  -> "Prepare ad"
-    // Second tap -> ad opens
-    //
-    // and changes it to:
-    //
-    // First tap -> wait -> ad opens automatically
-    // ----------------------------------------------------------
 
     const int maxWaitChecks = 150;
 
@@ -828,14 +803,6 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      // --------------------------------------------------------
-      // Make sure the Mining Start rewarded ad is loaded.
-      //
-      // IMPORTANT:
-      // The first button press now waits for the ad to finish
-      // loading instead of returning to the user.
-      // --------------------------------------------------------
-
       final bool ready =
           await _waitForRewardedAd(
         purpose: _miningStartPurpose,
@@ -863,10 +830,6 @@ class _HomePageState extends State<HomePage>
       _adReady = false;
 
       bool rewardEarned = false;
-
-      // --------------------------------------------------------
-      // Show immediately after the first load completes.
-      // --------------------------------------------------------
 
       debugPrint(
         'Showing Mining Start rewarded ad automatically.',
@@ -952,27 +915,6 @@ class _HomePageState extends State<HomePage>
         }
       }
     } finally {
-      // --------------------------------------------------------
-      // Do NOT reset _actionLoading here if the rewarded ad was
-      // successfully shown.
-      //
-      // _startMiningAfterAd() owns the rest of the flow and
-      // resets the state after the SSV/claim operation.
-      //
-      // If the ad was not shown, reset it here.
-      // --------------------------------------------------------
-
-      if (mounted &&
-          (_rewardedAd == null ||
-              !_adReady)) {
-        // The rewarded ad has been handed over to AdMob.
-        //
-        // Keep action loading active while the ad is running
-        // and while SSV is being processed.
-        //
-        // _startMiningAfterAd() will reset it.
-      }
-
       _miningAdFlowActive = false;
     }
   }
@@ -983,19 +925,6 @@ class _HomePageState extends State<HomePage>
 
   Future<HttpsCallableResult<dynamic>>
       _claimMiningWithSsvRetry() async {
-    // ==========================================================
-    // AdMob SSV may arrive a few seconds after the client-side
-    // reward callback.
-    //
-    // We therefore allow up to 15 attempts with a 2-second
-    // interval.
-    //
-    // First attempt is also delayed by 2 seconds.
-    //
-    // Maximum waiting time:
-    // approximately 30 seconds.
-    // ==========================================================
-
     const int maxAttempts = 15;
 
     const Duration retryDelay =
@@ -1424,7 +1353,7 @@ class _HomePageState extends State<HomePage>
     );
 
     debugPrint(
-      'TEST Ad Unit: $_rewardedAdUnitId',
+      'PRODUCTION REWARDED AD UNIT: $_rewardedAdUnitId',
     );
 
     debugPrint(
@@ -1456,7 +1385,7 @@ class _HomePageState extends State<HomePage>
           );
 
           debugPrint(
-            'TEST REWARDED AD',
+            'PRODUCTION REWARDED AD',
           );
 
           debugPrint(
@@ -1523,7 +1452,7 @@ class _HomePageState extends State<HomePage>
               RewardedAd showedAd,
             ) {
               debugPrint(
-                'Rewarded test ad showed: $purpose',
+                'Rewarded production ad showed: $purpose',
               );
             },
             onAdDismissedFullScreenContent:
@@ -1531,7 +1460,7 @@ class _HomePageState extends State<HomePage>
               RewardedAd dismissedAd,
             ) {
               debugPrint(
-                'Rewarded test ad dismissed: $purpose',
+                'Rewarded production ad dismissed: $purpose',
               );
 
               dismissedAd.dispose();
@@ -1675,7 +1604,7 @@ class _HomePageState extends State<HomePage>
           );
 
           debugPrint(
-            'STELLURIINI ADMOB TEST LOAD FAILED',
+            'STELLURIINI ADMOB PRODUCTION LOAD FAILED',
           );
 
           debugPrint(
@@ -1845,10 +1774,6 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      // --------------------------------------------------------
-      // First tap waits for the ad to actually load.
-      // --------------------------------------------------------
-
       final bool ready =
           await _waitForRewardedAd(
         purpose: _powerBoostPurpose,
@@ -2066,8 +1991,8 @@ class _HomePageState extends State<HomePage>
               const Color(0xFF301A4F),
           duration:
               const Duration(
-            seconds: 10,
-          ),
+                seconds: 10,
+              ),
           margin:
               const EdgeInsets.all(16),
           shape:
@@ -2127,8 +2052,8 @@ class _HomePageState extends State<HomePage>
               const Color(0xFF301A4F),
           duration:
               const Duration(
-            seconds: 10,
-          ),
+                seconds: 10,
+              ),
           margin:
               const EdgeInsets.all(16),
           shape:
