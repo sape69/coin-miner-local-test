@@ -1,95 +1,107 @@
 "use strict";
 
+// ============================================================
+// 🐱 STELLURIINI CLOUD FUNCTIONS
+// ============================================================
+
+// ============================================================
+// ⛏️ MINING
+// ============================================================
+
 const {
   getMiningStatus,
   claimMining,
-} = require("./src/functions/miningFunctions");
+} = require(
+  "./src/functions/miningFunctions"
+);
+
+
+// ============================================================
+// 🎁 DAILY CHECK-IN
+// ============================================================
 
 const {
   dailyCheckIn,
-} = require("./src/functions/dailyFunctions");
+} = require(
+  "./src/functions/dailyFunctions"
+);
+
+
+// ============================================================
+// 📺 ADMOB SSV
+// ============================================================
 
 const {
   adMobReward,
-} = require("./src/functions/adFunctions");
+} = require(
+  "./src/functions/adFunctions"
+);
+
+
+// ============================================================
+// 📜 TRANSACTION HISTORY
+// ============================================================
 
 const {
   getTransactionHistory,
-} = require("./src/functions/historyFunctions");
+} = require(
+  "./src/functions/historyFunctions"
+);
+
+
+// ============================================================
+// 🏆 ACHIEVEMENTS
+// ============================================================
 
 const {
   getAchievements,
   getAchievementsCompleted,
-} = require("./src/functions/achievementFunctions");
+} = require(
+  "./src/functions/achievementFunctions"
+);
 
-// ==========================================
-// Mining
-// ==========================================
 
-exports.getMiningStatus = getMiningStatus;
-exports.claimMining = claimMining;
+// ============================================================
+// ⛏️ MINING EXPORTS
+// ============================================================
 
-// ==========================================
-// Daily Check-In
-// ==========================================
+exports.getMiningStatus =
+  getMiningStatus;
 
-exports.dailyCheckIn = dailyCheckIn;
+exports.claimMining =
+  claimMining;
 
-// ==========================================
-// AdMob Server-Side Verification
-// ==========================================
 
-exports.adMobReward = adMobReward;
+// ============================================================
+// 🎁 DAILY CHECK-IN EXPORT
+// ============================================================
 
-// ==========================================
-// Transaction History
-// ==========================================
+exports.dailyCheckIn =
+  dailyCheckIn;
+
+
+// ============================================================
+// 📺 ADMOB SSV EXPORT
+// ============================================================
+
+exports.adMobReward =
+  adMobReward;
+
+
+// ============================================================
+// 📜 TRANSACTION HISTORY EXPORT
+// ============================================================
 
 exports.getTransactionHistory =
   getTransactionHistory;
 
-// ==========================================
-// Achievements
-// ==========================================
+
+// ============================================================
+// 🏆 ACHIEVEMENT EXPORTS
+// ============================================================
 
 exports.getAchievements =
   getAchievements;
 
 exports.getAchievementsCompleted =
-  getAchievementsCompleted;"use strict";
-
-const {
-  getMiningStatus,
-  claimMining,
-} = require("./src/functions/miningFunctions");
-
-const {
-  dailyCheckIn,
-} = require("./src/functions/dailyFunctions");
-
-const {
-  testAdReward,
-  adMobReward,
-} = require("./src/functions/adFunctions");
-
-const {
-  getTransactionHistory,
-} = require("./src/functions/historyFunctions");
-
-const {
-  getAchievements,
-  getAchievementsCompleted,
-} = require("./src/functions/achievementFunctions");
-
-exports.getMiningStatus = getMiningStatus;
-exports.claimMining = claimMining;
-
-exports.dailyCheckIn = dailyCheckIn;
-
-exports.testAdReward = testAdReward;
-exports.adMobReward = adMobReward;
-
-exports.getTransactionHistory = getTransactionHistory;
-
-exports.getAchievements = getAchievements;
-exports.getAchievementsCompleted = getAchievementsCompleted;
+  getAchievementsCompleted;
