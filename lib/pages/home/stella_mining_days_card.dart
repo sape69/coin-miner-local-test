@@ -303,11 +303,10 @@ class StellaMiningDaysCard extends StatelessWidget {
       return 1;
     }
 
-    return dailyStreak
-        .clamp(
-          1,
-          7,
-        );
+    return dailyStreak.clamp(
+      1,
+      7,
+    );
   }
 
   // ============================================================
@@ -355,10 +354,12 @@ class StellaMiningDaysCard extends StatelessWidget {
           const Duration(
         milliseconds: 250,
       ),
+      width:
+          double.infinity,
       padding:
           const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 7,
+        horizontal: 10,
+        vertical: 8,
       ),
       decoration:
           BoxDecoration(
@@ -366,7 +367,7 @@ class StellaMiningDaysCard extends StatelessWidget {
             cardBackground,
         borderRadius:
             BorderRadius.circular(
-          12,
+          13,
         ),
         border:
             Border.all(
@@ -383,10 +384,10 @@ class StellaMiningDaysCard extends StatelessWidget {
                     BoxShadow(
                       color:
                           goldColor.withValues(
-                        alpha: 0.12,
+                        alpha: 0.14,
                       ),
                       blurRadius:
-                          10,
+                          12,
                       spreadRadius:
                           0,
                     ),
@@ -401,8 +402,10 @@ class StellaMiningDaysCard extends StatelessWidget {
           // ==================================================
 
           Container(
-            width: 28,
-            height: 28,
+            width:
+                30,
+            height:
+                30,
             decoration:
                 BoxDecoration(
               shape:
@@ -439,11 +442,12 @@ class StellaMiningDaysCard extends StatelessWidget {
           ),
 
           const SizedBox(
-            width: 7,
+            width:
+                8,
           ),
 
           // ==================================================
-          // TEXT
+          // DAY TEXT
           // ==================================================
 
           Expanded(
@@ -470,16 +474,17 @@ class StellaMiningDaysCard extends StatelessWidget {
                             ? goldColor
                             : secondaryTextColor,
                     fontSize:
-                        8,
+                        9,
                     fontWeight:
                         FontWeight.bold,
                     letterSpacing:
-                        0.2,
+                        0.25,
                   ),
                 ),
 
                 const SizedBox(
-                  height: 1,
+                  height:
+                      2,
                 ),
 
                 Text(
@@ -495,13 +500,18 @@ class StellaMiningDaysCard extends StatelessWidget {
                             ? Colors.white
                             : Colors.white70,
                     fontSize:
-                        11,
+                        12,
                     fontWeight:
                         FontWeight.bold,
                   ),
                 ),
               ],
             ),
+          ),
+
+          const SizedBox(
+            width:
+                5,
           ),
 
           // ==================================================
@@ -514,7 +524,7 @@ class StellaMiningDaysCard extends StatelessWidget {
               style:
                   TextStyle(
                 fontSize:
-                    13,
+                    14,
               ),
             )
           else if (isCompleted)
@@ -523,17 +533,18 @@ class StellaMiningDaysCard extends StatelessWidget {
               color:
                   pinkColor,
               size:
-                  14,
+                  15,
             )
           else
             Icon(
               Icons.lock_outline_rounded,
               color:
                   accentColor.withValues(
-                alpha: 0.35,
+                alpha:
+                    0.35,
               ),
               size:
-                  13,
+                  14,
             ),
         ],
       ),
@@ -565,7 +576,8 @@ class StellaMiningDaysCard extends StatelessWidget {
           BoxDecoration(
         color:
             cardColor.withValues(
-          alpha: 0.55,
+          alpha:
+              0.55,
         ),
         borderRadius:
             BorderRadius.circular(
@@ -575,7 +587,8 @@ class StellaMiningDaysCard extends StatelessWidget {
             Border.all(
           color:
               accentColor.withValues(
-            alpha: 0.16,
+            alpha:
+                0.16,
           ),
         ),
       ),
@@ -601,7 +614,8 @@ class StellaMiningDaysCard extends StatelessWidget {
                       BoxShape.circle,
                   color:
                       accentColor.withValues(
-                    alpha: 0.13,
+                    alpha:
+                        0.13,
                   ),
                 ),
                 child:
@@ -629,6 +643,10 @@ class StellaMiningDaysCard extends StatelessWidget {
                   _title(
                     language,
                   ),
+                  maxLines:
+                      1,
+                  overflow:
+                      TextOverflow.ellipsis,
                   style:
                       const TextStyle(
                     color:
@@ -641,6 +659,11 @@ class StellaMiningDaysCard extends StatelessWidget {
                         0.8,
                   ),
                 ),
+              ),
+
+              const SizedBox(
+                width:
+                    6,
               ),
 
               Container(
@@ -673,7 +696,7 @@ class StellaMiningDaysCard extends StatelessWidget {
                 ),
                 child:
                     Text(
-                  '${currentDay}/7',
+                  '$currentDay/7',
                   style:
                       const TextStyle(
                     color:
@@ -697,40 +720,97 @@ class StellaMiningDaysCard extends StatelessWidget {
           // DAY GRID
           // ==================================================
 
-          GridView.builder(
-            shrinkWrap:
-                true,
-            physics:
-                const NeverScrollableScrollPhysics(),
-            itemCount:
-                rates.length,
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount:
-                  2,
-              crossAxisSpacing:
-                  7,
-              mainAxisSpacing:
-                  7,
-              childAspectRatio:
-                  2.65,
-            ),
-            itemBuilder: (
+          LayoutBuilder(
+            builder: (
               BuildContext context,
-              int index,
+              BoxConstraints constraints,
             ) {
-              final int day =
-                  index + 1;
+              // ------------------------------------------------
+              // Small phone screens:
+              // Use one column so DAY + HR never get squeezed.
+              // ------------------------------------------------
 
-              return _buildDayCard(
-                day:
-                    day,
-                rate:
-                    rates[index],
-                currentDay:
-                    currentDay,
-                language:
-                    language,
+              final bool useSingleColumn =
+                  constraints.maxWidth < 310;
+
+              if (useSingleColumn) {
+                return Column(
+                  children:
+                      List<Widget>.generate(
+                    rates.length,
+                    (
+                      int index,
+                    ) {
+                      final int day =
+                          index + 1;
+
+                      return Padding(
+                        padding:
+                            EdgeInsets.only(
+                          bottom:
+                              index ==
+                                      rates.length - 1
+                                  ? 0
+                                  : 7,
+                        ),
+                        child:
+                            _buildDayCard(
+                          day:
+                              day,
+                          rate:
+                              rates[index],
+                          currentDay:
+                              currentDay,
+                          language:
+                              language,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }
+
+              // ------------------------------------------------
+              // Normal phone/tablet width:
+              // Two-column layout.
+              // ------------------------------------------------
+
+              return GridView.builder(
+                shrinkWrap:
+                    true,
+                physics:
+                    const NeverScrollableScrollPhysics(),
+                itemCount:
+                    rates.length,
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount:
+                      2,
+                  crossAxisSpacing:
+                      7,
+                  mainAxisSpacing:
+                      7,
+                  childAspectRatio:
+                      2.45,
+                ),
+                itemBuilder: (
+                  BuildContext context,
+                  int index,
+                ) {
+                  final int day =
+                      index + 1;
+
+                  return _buildDayCard(
+                    day:
+                        day,
+                    rate:
+                        rates[index],
+                    currentDay:
+                        currentDay,
+                    language:
+                        language,
+                  );
+                },
               );
             },
           ),
@@ -745,12 +825,14 @@ class StellaMiningDaysCard extends StatelessWidget {
           // ==================================================
 
           Container(
+            width:
+                double.infinity,
             padding:
                 const EdgeInsets.symmetric(
               horizontal:
                   10,
               vertical:
-                  8,
+                  9,
             ),
             decoration:
                 BoxDecoration(
@@ -808,6 +890,10 @@ class StellaMiningDaysCard extends StatelessWidget {
                           language,
                           currentDay,
                         ),
+                        maxLines:
+                            1,
+                        overflow:
+                            TextOverflow.ellipsis,
                         style:
                             const TextStyle(
                           color:
@@ -830,6 +916,10 @@ class StellaMiningDaysCard extends StatelessWidget {
                           currentDay,
                           currentDay,
                         ),
+                        maxLines:
+                            1,
+                        overflow:
+                            TextOverflow.ellipsis,
                         style:
                             const TextStyle(
                           color:
@@ -846,8 +936,15 @@ class StellaMiningDaysCard extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(
+                  width:
+                      8,
+                ),
+
                 Text(
                   '${rates[currentDay - 1].toStringAsFixed(4)} HR',
+                  maxLines:
+                      1,
                   style:
                       const TextStyle(
                     color:
