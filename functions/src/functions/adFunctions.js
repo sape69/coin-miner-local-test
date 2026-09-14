@@ -18,7 +18,11 @@
 // Test Ad Reward on poistettu tuotantoversiosta.
 //
 // Oikea Power Boost syntyy vain:
+//
 // 🔐 varmennetun AdMob SSV -callbackin kautta.
+//
+// AdMob reward on tarkoitettu Power Boostiin.
+// Se EI itsessään luo erillistä Mining Start -oikeutta.
 //
 // ============================================================
 
@@ -344,6 +348,11 @@ function getAdStatus(
 // Mainosboosti EI lisää pysyvästi käyttäjän
 // Daily Hash Ratea.
 //
+// TÄRKEÄÄ:
+//
+// AdMob reward ei luo tässä vaiheessa erillistä
+// Mining Start -oikeutta.
+//
 // ============================================================
 
 async function applyAdReward(
@@ -474,6 +483,7 @@ async function applyAdReward(
       // ======================================================
       //
       // AdMob SSV:n custom_data sisältää käyttäjän UID:n.
+      //
       // Emme luo uutta Firestore-käyttäjää pelkän
       // mainoscallbackin perusteella.
       //
@@ -761,10 +771,13 @@ async function applyAdReward(
       // 🔐 SAVE VERIFIED ADMOB REWARD
       // ======================================================
       //
-      // Tallennetaan AdMobin varmennetut tiedot.
+      // Tämä dokumentti on auditointia ja duplicate-suojausta
+      // varten.
       //
-      // Tätä reward-recordia käytetään myöhemmin
-      // Mining Startin turvalliseen tarkistukseen.
+      // TÄRKEÄÄ:
+      //
+      // miningClaimed-kenttää EI käytetä enää Mining Start
+      // -oikeutena tässä rewardissa.
       //
       // ======================================================
 
@@ -777,6 +790,9 @@ async function applyAdReward(
 
           rewardType:
             "admob",
+
+          rewardPurpose:
+            "power_boost",
 
           // --------------------------------------------------
           // AdMob verified metadata
@@ -837,16 +853,12 @@ async function applyAdReward(
           boostEndsAt,
 
           // --------------------------------------------------
-          // 🔐 MINING ENTITLEMENT
+          // 🔐 REWARD USAGE
           // --------------------------------------------------
           //
-          // Tämä merkitään käyttämättömäksi.
+          // Tämä reward on Power Boost -reward.
           //
-          // claimMining tulee myöhemmin kuluttamaan
-          // tämän entitlementin atomisesti.
-          //
-          // Näin samaa AdMob-palkintoa ei voida käyttää
-          // useamman mining-jakson käynnistämiseen.
+          // Se ei anna erillistä Mining Start -oikeutta.
           //
           // --------------------------------------------------
 
@@ -903,6 +915,9 @@ async function applyAdReward(
           rewardType:
             "admob",
 
+          rewardPurpose:
+            "power_boost",
+
           adMobTransactionId:
             transactionId,
 
@@ -917,7 +932,7 @@ async function applyAdReward(
 
       // ======================================================
       // 📤 SUCCESS RESPONSE
-      // ======================================================
+      // ============================================================
 
       return {
         success:
@@ -1052,12 +1067,6 @@ const adMobReward =
         // ======================================================
         // 🔐 ONLY GET
         // ======================================================
-        //
-        // AdMob SSV callback tulee GET-pyyntönä.
-        //
-        // Emme hyväksy muita HTTP-metodeja.
-        //
-        // ======================================================
 
         if (
           req.method !== "GET"
@@ -1098,11 +1107,7 @@ const adMobReward =
         // 👤 TRUSTED USER ID
         // ======================================================
         //
-        // ÄLÄ käytä suoraan:
-        //
-        // req.query.user_id
-        //
-        // vaan AdMobin allekirjoittamaa custom_data-arvoa.
+        // Käytetään AdMobin allekirjoittamaa custom_data-arvoa.
         //
         // ======================================================
 
@@ -1216,11 +1221,6 @@ const adMobReward =
         // ======================================================
         // 🔎 OPTIONAL CONSISTENCY CHECK
         // ======================================================
-        //
-        // Jos AdMob lähettää myös user_id:n,
-        // tarkistetaan että se vastaa custom_dataa.
-        //
-        // ======================================================
 
         const callbackUserId =
           typeof verifiedAd.userId ===
@@ -1305,11 +1305,6 @@ const adMobReward =
 
         // ======================================================
         // 🔐 SECURITY RESPONSE
-        // ======================================================
-        //
-        // Emme paljasta asiakkaalle liikaa
-        // palvelinlogiikasta.
-        //
         // ======================================================
 
         res.status(400).json({
