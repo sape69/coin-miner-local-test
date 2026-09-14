@@ -138,6 +138,13 @@ function getSafePositiveNumber(
 // ============================================================
 // 🔐 VALIDATE ADMOB TRANSACTION ID
 // ============================================================
+//
+// Tätä käytetään vain palvelimen löytämän AdMob transaction ID:n
+// turvalliseen käsittelyyn.
+//
+// Flutter ei enää lähetä transaction ID:tä claimMining-funktiolle.
+//
+// ============================================================
 
 function validateAdMobTransactionId(
   value
@@ -174,166 +181,341 @@ function getAdMobRewardRef(
 }
 
 // ============================================================
-// 🔐 VERIFY ADMOB MINING START REWARD
+// 🔐 GET TIMESTAMP MILLISECONDS
+// ============================================================
+
+function getTimestampMilliseconds(
+  value
+) {
+  if (!value) {
+    return 0;
+  }
+
+  if (
+    typeof value.toDate === "function"
+  ) {
+    const date =
+      value.toDate();
+
+    if (
+      date instanceof Date &&
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return date.getTime();
+    }
+  }
+
+  if (
+    value instanceof Date
+  ) {
+    if (
+      !Number.isNaN(
+        value.getTime()
+      )
+    ) {
+      return value.getTime();
+    }
+
+    return 0;
+  }
+
+  if (
+    typeof value === "string"
+  ) {
+    const parsed =
+      new Date(value);
+
+    if (
+      !Number.isNaN(
+        parsed.getTime()
+      )
+    ) {
+      return parsed.getTime();
+    }
+  }
+
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
+    return value;
+  }
+
+  return 0;
+}
+
+// ============================================================
+// 🔐 GET ADMOB REWARD CREATION TIME
 // ============================================================
 //
-// Tämä tarkistus varmistaa, että:
+// SSV reward -dokumentti voidaan luoda hieman eri tavalla
+// riippuen backend-versiosta. Käytetään ensisijaisesti
+// createdAt-kenttää ja tarvittaessa muita turvallisia
+// aikakenttiä.
 //
-// 1. AdMob SSV on luonut reward-documentin.
-// 2. Reward kuuluu kirjautuneelle käyttäjälle.
-// 3. Reward on oikea AdMob reward.
-// 4. Rewardin tarkoitus on Mining Start.
-// 5. Rewardia ei ole jo käytetty.
+// ============================================================
+
+function getRewardCreatedAtMs(
+  rewardData
+) {
+  const candidates = [
+    rewardData.createdAt,
+    rewardData.receivedAt,
+    rewardData.timestamp,
+    rewardData.rewardedAt,
+  ];
+
+  for (
+    const candidate of candidates
+  ) {
+    const milliseconds =
+      getTimestampMilliseconds(
+        candidate
+      );
+
+    if (
+      milliseconds > 0
+    ) {
+      return milliseconds;
+    }
+  }
+
+  return 0;
+}
+
+// ============================================================
+// 🔐 FIND VERIFIED ADMOB MINING START REWARD
+// ============================================================
 //
-// TÄRKEÄ:
+// TÄMÄ ON UUSI TURVALLINEN MALLI.
 //
-// Power Boost -rewardia ei hyväksytä Mining Startiin.
+// Flutter ei enää lähetä:
 //
-// Tämä estää tilanteen, jossa Power Boost -mainoksen
-// transactionId yritetään käyttää louhinnan käynnistämiseen.
+// adRewardTransactionId
+//
+// Sen sijaan palvelin etsii itse:
+//   - kirjautuneen käyttäjän
+//   - AdMob rewardin
+//   - rewardPurpose = mining_start
+//   - käyttämättömän rewardin
+//
+// Power Boost -rewardia ei hyväksytä.
 //
 // ============================================================
 
 async function getVerifiedMiningStartReward(
   transaction,
-  uid,
-  transactionId
+  uid
 ) {
-  const safeTransactionId =
-    validateAdMobTransactionId(
-      transactionId
-    );
+  // ----------------------------------------------------------
+  // 🔎 SEARCH ADMOB REWARDS
+  // ----------------------------------------------------------
+  //
+  // Käytämme vain equality-suodattimia.
+  //
+  // Tämä vähentää tarpeettomien composite-indexien tarvetta.
+  //
+  // ----------------------------------------------------------
 
-  if (
-    !safeTransactionId
-  ) {
-    throw new HttpsError(
-      "invalid-argument",
-      "🐱 Kelvollinen AdMob-tapahtuma vaaditaan."
-    );
-  }
-
-  const rewardRef =
-    getAdMobRewardRef(
-      safeTransactionId
-    );
+  const rewardsQuery =
+    db
+      .collection("admobRewards")
+      .where(
+        "uid",
+        "==",
+        uid
+      )
+      .where(
+        "rewardType",
+        "==",
+        "admob"
+      )
+      .where(
+        "rewardPurpose",
+        "==",
+        "mining_start"
+      )
+      .where(
+        "miningStartClaimed",
+        "==",
+        false
+      )
+      .limit(20);
 
   const rewardSnapshot =
     await transaction.get(
-      rewardRef
+      rewardsQuery
     );
 
+  // ----------------------------------------------------------
+  // ❌ NO REWARD
+  // ----------------------------------------------------------
+
   if (
-    !rewardSnapshot.exists
+    rewardSnapshot.empty
   ) {
     throw new HttpsError(
       "failed-precondition",
-      "🐱 AdMob-mainoksen vahvistusta ei löytynyt. Odota hetki ja yritä uudelleen."
-    );
-  }
-
-  const rewardData =
-    rewardSnapshot.data() || {};
-
-  // ----------------------------------------------------------
-  // 👤 USER
-  // ----------------------------------------------------------
-
-  if (
-    typeof rewardData.uid !== "string" ||
-    rewardData.uid !== uid
-  ) {
-    throw new HttpsError(
-      "permission-denied",
-      "🐱 AdMob-tapahtuma ei kuulu tälle käyttäjälle."
+      "🐱 AdMob-mainoksen vahvistusta ei löytynyt. Katso Mining Start -mainos loppuun ja odota hetki."
     );
   }
 
   // ----------------------------------------------------------
-  // 🎁 REWARD TYPE
+  // 🔎 FIND NEWEST VALID REWARD
+  // ----------------------------------------------------------
+  //
+  // Koska query ei käytä orderBy-kenttää, valitsemme uusimman
+  // palkinnon palvelimella.
+  //
+  // Tämä toimii myös silloin, jos vanhoissa reward-dokumenteissa
+  // createdAt puuttuu.
+  //
+  // ----------------------------------------------------------
+
+  const candidates = [];
+
+  rewardSnapshot.forEach(
+    (doc) => {
+      const rewardData =
+        doc.data() || {};
+
+      // --------------------------------------------------------
+      // 👤 USER
+      // --------------------------------------------------------
+
+      if (
+        typeof rewardData.uid !== "string" ||
+        rewardData.uid !== uid
+      ) {
+        return;
+      }
+
+      // --------------------------------------------------------
+      // 🎁 REWARD TYPE
+      // --------------------------------------------------------
+
+      if (
+        rewardData.rewardType !==
+        "admob"
+      ) {
+        return;
+      }
+
+      // --------------------------------------------------------
+      // 🎯 REWARD PURPOSE
+      // --------------------------------------------------------
+
+      if (
+        rewardData.rewardPurpose !==
+        "mining_start"
+      ) {
+        return;
+      }
+
+      // --------------------------------------------------------
+      // 🔒 ALREADY CLAIMED
+      // --------------------------------------------------------
+
+      if (
+        rewardData.miningClaimed === true ||
+        rewardData.miningStartClaimed === true ||
+        rewardData.miningStartClaimedAt
+      ) {
+        return;
+      }
+
+      // --------------------------------------------------------
+      // 🔐 ADMOB METADATA
+      // --------------------------------------------------------
+
+      if (
+        typeof rewardData.adUnit !== "string" ||
+        rewardData.adUnit.length === 0
+      ) {
+        return;
+      }
+
+      if (
+        typeof rewardData.rewardItem !== "string" ||
+        rewardData.rewardItem.length === 0
+      ) {
+        return;
+      }
+
+      const createdAtMs =
+        getRewardCreatedAtMs(
+          rewardData
+        );
+
+      candidates.push({
+        ref: doc.ref,
+        data: rewardData,
+        transactionId:
+          validateAdMobTransactionId(
+            doc.id
+          ),
+        createdAtMs,
+      });
+    }
+  );
+
+  // ----------------------------------------------------------
+  // ❌ NO VALID CANDIDATE
   // ----------------------------------------------------------
 
   if (
-    rewardData.rewardType !== "admob"
+    candidates.length === 0
   ) {
     throw new HttpsError(
       "failed-precondition",
-      "🐱 AdMob-tapahtuman tyyppi ei ole kelvollinen."
+      "🐱 Kelvollista käyttämätöntä Mining Start -AdMob-palkintoa ei löytynyt."
     );
   }
 
   // ----------------------------------------------------------
-  // 🎯 REWARD PURPOSE
+  // 🔄 NEWEST FIRST
   // ----------------------------------------------------------
-  //
-  // Vain rewardPurpose = "mining_start" voidaan käyttää
-  // louhinnan käynnistämiseen.
-  //
-  // Power Boost -reward:
-  //
-  // rewardPurpose = "power_boost"
-  //
-  // EI saa koskaan käynnistää louhintaa.
-  //
+
+  candidates.sort(
+    (a, b) => {
+      return (
+        b.createdAtMs -
+        a.createdAtMs
+      );
+    }
+  );
+
+  const selected =
+    candidates[0];
+
+  // ----------------------------------------------------------
+  // 🔐 TRANSACTION ID
   // ----------------------------------------------------------
 
   if (
-    rewardData.rewardPurpose !== "mining_start"
+    !selected.transactionId
   ) {
     throw new HttpsError(
       "failed-precondition",
-      "🐱 Tätä AdMob-palkintoa ei ole tarkoitettu louhinnan käynnistämiseen."
+      "🐱 AdMob-tapahtuman tunnistaminen epäonnistui."
     );
   }
 
   // ----------------------------------------------------------
-  // 🔒 ALREADY USED
+  // ✅ RETURN VERIFIED REWARD
   // ----------------------------------------------------------
-
-  if (
-    rewardData.miningClaimed === true ||
-    rewardData.miningStartClaimed === true ||
-    rewardData.miningStartClaimedAt
-  ) {
-    throw new HttpsError(
-      "already-exists",
-      "🐱 Tätä AdMob-mainosta on jo käytetty louhinnan käynnistämiseen."
-    );
-  }
-
-  // ----------------------------------------------------------
-  // 🔐 VERIFIED ADMOB METADATA
-  // ----------------------------------------------------------
-
-  if (
-    typeof rewardData.adUnit !== "string" ||
-    rewardData.adUnit.length === 0
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob reward -tietueen vahvistus puuttuu."
-    );
-  }
-
-  if (
-    typeof rewardData.rewardItem !== "string" ||
-    rewardData.rewardItem.length === 0
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob reward -tietueen palkintotieto puuttuu."
-    );
-  }
 
   return {
     ref:
-      rewardRef,
+      selected.ref,
 
     data:
-      rewardData,
+      selected.data,
 
     transactionId:
-      safeTransactionId,
+      selected.transactionId,
   };
 }
 
@@ -531,72 +713,6 @@ function calculateNextDailyClaim(
     streak: newStreak,
     dailyHashRate,
   };
-}
-
-// ============================================================
-// 📺 TIMESTAMP → MILLISECONDS
-// ============================================================
-
-function getTimestampMilliseconds(
-  value
-) {
-  if (!value) {
-    return 0;
-  }
-
-  if (
-    typeof value.toDate === "function"
-  ) {
-    const date =
-      value.toDate();
-
-    if (
-      date instanceof Date &&
-      !Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return date.getTime();
-    }
-  }
-
-  if (
-    value instanceof Date
-  ) {
-    if (
-      !Number.isNaN(
-        value.getTime()
-      )
-    ) {
-      return value.getTime();
-    }
-
-    return 0;
-  }
-
-  if (
-    typeof value === "string"
-  ) {
-    const parsed =
-      new Date(value);
-
-    if (
-      !Number.isNaN(
-        parsed.getTime()
-      )
-    ) {
-      return parsed.getTime();
-    }
-  }
-
-  if (
-    typeof value === "number" &&
-    Number.isFinite(value)
-  ) {
-    return value;
-  }
-
-  return 0;
 }
 
 // ============================================================
@@ -1519,29 +1635,6 @@ const claimMining =
         const uid =
           request.auth.uid;
 
-        // ====================================================
-        // 🔐 ADMOB TRANSACTION ID
-        // ====================================================
-        //
-        // Mining Start vaatii palvelimella vahvistetun
-        // AdMob SSV rewardin.
-        //
-        // ====================================================
-
-        const adRewardTransactionId =
-          validateAdMobTransactionId(
-            request.data?.adRewardTransactionId
-          );
-
-        if (
-          !adRewardTransactionId
-        ) {
-          throw new HttpsError(
-            "invalid-argument",
-            "🐱 AdMob-vahvistus puuttuu. Katso mainos loppuun ja yritä uudelleen."
-          );
-        }
-
         const userRef =
           getUserRef(uid);
 
@@ -1590,22 +1683,22 @@ const claimMining =
             // ⛏️ CHECK ACTIVE MINING FIRST
             // ==================================================
             //
-            // Tärkeää:
+            // Jos louhinta on jo käynnissä, emme etsi tai
+            // kuluta AdMob Mining Start -rewardia.
             //
-            // Jos louhinta on jo käynnissä, emme edes tarkista
-            // tai kuluta AdMob Mining Start -rewardia.
-            //
-            // Näin käyttäjä ei menetä mainospalkkiota
-            // turhaan.
+            // Näin käyttäjä ei menetä palkintoaan turhaan.
             //
             // ==================================================
+
+            const currentDailyStreak =
+              getDailyStreak(data);
 
             const existingMiningHashRate =
               getMiningHashRate(
                 data,
                 calculateDailyHashRate(
-                  getDailyStreak(data) > 0
-                    ? getDailyStreak(data)
+                  currentDailyStreak > 0
+                    ? currentDailyStreak
                     : 1
                 )
               );
@@ -1634,8 +1727,8 @@ const claimMining =
 
                 hashRate:
                   calculateDailyHashRate(
-                    getDailyStreak(data) > 0
-                      ? getDailyStreak(data)
+                    currentDailyStreak > 0
+                      ? currentDailyStreak
                       : 1
                   ),
 
@@ -1644,16 +1737,16 @@ const claimMining =
 
                 dailyHashRate:
                   calculateDailyHashRate(
-                    getDailyStreak(data) > 0
-                      ? getDailyStreak(data)
+                    currentDailyStreak > 0
+                      ? currentDailyStreak
                       : 1
                   ),
 
                 dailyStreak:
-                  getDailyStreak(data),
+                  currentDailyStreak,
 
                 streak:
-                  getDailyStreak(data),
+                  currentDailyStreak,
 
                 unclaimedMining:
                   Math.max(
@@ -1679,24 +1772,29 @@ const claimMining =
             }
 
             // ==================================================
-            // 🔐 VERIFY ADMOB REWARD
+            // 🔐 FIND VERIFIED ADMOB MINING START REWARD
             // ==================================================
             //
-            // Tarkistus tehdään vasta sen jälkeen, kun
-            // aktiivinen louhinta on varmistettu.
+            // TÄRKEÄ TURVAMUUTOS:
             //
-            // Lisäksi getVerifiedMiningStartReward()
-            // vaatii:
+            // Flutter EI lähetä transaction ID:tä.
             //
-            // rewardPurpose === "mining_start"
+            // Palvelin etsii itse SSV:n luoman reward-documentin.
+            //
+            // Hyväksytty reward:
+            //
+            // rewardType = admob
+            // rewardPurpose = mining_start
+            // miningStartClaimed = false
+            //
+            // Power Boost -reward ei kelpaa.
             //
             // ==================================================
 
             const verifiedReward =
               await getVerifiedMiningStartReward(
                 transaction,
-                uid,
-                adRewardTransactionId
+                uid
               );
 
             // ==================================================
@@ -1970,7 +2068,7 @@ const claimMining =
             // 🔐 CONSUME ADMOB MINING START REWARD
             // ==================================================
             //
-            // Sama transactionId voidaan käyttää vain kerran.
+            // Sama AdMob transaction voidaan käyttää vain kerran.
             //
             // ==================================================
 
@@ -2129,8 +2227,17 @@ const claimMining =
                 miningDurationMs:
                   MINING_DURATION_MS,
 
+                // ==================================================
+                // 🔐 VERIFIED ADMOB TRANSACTION
+                // ==================================================
+                //
+                // Tämä ID tulee palvelimen löytämästä SSV rewardista,
+                // ei Flutterilta.
+                //
+                // ==================================================
+
                 adRewardTransactionId:
-                  adRewardTransactionId,
+                  verifiedReward.transactionId,
 
                 rewardPurpose:
                   "mining_start",
@@ -2252,9 +2359,16 @@ const claimMining =
               // ==================================================
               // 🔐 ADMOB
               // ==================================================
+              //
+              // Tämä tieto tulee palvelimen itse löytämästä
+              // varmennetusta rewardista.
+              //
+              // Flutter ei lähettänyt sitä.
+              //
+              // ==================================================
 
               adRewardTransactionId:
-                adRewardTransactionId,
+                verifiedReward.transactionId,
 
               // ==================================================
               // 🐱 MESSAGE
