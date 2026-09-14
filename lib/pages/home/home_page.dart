@@ -109,12 +109,9 @@ class _HomePageState extends State<HomePage>
   // Mainosmuoto:
   // Palkkion tarjoava
   //
-  // Tämä vastaa backendin SSV-asetusta:
+  // Backendin SSV:
   //
   // 7225738491
-  //
-  // Vanhaa Rewarded Interstitial -mainosyksikköä
-  // ei käytetä tässä tiedostossa.
   //
   // ============================================================
 
@@ -143,11 +140,6 @@ class _HomePageState extends State<HomePage>
 
   // ============================================================
   // 🔒 AD FLOW STATE
-  // ============================================================
-  //
-  // Estää toistuvat napautukset silloin kun mainosta
-  // ollaan parhaillaan lataamassa tai näyttämässä.
-  //
   // ============================================================
 
   bool _miningAdFlowActive = false;
@@ -418,6 +410,16 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // INITIALIZE
   // ============================================================
+  //
+  // IMPORTANT:
+  // Rewarded-mainosta EI enää ladata automaattisesti
+  // HomePagen avautuessa.
+  //
+  // Näin AdMob "Code 3 / No fill" ei aiheuta
+  // virheilmoitusta ennen kuin käyttäjä painaa
+  // Power Boost -painiketta.
+  //
+  // ============================================================
 
   Future<void> _initialize() async {
     try {
@@ -429,13 +431,11 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      await _loadRewardedAd(
-        purpose: _powerBoostPurpose,
-      );
-
-      if (!mounted) {
-        return;
-      }
+      // --------------------------------------------------------
+      // EI automaattista _loadRewardedAd()-kutsua tässä.
+      //
+      // Mainos ladataan vasta käyttäjän painalluksesta.
+      // --------------------------------------------------------
 
       _startTimers();
     } catch (error) {
@@ -737,7 +737,7 @@ class _HomePageState extends State<HomePage>
           _adReady &&
           _rewardedAdPurpose == purpose) {
         debugPrint(
-          'Rewarded ad became ready automatically: $purpose',
+          'Rewarded ad became ready: $purpose',
         );
 
         return true;
@@ -819,6 +819,10 @@ class _HomePageState extends State<HomePage>
               _miningStartPurpose) {
         _showAdLoadError();
 
+        setState(() {
+          _actionLoading = false;
+        });
+
         return;
       }
 
@@ -832,7 +836,7 @@ class _HomePageState extends State<HomePage>
       bool rewardEarned = false;
 
       debugPrint(
-        'Showing Mining Start rewarded ad automatically.',
+        'Showing Mining Start rewarded ad.',
       );
 
       ad.show(
@@ -913,6 +917,10 @@ class _HomePageState extends State<HomePage>
             ),
           );
         }
+
+        setState(() {
+          _actionLoading = false;
+        });
       }
     } finally {
       _miningAdFlowActive = false;
@@ -1266,6 +1274,10 @@ class _HomePageState extends State<HomePage>
         });
       }
 
+      // Esiladataan seuraavaa Power Boostia vasta
+      // onnistuneen Mining Start -prosessin jälkeen.
+      //
+      // Tämä EI tapahdu HomePagen käynnistyksessä.
       await _loadRewardedAd(
         purpose: _powerBoostPurpose,
       );
@@ -1474,18 +1486,27 @@ class _HomePageState extends State<HomePage>
                 _adReady = false;
               }
 
+              // Jos käyttäjä sulkee mainoksen ilman palkintoa,
+              // vapautetaan käyttöliittymä.
               if (purpose ==
                   _miningStartPurpose) {
-                if (mounted &&
-                    !_actionLoading) {
-                  setState(() {});
+                _miningAdFlowActive = false;
+
+                if (mounted) {
+                  setState(() {
+                    _actionLoading = false;
+                  });
+                }
+              } else {
+                if (mounted) {
+                  setState(() {
+                    _actionLoading = false;
+                  });
                 }
               }
 
-              if (mounted) {
-                setState(() {});
-              }
-
+              // Seuraava mainos ladataan vasta mainoksen
+              // sulkemisen jälkeen.
               Future<void>.delayed(
                 Duration.zero,
                 () async {
@@ -1560,8 +1581,12 @@ class _HomePageState extends State<HomePage>
                   });
                 }
               } else {
+                _powerBoostAdFlowActive = false;
+
                 if (mounted) {
                   setState(() {
+                    _actionLoading = false;
+
                     _adLoadError =
                         'SHOW_FAILED | '
                         'Code: ${error.code} | '
@@ -1644,12 +1669,14 @@ class _HomePageState extends State<HomePage>
             _miningAdFlowActive = false;
           }
 
+          if (purpose ==
+              _powerBoostPurpose) {
+            _powerBoostAdFlowActive = false;
+          }
+
           if (mounted) {
             setState(() {
-              if (purpose ==
-                  _miningStartPurpose) {
-                _actionLoading = false;
-              }
+              _actionLoading = false;
             });
           }
 
@@ -1660,29 +1687,10 @@ class _HomePageState extends State<HomePage>
             );
           }
 
-          if (purpose ==
-              _powerBoostPurpose) {
-            Future<void>.delayed(
-              const Duration(
-                seconds: 15,
-              ),
-              () async {
-                if (!mounted) {
-                  return;
-                }
-
-                if (_rewardedAd != null ||
-                    _adLoading) {
-                  return;
-                }
-
-                await _loadRewardedAd(
-                  purpose:
-                      _powerBoostPurpose,
-                );
-              },
-            );
-          }
+          // Automaattista uudelleenlatausta EI tehdä.
+          //
+          // Käyttäjän seuraava painallus käynnistää
+          // uuden latausyrityksen.
         },
       ),
     );
@@ -1752,16 +1760,31 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (!_canWatchAd) {
-      _showMessage(
-        _localization.get(
-          'prepareAd',
-        ),
-      );
+    // ==========================================================
+    // TÄRKEÄ:
+    //
+    // Älä estä toimintoa vain siksi, että mainosta ei ole vielä
+    // ladattu.
+    //
+    // Nyt ensimmäinen painallus saa käynnistää mainoksen latauksen.
+    // ==========================================================
 
+    if (!_canWatchAd) {
       await _loadMiningStatus();
 
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      if (!_canWatchAd) {
+        _showMessage(
+          _localization.get(
+            'prepareAd',
+          ),
+        );
+
+        return;
+      }
     }
 
     _powerBoostAdFlowActive = true;
@@ -1809,7 +1832,7 @@ class _HomePageState extends State<HomePage>
       bool rewardProcessed = false;
 
       debugPrint(
-        'Showing Power Boost rewarded ad automatically.',
+        'Showing Power Boost rewarded ad.',
       );
 
       ad.show(
