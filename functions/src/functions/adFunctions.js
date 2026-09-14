@@ -14,9 +14,11 @@
 // 🔐 AdMob SSV -callback
 //
 // TÄRKEÄÄ:
+//
 // Test Ad Reward on poistettu tuotantoversiosta.
 //
-// Oikea Power Boost syntyy vain AdMob SSV -callbackin kautta.
+// Oikea Power Boost syntyy vain:
+// 🔐 varmennetun AdMob SSV -callbackin kautta.
 //
 // ============================================================
 
@@ -336,6 +338,7 @@ function getAdStatus(
 // ⏳ 4 tunniksi
 //
 // TÄMÄ FUNKTIO KUTSUTAAN VAIN:
+//
 // 🔐 AdMob SSV -callbackista.
 //
 // Mainosboosti EI lisää pysyvästi käyttäjän
@@ -371,9 +374,10 @@ async function applyAdReward(
     );
   }
 
-  // ----------------------------------------------------------
-  // 🔐 ONLY ADMOB
-  // ----------------------------------------------------------
+
+  // ==========================================================
+  // 🔐 ONLY VERIFIED ADMOB
+  // ==========================================================
 
   if (
     rewardType !== "admob"
@@ -465,10 +469,27 @@ async function applyAdReward(
         );
 
 
+      // ======================================================
+      // 🛡️ USER MUST EXIST
+      // ======================================================
+      //
+      // AdMob SSV:n custom_data sisältää käyttäjän UID:n.
+      // Emme luo uutta Firestore-käyttäjää pelkän
+      // mainoscallbackin perusteella.
+      //
+      // ======================================================
+
+      if (
+        !userSnapshot.exists
+      ) {
+        throw new Error(
+          "Stelluriini user does not exist."
+        );
+      }
+
+
       const data =
-        userSnapshot.exists
-          ? userSnapshot.data() || {}
-          : {};
+        userSnapshot.data() || {};
 
 
       // ======================================================
@@ -659,12 +680,6 @@ async function applyAdReward(
       // ======================================================
       // ⚡ EFFECTIVE HASH RATE
       // ======================================================
-      //
-      // Daily Hash Rate + yksi aktiivinen mainosboost.
-      //
-      // Boostit eivät kasaannu.
-      //
-      // ======================================================
 
       const effectiveHashRate =
         dailyHashRate +
@@ -690,9 +705,7 @@ async function applyAdReward(
           // ==================================================
           // ⚡ DAILY HASH RATE
           // ==================================================
-          //
-          // Tätä EI kasvateta mainoksella.
-          //
+
           hashRate:
             dailyHashRate,
 
@@ -748,9 +761,10 @@ async function applyAdReward(
       // 🔐 SAVE VERIFIED ADMOB REWARD
       // ======================================================
       //
-      // Tallennetaan myös AdMobin varmennetut tiedot.
-      // Näitä käytetään myöhemmin Mining Startin
-      // turvalliseen tarkistukseen.
+      // Tallennetaan AdMobin varmennetut tiedot.
+      //
+      // Tätä reward-recordia käytetään myöhemmin
+      // Mining Startin turvalliseen tarkistukseen.
       //
       // ======================================================
 
@@ -821,6 +835,26 @@ async function applyAdReward(
           boostStartedAt,
 
           boostEndsAt,
+
+          // --------------------------------------------------
+          // 🔐 MINING ENTITLEMENT
+          // --------------------------------------------------
+          //
+          // Tämä merkitään käyttämättömäksi.
+          //
+          // claimMining tulee myöhemmin kuluttamaan
+          // tämän entitlementin atomisesti.
+          //
+          // Näin samaa AdMob-palkintoa ei voida käyttää
+          // useamman mining-jakson käynnistämiseen.
+          //
+          // --------------------------------------------------
+
+          miningClaimed:
+            false,
+
+          miningClaimedAt:
+            null,
 
           createdAt:
             FieldValue.serverTimestamp(),
@@ -1016,6 +1050,31 @@ const adMobReward =
       try {
 
         // ======================================================
+        // 🔐 ONLY GET
+        // ======================================================
+        //
+        // AdMob SSV callback tulee GET-pyyntönä.
+        //
+        // Emme hyväksy muita HTTP-metodeja.
+        //
+        // ======================================================
+
+        if (
+          req.method !== "GET"
+        ) {
+          res.status(405).json({
+            success:
+              false,
+
+            error:
+              "Method not allowed.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
         // 🔐 VERIFY GOOGLE CALLBACK
         // ======================================================
         //
@@ -1158,8 +1217,8 @@ const adMobReward =
         // 🔎 OPTIONAL CONSISTENCY CHECK
         // ======================================================
         //
-        // Jos AdMob lähettää myös user_id:n, tarkistetaan
-        // että se vastaa custom_dataa.
+        // Jos AdMob lähettää myös user_id:n,
+        // tarkistetaan että se vastaa custom_dataa.
         //
         // ======================================================
 
@@ -1248,7 +1307,7 @@ const adMobReward =
         // 🔐 SECURITY RESPONSE
         // ======================================================
         //
-        // Emme paljasta asiakkaalle liikaa sisäisestä
+        // Emme paljasta asiakkaalle liikaa
         // palvelinlogiikasta.
         //
         // ======================================================
