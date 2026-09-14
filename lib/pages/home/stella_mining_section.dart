@@ -8,6 +8,12 @@ import 'stella_mining_card.dart';
 
 class StellaMiningSection extends StatelessWidget {
   // ============================================================
+  // 🌍 LANGUAGE
+  // ============================================================
+
+  final String languageCode;
+
+  // ============================================================
   // ⛏️ MINING STATE
   // ============================================================
 
@@ -67,15 +73,41 @@ class StellaMiningSection extends StatelessWidget {
 
   const StellaMiningSection({
     super.key,
+
+    // ==========================================================
+    // 🌍 LANGUAGE
+    // ==========================================================
+
+    required this.languageCode,
+
+    // ==========================================================
+    // ⛏️ MINING
+    // ==========================================================
+
     required this.miningActive,
     required this.unclaimedMining,
     required this.miningRemainingMs,
     required this.miningDurationMs,
+
+    // ==========================================================
+    // 🎁 DAILY STREAK
+    // ==========================================================
+
     required this.dailyStreak,
+
+    // ==========================================================
+    // 📊 MINING PROGRESS
+    // ==========================================================
+
     required this.miningProgressTitle,
     required this.stlPerHourText,
     required this.dailyHashRateText,
     required this.dailyHashRateDayText,
+
+    // ==========================================================
+    // 📝 STATUS TEXTS
+    // ==========================================================
+
     required this.miningActiveTitle,
     required this.miningActiveSubtitle,
     required this.miningCompleteTitle,
@@ -86,7 +118,17 @@ class StellaMiningSection extends StatelessWidget {
     required this.miningFinishedLabel,
     required this.readyText,
     required this.waitingForStellaLabel,
+
+    // ==========================================================
+    // ⏱️ FORMATTER
+    // ==========================================================
+
     required this.formatDuration,
+
+    // ==========================================================
+    // 🐱 ANIMATION
+    // ==========================================================
+
     required this.catAnimation,
   });
 
@@ -170,6 +212,13 @@ class StellaMiningSection extends StatelessWidget {
           catAnimation,
 
       // ========================================================
+      // 🌍 LANGUAGE
+      // ========================================================
+
+      languageCode:
+          languageCode,
+
+      // ========================================================
       // ⛏️ 24H MINING PROGRESS
       // ========================================================
 
@@ -188,6 +237,10 @@ class StellaMiningSection extends StatelessWidget {
 
       dailyStreak:
           dailyStreak,
+
+      // ========================================================
+      // 📊 MINING TEXTS
+      // ========================================================
 
       miningProgressTitle:
           miningProgressTitle,
