@@ -178,14 +178,17 @@ function getAdMobRewardRef(
 // ============================================================
 //
 // Tämä tarkistus varmistaa, että:
+//
 // 1. AdMob SSV on luonut reward-documentin.
 // 2. Reward kuuluu kirjautuneelle käyttäjälle.
 // 3. Reward on oikea AdMob reward.
 // 4. Rewardia ei ole jo käytetty Mining Startiin.
 //
 // Tärkeää:
+//
 // Flutterin lähettämään transactionId:hen ei luoteta
-// sellaisenaan. Firestore-documentti tarkistetaan palvelimella.
+// sellaisenaan. Firestore-documentti tarkistetaan
+// palvelimella.
 //
 // ============================================================
 
@@ -199,7 +202,9 @@ async function getVerifiedMiningStartReward(
       transactionId
     );
 
-  if (!safeTransactionId) {
+  if (
+    !safeTransactionId
+  ) {
     throw new HttpsError(
       "invalid-argument",
       "🐱 Kelvollinen AdMob-tapahtuma vaaditaan."
@@ -245,9 +250,14 @@ async function getVerifiedMiningStartReward(
   // ----------------------------------------------------------
   // 🎁 REWARD TYPE
   // ----------------------------------------------------------
+  //
+  // Reward-tyypin täytyy olla täsmälleen "admob".
+  //
+  // Puuttuva rewardType ei ole kelvollinen.
+  //
+  // ----------------------------------------------------------
 
   if (
-    typeof rewardData.rewardType === "string" &&
     rewardData.rewardType !== "admob"
   ) {
     throw new HttpsError(
@@ -259,8 +269,17 @@ async function getVerifiedMiningStartReward(
   // ----------------------------------------------------------
   // 🔒 ALREADY USED
   // ----------------------------------------------------------
+  //
+  // Uusi rakenne käyttää miningClaimed-kenttää.
+  //
+  // miningStartClaimedAt säilytetään myös yhteensopivuuden
+  // vuoksi vanhojen reward-documenttien kanssa.
+  //
+  // ----------------------------------------------------------
 
   if (
+    rewardData.miningClaimed === true ||
+    rewardData.miningStartClaimed === true ||
     rewardData.miningStartClaimedAt
   ) {
     throw new HttpsError(
@@ -269,9 +288,42 @@ async function getVerifiedMiningStartReward(
     );
   }
 
+  // ----------------------------------------------------------
+  // 🔐 VERIFIED ADMOB METADATA
+  // ----------------------------------------------------------
+  //
+  // Reward-documentin tulee sisältää palvelimen
+  // SSV-käsittelyssä tallennetut AdMob-tiedot.
+  //
+  // ----------------------------------------------------------
+
+  if (
+    typeof rewardData.adUnit !== "string" ||
+    rewardData.adUnit.length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob reward -tietueen vahvistus puuttuu."
+    );
+  }
+
+  if (
+    typeof rewardData.rewardItem !== "string" ||
+    rewardData.rewardItem.length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob reward -tietueen palkintotieto puuttuu."
+    );
+  }
+
   return {
-    ref: rewardRef,
-    data: rewardData,
+    ref:
+      rewardRef,
+
+    data:
+      rewardData,
+
     transactionId:
       safeTransactionId,
   };
@@ -611,6 +663,7 @@ function getAdStatus(
 
   return {
     adsToday,
+
     maxAdsPerDay:
       MAX_ADS_PER_DAY,
 
@@ -963,7 +1016,7 @@ async function updateMiningAchievements(
       buildAchievementUpdate(
         "first_paw",
         1,
-        5,
+        2,
         1,
         firstPaw.data,
         now
@@ -1000,7 +1053,7 @@ async function updateMiningAchievements(
       buildAchievementUpdate(
         "little_miner",
         10,
-        10,
+        5,
         Math.floor(
           newLittleProgress
         ),
@@ -1037,7 +1090,7 @@ async function updateMiningAchievements(
       buildAchievementUpdate(
         "stl_hunter",
         100,
-        25,
+        10,
         Math.floor(
           newHunterProgress
         ),
@@ -1462,7 +1515,7 @@ const claimMining =
         // 🔐 ADMOB TRANSACTION ID
         // ====================================================
         //
-        // Mining Start vaatii nyt palvelimella vahvistetun
+        // Mining Start vaatii palvelimella vahvistetun
         // AdMob SSV rewardin.
         //
         // ====================================================
@@ -1503,6 +1556,7 @@ const claimMining =
 
         return await db.runTransaction(
           async (transaction) => {
+
             // ==================================================
             // 👤 GET USER
             // ==================================================
@@ -1512,10 +1566,17 @@ const claimMining =
                 userRef
               );
 
+            if (
+              !snapshot.exists
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱 Stella-käyttäjää ei löytynyt."
+              );
+            }
+
             const data =
-              snapshot.exists
-                ? snapshot.data() || {}
-                : {};
+              snapshot.data() || {};
 
             // ==================================================
             // 🔐 VERIFY ADMOB REWARD
@@ -1576,7 +1637,7 @@ const claimMining =
 
             // ==================================================
             // 🐱 ALREADY MINING
-            // ====================================================
+            // ==================================================
 
             if (
               miningStatus.miningActive
@@ -1773,7 +1834,7 @@ const claimMining =
 
             // ==================================================
             // 👤 UPDATE USER
-            // ====================================================
+            // ==================================================
 
             const userUpdate = {
               // ==============================================
@@ -1851,22 +1912,30 @@ const claimMining =
             // 🔐 CONSUME ADMOB MINING START REWARD
             // ==================================================
             //
-            // Tämän jälkeen sama transactionId ei voi
-            // käynnistää toista Mining Startia.
+            // Sama transactionId voidaan käyttää vain kerran.
+            //
+            // Tallennetaan sekä miningClaimed että
+            // miningStartClaimedAt yhteensopivuuden vuoksi.
             //
             // ==================================================
 
             transaction.set(
               verifiedReward.ref,
               {
+                miningClaimed:
+                  true,
+
+                miningClaimedAt:
+                  FieldValue.serverTimestamp(),
+
+                miningStartClaimed:
+                  true,
+
                 miningStartClaimedAt:
                   FieldValue.serverTimestamp(),
 
                 miningStartClaimedBy:
                   uid,
-
-                miningStartClaimed:
-                  true,
               },
               {
                 merge: true,
