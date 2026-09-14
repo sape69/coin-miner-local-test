@@ -61,9 +61,6 @@ class _HomePageState extends State<HomePage>
 
   static const int defaultMaxAdsPerDay = 6;
 
-  static const int defaultAdBoostDurationMs =
-      4 * 60 * 60 * 1000;
-
   // ============================================================
   // ⛏️ DAILY HASH RATE CONFIG
   // ============================================================
@@ -792,9 +789,8 @@ class _HomePageState extends State<HomePage>
 
       final int returnedStreak =
           _toInt(
-        data['dailyHashRate'] != null
-            ? data['dailyStreak']
-            : data['streak'],
+        data['dailyStreak'] ??
+            data['streak'],
       );
 
       final double
@@ -1173,18 +1169,6 @@ class _HomePageState extends State<HomePage>
 
   // ============================================================
   // 🔐 WAIT FOR ADMOB SSV POWER BOOST
-  // ============================================================
-  //
-  // AdMob SSV is asynchronous.
-  //
-  // After the user earns the reward, Google sends the signed
-  // callback to our Cloud Function.
-  //
-  // We poll the server for a short period so the UI can update
-  // quickly when the verified Power Boost arrives.
-  //
-  // The normal 30-second refresh timer continues to act as a
-  // fallback if the SSV callback takes longer.
   // ============================================================
 
   Future<void>
