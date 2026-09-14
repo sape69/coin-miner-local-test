@@ -113,8 +113,13 @@ class _HomePageState extends State<HomePage>
   // 📺 REWARDED ADS
   // ============================================================
 
+  // Production AdMob Rewarded Ad Unit ID.
+  //
+  // IMPORTANT:
+  // This is the new standard Rewarded ad unit.
+  // The previous ID was a Rewarded Interstitial unit.
   static const String _rewardedAdUnitId =
-      'ca-app-pub-1131012057145658/2252768949';
+      'ca-app-pub-1131012057145658/7225738491';
 
   // ============================================================
   // 🔐 ADMOB SSV PURPOSES
