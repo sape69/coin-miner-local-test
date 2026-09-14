@@ -10,6 +10,64 @@ const {
 } = require("./src/functions/dailyFunctions");
 
 const {
+  adMobReward,
+} = require("./src/functions/adFunctions");
+
+const {
+  getTransactionHistory,
+} = require("./src/functions/historyFunctions");
+
+const {
+  getAchievements,
+  getAchievementsCompleted,
+} = require("./src/functions/achievementFunctions");
+
+// ==========================================
+// Mining
+// ==========================================
+
+exports.getMiningStatus = getMiningStatus;
+exports.claimMining = claimMining;
+
+// ==========================================
+// Daily Check-In
+// ==========================================
+
+exports.dailyCheckIn = dailyCheckIn;
+
+// ==========================================
+// AdMob Server-Side Verification
+// ==========================================
+
+exports.adMobReward = adMobReward;
+
+// ==========================================
+// Transaction History
+// ==========================================
+
+exports.getTransactionHistory =
+  getTransactionHistory;
+
+// ==========================================
+// Achievements
+// ==========================================
+
+exports.getAchievements =
+  getAchievements;
+
+exports.getAchievementsCompleted =
+  getAchievementsCompleted;"use strict";
+
+const {
+  getMiningStatus,
+  claimMining,
+} = require("./src/functions/miningFunctions");
+
+const {
+  dailyCheckIn,
+} = require("./src/functions/dailyFunctions");
+
+const {
   testAdReward,
   adMobReward,
 } = require("./src/functions/adFunctions");
