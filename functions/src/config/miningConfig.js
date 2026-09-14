@@ -8,6 +8,7 @@
 //
 // ⚡ Daily Hash Rate
 // 📺 Ad Boost
+// 🔐 AdMob SSV
 // ⛏️ Mining
 // 📜 Transaction History
 //
@@ -98,6 +99,72 @@ const AD_COOLDOWN_MS =
 
 
 // ============================================================
+// 🔐 ADMOB PRODUCTION / SSV
+// ============================================================
+//
+// Stelluriinin oikea tuotannon Rewarded Ad Unit.
+//
+// Koko Ad Unit ID tarvitaan Flutter-sovelluksessa.
+//
+// ============================================================
+
+const ADMOB_REWARDED_AD_UNIT_ID =
+  "ca-app-pub-1131012057145658/2252768949";
+
+
+// ============================================================
+// 🔐 ADMOB SSV AD UNIT
+// ============================================================
+//
+// AdMobin SSV-callbackissa ad_unit tulee ilman
+// ca-app-pub-alkuosaa.
+//
+// Kuvassa näkyvä tuotannon Ad Unit:
+//
+// ca-app-pub-1131012057145658/2252768949
+//
+// SSV:
+//
+// 2252768949
+//
+// ============================================================
+
+const ADMOB_SSV_AD_UNIT_ID =
+  "2252768949";
+
+
+// ============================================================
+// 🎁 ADMOB SSV REWARD
+// ============================================================
+//
+// AdMobin Rewarded Ad -asetuksissa:
+//
+// Reward amount:
+// 125
+//
+// Reward item:
+// Coins
+//
+// Näitä arvoja verrataan myöhemmin
+// varmennetun SSV-callbackin sisältöön.
+//
+// Huom:
+//
+// Tämä 125 Coins ei ole Stelluriinin STL-palkkio.
+// Stelluriinin varsinainen sovelluspalkinto tässä
+// järjestelmässä on Stella Power Boost.
+//
+// ============================================================
+
+const ADMOB_SSV_REWARD_AMOUNT =
+  125;
+
+
+const ADMOB_SSV_REWARD_ITEM =
+  "Coins";
+
+
+// ============================================================
 // ⛏️ MINING
 // ============================================================
 
@@ -136,7 +203,9 @@ const MAX_TRANSACTION_HISTORY =
 
 module.exports = {
 
+  // ==========================================================
   // ⚡ DAILY HASH RATE
+  // ==========================================================
 
   DAILY_HASH_RATE_START,
 
@@ -147,7 +216,9 @@ module.exports = {
   MAX_DAILY_HASH_RATE,
 
 
+  // ==========================================================
   // 📺 AD BOOST
+  // ==========================================================
 
   AD_HASH_RATE_BONUS,
 
@@ -158,14 +229,31 @@ module.exports = {
   AD_COOLDOWN_MS,
 
 
+  // ==========================================================
+  // 🔐 ADMOB / SSV
+  // ==========================================================
+
+  ADMOB_REWARDED_AD_UNIT_ID,
+
+  ADMOB_SSV_AD_UNIT_ID,
+
+  ADMOB_SSV_REWARD_AMOUNT,
+
+  ADMOB_SSV_REWARD_ITEM,
+
+
+  // ==========================================================
   // ⛏️ MINING
+  // ==========================================================
 
   MINING_DURATION_MS,
 
   MINING_PER_HASH_PER_HOUR,
 
 
+  // ==========================================================
   // 📜 HISTORY
+  // ==========================================================
 
   MAX_TRANSACTION_HISTORY,
 
