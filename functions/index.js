@@ -11,6 +11,7 @@
 const {
   getMiningStatus,
   claimMining,
+  powerBoost,
 } = require(
   "./src/functions/miningFunctions"
 );
@@ -70,6 +71,9 @@ exports.getMiningStatus =
 
 exports.claimMining =
   claimMining;
+
+exports.powerBoost =
+  powerBoost;
 
 
 // ============================================================
