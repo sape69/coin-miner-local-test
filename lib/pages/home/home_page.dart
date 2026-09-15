@@ -292,11 +292,11 @@ class _HomePageState extends State<HomePage>
           _asInt(data['adCooldownMs']) ??
               _adCooldownMs;
 
-      final bool boostActive =
+      final bool serverBoostActive =
           _asBool(data['boostActive']) ??
               false;
 
-      final int boostRemaining =
+      final int serverBoostRemaining =
           _asInt(data['boostRemainingMs']) ??
               _asInt(data['remainingBoostMs']) ??
               0;
@@ -309,6 +309,49 @@ class _HomePageState extends State<HomePage>
           duration > 0
               ? duration
               : defaultMiningDurationMs;
+
+      /*
+       * ----------------------------------------------------------
+       * POWER BOOST STATE
+       * ----------------------------------------------------------
+       *
+       * Jos Power Boost on juuri aktivoitu ja paikallinen tila
+       * sisältää vielä voimassa olevan boostin, emme saa pyyhkiä
+       * sitä pois vain siksi, että getMiningStatus palauttaa
+       * hetkellisesti vanhan tilan.
+       *
+       * Jos palvelin vahvistaa aktiivisen boostin, käytetään
+       * palvelimen arvoja.
+       *
+       * Jos palvelin palauttaa aktiivisen boostin, mutta paikallinen
+       * tila on vielä pidempi, käytetään voimassa olevaa aikaa.
+       *
+       * Jos kumpikaan ei ole aktiivinen, boost poistetaan.
+       * ----------------------------------------------------------
+       */
+
+      bool finalBoostActive = serverBoostActive;
+      int finalBoostRemaining = serverBoostRemaining;
+
+      if (_boostActive &&
+          _boostRemainingMs > 0 &&
+          !serverBoostActive) {
+        finalBoostActive = true;
+        finalBoostRemaining = _boostRemainingMs;
+      }
+
+      if (serverBoostActive &&
+          serverBoostRemaining > 0 &&
+          _boostActive &&
+          _boostRemainingMs > serverBoostRemaining) {
+        finalBoostActive = true;
+        finalBoostRemaining = _boostRemainingMs;
+      }
+
+      if (finalBoostRemaining <= 0) {
+        finalBoostActive = false;
+        finalBoostRemaining = 0;
+      }
 
       setState(() {
         _miningActive = miningActive;
@@ -339,8 +382,9 @@ class _HomePageState extends State<HomePage>
         _maxAdsPerDay = maxAds;
         _adHashRateBonus = adBonus;
         _adCooldownMs = cooldown;
-        _boostActive = boostActive;
-        _boostRemainingMs = boostRemaining;
+
+        _boostActive = finalBoostActive;
+        _boostRemainingMs = finalBoostRemaining;
       });
 
       _startMiningTimer();
@@ -426,6 +470,12 @@ class _HomePageState extends State<HomePage>
           });
 
           _boostTimer?.cancel();
+
+          /*
+           * Päivitetään palvelimen tila heti boostin päätyttyä.
+           */
+          _loadMiningStatus();
+
           return;
         }
 
@@ -631,6 +681,11 @@ class _HomePageState extends State<HomePage>
 
       Object? lastError;
 
+      bool confirmedBoostActive = false;
+      int confirmedBoostRemaining = 0;
+      int? confirmedAdsToday;
+      double? confirmedBonus;
+
       for (int attempt = 0;
           attempt < 30;
           attempt++) {
@@ -665,7 +720,23 @@ class _HomePageState extends State<HomePage>
             final int? ads =
                 _asInt(data['adsToday']);
 
+            final double? bonus =
+                _asDouble(
+                  data['adHashRateBonus'],
+                ) ??
+                _asDouble(
+                  data['hashRateBonus'],
+                ) ??
+                _asDouble(
+                  data['boostHashRateBonus'],
+                );
+
             if (active && remaining > 0) {
+              confirmedBoostActive = true;
+              confirmedBoostRemaining = remaining;
+              confirmedAdsToday = ads;
+              confirmedBonus = bonus;
+
               if (mounted) {
                 setState(() {
                   _boostActive = true;
@@ -674,7 +745,14 @@ class _HomePageState extends State<HomePage>
                   if (ads != null) {
                     _adsToday = ads;
                   }
+
+                  if (bonus != null &&
+                      bonus > 0) {
+                    _adHashRateBonus = bonus;
+                  }
                 });
+
+                _startBoostTimer();
               }
 
               successfulResult = result;
@@ -722,11 +800,43 @@ class _HomePageState extends State<HomePage>
             );
       }
 
+      /*
+       * Haetaan muut mining-tiedot palvelimelta.
+       *
+       * Tärkeää:
+       * getMiningStatus ei saa tässä vaiheessa pyyhkiä juuri
+       * vahvistettua Power Boostia pois.
+       */
       await _loadMiningStatus();
 
-      if (mounted) {
+      if (mounted && confirmedBoostActive) {
+        setState(() {
+          _boostActive = true;
+
+          if (confirmedBoostRemaining >
+              _boostRemainingMs) {
+            _boostRemainingMs =
+                confirmedBoostRemaining;
+          }
+
+          if (confirmedAdsToday != null) {
+            _adsToday = confirmedAdsToday!;
+          }
+
+          if (confirmedBonus != null &&
+              confirmedBonus! > 0) {
+            _adHashRateBonus =
+                confirmedBonus!;
+          }
+        });
+
+        _startBoostTimer();
+
         _showMessage(
-          '🐾 ${_t('powerBoostActive')}',
+          '🐾 ${_t('powerBoostActive')} '
+          '• +${_formatNumber(
+            _adHashRateBonus,
+          )} H/s',
         );
       }
     } catch (e) {
@@ -795,7 +905,27 @@ class _HomePageState extends State<HomePage>
   void _handleAdDismissed(
     String purpose,
   ) {
-    // Reward callback käsittelee backend-vahvistuksen.
+    /*
+     * Jos käyttäjä sulkee mainoksen ilman palkintoa,
+     * reward-callbackia ei välttämättä kutsuta.
+     *
+     * Siksi vapautetaan lataustila myös tässä.
+     *
+     * Jos palkinto on jo saatu, backend-callback käsittelee
+     * varsinaisen Power Boostin.
+     */
+    if (!mounted) {
+      return;
+    }
+
+    if (purpose ==
+            HomeAdManager.powerBoostPurpose ||
+        purpose ==
+            HomeAdManager.miningStartPurpose) {
+      setState(() {
+        _actionLoading = false;
+      });
+    }
   }
 
   Future<void> _logout() async {
@@ -973,12 +1103,12 @@ class _HomePageState extends State<HomePage>
           _t('miningProgress'),
       stlPerHourText:
           '${_formatNumber(
-        _hashRate *
+        _effectiveHashRate *
             miningPerHashPerHour,
       )} STL/h',
       dailyHashRateText:
           '${_formatNumber(
-        _dailyHashRate,
+        _effectiveHashRate,
       )} H/s',
       dailyHashRateDayText:
           '${_t('day')} $_streak',
@@ -1414,7 +1544,8 @@ class _HomePageState extends State<HomePage>
   }
 
   double get _effectiveHashRate {
-    if (_boostActive) {
+    if (_boostActive &&
+        _boostRemainingMs > 0) {
       return _hashRate +
           _adHashRateBonus;
     }
@@ -1432,7 +1563,8 @@ class _HomePageState extends State<HomePage>
       return false;
     }
 
-    if (_boostActive) {
+    if (_boostActive &&
+        _boostRemainingMs > 0) {
       return false;
     }
 
