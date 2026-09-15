@@ -118,79 +118,7 @@ class StellaMiningDaysCard extends StatelessWidget {
   }
 
   // ============================================================
-  // 📅 DAY
-  // ============================================================
-
-  String _day(
-    String language,
-    int day,
-  ) {
-    switch (language) {
-      case 'fi':
-        return 'PÄIVÄ $day';
-
-      case 'de':
-        return 'TAG $day';
-
-      case 'es':
-        return 'DÍA $day';
-
-      case 'fr':
-        return 'JOUR $day';
-
-      case 'zh':
-        return '第 $day 天';
-
-      case 'vi':
-        return 'NGÀY $day';
-
-      case 'ja':
-        return 'DAY $day';
-
-      case 'en':
-      default:
-        return 'DAY $day';
-    }
-  }
-
-  // ============================================================
-  // 🐱 CURRENT DAY
-  // ============================================================
-
-  String _currentDay(
-    String language,
-    int day,
-  ) {
-    switch (language) {
-      case 'fi':
-        return 'NYKYINEN PÄIVÄ: $day / 7';
-
-      case 'de':
-        return 'AKTUELLER TAG: $day / 7';
-
-      case 'es':
-        return 'DÍA ACTUAL: $day / 7';
-
-      case 'fr':
-        return 'JOUR ACTUEL : $day / 7';
-
-      case 'zh':
-        return '当前天数：$day / 7';
-
-      case 'vi':
-        return 'NGÀY HIỆN TẠI: $day / 7';
-
-      case 'ja':
-        return '現在の日: $day / 7';
-
-      case 'en':
-      default:
-        return 'CURRENT DAY: $day / 7';
-    }
-  }
-
-  // ============================================================
-  // 🐾 CURRENT DAY LABEL
+  // 🐱 CURRENT LABEL
   // ============================================================
 
   String _currentLabel(
@@ -198,25 +126,25 @@ class StellaMiningDaysCard extends StatelessWidget {
   ) {
     switch (language) {
       case 'fi':
-        return 'NYT LOUHITAAN';
+        return 'LOUHITAAN NYT';
 
       case 'de':
-        return 'AKTUELLER MINING-TAG';
+        return 'JETZT MINING';
 
       case 'es':
-        return 'MINERÍA ACTUAL';
+        return 'MINANDO AHORA';
 
       case 'fr':
-        return 'MINAGE ACTUEL';
+        return 'MINAGE EN COURS';
 
       case 'zh':
-        return '当前挖矿';
+        return '正在挖矿';
 
       case 'vi':
         return 'ĐANG ĐÀO';
 
       case 'ja':
-        return '現在のマイニング';
+        return '現在マイニング中';
 
       case 'en':
       default:
@@ -225,77 +153,7 @@ class StellaMiningDaysCard extends StatelessWidget {
   }
 
   // ============================================================
-  // 🐾 STATUS
-  // ============================================================
-
-  String _status(
-    String language,
-    int day,
-    int currentDay,
-  ) {
-    if (day == currentDay) {
-      return _currentLabel(language);
-    }
-
-    if (day < currentDay) {
-      switch (language) {
-        case 'fi':
-          return 'VALMIS';
-
-        case 'de':
-          return 'FERTIG';
-
-        case 'es':
-          return 'COMPLETADO';
-
-        case 'fr':
-          return 'TERMINÉ';
-
-        case 'zh':
-          return '已完成';
-
-        case 'vi':
-          return 'HOÀN TẤT';
-
-        case 'ja':
-          return '完了';
-
-        case 'en':
-        default:
-          return 'COMPLETED';
-      }
-    }
-
-    switch (language) {
-      case 'fi':
-        return 'TULOSSA';
-
-      case 'de':
-        return 'KOMMT';
-
-      case 'es':
-        return 'PRÓXIMO';
-
-      case 'fr':
-        return 'À VENIR';
-
-      case 'zh':
-        return '即将开始';
-
-      case 'vi':
-        return 'SẮP TỚI';
-
-      case 'ja':
-        return 'これから';
-
-      case 'en':
-      default:
-        return 'UPCOMING';
-    }
-  }
-
-  // ============================================================
-  // 🎯 CURRENT DAY
+  // 🔢 CURRENT DAY
   // ============================================================
 
   int _getCurrentDay() {
@@ -305,25 +163,35 @@ class StellaMiningDaysCard extends StatelessWidget {
 
     return dailyStreak.clamp(
       1,
-      7,
+      rates.length,
     );
   }
 
   // ============================================================
-  // 🧱 DAY CARD
+  // 🐾 DAY CHIP
   // ============================================================
 
-  Widget _buildDayCard({
+  Widget _buildDayChip({
     required int day,
     required double rate,
     required int currentDay,
-    required String language,
   }) {
     final bool isCurrent =
         day == currentDay;
 
     final bool isCompleted =
         day < currentDay;
+
+    final Color circleColor =
+        isCurrent
+            ? goldColor
+            : isCompleted
+                ? pinkColor.withValues(
+                    alpha: 0.18,
+                  )
+                : accentColor.withValues(
+                    alpha: 0.08,
+                  );
 
     final Color borderColor =
         isCurrent
@@ -336,217 +204,159 @@ class StellaMiningDaysCard extends StatelessWidget {
                     alpha: 0.12,
                   );
 
-    final Color cardBackground =
-        isCurrent
-            ? accentColor.withValues(
-                alpha: 0.16,
-              )
-            : isCompleted
-                ? pinkColor.withValues(
-                    alpha: 0.055,
-                  )
-                : backgroundColor.withValues(
-                    alpha: 0.38,
-                  );
-
-    return AnimatedContainer(
-      duration:
-          const Duration(
-        milliseconds: 250,
-      ),
-      width:
-          double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 8,
-      ),
-      decoration:
-          BoxDecoration(
-        color:
-            cardBackground,
-        borderRadius:
-            BorderRadius.circular(
-          13,
+    return Expanded(
+      child: AnimatedContainer(
+        duration:
+            const Duration(
+          milliseconds: 250,
         ),
-        border:
-            Border.all(
+        margin:
+            const EdgeInsets.symmetric(
+          horizontal: 2,
+        ),
+        padding:
+            const EdgeInsets.symmetric(
+          vertical: 7,
+        ),
+        decoration:
+            BoxDecoration(
           color:
-              borderColor,
-          width:
               isCurrent
-                  ? 1.5
-                  : 1,
-        ),
-        boxShadow:
-            isCurrent
-                ? [
-                    BoxShadow(
-                      color:
-                          goldColor.withValues(
-                        alpha: 0.14,
-                      ),
-                      blurRadius:
-                          12,
-                      spreadRadius:
-                          0,
+                  ? accentColor.withValues(
+                      alpha: 0.13,
+                    )
+                  : backgroundColor.withValues(
+                      alpha: 0.30,
                     ),
-                  ]
-                : null,
-      ),
-      child:
-          Row(
-        children: [
-          // ==================================================
-          // DAY CIRCLE
-          // ==================================================
-
-          Container(
+          borderRadius:
+              BorderRadius.circular(
+            12,
+          ),
+          border:
+              Border.all(
+            color:
+                borderColor,
             width:
-                30,
-            height:
-                30,
-            decoration:
-                BoxDecoration(
-              shape:
-                  BoxShape.circle,
-              color:
-                  isCurrent
-                      ? goldColor
-                      : isCompleted
-                          ? pinkColor.withValues(
-                              alpha: 0.16,
-                            )
-                          : accentColor.withValues(
-                              alpha: 0.09,
-                            ),
-            ),
-            child:
-                Center(
+                isCurrent ? 1.4 : 1,
+          ),
+          boxShadow:
+              isCurrent
+                  ? [
+                      BoxShadow(
+                        color:
+                            goldColor.withValues(
+                          alpha: 0.12,
+                        ),
+                        blurRadius:
+                            8,
+                      ),
+                    ]
+                  : null,
+        ),
+        child:
+            Column(
+          mainAxisSize:
+              MainAxisSize.min,
+          children: [
+            // ==================================================
+            // DAY NUMBER
+            // ==================================================
+
+            Container(
+              width:
+                  28,
+              height:
+                  28,
+              decoration:
+                  BoxDecoration(
+                shape:
+                    BoxShape.circle,
+                color:
+                    circleColor,
+              ),
               child:
-                  Text(
-                '$day',
-                style:
-                    TextStyle(
-                  color:
-                      isCurrent
-                          ? backgroundColor
-                          : Colors.white,
-                  fontSize:
-                      11,
-                  fontWeight:
-                      FontWeight.bold,
+                  Center(
+                child:
+                    Text(
+                  '$day',
+                  style:
+                      TextStyle(
+                    color:
+                        isCurrent
+                            ? backgroundColor
+                            : Colors.white,
+                    fontSize:
+                        11,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(
-            width:
-                8,
-          ),
-
-          // ==================================================
-          // DAY TEXT
-          // ==================================================
-
-          Expanded(
-            child:
-                Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _day(
-                    language,
-                    day,
-                  ),
-                  maxLines:
-                      1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style:
-                      TextStyle(
-                    color:
-                        isCurrent
-                            ? goldColor
-                            : secondaryTextColor,
-                    fontSize:
-                        9,
-                    fontWeight:
-                        FontWeight.bold,
-                    letterSpacing:
-                        0.25,
-                  ),
-                ),
-
-                const SizedBox(
-                  height:
-                      2,
-                ),
-
-                Text(
-                  '${rate.toStringAsFixed(4)} HR',
-                  maxLines:
-                      1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style:
-                      TextStyle(
-                    color:
-                        isCurrent
-                            ? Colors.white
-                            : Colors.white70,
-                    fontSize:
-                        12,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-              ],
+            const SizedBox(
+              height:
+                  4,
             ),
-          ),
 
-          const SizedBox(
-            width:
-                5,
-          ),
+            // ==================================================
+            // HASH RATE
+            // ==================================================
 
-          // ==================================================
-          // STATUS ICON
-          // ==================================================
-
-          if (isCurrent)
-            const Text(
-              '🐱',
+            Text(
+              rate.toStringAsFixed(1),
               style:
                   TextStyle(
+                color:
+                    isCurrent
+                        ? goldColor
+                        : secondaryTextColor,
                 fontSize:
-                    14,
+                    10,
+                fontWeight:
+                    FontWeight.bold,
               ),
-            )
-          else if (isCompleted)
-            const Icon(
-              Icons.check_circle_rounded,
-              color:
-                  pinkColor,
-              size:
-                  15,
-            )
-          else
-            Icon(
-              Icons.lock_outline_rounded,
-              color:
-                  accentColor.withValues(
-                alpha:
-                    0.35,
-              ),
-              size:
-                  14,
             ),
-        ],
+
+            const SizedBox(
+              height:
+                  2,
+            ),
+
+            // ==================================================
+            // STATUS
+            // ==================================================
+
+            if (isCurrent)
+              const Text(
+                '🐱',
+                style:
+                    TextStyle(
+                  fontSize:
+                      11,
+                ),
+              )
+            else if (isCompleted)
+              const Icon(
+                Icons.check_rounded,
+                color:
+                    pinkColor,
+                size:
+                    12,
+              )
+            else
+              Icon(
+                Icons.lock_outline_rounded,
+                color:
+                    accentColor.withValues(
+                  alpha:
+                      0.32,
+                ),
+                size:
+                    11,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -565,37 +375,41 @@ class StellaMiningDaysCard extends StatelessWidget {
     final int currentDay =
         _getCurrentDay();
 
+    final double currentRate =
+        rates[currentDay - 1];
+
     return Container(
       width:
           double.infinity,
       padding:
-          const EdgeInsets.all(
-        14,
+          const EdgeInsets.fromLTRB(
+        12,
+        11,
+        12,
+        10,
       ),
       decoration:
           BoxDecoration(
         color:
             cardColor.withValues(
-          alpha:
-              0.55,
+          alpha: 0.62,
         ),
         borderRadius:
             BorderRadius.circular(
-          18,
+          16,
         ),
         border:
             Border.all(
           color:
               accentColor.withValues(
-            alpha:
-                0.16,
+            alpha: 0.16,
           ),
         ),
       ),
       child:
           Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.stretch,
+        mainAxisSize:
+            MainAxisSize.min,
         children: [
           // ==================================================
           // HEADER
@@ -605,9 +419,9 @@ class StellaMiningDaysCard extends StatelessWidget {
             children: [
               Container(
                 width:
-                    32,
+                    30,
                 height:
-                    32,
+                    30,
                 decoration:
                     BoxDecoration(
                   shape:
@@ -615,7 +429,7 @@ class StellaMiningDaysCard extends StatelessWidget {
                   color:
                       accentColor.withValues(
                     alpha:
-                        0.13,
+                        0.12,
                   ),
                 ),
                 child:
@@ -626,7 +440,7 @@ class StellaMiningDaysCard extends StatelessWidget {
                     style:
                         TextStyle(
                       fontSize:
-                          16,
+                          15,
                     ),
                   ),
                 ),
@@ -652,11 +466,11 @@ class StellaMiningDaysCard extends StatelessWidget {
                     color:
                         Colors.white,
                     fontSize:
-                        12,
+                        11.5,
                     fontWeight:
                         FontWeight.bold,
                     letterSpacing:
-                        0.8,
+                        0.65,
                   ),
                 ),
               ),
@@ -666,31 +480,35 @@ class StellaMiningDaysCard extends StatelessWidget {
                     6,
               ),
 
+              // ==================================================
+              // DAY COUNTER
+              // ==================================================
+
               Container(
                 padding:
                     const EdgeInsets.symmetric(
                   horizontal:
-                      8,
+                      7,
                   vertical:
-                      5,
+                      4,
                 ),
                 decoration:
                     BoxDecoration(
                   color:
                       goldColor.withValues(
                     alpha:
-                        0.10,
+                        0.09,
                   ),
                   borderRadius:
                       BorderRadius.circular(
-                    9,
+                    8,
                   ),
                   border:
                       Border.all(
                     color:
                         goldColor.withValues(
                       alpha:
-                          0.22,
+                          0.20,
                     ),
                   ),
                 ),
@@ -702,7 +520,7 @@ class StellaMiningDaysCard extends StatelessWidget {
                     color:
                         goldColor,
                     fontSize:
-                        10,
+                        9,
                     fontWeight:
                         FontWeight.bold,
                   ),
@@ -713,115 +531,44 @@ class StellaMiningDaysCard extends StatelessWidget {
 
           const SizedBox(
             height:
-                11,
+                9,
           ),
 
           // ==================================================
-          // DAY GRID
+          // 7 DAY ROW
           // ==================================================
 
-          LayoutBuilder(
-            builder: (
-              BuildContext context,
-              BoxConstraints constraints,
-            ) {
-              // ------------------------------------------------
-              // Small phone screens:
-              // Use one column so DAY + HR never get squeezed.
-              // ------------------------------------------------
+          Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children:
+                List<Widget>.generate(
+              rates.length,
+              (
+                int index,
+              ) {
+                final int day =
+                    index + 1;
 
-              final bool useSingleColumn =
-                  constraints.maxWidth < 310;
-
-              if (useSingleColumn) {
-                return Column(
-                  children:
-                      List<Widget>.generate(
-                    rates.length,
-                    (
-                      int index,
-                    ) {
-                      final int day =
-                          index + 1;
-
-                      return Padding(
-                        padding:
-                            EdgeInsets.only(
-                          bottom:
-                              index ==
-                                      rates.length - 1
-                                  ? 0
-                                  : 7,
-                        ),
-                        child:
-                            _buildDayCard(
-                          day:
-                              day,
-                          rate:
-                              rates[index],
-                          currentDay:
-                              currentDay,
-                          language:
-                              language,
-                        ),
-                      );
-                    },
-                  ),
+                return _buildDayChip(
+                  day:
+                      day,
+                  rate:
+                      rates[index],
+                  currentDay:
+                      currentDay,
                 );
-              }
-
-              // ------------------------------------------------
-              // Normal phone/tablet width:
-              // Two-column layout.
-              // ------------------------------------------------
-
-              return GridView.builder(
-                shrinkWrap:
-                    true,
-                physics:
-                    const NeverScrollableScrollPhysics(),
-                itemCount:
-                    rates.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:
-                      2,
-                  crossAxisSpacing:
-                      7,
-                  mainAxisSpacing:
-                      7,
-                  childAspectRatio:
-                      2.45,
-                ),
-                itemBuilder: (
-                  BuildContext context,
-                  int index,
-                ) {
-                  final int day =
-                      index + 1;
-
-                  return _buildDayCard(
-                    day:
-                        day,
-                    rate:
-                        rates[index],
-                    currentDay:
-                        currentDay,
-                    language:
-                        language,
-                  );
-                },
-              );
-            },
+              },
+            ),
           ),
 
           const SizedBox(
             height:
-                10,
+                8,
           ),
 
           // ==================================================
-          // CURRENT DAY INFO
+          // CURRENT DAY SUMMARY
           // ==================================================
 
           Container(
@@ -830,9 +577,9 @@ class StellaMiningDaysCard extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(
               horizontal:
-                  10,
-              vertical:
                   9,
+              vertical:
+                  7,
             ),
             decoration:
                 BoxDecoration(
@@ -841,7 +588,7 @@ class StellaMiningDaysCard extends StatelessWidget {
                 colors: [
                   goldColor.withValues(
                     alpha:
-                        0.09,
+                        0.08,
                   ),
                   accentColor.withValues(
                     alpha:
@@ -851,14 +598,14 @@ class StellaMiningDaysCard extends StatelessWidget {
               ),
               borderRadius:
                   BorderRadius.circular(
-                11,
+                10,
               ),
               border:
                   Border.all(
                 color:
                     goldColor.withValues(
                   alpha:
-                      0.20,
+                      0.16,
                 ),
               ),
             ),
@@ -870,87 +617,50 @@ class StellaMiningDaysCard extends StatelessWidget {
                   style:
                       TextStyle(
                     fontSize:
-                        17,
+                        15,
                   ),
                 ),
 
                 const SizedBox(
                   width:
-                      7,
+                      6,
                 ),
 
                 Expanded(
                   child:
-                      Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
                       Text(
-                        _currentDay(
-                          language,
-                          currentDay,
-                        ),
-                        maxLines:
-                            1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white,
-                          fontSize:
-                              9,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height:
-                            2,
-                      ),
-
-                      Text(
-                        _status(
-                          language,
-                          currentDay,
-                          currentDay,
-                        ),
-                        maxLines:
-                            1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          color:
-                              goldColor,
-                          fontSize:
-                              8,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing:
-                              0.6,
-                        ),
-                      ),
-                    ],
+                    '${_currentLabel(language)} · DAY $currentDay',
+                    maxLines:
+                        1,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(
+                      color:
+                          Colors.white,
+                      fontSize:
+                          9,
+                      fontWeight:
+                          FontWeight.bold,
+                      letterSpacing:
+                          0.25,
+                    ),
                   ),
                 ),
 
                 const SizedBox(
                   width:
-                      8,
+                      6,
                 ),
 
                 Text(
-                  '${rates[currentDay - 1].toStringAsFixed(4)} HR',
-                  maxLines:
-                      1,
+                  '${currentRate.toStringAsFixed(4)} HR',
                   style:
                       const TextStyle(
                     color:
                         goldColor,
                     fontSize:
-                        12,
+                        11,
                     fontWeight:
                         FontWeight.bold,
                   ),
