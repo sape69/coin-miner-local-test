@@ -561,21 +561,10 @@ class _HomePageState extends State<HomePage>
               _asInt(data['dailyStreak']) ??
                   _streak;
 
-          final double dailyHash =
-              _asDouble(data['dailyHashRate']) ??
-                  _calculateDailyHashRate(
-                    streak,
-                  );
-
           setState(() {
             _miningActive = true;
             _streak = streak.clamp(1, 7);
           });
-
-          if (dailyHash.isFinite) {
-            // Backendin daily hash rate säilytetään
-            // getMiningStatus-kutsussa.
-          }
         }
       }
 
