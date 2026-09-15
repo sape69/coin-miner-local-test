@@ -76,8 +76,6 @@ class _HomePageState extends State<HomePage>
 
   int _streak = 1;
 
-  double _dailyHashRate = defaultDailyHashRate;
-
   int _adsToday = 0;
   int _maxAdsPerDay = defaultMaxAdsPerDay;
 
@@ -310,26 +308,6 @@ class _HomePageState extends State<HomePage>
               ? duration
               : defaultMiningDurationMs;
 
-      /*
-       * ----------------------------------------------------------
-       * POWER BOOST STATE
-       * ----------------------------------------------------------
-       *
-       * Jos Power Boost on juuri aktivoitu ja paikallinen tila
-       * sisältää vielä voimassa olevan boostin, emme saa pyyhkiä
-       * sitä pois vain siksi, että getMiningStatus palauttaa
-       * hetkellisesti vanhan tilan.
-       *
-       * Jos palvelin vahvistaa aktiivisen boostin, käytetään
-       * palvelimen arvoja.
-       *
-       * Jos palvelin palauttaa aktiivisen boostin, mutta paikallinen
-       * tila on vielä pidempi, käytetään voimassa olevaa aikaa.
-       *
-       * Jos kumpikaan ei ole aktiivinen, boost poistetaan.
-       * ----------------------------------------------------------
-       */
-
       bool finalBoostActive = serverBoostActive;
       int finalBoostRemaining = serverBoostRemaining;
 
@@ -367,12 +345,6 @@ class _HomePageState extends State<HomePage>
         );
 
         _streak = streak.clamp(1, 7);
-
-        _dailyHashRate =
-            dailyHashRate.clamp(
-          defaultDailyHashRate,
-          maximumDailyHashRate,
-        );
 
         _adsToday = adsToday.clamp(
           0,
@@ -471,9 +443,6 @@ class _HomePageState extends State<HomePage>
 
           _boostTimer?.cancel();
 
-          /*
-           * Päivitetään palvelimen tila heti boostin päätyttyä.
-           */
           _loadMiningStatus();
 
           return;
@@ -601,13 +570,12 @@ class _HomePageState extends State<HomePage>
           setState(() {
             _miningActive = true;
             _streak = streak.clamp(1, 7);
-
-            _dailyHashRate =
-                dailyHash.clamp(
-              defaultDailyHashRate,
-              maximumDailyHashRate,
-            );
           });
+
+          if (dailyHash.isFinite) {
+            // Backendin daily hash rate säilytetään
+            // getMiningStatus-kutsussa.
+          }
         }
       }
 
@@ -800,13 +768,6 @@ class _HomePageState extends State<HomePage>
             );
       }
 
-      /*
-       * Haetaan muut mining-tiedot palvelimelta.
-       *
-       * Tärkeää:
-       * getMiningStatus ei saa tässä vaiheessa pyyhkiä juuri
-       * vahvistettua Power Boostia pois.
-       */
       await _loadMiningStatus();
 
       if (mounted && confirmedBoostActive) {
@@ -820,13 +781,13 @@ class _HomePageState extends State<HomePage>
           }
 
           if (confirmedAdsToday != null) {
-            _adsToday = confirmedAdsToday!;
+            _adsToday = confirmedAdsToday;
           }
 
           if (confirmedBonus != null &&
-              confirmedBonus! > 0) {
+              confirmedBonus > 0) {
             _adHashRateBonus =
-                confirmedBonus!;
+                confirmedBonus;
           }
         });
 
@@ -905,15 +866,6 @@ class _HomePageState extends State<HomePage>
   void _handleAdDismissed(
     String purpose,
   ) {
-    /*
-     * Jos käyttäjä sulkee mainoksen ilman palkintoa,
-     * reward-callbackia ei välttämättä kutsuta.
-     *
-     * Siksi vapautetaan lataustila myös tässä.
-     *
-     * Jos palkinto on jo saatu, backend-callback käsittelee
-     * varsinaisen Power Boostin.
-     */
     if (!mounted) {
       return;
     }
