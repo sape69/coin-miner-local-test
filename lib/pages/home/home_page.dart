@@ -22,10 +22,12 @@ import 'stella_mining_card.dart';
 
 class HomePage extends StatefulWidget {
   final String languageCode;
+  final ValueChanged<String> changeLanguage;
 
   const HomePage({
     super.key,
     required this.languageCode,
+    required this.changeLanguage,
   });
 
   @override
@@ -86,29 +88,21 @@ class _HomePageState extends State<HomePage>
   double _unclaimedMining = 0.0;
   double _estimatedTotal = 0.0;
 
-  int _miningDurationMs =
-      defaultMiningDurationMs;
-
+  int _miningDurationMs = defaultMiningDurationMs;
   int _miningRemainingMs = 0;
 
   int _streak = 1;
 
-  double _dailyHashRate =
-      defaultDailyHashRate;
+  double _dailyHashRate = defaultDailyHashRate;
 
   int _adsToday = 0;
+  int _maxAdsPerDay = defaultMaxAdsPerDay;
 
-  int _maxAdsPerDay =
-      defaultMaxAdsPerDay;
+  double _adHashRateBonus = defaultAdHashRateBonus;
 
-  double _adHashRateBonus =
-      defaultAdHashRateBonus;
-
-  int _adCooldownMs =
-      4 * 60 * 60 * 1000;
+  int _adCooldownMs = 4 * 60 * 60 * 1000;
 
   bool _boostActive = false;
-
   int _boostRemainingMs = 0;
 
   String _username = '';
@@ -139,16 +133,11 @@ class _HomePageState extends State<HomePage>
     _catAnimation.repeat(reverse: true);
 
     _adManager = HomeAdManager(
-      onMiningStartReward:
-          _startMiningAfterAd,
-      onPowerBoostReward:
-          _waitForServerSidePowerBoost,
-      onAdLoadError:
-          _handleAdLoadError,
-      onAdShowError:
-          _handleAdShowError,
-      onAdDismissed:
-          _handleAdDismissed,
+      onMiningStartReward: _startMiningAfterAd,
+      onPowerBoostReward: _waitForServerSidePowerBoost,
+      onAdLoadError: _handleAdLoadError,
+      onAdShowError: _handleAdShowError,
+      onAdDismissed: _handleAdDismissed,
     );
 
     _adManager.addListener(
@@ -222,13 +211,9 @@ class _HomePageState extends State<HomePage>
             Map<String, dynamic>.from(raw);
 
         final String username =
-            data['username']
-                    ?.toString()
-                    .trim() ??
-                '';
+            data['username']?.toString().trim() ?? '';
 
-        if (mounted &&
-            username.isNotEmpty) {
+        if (mounted && username.isNotEmpty) {
           setState(() {
             _username = username;
           });
@@ -237,15 +222,13 @@ class _HomePageState extends State<HomePage>
         }
       }
     } catch (_) {
-      // Käytetään Firebase Auth -nimeä
-      // varavaihtoehtona.
+      // Firebase Auth toimii varavaihtoehtona.
     }
 
     final String displayName =
         user.displayName?.trim() ?? '';
 
-    if (mounted &&
-        displayName.isNotEmpty) {
+    if (mounted && displayName.isNotEmpty) {
       setState(() {
         _username = displayName;
       });
@@ -281,128 +264,72 @@ class _HomePageState extends State<HomePage>
           Map<String, dynamic>.from(raw);
 
       final bool miningActive =
-          _asBool(
-                data['miningActive'],
-              ) ??
-              _asBool(
-                data['active'],
-              ) ??
+          _asBool(data['miningActive']) ??
+              _asBool(data['active']) ??
               false;
 
       final double hashRate =
-          _asDouble(
-                data['hashRate'],
-              ) ??
-              _asDouble(
-                data['effectiveHashRate'],
-              ) ??
-              _asDouble(
-                data['dailyHashRate'],
-              ) ??
+          _asDouble(data['hashRate']) ??
+              _asDouble(data['effectiveHashRate']) ??
+              _asDouble(data['dailyHashRate']) ??
               defaultDailyHashRate;
 
       final double unclaimed =
-          _asDouble(
-                data['unclaimedMining'],
-              ) ??
-              _asDouble(
-                data['unclaimed'],
-              ) ??
-              _asDouble(
-                data['miningBalance'],
-              ) ??
+          _asDouble(data['unclaimedMining']) ??
+              _asDouble(data['unclaimed']) ??
+              _asDouble(data['miningBalance']) ??
               0.0;
 
       final double total =
-          _asDouble(
-                data['estimatedTotal'],
-              ) ??
-              _asDouble(
-                data['totalStl'],
-              ) ??
-              _asDouble(
-                data['totalBalance'],
-              ) ??
+          _asDouble(data['estimatedTotal']) ??
+              _asDouble(data['totalStl']) ??
+              _asDouble(data['totalBalance']) ??
               0.0;
 
       final int remaining =
-          _asInt(
-                data['miningRemainingMs'],
-              ) ??
-              _asInt(
-                data['remainingMs'],
-              ) ??
-              _asInt(
-                data['remainingTimeMs'],
-              ) ??
+          _asInt(data['miningRemainingMs']) ??
+              _asInt(data['remainingMs']) ??
+              _asInt(data['remainingTimeMs']) ??
               0;
 
       final int duration =
-          _asInt(
-                data['miningDurationMs'],
-              ) ??
-              _asInt(
-                data['durationMs'],
-              ) ??
+          _asInt(data['miningDurationMs']) ??
+              _asInt(data['durationMs']) ??
               defaultMiningDurationMs;
 
       final int streak =
-          _asInt(
-                data['dailyStreak'],
-              ) ??
-              _asInt(
-                data['streak'],
-              ) ??
+          _asInt(data['dailyStreak']) ??
+              _asInt(data['streak']) ??
               1;
 
       final double dailyHashRate =
-          _asDouble(
-                data['dailyHashRate'],
-              ) ??
-              _calculateDailyHashRate(
-                streak,
-              );
+          _asDouble(data['dailyHashRate']) ??
+              _calculateDailyHashRate(streak);
 
       final int adsToday =
-          _asInt(
-                data['adsToday'],
-              ) ??
-              _asInt(
-                data['adCountToday'],
-              ) ??
+          _asInt(data['adsToday']) ??
+              _asInt(data['adCountToday']) ??
               0;
 
       final int maxAds =
-          _asInt(
-                data['maxAdsPerDay'],
-              ) ??
+          _asInt(data['maxAdsPerDay']) ??
               defaultMaxAdsPerDay;
 
       final double adBonus =
-          _asDouble(
-                data['adHashRateBonus'],
-              ) ??
+          _asDouble(data['adHashRateBonus']) ??
               defaultAdHashRateBonus;
 
       final int cooldown =
-          _asInt(
-                data['adCooldownMs'],
-              ) ??
+          _asInt(data['adCooldownMs']) ??
               _adCooldownMs;
 
       final bool boostActive =
-          _asBool(
-                data['boostActive'],
-              ) ??
+          _asBool(data['boostActive']) ??
               false;
 
       final int boostRemaining =
-          _asInt(
-                data['boostRemainingMs'],
-              ) ??
-              _asInt(
-                data['remainingBoostMs'],
-              ) ??
+          _asInt(data['boostRemainingMs']) ??
+              _asInt(data['remainingBoostMs']) ??
               0;
 
       if (!mounted) {
@@ -415,28 +342,23 @@ class _HomePageState extends State<HomePage>
               : defaultMiningDurationMs;
 
       setState(() {
-        _miningActive =
-            miningActive;
+        _miningActive = miningActive;
 
         _hashRate = hashRate;
 
-        _unclaimedMining =
-            unclaimed;
+        _unclaimedMining = unclaimed;
 
-        _estimatedTotal =
-            total;
+        _estimatedTotal = total;
 
-        _miningDurationMs =
-            safeDuration;
+        _miningDurationMs = safeDuration;
 
         _miningRemainingMs =
             remaining.clamp(
-              0,
-              safeDuration,
-            );
+          0,
+          safeDuration,
+        );
 
-        _streak =
-            streak.clamp(1, 7);
+        _streak = streak.clamp(1, 7);
 
         _dailyHashRate =
             dailyHashRate.clamp(
@@ -444,26 +366,20 @@ class _HomePageState extends State<HomePage>
           maximumDailyHashRate,
         );
 
-        _adsToday =
-            adsToday.clamp(
+        _adsToday = adsToday.clamp(
           0,
           maxAds,
         );
 
-        _maxAdsPerDay =
-            maxAds;
+        _maxAdsPerDay = maxAds;
 
-        _adHashRateBonus =
-            adBonus;
+        _adHashRateBonus = adBonus;
 
-        _adCooldownMs =
-            cooldown;
+        _adCooldownMs = cooldown;
 
-        _boostActive =
-            boostActive;
+        _boostActive = boostActive;
 
-        _boostRemainingMs =
-            boostRemaining;
+        _boostRemainingMs = boostRemaining;
       });
 
       _startMiningTimer();
@@ -487,8 +403,7 @@ class _HomePageState extends State<HomePage>
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) {
-        if (!_loading &&
-            !_actionLoading) {
+        if (!_loading && !_actionLoading) {
           _loadMiningStatus();
         }
       },
@@ -514,8 +429,7 @@ class _HomePageState extends State<HomePage>
           return;
         }
 
-        if (_miningRemainingMs <=
-            1000) {
+        if (_miningRemainingMs <= 1000) {
           setState(() {
             _miningRemainingMs = 0;
             _miningActive = false;
@@ -556,8 +470,7 @@ class _HomePageState extends State<HomePage>
           return;
         }
 
-        if (_boostRemainingMs <=
-            1000) {
+        if (_boostRemainingMs <= 1000) {
           setState(() {
             _boostRemainingMs = 0;
             _boostActive = false;
@@ -579,13 +492,11 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _startMining() async {
-    if (_actionLoading ||
-        _miningActive) {
+    if (_actionLoading || _miningActive) {
       return;
     }
 
-    if (_adManager
-        .miningAdFlowActive) {
+    if (_adManager.miningAdFlowActive) {
       return;
     }
 
@@ -595,8 +506,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       final bool shown =
-          await _adManager
-              .showMiningStartAd();
+          await _adManager.showMiningStartAd();
 
       if (!shown && mounted) {
         setState(() {
@@ -621,7 +531,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // MINING START AFTER REWARDED AD
+  // MINING START AFTER AD
   // ============================================================
 
   Future<void> _startMiningAfterAd() async {
@@ -634,11 +544,9 @@ class _HomePageState extends State<HomePage>
 
       Object? lastError;
 
-      for (
-        int attempt = 0;
-        attempt < 15;
-        attempt++
-      ) {
+      for (int attempt = 0;
+          attempt < 15;
+          attempt++) {
         try {
           result = await _functions
               .httpsCallable(
@@ -655,17 +563,12 @@ class _HomePageState extends State<HomePage>
 
           final bool retryable =
               text.contains('admob') ||
-              text.contains('reward') ||
-              text.contains(
-                'mining_start',
-              ) ||
-              text.contains(
-                'mining start',
-              ) ||
-              text.contains('verified');
+                  text.contains('reward') ||
+                  text.contains('mining_start') ||
+                  text.contains('mining start') ||
+                  text.contains('verified');
 
-          if (!retryable ||
-              attempt == 14) {
+          if (!retryable || attempt == 14) {
             rethrow;
           }
 
@@ -682,36 +585,24 @@ class _HomePageState extends State<HomePage>
             );
       }
 
-      final dynamic raw =
-          result.data;
+      final dynamic raw = result.data;
 
       if (raw is Map) {
         final Map<String, dynamic> data =
-            Map<String, dynamic>.from(
-          raw,
-        );
+            Map<String, dynamic>.from(raw);
 
         final bool started =
-            _asBool(
-                  data['started'],
-                ) ??
-                _asBool(
-                  data['miningStarted'],
-                ) ??
+            _asBool(data['started']) ??
+                _asBool(data['miningStarted']) ??
                 true;
 
-        if (started &&
-            mounted) {
+        if (started && mounted) {
           final int streak =
-              _asInt(
-                    data['dailyStreak'],
-                  ) ??
+              _asInt(data['dailyStreak']) ??
                   _streak;
 
           final double dailyHash =
-              _asDouble(
-                    data['dailyHashRate'],
-                  ) ??
+              _asDouble(data['dailyHashRate']) ??
                   _calculateDailyHashRate(
                     streak,
                   );
@@ -719,8 +610,7 @@ class _HomePageState extends State<HomePage>
           setState(() {
             _miningActive = true;
 
-            _streak =
-                streak.clamp(1, 7);
+            _streak = streak.clamp(1, 7);
 
             _dailyHashRate =
                 dailyHash.clamp(
@@ -738,82 +628,6 @@ class _HomePageState extends State<HomePage>
           '🐱 ${_t('miningStarted')}',
         );
       }
-    } catch (e) {
-      if (mounted) {
-        _showMessage(
-          '⚠️ ${_errorText(e)}',
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _actionLoading = false;
-        });
-      }
-    }
-  }
-
-  // ============================================================
-  // SSV CLAIM RETRY
-  // ============================================================
-
-  Future<void> _claimMiningWithSsvRetry() async {
-    if (_actionLoading) {
-      return;
-    }
-
-    setState(() {
-      _actionLoading = true;
-    });
-
-    try {
-      HttpsCallableResult<dynamic>? result;
-
-      Object? lastError;
-
-      for (
-        int attempt = 0;
-        attempt < 15;
-        attempt++
-      ) {
-        try {
-          result = await _functions
-              .httpsCallable(
-                'claimMining',
-              )
-              .call();
-
-          break;
-        } catch (e) {
-          lastError = e;
-
-          final String text =
-              e.toString().toLowerCase();
-
-          final bool retryable =
-              text.contains('admob') ||
-              text.contains('reward') ||
-              text.contains('verified');
-
-          if (!retryable ||
-              attempt == 14) {
-            rethrow;
-          }
-
-          await Future.delayed(
-            const Duration(seconds: 2),
-          );
-        }
-      }
-
-      if (result == null) {
-        throw lastError ??
-            Exception(
-              'Claim failed.',
-            );
-      }
-
-      await _loadMiningStatus();
     } catch (e) {
       if (mounted) {
         _showMessage(
@@ -851,8 +665,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       final bool shown =
-          await _adManager
-              .showPowerBoostAd();
+          await _adManager.showPowerBoostAd();
 
       if (!shown && mounted) {
         setState(() {
@@ -880,8 +693,7 @@ class _HomePageState extends State<HomePage>
   // POWER BOOST BACKEND VERIFICATION
   // ============================================================
 
-  Future<void>
-      _waitForServerSidePowerBoost() async {
+  Future<void> _waitForServerSidePowerBoost() async {
     try {
       await Future.delayed(
         const Duration(seconds: 1),
@@ -889,49 +701,34 @@ class _HomePageState extends State<HomePage>
 
       bool verified = false;
 
-      for (
-        int attempt = 0;
-        attempt < 15;
-        attempt++
-      ) {
+      for (int attempt = 0;
+          attempt < 15;
+          attempt++) {
         try {
-          final HttpsCallableResult<dynamic>
-              result =
+          final HttpsCallableResult<dynamic> result =
               await _functions
                   .httpsCallable(
                     'powerBoost',
                   )
                   .call();
 
-          final dynamic raw =
-              result.data;
+          final dynamic raw = result.data;
 
           if (raw is Map) {
-            final Map<String, dynamic>
-                data =
-                Map<String, dynamic>.from(
-              raw,
-            );
+            final Map<String, dynamic> data =
+                Map<String, dynamic>.from(raw);
 
             final bool active =
-                _asBool(
-                      data['boostActive'],
-                    ) ??
-                    _asBool(
-                      data['active'],
-                    ) ??
+                _asBool(data['boostActive']) ??
+                    _asBool(data['active']) ??
                     true;
 
             final int remaining =
                 _asInt(
-                      data[
-                        'boostRemainingMs'
-                      ],
+                      data['boostRemainingMs'],
                     ) ??
                     _asInt(
-                      data[
-                        'remainingBoostMs'
-                      ],
+                      data['remainingBoostMs'],
                     ) ??
                     4 *
                         60 *
@@ -940,16 +737,12 @@ class _HomePageState extends State<HomePage>
 
             if (mounted) {
               setState(() {
-                _boostActive =
-                    active;
+                _boostActive = active;
 
-                _boostRemainingMs =
-                    remaining;
+                _boostRemainingMs = remaining;
 
                 final int? ads =
-                    _asInt(
-                  data['adsToday'],
-                );
+                    _asInt(data['adsToday']);
 
                 if (ads != null) {
                   _adsToday = ads;
@@ -966,14 +759,11 @@ class _HomePageState extends State<HomePage>
 
           final bool retryable =
               text.contains('admob') ||
-              text.contains('reward') ||
-              text.contains('verified') ||
-              text.contains(
-                'power boost',
-              );
+                  text.contains('reward') ||
+                  text.contains('verified') ||
+                  text.contains('power boost');
 
-          if (!retryable ||
-              attempt == 14) {
+          if (!retryable || attempt == 14) {
             rethrow;
           }
 
@@ -1062,10 +852,9 @@ class _HomePageState extends State<HomePage>
   void _handleAdDismissed(
     String purpose,
   ) {
-    // Älä nollaa actionLoadingia tässä.
-    //
-    // Reward callback voi vielä käsitellä
-    // backendin SSV-vahvistusta.
+    // Reward callback käsittelee tarvittaessa
+    // backend-vahvistuksen ennen lataustilan
+    // vapauttamista.
   }
 
   // ============================================================
@@ -1098,8 +887,7 @@ class _HomePageState extends State<HomePage>
   void _openWhitePaper() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            WhitePaperPage(
+        builder: (_) => WhitePaperPage(
           languageCode:
               widget.languageCode,
         ),
@@ -1121,8 +909,7 @@ class _HomePageState extends State<HomePage>
   void _openAchievements() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            AchievementsPage(
+        builder: (_) => AchievementsPage(
           languageCode:
               widget.languageCode,
         ),
@@ -1147,9 +934,8 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _showLanguageDialog() async {
-    final List<String> languages =
-        AppLocalizations
-            .supportedLanguages;
+    final Map<String, String> languages =
+        AppLocalizations.supportedLanguages;
 
     await showDialog<void>(
       context: context,
@@ -1157,53 +943,41 @@ class _HomePageState extends State<HomePage>
         BuildContext dialogContext,
       ) {
         return AlertDialog(
-          backgroundColor:
-              cardColor,
+          backgroundColor: cardColor,
           title: Text(
             _t('language'),
-            style:
-                const TextStyle(
-              color:
-                  primaryTextColor,
-              fontWeight:
-                  FontWeight.bold,
+            style: const TextStyle(
+              color: primaryTextColor,
+              fontWeight: FontWeight.bold,
             ),
           ),
           content: SizedBox(
-            width:
-                double.maxFinite,
-            child:
-                ListView.builder(
+            width: double.maxFinite,
+            child: ListView.builder(
               shrinkWrap: true,
-              itemCount:
-                  languages.length,
-              itemBuilder:
-                  (
+              itemCount: languages.length,
+              itemBuilder: (
                 BuildContext context,
                 int index,
               ) {
                 final String code =
-                    languages[index];
+                    languages.keys.elementAt(index);
+
+                final String name =
+                    languages[code] ?? code;
 
                 return ListTile(
                   title: Text(
-                    _languageName(
-                      code,
-                    ),
-                    style:
-                        const TextStyle(
-                      color:
-                          primaryTextColor,
+                    name,
+                    style: const TextStyle(
+                      color: primaryTextColor,
                     ),
                   ),
                   trailing:
-                      code ==
-                              widget
-                                  .languageCode
+                      code == widget.languageCode
                           ? const Icon(
                               Icons.check,
-                              color:
-                                  accentColor,
+                              color: accentColor,
                             )
                           : null,
                   onTap: () {
@@ -1212,11 +986,8 @@ class _HomePageState extends State<HomePage>
                     ).pop();
 
                     if (code !=
-                        widget
-                            .languageCode) {
-                      _showMessage(
-                        '🌐 ${_t('languageChanged')}',
-                      );
+                        widget.languageCode) {
+                      widget.changeLanguage(code);
                     }
                   },
                 );
@@ -1322,12 +1093,8 @@ class _HomePageState extends State<HomePage>
 
     final String subtitle =
         _boostActive
-            ? _t(
-                'powerBoostActive',
-              )
-            : _t(
-                'watchAdSubtitle',
-              );
+            ? _t('powerBoostActive')
+            : _t('watchAdSubtitle');
 
     return PowerBoostCard(
       boostActive:
@@ -1347,9 +1114,7 @@ class _HomePageState extends State<HomePage>
       activeText:
           _t('active'),
       activeTitle:
-          _t(
-        'powerBoostActive',
-      ),
+          _t('powerBoostActive'),
       remainingText:
           _t('remaining'),
       hashRateBonusText:
@@ -1361,9 +1126,7 @@ class _HomePageState extends State<HomePage>
         _effectiveHashRate,
       )} H/s',
       nextAdAfterBoostText:
-          _t(
-        'nextAdAfterBoost',
-      ),
+          _t('nextAdAfterBoost'),
       watchAdText:
           _t('watchAd'),
       adsTodayText:
@@ -1383,8 +1146,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildHeader() {
     return Padding(
-      padding:
-          const EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         20,
         18,
         20,
@@ -1401,8 +1163,7 @@ class _HomePageState extends State<HomePage>
                     context,
                   ).openDrawer();
                 },
-                icon:
-                    const Icon(
+                icon: const Icon(
                   Icons.menu_rounded,
                   color:
                       primaryTextColor,
@@ -1416,8 +1177,7 @@ class _HomePageState extends State<HomePage>
           ),
           const Expanded(
             child: Center(
-              child:
-                  StelluriiniLogo(
+              child: StelluriiniLogo(
                 size: 48,
               ),
             ),
@@ -1455,10 +1215,8 @@ class _HomePageState extends State<HomePage>
             maxLines: 1,
             overflow:
                 TextOverflow.ellipsis,
-            style:
-                const TextStyle(
-              color:
-                  primaryTextColor,
+            style: const TextStyle(
+              color: primaryTextColor,
               fontSize: 23,
               fontWeight:
                   FontWeight.w700,
@@ -1469,10 +1227,8 @@ class _HomePageState extends State<HomePage>
           ),
           Text(
             _t('stellaWelcome'),
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
+            style: const TextStyle(
+              color: secondaryTextColor,
               fontSize: 14,
             ),
           ),
@@ -1488,7 +1244,7 @@ class _HomePageState extends State<HomePage>
   Widget _buildMiningButton() {
     final bool disabled =
         _actionLoading ||
-        _miningActive;
+            _miningActive;
 
     return Padding(
       padding:
@@ -1496,8 +1252,7 @@ class _HomePageState extends State<HomePage>
         horizontal: 22,
       ),
       child: SizedBox(
-        width:
-            double.infinity,
+        width: double.infinity,
         height: 58,
         child: ElevatedButton(
           onPressed:
@@ -1535,8 +1290,7 @@ class _HomePageState extends State<HomePage>
                       height: 24,
                       child:
                           CircularProgressIndicator(
-                        strokeWidth:
-                            2.5,
+                        strokeWidth: 2.5,
                         color:
                             backgroundColor,
                       ),
@@ -1602,12 +1356,9 @@ class _HomePageState extends State<HomePage>
           ),
           const Text(
             'Stelluriini (STL)',
-            textAlign:
-                TextAlign.center,
-            style:
-                TextStyle(
-              color:
-                  primaryTextColor,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: primaryTextColor,
               fontWeight:
                   FontWeight.bold,
             ),
@@ -1619,12 +1370,9 @@ class _HomePageState extends State<HomePage>
             _t(
               'stelluriiniStlSolanaFooter',
             ),
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: secondaryTextColor,
               fontSize: 12,
               height: 1.4,
             ),
@@ -1659,8 +1407,7 @@ class _HomePageState extends State<HomePage>
                   height: 22,
                 ),
                 const CircularProgressIndicator(
-                  color:
-                      accentColor,
+                  color: accentColor,
                 ),
                 const SizedBox(
                   height: 18,
@@ -1702,16 +1449,13 @@ class _HomePageState extends State<HomePage>
             _logout,
       ),
       body: SafeArea(
-        child:
-            RefreshIndicator(
-          color:
-              accentColor,
+        child: RefreshIndicator(
+          color: accentColor,
           backgroundColor:
               cardColor,
           onRefresh:
               _loadMiningStatus,
-          child:
-              CustomScrollView(
+          child: CustomScrollView(
             physics:
                 const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -1724,8 +1468,7 @@ class _HomePageState extends State<HomePage>
                     _buildGreeting(),
               ),
               const SliverToBoxAdapter(
-                child:
-                    SizedBox(
+                child: SizedBox(
                   height: 12,
                 ),
               ),
@@ -1734,8 +1477,7 @@ class _HomePageState extends State<HomePage>
                     _buildStellaMiningCard(),
               ),
               const SliverToBoxAdapter(
-                child:
-                    SizedBox(
+                child: SizedBox(
                   height: 14,
                 ),
               ),
@@ -1744,8 +1486,7 @@ class _HomePageState extends State<HomePage>
                     _buildMiningButton(),
               ),
               const SliverToBoxAdapter(
-                child:
-                    SizedBox(
+                child: SizedBox(
                   height: 16,
                 ),
               ),
@@ -1754,8 +1495,7 @@ class _HomePageState extends State<HomePage>
                     _buildStatsRow(),
               ),
               const SliverToBoxAdapter(
-                child:
-                    SizedBox(
+                child: SizedBox(
                   height: 14,
                 ),
               ),
@@ -1764,8 +1504,7 @@ class _HomePageState extends State<HomePage>
                     _buildAdButton(),
               ),
               const SliverToBoxAdapter(
-                child:
-                    SizedBox(
+                child: SizedBox(
                   height: 14,
                 ),
               ),
@@ -1871,9 +1610,7 @@ class _HomePageState extends State<HomePage>
       return '0.0000';
     }
 
-    return value.toStringAsFixed(
-      4,
-    );
+    return value.toStringAsFixed(4);
   }
 
   String _errorText(
@@ -1939,48 +1676,18 @@ class _HomePageState extends State<HomePage>
     String key,
   ) {
     final AppLocalizations localizations =
-        AppLocalizations.of(
-      context,
-      widget.languageCode,
-    );
+        AppLocalizations.of(context);
 
     return localizations.t(
       key,
+      languageCode:
+          widget.languageCode,
     );
   }
 
-  String _languageName(
-    String code,
-  ) {
-    switch (code) {
-      case 'fi':
-        return 'Suomi';
-
-      case 'en':
-        return 'English';
-
-      case 'de':
-        return 'Deutsch';
-
-      case 'es':
-        return 'Español';
-
-      case 'fr':
-        return 'Français';
-
-      case 'zh':
-        return '中文';
-
-      case 'vi':
-        return 'Tiếng Việt';
-
-      case 'ja':
-        return '日本語';
-
-      default:
-        return code.toUpperCase();
-    }
-  }
+  // ============================================================
+  // CONVERSION HELPERS
+  // ============================================================
 
   double? _asDouble(
     dynamic value,
@@ -2064,8 +1771,7 @@ class _HomePageState extends State<HomePage>
         SnackBar(
           content: Text(
             message,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               color:
                   primaryTextColor,
             ),
