@@ -627,14 +627,22 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _waitForServerSidePowerBoost() async {
     try {
-      await Future.delayed(
-        const Duration(seconds: 1),
-      );
+      /*
+       * AdMob SSV ei välttämättä saavu Firebaseen heti,
+       * kun käyttäjä on saanut RewardedAd-palkkion.
+       *
+       * Tämän vuoksi yritämme powerBoost-kutsua jopa
+       * 60 sekunnin ajan.
+       *
+       * 30 yritystä × 2 sekuntia = noin 60 sekuntia.
+       */
 
-      bool verified = false;
+      HttpsCallableResult<dynamic>? successfulResult;
+
+      Object? lastError;
 
       for (int attempt = 0;
-          attempt < 15;
+          attempt < 30;
           attempt++) {
         try {
           final HttpsCallableResult<dynamic> result =
@@ -653,7 +661,7 @@ class _HomePageState extends State<HomePage>
             final bool active =
                 _asBool(data['boostActive']) ??
                     _asBool(data['active']) ??
-                    true;
+                    false;
 
             final int remaining =
                 _asInt(
@@ -662,29 +670,46 @@ class _HomePageState extends State<HomePage>
                     _asInt(
                       data['remainingBoostMs'],
                     ) ??
-                    4 *
-                        60 *
-                        60 *
-                        1000;
+                    0;
 
-            if (mounted) {
-              setState(() {
-                _boostActive = active;
-                _boostRemainingMs = remaining;
+            final int? ads =
+                _asInt(data['adsToday']);
 
-                final int? ads =
-                    _asInt(data['adsToday']);
+            /*
+             * Firebase vastasi onnistuneesti ja ilmoitti,
+             * että Boost on aktiivinen.
+             */
+            if (active && remaining > 0) {
+              if (mounted) {
+                setState(() {
+                  _boostActive = true;
+                  _boostRemainingMs = remaining;
 
-                if (ads != null) {
-                  _adsToday = ads;
-                }
-              });
+                  if (ads != null) {
+                    _adsToday = ads;
+                  }
+                });
+              }
+
+              successfulResult = result;
+              break;
             }
-          }
 
-          verified = true;
-          break;
+            /*
+             * Jos backend vastasi, mutta Boost ei vielä
+             * ole aktiivinen, annetaan SSV:lle lisää aikaa.
+             */
+            lastError = Exception(
+              'Power Boost is not active yet.',
+            );
+          } else {
+            lastError = Exception(
+              'Invalid Power Boost response.',
+            );
+          }
         } catch (e) {
+          lastError = e;
+
           final String text =
               e.toString().toLowerCase();
 
@@ -692,26 +717,42 @@ class _HomePageState extends State<HomePage>
               text.contains('admob') ||
                   text.contains('reward') ||
                   text.contains('verified') ||
-                  text.contains('power boost');
+                  text.contains('failed-precondition') ||
+                  text.contains('power boost') ||
+                  text.contains('not found');
 
-          if (!retryable || attempt == 14) {
+          if (!retryable) {
             rethrow;
           }
+        }
 
+        /*
+         * Odotetaan ennen seuraavaa Firebase-yritystä.
+         */
+        if (attempt < 29) {
           await Future.delayed(
             const Duration(seconds: 2),
           );
         }
       }
 
-      if (verified) {
-        await _loadMiningStatus();
+      if (successfulResult == null) {
+        throw lastError ??
+            Exception(
+              'Power Boost verification timed out.',
+            );
+      }
 
-        if (mounted) {
-          _showMessage(
-            '🐾 ${_t('powerBoostActive')}',
-          );
-        }
+      /*
+       * Haetaan lopullinen palvelintila, jotta kaikki
+       * hash rate- ja Boost-arvot ovat varmasti ajan tasalla.
+       */
+      await _loadMiningStatus();
+
+      if (mounted) {
+        _showMessage(
+          '🐾 ${_t('powerBoostActive')}',
+        );
       }
     } catch (e) {
       if (mounted) {
