@@ -905,12 +905,12 @@ class HomeAdManager extends ChangeNotifier {
   // 🖥️ FULL SCREEN CALLBACK
   // ============================================================
 
-  FullScreenContentCallback
+  FullScreenContentCallback<RewardedAd>
       _createFullScreenCallback({
     required String purpose,
     required bool isMining,
   }) {
-    return FullScreenContentCallback(
+    return FullScreenContentCallback<RewardedAd>(
       // ========================================================
       // SHOWN
       // ========================================================
@@ -943,7 +943,7 @@ class HomeAdManager extends ChangeNotifier {
       onAdDismissedFullScreenContent:
           (
         RewardedAd dismissedAd,
-      ) async {
+      ) {
         debugPrint(
           '==================================================',
         );
