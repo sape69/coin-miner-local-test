@@ -154,7 +154,8 @@ function validateAdMobTransactionId(
 
   if (
     transactionId.length === 0 ||
-    transactionId.length > 256
+    transactionId.length > 256 ||
+    transactionId.includes("/")
   ) {
     return "";
   }
@@ -169,9 +170,18 @@ function validateAdMobTransactionId(
 function getAdMobRewardRef(
   transactionId
 ) {
+  const safeTransactionId =
+    validateAdMobTransactionId(
+      transactionId
+    );
+
+  if (!safeTransactionId) {
+    return null;
+  }
+
   return db
     .collection("admobRewards")
-    .doc(transactionId);
+    .doc(safeTransactionId);
 }
 
 // ============================================================
@@ -273,12 +283,22 @@ function getRewardCreatedAtMs(
 }
 
 // ============================================================
-// 🔐 FIND VERIFIED ADMOB MINING START REWARD
+// 🔐 FIND VERIFIED ADMOB REWARD
+// ============================================================
+//
+// Tämä suorittaa yhden haun Firestoresta.
+//
+// TÄRKEÄÄ:
+// AdMob SSV voi saapua hieman myöhemmin kuin Flutterin
+// RewardedAd.onUserEarnedReward tapahtuma.
+//
+// Siksi tätä funktiota käytetään myös retry-loopin kautta.
 // ============================================================
 
-async function getVerifiedMiningStartReward(
-  transaction,
-  uid
+async function findVerifiedAdMobReward(
+  uid,
+  rewardPurpose,
+  claimedField
 ) {
   const rewardsQuery =
     db
@@ -296,27 +316,22 @@ async function getVerifiedMiningStartReward(
       .where(
         "rewardPurpose",
         "==",
-        "mining_start"
+        rewardPurpose
       )
       .where(
-        "miningStartClaimed",
+        claimedField,
         "==",
         false
       )
       .limit(20);
 
   const rewardSnapshot =
-    await transaction.get(
-      rewardsQuery
-    );
+    await rewardsQuery.get();
 
   if (
     rewardSnapshot.empty
   ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob-mainoksen vahvistusta ei löytynyt. Katso Mining Start -mainos loppuun ja odota hetki."
-    );
+    return null;
   }
 
   const candidates = [];
@@ -342,15 +357,34 @@ async function getVerifiedMiningStartReward(
 
       if (
         rewardData.rewardPurpose !==
-        "mining_start"
+        rewardPurpose
       ) {
         return;
       }
 
       if (
-        rewardData.miningClaimed === true ||
-        rewardData.miningStartClaimed === true ||
-        rewardData.miningStartClaimedAt
+        rewardData[claimedField] === true
+      ) {
+        return;
+      }
+
+      if (
+        rewardPurpose === "mining_start" &&
+        (
+          rewardData.miningClaimed === true ||
+          rewardData.miningStartClaimed === true ||
+          rewardData.miningStartClaimedAt
+        )
+      ) {
+        return;
+      }
+
+      if (
+        rewardPurpose === "power_boost" &&
+        (
+          rewardData.powerBoostClaimed === true ||
+          rewardData.powerBoostClaimedAt
+        )
       ) {
         return;
       }
@@ -369,6 +403,15 @@ async function getVerifiedMiningStartReward(
         return;
       }
 
+      const transactionId =
+        validateAdMobTransactionId(
+          doc.id
+        );
+
+      if (!transactionId) {
+        return;
+      }
+
       const createdAtMs =
         getRewardCreatedAtMs(
           rewardData
@@ -377,10 +420,7 @@ async function getVerifiedMiningStartReward(
       candidates.push({
         ref: doc.ref,
         data: rewardData,
-        transactionId:
-          validateAdMobTransactionId(
-            doc.id
-          ),
+        transactionId,
         createdAtMs,
       });
     }
@@ -389,10 +429,7 @@ async function getVerifiedMiningStartReward(
   if (
     candidates.length === 0
   ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 Kelvollista käyttämätöntä Mining Start -AdMob-palkintoa ei löytynyt."
-    );
+    return null;
   }
 
   candidates.sort(
@@ -404,193 +441,257 @@ async function getVerifiedMiningStartReward(
     }
   );
 
-  const selected =
-    candidates[0];
+  return candidates[0];
+}
 
-  if (
-    !selected.transactionId
+// ============================================================
+// 🔐 WAIT FOR VERIFIED ADMOB REWARD
+// ============================================================
+//
+// AdMob SSV ei välttämättä ehdi Firestoreen ennen kuin
+// Flutter kutsuu claimMining/powerBoost.
+//
+// Tämän vuoksi backend odottaa vahvistusta.
+//
+// Tarkistus:
+// - ensimmäinen heti
+// - sen jälkeen 2 sekunnin välein
+// - enintään 30 sekuntia
+//
+// Tämä poistaa kilpailutilanteen Flutter → AdMob SSV →
+// Firestore → Callable Function välillä.
+//
+// ============================================================
+
+const ADMOB_SSV_WAIT_TIMEOUT_MS =
+  30 * 1000;
+
+const ADMOB_SSV_POLL_INTERVAL_MS =
+  2 * 1000;
+
+async function waitForVerifiedAdMobReward(
+  uid,
+  rewardPurpose,
+  claimedField
+) {
+  const startedAt =
+    Date.now();
+
+  let attempt = 0;
+
+  while (
+    Date.now() -
+      startedAt <
+    ADMOB_SSV_WAIT_TIMEOUT_MS
   ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob-tapahtuman tunnistaminen epäonnistui."
+    attempt += 1;
+
+    const reward =
+      await findVerifiedAdMobReward(
+        uid,
+        rewardPurpose,
+        claimedField
+      );
+
+    if (reward) {
+      console.log(
+        "🐱 AdMob SSV reward found:",
+        {
+          uid,
+          rewardPurpose,
+          transactionId:
+            reward.transactionId,
+          attempt,
+        }
+      );
+
+      return reward;
+    }
+
+    const elapsedMs =
+      Date.now() -
+      startedAt;
+
+    if (
+      elapsedMs >=
+      ADMOB_SSV_WAIT_TIMEOUT_MS
+    ) {
+      break;
+    }
+
+    await new Promise(
+      (resolve) => {
+        setTimeout(
+          resolve,
+          ADMOB_SSV_POLL_INTERVAL_MS
+        );
+      }
     );
   }
 
-  return {
-    ref:
-      selected.ref,
+  console.warn(
+    "🐱 AdMob SSV reward was not found before timeout:",
+    {
+      uid,
+      rewardPurpose,
+      timeoutMs:
+        ADMOB_SSV_WAIT_TIMEOUT_MS,
+    }
+  );
 
-    data:
-      selected.data,
+  throw new HttpsError(
+    "failed-precondition",
+    rewardPurpose === "mining_start"
+      ? "🐱 AdMob-mainoksen vahvistusta ei vielä löytynyt. Katso Mining Start -mainos loppuun ja odota hetki."
+      : "🐱 Power Boost -mainoksen vahvistusta ei vielä löytynyt. Katso mainos loppuun ja odota hetki."
+  );
+}
 
-    transactionId:
-      selected.transactionId,
-  };
+// ============================================================
+// 🔐 VALIDATE VERIFIED REWARD DOCUMENT
+// ============================================================
+//
+// Reward haetaan ensin retry-loopilla.
+//
+// Tämän jälkeen sama dokumentti luetaan vielä Firestore
+// transactionin sisällä.
+//
+// Näin rewardin käyttäminen tapahtuu atomisesti.
+//
+// ============================================================
+
+function validateVerifiedRewardDocument(
+  rewardSnapshot,
+  uid,
+  rewardPurpose,
+  claimedField
+) {
+  if (
+    !rewardSnapshot.exists
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-palkintoa ei enää löytynyt."
+    );
+  }
+
+  const rewardData =
+    rewardSnapshot.data() || {};
+
+  if (
+    rewardData.uid !== uid
+  ) {
+    throw new HttpsError(
+      "permission-denied",
+      "🐱 AdMob-palkinnon käyttäjä ei täsmää."
+    );
+  }
+
+  if (
+    rewardData.rewardType !==
+    "admob"
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-palkinnon tyyppi ei ole kelvollinen."
+    );
+  }
+
+  if (
+    rewardData.rewardPurpose !==
+    rewardPurpose
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-palkinnon käyttötarkoitus ei täsmää."
+    );
+  }
+
+  if (
+    rewardData[claimedField] === true
+  ) {
+    throw new HttpsError(
+      "already-exists",
+      "🐱 Tämä AdMob-palkinto on jo käytetty."
+    );
+  }
+
+  if (
+    rewardPurpose === "mining_start" &&
+    (
+      rewardData.miningClaimed === true ||
+      rewardData.miningStartClaimed === true ||
+      rewardData.miningStartClaimedAt
+    )
+  ) {
+    throw new HttpsError(
+      "already-exists",
+      "🐱 Tämä Mining Start -palkinto on jo käytetty."
+    );
+  }
+
+  if (
+    rewardPurpose === "power_boost" &&
+    (
+      rewardData.powerBoostClaimed === true ||
+      rewardData.powerBoostClaimedAt
+    )
+  ) {
+    throw new HttpsError(
+      "already-exists",
+      "🐱 Tämä Power Boost -palkinto on jo käytetty."
+    );
+  }
+
+  if (
+    typeof rewardData.adUnit !== "string" ||
+    rewardData.adUnit.length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-mainoksen tunnistetiedot puuttuvat."
+    );
+  }
+
+  if (
+    typeof rewardData.rewardItem !== "string" ||
+    rewardData.rewardItem.length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-palkinnon tiedot puuttuvat."
+    );
+  }
+
+  return rewardData;
+}
+
+// ============================================================
+// 🔐 FIND VERIFIED ADMOB MINING START REWARD
+// ============================================================
+
+async function getVerifiedMiningStartReward(
+  uid
+) {
+  return waitForVerifiedAdMobReward(
+    uid,
+    "mining_start",
+    "miningStartClaimed"
+  );
 }
 
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB POWER BOOST REWARD
 // ============================================================
-//
-// Flutter ei lähetä transaction ID:tä.
-//
-// Palvelin etsii itse viimeisimmän:
-//
-//   rewardPurpose = power_boost
-//
-// -palkkion, jota ei ole vielä käytetty.
-//
-// ============================================================
 
 async function getVerifiedPowerBoostReward(
-  transaction,
   uid
 ) {
-  const rewardsQuery =
-    db
-      .collection("admobRewards")
-      .where(
-        "uid",
-        "==",
-        uid
-      )
-      .where(
-        "rewardType",
-        "==",
-        "admob"
-      )
-      .where(
-        "rewardPurpose",
-        "==",
-        "power_boost"
-      )
-      .where(
-        "powerBoostClaimed",
-        "==",
-        false
-      )
-      .limit(20);
-
-  const rewardSnapshot =
-    await transaction.get(
-      rewardsQuery
-    );
-
-  if (
-    rewardSnapshot.empty
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 Power Boost -mainoksen vahvistusta ei vielä löytynyt. Katso mainos loppuun ja odota hetki."
-    );
-  }
-
-  const candidates = [];
-
-  rewardSnapshot.forEach(
-    (doc) => {
-      const rewardData =
-        doc.data() || {};
-
-      if (
-        typeof rewardData.uid !== "string" ||
-        rewardData.uid !== uid
-      ) {
-        return;
-      }
-
-      if (
-        rewardData.rewardType !==
-        "admob"
-      ) {
-        return;
-      }
-
-      if (
-        rewardData.rewardPurpose !==
-        "power_boost"
-      ) {
-        return;
-      }
-
-      if (
-        rewardData.powerBoostClaimed === true ||
-        rewardData.powerBoostClaimedAt
-      ) {
-        return;
-      }
-
-      if (
-        typeof rewardData.adUnit !== "string" ||
-        rewardData.adUnit.length === 0
-      ) {
-        return;
-      }
-
-      if (
-        typeof rewardData.rewardItem !== "string" ||
-        rewardData.rewardItem.length === 0
-      ) {
-        return;
-      }
-
-      const createdAtMs =
-        getRewardCreatedAtMs(
-          rewardData
-        );
-
-      candidates.push({
-        ref: doc.ref,
-        data: rewardData,
-        transactionId:
-          validateAdMobTransactionId(
-            doc.id
-          ),
-        createdAtMs,
-      });
-    }
+  return waitForVerifiedAdMobReward(
+    uid,
+    "power_boost",
+    "powerBoostClaimed"
   );
-
-  if (
-    candidates.length === 0
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 Kelvollista käyttämätöntä Power Boost -AdMob-palkintoa ei löytynyt."
-    );
-  }
-
-  candidates.sort(
-    (a, b) => {
-      return (
-        b.createdAtMs -
-        a.createdAtMs
-      );
-    }
-  );
-
-  const selected =
-    candidates[0];
-
-  if (
-    !selected.transactionId
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 Power Boost -AdMob-tapahtuman tunnistaminen epäonnistui."
-    );
-  }
-
-  return {
-    ref:
-      selected.ref,
-
-    data:
-      selected.data,
-
-    transactionId:
-      selected.transactionId,
-  };
 }
 
 // ============================================================
@@ -1606,11 +1707,45 @@ const claimMining =
         const today =
           getUtcDateString();
 
+        // ======================================================
+        // 🔐 ODOTA ADMOB SSV -VAHVISTUSTA
+        // ======================================================
+
+        const verifiedReward =
+          await getVerifiedMiningStartReward(
+            uid
+          );
+
+        const verifiedRewardRef =
+          getAdMobRewardRef(
+            verifiedReward.transactionId
+          );
+
+        if (!verifiedRewardRef) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱 AdMob-tapahtuman tunnistaminen epäonnistui."
+          );
+        }
+
         return await db.runTransaction(
           async (transaction) => {
             const snapshot =
               await transaction.get(
                 userRef
+              );
+
+            const rewardSnapshot =
+              await transaction.get(
+                verifiedRewardRef
+              );
+
+            const rewardData =
+              validateVerifiedRewardDocument(
+                rewardSnapshot,
+                uid,
+                "mining_start",
+                "miningStartClaimed"
               );
 
             const data =
@@ -1640,6 +1775,10 @@ const claimMining =
                 },
                 now
               );
+
+            // ==================================================
+            // ⚠️ JOS MINING ON JO KÄYNNISSÄ
+            // ==================================================
 
             if (
               existingMiningStatus.miningActive
@@ -1694,16 +1833,13 @@ const claimMining =
                     )
                   ),
 
+                adRewardTransactionId:
+                  verifiedReward.transactionId,
+
                 message:
                   "🐱⛏️ Stella louhii jo STL:ää!",
               };
             }
-
-            const verifiedReward =
-              await getVerifiedMiningStartReward(
-                transaction,
-                uid
-              );
 
             const dailyClaim =
               calculateNextDailyClaim(
@@ -1896,8 +2032,12 @@ const claimMining =
               }
             );
 
+            // ==================================================
+            // 🔐 KULUTA ADMOB MINING START -PALKKIO
+            // ==================================================
+
             transaction.set(
-              verifiedReward.ref,
+              verifiedRewardRef,
               {
                 miningClaimed:
                   true,
@@ -2169,17 +2309,15 @@ const claimMining =
 // ⚡ POWER BOOST
 // ============================================================
 //
-// Mainos itsessään näytetään Flutterissa.
+// Mainos näytetään Flutterissa.
 //
-// Kun käyttäjä saa RewardedAd-palkkion:
-//
-//   AdMob SSV
-//        ↓
-//   admobRewards/{transactionId}
-//        ↓
-//   powerBoost()
-//        ↓
-//   4 h Power Boost
+// AdMob SSV
+//      ↓
+// admobRewards/{transactionId}
+//      ↓
+// powerBoost()
+//      ↓
+// 4 h Power Boost
 //
 // ============================================================
 
@@ -2217,6 +2355,27 @@ const powerBoost =
           getUtcDateString();
 
         // ======================================================
+        // 🔐 ODOTA ADMOB SSV -VAHVISTUSTA
+        // ======================================================
+
+        const verifiedReward =
+          await getVerifiedPowerBoostReward(
+            uid
+          );
+
+        const verifiedRewardRef =
+          getAdMobRewardRef(
+            verifiedReward.transactionId
+          );
+
+        if (!verifiedRewardRef) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱 Power Boost -AdMob-tapahtuman tunnistaminen epäonnistui."
+          );
+        }
+
+        // ======================================================
         // 🔥 FIRESTORE TRANSACTION
         // ======================================================
 
@@ -2229,6 +2388,19 @@ const powerBoost =
             const userSnapshot =
               await transaction.get(
                 userRef
+              );
+
+            const rewardSnapshot =
+              await transaction.get(
+                verifiedRewardRef
+              );
+
+            const rewardData =
+              validateVerifiedRewardDocument(
+                rewardSnapshot,
+                uid,
+                "power_boost",
+                "powerBoostClaimed"
               );
 
             const userData =
@@ -2287,16 +2459,6 @@ const powerBoost =
                 "🐱 Power Boost ei ole vielä valmis käytettäväksi uudelleen."
               );
             }
-
-            // ==================================================
-            // 🔐 FIND VERIFIED ADMOB REWARD
-            // ==================================================
-
-            const verifiedReward =
-              await getVerifiedPowerBoostReward(
-                transaction,
-                uid
-              );
 
             // ==================================================
             // 🕒 BOOST TIME
@@ -2371,7 +2533,7 @@ const powerBoost =
             // ==================================================
 
             transaction.set(
-              verifiedReward.ref,
+              verifiedRewardRef,
               {
                 powerBoostClaimed:
                   true,
