@@ -15,37 +15,23 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //   ⛏️ mining_start
 //   ⚡ power_boost
 //
-// TÄRKEÄ MUUTOS:
-//
-// Mining ja Power Boost käyttävät nyt täysin erillisiä
-// RewardedAd-instansseja.
-//
-// Tämä estää tilanteen, jossa yhden mainoksen lataaminen,
-// näyttäminen tai vaihtaminen sotkee toisen mainoksen.
-//
-// AdMob Ad Unit ID:t voidaan myös erottaa toisistaan.
+// Mining ja Power Boost käyttävät erillisiä RewardedAd-
+// instansseja ja erillisiä AdMob Ad Unit ID:itä.
 //
 // ============================================================
 
 class HomeAdManager extends ChangeNotifier {
   // ============================================================
-  // 📺 PRODUCTION ADMOB
+  // ⛏️ MINING ADMOB
   // ============================================================
 
-  // Nykyinen toimiva Mining Rewarded Ad Unit.
   static const String miningRewardedAdUnitId =
-      'ca-app-pub-1131012057145658/7225738491';
+      'ca-app-pub-1131012057145658/6674097787';
 
-  // ------------------------------------------------------------
+  // ============================================================
   // ⚡ POWER BOOST ADMOB
-  // ------------------------------------------------------------
-  //
-  // Aluksi käytetään samaa olemassa olevaa Ad Unit ID:tä,
-  // jotta sovellus toimii heti.
-  //
-  // Kun AdMobiin tehdään oma Power Boost Rewarded Ad Unit,
-  // vaihda TÄMÄN yhden rivin arvo uuden Ad Unit ID:n arvoksi.
-  //
+  // ============================================================
+
   static const String powerBoostRewardedAdUnitId =
       'ca-app-pub-1131012057145658/7225738491';
 
@@ -179,7 +165,7 @@ class HomeAdManager extends ChangeNotifier {
       _powerBoostAdLoadError;
 
   // ------------------------------------------------------------
-  // 🔒 FLOWS
+  // 🔒 FLOW STATE
   // ------------------------------------------------------------
 
   bool get miningAdFlowActive =>
@@ -189,14 +175,8 @@ class HomeAdManager extends ChangeNotifier {
       _powerBoostAdFlowActive;
 
   // ------------------------------------------------------------
-  // LEGACY / GENERAL GETTERS
+  // GENERAL GETTERS
   // ------------------------------------------------------------
-  //
-  // Säilytetään nämä, jotta HomePage ei tarvitse muutoksia
-  // tässä vaiheessa.
-  //
-  // Näyttävät aktiivisen mainosvirran tilanteen.
-  //
 
   RewardedAd? get rewardedAd {
     if (_miningAdFlowActive) {
@@ -1421,7 +1401,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🧹 CLEAR CURRENT AD
+  // 🧹 CLEAR CURRENT ADS
   // ============================================================
 
   void clearCurrentAd() {
