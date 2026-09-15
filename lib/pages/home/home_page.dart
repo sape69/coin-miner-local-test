@@ -36,22 +36,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  // ============================================================
-  // THEME
-  // ============================================================
-
   static const Color backgroundColor = Color(0xFF120B24);
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
   static const Color pinkColor = Color(0xFFFFB7E8);
-
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
-
-  // ============================================================
-  // MINING CONFIG
-  // ============================================================
 
   static const double defaultAdHashRateBonus = 0.5833;
   static const int defaultMaxAdsPerDay = 6;
@@ -65,20 +56,12 @@ class _HomePageState extends State<HomePage>
   static const int defaultMiningDurationMs =
       24 * 60 * 60 * 1000;
 
-  // ============================================================
-  // FIREBASE
-  // ============================================================
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(
     region: 'us-central1',
   );
-
-  // ============================================================
-  // STATE
-  // ============================================================
 
   bool _loading = true;
   bool _actionLoading = false;
@@ -112,12 +95,7 @@ class _HomePageState extends State<HomePage>
   Timer? _refreshTimer;
 
   late final AnimationController _catAnimation;
-
   late final HomeAdManager _adManager;
-
-  // ============================================================
-  // LIFECYCLE
-  // ============================================================
 
   @override
   void initState() {
@@ -158,15 +136,10 @@ class _HomePageState extends State<HomePage>
     );
 
     _adManager.dispose();
-
     _catAnimation.dispose();
 
     super.dispose();
   }
-
-  // ============================================================
-  // INITIALIZATION
-  // ============================================================
 
   Future<void> _initialize() async {
     try {
@@ -222,7 +195,7 @@ class _HomePageState extends State<HomePage>
         }
       }
     } catch (_) {
-      // Firebase Auth toimii varavaihtoehtona.
+      // Käytetään Firebase Auth -nimeä varavaihtoehtona.
     }
 
     final String displayName =
@@ -234,10 +207,6 @@ class _HomePageState extends State<HomePage>
       });
     }
   }
-
-  // ============================================================
-  // MINING STATUS
-  // ============================================================
 
   Future<void> _loadMiningStatus() async {
     final User? user = _auth.currentUser;
@@ -343,13 +312,9 @@ class _HomePageState extends State<HomePage>
 
       setState(() {
         _miningActive = miningActive;
-
         _hashRate = hashRate;
-
         _unclaimedMining = unclaimed;
-
         _estimatedTotal = total;
-
         _miningDurationMs = safeDuration;
 
         _miningRemainingMs =
@@ -372,13 +337,9 @@ class _HomePageState extends State<HomePage>
         );
 
         _maxAdsPerDay = maxAds;
-
         _adHashRateBonus = adBonus;
-
         _adCooldownMs = cooldown;
-
         _boostActive = boostActive;
-
         _boostRemainingMs = boostRemaining;
       });
 
@@ -393,10 +354,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  // ============================================================
-  // REFRESH TIMER
-  // ============================================================
-
   void _startRefreshTimer() {
     _refreshTimer?.cancel();
 
@@ -409,10 +366,6 @@ class _HomePageState extends State<HomePage>
       },
     );
   }
-
-  // ============================================================
-  // MINING TIMER
-  // ============================================================
 
   void _startMiningTimer() {
     _miningTimer?.cancel();
@@ -451,10 +404,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // BOOST TIMER
-  // ============================================================
-
   void _startBoostTimer() {
     _boostTimer?.cancel();
 
@@ -486,10 +435,6 @@ class _HomePageState extends State<HomePage>
       },
     );
   }
-
-  // ============================================================
-  // MINING START
-  // ============================================================
 
   Future<void> _startMining() async {
     if (_actionLoading || _miningActive) {
@@ -529,10 +474,6 @@ class _HomePageState extends State<HomePage>
       }
     }
   }
-
-  // ============================================================
-  // MINING START AFTER AD
-  // ============================================================
 
   Future<void> _startMiningAfterAd() async {
     if (!mounted) {
@@ -609,7 +550,6 @@ class _HomePageState extends State<HomePage>
 
           setState(() {
             _miningActive = true;
-
             _streak = streak.clamp(1, 7);
 
             _dailyHashRate =
@@ -642,10 +582,6 @@ class _HomePageState extends State<HomePage>
       }
     }
   }
-
-  // ============================================================
-  // POWER BOOST
-  // ============================================================
 
   Future<void> _watchAd() async {
     if (_actionLoading) {
@@ -688,10 +624,6 @@ class _HomePageState extends State<HomePage>
       }
     }
   }
-
-  // ============================================================
-  // POWER BOOST BACKEND VERIFICATION
-  // ============================================================
 
   Future<void> _waitForServerSidePowerBoost() async {
     try {
@@ -738,7 +670,6 @@ class _HomePageState extends State<HomePage>
             if (mounted) {
               setState(() {
                 _boostActive = active;
-
                 _boostRemainingMs = remaining;
 
                 final int? ads =
@@ -797,10 +728,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  // ============================================================
-  // ADMOB CALLBACKS
-  // ============================================================
-
   void _onAdManagerChanged() {
     if (!mounted) {
       return;
@@ -852,14 +779,8 @@ class _HomePageState extends State<HomePage>
   void _handleAdDismissed(
     String purpose,
   ) {
-    // Reward callback käsittelee tarvittaessa
-    // backend-vahvistuksen ennen lataustilan
-    // vapauttamista.
+    // Reward callback käsittelee backend-vahvistuksen.
   }
-
-  // ============================================================
-  // DRAWER
-  // ============================================================
 
   Future<void> _logout() async {
     try {
@@ -929,10 +850,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // LANGUAGE
-  // ============================================================
-
   Future<void> _showLanguageDialog() async {
     final Map<String, String> languages =
         AppLocalizations.supportedLanguages;
@@ -999,10 +916,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // CAT FACT
-  // ============================================================
-
   Widget _buildDailyCatFact() {
     final String fact =
         CatFacts.getDailyFact(
@@ -1015,10 +928,6 @@ class _HomePageState extends State<HomePage>
       fact: fact,
     );
   }
-
-  // ============================================================
-  // STELLA MINING CARD
-  // ============================================================
 
   Widget _buildStellaMiningCard() {
     return StellaMiningCard(
@@ -1062,10 +971,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // STATS CARD
-  // ============================================================
-
   Widget _buildStatsRow() {
     return HomeStatsCard(
       hashRateTitle:
@@ -1082,10 +987,6 @@ class _HomePageState extends State<HomePage>
       )} STL',
     );
   }
-
-  // ============================================================
-  // POWER BOOST CARD
-  // ============================================================
 
   Widget _buildAdButton() {
     final bool canUse =
@@ -1140,10 +1041,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // HEADER
-  // ============================================================
-
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -1190,10 +1087,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // GREETING
-  // ============================================================
-
   Widget _buildGreeting() {
     final String greeting =
         _username.isEmpty
@@ -1237,10 +1130,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // START MINING BUTTON
-  // ============================================================
-
   Widget _buildMiningButton() {
     final bool disabled =
         _actionLoading ||
@@ -1270,8 +1159,7 @@ class _HomePageState extends State<HomePage>
               alpha: 0.35,
             ),
             disabledForegroundColor:
-                primaryTextColor
-                    .withValues(
+                primaryTextColor.withValues(
               alpha: 0.6,
             ),
             elevation: 0,
@@ -1320,8 +1208,7 @@ class _HomePageState extends State<HomePage>
                               const TextStyle(
                             fontSize: 17,
                             fontWeight:
-                                FontWeight
-                                    .bold,
+                                FontWeight.bold,
                           ),
                         ),
                       ],
@@ -1330,10 +1217,6 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
-
-  // ============================================================
-  // FOOTER
-  // ============================================================
 
   Widget _buildFooter() {
     return Padding(
@@ -1356,7 +1239,8 @@ class _HomePageState extends State<HomePage>
           ),
           const Text(
             'Stelluriini (STL)',
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: TextStyle(
               color: primaryTextColor,
               fontWeight:
@@ -1370,7 +1254,8 @@ class _HomePageState extends State<HomePage>
             _t(
               'stelluriiniStlSolanaFooter',
             ),
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 12,
@@ -1381,10 +1266,6 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
 
   @override
   Widget build(
@@ -1523,10 +1404,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // CALCULATED VALUES
-  // ============================================================
-
   double get _effectiveHashRate {
     if (_boostActive) {
       return _hashRate +
@@ -1557,10 +1434,6 @@ class _HomePageState extends State<HomePage>
 
     return true;
   }
-
-  // ============================================================
-  // HELPERS
-  // ============================================================
 
   double _calculateDailyHashRate(
     int streak,
@@ -1680,14 +1553,8 @@ class _HomePageState extends State<HomePage>
 
     return localizations.t(
       key,
-      languageCode:
-          widget.languageCode,
     );
   }
-
-  // ============================================================
-  // CONVERSION HELPERS
-  // ============================================================
 
   double? _asDouble(
     dynamic value,
@@ -1754,10 +1621,6 @@ class _HomePageState extends State<HomePage>
     return null;
   }
 
-  // ============================================================
-  // SNACKBAR
-  // ============================================================
-
   void _showMessage(
     String message,
   ) {
@@ -1781,15 +1644,11 @@ class _HomePageState extends State<HomePage>
           behavior:
               SnackBarBehavior.floating,
           margin:
-              const EdgeInsets.all(
-            16,
-          ),
+              const EdgeInsets.all(16),
           shape:
               RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(
-              14,
-            ),
+                BorderRadius.circular(14),
           ),
         ),
       );
