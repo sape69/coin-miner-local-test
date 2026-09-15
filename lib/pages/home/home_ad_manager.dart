@@ -10,13 +10,20 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //
 // Hallitsee HomePagen Rewarded-mainoksia.
 //
-// Tarkoitukset:
+// Käyttötarkoitukset:
 //
-//   mining_start
-//   power_boost
+//   ⛏️ mining_start
+//   ⚡ power_boost
 //
-// Molemmat käyttävät samaa tuotannon Rewarded Ad Unit ID:tä,
-// mutta SSV customData erottaa käyttötarkoitukset.
+// TÄRKEÄ MUUTOS:
+//
+// Mining ja Power Boost käyttävät nyt täysin erillisiä
+// RewardedAd-instansseja.
+//
+// Tämä estää tilanteen, jossa yhden mainoksen lataaminen,
+// näyttäminen tai vaihtaminen sotkee toisen mainoksen.
+//
+// AdMob Ad Unit ID:t voidaan myös erottaa toisistaan.
 //
 // ============================================================
 
@@ -25,7 +32,21 @@ class HomeAdManager extends ChangeNotifier {
   // 📺 PRODUCTION ADMOB
   // ============================================================
 
-  static const String rewardedAdUnitId =
+  // Nykyinen toimiva Mining Rewarded Ad Unit.
+  static const String miningRewardedAdUnitId =
+      'ca-app-pub-1131012057145658/7225738491';
+
+  // ------------------------------------------------------------
+  // ⚡ POWER BOOST ADMOB
+  // ------------------------------------------------------------
+  //
+  // Aluksi käytetään samaa olemassa olevaa Ad Unit ID:tä,
+  // jotta sovellus toimii heti.
+  //
+  // Kun AdMobiin tehdään oma Power Boost Rewarded Ad Unit,
+  // vaihda TÄMÄN yhden rivin arvo uuden Ad Unit ID:n arvoksi.
+  //
+  static const String powerBoostRewardedAdUnitId =
       'ca-app-pub-1131012057145658/7225738491';
 
   // ============================================================
@@ -68,19 +89,28 @@ class HomeAdManager extends ChangeNotifier {
   )? onAdDismissed;
 
   // ============================================================
-  // 📺 CURRENT AD
+  // ⛏️ MINING REWARDED AD
   // ============================================================
 
-  RewardedAd? _rewardedAd;
+  RewardedAd? _miningRewardedAd;
 
-  bool _adReady = false;
+  bool _miningAdReady = false;
 
-  bool _adLoading = false;
+  bool _miningAdLoading = false;
 
-  String _rewardedAdPurpose =
-      powerBoostPurpose;
+  String _miningAdLoadError = '';
 
-  String _adLoadError = '';
+  // ============================================================
+  // ⚡ POWER BOOST REWARDED AD
+  // ============================================================
+
+  RewardedAd? _powerBoostRewardedAd;
+
+  bool _powerBoostAdReady = false;
+
+  bool _powerBoostAdLoading = false;
+
+  String _powerBoostAdLoadError = '';
 
   // ============================================================
   // 🔒 FLOW STATE
@@ -96,7 +126,9 @@ class HomeAdManager extends ChangeNotifier {
 
   bool _disposed = false;
 
-  int _loadRequestId = 0;
+  int _miningLoadRequestId = 0;
+
+  int _powerBoostLoadRequestId = 0;
 
   // ============================================================
   // CONSTRUCTOR
@@ -114,26 +146,113 @@ class HomeAdManager extends ChangeNotifier {
   // PUBLIC GETTERS
   // ============================================================
 
-  RewardedAd? get rewardedAd =>
-      _rewardedAd;
+  // ------------------------------------------------------------
+  // ⛏️ MINING
+  // ------------------------------------------------------------
 
-  bool get adReady =>
-      _adReady;
+  RewardedAd? get miningRewardedAd =>
+      _miningRewardedAd;
 
-  bool get adLoading =>
-      _adLoading;
+  bool get miningAdReady =>
+      _miningAdReady;
 
-  String get rewardedAdPurpose =>
-      _rewardedAdPurpose;
+  bool get miningAdLoading =>
+      _miningAdLoading;
 
-  String get adLoadError =>
-      _adLoadError;
+  String get miningAdLoadError =>
+      _miningAdLoadError;
+
+  // ------------------------------------------------------------
+  // ⚡ POWER BOOST
+  // ------------------------------------------------------------
+
+  RewardedAd? get powerBoostRewardedAd =>
+      _powerBoostRewardedAd;
+
+  bool get powerBoostAdReady =>
+      _powerBoostAdReady;
+
+  bool get powerBoostAdLoading =>
+      _powerBoostAdLoading;
+
+  String get powerBoostAdLoadError =>
+      _powerBoostAdLoadError;
+
+  // ------------------------------------------------------------
+  // 🔒 FLOWS
+  // ------------------------------------------------------------
 
   bool get miningAdFlowActive =>
       _miningAdFlowActive;
 
   bool get powerBoostAdFlowActive =>
       _powerBoostAdFlowActive;
+
+  // ------------------------------------------------------------
+  // LEGACY / GENERAL GETTERS
+  // ------------------------------------------------------------
+  //
+  // Säilytetään nämä, jotta HomePage ei tarvitse muutoksia
+  // tässä vaiheessa.
+  //
+  // Näyttävät aktiivisen mainosvirran tilanteen.
+  //
+
+  RewardedAd? get rewardedAd {
+    if (_miningAdFlowActive) {
+      return _miningRewardedAd;
+    }
+
+    if (_powerBoostAdFlowActive) {
+      return _powerBoostRewardedAd;
+    }
+
+    if (_miningAdReady) {
+      return _miningRewardedAd;
+    }
+
+    return _powerBoostRewardedAd;
+  }
+
+  bool get adReady =>
+      _miningAdReady ||
+      _powerBoostAdReady;
+
+  bool get adLoading =>
+      _miningAdLoading ||
+      _powerBoostAdLoading;
+
+  String get rewardedAdPurpose {
+    if (_miningAdFlowActive ||
+        _miningAdReady ||
+        _miningAdLoading) {
+      return miningStartPurpose;
+    }
+
+    if (_powerBoostAdFlowActive ||
+        _powerBoostAdReady ||
+        _powerBoostAdLoading) {
+      return powerBoostPurpose;
+    }
+
+    return powerBoostPurpose;
+  }
+
+  String get adLoadError {
+    if (_miningAdFlowActive ||
+        _miningAdReady ||
+        _miningAdLoading) {
+      return _miningAdLoadError;
+    }
+
+    if (_powerBoostAdFlowActive ||
+        _powerBoostAdReady ||
+        _powerBoostAdLoading) {
+      return _powerBoostAdLoadError;
+    }
+
+    return '';
+  }
 
   // ============================================================
   // SAFE NOTIFY
@@ -148,7 +267,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // WAIT FOR AD
+  // ⏳ WAIT FOR REWARDED AD
   // ============================================================
 
   Future<bool> waitForRewardedAd({
@@ -158,79 +277,149 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    if (_rewardedAd != null &&
-        _adReady &&
-        _rewardedAdPurpose == purpose) {
-      debugPrint(
-        'Rewarded ad already ready: $purpose',
-      );
+    // ==========================================================
+    // ⛏️ MINING
+    // ==========================================================
 
-      return true;
-    }
-
-    if (_rewardedAd != null &&
-        _rewardedAdPurpose != purpose) {
-      _disposeCurrentAd();
-    }
-
-    if (!_adLoading) {
-      await loadRewardedAd(
-        purpose: purpose,
-      );
-    }
-
-    const int maxWaitChecks = 150;
-
-    const Duration checkInterval =
-        Duration(
-      milliseconds: 200,
-    );
-
-    for (
-      int check = 0;
-      check < maxWaitChecks;
-      check++
-    ) {
-      if (_disposed) {
-        return false;
-      }
-
-      if (_rewardedAd != null &&
-          _adReady &&
-          _rewardedAdPurpose == purpose) {
+    if (purpose == miningStartPurpose) {
+      if (_miningRewardedAd != null &&
+          _miningAdReady) {
         debugPrint(
-          'Rewarded ad became ready: $purpose',
+          'Mining rewarded ad already ready.',
         );
 
         return true;
       }
 
-      if (!_adLoading) {
-        break;
+      if (!_miningAdLoading) {
+        await loadRewardedAd(
+          purpose: purpose,
+        );
       }
 
-      await Future<void>.delayed(
-        checkInterval,
+      const int maxWaitChecks = 150;
+
+      const Duration checkInterval =
+          Duration(
+        milliseconds: 200,
       );
+
+      for (
+        int check = 0;
+        check < maxWaitChecks;
+        check++
+      ) {
+        if (_disposed) {
+          return false;
+        }
+
+        if (_miningRewardedAd != null &&
+            _miningAdReady) {
+          debugPrint(
+            'Mining rewarded ad became ready.',
+          );
+
+          return true;
+        }
+
+        if (!_miningAdLoading) {
+          break;
+        }
+
+        await Future<void>.delayed(
+          checkInterval,
+        );
+      }
+
+      final bool ready =
+          !_disposed &&
+          _miningRewardedAd != null &&
+          _miningAdReady;
+
+      debugPrint(
+        'Mining rewarded ad wait finished. '
+        'Ready: $ready',
+      );
+
+      return ready;
     }
 
-    final bool ready =
-        !_disposed &&
-        _rewardedAd != null &&
-        _adReady &&
-        _rewardedAdPurpose == purpose;
+    // ==========================================================
+    // ⚡ POWER BOOST
+    // ==========================================================
+
+    if (purpose == powerBoostPurpose) {
+      if (_powerBoostRewardedAd != null &&
+          _powerBoostAdReady) {
+        debugPrint(
+          'Power Boost rewarded ad already ready.',
+        );
+
+        return true;
+      }
+
+      if (!_powerBoostAdLoading) {
+        await loadRewardedAd(
+          purpose: purpose,
+        );
+      }
+
+      const int maxWaitChecks = 150;
+
+      const Duration checkInterval =
+          Duration(
+        milliseconds: 200,
+      );
+
+      for (
+        int check = 0;
+        check < maxWaitChecks;
+        check++
+      ) {
+        if (_disposed) {
+          return false;
+        }
+
+        if (_powerBoostRewardedAd != null &&
+            _powerBoostAdReady) {
+          debugPrint(
+            'Power Boost rewarded ad became ready.',
+          );
+
+          return true;
+        }
+
+        if (!_powerBoostAdLoading) {
+          break;
+        }
+
+        await Future<void>.delayed(
+          checkInterval,
+        );
+      }
+
+      final bool ready =
+          !_disposed &&
+          _powerBoostRewardedAd != null &&
+          _powerBoostAdReady;
+
+      debugPrint(
+        'Power Boost rewarded ad wait finished. '
+        'Ready: $ready',
+      );
+
+      return ready;
+    }
 
     debugPrint(
-      'Rewarded ad wait finished. '
-      'Purpose: $purpose '
-      'Ready: $ready',
+      'Unknown rewarded ad purpose: $purpose',
     );
 
-    return ready;
+    return false;
   }
 
   // ============================================================
-  // LOAD REWARDED AD
+  // 📺 LOAD REWARDED AD
   // ============================================================
 
   Future<void> loadRewardedAd({
@@ -240,20 +429,43 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    if (_rewardedAd != null &&
-        _adReady &&
-        _rewardedAdPurpose == purpose) {
+    if (purpose == miningStartPurpose) {
+      await _loadMiningRewardedAd();
+      return;
+    }
+
+    if (purpose == powerBoostPurpose) {
+      await _loadPowerBoostRewardedAd();
+      return;
+    }
+
+    debugPrint(
+      'Cannot load rewarded ad. '
+      'Unknown purpose: $purpose',
+    );
+  }
+
+  // ============================================================
+  // ⛏️ LOAD MINING AD
+  // ============================================================
+
+  Future<void> _loadMiningRewardedAd() async {
+    if (_disposed) {
+      return;
+    }
+
+    if (_miningRewardedAd != null &&
+        _miningAdReady) {
       debugPrint(
-        'Rewarded ad already ready: $purpose',
+        'Mining rewarded ad already ready.',
       );
 
       return;
     }
 
-    if (_adLoading) {
+    if (_miningAdLoading) {
       debugPrint(
-        'Rewarded ad loading already in progress. '
-        'Requested purpose: $purpose',
+        'Mining rewarded ad loading already in progress.',
       );
 
       return;
@@ -264,30 +476,28 @@ class HomeAdManager extends ChangeNotifier {
 
     if (user == null) {
       debugPrint(
-        'Cannot load rewarded ad: '
+        'Cannot load Mining rewarded ad: '
         'no authenticated Firebase user.',
       );
 
-      _adLoading = false;
-      _adReady = false;
-      _adLoadError = 'NO_AUTH_USER';
+      _miningAdLoading = false;
+      _miningAdReady = false;
+      _miningAdLoadError =
+          'NO_AUTH_USER';
 
       _notify();
 
       return;
     }
 
-    if (_rewardedAd != null) {
-      _disposeCurrentAd();
-    }
+    _disposeMiningAd();
 
     final int requestId =
-        ++_loadRequestId;
+        ++_miningLoadRequestId;
 
-    _adLoading = true;
-    _adReady = false;
-    _adLoadError = '';
-    _rewardedAdPurpose = purpose;
+    _miningAdLoading = true;
+    _miningAdReady = false;
+    _miningAdLoadError = '';
 
     _notify();
 
@@ -296,15 +506,15 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     debugPrint(
-      'STELLURIINI ADMOB LOAD START',
+      'STELLURIINI MINING ADMOB LOAD START',
     );
 
     debugPrint(
-      'AD UNIT: $rewardedAdUnitId',
+      'AD UNIT: $miningRewardedAdUnitId',
     );
 
     debugPrint(
-      'Purpose: $purpose',
+      'Purpose: $miningStartPurpose',
     );
 
     debugPrint(
@@ -316,14 +526,12 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
-      request: const AdRequest(),
+      adUnitId:
+          miningRewardedAdUnitId,
+      request:
+          const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        // ======================================================
-        // ✅ LOADED
-        // ======================================================
-
         onAdLoaded: (
           RewardedAd ad,
         ) {
@@ -332,9 +540,10 @@ class HomeAdManager extends ChangeNotifier {
             return;
           }
 
-          if (requestId != _loadRequestId) {
+          if (requestId !=
+              _miningLoadRequestId) {
             debugPrint(
-              'Ignoring stale rewarded ad callback.',
+              'Ignoring stale Mining rewarded ad callback.',
             );
 
             ad.dispose();
@@ -346,11 +555,11 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI ADMOB LOAD SUCCESS',
+            'STELLURIINI MINING ADMOB LOAD SUCCESS',
           );
 
           debugPrint(
-            'Purpose: $purpose',
+            'Purpose: $miningStartPurpose',
           );
 
           debugPrint(
@@ -362,7 +571,7 @@ class HomeAdManager extends ChangeNotifier {
                 serverSideOptions =
                 ServerSideVerificationOptions(
               customData:
-                  '${user.uid}:$purpose',
+                  '${user.uid}:$miningStartPurpose',
             );
 
             ad.setServerSideOptions(
@@ -370,16 +579,16 @@ class HomeAdManager extends ChangeNotifier {
             );
           } catch (error) {
             debugPrint(
-              'AdMob SSV setup failed: $error',
+              'Mining SSV setup failed: $error',
             );
 
             ad.dispose();
 
-            _rewardedAd = null;
-            _adReady = false;
-            _adLoading = false;
+            _miningRewardedAd = null;
+            _miningAdReady = false;
+            _miningAdLoading = false;
 
-            _adLoadError =
+            _miningAdLoadError =
                 'SSV_SETUP_FAILED: $error';
 
             _notify();
@@ -387,182 +596,23 @@ class HomeAdManager extends ChangeNotifier {
             return;
           }
 
-          _rewardedAd = ad;
+          _miningRewardedAd = ad;
 
-          _rewardedAdPurpose =
-              purpose;
+          _miningAdReady = true;
 
-          _adReady = true;
+          _miningAdLoading = false;
 
-          _adLoading = false;
-
-          _adLoadError = '';
-
-          // ====================================================
-          // FULL SCREEN CALLBACKS
-          // ====================================================
+          _miningAdLoadError = '';
 
           ad.fullScreenContentCallback =
-              FullScreenContentCallback(
-            // --------------------------------------------------
-            // SHOWN
-            // --------------------------------------------------
-
-            onAdShowedFullScreenContent:
-                (
-              RewardedAd showedAd,
-            ) {
-              debugPrint(
-                '==================================================',
-              );
-
-              debugPrint(
-                'STELLURIINI ADMOB SHOWN',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                '==================================================',
-              );
-            },
-
-            // --------------------------------------------------
-            // DISMISSED
-            // --------------------------------------------------
-
-            onAdDismissedFullScreenContent:
-                (
-              RewardedAd dismissedAd,
-            ) async {
-              debugPrint(
-                '==================================================',
-              );
-
-              debugPrint(
-                'STELLURIINI ADMOB DISMISSED',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                '==================================================',
-              );
-
-              dismissedAd.dispose();
-
-              if (identical(
-                _rewardedAd,
-                dismissedAd,
-              )) {
-                _rewardedAd = null;
-                _adReady = false;
-              }
-
-              _finishFlow(
-                purpose,
-              );
-
-              _notify();
-
-              onAdDismissed?.call(
-                purpose,
-              );
-
-              // ------------------------------------------------
-              // HUOMIO:
-              //
-              // Normaali RewardedAd-polku kutsuu palkkiokäsittelyn
-              // onUserEarnedReward-callbackissa.
-              //
-              // Jos callback ei jostain syystä saavu ennen
-              // mainoksen sulkemista, emme tässä kohtaa voi
-              // turvallisesti antaa palkkiota suoraan.
-              //
-              // Firebase SSV toimii lopullisena vahvistuksena.
-              //
-              // Siksi emme kutsu callbackia automaattisesti tässä.
-              //
-              // ------------------------------------------------
-            },
-
-            // --------------------------------------------------
-            // SHOW FAILED
-            // --------------------------------------------------
-
-            onAdFailedToShowFullScreenContent:
-                (
-              RewardedAd failedAd,
-              AdError error,
-            ) {
-              debugPrint(
-                '==================================================',
-              );
-
-              debugPrint(
-                'STELLURIINI ADMOB SHOW FAILED',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                'Code: ${error.code}',
-              );
-
-              debugPrint(
-                'Domain: ${error.domain}',
-              );
-
-              debugPrint(
-                'Message: ${error.message}',
-              );
-
-              debugPrint(
-                '==================================================',
-              );
-
-              failedAd.dispose();
-
-              if (identical(
-                _rewardedAd,
-                failedAd,
-              )) {
-                _rewardedAd = null;
-                _adReady = false;
-              }
-
-              _finishFlow(
-                purpose,
-              );
-
-              _adLoadError =
-                  'SHOW_FAILED | '
-                  'Code: ${error.code} | '
-                  'Domain: ${error.domain} | '
-                  'Message: ${error.message}';
-
-              _notify();
-
-              onAdShowError?.call(
-                purpose,
-                error,
-              );
-            },
+              _createFullScreenCallback(
+            purpose:
+                miningStartPurpose,
+            isMining: true,
           );
 
           _notify();
         },
-
-        // ======================================================
-        // ❌ LOAD FAILED
-        // ======================================================
-
         onAdFailedToLoad: (
           LoadAdError error,
         ) {
@@ -570,7 +620,8 @@ class HomeAdManager extends ChangeNotifier {
             return;
           }
 
-          if (requestId != _loadRequestId) {
+          if (requestId !=
+              _miningLoadRequestId) {
             return;
           }
 
@@ -579,11 +630,11 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI ADMOB LOAD FAILED',
+            'STELLURIINI MINING ADMOB LOAD FAILED',
           );
 
           debugPrint(
-            'Purpose: $purpose',
+            'Purpose: $miningStartPurpose',
           );
 
           debugPrint(
@@ -606,33 +657,440 @@ class HomeAdManager extends ChangeNotifier {
             '==================================================',
           );
 
-          _rewardedAd = null;
+          _miningRewardedAd = null;
 
-          _adReady = false;
+          _miningAdReady = false;
 
-          _adLoading = false;
+          _miningAdLoading = false;
 
-          _adLoadError =
+          _miningAdLoadError =
               'Code: ${error.code} | '
               'Domain: ${error.domain} | '
               'Message: ${error.message}';
 
           _finishFlow(
-            purpose,
+            miningStartPurpose,
           );
 
           _notify();
 
           onAdLoadError?.call(
-            purpose,
+            miningStartPurpose,
             error,
-          );
-
-          debugPrint(
-            'No automatic reload after AdMob load failure.',
           );
         },
       ),
+    );
+  }
+
+  // ============================================================
+  // ⚡ LOAD POWER BOOST AD
+  // ============================================================
+
+  Future<void> _loadPowerBoostRewardedAd() async {
+    if (_disposed) {
+      return;
+    }
+
+    if (_powerBoostRewardedAd != null &&
+        _powerBoostAdReady) {
+      debugPrint(
+        'Power Boost rewarded ad already ready.',
+      );
+
+      return;
+    }
+
+    if (_powerBoostAdLoading) {
+      debugPrint(
+        'Power Boost rewarded ad loading already in progress.',
+      );
+
+      return;
+    }
+
+    final User? user =
+        _auth.currentUser;
+
+    if (user == null) {
+      debugPrint(
+        'Cannot load Power Boost rewarded ad: '
+        'no authenticated Firebase user.',
+      );
+
+      _powerBoostAdLoading = false;
+      _powerBoostAdReady = false;
+      _powerBoostAdLoadError =
+          'NO_AUTH_USER';
+
+      _notify();
+
+      return;
+    }
+
+    _disposePowerBoostAd();
+
+    final int requestId =
+        ++_powerBoostLoadRequestId;
+
+    _powerBoostAdLoading = true;
+    _powerBoostAdReady = false;
+    _powerBoostAdLoadError = '';
+
+    _notify();
+
+    debugPrint(
+      '==================================================',
+    );
+
+    debugPrint(
+      'STELLURIINI POWER BOOST ADMOB LOAD START',
+    );
+
+    debugPrint(
+      'AD UNIT: $powerBoostRewardedAdUnitId',
+    );
+
+    debugPrint(
+      'Purpose: $powerBoostPurpose',
+    );
+
+    debugPrint(
+      'User UID length: ${user.uid.length}',
+    );
+
+    debugPrint(
+      '==================================================',
+    );
+
+    RewardedAd.load(
+      adUnitId:
+          powerBoostRewardedAdUnitId,
+      request:
+          const AdRequest(),
+      rewardedAdLoadCallback:
+          RewardedAdLoadCallback(
+        onAdLoaded: (
+          RewardedAd ad,
+        ) {
+          if (_disposed) {
+            ad.dispose();
+            return;
+          }
+
+          if (requestId !=
+              _powerBoostLoadRequestId) {
+            debugPrint(
+              'Ignoring stale Power Boost rewarded ad callback.',
+            );
+
+            ad.dispose();
+            return;
+          }
+
+          debugPrint(
+            '==================================================',
+          );
+
+          debugPrint(
+            'STELLURIINI POWER BOOST ADMOB LOAD SUCCESS',
+          );
+
+          debugPrint(
+            'Purpose: $powerBoostPurpose',
+          );
+
+          debugPrint(
+            '==================================================',
+          );
+
+          try {
+            final ServerSideVerificationOptions
+                serverSideOptions =
+                ServerSideVerificationOptions(
+              customData:
+                  '${user.uid}:$powerBoostPurpose',
+            );
+
+            ad.setServerSideOptions(
+              serverSideOptions,
+            );
+          } catch (error) {
+            debugPrint(
+              'Power Boost SSV setup failed: $error',
+            );
+
+            ad.dispose();
+
+            _powerBoostRewardedAd = null;
+            _powerBoostAdReady = false;
+            _powerBoostAdLoading = false;
+
+            _powerBoostAdLoadError =
+                'SSV_SETUP_FAILED: $error';
+
+            _notify();
+
+            return;
+          }
+
+          _powerBoostRewardedAd = ad;
+
+          _powerBoostAdReady = true;
+
+          _powerBoostAdLoading = false;
+
+          _powerBoostAdLoadError = '';
+
+          ad.fullScreenContentCallback =
+              _createFullScreenCallback(
+            purpose:
+                powerBoostPurpose,
+            isMining: false,
+          );
+
+          _notify();
+        },
+        onAdFailedToLoad: (
+          LoadAdError error,
+        ) {
+          if (_disposed) {
+            return;
+          }
+
+          if (requestId !=
+              _powerBoostLoadRequestId) {
+            return;
+          }
+
+          debugPrint(
+            '==================================================',
+          );
+
+          debugPrint(
+            'STELLURIINI POWER BOOST ADMOB LOAD FAILED',
+          );
+
+          debugPrint(
+            'Purpose: $powerBoostPurpose',
+          );
+
+          debugPrint(
+            'Code: ${error.code}',
+          );
+
+          debugPrint(
+            'Domain: ${error.domain}',
+          );
+
+          debugPrint(
+            'Message: ${error.message}',
+          );
+
+          debugPrint(
+            'Response info: ${error.responseInfo}',
+          );
+
+          debugPrint(
+            '==================================================',
+          );
+
+          _powerBoostRewardedAd = null;
+
+          _powerBoostAdReady = false;
+
+          _powerBoostAdLoading = false;
+
+          _powerBoostAdLoadError =
+              'Code: ${error.code} | '
+              'Domain: ${error.domain} | '
+              'Message: ${error.message}';
+
+          _finishFlow(
+            powerBoostPurpose,
+          );
+
+          _notify();
+
+          onAdLoadError?.call(
+            powerBoostPurpose,
+            error,
+          );
+        },
+      ),
+    );
+  }
+
+  // ============================================================
+  // 🖥️ FULL SCREEN CALLBACK
+  // ============================================================
+
+  FullScreenContentCallback
+      _createFullScreenCallback({
+    required String purpose,
+    required bool isMining,
+  }) {
+    return FullScreenContentCallback(
+      // ========================================================
+      // SHOWN
+      // ========================================================
+
+      onAdShowedFullScreenContent:
+          (
+        RewardedAd showedAd,
+      ) {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI ADMOB SHOWN',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+      },
+
+      // ========================================================
+      // DISMISSED
+      // ========================================================
+
+      onAdDismissedFullScreenContent:
+          (
+        RewardedAd dismissedAd,
+      ) async {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI ADMOB DISMISSED',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        dismissedAd.dispose();
+
+        if (isMining) {
+          if (identical(
+            _miningRewardedAd,
+            dismissedAd,
+          )) {
+            _miningRewardedAd = null;
+            _miningAdReady = false;
+          }
+        } else {
+          if (identical(
+            _powerBoostRewardedAd,
+            dismissedAd,
+          )) {
+            _powerBoostRewardedAd = null;
+            _powerBoostAdReady = false;
+          }
+        }
+
+        _finishFlow(
+          purpose,
+        );
+
+        _notify();
+
+        onAdDismissed?.call(
+          purpose,
+        );
+      },
+
+      // ========================================================
+      // SHOW FAILED
+      // ========================================================
+
+      onAdFailedToShowFullScreenContent:
+          (
+        RewardedAd failedAd,
+        AdError error,
+      ) {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI ADMOB SHOW FAILED',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Code: ${error.code}',
+        );
+
+        debugPrint(
+          'Domain: ${error.domain}',
+        );
+
+        debugPrint(
+          'Message: ${error.message}',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        failedAd.dispose();
+
+        if (isMining) {
+          if (identical(
+            _miningRewardedAd,
+            failedAd,
+          )) {
+            _miningRewardedAd = null;
+            _miningAdReady = false;
+          }
+
+          _miningAdLoadError =
+              'SHOW_FAILED | '
+              'Code: ${error.code} | '
+              'Domain: ${error.domain} | '
+              'Message: ${error.message}';
+        } else {
+          if (identical(
+            _powerBoostRewardedAd,
+            failedAd,
+          )) {
+            _powerBoostRewardedAd = null;
+            _powerBoostAdReady = false;
+          }
+
+          _powerBoostAdLoadError =
+              'SHOW_FAILED | '
+              'Code: ${error.code} | '
+              'Domain: ${error.domain} | '
+              'Message: ${error.message}';
+        }
+
+        _finishFlow(
+          purpose,
+        );
+
+        _notify();
+
+        onAdShowError?.call(
+          purpose,
+          error,
+        );
+      },
     );
   }
 
@@ -663,7 +1121,7 @@ class HomeAdManager extends ChangeNotifier {
 
     _miningAdFlowActive = true;
 
-    _adLoadError = '';
+    _miningAdLoadError = '';
 
     _notify();
 
@@ -679,10 +1137,8 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       if (!ready ||
-          _rewardedAd == null ||
-          !_adReady ||
-          _rewardedAdPurpose !=
-              miningStartPurpose) {
+          _miningRewardedAd == null ||
+          !_miningAdReady) {
         _miningAdFlowActive = false;
 
         _notify();
@@ -691,10 +1147,11 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       final RewardedAd ad =
-          _rewardedAd!;
+          _miningRewardedAd!;
 
-      _rewardedAd = null;
-      _adReady = false;
+      _miningRewardedAd = null;
+
+      _miningAdReady = false;
 
       _notify();
 
@@ -803,17 +1260,11 @@ class HomeAdManager extends ChangeNotifier {
 
     _powerBoostAdFlowActive = true;
 
-    _adLoadError = '';
+    _powerBoostAdLoadError = '';
 
     _notify();
 
     try {
-      if (_rewardedAd != null &&
-          _rewardedAdPurpose !=
-              powerBoostPurpose) {
-        _disposeCurrentAd();
-      }
-
       final bool ready =
           await waitForRewardedAd(
         purpose:
@@ -825,10 +1276,8 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       if (!ready ||
-          _rewardedAd == null ||
-          !_adReady ||
-          _rewardedAdPurpose !=
-              powerBoostPurpose) {
+          _powerBoostRewardedAd == null ||
+          !_powerBoostAdReady) {
         _powerBoostAdFlowActive = false;
 
         _notify();
@@ -837,10 +1286,11 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       final RewardedAd ad =
-          _rewardedAd!;
+          _powerBoostRewardedAd!;
 
-      _rewardedAd = null;
-      _adReady = false;
+      _powerBoostRewardedAd = null;
+
+      _powerBoostAdReady = false;
 
       _notify();
 
@@ -941,32 +1391,51 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // DISPOSE CURRENT AD
+  // ⛏️ DISPOSE MINING AD
   // ============================================================
 
-  void _disposeCurrentAd() {
+  void _disposeMiningAd() {
     final RewardedAd? ad =
-        _rewardedAd;
+        _miningRewardedAd;
 
-    _rewardedAd = null;
+    _miningRewardedAd = null;
 
-    _adReady = false;
+    _miningAdReady = false;
 
     ad?.dispose();
   }
 
   // ============================================================
-  // CLEAR CURRENT AD
+  // ⚡ DISPOSE POWER BOOST AD
+  // ============================================================
+
+  void _disposePowerBoostAd() {
+    final RewardedAd? ad =
+        _powerBoostRewardedAd;
+
+    _powerBoostRewardedAd = null;
+
+    _powerBoostAdReady = false;
+
+    ad?.dispose();
+  }
+
+  // ============================================================
+  // 🧹 CLEAR CURRENT AD
   // ============================================================
 
   void clearCurrentAd() {
-    _loadRequestId++;
+    _miningLoadRequestId++;
+    _powerBoostLoadRequestId++;
 
-    _disposeCurrentAd();
+    _disposeMiningAd();
+    _disposePowerBoostAd();
 
-    _adLoading = false;
+    _miningAdLoading = false;
+    _powerBoostAdLoading = false;
 
-    _adLoadError = '';
+    _miningAdLoadError = '';
+    _powerBoostAdLoadError = '';
 
     _notify();
   }
@@ -979,11 +1448,14 @@ class HomeAdManager extends ChangeNotifier {
   void dispose() {
     _disposed = true;
 
-    _loadRequestId++;
+    _miningLoadRequestId++;
+    _powerBoostLoadRequestId++;
 
-    _rewardedAd?.dispose();
+    _miningRewardedAd?.dispose();
+    _powerBoostRewardedAd?.dispose();
 
-    _rewardedAd = null;
+    _miningRewardedAd = null;
+    _powerBoostRewardedAd = null;
 
     super.dispose();
   }
