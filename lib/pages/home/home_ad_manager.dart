@@ -158,10 +158,6 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    // ----------------------------------------------------------
-    // Oikea mainos on jo valmis.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _adReady &&
         _rewardedAdPurpose == purpose) {
@@ -172,20 +168,10 @@ class HomeAdManager extends ChangeNotifier {
       return true;
     }
 
-    // ----------------------------------------------------------
-    // Jos väärän purpose-mainos on muistissa,
-    // vapautetaan se ennen uuden lataamista.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _rewardedAdPurpose != purpose) {
       _disposeCurrentAd();
     }
-
-    // ----------------------------------------------------------
-    // Jos lataus on jo käynnissä samaan tarkoitukseen,
-    // odotetaan sitä.
-    // ----------------------------------------------------------
 
     if (!_adLoading) {
       await loadRewardedAd(
@@ -218,10 +204,6 @@ class HomeAdManager extends ChangeNotifier {
 
         return true;
       }
-
-      // --------------------------------------------------------
-      // Jos lataus epäonnistui, lopetetaan odotus.
-      // --------------------------------------------------------
 
       if (!_adLoading) {
         break;
@@ -258,10 +240,6 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // Jos sama mainos on jo valmis, ei tehdä mitään.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _adReady &&
         _rewardedAdPurpose == purpose) {
@@ -272,11 +250,6 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // Jos lataus on jo käynnissä, odottava kutsu saa jatkaa
-    // samaa latausta.
-    // ----------------------------------------------------------
-
     if (_adLoading) {
       debugPrint(
         'Rewarded ad loading already in progress. '
@@ -285,10 +258,6 @@ class HomeAdManager extends ChangeNotifier {
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // Varmistetaan Firebase-käyttäjä.
-    // ----------------------------------------------------------
 
     final User? user =
         _auth.currentUser;
@@ -308,19 +277,9 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // Vapautetaan vanha mainos tarvittaessa.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null) {
       _disposeCurrentAd();
     }
-
-    // ----------------------------------------------------------
-    // Uusi request ID.
-    //
-    // Estää vanhaa callbackia muuttamasta uuden latauksen tilaa.
-    // ----------------------------------------------------------
 
     final int requestId =
         ++_loadRequestId;
@@ -368,18 +327,10 @@ class HomeAdManager extends ChangeNotifier {
         onAdLoaded: (
           RewardedAd ad,
         ) {
-          // ----------------------------------------------------
-          // Manager on jo poistettu.
-          // ----------------------------------------------------
-
           if (_disposed) {
             ad.dispose();
             return;
           }
-
-          // ----------------------------------------------------
-          // Tämä callback kuuluu vanhaan latauspyyntöön.
-          // ----------------------------------------------------
 
           if (requestId != _loadRequestId) {
             debugPrint(
@@ -405,10 +356,6 @@ class HomeAdManager extends ChangeNotifier {
           debugPrint(
             '==================================================',
           );
-
-          // ----------------------------------------------------
-          // SSV customData.
-          // ----------------------------------------------------
 
           try {
             final ServerSideVerificationOptions
@@ -440,10 +387,6 @@ class HomeAdManager extends ChangeNotifier {
             return;
           }
 
-          // ----------------------------------------------------
-          // Tallenna mainos.
-          // ----------------------------------------------------
-
           _rewardedAd = ad;
 
           _rewardedAdPurpose =
@@ -470,7 +413,19 @@ class HomeAdManager extends ChangeNotifier {
               RewardedAd showedAd,
             ) {
               debugPrint(
-                'Rewarded ad showed: $purpose',
+                '==================================================',
+              );
+
+              debugPrint(
+                'STELLURIINI ADMOB SHOWN',
+              );
+
+              debugPrint(
+                'Purpose: $purpose',
+              );
+
+              debugPrint(
+                '==================================================',
               );
             },
 
@@ -481,9 +436,21 @@ class HomeAdManager extends ChangeNotifier {
             onAdDismissedFullScreenContent:
                 (
               RewardedAd dismissedAd,
-            ) {
+            ) async {
               debugPrint(
-                'Rewarded ad dismissed: $purpose',
+                '==================================================',
+              );
+
+              debugPrint(
+                'STELLURIINI ADMOB DISMISSED',
+              );
+
+              debugPrint(
+                'Purpose: $purpose',
+              );
+
+              debugPrint(
+                '==================================================',
               );
 
               dismissedAd.dispose();
@@ -507,15 +474,19 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               // ------------------------------------------------
-              // TÄRKEÄ MUUTOS:
+              // HUOMIO:
               //
-              // Emme lataa tässä automaattisesti Power Boostia.
+              // Normaali RewardedAd-polku kutsuu palkkiokäsittelyn
+              // onUserEarnedReward-callbackissa.
               //
-              // Seuraava Boost-mainos ladataan vasta kun käyttäjä
-              // painaa Boost-painiketta.
+              // Jos callback ei jostain syystä saavu ennen
+              // mainoksen sulkemista, emme tässä kohtaa voi
+              // turvallisesti antaa palkkiota suoraan.
               //
-              // Tämä vähentää No Fill / Code 3 -tilanteita ja
-              // estää turhat taustalataukset.
+              // Firebase SSV toimii lopullisena vahvistuksena.
+              //
+              // Siksi emme kutsu callbackia automaattisesti tässä.
+              //
               // ------------------------------------------------
             },
 
@@ -657,10 +628,6 @@ class HomeAdManager extends ChangeNotifier {
             error,
           );
 
-          // ----------------------------------------------------
-          // Ei automaattista latauslooppiä.
-          // ----------------------------------------------------
-
           debugPrint(
             'No automatic reload after AdMob load failure.',
           );
@@ -726,10 +693,6 @@ class HomeAdManager extends ChangeNotifier {
       final RewardedAd ad =
           _rewardedAd!;
 
-      // --------------------------------------------------------
-      // Poistetaan managerin viite ennen show()-kutsua.
-      // --------------------------------------------------------
-
       _rewardedAd = null;
       _adReady = false;
 
@@ -738,7 +701,19 @@ class HomeAdManager extends ChangeNotifier {
       bool rewardEarned = false;
 
       debugPrint(
-        'Showing Mining Start rewarded ad.',
+        '==================================================',
+      );
+
+      debugPrint(
+        'STELLURIINI SHOW MINING START',
+      );
+
+      debugPrint(
+        'Waiting for onUserEarnedReward...',
+      );
+
+      debugPrint(
+        '==================================================',
       );
 
       ad.show(
@@ -753,7 +728,27 @@ class HomeAdManager extends ChangeNotifier {
           rewardEarned = true;
 
           debugPrint(
-            'Mining Start client reward received.',
+            '==================================================',
+          );
+
+          debugPrint(
+            'STELLURIINI MINING START REWARD RECEIVED',
+          );
+
+          debugPrint(
+            'Reward amount: ${reward.amount}',
+          );
+
+          debugPrint(
+            'Reward type: ${reward.type}',
+          );
+
+          debugPrint(
+            'Calling Firebase claimMining...',
+          );
+
+          debugPrint(
+            '==================================================',
           );
 
           try {
@@ -813,11 +808,6 @@ class HomeAdManager extends ChangeNotifier {
     _notify();
 
     try {
-      // --------------------------------------------------------
-      // Varmistetaan aina, että Boost saa nimenomaan
-      // power_boost-purposea käyttävän mainoksen.
-      // --------------------------------------------------------
-
       if (_rewardedAd != null &&
           _rewardedAdPurpose !=
               powerBoostPurpose) {
@@ -854,10 +844,22 @@ class HomeAdManager extends ChangeNotifier {
 
       _notify();
 
-      bool rewardProcessed = false;
+      bool rewardEarned = false;
 
       debugPrint(
-        'Showing Power Boost rewarded ad.',
+        '==================================================',
+      );
+
+      debugPrint(
+        'STELLURIINI SHOW POWER BOOST',
+      );
+
+      debugPrint(
+        'Waiting for onUserEarnedReward...',
+      );
+
+      debugPrint(
+        '==================================================',
       );
 
       ad.show(
@@ -865,14 +867,34 @@ class HomeAdManager extends ChangeNotifier {
           AdWithoutView adWithoutView,
           RewardItem reward,
         ) async {
-          if (rewardProcessed) {
+          if (rewardEarned) {
             return;
           }
 
-          rewardProcessed = true;
+          rewardEarned = true;
 
           debugPrint(
-            'Power Boost client reward received.',
+            '==================================================',
+          );
+
+          debugPrint(
+            'STELLURIINI POWER BOOST REWARD RECEIVED',
+          );
+
+          debugPrint(
+            'Reward amount: ${reward.amount}',
+          );
+
+          debugPrint(
+            'Reward type: ${reward.type}',
+          );
+
+          debugPrint(
+            'Calling Firebase powerBoost...',
+          );
+
+          debugPrint(
+            '==================================================',
           );
 
           try {
