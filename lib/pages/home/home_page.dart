@@ -36,82 +36,159 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  static const Color backgroundColor = Color(0xFF120B24);
-  static const Color surfaceColor = Color(0xFF1A0E31);
-  static const Color cardColor = Color(0xFF21113B);
-  static const Color accentColor = Color(0xFFB58CFF);
-  static const Color pinkColor = Color(0xFFFFB7E8);
-  static const Color primaryTextColor = Color(0xFFF8F4FF);
-  static const Color secondaryTextColor = Color(0xFFBDB4D1);
+  // ============================================================
+  // 🎨 STELLA THEME
+  // ============================================================
 
-  static const double defaultAdHashRateBonus = 0.5833;
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color surfaceColor =
+      Color(0xFF1A0E31);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color accentColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color primaryTextColor =
+      Color(0xFFF8F4FF);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBDB4D1);
+
+  // ============================================================
+  // ⚙️ FALLBACK VALUES
+  // ============================================================
+
+  static const double defaultAdHashRateBonus =
+      0.5833;
+
   static const int defaultMaxAdsPerDay = 6;
 
-  static const double defaultDailyHashRate = 0.5;
+  static const double defaultDailyHashRate =
+      0.5;
 
-  static const double miningPerHashPerHour = 0.10;
+  static const double miningPerHashPerHour =
+      0.10;
 
   static const int defaultMiningDurationMs =
       24 * 60 * 60 * 1000;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // ============================================================
+  // 🔥 FIREBASE
+  // ============================================================
+
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance;
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(
     region: 'us-central1',
   );
 
+  // ============================================================
+  // 📊 STATE
+  // ============================================================
+
   bool _loading = true;
+
   bool _actionLoading = false;
+
   bool _miningActive = false;
 
-  double _hashRate = defaultDailyHashRate;
+  double _hashRate =
+      defaultDailyHashRate;
+
   double _unclaimedMining = 0.0;
+
   double _estimatedTotal = 0.0;
 
-  int _miningDurationMs = defaultMiningDurationMs;
+  int _miningDurationMs =
+      defaultMiningDurationMs;
+
   int _miningRemainingMs = 0;
 
   int _streak = 1;
 
   int _adsToday = 0;
-  int _maxAdsPerDay = defaultMaxAdsPerDay;
 
-  double _adHashRateBonus = defaultAdHashRateBonus;
+  int _maxAdsPerDay =
+      defaultMaxAdsPerDay;
 
-  int _adCooldownMs = 4 * 60 * 60 * 1000;
+  double _adHashRateBonus =
+      defaultAdHashRateBonus;
+
+  int _adCooldownMs =
+      4 * 60 * 60 * 1000;
+
+  int _cooldownRemainingMs = 0;
+
+  bool _serverCanWatchAd = true;
 
   bool _boostActive = false;
+
   int _boostRemainingMs = 0;
 
   String _username = '';
 
+  // ============================================================
+  // ⏱️ TIMERS
+  // ============================================================
+
   Timer? _miningTimer;
+
   Timer? _boostTimer;
+
   Timer? _refreshTimer;
 
+  // ============================================================
+  // 🐱 ANIMATION
+  // ============================================================
+
   late final AnimationController _catAnimation;
+
+  // ============================================================
+  // 📺 ADMOB
+  // ============================================================
+
   late final HomeAdManager _adManager;
+
+  // ============================================================
+  // 🚀 INIT
+  // ============================================================
 
   @override
   void initState() {
     super.initState();
 
-    _catAnimation = AnimationController(
+    _catAnimation =
+        AnimationController(
       vsync: this,
       duration: const Duration(
         milliseconds: 1800,
       ),
     );
 
-    _catAnimation.repeat(reverse: true);
+    _catAnimation.repeat(
+      reverse: true,
+    );
 
     _adManager = HomeAdManager(
-      onMiningStartReward: _startMiningAfterAd,
-      onPowerBoostReward: _waitForServerSidePowerBoost,
-      onAdLoadError: _handleAdLoadError,
-      onAdShowError: _handleAdShowError,
-      onAdDismissed: _handleAdDismissed,
+      onMiningStartReward:
+          _startMiningAfterAd,
+      onPowerBoostReward:
+          _waitForServerSidePowerBoost,
+      onAdLoadError:
+          _handleAdLoadError,
+      onAdShowError:
+          _handleAdShowError,
+      onAdDismissed:
+          _handleAdDismissed,
     );
 
     _adManager.addListener(
@@ -121,10 +198,16 @@ class _HomePageState extends State<HomePage>
     _initialize();
   }
 
+  // ============================================================
+  // 🧹 DISPOSE
+  // ============================================================
+
   @override
   void dispose() {
     _miningTimer?.cancel();
+
     _boostTimer?.cancel();
+
     _refreshTimer?.cancel();
 
     _adManager.removeListener(
@@ -132,14 +215,20 @@ class _HomePageState extends State<HomePage>
     );
 
     _adManager.dispose();
+
     _catAnimation.dispose();
 
     super.dispose();
   }
 
+  // ============================================================
+  // 🚀 INITIALIZE
+  // ============================================================
+
   Future<void> _initialize() async {
     try {
       await _loadUsername();
+
       await _loadMiningStatus();
     } catch (e) {
       if (mounted) {
@@ -158,31 +247,45 @@ class _HomePageState extends State<HomePage>
     _startRefreshTimer();
   }
 
+  // ============================================================
+  // 👤 LOAD USERNAME
+  // ============================================================
+
   Future<void> _loadUsername() async {
-    final User? user = _auth.currentUser;
+    final User? user =
+        _auth.currentUser;
 
     if (user == null) {
       return;
     }
 
     try {
-      final HttpsCallableResult<dynamic> result =
+      final HttpsCallableResult<dynamic>
+          result =
           await _functions
               .httpsCallable(
                 'getUserProfile',
               )
               .call();
 
-      final dynamic raw = result.data;
+      final dynamic raw =
+          result.data;
 
       if (raw is Map) {
-        final Map<String, dynamic> data =
-            Map<String, dynamic>.from(raw);
+        final Map<String, dynamic>
+            data =
+            Map<String, dynamic>.from(
+          raw,
+        );
 
         final String username =
-            data['username']?.toString().trim() ?? '';
+            data['username']
+                    ?.toString()
+                    .trim() ??
+                '';
 
-        if (mounted && username.isNotEmpty) {
+        if (mounted &&
+            username.isNotEmpty) {
           setState(() {
             _username = username;
           });
@@ -191,107 +294,218 @@ class _HomePageState extends State<HomePage>
         }
       }
     } catch (_) {
-      // Käytetään Firebase Auth -nimeä varavaihtoehtona.
+      // Firebase Auth toimii varavaihtoehtona.
     }
 
     final String displayName =
-        user.displayName?.trim() ?? '';
+        user.displayName
+                ?.trim() ??
+            '';
 
-    if (mounted && displayName.isNotEmpty) {
+    if (mounted &&
+        displayName.isNotEmpty) {
       setState(() {
         _username = displayName;
       });
     }
   }
 
+  // ============================================================
+  // 📊 LOAD MINING STATUS
+  // ============================================================
+
   Future<void> _loadMiningStatus() async {
-    final User? user = _auth.currentUser;
+    final User? user =
+        _auth.currentUser;
 
     if (user == null) {
       return;
     }
 
     try {
-      final HttpsCallableResult<dynamic> result =
+      final HttpsCallableResult<dynamic>
+          result =
           await _functions
               .httpsCallable(
                 'getMiningStatus',
               )
               .call();
 
-      final dynamic raw = result.data;
+      final dynamic raw =
+          result.data;
 
       if (raw is! Map) {
         return;
       }
 
-      final Map<String, dynamic> data =
-          Map<String, dynamic>.from(raw);
+      final Map<String, dynamic>
+          data =
+          Map<String, dynamic>.from(
+        raw,
+      );
+
+      // ========================================================
+      // ⛏️ MINING
+      // ========================================================
 
       final bool miningActive =
-          _asBool(data['miningActive']) ??
-              _asBool(data['active']) ??
+          _asBool(
+                data['miningActive'],
+              ) ??
+              _asBool(
+                data['active'],
+              ) ??
               false;
 
       final double hashRate =
-          _asDouble(data['hashRate']) ??
-              _asDouble(data['effectiveHashRate']) ??
-              _asDouble(data['dailyHashRate']) ??
+          _asDouble(
+                data['hashRate'],
+              ) ??
+              _asDouble(
+                data['effectiveHashRate'],
+              ) ??
+              _asDouble(
+                data['dailyHashRate'],
+              ) ??
               defaultDailyHashRate;
 
       final double unclaimed =
-          _asDouble(data['unclaimedMining']) ??
-              _asDouble(data['unclaimed']) ??
-              _asDouble(data['miningBalance']) ??
+          _asDouble(
+                data['unclaimedMining'],
+              ) ??
+              _asDouble(
+                data['unclaimed'],
+              ) ??
               0.0;
 
       final double total =
-          _asDouble(data['estimatedTotal']) ??
-              _asDouble(data['totalStl']) ??
-              _asDouble(data['totalBalance']) ??
+          _asDouble(
+                data['estimatedTotal'],
+              ) ??
+              _asDouble(
+                data['totalStl'],
+              ) ??
+              _asDouble(
+                data['totalBalance'],
+              ) ??
               0.0;
 
       final int remaining =
-          _asInt(data['miningRemainingMs']) ??
-              _asInt(data['remainingMs']) ??
-              _asInt(data['remainingTimeMs']) ??
+          _asInt(
+                data['miningRemainingMs'],
+              ) ??
+              _asInt(
+                data['remainingMs'],
+              ) ??
+              _asInt(
+                data['remainingTimeMs'],
+              ) ??
               0;
 
       final int duration =
-          _asInt(data['miningDurationMs']) ??
-              _asInt(data['durationMs']) ??
+          _asInt(
+                data['miningDurationMs'],
+              ) ??
+              _asInt(
+                data['durationMs'],
+              ) ??
               defaultMiningDurationMs;
 
       final int streak =
-          _asInt(data['dailyStreak']) ??
-              _asInt(data['streak']) ??
+          _asInt(
+                data['dailyStreak'],
+              ) ??
+              _asInt(
+                data['streak'],
+              ) ??
               1;
 
+      // ========================================================
+      // 📺 ADMOB STATUS
+      // ========================================================
+
       final int adsToday =
-          _asInt(data['adsToday']) ??
-              _asInt(data['adCountToday']) ??
+          _asInt(
+                data['adsToday'],
+              ) ??
+              _asInt(
+                data['adCountToday'],
+              ) ??
               0;
 
       final int maxAds =
-          _asInt(data['maxAdsPerDay']) ??
+          _asInt(
+                data['maxAdsPerDay'],
+              ) ??
               defaultMaxAdsPerDay;
 
       final double adBonus =
-          _asDouble(data['adHashRateBonus']) ??
+          _asDouble(
+                data['adHashRateBonus'],
+              ) ??
               defaultAdHashRateBonus;
 
       final int cooldown =
-          _asInt(data['adCooldownMs']) ??
+          _asInt(
+                data['adCooldownMs'],
+              ) ??
               _adCooldownMs;
 
+      final int cooldownRemaining =
+          _asInt(
+                data['cooldownRemainingMs'],
+              ) ??
+              0;
+
+      // ========================================================
+      // ⚡ TÄRKEÄ KORJAUS
+      // ========================================================
+      //
+      // Backend palauttaa:
+      //
+      //   adBoostActive
+      //   adBoostRemainingMs
+      //
+      // Ei:
+      //
+      //   boostActive
+      //   boostRemainingMs
+      //
+      // Tämä oli syy siihen, että aktiivinen Power Boost
+      // saattoi näkyä HomePagessa edelleen pois päältä.
+      //
+      // ========================================================
+
       final bool serverBoostActive =
-          _asBool(data['boostActive']) ??
+          _asBool(
+                data['adBoostActive'],
+              ) ??
+              _asBool(
+                data['boostActive'],
+              ) ??
               false;
 
       final int serverBoostRemaining =
-          _asInt(data['boostRemainingMs']) ??
-              _asInt(data['remainingBoostMs']) ??
+          _asInt(
+                data['adBoostRemainingMs'],
+              ) ??
+              _asInt(
+                data['boostRemainingMs'],
+              ) ??
+              _asInt(
+                data['remainingBoostMs'],
+              ) ??
               0;
+
+      // ========================================================
+      // 🔐 BACKENDIN CAN-WATCH-STATUS
+      // ========================================================
+
+      final bool serverCanWatchAd =
+          _asBool(
+                data['canWatchAd'],
+              ) ??
+              true;
 
       if (!mounted) {
         return;
@@ -302,35 +516,67 @@ class _HomePageState extends State<HomePage>
               ? duration
               : defaultMiningDurationMs;
 
-      bool finalBoostActive = serverBoostActive;
-      int finalBoostRemaining = serverBoostRemaining;
+      bool finalBoostActive =
+          serverBoostActive;
+
+      int finalBoostRemaining =
+          serverBoostRemaining;
+
+      // ========================================================
+      // ⚡ PIDÄ PAIKALLINEN BOOST ELÄVÄNÄ
+      // ========================================================
+      //
+      // Tämä suojaa tilannetta, jossa Flutter kysyy backendiltä
+      // tilan juuri ennen kuin edellinen paikallinen timer ehtii
+      // päivittyä.
+      //
+      // Backendillä on kuitenkin aina viimeinen sana, kun sen
+      // vastaus sisältää aktiivisen boostin.
+      //
+      // ========================================================
 
       if (_boostActive &&
           _boostRemainingMs > 0 &&
-          !serverBoostActive) {
+          !serverBoostActive &&
+          serverBoostRemaining <= 0) {
         finalBoostActive = true;
-        finalBoostRemaining = _boostRemainingMs;
+
+        finalBoostRemaining =
+            _boostRemainingMs;
       }
 
       if (serverBoostActive &&
-          serverBoostRemaining > 0 &&
-          _boostActive &&
-          _boostRemainingMs > serverBoostRemaining) {
+          serverBoostRemaining > 0) {
         finalBoostActive = true;
-        finalBoostRemaining = _boostRemainingMs;
+
+        if (_boostRemainingMs >
+            serverBoostRemaining) {
+          finalBoostRemaining =
+              _boostRemainingMs;
+        }
       }
 
       if (finalBoostRemaining <= 0) {
         finalBoostActive = false;
+
         finalBoostRemaining = 0;
       }
 
       setState(() {
-        _miningActive = miningActive;
-        _hashRate = hashRate;
-        _unclaimedMining = unclaimed;
-        _estimatedTotal = total;
-        _miningDurationMs = safeDuration;
+        _miningActive =
+            miningActive;
+
+        _hashRate =
+            hashRate;
+
+        _unclaimedMining =
+            unclaimed;
+
+        _estimatedTotal =
+            total;
+
+        _miningDurationMs =
+            safeDuration;
 
         _miningRemainingMs =
             remaining.clamp(
@@ -338,22 +584,42 @@ class _HomePageState extends State<HomePage>
           safeDuration,
         );
 
-        _streak = streak.clamp(1, 7);
+        _streak =
+            streak.clamp(
+          1,
+          7,
+        );
 
-        _adsToday = adsToday.clamp(
+        _adsToday =
+            adsToday.clamp(
           0,
           maxAds,
         );
 
-        _maxAdsPerDay = maxAds;
-        _adHashRateBonus = adBonus;
-        _adCooldownMs = cooldown;
+        _maxAdsPerDay =
+            maxAds;
 
-        _boostActive = finalBoostActive;
-        _boostRemainingMs = finalBoostRemaining;
+        _adHashRateBonus =
+            adBonus;
+
+        _adCooldownMs =
+            cooldown;
+
+        _cooldownRemainingMs =
+            cooldownRemaining;
+
+        _serverCanWatchAd =
+            serverCanWatchAd;
+
+        _boostActive =
+            finalBoostActive;
+
+        _boostRemainingMs =
+            finalBoostRemaining;
       });
 
       _startMiningTimer();
+
       _startBoostTimer();
     } catch (e) {
       if (mounted) {
@@ -364,18 +630,30 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  // ============================================================
+  // 🔄 REFRESH TIMER
+  // ============================================================
+
   void _startRefreshTimer() {
     _refreshTimer?.cancel();
 
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
+    _refreshTimer =
+        Timer.periodic(
+      const Duration(
+        seconds: 30,
+      ),
       (_) {
-        if (!_loading && !_actionLoading) {
+        if (!_loading &&
+            !_actionLoading) {
           _loadMiningStatus();
         }
       },
     );
   }
+
+  // ============================================================
+  // ⛏️ MINING TIMER
+  // ============================================================
 
   void _startMiningTimer() {
     _miningTimer?.cancel();
@@ -385,25 +663,34 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    _miningTimer = Timer.periodic(
-      const Duration(seconds: 1),
+    _miningTimer =
+        Timer.periodic(
+      const Duration(
+        seconds: 1,
+      ),
       (_) {
         if (!mounted) {
           return;
         }
 
-        if (_miningRemainingMs <= 1000) {
+        if (_miningRemainingMs <=
+            1000) {
           setState(() {
-            _miningRemainingMs = 0;
-            _miningActive = false;
+            _miningRemainingMs =
+                0;
+
+            _miningActive =
+                false;
           });
 
           _miningTimer?.cancel();
+
           return;
         }
 
         setState(() {
-          _miningRemainingMs -= 1000;
+          _miningRemainingMs -=
+              1000;
 
           _unclaimedMining +=
               (_effectiveHashRate *
@@ -414,6 +701,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // ⚡ BOOST TIMER
+  // ============================================================
+
   void _startBoostTimer() {
     _boostTimer?.cancel();
 
@@ -422,17 +713,24 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    _boostTimer = Timer.periodic(
-      const Duration(seconds: 1),
+    _boostTimer =
+        Timer.periodic(
+      const Duration(
+        seconds: 1,
+      ),
       (_) {
         if (!mounted) {
           return;
         }
 
-        if (_boostRemainingMs <= 1000) {
+        if (_boostRemainingMs <=
+            1000) {
           setState(() {
-            _boostRemainingMs = 0;
-            _boostActive = false;
+            _boostRemainingMs =
+                0;
+
+            _boostActive =
+                false;
           });
 
           _boostTimer?.cancel();
@@ -443,18 +741,25 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          _boostRemainingMs -= 1000;
+          _boostRemainingMs -=
+              1000;
         });
       },
     );
   }
 
+  // ============================================================
+  // ⛏️ START MINING
+  // ============================================================
+
   Future<void> _startMining() async {
-    if (_actionLoading || _miningActive) {
+    if (_actionLoading ||
+        _miningActive) {
       return;
     }
 
-    if (_adManager.miningAdFlowActive) {
+    if (_adManager
+        .miningAdFlowActive) {
       return;
     }
 
@@ -464,11 +769,13 @@ class _HomePageState extends State<HomePage>
 
     try {
       final bool shown =
-          await _adManager.showMiningStartAd();
+          await _adManager
+              .showMiningStartAd();
 
       if (!shown && mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
 
         _showMessage(
@@ -478,7 +785,8 @@ class _HomePageState extends State<HomePage>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
 
         _showMessage(
@@ -488,25 +796,33 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  // ============================================================
+  // 🔐 START MINING AFTER ADMOB
+  // ============================================================
+
   Future<void> _startMiningAfterAd() async {
     if (!mounted) {
       return;
     }
 
     try {
-      HttpsCallableResult<dynamic>? result;
+      HttpsCallableResult<dynamic>?
+          result;
 
       Object? lastError;
 
-      for (int attempt = 0;
-          attempt < 15;
-          attempt++) {
+      for (
+        int attempt = 0;
+        attempt < 15;
+        attempt++
+      ) {
         try {
-          result = await _functions
-              .httpsCallable(
-                'claimMining',
-              )
-              .call();
+          result =
+              await _functions
+                  .httpsCallable(
+                    'claimMining',
+                  )
+                  .call();
 
           break;
         } catch (e) {
@@ -516,18 +832,31 @@ class _HomePageState extends State<HomePage>
               e.toString().toLowerCase();
 
           final bool retryable =
-              text.contains('admob') ||
-                  text.contains('reward') ||
-                  text.contains('mining_start') ||
-                  text.contains('mining start') ||
-                  text.contains('verified');
+              text.contains(
+                    'admob',
+                  ) ||
+                  text.contains(
+                    'reward',
+                  ) ||
+                  text.contains(
+                    'mining_start',
+                  ) ||
+                  text.contains(
+                    'mining start',
+                  ) ||
+                  text.contains(
+                    'verified',
+                  );
 
-          if (!retryable || attempt == 14) {
+          if (!retryable ||
+              attempt == 14) {
             rethrow;
           }
 
-          await Future.delayed(
-            const Duration(seconds: 2),
+          await Future<void>.delayed(
+            const Duration(
+              seconds: 2,
+            ),
           );
         }
       }
@@ -539,25 +868,42 @@ class _HomePageState extends State<HomePage>
             );
       }
 
-      final dynamic raw = result.data;
+      final dynamic raw =
+          result.data;
 
       if (raw is Map) {
-        final Map<String, dynamic> data =
-            Map<String, dynamic>.from(raw);
+        final Map<String, dynamic>
+            data =
+            Map<String, dynamic>.from(
+          raw,
+        );
 
         final bool started =
-            _asBool(data['started']) ??
-                _asBool(data['miningStarted']) ??
+            _asBool(
+                  data['started'],
+                ) ??
+                _asBool(
+                  data['miningStarted'],
+                ) ??
                 true;
 
-        if (started && mounted) {
+        if (started &&
+            mounted) {
           final int streak =
-              _asInt(data['dailyStreak']) ??
+              _asInt(
+                    data['dailyStreak'],
+                  ) ??
                   _streak;
 
           setState(() {
-            _miningActive = true;
-            _streak = streak.clamp(1, 7);
+            _miningActive =
+                true;
+
+            _streak =
+                streak.clamp(
+              1,
+              7,
+            );
           });
         }
       }
@@ -578,11 +924,16 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
       }
     }
   }
+
+  // ============================================================
+  // 📺 WATCH POWER BOOST AD
+  // ============================================================
 
   Future<void> _watchAd() async {
     if (_actionLoading) {
@@ -593,6 +944,7 @@ class _HomePageState extends State<HomePage>
       _showMessage(
         '🐱 ${_t('maxBoostsInfo')}',
       );
+
       return;
     }
 
@@ -602,11 +954,13 @@ class _HomePageState extends State<HomePage>
 
     try {
       final bool shown =
-          await _adManager.showPowerBoostAd();
+          await _adManager
+              .showPowerBoostAd();
 
       if (!shown && mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
 
         _showMessage(
@@ -616,7 +970,8 @@ class _HomePageState extends State<HomePage>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
 
         _showMessage(
@@ -626,72 +981,118 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _waitForServerSidePowerBoost() async {
+  // ============================================================
+  // ⚡ WAIT FOR SERVER-SIDE POWER BOOST
+  // ============================================================
+
+  Future<void>
+      _waitForServerSidePowerBoost() async {
     try {
-      HttpsCallableResult<dynamic>? successfulResult;
+      HttpsCallableResult<dynamic>?
+          successfulResult;
 
       Object? lastError;
 
-      bool confirmedBoostActive = false;
-      int confirmedBoostRemaining = 0;
+      bool confirmedBoostActive =
+          false;
+
+      int confirmedBoostRemaining =
+          0;
+
       int? confirmedAdsToday;
+
       double? confirmedBonus;
 
-      for (int attempt = 0;
-          attempt < 30;
-          attempt++) {
+      for (
+        int attempt = 0;
+        attempt < 30;
+        attempt++
+      ) {
         try {
-          final HttpsCallableResult<dynamic> result =
+          final HttpsCallableResult<
+                  dynamic>
+              result =
               await _functions
                   .httpsCallable(
                     'powerBoost',
                   )
                   .call();
 
-          final dynamic raw = result.data;
+          final dynamic raw =
+              result.data;
 
           if (raw is Map) {
-            final Map<String, dynamic> data =
-                Map<String, dynamic>.from(raw);
+            final Map<String, dynamic>
+                data =
+                Map<String, dynamic>.from(
+              raw,
+            );
 
             final bool active =
-                _asBool(data['boostActive']) ??
-                    _asBool(data['active']) ??
+                _asBool(
+                      data[
+                          'boostActive'],
+                    ) ??
+                    _asBool(
+                      data['active'],
+                    ) ??
                     false;
 
             final int remaining =
                 _asInt(
-                      data['boostRemainingMs'],
+                      data[
+                          'boostRemainingMs'],
                     ) ??
                     _asInt(
-                      data['remainingBoostMs'],
+                      data[
+                          'remainingBoostMs'],
+                    ) ??
+                    _asInt(
+                      data[
+                          'adBoostRemainingMs'],
                     ) ??
                     0;
 
             final int? ads =
-                _asInt(data['adsToday']);
+                _asInt(
+              data['adsToday'],
+            );
 
             final double? bonus =
                 _asDouble(
-                  data['adHashRateBonus'],
-                ) ??
-                _asDouble(
-                  data['hashRateBonus'],
-                ) ??
-                _asDouble(
-                  data['boostHashRateBonus'],
-                );
+                      data[
+                          'adHashRateBonus'],
+                    ) ??
+                    _asDouble(
+                      data[
+                          'hashRateBonus'],
+                    ) ??
+                    _asDouble(
+                      data[
+                          'boostHashRateBonus'],
+                    );
 
-            if (active && remaining > 0) {
-              confirmedBoostActive = true;
-              confirmedBoostRemaining = remaining;
-              confirmedAdsToday = ads;
-              confirmedBonus = bonus;
+            if (active &&
+                remaining > 0) {
+              confirmedBoostActive =
+                  true;
+
+              confirmedBoostRemaining =
+                  remaining;
+
+              confirmedAdsToday =
+                  ads;
+
+              confirmedBonus =
+                  bonus;
 
               if (mounted) {
                 setState(() {
-                  _boostActive = true;
-                  _boostRemainingMs = remaining;
+                  _boostActive =
+                      true;
+
+                  _boostRemainingMs =
+                      remaining;
 
                   if (ads != null) {
                     _adsToday = ads;
@@ -699,22 +1100,33 @@ class _HomePageState extends State<HomePage>
 
                   if (bonus != null &&
                       bonus > 0) {
-                    _adHashRateBonus = bonus;
+                    _adHashRateBonus =
+                        bonus;
                   }
+
+                  _serverCanWatchAd =
+                      false;
+
+                  _cooldownRemainingMs =
+                      0;
                 });
 
                 _startBoostTimer();
               }
 
-              successfulResult = result;
+              successfulResult =
+                  result;
+
               break;
             }
 
-            lastError = Exception(
+            lastError =
+                Exception(
               'Power Boost is not active yet.',
             );
           } else {
-            lastError = Exception(
+            lastError =
+                Exception(
               'Invalid Power Boost response.',
             );
           }
@@ -725,12 +1137,24 @@ class _HomePageState extends State<HomePage>
               e.toString().toLowerCase();
 
           final bool retryable =
-              text.contains('admob') ||
-                  text.contains('reward') ||
-                  text.contains('verified') ||
-                  text.contains('failed-precondition') ||
-                  text.contains('power boost') ||
-                  text.contains('not found');
+              text.contains(
+                    'admob',
+                  ) ||
+                  text.contains(
+                    'reward',
+                  ) ||
+                  text.contains(
+                    'verified',
+                  ) ||
+                  text.contains(
+                    'failed-precondition',
+                  ) ||
+                  text.contains(
+                    'power boost',
+                  ) ||
+                  text.contains(
+                    'not found',
+                  );
 
           if (!retryable) {
             rethrow;
@@ -738,13 +1162,16 @@ class _HomePageState extends State<HomePage>
         }
 
         if (attempt < 29) {
-          await Future.delayed(
-            const Duration(seconds: 2),
+          await Future<void>.delayed(
+            const Duration(
+              seconds: 2,
+            ),
           );
         }
       }
 
-      if (successfulResult == null) {
+      if (successfulResult ==
+          null) {
         throw lastError ??
             Exception(
               'Power Boost verification timed out.',
@@ -753,7 +1180,8 @@ class _HomePageState extends State<HomePage>
 
       await _loadMiningStatus();
 
-      if (mounted && confirmedBoostActive) {
+      if (mounted &&
+          confirmedBoostActive) {
         setState(() {
           _boostActive = true;
 
@@ -763,15 +1191,24 @@ class _HomePageState extends State<HomePage>
                 confirmedBoostRemaining;
           }
 
-          if (confirmedAdsToday != null) {
-            _adsToday = confirmedAdsToday;
+          if (confirmedAdsToday !=
+              null) {
+            _adsToday =
+                confirmedAdsToday;
           }
 
-          if (confirmedBonus != null &&
+          if (confirmedBonus !=
+                  null &&
               confirmedBonus > 0) {
             _adHashRateBonus =
                 confirmedBonus;
           }
+
+          _serverCanWatchAd =
+              false;
+
+          _cooldownRemainingMs =
+              0;
         });
 
         _startBoostTimer();
@@ -792,11 +1229,16 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (mounted) {
         setState(() {
-          _actionLoading = false;
+          _actionLoading =
+              false;
         });
       }
     }
   }
+
+  // ============================================================
+  // 📺 ADMOB MANAGER CHANGED
+  // ============================================================
 
   void _onAdManagerChanged() {
     if (!mounted) {
@@ -805,6 +1247,10 @@ class _HomePageState extends State<HomePage>
 
     setState(() {});
   }
+
+  // ============================================================
+  // ❌ ADMOB LOAD ERROR
+  // ============================================================
 
   void _handleAdLoadError(
     String purpose,
@@ -815,7 +1261,8 @@ class _HomePageState extends State<HomePage>
     }
 
     setState(() {
-      _actionLoading = false;
+      _actionLoading =
+          false;
     });
 
     _showMessage(
@@ -826,6 +1273,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // ❌ ADMOB SHOW ERROR
+  // ============================================================
+
   void _handleAdShowError(
     String purpose,
     AdError error,
@@ -835,7 +1286,8 @@ class _HomePageState extends State<HomePage>
     }
 
     setState(() {
-      _actionLoading = false;
+      _actionLoading =
+          false;
     });
 
     _showMessage(
@@ -846,6 +1298,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // 📺 ADMOB DISMISSED
+  // ============================================================
+
   void _handleAdDismissed(
     String purpose,
   ) {
@@ -854,14 +1310,21 @@ class _HomePageState extends State<HomePage>
     }
 
     if (purpose ==
-            HomeAdManager.powerBoostPurpose ||
+            HomeAdManager
+                .powerBoostPurpose ||
         purpose ==
-            HomeAdManager.miningStartPurpose) {
+            HomeAdManager
+                .miningStartPurpose) {
       setState(() {
-        _actionLoading = false;
+        _actionLoading =
+            false;
       });
     }
   }
+
+  // ============================================================
+  // 🚪 LOGOUT
+  // ============================================================
 
   Future<void> _logout() async {
     try {
@@ -875,10 +1338,15 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  // ============================================================
+  // 📄 NAVIGATION
+  // ============================================================
+
   void _openAbout() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => AboutPage(
+        builder: (_) =>
+            AboutPage(
           languageCode:
               widget.languageCode,
         ),
@@ -889,7 +1357,8 @@ class _HomePageState extends State<HomePage>
   void _openWhitePaper() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => WhitePaperPage(
+        builder: (_) =>
+            WhitePaperPage(
           languageCode:
               widget.languageCode,
         ),
@@ -900,7 +1369,8 @@ class _HomePageState extends State<HomePage>
   void _openRoadmap() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RoadmapPage(
+        builder: (_) =>
+            RoadmapPage(
           languageCode:
               widget.languageCode,
         ),
@@ -911,7 +1381,8 @@ class _HomePageState extends State<HomePage>
   void _openAchievements() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => AchievementsPage(
+        builder: (_) =>
+            AchievementsPage(
           languageCode:
               widget.languageCode,
         ),
@@ -931,9 +1402,16 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Future<void> _showLanguageDialog() async {
-    final Map<String, String> languages =
-        AppLocalizations.supportedLanguages;
+  // ============================================================
+  // 🌍 LANGUAGE DIALOG
+  // ============================================================
+
+  Future<void>
+      _showLanguageDialog() async {
+    final Map<String, String>
+        languages =
+        AppLocalizations
+            .supportedLanguages;
 
     await showDialog<void>(
       context: context,
@@ -941,41 +1419,64 @@ class _HomePageState extends State<HomePage>
         BuildContext dialogContext,
       ) {
         return AlertDialog(
-          backgroundColor: cardColor,
+          backgroundColor:
+              cardColor,
           title: Text(
             _t('language'),
-            style: const TextStyle(
-              color: primaryTextColor,
-              fontWeight: FontWeight.bold,
+            style:
+                const TextStyle(
+              color:
+                  primaryTextColor,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
           content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: languages.length,
+            width:
+                double.maxFinite,
+            child:
+                ListView.builder(
+              shrinkWrap:
+                  true,
+              itemCount:
+                  languages.length,
               itemBuilder: (
-                BuildContext context,
+                BuildContext
+                    context,
                 int index,
               ) {
-                final String code =
-                    languages.keys.elementAt(index);
+                final String
+                    code =
+                    languages
+                        .keys
+                        .elementAt(
+                  index,
+                );
 
-                final String name =
-                    languages[code] ?? code;
+                final String
+                    name =
+                    languages[
+                            code] ??
+                        code;
 
                 return ListTile(
-                  title: Text(
+                  title:
+                      Text(
                     name,
-                    style: const TextStyle(
-                      color: primaryTextColor,
+                    style:
+                        const TextStyle(
+                      color:
+                          primaryTextColor,
                     ),
                   ),
                   trailing:
-                      code == widget.languageCode
+                      code ==
+                              widget
+                                  .languageCode
                           ? const Icon(
                               Icons.check,
-                              color: accentColor,
+                              color:
+                                  accentColor,
                             )
                           : null,
                   onTap: () {
@@ -984,8 +1485,12 @@ class _HomePageState extends State<HomePage>
                     ).pop();
 
                     if (code !=
-                        widget.languageCode) {
-                      widget.changeLanguage(code);
+                        widget
+                            .languageCode) {
+                      widget
+                          .changeLanguage(
+                        code,
+                      );
                     }
                   },
                 );
@@ -997,6 +1502,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // 🐱 CAT FACT
+  // ============================================================
+
   Widget _buildDailyCatFact() {
     final String fact =
         CatFacts.getDailyFact(
@@ -1005,10 +1514,15 @@ class _HomePageState extends State<HomePage>
     );
 
     return CatFactCard(
-      title: _t('catFact'),
+      title:
+          _t('catFact'),
       fact: fact,
     );
   }
+
+  // ============================================================
+  // ⛏️ STELLA MINING CARD
+  // ============================================================
 
   Widget _buildStellaMiningCard() {
     return StellaMiningCard(
@@ -1017,15 +1531,21 @@ class _HomePageState extends State<HomePage>
       unclaimedMining:
           _unclaimedMining,
       miningTitle:
-          _t('stellaMiningTitle'),
+          _t(
+        'stellaMiningTitle',
+      ),
       miningSubtitle:
-          _t('stellaMiningSubtitle'),
+          _t(
+        'stellaMiningSubtitle',
+      ),
       timerText:
           _formatDuration(
         _miningRemainingMs,
       ),
       timerLabel:
-          _t('miningTimeRemaining'),
+          _t(
+        'miningTimeRemaining',
+      ),
       catAnimation:
           _catAnimation,
       miningActive:
@@ -1035,7 +1555,9 @@ class _HomePageState extends State<HomePage>
       miningDurationMs:
           _miningDurationMs,
       miningProgressTitle:
-          _t('miningProgress'),
+          _t(
+        'miningProgress',
+      ),
       stlPerHourText:
           '${_formatNumber(
         _effectiveHashRate *
@@ -1054,6 +1576,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // 📊 STATS
+  // ============================================================
+
   Widget _buildStatsRow() {
     return HomeStatsCard(
       hashRateTitle:
@@ -1071,14 +1597,51 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // ⚡ POWER BOOST CARD
+  // ============================================================
+
   Widget _buildAdButton() {
     final bool canUse =
         _canUseBoost;
 
+    // ----------------------------------------------------------
+    // 🌍 Korjaa mahdollisen raakakäännösavaimen.
+    //
+    // adsToday-käännös voi olla esimerkiksi:
+    //
+    // Ads today: {current}/{max}
+    //
+    // PowerBoostCardille annetaan tässä valmis teksti.
+    // ----------------------------------------------------------
+
+    final String adsTodayLabel =
+        _t('adsToday')
+            .replaceAll(
+              '{current}',
+              '$_adsToday',
+            )
+            .replaceAll(
+              '{max}',
+              '$_maxAdsPerDay',
+            )
+            .replaceAll(
+              '{{current}}',
+              '$_adsToday',
+            )
+            .replaceAll(
+              '{{max}}',
+              '$_maxAdsPerDay',
+            );
+
     final String subtitle =
         _boostActive
-            ? _t('powerBoostActive')
-            : _t('watchAdSubtitle');
+            ? _t(
+                'powerBoostActive',
+              )
+            : _t(
+                'watchAdSubtitle',
+              );
 
     return PowerBoostCard(
       boostActive:
@@ -1094,11 +1657,15 @@ class _HomePageState extends State<HomePage>
       subtitle:
           subtitle,
       title:
-          _t('powerBoost'),
+          _t(
+        'powerBoost',
+      ),
       activeText:
           _t('active'),
       activeTitle:
-          _t('powerBoostActive'),
+          _t(
+        'powerBoostActive',
+      ),
       remainingText:
           _t('remaining'),
       hashRateBonusText:
@@ -1110,11 +1677,13 @@ class _HomePageState extends State<HomePage>
         _effectiveHashRate,
       )} H/s',
       nextAdAfterBoostText:
-          _t('nextAdAfterBoost'),
+          _t(
+        'nextAdAfterBoost',
+      ),
       watchAdText:
           _t('watchAd'),
       adsTodayText:
-          _t('adsToday'),
+          adsTodayLabel,
       maxBoostsInfoText:
           '$_adsToday/$_maxAdsPerDay',
       onPressed:
@@ -1124,9 +1693,14 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // 🐱 HEADER
+  // ============================================================
+
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding:
+          const EdgeInsets.fromLTRB(
         20,
         18,
         20,
@@ -1136,15 +1710,19 @@ class _HomePageState extends State<HomePage>
         children: [
           Builder(
             builder:
-                (BuildContext context) {
+                (
+              BuildContext context,
+            ) {
               return IconButton(
                 onPressed: () {
                   Scaffold.of(
                     context,
                   ).openDrawer();
                 },
-                icon: const Icon(
-                  Icons.menu_rounded,
+                icon:
+                    const Icon(
+                  Icons
+                      .menu_rounded,
                   color:
                       primaryTextColor,
                   size: 30,
@@ -1157,7 +1735,8 @@ class _HomePageState extends State<HomePage>
           ),
           const Expanded(
             child: Center(
-              child: StelluriiniLogo(
+              child:
+                  StelluriiniLogo(
                 size: 48,
               ),
             ),
@@ -1169,6 +1748,10 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
+
+  // ============================================================
+  // 👋 GREETING
+  // ============================================================
 
   Widget _buildGreeting() {
     final String greeting =
@@ -1191,8 +1774,10 @@ class _HomePageState extends State<HomePage>
             maxLines: 1,
             overflow:
                 TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: primaryTextColor,
+            style:
+                const TextStyle(
+              color:
+                  primaryTextColor,
               fontSize: 23,
               fontWeight:
                   FontWeight.w700,
@@ -1202,9 +1787,13 @@ class _HomePageState extends State<HomePage>
             height: 4,
           ),
           Text(
-            _t('stellaWelcome'),
-            style: const TextStyle(
-              color: secondaryTextColor,
+            _t(
+              'stellaWelcome',
+            ),
+            style:
+                const TextStyle(
+              color:
+                  secondaryTextColor,
               fontSize: 14,
             ),
           ),
@@ -1212,6 +1801,10 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
+
+  // ============================================================
+  // ⛏️ MINING BUTTON
+  // ============================================================
 
   Widget _buildMiningButton() {
     final bool disabled =
@@ -1224,15 +1817,18 @@ class _HomePageState extends State<HomePage>
         horizontal: 22,
       ),
       child: SizedBox(
-        width: double.infinity,
+        width:
+            double.infinity,
         height: 58,
-        child: ElevatedButton(
+        child:
+            ElevatedButton(
           onPressed:
               disabled
                   ? null
                   : _startMining,
           style:
-              ElevatedButton.styleFrom(
+              ElevatedButton
+                  .styleFrom(
             backgroundColor:
                 accentColor,
             foregroundColor:
@@ -1242,14 +1838,16 @@ class _HomePageState extends State<HomePage>
               alpha: 0.35,
             ),
             disabledForegroundColor:
-                primaryTextColor.withValues(
+                primaryTextColor
+                    .withValues(
               alpha: 0.6,
             ),
             elevation: 0,
             shape:
                 RoundedRectangleBorder(
               borderRadius:
-                  BorderRadius.circular(
+                  BorderRadius
+                      .circular(
                 18,
               ),
             ),
@@ -1261,7 +1859,8 @@ class _HomePageState extends State<HomePage>
                       height: 24,
                       child:
                           CircularProgressIndicator(
-                        strokeWidth: 2.5,
+                        strokeWidth:
+                            2.5,
                         color:
                             backgroundColor,
                       ),
@@ -1291,7 +1890,8 @@ class _HomePageState extends State<HomePage>
                               const TextStyle(
                             fontSize: 17,
                             fontWeight:
-                                FontWeight.bold,
+                                FontWeight
+                                    .bold,
                           ),
                         ),
                       ],
@@ -1300,6 +1900,10 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
+
+  // ============================================================
+  // 🐾 FOOTER
+  // ============================================================
 
   Widget _buildFooter() {
     return Padding(
@@ -1314,7 +1918,8 @@ class _HomePageState extends State<HomePage>
         children: [
           const Icon(
             Icons.pets_rounded,
-            color: pinkColor,
+            color:
+                pinkColor,
             size: 22,
           ),
           const SizedBox(
@@ -1324,8 +1929,10 @@ class _HomePageState extends State<HomePage>
             'Stelluriini (STL)',
             textAlign:
                 TextAlign.center,
-            style: TextStyle(
-              color: primaryTextColor,
+            style:
+                TextStyle(
+              color:
+                  primaryTextColor,
               fontWeight:
                   FontWeight.bold,
             ),
@@ -1339,8 +1946,10 @@ class _HomePageState extends State<HomePage>
             ),
             textAlign:
                 TextAlign.center,
-            style: const TextStyle(
-              color: secondaryTextColor,
+            style:
+                const TextStyle(
+              color:
+                  secondaryTextColor,
               fontSize: 12,
               height: 1.4,
             ),
@@ -1350,6 +1959,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // 🖥️ BUILD
+  // ============================================================
+
   @override
   Widget build(
     BuildContext context,
@@ -1358,11 +1971,15 @@ class _HomePageState extends State<HomePage>
       return Scaffold(
         backgroundColor:
             backgroundColor,
-        body: SafeArea(
-          child: Center(
-            child: Column(
+        body:
+            SafeArea(
+          child:
+              Center(
+            child:
+                Column(
               mainAxisSize:
-                  MainAxisSize.min,
+                  MainAxisSize
+                      .min,
               children: [
                 const StelluriiniLogo(
                   size: 76,
@@ -1371,13 +1988,16 @@ class _HomePageState extends State<HomePage>
                   height: 22,
                 ),
                 const CircularProgressIndicator(
-                  color: accentColor,
+                  color:
+                      accentColor,
                 ),
                 const SizedBox(
                   height: 18,
                 ),
                 Text(
-                  _t('loading'),
+                  _t(
+                    'loading',
+                  ),
                   style:
                       const TextStyle(
                     color:
@@ -1394,9 +2014,11 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       backgroundColor:
           backgroundColor,
-      drawer: HomeDrawer(
+      drawer:
+          HomeDrawer(
         languageCode:
-            widget.languageCode,
+            widget
+                .languageCode,
         onLanguagePressed:
             _showLanguageDialog,
         onAboutPressed:
@@ -1412,14 +2034,18 @@ class _HomePageState extends State<HomePage>
         onLogoutPressed:
             _logout,
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: accentColor,
+      body:
+          SafeArea(
+        child:
+            RefreshIndicator(
+          color:
+              accentColor,
           backgroundColor:
               cardColor,
           onRefresh:
               _loadMiningStatus,
-          child: CustomScrollView(
+          child:
+              CustomScrollView(
             physics:
                 const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -1432,7 +2058,8 @@ class _HomePageState extends State<HomePage>
                     _buildGreeting(),
               ),
               const SliverToBoxAdapter(
-                child: SizedBox(
+                child:
+                    SizedBox(
                   height: 12,
                 ),
               ),
@@ -1441,7 +2068,8 @@ class _HomePageState extends State<HomePage>
                     _buildStellaMiningCard(),
               ),
               const SliverToBoxAdapter(
-                child: SizedBox(
+                child:
+                    SizedBox(
                   height: 16,
                 ),
               ),
@@ -1450,7 +2078,8 @@ class _HomePageState extends State<HomePage>
                     _buildStatsRow(),
               ),
               const SliverToBoxAdapter(
-                child: SizedBox(
+                child:
+                    SizedBox(
                   height: 14,
                 ),
               ),
@@ -1459,7 +2088,8 @@ class _HomePageState extends State<HomePage>
                     _buildAdButton(),
               ),
               const SliverToBoxAdapter(
-                child: SizedBox(
+                child:
+                    SizedBox(
                   height: 14,
                 ),
               ),
@@ -1478,6 +2108,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // ⚡ EFFECTIVE HASH RATE
+  // ============================================================
+
   double get _effectiveHashRate {
     if (_boostActive &&
         _boostRemainingMs > 0) {
@@ -1488,28 +2122,65 @@ class _HomePageState extends State<HomePage>
     return _hashRate;
   }
 
+  // ============================================================
+  // ⚡ CAN USE POWER BOOST
+  // ============================================================
+
   bool get _canUseBoost {
     if (_actionLoading) {
       return false;
     }
+
+    // ----------------------------------------------------------
+    // Päivittäinen mainosraja
+    // ----------------------------------------------------------
 
     if (_adsToday >=
         _maxAdsPerDay) {
       return false;
     }
 
+    // ----------------------------------------------------------
+    // Aktiivinen boost
+    // ----------------------------------------------------------
+
     if (_boostActive &&
         _boostRemainingMs > 0) {
       return false;
     }
+
+    // ----------------------------------------------------------
+    // AdMob-mainosflow käynnissä
+    // ----------------------------------------------------------
 
     if (_adManager
         .powerBoostAdFlowActive) {
       return false;
     }
 
+    // ----------------------------------------------------------
+    // Backendin cooldown
+    // ----------------------------------------------------------
+
+    if (_cooldownRemainingMs >
+        0) {
+      return false;
+    }
+
+    // ----------------------------------------------------------
+    // Backendin lopullinen canWatchAd
+    // ----------------------------------------------------------
+
+    if (!_serverCanWatchAd) {
+      return false;
+    }
+
     return true;
   }
+
+  // ============================================================
+  // ⏱️ FORMAT DURATION
+  // ============================================================
 
   String _formatDuration(
     int milliseconds,
@@ -1535,6 +2206,10 @@ class _HomePageState extends State<HomePage>
         '${seconds.toString().padLeft(2, '0')}';
   }
 
+  // ============================================================
+  // 🔢 FORMAT NUMBER
+  // ============================================================
+
   String _formatNumber(
     double value,
   ) {
@@ -1542,8 +2217,14 @@ class _HomePageState extends State<HomePage>
       return '0.0000';
     }
 
-    return value.toStringAsFixed(4);
+    return value.toStringAsFixed(
+      4,
+    );
   }
+
+  // ============================================================
+  // ❌ ERROR TEXT
+  // ============================================================
 
   String _errorText(
     Object error,
@@ -1551,7 +2232,8 @@ class _HomePageState extends State<HomePage>
     if (error
         is FirebaseFunctionsException) {
       final String? message =
-          error.message?.trim();
+          error.message
+              ?.trim();
 
       if (message != null &&
           message.isNotEmpty) {
@@ -1568,6 +2250,10 @@ class _HomePageState extends State<HomePage>
           '',
         );
   }
+
+  // ============================================================
+  // 📺 ADMOB LOAD ERROR TEXT
+  // ============================================================
 
   String _adLoadErrorText(
     String purpose,
@@ -1589,6 +2275,10 @@ class _HomePageState extends State<HomePage>
         '(${error.code})';
   }
 
+  // ============================================================
+  // 📺 ADMOB SHOW ERROR TEXT
+  // ============================================================
+
   String _adShowErrorText(
     String purpose,
     AdError error,
@@ -1604,16 +2294,27 @@ class _HomePageState extends State<HomePage>
         '(${error.code})';
   }
 
+  // ============================================================
+  // 🌍 LOCALIZATION
+  // ============================================================
+
   String _t(
     String key,
   ) {
-    final AppLocalizations localizations =
-        AppLocalizations.of(context);
+    final AppLocalizations
+        localizations =
+        AppLocalizations.of(
+      context,
+    );
 
     return localizations.t(
       key,
     );
   }
+
+  // ============================================================
+  // 🔢 SAFE DOUBLE
+  // ============================================================
 
   double? _asDouble(
     dynamic value,
@@ -1630,6 +2331,10 @@ class _HomePageState extends State<HomePage>
       value.toString(),
     );
   }
+
+  // ============================================================
+  // 🔢 SAFE INT
+  // ============================================================
 
   int? _asInt(
     dynamic value,
@@ -1651,6 +2356,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  // ============================================================
+  // 🔘 SAFE BOOL
+  // ============================================================
+
   bool? _asBool(
     dynamic value,
   ) {
@@ -1664,14 +2373,18 @@ class _HomePageState extends State<HomePage>
 
     if (value is String) {
       final String normalized =
-          value.toLowerCase().trim();
+          value
+              .toLowerCase()
+              .trim();
 
-      if (normalized == 'true' ||
+      if (normalized ==
+              'true' ||
           normalized == '1') {
         return true;
       }
 
-      if (normalized == 'false' ||
+      if (normalized ==
+              'false' ||
           normalized == '0') {
         return false;
       }
@@ -1680,6 +2393,10 @@ class _HomePageState extends State<HomePage>
     return null;
   }
 
+  // ============================================================
+  // 💬 SHOW MESSAGE
+  // ============================================================
+
   void _showMessage(
     String message,
   ) {
@@ -1687,13 +2404,17 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    ScaffoldMessenger.of(context)
+    ScaffoldMessenger.of(
+      context,
+    )
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(
+          content:
+              Text(
             message,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color:
                   primaryTextColor,
             ),
@@ -1701,13 +2422,18 @@ class _HomePageState extends State<HomePage>
           backgroundColor:
               surfaceColor,
           behavior:
-              SnackBarBehavior.floating,
+              SnackBarBehavior
+                  .floating,
           margin:
-              const EdgeInsets.all(16),
+              const EdgeInsets.all(
+            16,
+          ),
           shape:
               RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(14),
+                BorderRadius.circular(
+              14,
+            ),
           ),
         ),
       );
