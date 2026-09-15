@@ -27,6 +27,20 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //   UID:mining_start
 //   UID:power_boost
 //
+// TÄRKEÄ:
+// AdMob SSV -callback voi saapua hieman mainoksen palkinnon
+// jälkeen. Siksi Firebase reward callbackia EI kutsuta heti
+// onUserEarnedReward-tapahtumassa.
+//
+// Ensin:
+//   AdMob → reward
+//
+// Sen jälkeen:
+//   odotus → SSV → Firestore
+//
+// Ja vasta lopuksi:
+//   Firebase claimMining / powerBoost
+//
 // ============================================================
 
 class HomeAdManager extends ChangeNotifier {
@@ -53,6 +67,22 @@ class HomeAdManager extends ChangeNotifier {
 
   static const String miningStartPurpose =
       'mining_start';
+
+  // ============================================================
+  // ⏳ SSV WAIT
+  // ============================================================
+  //
+  // AdMob voi lähettää SSV-callbackin hieman myöhemmin kuin
+  // onUserEarnedReward tapahtuu.
+  //
+  // Odotetaan ennen Firebase reward callbackia.
+  //
+  // ============================================================
+
+  static const Duration ssvGracePeriod =
+      Duration(
+    seconds: 8,
+  );
 
   // ============================================================
   // 👤 FIREBASE AUTH
@@ -129,17 +159,23 @@ class HomeAdManager extends ChangeNotifier {
   // PUBLIC GETTERS
   // ============================================================
 
-  RewardedAd? get rewardedAd => _rewardedAd;
+  RewardedAd? get rewardedAd =>
+      _rewardedAd;
 
-  bool get adReady => _adReady;
+  bool get adReady =>
+      _adReady;
 
-  bool get adLoading => _adLoading;
+  bool get adLoading =>
+      _adLoading;
 
-  String get rewardedAdPurpose => _rewardedAdPurpose;
+  String get rewardedAdPurpose =>
+      _rewardedAdPurpose;
 
-  String get adLoadError => _adLoadError;
+  String get adLoadError =>
+      _adLoadError;
 
-  bool get miningAdFlowActive => _miningAdFlowActive;
+  bool get miningAdFlowActive =>
+      _miningAdFlowActive;
 
   bool get powerBoostAdFlowActive =>
       _powerBoostAdFlowActive;
@@ -317,7 +353,8 @@ class HomeAdManager extends ChangeNotifier {
     // AUTH CHECK
     // ----------------------------------------------------------
 
-    final User? user = _auth.currentUser;
+    final User? user =
+        _auth.currentUser;
 
     if (user == null) {
       debugPrint(
@@ -346,7 +383,8 @@ class HomeAdManager extends ChangeNotifier {
     // REQUEST ID
     // ----------------------------------------------------------
 
-    final int requestId = ++_loadRequestId;
+    final int requestId =
+        ++_loadRequestId;
 
     // ----------------------------------------------------------
     // STATE
@@ -460,6 +498,18 @@ class HomeAdManager extends ChangeNotifier {
 
             ad.setServerSideOptions(
               serverSideOptions,
+            );
+
+            debugPrint(
+              'STELLURIINI SSV CUSTOM DATA SET',
+            );
+
+            debugPrint(
+              'Purpose: $purpose',
+            );
+
+            debugPrint(
+              'Custom data format: UID:$purpose',
             );
           } catch (error) {
             debugPrint(
@@ -598,7 +648,7 @@ class HomeAdManager extends ChangeNotifier {
               // ------------------------------------------------
               // Hiljainen taustalataus.
               //
-              // Code 3 / no fill ei näy käyttäjälle.
+              // Älä lataa välittömästi uudelleen.
               // ------------------------------------------------
 
               if (!_disposed) {
@@ -754,8 +804,6 @@ class HomeAdManager extends ChangeNotifier {
 
           // ----------------------------------------------------
           // Vain käyttäjän aloittama lataus ilmoittaa virheestä.
-          //
-          // Taustalatauksen code 3 ei näytetä käyttäjälle.
           // ----------------------------------------------------
 
           if (notifyOnLoadError) {
@@ -825,6 +873,103 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
+  // 🛡️ DELAYED SSV REWARD CALLBACK
+  // ============================================================
+  //
+  // TÄMÄ ON TÄRKEIN MUUTOS.
+  //
+  // onUserEarnedReward EI kutsu Firebasea heti.
+  //
+  // Odotetaan ensin SSV:n ehtimistä backendille.
+  //
+  // ============================================================
+
+  void _scheduleVerifiedRewardCallback({
+    required String purpose,
+    required bool Function() isRewardAlreadyHandled,
+    required void Function() markRewardHandled,
+  }) {
+    unawaited(
+      () async {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI SSV GRACE PERIOD START',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Waiting: '
+          '${ssvGracePeriod.inSeconds} seconds',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        await Future<void>.delayed(
+          ssvGracePeriod,
+        );
+
+        if (_disposed) {
+          debugPrint(
+            'SSV reward callback cancelled: manager disposed.',
+          );
+
+          return;
+        }
+
+        if (isRewardAlreadyHandled()) {
+          debugPrint(
+            'SSV reward callback already handled.',
+          );
+
+          return;
+        }
+
+        markRewardHandled();
+
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          'STELLURIINI SSV GRACE PERIOD COMPLETE',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Calling Firebase reward callback now.',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        try {
+          if (purpose == miningStartPurpose) {
+            await onMiningStartReward?.call();
+          } else if (purpose == powerBoostPurpose) {
+            await onPowerBoostReward?.call();
+          }
+        } catch (error) {
+          debugPrint(
+            'Verified reward callback error: $error',
+          );
+        }
+      }(),
+    );
+  }
+
+  // ============================================================
   // ⛏️ SHOW MINING START AD
   // ============================================================
 
@@ -886,6 +1031,9 @@ class HomeAdManager extends ChangeNotifier {
 
       bool rewardEarned = false;
 
+      bool rewardCallbackHandled =
+          false;
+
       debugPrint(
         '==================================================',
       );
@@ -899,7 +1047,12 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'Waiting for onUserEarnedReward...',
+        'SSV Purpose: $miningStartPurpose',
+      );
+
+      debugPrint(
+        'SSV Custom Data: '
+        '${_auth.currentUser?.uid}:$miningStartPurpose',
       );
 
       debugPrint(
@@ -910,8 +1063,12 @@ class HomeAdManager extends ChangeNotifier {
         onUserEarnedReward: (
           AdWithoutView adWithoutView,
           RewardItem reward,
-        ) async {
+        ) {
           if (rewardEarned) {
+            debugPrint(
+              'Mining Start reward callback already received.',
+            );
+
             return;
           }
 
@@ -934,21 +1091,22 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'Calling Firebase claimMining...',
+            'IMPORTANT: Firebase callback is delayed '
+            'for SSV verification.',
           );
 
           debugPrint(
             '==================================================',
           );
 
-          try {
-            await onMiningStartReward?.call();
-          } catch (error) {
-            debugPrint(
-              'Mining Start reward callback error: '
-              '$error',
-            );
-          }
+          _scheduleVerifiedRewardCallback(
+            purpose: miningStartPurpose,
+            isRewardAlreadyHandled: () =>
+                rewardCallbackHandled,
+            markRewardHandled: () {
+              rewardCallbackHandled = true;
+            },
+          );
         },
       );
 
@@ -1042,6 +1200,9 @@ class HomeAdManager extends ChangeNotifier {
 
       bool rewardEarned = false;
 
+      bool rewardCallbackHandled =
+          false;
+
       debugPrint(
         '==================================================',
       );
@@ -1055,7 +1216,12 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'Waiting for onUserEarnedReward...',
+        'SSV Purpose: $powerBoostPurpose',
+      );
+
+      debugPrint(
+        'SSV Custom Data: '
+        '${_auth.currentUser?.uid}:$powerBoostPurpose',
       );
 
       debugPrint(
@@ -1066,8 +1232,12 @@ class HomeAdManager extends ChangeNotifier {
         onUserEarnedReward: (
           AdWithoutView adWithoutView,
           RewardItem reward,
-        ) async {
+        ) {
           if (rewardEarned) {
+            debugPrint(
+              'Power Boost reward callback already received.',
+            );
+
             return;
           }
 
@@ -1090,21 +1260,22 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'Calling Firebase powerBoost...',
+            'IMPORTANT: Firebase callback is delayed '
+            'for SSV verification.',
           );
 
           debugPrint(
             '==================================================',
           );
 
-          try {
-            await onPowerBoostReward?.call();
-          } catch (error) {
-            debugPrint(
-              'Power Boost reward callback error: '
-              '$error',
-            );
-          }
+          _scheduleVerifiedRewardCallback(
+            purpose: powerBoostPurpose,
+            isRewardAlreadyHandled: () =>
+                rewardCallbackHandled,
+            markRewardHandled: () {
+              rewardCallbackHandled = true;
+            },
+          );
         },
       );
 
