@@ -14,6 +14,7 @@
 // 📺 Stella Power Boost
 // 🏆 Stella Achievements
 // 🔐 AdMob SSV -varmistettu Mining Start
+// 🔐 AdMob SSV -varmistettu Power Boost
 //
 // ============================================================
 
@@ -138,13 +139,6 @@ function getSafePositiveNumber(
 // ============================================================
 // 🔐 VALIDATE ADMOB TRANSACTION ID
 // ============================================================
-//
-// Tätä käytetään vain palvelimen löytämän AdMob transaction ID:n
-// turvalliseen käsittelyyn.
-//
-// Flutter ei enää lähetä transaction ID:tä claimMining-funktiolle.
-//
-// ============================================================
 
 function validateAdMobTransactionId(
   value
@@ -249,13 +243,6 @@ function getTimestampMilliseconds(
 // ============================================================
 // 🔐 GET ADMOB REWARD CREATION TIME
 // ============================================================
-//
-// SSV reward -dokumentti voidaan luoda hieman eri tavalla
-// riippuen backend-versiosta. Käytetään ensisijaisesti
-// createdAt-kenttää ja tarvittaessa muita turvallisia
-// aikakenttiä.
-//
-// ============================================================
 
 function getRewardCreatedAtMs(
   rewardData
@@ -288,31 +275,11 @@ function getRewardCreatedAtMs(
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB MINING START REWARD
 // ============================================================
-//
-// TÄMÄ ON UUSI TURVALLINEN MALLI.
-//
-// Flutter ei enää lähetä:
-//
-// adRewardTransactionId
-//
-// Sen sijaan palvelin etsii itse:
-//   - kirjautuneen käyttäjän
-//   - AdMob rewardin
-//   - rewardPurpose = mining_start
-//   - käyttämättömän rewardin
-//
-// Power Boost -rewardia ei hyväksytä.
-//
-// ============================================================
 
 async function getVerifiedMiningStartReward(
   transaction,
   uid
 ) {
-  // ----------------------------------------------------------
-  // 🔎 SEARCH ADMOB REWARDS
-  // ----------------------------------------------------------
-
   const rewardsQuery =
     db
       .collection("admobRewards")
@@ -343,10 +310,6 @@ async function getVerifiedMiningStartReward(
       rewardsQuery
     );
 
-  // ----------------------------------------------------------
-  // ❌ NO REWARD
-  // ----------------------------------------------------------
-
   if (
     rewardSnapshot.empty
   ) {
@@ -356,20 +319,12 @@ async function getVerifiedMiningStartReward(
     );
   }
 
-  // ----------------------------------------------------------
-  // 🔎 FIND NEWEST VALID REWARD
-  // ----------------------------------------------------------
-
   const candidates = [];
 
   rewardSnapshot.forEach(
     (doc) => {
       const rewardData =
         doc.data() || {};
-
-      // --------------------------------------------------------
-      // 👤 USER
-      // --------------------------------------------------------
 
       if (
         typeof rewardData.uid !== "string" ||
@@ -378,20 +333,12 @@ async function getVerifiedMiningStartReward(
         return;
       }
 
-      // --------------------------------------------------------
-      // 🎁 REWARD TYPE
-      // --------------------------------------------------------
-
       if (
         rewardData.rewardType !==
         "admob"
       ) {
         return;
       }
-
-      // --------------------------------------------------------
-      // 🎯 REWARD PURPOSE
-      // --------------------------------------------------------
 
       if (
         rewardData.rewardPurpose !==
@@ -400,10 +347,6 @@ async function getVerifiedMiningStartReward(
         return;
       }
 
-      // --------------------------------------------------------
-      // 🔒 ALREADY CLAIMED
-      // --------------------------------------------------------
-
       if (
         rewardData.miningClaimed === true ||
         rewardData.miningStartClaimed === true ||
@@ -411,10 +354,6 @@ async function getVerifiedMiningStartReward(
       ) {
         return;
       }
-
-      // --------------------------------------------------------
-      // 🔐 ADMOB METADATA
-      // --------------------------------------------------------
 
       if (
         typeof rewardData.adUnit !== "string" ||
@@ -447,10 +386,6 @@ async function getVerifiedMiningStartReward(
     }
   );
 
-  // ----------------------------------------------------------
-  // ❌ NO VALID CANDIDATE
-  // ----------------------------------------------------------
-
   if (
     candidates.length === 0
   ) {
@@ -459,10 +394,6 @@ async function getVerifiedMiningStartReward(
       "🐱 Kelvollista käyttämätöntä Mining Start -AdMob-palkintoa ei löytynyt."
     );
   }
-
-  // ----------------------------------------------------------
-  // 🔄 NEWEST FIRST
-  // ----------------------------------------------------------
 
   candidates.sort(
     (a, b) => {
@@ -476,10 +407,6 @@ async function getVerifiedMiningStartReward(
   const selected =
     candidates[0];
 
-  // ----------------------------------------------------------
-  // 🔐 TRANSACTION ID
-  // ----------------------------------------------------------
-
   if (
     !selected.transactionId
   ) {
@@ -489,9 +416,170 @@ async function getVerifiedMiningStartReward(
     );
   }
 
-  // ----------------------------------------------------------
-  // ✅ RETURN VERIFIED REWARD
-  // ----------------------------------------------------------
+  return {
+    ref:
+      selected.ref,
+
+    data:
+      selected.data,
+
+    transactionId:
+      selected.transactionId,
+  };
+}
+
+// ============================================================
+// 🔐 FIND VERIFIED ADMOB POWER BOOST REWARD
+// ============================================================
+//
+// Flutter ei lähetä transaction ID:tä.
+//
+// Palvelin etsii itse viimeisimmän:
+//
+//   rewardPurpose = power_boost
+//
+// -palkkion, jota ei ole vielä käytetty.
+//
+// ============================================================
+
+async function getVerifiedPowerBoostReward(
+  transaction,
+  uid
+) {
+  const rewardsQuery =
+    db
+      .collection("admobRewards")
+      .where(
+        "uid",
+        "==",
+        uid
+      )
+      .where(
+        "rewardType",
+        "==",
+        "admob"
+      )
+      .where(
+        "rewardPurpose",
+        "==",
+        "power_boost"
+      )
+      .where(
+        "powerBoostClaimed",
+        "==",
+        false
+      )
+      .limit(20);
+
+  const rewardSnapshot =
+    await transaction.get(
+      rewardsQuery
+    );
+
+  if (
+    rewardSnapshot.empty
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 Power Boost -mainoksen vahvistusta ei vielä löytynyt. Katso mainos loppuun ja odota hetki."
+    );
+  }
+
+  const candidates = [];
+
+  rewardSnapshot.forEach(
+    (doc) => {
+      const rewardData =
+        doc.data() || {};
+
+      if (
+        typeof rewardData.uid !== "string" ||
+        rewardData.uid !== uid
+      ) {
+        return;
+      }
+
+      if (
+        rewardData.rewardType !==
+        "admob"
+      ) {
+        return;
+      }
+
+      if (
+        rewardData.rewardPurpose !==
+        "power_boost"
+      ) {
+        return;
+      }
+
+      if (
+        rewardData.powerBoostClaimed === true ||
+        rewardData.powerBoostClaimedAt
+      ) {
+        return;
+      }
+
+      if (
+        typeof rewardData.adUnit !== "string" ||
+        rewardData.adUnit.length === 0
+      ) {
+        return;
+      }
+
+      if (
+        typeof rewardData.rewardItem !== "string" ||
+        rewardData.rewardItem.length === 0
+      ) {
+        return;
+      }
+
+      const createdAtMs =
+        getRewardCreatedAtMs(
+          rewardData
+        );
+
+      candidates.push({
+        ref: doc.ref,
+        data: rewardData,
+        transactionId:
+          validateAdMobTransactionId(
+            doc.id
+          ),
+        createdAtMs,
+      });
+    }
+  );
+
+  if (
+    candidates.length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 Kelvollista käyttämätöntä Power Boost -AdMob-palkintoa ei löytynyt."
+    );
+  }
+
+  candidates.sort(
+    (a, b) => {
+      return (
+        b.createdAtMs -
+        a.createdAtMs
+      );
+    }
+  );
+
+  const selected =
+    candidates[0];
+
+  if (
+    !selected.transactionId
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 Power Boost -AdMob-tapahtuman tunnistaminen epäonnistui."
+    );
+  }
 
   return {
     ref:
@@ -1090,10 +1178,6 @@ async function updateMiningAchievements(
       "stl_hunter"
     );
 
-  // ----------------------------------------------------------
-  // 🐾 FIRST PAW
-  // ----------------------------------------------------------
-
   if (startedMining) {
     const update =
       buildAchievementUpdate(
@@ -1113,10 +1197,6 @@ async function updateMiningAchievements(
       }
     );
   }
-
-  // ----------------------------------------------------------
-  // ⛏️ LITTLE MINER
-  // ----------------------------------------------------------
 
   if (collected > 0) {
     const oldLittleProgress =
@@ -1151,10 +1231,6 @@ async function updateMiningAchievements(
         merge: true,
       }
     );
-
-    // --------------------------------------------------------
-    // 💎 STL HUNTER
-    // --------------------------------------------------------
 
     const oldHunterProgress =
       Math.max(
@@ -1202,10 +1278,6 @@ const getMiningStatus =
     },
     async (request) => {
       try {
-        // ====================================================
-        // 🔐 AUTHENTICATION
-        // ====================================================
-
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
@@ -1219,10 +1291,6 @@ const getMiningStatus =
         const userRef =
           getUserRef(uid);
 
-        // ====================================================
-        // 👤 GET USER
-        // ====================================================
-
         const snapshot =
           await userRef.get();
 
@@ -1230,10 +1298,6 @@ const getMiningStatus =
           snapshot.exists
             ? snapshot.data() || {}
             : {};
-
-        // ====================================================
-        // 🕒 SERVER TIME
-        // ====================================================
 
         const now =
           new Date();
@@ -1244,10 +1308,6 @@ const getMiningStatus =
         const today =
           getUtcDateString();
 
-        // ====================================================
-        // 🎁 DAILY STATUS
-        // ====================================================
-
         const dailyStatus =
           getDailyStatus(
             data,
@@ -1257,29 +1317,17 @@ const getMiningStatus =
         const hashRate =
           dailyStatus.dailyHashRate;
 
-        // ====================================================
-        // ⛏️ ACTIVE MINING HASH RATE
-        // ====================================================
-
         const miningHashRate =
           getMiningHashRate(
             data,
             hashRate
           );
 
-        // ====================================================
-        // 💰 SAVED BALANCE
-        // ====================================================
-
         const miningBalance =
           getSafeNonNegativeNumber(
             data.miningBalance,
             0
           );
-
-        // ====================================================
-        // ⛏️ MINING STATUS
-        // ====================================================
 
         const miningStatus =
           calculateMiningStatus(
@@ -1291,19 +1339,11 @@ const getMiningStatus =
             now
           );
 
-        // ====================================================
-        // 🕒 MINING TIMES
-        // ====================================================
-
         const miningStartedAt =
           getMiningStartTime(data);
 
         const miningEndsAt =
           getMiningEndTime(data);
-
-        // ====================================================
-        // 📺 AD STATUS
-        // ====================================================
 
         const adStatus =
           getAdStatus(
@@ -1311,10 +1351,6 @@ const getMiningStatus =
             nowMs,
             today
           );
-
-        // ====================================================
-        // ✨ BASE UNCLAIMED MINING
-        // ====================================================
 
         let unclaimedMining =
           Math.max(
@@ -1324,10 +1360,6 @@ const getMiningStatus =
               0
             )
           );
-
-        // ====================================================
-        // ⚡ POWER BOOST MINING
-        // ====================================================
 
         let adBoostMining = 0;
 
@@ -1383,17 +1415,9 @@ const getMiningStatus =
           }
         }
 
-        // ====================================================
-        // 💎 ESTIMATED TOTAL
-        // ====================================================
-
         const estimatedTotal =
           miningBalance +
           unclaimedMining;
-
-        // ====================================================
-        // ⚡ EFFECTIVE HASH RATE
-        // ====================================================
 
         const effectiveHashRate =
           adStatus.adBoostActive
@@ -1401,25 +1425,13 @@ const getMiningStatus =
                 AD_HASH_RATE_BONUS
             : hashRate;
 
-        // ====================================================
-        // ⚡ CURRENT MINING SPEED
-        // ====================================================
-
         const miningPerHour =
           effectiveHashRate *
           MINING_PER_HASH_PER_HOUR;
 
-        // ====================================================
-        // ⛏️ ACTIVE CYCLE BASE SPEED
-        // ====================================================
-
         const activeMiningPerHour =
           miningHashRate *
           MINING_PER_HASH_PER_HOUR;
-
-        // ====================================================
-        // 📦 RESPONSE
-        // ====================================================
 
         return {
           success: true,
@@ -1490,10 +1502,6 @@ const getMiningStatus =
 
           activeMiningPerHour,
 
-          // ==================================================
-          // 🎁 DAILY HASH RATE
-          // ==================================================
-
           dailyClaimed:
             dailyStatus.dailyClaimed,
 
@@ -1508,10 +1516,6 @@ const getMiningStatus =
 
           dailyHashRateBonus:
             dailyStatus.dailyHashRate,
-
-          // ==================================================
-          // 📺 POWER BOOST
-          // ==================================================
 
           adsToday:
             adStatus.adsToday,
@@ -1580,10 +1584,6 @@ const claimMining =
     },
     async (request) => {
       try {
-        // ====================================================
-        // 🔐 AUTHENTICATION
-        // ====================================================
-
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
@@ -1597,10 +1597,6 @@ const claimMining =
         const userRef =
           getUserRef(uid);
 
-        // ====================================================
-        // 🕒 SERVER TIME
-        // ====================================================
-
         const now =
           new Date();
 
@@ -1610,51 +1606,17 @@ const claimMining =
         const today =
           getUtcDateString();
 
-        // ====================================================
-        // 🔥 FIRESTORE TRANSACTION
-        // ====================================================
-
         return await db.runTransaction(
           async (transaction) => {
-
-            // ==================================================
-            // 👤 GET USER
-            // ==================================================
-
             const snapshot =
               await transaction.get(
                 userRef
               );
 
-            // ==================================================
-            // 👤 USER DATA
-            // ==================================================
-            //
-            // Jos users/{uid}-dokumenttia ei vielä ole,
-            // käytetään tyhjää käyttäjädataa.
-            //
-            // Myöhemmin transaction.set(..., { merge: true })
-            // luo dokumentin automaattisesti.
-            //
-            // Tämä vastaa dailyCheckIn-funktion toimintaa.
-            //
-            // ==================================================
-
             const data =
               snapshot.exists
                 ? snapshot.data() || {}
                 : {};
-
-            // ==================================================
-            // ⛏️ CHECK ACTIVE MINING FIRST
-            // ==================================================
-            //
-            // Jos louhinta on jo käynnissä, emme etsi tai
-            // kuluta AdMob Mining Start -rewardia.
-            //
-            // Näin käyttäjä ei menetä palkintoaan turhaan.
-            //
-            // ==================================================
 
             const currentDailyStreak =
               getDailyStreak(data);
@@ -1737,19 +1699,11 @@ const claimMining =
               };
             }
 
-            // ==================================================
-            // 🔐 FIND VERIFIED ADMOB MINING START REWARD
-            // ==================================================
-
             const verifiedReward =
               await getVerifiedMiningStartReward(
                 transaction,
                 uid
               );
-
-            // ==================================================
-            // 🎁 DAILY HASH RATE
-            // ==================================================
 
             const dailyClaim =
               calculateNextDailyClaim(
@@ -1763,19 +1717,11 @@ const claimMining =
             const dailyStreak =
               dailyClaim.streak;
 
-            // ==================================================
-            // 💰 CURRENT BALANCE
-            // ==================================================
-
             const oldBalance =
               getSafeNonNegativeNumber(
                 data.miningBalance,
                 0
               );
-
-            // ==================================================
-            // ⛏️ PREVIOUS MINING HASH RATE
-            // ==================================================
 
             const previousMiningHashRate =
               getMiningHashRate(
@@ -1793,10 +1739,6 @@ const claimMining =
                 now
               );
 
-            // ==================================================
-            // 🕒 PREVIOUS MINING CYCLE
-            // ==================================================
-
             const previousStart =
               getMiningStartTime(data);
 
@@ -1812,10 +1754,6 @@ const claimMining =
               false;
 
             let previousAdBoostMining = 0;
-
-            // ==================================================
-            // 💰 COLLECT FINISHED MINING
-            // ==================================================
 
             if (
               previousStart &&
@@ -1836,10 +1774,6 @@ const claimMining =
                     previousStartMs
                 );
 
-              // ================================================
-              // 💰 BASE MINING
-              // ================================================
-
               const baseCollected =
                 Math.max(
                   0,
@@ -1851,10 +1785,6 @@ const claimMining =
                     0
                   )
                 );
-
-              // ================================================
-              // ⚡ POWER BOOST MINING
-              // ================================================
 
               const boosts =
                 await getAdBoostHistory(
@@ -1883,10 +1813,6 @@ const claimMining =
                   )
                 );
 
-              // ================================================
-              // 💰 TOTAL COLLECTION
-              // ================================================
-
               collected =
                 Math.max(
                   0,
@@ -1906,10 +1832,6 @@ const claimMining =
               }
             }
 
-            // ==================================================
-            // 🏆 ACHIEVEMENT DATA
-            // ==================================================
-
             await updateMiningAchievements(
               transaction,
               uid,
@@ -1917,10 +1839,6 @@ const claimMining =
               true,
               now
             );
-
-            // ==================================================
-            // 🐱 START NEW MINING CYCLE
-            // ==================================================
 
             const newMiningStartedAt =
               now;
@@ -1931,16 +1849,8 @@ const claimMining =
                   MINING_DURATION_MS
               );
 
-            // ==================================================
-            // ⚡ NEW CYCLE HASH RATE
-            // ==================================================
-
             const newMiningHashRate =
               dailyHashRate;
-
-            // ==================================================
-            // 👤 UPDATE USER
-            // ====================================================
 
             const userUpdate = {
               hashRate:
@@ -1978,10 +1888,6 @@ const claimMining =
                 FieldValue.serverTimestamp(),
             };
 
-            // ==================================================
-            // 👤 CREATE OR UPDATE USER
-            // ==================================================
-
             transaction.set(
               userRef,
               userUpdate,
@@ -1989,10 +1895,6 @@ const claimMining =
                 merge: true,
               }
             );
-
-            // ==================================================
-            // 🔐 CONSUME ADMOB MINING START REWARD
-            // ==================================================
 
             transaction.set(
               verifiedReward.ref,
@@ -2016,10 +1918,6 @@ const claimMining =
                 merge: true,
               }
             );
-
-            // ==================================================
-            // 📜 HISTORY: DAILY HASH RATE
-            // ==================================================
 
             if (
               !dailyClaim.claimedToday
@@ -2064,10 +1962,6 @@ const claimMining =
                 }
               );
             }
-
-            // ==================================================
-            // 📜 HISTORY: COMPLETED MINING
-            // ==================================================
 
             if (
               completedPreviousCycle
@@ -2119,10 +2013,6 @@ const claimMining =
               );
             }
 
-            // ==================================================
-            // 📜 HISTORY: NEW MINING
-            // ==================================================
-
             const startHistoryRef =
               getHistoryCollection(uid)
                 .doc();
@@ -2160,10 +2050,6 @@ const claimMining =
               }
             );
 
-            // ==================================================
-            // ⚡ ACTIVE POWER BOOST INFO
-            // ==================================================
-
             const boostStartedMs =
               getTimestampMilliseconds(
                 data.adBoostStartedAt
@@ -2193,18 +2079,10 @@ const claimMining =
                     AD_HASH_RATE_BONUS
                 : dailyHashRate;
 
-            // ==================================================
-            // 🎁 DAILY MESSAGE
-            // ==================================================
-
             const dailyMessage =
               dailyClaim.claimedToday
                 ? "🐱⛏️ Stella jatkaa tämän päivän louhintaa!"
                 : `🐱✨ Stella sai päivän ${dailyStreak} Daily Hash Raten: ${dailyHashRate.toFixed(4)} HR!`;
-
-            // ==================================================
-            // ✅ RESPONSE
-            // ==================================================
 
             return {
               success: true,
@@ -2288,10 +2166,367 @@ const claimMining =
   );
 
 // ============================================================
+// ⚡ POWER BOOST
+// ============================================================
+//
+// Mainos itsessään näytetään Flutterissa.
+//
+// Kun käyttäjä saa RewardedAd-palkkion:
+//
+//   AdMob SSV
+//        ↓
+//   admobRewards/{transactionId}
+//        ↓
+//   powerBoost()
+//        ↓
+//   4 h Power Boost
+//
+// ============================================================
+
+const powerBoost =
+  onCall(
+    {
+      region: "us-central1",
+    },
+    async (request) => {
+      try {
+        // ======================================================
+        // 🔐 AUTHENTICATION
+        // ======================================================
+
+        if (!request.auth) {
+          throw new HttpsError(
+            "unauthenticated",
+            "🐱 Kirjaudu sisään käyttääksesi Power Boostia."
+          );
+        }
+
+        const uid =
+          request.auth.uid;
+
+        const userRef =
+          getUserRef(uid);
+
+        const now =
+          new Date();
+
+        const nowMs =
+          now.getTime();
+
+        const today =
+          getUtcDateString();
+
+        // ======================================================
+        // 🔥 FIRESTORE TRANSACTION
+        // ======================================================
+
+        return await db.runTransaction(
+          async (transaction) => {
+            // ==================================================
+            // 👤 USER
+            // ==================================================
+
+            const userSnapshot =
+              await transaction.get(
+                userRef
+              );
+
+            const userData =
+              userSnapshot.exists
+                ? userSnapshot.data() || {}
+                : {};
+
+            // ==================================================
+            // 📊 CURRENT AD STATUS
+            // ==================================================
+
+            const currentAdStatus =
+              getAdStatus(
+                userData,
+                nowMs,
+                today
+              );
+
+            // ==================================================
+            // 🚫 MAX DAILY ADS
+            // ==================================================
+
+            if (
+              currentAdStatus.adsToday >=
+              MAX_ADS_PER_DAY
+            ) {
+              throw new HttpsError(
+                "resource-exhausted",
+                "🐱 Päivän Power Boost -mainosraja on täynnä."
+              );
+            }
+
+            // ==================================================
+            // 🚫 EXISTING ACTIVE BOOST
+            // ==================================================
+
+            if (
+              currentAdStatus.adBoostActive
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱 Power Boost on jo aktiivinen."
+              );
+            }
+
+            // ==================================================
+            // 🚫 COOLDOWN
+            // ==================================================
+
+            if (
+              currentAdStatus.cooldownRemainingMs >
+              0
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱 Power Boost ei ole vielä valmis käytettäväksi uudelleen."
+              );
+            }
+
+            // ==================================================
+            // 🔐 FIND VERIFIED ADMOB REWARD
+            // ==================================================
+
+            const verifiedReward =
+              await getVerifiedPowerBoostReward(
+                transaction,
+                uid
+              );
+
+            // ==================================================
+            // 🕒 BOOST TIME
+            // ==================================================
+
+            const boostStartedAt =
+              now;
+
+            const boostEndsAt =
+              new Date(
+                nowMs +
+                  AD_BOOST_DURATION_MS
+              );
+
+            // ==================================================
+            // 📊 NEW DAILY AD COUNT
+            // ==================================================
+
+            const storedAdDate =
+              typeof userData.lastAdDate === "string"
+                ? userData.lastAdDate
+                : "";
+
+            const currentAdsToday =
+              storedAdDate === today
+                ? Math.max(
+                    0,
+                    Math.floor(
+                      getSafeNumber(
+                        userData.adsToday,
+                        0
+                      )
+                    )
+                  )
+                : 0;
+
+            const newAdsToday =
+              currentAdsToday + 1;
+
+            // ==================================================
+            // 👤 USER UPDATE
+            // ==================================================
+
+            transaction.set(
+              userRef,
+              {
+                adsToday:
+                  newAdsToday,
+
+                lastAdDate:
+                  today,
+
+                lastAdRewardAt:
+                  FieldValue.serverTimestamp(),
+
+                adBoostStartedAt:
+                  boostStartedAt,
+
+                adBoostEndsAt:
+                  boostEndsAt,
+
+                updatedAt:
+                  FieldValue.serverTimestamp(),
+              },
+              {
+                merge: true,
+              }
+            );
+
+            // ==================================================
+            // 🔐 CONSUME ADMOB REWARD
+            // ==================================================
+
+            transaction.set(
+              verifiedReward.ref,
+              {
+                powerBoostClaimed:
+                  true,
+
+                powerBoostClaimedAt:
+                  FieldValue.serverTimestamp(),
+
+                powerBoostClaimedBy:
+                  uid,
+              },
+              {
+                merge: true,
+              }
+            );
+
+            // ==================================================
+            // 📜 POWER BOOST HISTORY
+            // ==================================================
+
+            const historyRef =
+              getHistoryCollection(uid)
+                .doc();
+
+            transaction.set(
+              historyRef,
+              {
+                type:
+                  "ad_reward",
+
+                title:
+                  "Stella Power Boost 🐱⚡",
+
+                amount:
+                  0,
+
+                adRewardTransactionId:
+                  verifiedReward.transactionId,
+
+                rewardPurpose:
+                  "power_boost",
+
+                adHashRateBonus:
+                  AD_HASH_RATE_BONUS,
+
+                boostStartedAt:
+                  boostStartedAt,
+
+                boostEndsAt:
+                  boostEndsAt,
+
+                boostDurationMs:
+                  AD_BOOST_DURATION_MS,
+
+                adsToday:
+                  newAdsToday,
+
+                maxAdsPerDay:
+                  MAX_ADS_PER_DAY,
+
+                createdAt:
+                  FieldValue.serverTimestamp(),
+              }
+            );
+
+            // ==================================================
+            // 📊 EFFECTIVE HASH RATE
+            // ==================================================
+
+            const dailyStatus =
+              getDailyStatus(
+                userData,
+                today
+              );
+
+            const baseHashRate =
+              getMiningHashRate(
+                userData,
+                dailyStatus.dailyHashRate
+              );
+
+            const effectiveHashRate =
+              baseHashRate +
+              AD_HASH_RATE_BONUS;
+
+            // ==================================================
+            // ✅ RESPONSE
+            // ==================================================
+
+            return {
+              success: true,
+
+              boostActive: true,
+
+              active: true,
+
+              adsToday:
+                newAdsToday,
+
+              maxAdsPerDay:
+                MAX_ADS_PER_DAY,
+
+              adHashRateBonus:
+                AD_HASH_RATE_BONUS,
+
+              boostRemainingMs:
+                AD_BOOST_DURATION_MS,
+
+              remainingBoostMs:
+                AD_BOOST_DURATION_MS,
+
+              adBoostDurationMs:
+                AD_BOOST_DURATION_MS,
+
+              adBoostStartedAt:
+                boostStartedAt.toISOString(),
+
+              adBoostEndsAt:
+                boostEndsAt.toISOString(),
+
+              effectiveHashRate,
+
+              transactionId:
+                verifiedReward.transactionId,
+
+              message:
+                "🐱⚡ Stella Power Boost on aktiivinen 4 tunnin ajan!",
+            };
+          }
+        );
+      } catch (error) {
+        console.error(
+          "powerBoost error:",
+          error
+        );
+
+        if (
+          error instanceof HttpsError
+        ) {
+          throw error;
+        }
+
+        throw new HttpsError(
+          "internal",
+          "🐱 Power Boostin aktivointi epäonnistui."
+        );
+      }
+    }
+  );
+
+// ============================================================
 // 📦 EXPORTS
 // ============================================================
 
 module.exports = {
   getMiningStatus,
   claimMining,
+  powerBoost,
 };
