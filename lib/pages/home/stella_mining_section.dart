@@ -56,6 +56,12 @@ class StellaMiningSection extends StatelessWidget {
   final String waitingForStellaLabel;
 
   // ============================================================
+  // ⛏️ MINING BUTTON
+  // ============================================================
+
+  final Widget miningButton;
+
+  // ============================================================
   // ⏱️ FORMATTER
   // ============================================================
 
@@ -118,6 +124,12 @@ class StellaMiningSection extends StatelessWidget {
     required this.miningFinishedLabel,
     required this.readyText,
     required this.waitingForStellaLabel,
+
+    // ==========================================================
+    // ⛏️ MINING BUTTON
+    // ==========================================================
+
+    required this.miningButton,
 
     // ==========================================================
     // ⏱️ FORMATTER
@@ -188,9 +200,9 @@ class StellaMiningSection extends StatelessWidget {
       timerLabel = waitingForStellaLabel;
     }
 
-    // ==========================================================
+    // ============================================================
     // 🐱 STELLA MINING CARD
-    // ==========================================================
+    // ============================================================
 
     return StellaMiningCard(
       unclaimedMining:
@@ -253,6 +265,13 @@ class StellaMiningSection extends StatelessWidget {
 
       dailyHashRateDayText:
           dailyHashRateDayText,
+
+      // ========================================================
+      // ⛏️ MINING BUTTON
+      // ========================================================
+
+      miningButton:
+          miningButton,
     );
   }
 }
