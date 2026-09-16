@@ -68,7 +68,8 @@ class _HomePageState extends State<HomePage>
   static const double defaultAdHashRateBonus =
       0.5833;
 
-  static const int defaultMaxAdsPerDay = 6;
+  static const int defaultMaxAdsPerDay =
+      6;
 
   static const double defaultDailyHashRate =
       0.5;
@@ -205,9 +206,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _miningTimer?.cancel();
-
     _boostTimer?.cancel();
-
     _refreshTimer?.cancel();
 
     _adManager.removeListener(
@@ -215,7 +214,6 @@ class _HomePageState extends State<HomePage>
     );
 
     _adManager.dispose();
-
     _catAnimation.dispose();
 
     super.dispose();
@@ -228,7 +226,6 @@ class _HomePageState extends State<HomePage>
   Future<void> _initialize() async {
     try {
       await _loadUsername();
-
       await _loadMiningStatus();
     } catch (e) {
       if (mounted) {
@@ -534,7 +531,6 @@ class _HomePageState extends State<HomePage>
 
       if (finalBoostRemaining <= 0) {
         finalBoostActive = false;
-
         finalBoostRemaining = 0;
       }
 
@@ -595,7 +591,6 @@ class _HomePageState extends State<HomePage>
       });
 
       _startMiningTimer();
-
       _startBoostTimer();
     } catch (e) {
       if (mounted) {
@@ -652,11 +647,8 @@ class _HomePageState extends State<HomePage>
         if (_miningRemainingMs <=
             1000) {
           setState(() {
-            _miningRemainingMs =
-                0;
-
-            _miningActive =
-                false;
+            _miningRemainingMs = 0;
+            _miningActive = false;
           });
 
           _miningTimer?.cancel();
@@ -665,8 +657,7 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          _miningRemainingMs -=
-              1000;
+          _miningRemainingMs -= 1000;
 
           _unclaimedMining +=
               (_effectiveHashRate *
@@ -702,11 +693,8 @@ class _HomePageState extends State<HomePage>
         if (_boostRemainingMs <=
             1000) {
           setState(() {
-            _boostRemainingMs =
-                0;
-
-            _boostActive =
-                false;
+            _boostRemainingMs = 0;
+            _boostActive = false;
           });
 
           _boostTimer?.cancel();
@@ -717,8 +705,7 @@ class _HomePageState extends State<HomePage>
         }
 
         setState(() {
-          _boostRemainingMs -=
-              1000;
+          _boostRemainingMs -= 1000;
         });
       },
     );
@@ -750,8 +737,7 @@ class _HomePageState extends State<HomePage>
 
       if (!shown && mounted) {
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
 
         _showMessage(
@@ -761,8 +747,7 @@ class _HomePageState extends State<HomePage>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
 
         _showMessage(
@@ -774,12 +759,6 @@ class _HomePageState extends State<HomePage>
 
   // ============================================================
   // 🔐 START MINING AFTER ADMOB
-  // ============================================================
-  //
-  // AdMob SSV:n odotus tehdään nyt backendissä.
-  //
-  // Flutter lähettää vain yhden claimMining()-kutsun.
-  //
   // ============================================================
 
   Future<void> _startMiningAfterAd() async {
@@ -824,8 +803,7 @@ class _HomePageState extends State<HomePage>
                   _streak;
 
           setState(() {
-            _miningActive =
-                true;
+            _miningActive = true;
 
             _streak =
                 streak.clamp(
@@ -852,8 +830,7 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (mounted) {
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
       }
     }
@@ -887,8 +864,7 @@ class _HomePageState extends State<HomePage>
 
       if (!shown && mounted) {
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
 
         _showMessage(
@@ -898,8 +874,7 @@ class _HomePageState extends State<HomePage>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
 
         _showMessage(
@@ -911,18 +886,6 @@ class _HomePageState extends State<HomePage>
 
   // ============================================================
   // ⚡ ACTIVATE SERVER-SIDE POWER BOOST
-  // ============================================================
-  //
-  // TÄRKEÄ MUUTOS:
-  //
-  // Aiemmin tämä funktio kutsui powerBoost()-funktiota jopa
-  // 30 kertaa kahden sekunnin välein.
-  //
-  // Backendin miningFunctions.js odottaa jo AdMob SSV:tä
-  // enintään 30 sekuntia.
-  //
-  // Siksi Flutter tekee nyt vain YHDEN kutsun.
-  //
   // ============================================================
 
   Future<void>
@@ -1000,28 +963,22 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
-        _boostActive =
-            true;
+        _boostActive = true;
 
         _boostRemainingMs =
             remaining;
 
         if (ads != null) {
-          _adsToday =
-              ads;
+          _adsToday = ads;
         }
 
         if (bonus != null &&
             bonus > 0) {
-          _adHashRateBonus =
-              bonus;
+          _adHashRateBonus = bonus;
         }
 
-        _serverCanWatchAd =
-            false;
-
-        _cooldownRemainingMs =
-            0;
+        _serverCanWatchAd = false;
+        _cooldownRemainingMs = 0;
       });
 
       _startBoostTimer();
@@ -1045,8 +1002,7 @@ class _HomePageState extends State<HomePage>
     } finally {
       if (mounted) {
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
       }
     }
@@ -1077,8 +1033,7 @@ class _HomePageState extends State<HomePage>
     }
 
     setState(() {
-      _actionLoading =
-          false;
+      _actionLoading = false;
     });
 
     _showMessage(
@@ -1102,8 +1057,7 @@ class _HomePageState extends State<HomePage>
     }
 
     setState(() {
-      _actionLoading =
-          false;
+      _actionLoading = false;
     });
 
     _showMessage(
@@ -1132,8 +1086,7 @@ class _HomePageState extends State<HomePage>
             HomeAdManager
                 .miningStartPurpose) {
       setState(() {
-        _actionLoading =
-            false;
+        _actionLoading = false;
       });
     }
   }
@@ -1422,23 +1375,16 @@ class _HomePageState extends State<HomePage>
         _canUseBoost;
 
     final String adsTodayLabel =
-        _t('adsToday')
-            .replaceAll(
-              '{current}',
-              '$_adsToday',
-            )
-            .replaceAll(
-              '{max}',
-              '$_maxAdsPerDay',
-            )
-            .replaceAll(
-              '{{current}}',
-              '$_adsToday',
-            )
-            .replaceAll(
-              '{{max}}',
-              '$_maxAdsPerDay',
-            );
+        AppLocalizations
+            .forLanguage(
+      widget.languageCode,
+    ).getWithParams(
+      'adsToday',
+      params: {
+        'current': _adsToday,
+        'max': _maxAdsPerDay,
+      },
+    );
 
     final String subtitle =
         _boostActive
@@ -2083,19 +2029,22 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // 🌍 LOCALIZATION
   // ============================================================
+  //
+  // TÄRKEÄ:
+  // Käytetään HomePagen omaa languageCode-arvoa.
+  //
+  // Näin main.dartin kielivalinta ja HomePagen
+  // kaikki käännökset pysyvät varmasti samassa kielessä.
+  // ============================================================
 
   String _t(
     String key,
   ) {
-    final AppLocalizations
-        localizations =
-        AppLocalizations.of(
-      context,
-    );
-
-    return localizations.t(
-      key,
-    );
+    return AppLocalizations
+        .forLanguage(
+      widget.languageCode,
+    )
+        .get(key);
   }
 
   // ============================================================
@@ -2222,6 +2171,7 @@ class _HomePageState extends State<HomePage>
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
