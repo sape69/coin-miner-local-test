@@ -7,10 +7,10 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- Google Mobile Ads TEST App ID -->
+        <!-- 🐱 STELLURIINI ADMOB APP ID -->
         <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1131012057145658~8929857936"/>
 
         <activity
             android:name=".MainActivity"
@@ -23,7 +23,7 @@
             android:windowSoftInputMode="adjustResize">
 
             <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
+                name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"
             />
 
@@ -35,7 +35,7 @@
         </activity>
 
         <meta-data
-            android:name="flutterEmbedding"
+            name="flutterEmbedding"
             android:value="2" />
 
     </application>
