@@ -17,7 +17,14 @@ const Map<String, String> jaTranslations = {
   'selectLanguage': '言語を選択',
   'logout': 'ログアウト',
   'menu': 'メニュー',
+  'refresh': '更新',
   'ready': '準備完了',
+  'close': '閉じる',
+  'cancel': 'キャンセル',
+  'error': 'エラー',
+  'success': '完了',
+  'comingSoon': '近日公開',
+  'information': '情報',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -36,7 +43,14 @@ const Map<String, String> jaTranslations = {
   'dailyHashRateSuccess':
       '{day}日目のハッシュレート: {rate} HR',
 
+  // 🐱 Stella Mining
   'stellaMiningProgress':
+      'Stellaマイニング進捗',
+
+  'miningProgress':
+      'マイニング進捗',
+
+  'miningProgressStella':
       'Stellaマイニング進捗',
 
   'stlPerHour':
@@ -51,17 +65,38 @@ const Map<String, String> jaTranslations = {
   'claimMining':
       'STLを受け取る',
 
+  'watchAdStartMining':
+      '広告を見てマイニング開始',
+
+  'watchAdCollectReward':
+      '広告を見て報酬を受け取る',
+
   'miningActive':
       'マイニング中',
 
   'miningComplete':
       'マイニングサイクル完了',
 
+  'miningFinished':
+      'マイニング終了',
+
   'timeRemaining':
       '残り時間',
 
+  'timeRemainingLabel':
+      '残り時間',
+
   'remaining':
-      '残り: {time}',
+      '残り時間: {time}',
+
+  'timeRemainingText':
+      '残り時間: {time}',
+
+  'miningTimeRemaining':
+      '残り時間: {time}',
+
+  'waitingForStella':
+      'Stellaを待っています 🐱💜',
 
   'streak':
       '連続日数',
@@ -104,6 +139,9 @@ const Map<String, String> jaTranslations = {
   'adLoading':
       '広告を読み込み中...',
 
+  'prepareAd':
+      '広告を準備中...',
+
   'adReward':
       '+{amount} HR',
 
@@ -115,13 +153,13 @@ const Map<String, String> jaTranslations = {
       'Stella Power Boost',
 
   'powerBoostOffer':
-      '広告を見て、4時間の間Stella Power Boost +{amount} HRを有効にします。',
+      '広告を見て、4時間の間Stella Power Boost +{amount} HRを有効にします。 🐱⚡',
 
   'powerBoostActive':
       'Power Boost有効中',
 
   'powerBoostActiveTitle':
-      'Stella Power Boostが有効になりました！',
+      'Stella Power Boostが有効になりました！ 🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HRがマイニングサイクルに適用されます。',
@@ -150,6 +188,9 @@ const Map<String, String> jaTranslations = {
   'adRewardDuplicate':
       'この広告報酬はすでに処理されています。',
 
+  'powerBoostFailed':
+      'Power Boostを有効にできませんでした。',
+
   'testAdRewardFailed':
       '広告報酬を処理できませんでした。',
 
@@ -160,21 +201,12 @@ const Map<String, String> jaTranslations = {
   'serverConnectionFailed':
       'サーバーに接続できませんでした。',
 
-  'refresh':
-      '更新',
-
   // ============================================================
   // 👤 GENERAL UI
   // ============================================================
 
   'profile':
       'プロフィール',
-
-  'comingSoon':
-      '近日公開',
-
-  'information':
-      '情報',
 
   // ============================================================
   // 🐱 STELLA
@@ -196,13 +228,13 @@ const Map<String, String> jaTranslations = {
       'Stellaがマイニング中',
 
   'stellaMiningNow':
-      'Stellaは現在マイニング中です',
+      'Stellaは現在マイニング中です。 🐱⛏️',
 
   'stellaIsResting':
-      'Stellaは休憩中です',
+      'Stellaは休憩中です。 🐱💜',
 
   'stellaWaiting':
-      'Stellaは次のマイニングサイクルを待っています',
+      'Stellaは次のマイニングサイクルを待っています。',
 
   'stlReadyToCollect':
       'STLを受け取る準備ができました',
@@ -210,26 +242,36 @@ const Map<String, String> jaTranslations = {
   'stlMined':
       'マイニングしたSTL',
 
-  'waitingForStella':
-      'Stellaを待っています',
-
   'stellaIsWorking':
-      'STELLA 作業中です...',
+      'STELLA 作業中です... 🐱⛏️',
 
   'stellaIsMiningButton':
       'マイニング中',
 
   'stellaAlreadyMining':
-      'Stellaはすでにマイニング中です。',
+      'Stellaはすでにマイニング中です。 🐱💜',
 
-  'prepareAd':
-      '広告を準備中...',
+  // ============================================================
+  // ⛏️ MINING MESSAGES
+  // ============================================================
 
   'miningCollected':
       '{amount} STLを受け取りました',
 
   'miningStartFailed':
       'マイニングを開始できませんでした。',
+
+  'miningStarted':
+      'Stellaがマイニングを開始しました！ 🐱⛏️',
+
+  'miningCycleStarted':
+      'Stellaの新しいマイニングサイクルが開始されました。 🐱💜',
+
+  'miningCycleComplete':
+      'Stellaのマイニングサイクルが完了しました！ ✨',
+
+  'miningReady':
+      'Stellaのマイニング報酬を受け取る準備ができました。 🐾',
 
   // ============================================================
   // 💎 TRANSACTIONS
@@ -260,20 +302,8 @@ const Map<String, String> jaTranslations = {
   'resetConfirm':
       'テストアカウントをリセットしてもよろしいですか？',
 
-  'cancel':
-      'キャンセル',
-
   'reset':
       'リセット',
-
-  'error':
-      'エラー',
-
-  'success':
-      '完了',
-
-  'close':
-      '閉じる',
 
   // ============================================================
   // 🔐 LOGIN
@@ -418,19 +448,19 @@ const Map<String, String> jaTranslations = {
       'まだ取引はありません',
 
   'rewardsAppearHere':
-      'あなたのSTL報酬はここに表示されます。🐱',
+      'あなたのSTL報酬はここに表示されます。 🐱💜',
 
   'startMiningWithStella':
-      'Stellaと一緒にマイニングを始めましょう',
+      'Stellaと一緒にマイニングを始めましょう。 🐱⛏️',
 
   'historyRecorded':
       'マイニング、デイリーボーナス、広告報酬の履歴がここに記録されます。',
 
   'stellaCheckingHistory':
-      'Stellaが履歴を確認しています...',
+      'Stellaが履歴を確認しています... 🐱🔎',
 
   'everyRewardJourney':
-      'すべての報酬がStelluriiniの旅の一部です。🐾',
+      'すべての報酬がStelluriiniの旅の一部です。 🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -446,7 +476,7 @@ const Map<String, String> jaTranslations = {
       'Stelluriiniは、コミュニティ、デジタルトークン、Stellaを中心としたアプリ体験を組み合わせています。',
 
   'meetStella':
-      'Stellaに会おう',
+      'Stellaに会おう 🐱💜',
 
   'aboutStellaIntro':
       'StellaはStelluriiniの中心的な存在であり、プロジェクトを象徴するかわいい猫です。',
@@ -486,10 +516,13 @@ const Map<String, String> jaTranslations = {
       'Stelluriiniロードマップ',
 
   'roadmapSubtitle':
-      'Stelluriiniの開発ロードマップ。一歩ずつ未来へ進みます。',
+      'Stelluriiniの歩みを、一歩ずつ未来へ。',
 
   'roadmapJourney':
       'Stelluriiniの歩み',
+
+  'roadmapJourneyDescription':
+      'Stelluriiniは、より大きなコミュニティ、より広いエコシステム、新しいユースケースに向けて、一歩ずつ開発を進めています。',
 
   'roadmapPhase1':
       'フェーズ1 – 基盤',
@@ -537,13 +570,13 @@ const Map<String, String> jaTranslations = {
       '新機能、将来的なパートナーシップ、コミュニティからのアイデアを探求します。',
 
   'roadmapPhase6':
-      'フェーズ6 – 拡張',
+      'フェーズ6 – 長期的な発展',
 
   'roadmapPhase6Title':
-      'Stelluriiniをさらに広げる',
+      'Stelluriiniの長期的な発展',
 
   'roadmapPhase6Description':
-      'Stelluriiniエコシステム、統合、STLトークンのユーティリティ、そしてコミュニティに提供される新しい可能性をさらに発展させます。',
+      'Stelluriiniエコシステム、新機能、コミュニティのニーズに応じた継続的な開発を進めます。',
 
   'roadmapStatusCompleted':
       '完了',
@@ -554,11 +587,77 @@ const Map<String, String> jaTranslations = {
   'roadmapStatusPlanned':
       '予定',
 
+  'roadmapInProgress':
+      '進行中',
+
+  'roadmapPlanned':
+      '予定',
+
+  'roadmapFuture':
+      '未来',
+
+  'futureWithdrawalsTitle':
+      '将来的な出金の可能性',
+
+  'futureWithdrawals':
+      '将来的な出金システムを導入する場合は、個別に設計され、実装前に条件が公開されます。',
+
+  'plannedWithdrawalModel':
+      '将来的な出金モデルを導入する場合は、実装前に個別に設計し、コミュニティへ透明性を持って公開します。',
+
+  'developmentPrinciples':
+      '開発の原則',
+
   'roadmapDevelopmentPrinciples':
       '開発の原則',
 
-  'plannedWithdrawalModel':
-      '将来的な出金モデルを導入する場合は、個別に設計し、実装前にコミュニティへ透明性を持って公開します。',
+  'roadmapCommunity':
+      'コミュニティ',
+
+  'roadmapCommunityDescription':
+      'コミュニティはStelluriini開発の中心です。ユーザーからのフィードバックやアイデアが今後の開発を支えます。',
+
+  'roadmapStella':
+      'Stella 🐱💜',
+
+  'roadmapStellaDescription':
+      'StellaはこれからもStelluriiniのビジュアルマスコットであり、ユーザー体験の重要な一部です。',
+
+  'roadmapSecurity':
+      'セキュリティ',
+
+  'roadmapSecurityDescription':
+      'セキュリティ、サーバーインフラ、アプリの信頼性を継続的に改善します。',
+
+  'roadmapInnovation':
+      'イノベーション',
+
+  'roadmapInnovationDescription':
+      'プロジェクトの発展に合わせて、新しいユースケース、機能、テクノロジーを探求します。',
+
+  'roadmapLongTermGrowth':
+      '長期的な成長',
+
+  'roadmapLongTermGrowthDescription':
+      '持続可能で段階的に発展するStelluriiniエコシステムを構築することを目指します。',
+
+  'roadmapNotice':
+      '重要なお知らせ',
+
+  'roadmapNoticeDescription':
+      'ロードマップはStelluriiniの計画された開発方針を示しています。フェーズ、機能、スケジュールはプロジェクト開発中に変更される場合があります。',
+
+  'roadmapStellaJourney':
+      'Stellaの旅 🐾',
+
+  'roadmapEcosystemDescription':
+      'Stelluriiniエコシステムは、コミュニティ、アプリ、STLトークンを中心に段階的に開発されます。',
+
+  'roadmapStellaIntro':
+      'Stellaは開発のすべての段階でStelluriiniとともに歩みます。',
+
+  'roadmapFooter':
+      'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
   // 🪙 TOKEN
@@ -597,10 +696,6 @@ const Map<String, String> jaTranslations = {
   'addressCopied':
       'アドレスをコピーしました。',
 
-  // ============================================================
-  // 🪙 SOLANA COMMUNITY TOKEN
-  // ============================================================
-
   'solanaCommunityToken':
       'Solanaコミュニティトークン',
 
@@ -629,13 +724,16 @@ const Map<String, String> jaTranslations = {
       'Mintアドレスをコピーしました。',
 
   'copyMintAddress':
-      'MINTアドレスをコピー',
+      'Mintアドレスをコピー',
 
   'viewOnSolscan':
-      'SOLSCANで見る',
+      'Solscanで見る',
 
   'couldNotOpenSolscan':
       'Solscanを開けませんでした。',
+
+  'communityCuriositySolana':
+      'コミュニティ • 好奇心 • Solana',
 
   // ============================================================
   // 📊 TOKENOMICS
@@ -665,38 +763,41 @@ const Map<String, String> jaTranslations = {
   'tokenDistribution':
       'トークン配分',
 
-  'communityAllocation':
-      'コミュニティ',
+  'tokenAllocation':
+      'トークン配分',
 
   'communityRewards':
       'コミュニティと報酬',
 
-  'ecosystemAllocation':
-      'エコシステム',
+  'liquidity':
+      '流動性',
 
   'ecosystem':
       'エコシステム',
 
-  'developmentAllocation':
-      '開発',
-
   'development':
       '開発',
-
-  'liquidityAllocation':
-      '流動性',
-
-  'liquidity':
-      '流動性',
-
-  'marketingAllocation':
-      'マーケティング',
 
   'marketing':
       'マーケティング',
 
   'stlTokens':
       'STLトークン',
+
+  'communityAllocation':
+      'コミュニティ',
+
+  'ecosystemAllocation':
+      'エコシステム',
+
+  'developmentAllocation':
+      '開発',
+
+  'liquidityAllocation':
+      '流動性',
+
+  'marketingAllocation':
+      'マーケティング',
 
   'totalSupplyDescription':
       'Stelluriiniの総供給量は17 602 539 062 STLです。以下に示す配分は、計画されているトークン総供給量のすべてを表しています。',
@@ -758,15 +859,6 @@ const Map<String, String> jaTranslations = {
   'communityCuriosityDevelopmentSolana':
       'コミュニティ • 好奇心 • 開発 • Solana',
 
-  'communityCuriositySolana':
-      'コミュニティ • 好奇心 • Solana',
-
-  'tokenAllocation':
-      'トークン配分',
-
-  'tokenomicsImportant':
-      '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されるべきです。',
-
   'importantNotice':
       '重要なお知らせ',
 
@@ -775,6 +867,9 @@ const Map<String, String> jaTranslations = {
 
   'stellaStelluriiniStlSolana':
       'STELLA • STELLURIINI • STL • SOLANA',
+
+  'tokenomicsImportant':
+      '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されるべきです。',
 
   // ============================================================
   // 📄 WHITEPAPER
@@ -846,11 +941,11 @@ const Map<String, String> jaTranslations = {
   // ============================================================
 
   'footerTagline':
-      'Stelluriiniと一緒にマイニングし、未来を築きましょう。',
+      'Stellaと一緒にマイニングし、Stelluriiniの未来を築きましょう。 🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
   'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
+      'STELLA • STELLURIINI • STL • SOLANA',
 };
