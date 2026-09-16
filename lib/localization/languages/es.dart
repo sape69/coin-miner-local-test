@@ -568,8 +568,11 @@ const Map<String, String> esTranslations = {
   'roadmapPhase5Description':
       'Exploración de nuevas funciones, posibles colaboraciones e ideas de la comunidad.',
 
-  'roadmapPhase6Title':
+  'roadmapPhase6':
       'Fase 6 – Desarrollo a largo plazo',
+
+  'roadmapPhase6Title':
+      'Desarrollo a largo plazo de Stelluriini',
 
   'roadmapPhase6Description':
       'Desarrollo continuo del ecosistema Stelluriini, nuevas funciones y respuestas a las necesidades de la comunidad.',
