@@ -458,22 +458,7 @@ class _HomePageState extends State<HomePage>
               0;
 
       // ========================================================
-      // ⚡ TÄRKEÄ KORJAUS
-      // ========================================================
-      //
-      // Backend palauttaa:
-      //
-      //   adBoostActive
-      //   adBoostRemainingMs
-      //
-      // Ei:
-      //
-      //   boostActive
-      //   boostRemainingMs
-      //
-      // Tämä oli syy siihen, että aktiivinen Power Boost
-      // saattoi näkyä HomePagessa edelleen pois päältä.
-      //
+      // ⚡ POWER BOOST STATUS
       // ========================================================
 
       final bool serverBoostActive =
@@ -524,15 +509,6 @@ class _HomePageState extends State<HomePage>
 
       // ========================================================
       // ⚡ PIDÄ PAIKALLINEN BOOST ELÄVÄNÄ
-      // ========================================================
-      //
-      // Tämä suojaa tilannetta, jossa Flutter kysyy backendiltä
-      // tilan juuri ennen kuin edellinen paikallinen timer ehtii
-      // päivittyä.
-      //
-      // Backendillä on kuitenkin aina viimeinen sana, kun sen
-      // vastaus sisältää aktiivisen boostin.
-      //
       // ========================================================
 
       if (_boostActive &&
@@ -799,6 +775,12 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // 🔐 START MINING AFTER ADMOB
   // ============================================================
+  //
+  // AdMob SSV:n odotus tehdään nyt backendissä.
+  //
+  // Flutter lähettää vain yhden claimMining()-kutsun.
+  //
+  // ============================================================
 
   Future<void> _startMiningAfterAd() async {
     if (!mounted) {
@@ -806,67 +788,13 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      HttpsCallableResult<dynamic>?
-          result;
-
-      Object? lastError;
-
-      for (
-        int attempt = 0;
-        attempt < 15;
-        attempt++
-      ) {
-        try {
+      final HttpsCallableResult<dynamic>
           result =
-              await _functions
-                  .httpsCallable(
-                    'claimMining',
-                  )
-                  .call();
-
-          break;
-        } catch (e) {
-          lastError = e;
-
-          final String text =
-              e.toString().toLowerCase();
-
-          final bool retryable =
-              text.contains(
-                    'admob',
-                  ) ||
-                  text.contains(
-                    'reward',
-                  ) ||
-                  text.contains(
-                    'mining_start',
-                  ) ||
-                  text.contains(
-                    'mining start',
-                  ) ||
-                  text.contains(
-                    'verified',
-                  );
-
-          if (!retryable ||
-              attempt == 14) {
-            rethrow;
-          }
-
-          await Future<void>.delayed(
-            const Duration(
-              seconds: 2,
-            ),
-          );
-        }
-      }
-
-      if (result == null) {
-        throw lastError ??
-            Exception(
-              'Mining start failed.',
-            );
-      }
+          await _functions
+              .httpsCallable(
+                'claimMining',
+              )
+              .call();
 
       final dynamic raw =
           result.data;
@@ -982,237 +910,125 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // ⚡ WAIT FOR SERVER-SIDE POWER BOOST
+  // ⚡ ACTIVATE SERVER-SIDE POWER BOOST
+  // ============================================================
+  //
+  // TÄRKEÄ MUUTOS:
+  //
+  // Aiemmin tämä funktio kutsui powerBoost()-funktiota jopa
+  // 30 kertaa kahden sekunnin välein.
+  //
+  // Backendin miningFunctions.js odottaa jo AdMob SSV:tä
+  // enintään 30 sekuntia.
+  //
+  // Siksi Flutter tekee nyt vain YHDEN kutsun.
+  //
   // ============================================================
 
   Future<void>
       _waitForServerSidePowerBoost() async {
     try {
-      HttpsCallableResult<dynamic>?
-          successfulResult;
+      final HttpsCallableResult<dynamic>
+          result =
+          await _functions
+              .httpsCallable(
+                'powerBoost',
+              )
+              .call();
 
-      Object? lastError;
+      final dynamic raw =
+          result.data;
 
-      bool confirmedBoostActive =
-          false;
-
-      int confirmedBoostRemaining =
-          0;
-
-      int? confirmedAdsToday;
-
-      double? confirmedBonus;
-
-      for (
-        int attempt = 0;
-        attempt < 30;
-        attempt++
-      ) {
-        try {
-          final HttpsCallableResult<
-                  dynamic>
-              result =
-              await _functions
-                  .httpsCallable(
-                    'powerBoost',
-                  )
-                  .call();
-
-          final dynamic raw =
-              result.data;
-
-          if (raw is Map) {
-            final Map<String, dynamic>
-                data =
-                Map<String, dynamic>.from(
-              raw,
-            );
-
-            final bool active =
-                _asBool(
-                      data[
-                          'boostActive'],
-                    ) ??
-                    _asBool(
-                      data['active'],
-                    ) ??
-                    false;
-
-            final int remaining =
-                _asInt(
-                      data[
-                          'boostRemainingMs'],
-                    ) ??
-                    _asInt(
-                      data[
-                          'remainingBoostMs'],
-                    ) ??
-                    _asInt(
-                      data[
-                          'adBoostRemainingMs'],
-                    ) ??
-                    0;
-
-            final int? ads =
-                _asInt(
-              data['adsToday'],
-            );
-
-            final double? bonus =
-                _asDouble(
-                      data[
-                          'adHashRateBonus'],
-                    ) ??
-                    _asDouble(
-                      data[
-                          'hashRateBonus'],
-                    ) ??
-                    _asDouble(
-                      data[
-                          'boostHashRateBonus'],
-                    );
-
-            if (active &&
-                remaining > 0) {
-              confirmedBoostActive =
-                  true;
-
-              confirmedBoostRemaining =
-                  remaining;
-
-              confirmedAdsToday =
-                  ads;
-
-              confirmedBonus =
-                  bonus;
-
-              if (mounted) {
-                setState(() {
-                  _boostActive =
-                      true;
-
-                  _boostRemainingMs =
-                      remaining;
-
-                  if (ads != null) {
-                    _adsToday = ads;
-                  }
-
-                  if (bonus != null &&
-                      bonus > 0) {
-                    _adHashRateBonus =
-                        bonus;
-                  }
-
-                  _serverCanWatchAd =
-                      false;
-
-                  _cooldownRemainingMs =
-                      0;
-                });
-
-                _startBoostTimer();
-              }
-
-              successfulResult =
-                  result;
-
-              break;
-            }
-
-            lastError =
-                Exception(
-              'Power Boost is not active yet.',
-            );
-          } else {
-            lastError =
-                Exception(
-              'Invalid Power Boost response.',
-            );
-          }
-        } catch (e) {
-          lastError = e;
-
-          final String text =
-              e.toString().toLowerCase();
-
-          final bool retryable =
-              text.contains(
-                    'admob',
-                  ) ||
-                  text.contains(
-                    'reward',
-                  ) ||
-                  text.contains(
-                    'verified',
-                  ) ||
-                  text.contains(
-                    'failed-precondition',
-                  ) ||
-                  text.contains(
-                    'power boost',
-                  ) ||
-                  text.contains(
-                    'not found',
-                  );
-
-          if (!retryable) {
-            rethrow;
-          }
-        }
-
-        if (attempt < 29) {
-          await Future<void>.delayed(
-            const Duration(
-              seconds: 2,
-            ),
-          );
-        }
+      if (raw is! Map) {
+        throw Exception(
+          'Invalid Power Boost response.',
+        );
       }
 
-      if (successfulResult ==
-          null) {
-        throw lastError ??
-            Exception(
-              'Power Boost verification timed out.',
-            );
+      final Map<String, dynamic>
+          data =
+          Map<String, dynamic>.from(
+        raw,
+      );
+
+      final bool active =
+          _asBool(
+                data['boostActive'],
+              ) ??
+              _asBool(
+                data['active'],
+              ) ??
+              false;
+
+      final int remaining =
+          _asInt(
+                data['boostRemainingMs'],
+              ) ??
+              _asInt(
+                data['remainingBoostMs'],
+              ) ??
+              _asInt(
+                data['adBoostRemainingMs'],
+              ) ??
+              0;
+
+      final int? ads =
+          _asInt(
+        data['adsToday'],
+      );
+
+      final double? bonus =
+          _asDouble(
+                data['adHashRateBonus'],
+              ) ??
+              _asDouble(
+                data['hashRateBonus'],
+              ) ??
+              _asDouble(
+                data['boostHashRateBonus'],
+              );
+
+      if (!active ||
+          remaining <= 0) {
+        throw Exception(
+          'Power Boost verification did not return an active boost.',
+        );
       }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _boostActive =
+            true;
+
+        _boostRemainingMs =
+            remaining;
+
+        if (ads != null) {
+          _adsToday =
+              ads;
+        }
+
+        if (bonus != null &&
+            bonus > 0) {
+          _adHashRateBonus =
+              bonus;
+        }
+
+        _serverCanWatchAd =
+            false;
+
+        _cooldownRemainingMs =
+            0;
+      });
+
+      _startBoostTimer();
 
       await _loadMiningStatus();
 
-      if (mounted &&
-          confirmedBoostActive) {
-        setState(() {
-          _boostActive = true;
-
-          if (confirmedBoostRemaining >
-              _boostRemainingMs) {
-            _boostRemainingMs =
-                confirmedBoostRemaining;
-          }
-
-          if (confirmedAdsToday !=
-              null) {
-            _adsToday =
-                confirmedAdsToday;
-          }
-
-          if (confirmedBonus !=
-                  null &&
-              confirmedBonus > 0) {
-            _adHashRateBonus =
-                confirmedBonus;
-          }
-
-          _serverCanWatchAd =
-              false;
-
-          _cooldownRemainingMs =
-              0;
-        });
-
-        _startBoostTimer();
-
+      if (mounted) {
         _showMessage(
           '🐾 ${_t('powerBoostActive')} '
           '• +${_formatNumber(
@@ -1604,16 +1420,6 @@ class _HomePageState extends State<HomePage>
   Widget _buildAdButton() {
     final bool canUse =
         _canUseBoost;
-
-    // ----------------------------------------------------------
-    // 🌍 Korjaa mahdollisen raakakäännösavaimen.
-    //
-    // adsToday-käännös voi olla esimerkiksi:
-    //
-    // Ads today: {current}/{max}
-    //
-    // PowerBoostCardille annetaan tässä valmis teksti.
-    // ----------------------------------------------------------
 
     final String adsTodayLabel =
         _t('adsToday')
@@ -2131,45 +1937,25 @@ class _HomePageState extends State<HomePage>
       return false;
     }
 
-    // ----------------------------------------------------------
-    // Päivittäinen mainosraja
-    // ----------------------------------------------------------
-
     if (_adsToday >=
         _maxAdsPerDay) {
       return false;
     }
-
-    // ----------------------------------------------------------
-    // Aktiivinen boost
-    // ----------------------------------------------------------
 
     if (_boostActive &&
         _boostRemainingMs > 0) {
       return false;
     }
 
-    // ----------------------------------------------------------
-    // AdMob-mainosflow käynnissä
-    // ----------------------------------------------------------
-
     if (_adManager
         .powerBoostAdFlowActive) {
       return false;
     }
 
-    // ----------------------------------------------------------
-    // Backendin cooldown
-    // ----------------------------------------------------------
-
     if (_cooldownRemainingMs >
         0) {
       return false;
     }
-
-    // ----------------------------------------------------------
-    // Backendin lopullinen canWatchAd
-    // ----------------------------------------------------------
 
     if (!_serverCanWatchAd) {
       return false;
