@@ -42,45 +42,35 @@ const Map<String, String> deTranslations = {
   'dailyHashRateMaximum': 'Maximum: {rate} HR',
   'dailyHashRateSuccess': 'Hashrate an Tag {day}: {rate} HR',
 
-  // 🐱 Stella Mining
   'stellaMiningProgress': 'Stellas Mining-Fortschritt',
-
   'miningProgress': 'Mining-Fortschritt',
-
   'miningProgressStella': 'Stellas Mining-Fortschritt',
 
   'stlPerHour': 'STL pro Stunde',
-
   'hashRateBonus': 'Hashrate-Bonus',
 
   'startMining': 'MINING STARTEN',
-
   'claimMining': 'STL EINSAMMELN',
 
-  'watchAdStartMining': 'WERBUNG ANSEHEN & MINING STARTEN',
+  'watchAdStartMining':
+      'WERBUNG ANSEHEN & MINING STARTEN',
 
-  'watchAdCollectReward': 'WERBUNG ANSEHEN & BELOHNUNG SAMMELN',
+  'watchAdCollectReward':
+      'WERBUNG ANSEHEN & BELOHNUNG SAMMELN',
 
   'miningActive': 'Mining aktiv',
-
   'miningComplete': 'Mining-Zyklus abgeschlossen',
-
   'miningFinished': 'Mining beendet',
 
   'timeRemaining': 'Verbleibende Zeit',
-
   'timeRemainingLabel': 'Verbleibende Zeit',
-
   'remaining': 'Verbleibende Zeit: {time}',
-
   'timeRemainingText': 'Verbleibende Zeit: {time}',
-
   'miningTimeRemaining': 'Verbleibende Zeit: {time}',
 
   'waitingForStella': 'Warte auf Stella 🐱💜',
 
   'streak': 'Tages-Serie',
-
   'days': 'Tage',
 
   // ============================================================
@@ -88,11 +78,8 @@ const Map<String, String> deTranslations = {
   // ============================================================
 
   'dailyBonus': 'Täglicher Bonus',
-
   'dailyClaim': 'Täglichen Bonus sammeln',
-
   'dailyReward': 'Tägliche Belohnung',
-
   'claimedToday': 'Heute gesammelt',
 
   'alreadyClaimed':
@@ -103,15 +90,10 @@ const Map<String, String> deTranslations = {
   // ============================================================
 
   'watchAd': 'WERBUNG ANSEHEN',
-
   'watchAndEarn': 'ANSEHEN & VERDIENEN',
-
   'loadingAd': 'WERBUNG WIRD GELADEN...',
-
   'adLoading': 'WERBUNG WIRD GELADEN...',
-
   'prepareAd': 'Werbung wird vorbereitet...',
-
   'adReward': '+{amount} HR',
 
   // ============================================================
@@ -179,14 +161,13 @@ const Map<String, String> deTranslations = {
   // ============================================================
 
   'catFact': 'Stellas Katzenfakt',
-
   'stellaFacts': 'Stellas Katzenfakt',
 
   'stellaPower': 'Stella Power',
-
   'stellaMining': 'Stella Mining',
 
-  'stellaIsMining': 'Stella miniert',
+  'stellaIsMining':
+      'Stella miniert',
 
   'stellaMiningNow':
       'Stella miniert gerade. 🐱⛏️',
@@ -200,7 +181,8 @@ const Map<String, String> deTranslations = {
   'stlReadyToCollect':
       'STL kann eingesammelt werden',
 
-  'stlMined': 'STL GEMINT',
+  'stlMined':
+      'STL GEMINT',
 
   'stellaIsWorking':
       'STELLA ARBEITET... 🐱⛏️',
@@ -243,9 +225,7 @@ const Map<String, String> deTranslations = {
       'Noch keine Transaktionen.',
 
   'totalStl': 'STL insgesamt',
-
   'points': 'Punkte',
-
   'pointsAdded': 'Punkte hinzugefügt',
 
   // ============================================================
@@ -265,13 +245,10 @@ const Map<String, String> deTranslations = {
   // ============================================================
 
   'email': 'E-Mail',
-
   'password': 'Passwort',
-
   'forgotPassword': 'Passwort vergessen?',
 
   'login': 'ANMELDEN',
-
   'loggingIn': 'ANMELDUNG...',
 
   'createAccount':
@@ -351,7 +328,8 @@ const Map<String, String> deTranslations = {
   'passwordResetDescription':
       'Gib die E-Mail-Adresse deines Kontos ein. Wir senden dir anschließend einen Link zum Zurücksetzen deines Passworts.',
 
-  'sending': 'WIRD GESENDET...',
+  'sending':
+      'WIRD GESENDET...',
 
   'sendPasswordReset':
       'LINK ZUM ZURÜCKSETZEN SENDEN',
@@ -390,7 +368,8 @@ const Map<String, String> deTranslations = {
   'transactionBalance':
       'Guthaben: {balance} STL',
 
-  'tryAgain': 'Erneut versuchen',
+  'tryAgain':
+      'Erneut versuchen',
 
   'noTransactionsYet':
       'Noch keine Transaktionen',
@@ -517,8 +496,11 @@ const Map<String, String> deTranslations = {
   'roadmapPhase5Description':
       'Erkundung neuer Funktionen, möglicher Partnerschaften und Ideen aus der Community.',
 
-  'roadmapPhase6Title':
+  'roadmapPhase6':
       'Phase 6 – Langfristige Entwicklung',
+
+  'roadmapPhase6Title':
+      'Langfristige Entwicklung von Stelluriini',
 
   'roadmapPhase6Description':
       'Kontinuierliche Weiterentwicklung des Stelluriini-Ökosystems, neue Funktionen und Reaktionen auf die Bedürfnisse der Community.',
@@ -532,6 +514,15 @@ const Map<String, String> deTranslations = {
   'roadmapFuture':
       'Zukunft',
 
+  'roadmapStatusCompleted':
+      'Abgeschlossen',
+
+  'roadmapStatusCurrent':
+      'In Entwicklung',
+
+  'roadmapStatusPlanned':
+      'Geplant',
+
   'futureWithdrawalsTitle':
       'Mögliche zukünftige Auszahlungen',
 
@@ -542,6 +533,9 @@ const Map<String, String> deTranslations = {
       'Ein mögliches Auszahlungsmodell wird vor der Implementierung separat festgelegt.',
 
   'developmentPrinciples':
+      'Entwicklungsprinzipien',
+
+  'roadmapDevelopmentPrinciples':
       'Entwicklungsprinzipien',
 
   'roadmapCommunity':
@@ -602,24 +596,32 @@ const Map<String, String> deTranslations = {
   'tokenSubtitle':
       'Der offizielle Stelluriini-Token im Solana-Netzwerk.',
 
-  'tokenName': 'Name',
+  'tokenName':
+      'Name',
 
-  'tokenSymbol': 'Symbol',
+  'tokenSymbol':
+      'Symbol',
 
-  'tokenBlockchain': 'Blockchain',
+  'tokenBlockchain':
+      'Blockchain',
 
-  'tokenSupply': 'Gesamtangebot',
+  'tokenSupply':
+      'Gesamtangebot',
 
-  'tokenMint': 'Mint-Adresse',
+  'tokenMint':
+      'Mint-Adresse',
 
   'tokenDescription':
       'Stelluriini ist ein community-orientierter Token auf der Solana-Blockchain.',
 
-  'solana': 'Solana',
+  'solana':
+      'Solana',
 
-  'copyAddress': 'Adresse kopieren',
+  'copyAddress':
+      'Adresse kopieren',
 
-  'addressCopied': 'Adresse kopiert.',
+  'addressCopied':
+      'Adresse kopiert.',
 
   'solanaCommunityToken':
       'Solana Community Token',
@@ -627,13 +629,17 @@ const Map<String, String> deTranslations = {
   'tokenInformation':
       'Token-Informationen',
 
-  'name': 'Name',
+  'name':
+      'Name',
 
-  'symbol': 'Symbol',
+  'symbol':
+      'Symbol',
 
-  'blockchain': 'Blockchain',
+  'blockchain':
+      'Blockchain',
 
-  'decimals': 'Dezimalstellen',
+  'decimals':
+      'Dezimalstellen',
 
   'officialMintAddress':
       'Offizielle Mint-Adresse',
@@ -645,10 +651,10 @@ const Map<String, String> deTranslations = {
       'Mint-Adresse kopiert.',
 
   'copyMintAddress':
-      'Mint-Adresse kopieren',
+      'MINT-ADRESSE KOPIEREN',
 
   'viewOnSolscan':
-      'Auf Solscan anzeigen',
+      'AUF SOLSCAN ANZEIGEN',
 
   'couldNotOpenSolscan':
       'Solscan konnte nicht geöffnet werden.',
@@ -853,6 +859,9 @@ const Map<String, String> deTranslations = {
 
   'withdrawalsDisabled':
       'Auszahlungen sind derzeit nicht verfügbar.',
+
+  'futureWithdrawals':
+      'Ein mögliches zukünftiges Auszahlungssystem wird separat entwickelt. Die Bedingungen werden vor der Einführung bekannt gegeben.',
 
   // ============================================================
   // 🐾 FOOTER
