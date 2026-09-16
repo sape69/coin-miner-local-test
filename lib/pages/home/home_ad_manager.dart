@@ -10,7 +10,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //
 // Hallitsee HomePagen Rewarded-mainoksia.
 //
-// NYKYISET ADMOB-MAINOSYKSIKÖT:
+// ADMOB-MAINOSYKSIKÖT:
 //
 //   mining_start
 //     → Stelluriini Mining
@@ -27,9 +27,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //   UID:mining_start
 //   UID:power_boost
 //
-// TÄRKEÄ:
-// AdMob SSV -callback voi saapua hieman mainoksen palkinnon
-// jälkeen. Siksi Firebase reward callbackia EI kutsuta heti
+// Reward callbackia ei kutsuta välittömästi
 // onUserEarnedReward-tapahtumassa.
 //
 // Ensin:
@@ -70,13 +68,6 @@ class HomeAdManager extends ChangeNotifier {
 
   // ============================================================
   // ⏳ SSV WAIT
-  // ============================================================
-  //
-  // AdMob voi lähettää SSV-callbackin hieman myöhemmin kuin
-  // onUserEarnedReward tapahtuu.
-  //
-  // Odotetaan ennen Firebase reward callbackia.
-  //
   // ============================================================
 
   static const Duration ssvGracePeriod =
@@ -124,6 +115,8 @@ class HomeAdManager extends ChangeNotifier {
   bool _adLoading = false;
 
   String _rewardedAdPurpose = '';
+
+  String _loadingPurpose = '';
 
   String _adLoadError = '';
 
@@ -232,7 +225,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     // ----------------------------------------------------------
-    // WRONG AD IS LOADED
+    // WRONG READY AD
     // ----------------------------------------------------------
 
     if (_rewardedAd != null &&
@@ -243,6 +236,39 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       _disposeCurrentAd();
+    }
+
+    // ----------------------------------------------------------
+    // WRONG AD IS CURRENTLY LOADING
+    // ----------------------------------------------------------
+    //
+    // Tämä on tärkeä korjaus.
+    //
+    // Jos esimerkiksi mining_start-mainos on latautumassa
+    // ja tarvitsemme power_boost-mainoksen, vanhaa latausta
+    // ei jäädä odottamaan.
+    //
+    // Vanhan latauksen callback mitätöidään requestId:n avulla.
+    // ----------------------------------------------------------
+
+    if (_adLoading &&
+        _loadingPurpose != purpose) {
+      debugPrint(
+        'Different Rewarded ad is currently loading. '
+        'Cancelling stale load logically and switching to: '
+        '$purpose',
+      );
+
+      _loadRequestId++;
+
+      _adLoading = false;
+      _loadingPurpose = '';
+
+      _rewardedAd = null;
+      _adReady = false;
+      _rewardedAdPurpose = '';
+
+      _notify();
     }
 
     // ----------------------------------------------------------
@@ -284,6 +310,22 @@ class HomeAdManager extends ChangeNotifier {
         );
 
         return true;
+      }
+
+      // --------------------------------------------------------
+      // Jos latauksessa oleva purpose ei enää vastaa
+      // pyydettyä purposea, lopetetaan odotus.
+      // --------------------------------------------------------
+
+      if (_adLoading &&
+          _loadingPurpose != purpose) {
+        debugPrint(
+          'Rewarded ad loading purpose changed. '
+          'Expected: $purpose '
+          'Current: $_loadingPurpose',
+        );
+
+        return false;
       }
 
       if (!_adLoading) {
@@ -337,16 +379,29 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     // ----------------------------------------------------------
-    // ALREADY LOADING
+    // DIFFERENT AD IS ALREADY LOADING
     // ----------------------------------------------------------
 
     if (_adLoading) {
+      if (_loadingPurpose == purpose) {
+        debugPrint(
+          'Rewarded ad loading already in progress: '
+          '$purpose',
+        );
+
+        return;
+      }
+
       debugPrint(
-        'Rewarded ad loading already in progress. '
-        'Requested purpose: $purpose',
+        'Replacing stale Rewarded ad load. '
+        'Old: $_loadingPurpose '
+        'New: $purpose',
       );
 
-      return;
+      _loadRequestId++;
+
+      _adLoading = false;
+      _loadingPurpose = '';
     }
 
     // ----------------------------------------------------------
@@ -363,6 +418,7 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       _adLoading = false;
+      _loadingPurpose = '';
       _adReady = false;
       _adLoadError = 'NO_AUTH_USER';
 
@@ -391,6 +447,7 @@ class HomeAdManager extends ChangeNotifier {
     // ----------------------------------------------------------
 
     _adLoading = true;
+    _loadingPurpose = purpose;
     _adReady = false;
     _adLoadError = '';
     _rewardedAdPurpose = purpose;
@@ -521,6 +578,7 @@ class HomeAdManager extends ChangeNotifier {
             _rewardedAd = null;
             _adReady = false;
             _adLoading = false;
+            _loadingPurpose = '';
 
             _adLoadError =
                 'SSV_SETUP_FAILED: $error';
@@ -538,6 +596,7 @@ class HomeAdManager extends ChangeNotifier {
           _rewardedAdPurpose = purpose;
           _adReady = true;
           _adLoading = false;
+          _loadingPurpose = '';
           _adLoadError = '';
 
           // ====================================================
@@ -633,6 +692,7 @@ class HomeAdManager extends ChangeNotifier {
               )) {
                 _rewardedAd = null;
                 _adReady = false;
+                _rewardedAdPurpose = '';
               }
 
               _finishFlow(
@@ -704,6 +764,7 @@ class HomeAdManager extends ChangeNotifier {
               )) {
                 _rewardedAd = null;
                 _adReady = false;
+                _rewardedAdPurpose = '';
               }
 
               _finishFlow(
@@ -794,6 +855,8 @@ class HomeAdManager extends ChangeNotifier {
           _rewardedAd = null;
           _adReady = false;
           _adLoading = false;
+          _loadingPurpose = '';
+          _rewardedAdPurpose = '';
 
           _adLoadError =
               'Code: ${error.code} | '
@@ -833,12 +896,10 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // Pieni viive ennen seuraavaa latausta.
-    // ----------------------------------------------------------
-
     await Future<void>.delayed(
-      const Duration(seconds: 5),
+      const Duration(
+        seconds: 5,
+      ),
     );
 
     if (_disposed) {
@@ -846,7 +907,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     // ----------------------------------------------------------
-    // Jos mainos on jo valmis, ei tehdä mitään.
+    // Jos toinen mainostyyppi on jo valmis, ei korvata sitä.
     // ----------------------------------------------------------
 
     if (_rewardedAd != null &&
@@ -855,7 +916,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     // ----------------------------------------------------------
-    // Jos mainos on jo latautumassa, ei tehdä mitään.
+    // Jos toinen mainostyyppi on latautumassa, ei korvata sitä.
     // ----------------------------------------------------------
 
     if (_adLoading) {
@@ -875,8 +936,6 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
   // 🛡️ DELAYED SSV REWARD CALLBACK
   // ============================================================
-  //
-  // TÄMÄ ON TÄRKEIN MUUTOS.
   //
   // onUserEarnedReward EI kutsu Firebasea heti.
   //
@@ -1026,6 +1085,7 @@ class HomeAdManager extends ChangeNotifier {
 
       _rewardedAd = null;
       _adReady = false;
+      _rewardedAdPurpose = '';
 
       _notify();
 
@@ -1156,13 +1216,30 @@ class HomeAdManager extends ChangeNotifier {
 
     try {
       // --------------------------------------------------------
-      // Varmistetaan, ettei mining-mainos ole käytössä.
+      // Varmistetaan, ettei väärä valmis mainos ole käytössä.
       // --------------------------------------------------------
 
       if (_rewardedAd != null &&
           _rewardedAdPurpose !=
               powerBoostPurpose) {
         _disposeCurrentAd();
+      }
+
+      // --------------------------------------------------------
+      // Varmistetaan, ettei väärä mainostyyppi jää latautumaan.
+      // --------------------------------------------------------
+
+      if (_adLoading &&
+          _loadingPurpose !=
+              powerBoostPurpose) {
+        debugPrint(
+          'Switching active ad load to Power Boost.',
+        );
+
+        _loadRequestId++;
+
+        _adLoading = false;
+        _loadingPurpose = '';
       }
 
       // --------------------------------------------------------
@@ -1195,6 +1272,7 @@ class HomeAdManager extends ChangeNotifier {
 
       _rewardedAd = null;
       _adReady = false;
+      _rewardedAdPurpose = '';
 
       _notify();
 
@@ -1319,6 +1397,7 @@ class HomeAdManager extends ChangeNotifier {
 
     _rewardedAd = null;
     _adReady = false;
+    _rewardedAdPurpose = '';
 
     ad?.dispose();
   }
@@ -1333,6 +1412,7 @@ class HomeAdManager extends ChangeNotifier {
     _disposeCurrentAd();
 
     _adLoading = false;
+    _loadingPurpose = '';
     _adLoadError = '';
     _rewardedAdPurpose = '';
 
@@ -1352,6 +1432,8 @@ class HomeAdManager extends ChangeNotifier {
     _rewardedAd?.dispose();
 
     _rewardedAd = null;
+
+    _loadingPurpose = '';
 
     super.dispose();
   }
