@@ -8,53 +8,72 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 // 🐱 STELLURIINI HOME AD MANAGER
 // ============================================================
 //
-// Hallitsee HomePagen Rewarded-mainoksia.
+// TESTIVAIHE
 //
-// ADMOB-MAINOSYKSIKÖT:
+// Käytetään Googlen virallista Android Rewarded-testimainosta.
 //
+// Tämän testin tarkoitus:
+//
+//   Flutter
+//      ↓
+//   Google Mobile Ads SDK
+//      ↓
+//   RewardedAd.load()
+//      ↓
+//   Testimainos
+//
+// Jos tämä toimii, tiedämme että Flutterin AdMob-integraatio
+// toimii ja ongelma liittyy nykyisiin omiin AdMob-mainosyksiköihin
+// tai niiden tarjoiluun.
+//
+// ============================================================
+//
+// ⚠️ TESTI-ID
+//
+// Google Android Rewarded test ad:
+//
+//   ca-app-pub-3940256099942544/5224354917
+//
+// Sama testimainosyksikkö on tässä käytössä sekä:
 //   mining_start
-//     → Stelluriini Mining
-//     → ca-app-pub-1131012057145658/6674097787
-//
 //   power_boost
-//     → Stelluriini Power Boost
-//     → ca-app-pub-1131012057145658/7225738491
 //
-// Molemmat ovat AdMob Rewarded -mainosyksiköitä.
+// ============================================================
 //
 // SSV customData:
 //
 //   UID:mining_start
 //   UID:power_boost
 //
-// Reward callbackia ei kutsuta välittömästi
-// onUserEarnedReward-tapahtumassa.
-//
-// Ensin:
-//   AdMob → reward
-//
-// Sen jälkeen:
-//   odotus → SSV → Firestore
-//
-// Ja vasta lopuksi:
-//   Firebase claimMining / powerBoost
-//
 // ============================================================
 
 class HomeAdManager extends ChangeNotifier {
+  // ============================================================
+  // 🧪 GOOGLE REWARDED TEST AD
+  // ============================================================
+  //
+  // Tämä on tarkoituksella Googlen virallinen TEST-mainosyksikkö.
+  //
+  // ÄLÄ käytä tätä tuotannossa.
+  //
+  // ============================================================
+
+  static const String testRewardedAdUnitId =
+      'ca-app-pub-3940256099942544/5224354917';
+
   // ============================================================
   // 📺 MINING START REWARDED AD
   // ============================================================
 
   static const String miningRewardedAdUnitId =
-      'ca-app-pub-1131012057145658/6674097787';
+      testRewardedAdUnitId;
 
   // ============================================================
   // ⚡ POWER BOOST REWARDED AD
   // ============================================================
 
   static const String powerBoostRewardedAdUnitId =
-      'ca-app-pub-1131012057145658/7225738491';
+      testRewardedAdUnitId;
 
   // ============================================================
   // 🔐 SSV PURPOSES
@@ -241,15 +260,6 @@ class HomeAdManager extends ChangeNotifier {
     // ----------------------------------------------------------
     // WRONG AD IS CURRENTLY LOADING
     // ----------------------------------------------------------
-    //
-    // Tämä on tärkeä korjaus.
-    //
-    // Jos esimerkiksi mining_start-mainos on latautumassa
-    // ja tarvitsemme power_boost-mainoksen, vanhaa latausta
-    // ei jäädä odottamaan.
-    //
-    // Vanhan latauksen callback mitätöidään requestId:n avulla.
-    // ----------------------------------------------------------
 
     if (_adLoading &&
         _loadingPurpose != purpose) {
@@ -311,11 +321,6 @@ class HomeAdManager extends ChangeNotifier {
 
         return true;
       }
-
-      // --------------------------------------------------------
-      // Jos latauksessa oleva purpose ei enää vastaa
-      // pyydettyä purposea, lopetetaan odotus.
-      // --------------------------------------------------------
 
       if (_adLoading &&
           _loadingPurpose != purpose) {
@@ -468,7 +473,11 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     debugPrint(
-      'STELLURIINI ADMOB LOAD START',
+      'STELLURIINI ADMOB TEST LOAD START',
+    );
+
+    debugPrint(
+      'TEST MODE: Google Rewarded Test Ad',
     );
 
     debugPrint(
@@ -476,7 +485,7 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     debugPrint(
-      'Ad Unit ID: $adUnitId',
+      'Test Ad Unit ID: $adUnitId',
     );
 
     debugPrint(
@@ -526,7 +535,11 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI ADMOB LOAD SUCCESS',
+            'STELLURIINI ADMOB TEST LOAD SUCCESS',
+          );
+
+          debugPrint(
+            'TEST MODE: Google Rewarded Test Ad',
           );
 
           debugPrint(
@@ -534,7 +547,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'Ad Unit ID: $adUnitId',
+            'Test Ad Unit ID: $adUnitId',
           );
 
           debugPrint(
@@ -617,7 +630,7 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'STELLURIINI ADMOB SHOWN',
+                'STELLURIINI ADMOB TEST SHOWN',
               );
 
               debugPrint(
@@ -637,7 +650,7 @@ class HomeAdManager extends ChangeNotifier {
               RewardedAd impressionAd,
             ) {
               debugPrint(
-                'STELLURIINI ADMOB IMPRESSION',
+                'STELLURIINI ADMOB TEST IMPRESSION',
               );
 
               debugPrint(
@@ -653,7 +666,7 @@ class HomeAdManager extends ChangeNotifier {
               RewardedAd clickedAd,
             ) {
               debugPrint(
-                'STELLURIINI ADMOB CLICKED',
+                'STELLURIINI ADMOB TEST CLICKED',
               );
 
               debugPrint(
@@ -673,7 +686,7 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'STELLURIINI ADMOB DISMISSED',
+                'STELLURIINI ADMOB TEST DISMISSED',
               );
 
               debugPrint(
@@ -707,8 +720,6 @@ class HomeAdManager extends ChangeNotifier {
 
               // ------------------------------------------------
               // Hiljainen taustalataus.
-              //
-              // Älä lataa välittömästi uudelleen.
               // ------------------------------------------------
 
               if (!_disposed) {
@@ -733,7 +744,7 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'STELLURIINI ADMOB SHOW FAILED',
+                'STELLURIINI ADMOB TEST SHOW FAILED',
               );
 
               debugPrint(
@@ -817,7 +828,11 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI ADMOB LOAD FAILED',
+            'STELLURIINI ADMOB TEST LOAD FAILED',
+          );
+
+          debugPrint(
+            'TEST MODE: Google Rewarded Test Ad',
           );
 
           debugPrint(
@@ -825,7 +840,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'Ad Unit ID: $adUnitId',
+            'Test Ad Unit ID: $adUnitId',
           );
 
           debugPrint(
@@ -924,7 +939,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     debugPrint(
-      'Starting silent background reload: $purpose',
+      'Starting silent background TEST ad reload: $purpose',
     );
 
     await loadRewardedAd(
@@ -935,12 +950,6 @@ class HomeAdManager extends ChangeNotifier {
 
   // ============================================================
   // 🛡️ DELAYED SSV REWARD CALLBACK
-  // ============================================================
-  //
-  // onUserEarnedReward EI kutsu Firebasea heti.
-  //
-  // Odotetaan ensin SSV:n ehtimistä backendille.
-  //
   // ============================================================
 
   void _scheduleVerifiedRewardCallback({
@@ -1099,11 +1108,11 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'STELLURIINI SHOW MINING START',
+        'STELLURIINI SHOW MINING START TEST AD',
       );
 
       debugPrint(
-        'Ad Unit ID: $miningRewardedAdUnitId',
+        'TEST Ad Unit ID: $miningRewardedAdUnitId',
       );
 
       debugPrint(
@@ -1139,7 +1148,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI MINING START REWARD RECEIVED',
+            'STELLURIINI MINING START TEST REWARD RECEIVED',
           );
 
           debugPrint(
@@ -1173,7 +1182,7 @@ class HomeAdManager extends ChangeNotifier {
       return true;
     } catch (error) {
       debugPrint(
-        'Mining Start ad flow error: $error',
+        'Mining Start test ad flow error: $error',
       );
 
       _miningAdFlowActive = false;
@@ -1243,7 +1252,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // --------------------------------------------------------
-      // Ladataan nimenomaan Power Boost -mainosyksikkö.
+      // Ladataan nimenomaan Power Boost -testimainos.
       // --------------------------------------------------------
 
       final bool ready =
@@ -1286,11 +1295,11 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'STELLURIINI SHOW POWER BOOST',
+        'STELLURIINI SHOW POWER BOOST TEST AD',
       );
 
       debugPrint(
-        'Ad Unit ID: $powerBoostRewardedAdUnitId',
+        'TEST Ad Unit ID: $powerBoostRewardedAdUnitId',
       );
 
       debugPrint(
@@ -1326,7 +1335,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI POWER BOOST REWARD RECEIVED',
+            'STELLURIINI POWER BOOST TEST REWARD RECEIVED',
           );
 
           debugPrint(
@@ -1360,7 +1369,7 @@ class HomeAdManager extends ChangeNotifier {
       return true;
     } catch (error) {
       debugPrint(
-        'Power Boost ad flow error: $error',
+        'Power Boost test ad flow error: $error',
       );
 
       _powerBoostAdFlowActive = false;
