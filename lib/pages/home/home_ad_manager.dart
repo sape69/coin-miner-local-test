@@ -769,10 +769,6 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'Response info: ${error.responseInfo}',
-              );
-
-              debugPrint(
                 '==================================================',
               );
 
@@ -797,8 +793,7 @@ class HomeAdManager extends ChangeNotifier {
                   'Ad Unit ID: $adUnitId | '
                   'Code: ${error.code} | '
                   'Domain: ${error.domain} | '
-                  'Message: ${error.message} | '
-                  'Response info: ${error.responseInfo}';
+                  'Message: ${error.message}';
 
               _notify();
 
@@ -841,8 +836,7 @@ class HomeAdManager extends ChangeNotifier {
               'Ad Unit ID: $adUnitId | '
               'Code: ${error.code} | '
               'Domain: ${error.domain} | '
-              'Message: ${error.message} | '
-              'Response info: ${error.responseInfo}';
+              'Message: ${error.message}';
 
           debugPrint(
             '==================================================',
@@ -870,10 +864,6 @@ class HomeAdManager extends ChangeNotifier {
 
           debugPrint(
             'Message: ${error.message}',
-          );
-
-          debugPrint(
-            'Response info: ${error.responseInfo}',
           );
 
           debugPrint(
