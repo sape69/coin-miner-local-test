@@ -10,13 +10,11 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //
 // STELLURIININ OIKEAT ADMOB-MAINOSYKSIKÖT
 //
-// Käytetään Stelluriini-projektin omia Rewarded-mainosyksiköitä.
-//
 // Flutter
 //    ↓
 // Google Mobile Ads SDK
 //    ↓
-// Stelluriinin Rewarded Ad
+// Stelluriini Rewarded Ad
 //    ↓
 // käyttäjä katsoo mainoksen
 //    ↓
@@ -340,7 +338,8 @@ class HomeAdManager extends ChangeNotifier {
     debugPrint(
       '🐱 Rewarded ad wait finished. '
       'Purpose: $purpose '
-      'Ready: $ready',
+      'Ready: $ready '
+      'Last error: $_adLoadError',
     );
 
     return ready;
@@ -414,7 +413,9 @@ class HomeAdManager extends ChangeNotifier {
       _adLoading = false;
       _loadingPurpose = '';
       _adReady = false;
-      _adLoadError = 'NO_AUTH_USER';
+      _adLoadError =
+          'NO_AUTH_USER | '
+          'Purpose: $purpose';
 
       _notify();
 
@@ -575,7 +576,10 @@ class HomeAdManager extends ChangeNotifier {
             _loadingPurpose = '';
 
             _adLoadError =
-                'SSV_SETUP_FAILED: $error';
+                'SSV_SETUP_FAILED | '
+                'Purpose: $purpose | '
+                'Ad Unit ID: $adUnitId | '
+                'Error: $error';
 
             _notify();
 
@@ -619,6 +623,10 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
+                'Ad Unit ID: $adUnitId',
+              );
+
+              debugPrint(
                 '==================================================',
               );
             },
@@ -637,6 +645,10 @@ class HomeAdManager extends ChangeNotifier {
               debugPrint(
                 'Purpose: $purpose',
               );
+
+              debugPrint(
+                'Ad Unit ID: $adUnitId',
+              );
             },
 
             // --------------------------------------------------
@@ -652,6 +664,10 @@ class HomeAdManager extends ChangeNotifier {
 
               debugPrint(
                 'Purpose: $purpose',
+              );
+
+              debugPrint(
+                'Ad Unit ID: $adUnitId',
               );
             },
 
@@ -672,6 +688,10 @@ class HomeAdManager extends ChangeNotifier {
 
               debugPrint(
                 'Purpose: $purpose',
+              );
+
+              debugPrint(
+                'Ad Unit ID: $adUnitId',
               );
 
               debugPrint(
@@ -733,6 +753,10 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
+                'Ad Unit ID: $adUnitId',
+              );
+
+              debugPrint(
                 'Code: ${error.code}',
               );
 
@@ -742,6 +766,10 @@ class HomeAdManager extends ChangeNotifier {
 
               debugPrint(
                 'Message: ${error.message}',
+              );
+
+              debugPrint(
+                'Response info: ${error.responseInfo}',
               );
 
               debugPrint(
@@ -765,9 +793,12 @@ class HomeAdManager extends ChangeNotifier {
 
               _adLoadError =
                   'SHOW_FAILED | '
+                  'Purpose: $purpose | '
+                  'Ad Unit ID: $adUnitId | '
                   'Code: ${error.code} | '
                   'Domain: ${error.domain} | '
-                  'Message: ${error.message}';
+                  'Message: ${error.message} | '
+                  'Response info: ${error.responseInfo}';
 
               _notify();
 
@@ -804,6 +835,15 @@ class HomeAdManager extends ChangeNotifier {
             return;
           }
 
+          final String detailedError =
+              'LOAD_FAILED | '
+              'Purpose: $purpose | '
+              'Ad Unit ID: $adUnitId | '
+              'Code: ${error.code} | '
+              'Domain: ${error.domain} | '
+              'Message: ${error.message} | '
+              'Response info: ${error.responseInfo}';
+
           debugPrint(
             '==================================================',
           );
@@ -837,6 +877,10 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
+            'FULL ERROR: $detailedError',
+          );
+
+          debugPrint(
             'Notify user: $notifyOnLoadError',
           );
 
@@ -851,9 +895,7 @@ class HomeAdManager extends ChangeNotifier {
           _rewardedAdPurpose = '';
 
           _adLoadError =
-              'Code: ${error.code} | '
-              'Domain: ${error.domain} | '
-              'Message: ${error.message}';
+              detailedError;
 
           _notify();
 
@@ -1061,6 +1103,14 @@ class HomeAdManager extends ChangeNotifier {
               miningStartPurpose) {
         _miningAdFlowActive = false;
 
+        debugPrint(
+          '🐱 Mining Start ad was not ready.',
+        );
+
+        debugPrint(
+          'Last AdMob error: $_adLoadError',
+        );
+
         _notify();
 
         return false;
@@ -1247,6 +1297,14 @@ class HomeAdManager extends ChangeNotifier {
           _rewardedAdPurpose !=
               powerBoostPurpose) {
         _powerBoostAdFlowActive = false;
+
+        debugPrint(
+          '🐱 Power Boost ad was not ready.',
+        );
+
+        debugPrint(
+          'Last AdMob error: $_adLoadError',
+        );
 
         _notify();
 
