@@ -286,13 +286,13 @@ function getRewardCreatedAtMs(
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
 //
-// Tämä suorittaa yhden haun Firestoresta.
+// Yksi Firestore-haku.
 //
-// TÄRKEÄÄ:
 // AdMob SSV voi saapua hieman myöhemmin kuin Flutterin
 // RewardedAd.onUserEarnedReward tapahtuma.
 //
-// Siksi tätä funktiota käytetään myös retry-loopin kautta.
+// Backend odottaa tarvittaessa SSV:tä.
+//
 // ============================================================
 
 async function findVerifiedAdMobReward(
@@ -451,15 +451,12 @@ async function findVerifiedAdMobReward(
 // AdMob SSV ei välttämättä ehdi Firestoreen ennen kuin
 // Flutter kutsuu claimMining/powerBoost.
 //
-// Tämän vuoksi backend odottaa vahvistusta.
+// Backend odottaa vahvistusta.
 //
 // Tarkistus:
 // - ensimmäinen heti
 // - sen jälkeen 2 sekunnin välein
 // - enintään 30 sekuntia
-//
-// Tämä poistaa kilpailutilanteen Flutter → AdMob SSV →
-// Firestore → Callable Function välillä.
 //
 // ============================================================
 
@@ -549,15 +546,6 @@ async function waitForVerifiedAdMobReward(
 
 // ============================================================
 // 🔐 VALIDATE VERIFIED REWARD DOCUMENT
-// ============================================================
-//
-// Reward haetaan ensin retry-loopilla.
-//
-// Tämän jälkeen sama dokumentti luetaan vielä Firestore
-// transactionin sisällä.
-//
-// Näin rewardin käyttäminen tapahtuu atomisesti.
-//
 // ============================================================
 
 function validateVerifiedRewardDocument(
@@ -1779,10 +1767,44 @@ const claimMining =
             // ==================================================
             // ⚠️ JOS MINING ON JO KÄYNNISSÄ
             // ==================================================
+            //
+            // TÄRKEÄ KORJAUS:
+            // AdMob reward kulutetaan myös tässä tilanteessa.
+            //
+            // Muuten sama SSV reward voisi jäädä käyttämättömäksi
+            // ja löytyä uudelleen seuraavissa kutsuissa.
+            //
+            // ==================================================
 
             if (
               existingMiningStatus.miningActive
             ) {
+              transaction.set(
+                verifiedRewardRef,
+                {
+                  miningClaimed:
+                    true,
+
+                  miningClaimedAt:
+                    FieldValue.serverTimestamp(),
+
+                  miningStartClaimed:
+                    true,
+
+                  miningStartClaimedAt:
+                    FieldValue.serverTimestamp(),
+
+                  miningStartClaimedBy:
+                    uid,
+
+                  miningStartAlreadyActive:
+                    true,
+                },
+                {
+                  merge: true,
+                }
+              );
+
               return {
                 success: true,
 
@@ -2396,17 +2418,125 @@ const powerBoost =
               );
 
             const rewardData =
+              rewardSnapshot.exists
+                ? rewardSnapshot.data() || {}
+                : {};
+
+            const userData =
+              userSnapshot.exists
+                ? userSnapshot.data() || {}
+                : {};
+
+            // ==================================================
+            // 🛡️ IDEMPOTENCY
+            // ==================================================
+            //
+            // Jos sama callable-kutsu tulee useita kertoja
+            // saman transaction ID:n kanssa, jo käsitelty
+            // reward palautetaan turvallisesti onnistuneena.
+            //
+            // Tämä on tärkeää Flutterin retry-loopin aikana.
+            //
+            // ==================================================
+
+            if (
+              rewardSnapshot.exists &&
+              rewardData.uid === uid &&
+              rewardData.rewardType === "admob" &&
+              rewardData.rewardPurpose === "power_boost" &&
+              rewardData.powerBoostClaimed === true &&
+              rewardData.powerBoostClaimedBy === uid &&
+              rewardData.powerBoostTransactionId ===
+                verifiedReward.transactionId
+            ) {
+              const currentAdStatus =
+                getAdStatus(
+                  userData,
+                  nowMs,
+                  today
+                );
+
+              if (
+                currentAdStatus.adBoostActive
+              ) {
+                const remainingMs =
+                  currentAdStatus.adBoostRemainingMs;
+
+                const dailyStatus =
+                  getDailyStatus(
+                    userData,
+                    today
+                  );
+
+                const baseHashRate =
+                  getMiningHashRate(
+                    userData,
+                    dailyStatus.dailyHashRate
+                  );
+
+                const effectiveHashRate =
+                  baseHashRate +
+                  AD_HASH_RATE_BONUS;
+
+                return {
+                  success: true,
+
+                  boostActive: true,
+
+                  active: true,
+
+                  alreadyActivated: true,
+
+                  adsToday:
+                    currentAdStatus.adsToday,
+
+                  maxAdsPerDay:
+                    MAX_ADS_PER_DAY,
+
+                  adHashRateBonus:
+                    AD_HASH_RATE_BONUS,
+
+                  boostRemainingMs:
+                    remainingMs,
+
+                  remainingBoostMs:
+                    remainingMs,
+
+                  adBoostDurationMs:
+                    AD_BOOST_DURATION_MS,
+
+                  adBoostStartedAt:
+                    currentAdStatus.adBoostStartedAt
+                      ? currentAdStatus.adBoostStartedAt.toISOString()
+                      : null,
+
+                  adBoostEndsAt:
+                    currentAdStatus.adBoostEndsAt
+                      ? currentAdStatus.adBoostEndsAt.toISOString()
+                      : null,
+
+                  effectiveHashRate,
+
+                  transactionId:
+                    verifiedReward.transactionId,
+
+                  message:
+                    "🐱⚡ Stella Power Boost on jo aktiivinen!",
+                };
+              }
+            }
+
+            // ==================================================
+            // 🔐 VALIDATE VERIFIED REWARD
+            // ==================================================
+
+            const validatedRewardData =
               validateVerifiedRewardDocument(
                 rewardSnapshot,
                 uid,
                 "power_boost",
                 "powerBoostClaimed"
               );
-
-            const userData =
-              userSnapshot.exists
-                ? userSnapshot.data() || {}
-                : {};
 
             // ==================================================
             // 📊 CURRENT AD STATUS
@@ -2520,6 +2650,13 @@ const powerBoost =
                 adBoostEndsAt:
                   boostEndsAt,
 
+                // ==============================================
+                // 🛡️ IDEMPOTENCY REFERENCE
+                // ==============================================
+
+                powerBoostTransactionId:
+                  verifiedReward.transactionId,
+
                 updatedAt:
                   FieldValue.serverTimestamp(),
               },
@@ -2543,6 +2680,9 @@ const powerBoost =
 
                 powerBoostClaimedBy:
                   uid,
+
+                powerBoostTransactionId:
+                  verifiedReward.transactionId,
               },
               {
                 merge: true,
@@ -2570,6 +2710,7 @@ const powerBoost =
                   0,
 
                 adRewardTransactionId:
+                  validatedRewardData.transactionId ||
                   verifiedReward.transactionId,
 
                 rewardPurpose:
@@ -2628,6 +2769,8 @@ const powerBoost =
               boostActive: true,
 
               active: true,
+
+              alreadyActivated: false,
 
               adsToday:
                 newAdsToday,
