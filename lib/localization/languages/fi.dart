@@ -42,7 +42,16 @@ const Map<String, String> fiTranslations = {
   'dailyHashRateMaximum': 'Maksimi: {rate} HR',
   'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
 
-  // 🐱 Stella Mining
+  // ============================================================
+  // 🐱 STELLA MINING
+  // ============================================================
+
+  'stellaMiningTitle':
+      'Stellan louhinta',
+
+  'stellaMiningSubtitle':
+      'Stella työskentelee puolestasi. 🐱⛏️',
+
   'stellaMiningProgress':
       'Stellan louhinnan edistyminen',
 
@@ -92,7 +101,7 @@ const Map<String, String> fiTranslations = {
       'Aikaa jäljellä: {time}',
 
   'miningTimeRemaining':
-      'Aikaa jäljellä: {time}',
+      'Aikaa jäljellä',
 
   'waitingForStella':
       'Odotetaan Stellaa 🐱💜',
@@ -102,6 +111,9 @@ const Map<String, String> fiTranslations = {
 
   'days':
       'päivää',
+
+  'day':
+      'Päivä',
 
   // ============================================================
   // 🎁 DAILY BONUS
@@ -132,6 +144,9 @@ const Map<String, String> fiTranslations = {
   'watchAndEarn':
       'KATSO & ANSAITSE',
 
+  'watchAdSubtitle':
+      'Katso mainos ja anna Stellalle Power Boost. 🐱⚡',
+
   'loadingAd':
       'LADATAAN MAINOSTA...',
 
@@ -140,6 +155,15 @@ const Map<String, String> fiTranslations = {
 
   'prepareAd':
       'Valmistellaan mainosta...',
+
+  'adNotAvailable':
+      'Mainos ei ole tällä hetkellä saatavilla.',
+
+  'adLoadError':
+      'Mainoksen lataaminen epäonnistui.',
+
+  'adShowError':
+      'Mainoksen näyttäminen epäonnistui.',
 
   'adReward':
       '+{amount} HR',
@@ -173,7 +197,7 @@ const Map<String, String> fiTranslations = {
       'Seuraava mainos on saatavilla boostin päätyttyä.',
 
   'maxBoostsInfo':
-      'Voit aktivoida enintään {count} Power Boostia päivässä.',
+      'Power Boostien päivittäinen enimmäismäärä on saavutettu.',
 
   'adsToday':
       'Mainoksia tänään: {current}/{max}',
@@ -207,6 +231,15 @@ const Map<String, String> fiTranslations = {
   'profile':
       'Profiili',
 
+  'loading':
+      'Ladataan...',
+
+  'active':
+      'Aktiivinen',
+
+  'welcome':
+      'Tervetuloa',
+
   // ============================================================
   // 🐱 STELLA
   // ============================================================
@@ -222,6 +255,9 @@ const Map<String, String> fiTranslations = {
 
   'stellaMining':
       'Stella Mining',
+
+  'stellaWelcome':
+      'Stella on täällä auttamassa sinua. 🐱💜',
 
   'stellaIsMining':
       'Stella louhii',
