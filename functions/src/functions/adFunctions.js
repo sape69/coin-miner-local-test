@@ -413,17 +413,55 @@ async function saveVerifiedAdMobReward(
           ? verifiedAd.keyId
           : "";
 
-      const customData =
+      // ======================================================
+      // 🔐 CUSTOM DATA
+      // ======================================================
+      //
+      // Tuetaan kaikkia mahdollisia muotoja:
+      //
+      // verifiedAd.customData
+      // verifiedAd.custom_data
+      // verifiedAd.parameters.custom_data
+      // verifiedAd.parameters.customData
+      //
+      // ======================================================
+
+      const parameters =
+        verifiedAd &&
+        verifiedAd.parameters &&
+        typeof verifiedAd.parameters ===
+          "object"
+          ? verifiedAd.parameters
+          : {};
+
+      const rawCustomData =
         typeof verifiedAd.customData ===
           "string"
           ? verifiedAd.customData
-          : `${uid}:${rewardPurpose}`;
+          : typeof verifiedAd.custom_data ===
+              "string"
+              ? verifiedAd.custom_data
+              : typeof parameters.custom_data ===
+                  "string"
+                  ? parameters.custom_data
+                  : typeof parameters.customData ===
+                      "string"
+                      ? parameters.customData
+                      : "";
+
+      const customData =
+        decodeCustomData(
+          rawCustomData
+        );
 
       const userId =
         typeof verifiedAd.userId ===
           "string"
           ? verifiedAd.userId
-          : "";
+          : typeof parameters.user_id ===
+              "string"
+              ? parameters.user_id
+              : "";
 
       // ======================================================
       // 💾 SAVE REWARD
@@ -751,7 +789,7 @@ const adMobReward =
 
         if (
           !verifiedAd ||
-          verifiedAd.verified === false
+          verifiedAd.verified !== true
         ) {
 
           const verificationError =
@@ -765,14 +803,6 @@ const adMobReward =
             "❌ AdMob SSV verification failed:",
             verificationError
           );
-
-          // ----------------------------------------------------
-          // 🔐 Emme anna palkkiota.
-          //
-          // Virheellinen allekirjoitus ei saa koskaan päästä
-          // reward-järjestelmään.
-          //
-          // ----------------------------------------------------
 
           res.status(400).json({
             success:
@@ -792,36 +822,66 @@ const adMobReward =
         }
 
         // ======================================================
-        // 🎯 GET CUSTOM DATA
+        // 🎯 GET VERIFIED PARAMETERS
         // ======================================================
         //
-        // Ensisijainen kenttä on customData.
+        // admobService.js palauttaa varsinaiset AdMob-parametrit
+        // verifiedAd.parameters-objektissa.
         //
-        // Fallback custom_data tukee mahdollisia palvelukerroksen
-        // nimeämiseroja.
+        // Käytämme sitä ensisijaisena lähteenä.
         //
         // ======================================================
 
-        const customData =
+        const parameters =
+          verifiedAd &&
+          verifiedAd.parameters &&
+          typeof verifiedAd.parameters ===
+            "object"
+            ? verifiedAd.parameters
+            : {};
+
+        // ======================================================
+        // 🎯 GET CUSTOM DATA
+        // ======================================================
+        //
+        // TÄMÄ ON TÄRKEÄ KORJAUS.
+        //
+        // AdMob SSV:n custom_data voi olla täällä:
+        //
+        // parameters.custom_data
+        //
+        // eikä välttämättä:
+        //
+        // verifiedAd.customData
+        //
+        // ======================================================
+
+        const rawCustomData =
           typeof verifiedAd.customData ===
             "string"
             ? verifiedAd.customData
             : typeof verifiedAd.custom_data ===
                 "string"
                 ? verifiedAd.custom_data
-                : "";
+                : typeof parameters.custom_data ===
+                    "string"
+                    ? parameters.custom_data
+                    : typeof parameters.customData ===
+                        "string"
+                        ? parameters.customData
+                        : "";
+
+        const customData =
+          decodeCustomData(
+            rawCustomData
+          );
 
         // ======================================================
         // 🔎 DEBUG LOG
         // ======================================================
-        //
-        // Ei kirjata käyttäjän rewardia tai muita arkaluontoisia
-        // tietoja enempää kuin tarpeellista.
-        //
-        // ======================================================
 
         console.log(
-          "🐱 AdMob verified custom_data received:",
+          "🐱 AdMob verified custom_data:",
           customData
             ? "present"
             : "missing"
@@ -845,14 +905,11 @@ const adMobReward =
           );
 
           // ----------------------------------------------------
-          // TÄRKEÄ:
-          //
           // Custom_data on pysyvästi virheellinen callbackin
-          // sisältö. HTTP 400 aiheuttaisi AdMobilta uusia
-          // callback-yrityksiä.
+          // sisältö.
           //
-          // Kuittaamme callbackin vastaanotetuksi ilman
-          // palkkiota.
+          // Kuittaamme callbackin vastaanotetuksi HTTP 200:
+          // AdMob ei saa käynnistää tarpeetonta retry-kierrettä.
           //
           // ----------------------------------------------------
 
@@ -893,10 +950,19 @@ const adMobReward =
         // ======================================================
         // 🔐 TRANSACTION ID
         // ======================================================
+        //
+        // Ensisijainen lähde on verifyAdMobCallbackin palauttama
+        // transactionId.
+        //
+        // Fallback:
+        // parameters.transaction_id
+        //
+        // ======================================================
 
         const transactionId =
           validateTransactionId(
-            verifiedAd.transactionId
+            verifiedAd.transactionId ||
+            parameters.transaction_id
           );
 
         if (
@@ -906,13 +972,6 @@ const adMobReward =
           console.error(
             "❌ AdMob SSV missing transaction_id."
           );
-
-          // ----------------------------------------------------
-          // Transaction ID puuttuu.
-          //
-          // Tätä callbackia ei voida turvallisesti tallentaa.
-          //
-          // ----------------------------------------------------
 
           res.status(200).json({
             success:
@@ -942,7 +1001,10 @@ const adMobReward =
           typeof verifiedAd.userId ===
             "string"
             ? verifiedAd.userId.trim()
-            : "";
+            : typeof parameters.user_id ===
+                "string"
+                ? parameters.user_id.trim()
+                : "";
 
         if (
           callbackUserId &&
@@ -952,12 +1014,6 @@ const adMobReward =
           console.error(
             "❌ AdMob user_id does not match custom_data UID."
           );
-
-          // ----------------------------------------------------
-          // Turvallisuussyistä ei anneta rewardia.
-          // Callback kuitataan, jotta virheellinen request ei
-          // synnytä loputonta retry-ketjua.
-          // ----------------------------------------------------
 
           res.status(200).json({
             success:
@@ -980,6 +1036,51 @@ const adMobReward =
         }
 
         // ======================================================
+        // 📺 BUILD NORMALIZED VERIFIED AD
+        // ======================================================
+        //
+        // saveVerifiedAdMobReward() saa tästä aina yhtenäisen
+        // rakenteen riippumatta siitä, missä muodossa
+        // admobService.js palautti parametrin.
+        //
+        // ======================================================
+
+        const normalizedVerifiedAd = {
+          ...verifiedAd,
+
+          transactionId,
+
+          customData,
+
+          userId:
+            callbackUserId || uid,
+
+          rewardAmount:
+            verifiedAd.rewardAmount ??
+            parameters.reward_amount,
+
+          rewardItem:
+            verifiedAd.rewardItem ??
+            parameters.reward_item,
+
+          adUnit:
+            verifiedAd.adUnit ??
+            parameters.ad_unit,
+
+          timestamp:
+            verifiedAd.timestamp ??
+            parameters.timestamp,
+
+          keyId:
+            verifiedAd.keyId ??
+            parameters.key_id,
+
+          adNetwork:
+            verifiedAd.adNetwork ||
+            "admob",
+        };
+
+        // ======================================================
         // 📺 LOG VERIFIED AD
         // ======================================================
 
@@ -990,13 +1091,13 @@ const adMobReward =
             transactionId,
             rewardPurpose,
             adUnit:
-              verifiedAd.adUnit,
+              normalizedVerifiedAd.adUnit,
             rewardAmount:
-              verifiedAd.rewardAmount,
+              normalizedVerifiedAd.rewardAmount,
             rewardItem:
-              verifiedAd.rewardItem,
+              normalizedVerifiedAd.rewardItem,
             keyId:
-              verifiedAd.keyId,
+              normalizedVerifiedAd.keyId,
           }
         );
 
@@ -1008,7 +1109,7 @@ const adMobReward =
           await saveVerifiedAdMobReward(
             uid,
             transactionId,
-            verifiedAd,
+            normalizedVerifiedAd,
             rewardPurpose
           );
 
@@ -1044,9 +1145,7 @@ const adMobReward =
         // ❗ SERVER ERROR
         // ======================================================
         //
-        // Todellinen palvelinvirhe palautetaan 400, jotta
-        // callbackia ei kuitata onnistuneeksi silloin kun
-        // rewardia ei ole pystytty turvallisesti käsittelemään.
+        // Todellinen palvelinvirhe palautetaan 400.
         //
         // ======================================================
 
