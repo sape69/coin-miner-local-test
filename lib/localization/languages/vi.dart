@@ -46,6 +46,12 @@ const Map<String, String> viTranslations = {
   'stellaMiningProgress':
       'Tiến trình khai thác Stella',
 
+  'miningProgress':
+      'Tiến trình khai thác',
+
+  'miningProgressStella':
+      'Tiến trình khai thác của Stella',
+
   'stlPerHour':
       'STL mỗi giờ',
 
@@ -76,11 +82,20 @@ const Map<String, String> viTranslations = {
   'timeRemaining':
       'Thời gian còn lại',
 
+  'timeRemainingLabel':
+      'Thời gian còn lại',
+
   'remaining':
-      'Còn lại: {time}',
+      'Thời gian còn lại: {time}',
+
+  'timeRemainingText':
+      'Thời gian còn lại: {time}',
+
+  'miningTimeRemaining':
+      'Thời gian còn lại: {time}',
 
   'waitingForStella':
-      'Đang chờ Stella',
+      'Đang chờ Stella 🐱💜',
 
   'streak':
       'Chuỗi ngày',
@@ -137,13 +152,13 @@ const Map<String, String> viTranslations = {
       'Stella Power Boost',
 
   'powerBoostOffer':
-      'Xem quảng cáo để kích hoạt Stella Power Boost +{amount} HR trong 4 giờ.',
+      'Xem quảng cáo để kích hoạt Stella Power Boost +{amount} HR trong 4 giờ. 🐱⚡',
 
   'powerBoostActive':
       'Power Boost đang hoạt động',
 
   'powerBoostActiveTitle':
-      'Stella Power Boost đã được kích hoạt!',
+      'Stella Power Boost đã được kích hoạt! 🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HR sẽ được áp dụng trong chu kỳ khai thác của bạn.',
@@ -212,10 +227,10 @@ const Map<String, String> viTranslations = {
       'Stella đang khai thác',
 
   'stellaMiningNow':
-      'Stella đang khai thác',
+      'Stella đang khai thác ngay lúc này 🐱⛏️',
 
   'stellaIsResting':
-      'Stella đang nghỉ ngơi',
+      'Stella đang nghỉ ngơi 🐱💜',
 
   'stellaWaiting':
       'Stella đang chờ chu kỳ khai thác tiếp theo',
@@ -227,13 +242,13 @@ const Map<String, String> viTranslations = {
       'STL ĐÃ KHAI THÁC',
 
   'stellaIsWorking':
-      'STELLA ĐANG LÀM VIỆC...',
+      'STELLA ĐANG LÀM VIỆC... 🐱⛏️',
 
   'stellaIsMiningButton':
       'ĐANG KHAI THÁC',
 
   'stellaAlreadyMining':
-      'Stella đang khai thác.',
+      'Stella đang khai thác. 🐱💜',
 
   // ============================================================
   // ⛏️ MINING MESSAGES
@@ -244,6 +259,18 @@ const Map<String, String> viTranslations = {
 
   'miningStartFailed':
       'Không thể bắt đầu khai thác.',
+
+  'miningStarted':
+      'Stella đã bắt đầu khai thác! 🐱⛏️',
+
+  'miningCycleStarted':
+      'Chu kỳ khai thác mới của Stella đã bắt đầu. 🐱💜',
+
+  'miningCycleComplete':
+      'Chu kỳ khai thác của Stella đã hoàn thành! ✨',
+
+  'miningReady':
+      'Phần thưởng khai thác của Stella đã sẵn sàng để nhận. 🐾',
 
   // ============================================================
   // 💎 TRANSACTIONS
@@ -420,19 +447,19 @@ const Map<String, String> viTranslations = {
       'Chưa có giao dịch',
 
   'rewardsAppearHere':
-      'Phần thưởng STL của bạn sẽ xuất hiện tại đây. 🐱',
+      'Phần thưởng STL của bạn sẽ xuất hiện tại đây. 🐱💜',
 
   'startMiningWithStella':
-      'Bắt đầu khai thác cùng Stella',
+      'Bắt đầu khai thác cùng Stella 🐱⛏️',
 
   'historyRecorded':
       'Hoạt động khai thác, phần thưởng hàng ngày và phần thưởng quảng cáo của bạn sẽ được ghi lại tại đây.',
 
   'stellaCheckingHistory':
-      'Stella đang kiểm tra lịch sử của bạn...',
+      'Stella đang kiểm tra lịch sử của bạn... 🐱🔎',
 
   'everyRewardJourney':
-      'Mỗi phần thưởng là một phần trong hành trình Stelluriini của bạn. 🐾',
+      'Mỗi phần thưởng là một phần trong hành trình Stelluriini của bạn. 🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -448,7 +475,7 @@ const Map<String, String> viTranslations = {
       'Stelluriini kết hợp cộng đồng, token kỹ thuật số và trải nghiệm ứng dụng xoay quanh Stella.',
 
   'meetStella':
-      'Gặp Stella',
+      'Gặp Stella 🐱💜',
 
   'aboutStellaIntro':
       'Stella là trung tâm của Stelluriini và là chú mèo đáng yêu đại diện cho dự án.',
@@ -545,7 +572,7 @@ const Map<String, String> viTranslations = {
       'Giai đoạn 6 – Phát triển dài hạn',
 
   'roadmapPhase6Title':
-      'Phát triển dài hạn',
+      'Phát triển Stelluriini dài hạn',
 
   'roadmapPhase6Description':
       'Tiếp tục phát triển hệ sinh thái Stelluriini, các tính năng mới và đáp ứng nhu cầu của cộng đồng.',
@@ -590,7 +617,7 @@ const Map<String, String> viTranslations = {
       'Cộng đồng là trung tâm của quá trình phát triển Stelluriini. Phản hồi và ý tưởng của người dùng giúp định hướng sự phát triển trong tương lai.',
 
   'roadmapStella':
-      'Stella',
+      'Stella 🐱💜',
 
   'roadmapStellaDescription':
       'Stella sẽ tiếp tục là linh vật hình ảnh của Stelluriini và là một phần quan trọng của trải nghiệm người dùng.',
@@ -620,7 +647,7 @@ const Map<String, String> viTranslations = {
       'Lộ trình mô tả hướng phát triển dự kiến của Stelluriini. Các giai đoạn, tính năng và thời gian có thể thay đổi trong quá trình phát triển dự án.',
 
   'roadmapStellaJourney':
-      'Hành trình của Stella',
+      'Hành trình của Stella 🐾',
 
   'roadmapEcosystemDescription':
       'Hệ sinh thái Stelluriini sẽ được phát triển từng bước xoay quanh cộng đồng, ứng dụng và token STL.',
@@ -905,16 +932,19 @@ const Map<String, String> viTranslations = {
   'withdrawalsDisabled':
       'Tính năng rút tiền hiện chưa khả dụng.',
 
+  'futureWithdrawals':
+      'Hệ thống rút STL trong tương lai, nếu được triển khai, sẽ được thiết kế riêng và các điều kiện sẽ được công bố trước khi triển khai.',
+
   // ============================================================
   // 🐾 FOOTER
   // ============================================================
 
   'footerTagline':
-      'Cùng khai thác và xây dựng tương lai của Stelluriini.',
+      'Cùng Stella khai thác và xây dựng tương lai của Stelluriini. 🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
   'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
+      'STELLA • STELLURIINI • STL • SOLANA',
 };
