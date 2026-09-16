@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
@@ -30,6 +31,29 @@ Future<void> main() async {
   // ==========================================================
 
   await Firebase.initializeApp();
+
+  // ==========================================================
+  // GOOGLE MOBILE ADS
+  // ==========================================================
+  //
+  // Alustetaan Google Mobile Ads SDK ennen ensimmäistä
+  // RewardedAd.load() -kutsua.
+  //
+  // Tämä on tärkeää erityisesti Rewarded-mainoksia varten.
+  //
+  // ==========================================================
+
+  try {
+    await MobileAds.instance.initialize();
+
+    debugPrint(
+      '🐱 Stelluriini: Google Mobile Ads SDK initialized.',
+    );
+  } catch (error) {
+    debugPrint(
+      '🐱 Stelluriini: Google Mobile Ads initialization error: $error',
+    );
+  }
 
   // ==========================================================
   // APP
