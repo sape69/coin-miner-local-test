@@ -13,9 +13,8 @@
 // 💾 Tallentaa vahvistetun rewardin admobRewards-kokoelmaan
 //
 // TÄRKEÄ:
-// AdMob SSV EI aktivoi Power Boostia.
 //
-// Power Boost aktivoidaan myöhemmin:
+// AdMob SSV EI aktivoi Power Boostia.
 //
 // AdMob SSV
 //      ↓
@@ -91,6 +90,58 @@ function getSafeNumber(
 }
 
 // ============================================================
+// 🔐 DECODE CUSTOM DATA
+// ============================================================
+//
+// AdMob custom_data voi saapua URL-koodattuna.
+//
+// Esimerkiksi:
+//
+// UID%3Amining_start
+//
+// muuttuu:
+//
+// UID:mining_start
+//
+// Jos arvo ei ole URL-koodattu, se palautetaan sellaisenaan.
+//
+// ============================================================
+
+function decodeCustomData(
+  value
+) {
+  if (
+    typeof value !== "string"
+  ) {
+    return "";
+  }
+
+  const trimmed =
+    value.trim();
+
+  if (
+    trimmed.length === 0
+  ) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(
+      trimmed
+    ).trim();
+  } catch (
+    error
+  ) {
+    console.error(
+      "❌ Failed to decode AdMob custom_data:",
+      error.message
+    );
+
+    return "";
+  }
+}
+
+// ============================================================
 // 🔐 PARSE ADMOB CUSTOM DATA
 // ============================================================
 //
@@ -110,18 +161,14 @@ function getSafeNumber(
 function parseAdMobCustomData(
   customData
 ) {
-  if (
-    typeof customData !== "string"
-  ) {
-    return null;
-  }
-
-  const value =
-    customData.trim();
+  const decoded =
+    decodeCustomData(
+      customData
+    );
 
   if (
-    value.length === 0 ||
-    value.length > 128
+    decoded.length === 0 ||
+    decoded.length > 128
   ) {
     return null;
   }
@@ -131,11 +178,11 @@ function parseAdMobCustomData(
   // ==========================================================
 
   if (
-    !value.includes(":")
+    !decoded.includes(":")
   ) {
     if (
-      !/^[A-Za-z0-9._:-]+$/.test(
-        value
+      !/^[A-Za-z0-9._-]+$/.test(
+        decoded
       )
     ) {
       return null;
@@ -143,7 +190,7 @@ function parseAdMobCustomData(
 
     return {
       uid:
-        value,
+        decoded,
 
       rewardPurpose:
         "power_boost",
@@ -155,24 +202,24 @@ function parseAdMobCustomData(
   // ==========================================================
 
   const separatorIndex =
-    value.lastIndexOf(":");
+    decoded.lastIndexOf(":");
 
   if (
     separatorIndex <= 0 ||
     separatorIndex >=
-      value.length - 1
+      decoded.length - 1
   ) {
     return null;
   }
 
   const uid =
-    value.substring(
+    decoded.substring(
       0,
       separatorIndex
     );
 
   const rewardPurpose =
-    value.substring(
+    decoded.substring(
       separatorIndex + 1
     );
 
@@ -183,7 +230,7 @@ function parseAdMobCustomData(
   if (
     uid.length === 0 ||
     uid.length > 128 ||
-    !/^[A-Za-z0-9._:-]+$/.test(
+    !/^[A-Za-z0-9._-]+$/.test(
       uid
     )
   ) {
@@ -270,7 +317,9 @@ async function saveVerifiedAdMobReward(
     new Date();
 
   return await db.runTransaction(
-    async (transaction) => {
+    async (
+      transaction
+    ) => {
 
       // ======================================================
       // 🔐 DUPLICATE CHECK
@@ -572,13 +621,17 @@ const adMobReward =
         }
 
         // ======================================================
-        // 🩺 BASIC HEALTH CHECK
+        // 🔍 QUERY KEYS
         // ======================================================
 
         const queryKeys =
           Object.keys(
             req.query || {}
           );
+
+        // ======================================================
+        // 🩺 BASIC HEALTH CHECK
+        // ======================================================
 
         if (
           queryKeys.length === 0
@@ -682,12 +735,105 @@ const adMobReward =
           );
 
         // ======================================================
+        // 🛡️ VERIFY RESULT CHECK
+        // ======================================================
+        //
+        // verifyAdMobCallback() voi palauttaa:
+        //
+        // {
+        //   verified: false,
+        //   error: "..."
+        // }
+        //
+        // Tätä ei saa käsitellä normaalina verifiedAd-objektina.
+        //
+        // ======================================================
+
+        if (
+          !verifiedAd ||
+          verifiedAd.verified === false
+        ) {
+
+          const verificationError =
+            verifiedAd &&
+            typeof verifiedAd.error ===
+              "string"
+              ? verifiedAd.error
+              : "AdMob SSV verification failed.";
+
+          console.error(
+            "❌ AdMob SSV verification failed:",
+            verificationError
+          );
+
+          // ----------------------------------------------------
+          // 🔐 Emme anna palkkiota.
+          //
+          // Virheellinen allekirjoitus ei saa koskaan päästä
+          // reward-järjestelmään.
+          //
+          // ----------------------------------------------------
+
+          res.status(400).json({
+            success:
+              false,
+
+            verified:
+              false,
+
+            rewarded:
+              false,
+
+            error:
+              "Invalid AdMob SSV callback.",
+          });
+
+          return;
+        }
+
+        // ======================================================
+        // 🎯 GET CUSTOM DATA
+        // ======================================================
+        //
+        // Ensisijainen kenttä on customData.
+        //
+        // Fallback custom_data tukee mahdollisia palvelukerroksen
+        // nimeämiseroja.
+        //
+        // ======================================================
+
+        const customData =
+          typeof verifiedAd.customData ===
+            "string"
+            ? verifiedAd.customData
+            : typeof verifiedAd.custom_data ===
+                "string"
+                ? verifiedAd.custom_data
+                : "";
+
+        // ======================================================
+        // 🔎 DEBUG LOG
+        // ======================================================
+        //
+        // Ei kirjata käyttäjän rewardia tai muita arkaluontoisia
+        // tietoja enempää kuin tarpeellista.
+        //
+        // ======================================================
+
+        console.log(
+          "🐱 AdMob verified custom_data received:",
+          customData
+            ? "present"
+            : "missing"
+        );
+
+        // ======================================================
         // 🎯 PARSE CUSTOM DATA
         // ======================================================
 
         const parsedCustomData =
           parseAdMobCustomData(
-            verifiedAd.customData
+            customData
           );
 
         if (
@@ -698,12 +844,33 @@ const adMobReward =
             "❌ Invalid AdMob custom_data."
           );
 
-          res.status(400).json({
+          // ----------------------------------------------------
+          // TÄRKEÄ:
+          //
+          // Custom_data on pysyvästi virheellinen callbackin
+          // sisältö. HTTP 400 aiheuttaisi AdMobilta uusia
+          // callback-yrityksiä.
+          //
+          // Kuittaamme callbackin vastaanotetuksi ilman
+          // palkkiota.
+          //
+          // ----------------------------------------------------
+
+          res.status(200).json({
             success:
               false,
 
+            verified:
+              true,
+
+            rewarded:
+              false,
+
+            ignored:
+              true,
+
             error:
-              "Invalid AdMob custom_data.",
+              "Invalid AdMob custom_data. No reward granted.",
           });
 
           return;
@@ -740,12 +907,28 @@ const adMobReward =
             "❌ AdMob SSV missing transaction_id."
           );
 
-          res.status(400).json({
+          // ----------------------------------------------------
+          // Transaction ID puuttuu.
+          //
+          // Tätä callbackia ei voida turvallisesti tallentaa.
+          //
+          // ----------------------------------------------------
+
+          res.status(200).json({
             success:
               false,
 
+            verified:
+              true,
+
+            rewarded:
+              false,
+
+            ignored:
+              true,
+
             error:
-              "Missing AdMob transaction_id.",
+              "Missing AdMob transaction_id. No reward granted.",
           });
 
           return;
@@ -770,12 +953,27 @@ const adMobReward =
             "❌ AdMob user_id does not match custom_data UID."
           );
 
-          res.status(400).json({
+          // ----------------------------------------------------
+          // Turvallisuussyistä ei anneta rewardia.
+          // Callback kuitataan, jotta virheellinen request ei
+          // synnytä loputonta retry-ketjua.
+          // ----------------------------------------------------
+
+          res.status(200).json({
             success:
               false,
 
+            verified:
+              true,
+
+            rewarded:
+              false,
+
+            ignored:
+              true,
+
             error:
-              "AdMob user identity mismatch.",
+              "AdMob user identity mismatch. No reward granted.",
           });
 
           return;
@@ -824,7 +1022,8 @@ const adMobReward =
             uid,
             transactionId,
             rewardPurpose,
-            result,
+            duplicate:
+              result.duplicate,
           }
         );
 
@@ -841,8 +1040,24 @@ const adMobReward =
           error
         );
 
+        // ======================================================
+        // ❗ SERVER ERROR
+        // ======================================================
+        //
+        // Todellinen palvelinvirhe palautetaan 400, jotta
+        // callbackia ei kuitata onnistuneeksi silloin kun
+        // rewardia ei ole pystytty turvallisesti käsittelemään.
+        //
+        // ======================================================
+
         res.status(400).json({
           success:
+            false,
+
+          verified:
+            false,
+
+          rewarded:
             false,
 
           error:
