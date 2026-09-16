@@ -932,9 +932,6 @@ const Map<String, String> viTranslations = {
   'withdrawalsDisabled':
       'Tính năng rút tiền hiện chưa khả dụng.',
 
-  'futureWithdrawals':
-      'Hệ thống rút STL trong tương lai, nếu được triển khai, sẽ được thiết kế riêng và các điều kiện sẽ được công bố trước khi triển khai.',
-
   // ============================================================
   // 🐾 FOOTER
   // ============================================================
