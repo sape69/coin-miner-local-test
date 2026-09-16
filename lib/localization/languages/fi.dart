@@ -42,7 +42,14 @@ const Map<String, String> fiTranslations = {
   'dailyHashRateMaximum': 'Maksimi: {rate} HR',
   'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
 
+  // 🐱 Stella Mining
   'stellaMiningProgress':
+      'Stellan louhinnan edistyminen',
+
+  'miningProgress':
+      'Louhinnan edistyminen',
+
+  'miningProgressStella':
       'Stellan louhinnan edistyminen',
 
   'stlPerHour':
@@ -75,11 +82,20 @@ const Map<String, String> fiTranslations = {
   'timeRemaining':
       'Aikaa jäljellä',
 
+  'timeRemainingLabel':
+      'Aikaa jäljellä',
+
   'remaining':
       'Aikaa jäljellä: {time}',
 
+  'timeRemainingText':
+      'Aikaa jäljellä: {time}',
+
+  'miningTimeRemaining':
+      'Aikaa jäljellä: {time}',
+
   'waitingForStella':
-      'Odotetaan Stellaa',
+      'Odotetaan Stellaa 🐱💜',
 
   'streak':
       'Päiväputki',
@@ -136,13 +152,13 @@ const Map<String, String> fiTranslations = {
       'Stella Power Boost',
 
   'powerBoostOffer':
-      'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi.',
+      'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi. 🐱⚡',
 
   'powerBoostActive':
       'Power Boost aktiivinen',
 
   'powerBoostActiveTitle':
-      'Stella Power Boost on aktiivinen!',
+      'Stella Power Boost on aktiivinen! 🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HR on käytössä louhintajakson aikana.',
@@ -211,10 +227,10 @@ const Map<String, String> fiTranslations = {
       'Stella louhii',
 
   'stellaMiningNow':
-      'Stella louhii juuri nyt',
+      'Stella louhii juuri nyt 🐱⛏️',
 
   'stellaIsResting':
-      'Stella lepää',
+      'Stella lepää 🐱💜',
 
   'stellaWaiting':
       'Stella odottaa seuraavaa louhintajaksoa',
@@ -226,13 +242,13 @@ const Map<String, String> fiTranslations = {
       'LOUHITTU STL',
 
   'stellaIsWorking':
-      'STELLA TYÖSKENTELEE...',
+      'STELLA TYÖSKENTELEE... 🐱⛏️',
 
   'stellaIsMiningButton':
       'LOUHINTA KÄYNNISSÄ',
 
   'stellaAlreadyMining':
-      'Stella louhii jo.',
+      'Stella louhii jo. 🐱💜',
 
   // ============================================================
   // ⛏️ MINING MESSAGES
@@ -243,6 +259,18 @@ const Map<String, String> fiTranslations = {
 
   'miningStartFailed':
       'Louhinnan aloittaminen epäonnistui.',
+
+  'miningStarted':
+      'Stellan louhinta alkoi! 🐱⛏️',
+
+  'miningCycleStarted':
+      'Stellan uusi louhintajakso alkoi. 🐱💜',
+
+  'miningCycleComplete':
+      'Stellan louhintajakso on valmis! ✨',
+
+  'miningReady':
+      'Stellan louhinta on valmis kerättäväksi. 🐾',
 
   // ============================================================
   // 💎 TRANSACTIONS
@@ -419,19 +447,19 @@ const Map<String, String> fiTranslations = {
       'Ei tapahtumia vielä',
 
   'rewardsAppearHere':
-      'STL-palkintosi näkyvät täällä. 🐱',
+      'STL-palkintosi näkyvät täällä. 🐱💜',
 
   'startMiningWithStella':
-      'Aloita louhinta Stellan kanssa',
+      'Aloita louhinta Stellan kanssa 🐱⛏️',
 
   'historyRecorded':
       'Louhinta, päivittäiset bonukset ja mainospalkinnot tallennetaan tänne.',
 
   'stellaCheckingHistory':
-      'Stella tarkistaa historiaasi...',
+      'Stella tarkistaa historiaasi... 🐱🔎',
 
   'everyRewardJourney':
-      'Jokainen palkinto on osa Stelluriini-matkaasi. 🐾',
+      'Jokainen palkinto on osa Stelluriini-matkaasi. 🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -447,7 +475,7 @@ const Map<String, String> fiTranslations = {
       'Stelluriini yhdistää yhteisön, digitaalisen tokenin ja Stellan ympärille rakennetun sovelluskokemuksen.',
 
   'meetStella':
-      'Tapaa Stella',
+      'Tapaa Stella 🐱💜',
 
   'aboutStellaIntro':
       'Stella on Stelluriinin sydän ja projektin rakastettava kissamaskotti.',
@@ -574,7 +602,7 @@ const Map<String, String> fiTranslations = {
       'Yhteisö on Stelluriinin kehityksen keskiössä. Palaute ja käyttäjien ideat auttavat ohjaamaan tulevaa kehitystä.',
 
   'roadmapStella':
-      'Stella',
+      'Stella 🐱💜',
 
   'roadmapStellaDescription':
       'Stella säilyy Stelluriinin visuaalisena maskottina ja osana käyttäjäkokemusta.',
@@ -604,7 +632,7 @@ const Map<String, String> fiTranslations = {
       'Tiekartta kuvaa Stelluriinin suunniteltua kehityssuuntaa. Vaiheet, ominaisuudet ja aikataulut voivat muuttua projektin kehityksen aikana.',
 
   'roadmapStellaJourney':
-      'Stellan matka',
+      'Stellan matka 🐾',
 
   'roadmapEcosystemDescription':
       'Stelluriini-ekosysteemiä kehitetään vaiheittain yhteisön, sovelluksen ja STL-tokenin ympärille.',
@@ -894,11 +922,11 @@ const Map<String, String> fiTranslations = {
   // ============================================================
 
   'footerTagline':
-      'Louhitaan yhdessä Stelluriinin tulevaisuutta.',
+      'Louhitaan yhdessä Stelluriinin tulevaisuutta. 🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
   'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
+      'STELLA • STELLURIINI • STL • SOLANA',
 };
