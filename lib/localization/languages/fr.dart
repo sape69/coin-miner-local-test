@@ -17,7 +17,14 @@ const Map<String, String> frTranslations = {
   'selectLanguage': 'Sélectionner la langue',
   'logout': 'Se déconnecter',
   'menu': 'Menu',
+  'refresh': 'Actualiser',
   'ready': 'Prêt',
+  'close': 'Fermer',
+  'cancel': 'Annuler',
+  'error': 'Erreur',
+  'success': 'Succès',
+  'comingSoon': 'Bientôt disponible',
+  'information': 'Informations',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -36,29 +43,83 @@ const Map<String, String> frTranslations = {
   'dailyHashRateSuccess':
       'Taux de hachage du jour {day} : {rate} HR',
 
-  'stellaMiningProgress': 'Progression du minage de Stella',
-  'stlPerHour': 'STL par heure',
-  'hashRateBonus': 'Bonus de taux de hachage',
+  // 🐱 Stella Mining
+  'stellaMiningProgress':
+      'Progression du minage de Stella',
 
-  'startMining': 'DÉMARRER LE MINAGE',
-  'claimMining': 'RÉCLAMER STL',
-  'miningActive': 'Minage actif',
-  'miningComplete': 'Cycle de minage terminé',
+  'miningProgress':
+      'Progression du minage',
 
-  'timeRemaining': 'Temps restant',
-  'remaining': 'Temps restant : {time}',
+  'miningProgressStella':
+      'Progression du minage de Stella',
 
-  'streak': 'Série',
-  'days': 'jours',
+  'stlPerHour':
+      'STL par heure',
+
+  'hashRateBonus':
+      'Bonus de taux de hachage',
+
+  'startMining':
+      'DÉMARRER LE MINAGE',
+
+  'claimMining':
+      'RÉCLAMER STL',
+
+  'watchAdStartMining':
+      'REGARDER LA PUB & DÉMARRER LE MINAGE',
+
+  'watchAdCollectReward':
+      'REGARDER LA PUB & RÉCUPÉRER LA RÉCOMPENSE',
+
+  'miningActive':
+      'Minage actif',
+
+  'miningComplete':
+      'Cycle de minage terminé',
+
+  'miningFinished':
+      'Minage terminé',
+
+  'timeRemaining':
+      'Temps restant',
+
+  'timeRemainingLabel':
+      'Temps restant',
+
+  'remaining':
+      'Temps restant : {time}',
+
+  'timeRemainingText':
+      'Temps restant : {time}',
+
+  'miningTimeRemaining':
+      'Temps restant : {time}',
+
+  'waitingForStella':
+      'En attente de Stella 🐱💜',
+
+  'streak':
+      'Série',
+
+  'days':
+      'jours',
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
-  'dailyBonus': 'Bonus quotidien',
-  'dailyClaim': 'Réclamer le bonus quotidien',
-  'dailyReward': 'Récompense quotidienne',
-  'claimedToday': 'Réclamé aujourd’hui',
+  'dailyBonus':
+      'Bonus quotidien',
+
+  'dailyClaim':
+      'Réclamer le bonus quotidien',
+
+  'dailyReward':
+      'Récompense quotidienne',
+
+  'claimedToday':
+      'Réclamé aujourd’hui',
+
   'alreadyClaimed':
       'Vous avez déjà réclamé la récompense du jour.',
 
@@ -66,25 +127,39 @@ const Map<String, String> frTranslations = {
   // 📺 ADS
   // ============================================================
 
-  'watchAd': 'REGARDER LA PUB',
-  'watchAndEarn': 'REGARDER & GAGNER',
-  'loadingAd': 'CHARGEMENT DE LA PUB...',
-  'adLoading': 'CHARGEMENT DE LA PUB...',
-  'adReward': '+{amount} HR',
+  'watchAd':
+      'REGARDER LA PUB',
+
+  'watchAndEarn':
+      'REGARDER & GAGNER',
+
+  'loadingAd':
+      'CHARGEMENT DE LA PUB...',
+
+  'adLoading':
+      'CHARGEMENT DE LA PUB...',
+
+  'prepareAd':
+      'Préparation de la publicité...',
+
+  'adReward':
+      '+{amount} HR',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
-  'powerBoost': 'Stella Power Boost',
+  'powerBoost':
+      'Stella Power Boost',
 
   'powerBoostOffer':
-      'Regardez une publicité pour activer +{amount} HR de Stella Power Boost pendant 4 heures.',
+      'Regardez une publicité pour activer +{amount} HR de Stella Power Boost pendant 4 heures. 🐱⚡',
 
-  'powerBoostActive': 'Power Boost actif',
+  'powerBoostActive':
+      'Power Boost actif',
 
   'powerBoostActiveTitle':
-      'Stella Power Boost est actif !',
+      'Stella Power Boost est actif ! 🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HR est actif pendant votre cycle de minage.',
@@ -113,6 +188,9 @@ const Map<String, String> frTranslations = {
   'adRewardDuplicate':
       'Cette récompense publicitaire a déjà été traitée.',
 
+  'powerBoostFailed':
+      'Impossible d’activer le Power Boost.',
+
   'testAdRewardFailed':
       'Impossible de traiter la récompense publicitaire.',
 
@@ -123,36 +201,40 @@ const Map<String, String> frTranslations = {
   'serverConnectionFailed':
       'Échec de la connexion au serveur.',
 
-  'refresh': 'Actualiser',
-
   // ============================================================
   // 👤 GENERAL UI
   // ============================================================
 
-  'profile': 'Profil',
-  'comingSoon': 'Bientôt disponible',
-  'information': 'Informations',
+  'profile':
+      'Profil',
 
   // ============================================================
   // 🐱 STELLA
   // ============================================================
 
-  'catFact': 'Fait amusant sur les chats de Stella',
-  'stellaFacts': 'Fait amusant sur les chats de Stella',
-  'stellaPower': 'Stella Power',
-  'stellaMining': 'Stella Mining',
+  'catFact':
+      'Fait amusant sur les chats de Stella',
+
+  'stellaFacts':
+      'Fait amusant sur les chats de Stella',
+
+  'stellaPower':
+      'Stella Power',
+
+  'stellaMining':
+      'Stella Mining',
 
   'stellaIsMining':
       'Stella mine',
 
   'stellaMiningNow':
-      'Stella est en train de miner',
+      'Stella est en train de miner. 🐱⛏️',
 
   'stellaIsResting':
-      'Stella se repose',
+      'Stella se repose. 🐱💜',
 
   'stellaWaiting':
-      'Stella attend le prochain cycle de minage',
+      'Stella attend le prochain cycle de minage.',
 
   'stlReadyToCollect':
       'STL est prêt à être récupéré',
@@ -160,20 +242,18 @@ const Map<String, String> frTranslations = {
   'stlMined':
       'STL MINÉ',
 
-  'waitingForStella':
-      'En attente de Stella',
-
   'stellaIsWorking':
-      'STELLA TRAVAILLE...',
+      'STELLA TRAVAILLE... 🐱⛏️',
 
   'stellaIsMiningButton':
       'MINAGE ACTIF',
 
   'stellaAlreadyMining':
-      'Stella mine déjà.',
+      'Stella mine déjà. 🐱💜',
 
-  'prepareAd':
-      'Préparation de la publicité...',
+  // ============================================================
+  // ⛏️ MINING MESSAGES
+  // ============================================================
 
   'miningCollected':
       '{amount} STL récupérés',
@@ -181,11 +261,24 @@ const Map<String, String> frTranslations = {
   'miningStartFailed':
       'Impossible de démarrer le minage.',
 
+  'miningStarted':
+      'Stella a commencé à miner ! 🐱⛏️',
+
+  'miningCycleStarted':
+      'Le nouveau cycle de minage de Stella a commencé. 🐱💜',
+
+  'miningCycleComplete':
+      'Le cycle de minage de Stella est terminé ! ✨',
+
+  'miningReady':
+      'Le minage de Stella est prêt à être récupéré. 🐾',
+
   // ============================================================
   // 💎 TRANSACTIONS
   // ============================================================
 
-  'transactions': 'Transactions',
+  'transactions':
+      'Transactions',
 
   'noTransactions':
       'Aucune transaction pour le moment.',
@@ -194,7 +287,7 @@ const Map<String, String> frTranslations = {
       'STL total',
 
   'points':
-      'points',
+      'Points',
 
   'pointsAdded':
       'Points ajoutés',
@@ -209,20 +302,8 @@ const Map<String, String> frTranslations = {
   'resetConfirm':
       'Voulez-vous vraiment réinitialiser le compte de test ?',
 
-  'cancel':
-      'Annuler',
-
   'reset':
       'Réinitialiser',
-
-  'error':
-      'Erreur',
-
-  'success':
-      'Succès',
-
-  'close':
-      'Fermer',
 
   // ============================================================
   // 🔐 LOGIN
@@ -367,19 +448,19 @@ const Map<String, String> frTranslations = {
       'Aucune transaction pour le moment',
 
   'rewardsAppearHere':
-      'Vos récompenses STL apparaîtront ici. 🐱',
+      'Vos récompenses STL apparaîtront ici. 🐱💜',
 
   'startMiningWithStella':
-      'Commencez à miner avec Stella',
+      'Commencez à miner avec Stella. 🐱⛏️',
 
   'historyRecorded':
       'Votre minage, vos bonus quotidiens et vos récompenses publicitaires seront enregistrés ici.',
 
   'stellaCheckingHistory':
-      'Stella vérifie votre historique...',
+      'Stella vérifie votre historique... 🐱🔎',
 
   'everyRewardJourney':
-      'Chaque récompense fait partie de votre aventure Stelluriini. 🐾',
+      'Chaque récompense fait partie de votre aventure Stelluriini. 🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -395,7 +476,7 @@ const Map<String, String> frTranslations = {
       'Stelluriini associe une communauté, un token numérique et une expérience d’application construite autour de Stella.',
 
   'meetStella':
-      'Rencontrez Stella',
+      'Rencontrez Stella 🐱💜',
 
   'aboutStellaIntro':
       'Stella est le cœur de Stelluriini et l’adorable mascotte féline du projet.',
@@ -439,6 +520,9 @@ const Map<String, String> frTranslations = {
 
   'roadmapJourney':
       'Le parcours de Stelluriini',
+
+  'roadmapJourneyDescription':
+      'Le développement de Stelluriini progresse étape par étape vers une communauté plus large, un écosystème plus complet et de nouveaux cas d’utilisation.',
 
   'roadmapPhase1':
       'Phase 1 – Fondation',
@@ -503,11 +587,77 @@ const Map<String, String> frTranslations = {
   'roadmapStatusPlanned':
       'Prévu',
 
-  'roadmapDevelopmentPrinciples':
-      'Principes de développement',
+  'roadmapInProgress':
+      'En cours',
+
+  'roadmapPlanned':
+      'Prévu',
+
+  'roadmapFuture':
+      'Avenir',
+
+  'futureWithdrawalsTitle':
+      'Éventuels retraits futurs',
+
+  'futureWithdrawals':
+      'Un éventuel futur système de retrait sera conçu séparément et ses conditions seront annoncées avant sa mise en œuvre.',
 
   'plannedWithdrawalModel':
       'Un éventuel futur modèle de retrait sera conçu séparément et annoncé de manière transparente avant toute mise en œuvre.',
+
+  'developmentPrinciples':
+      'Principes de développement',
+
+  'roadmapDevelopmentPrinciples':
+      'Principes de développement',
+
+  'roadmapCommunity':
+      'Communauté',
+
+  'roadmapCommunityDescription':
+      'La communauté est au cœur du développement de Stelluriini. Les commentaires et les idées des utilisateurs contribuent à orienter le développement futur.',
+
+  'roadmapStella':
+      'Stella 🐱💜',
+
+  'roadmapStellaDescription':
+      'Stella restera la mascotte visuelle de Stelluriini et une partie importante de l’expérience utilisateur.',
+
+  'roadmapSecurity':
+      'Sécurité',
+
+  'roadmapSecurityDescription':
+      'La sécurité, l’infrastructure serveur et la fiabilité de l’application seront améliorées en continu.',
+
+  'roadmapInnovation':
+      'Innovation',
+
+  'roadmapInnovationDescription':
+      'De nouveaux cas d’utilisation, fonctionnalités et technologies seront explorés au fur et à mesure de l’évolution du projet.',
+
+  'roadmapLongTermGrowth':
+      'Croissance à long terme',
+
+  'roadmapLongTermGrowthDescription':
+      'L’objectif est de construire un écosystème Stelluriini durable et en évolution progressive.',
+
+  'roadmapNotice':
+      'Avis important',
+
+  'roadmapNoticeDescription':
+      'La feuille de route décrit l’orientation prévue du développement de Stelluriini. Les phases, fonctionnalités et calendriers peuvent changer pendant le développement du projet.',
+
+  'roadmapStellaJourney':
+      'Le voyage de Stella 🐾',
+
+  'roadmapEcosystemDescription':
+      'L’écosystème Stelluriini sera développé étape par étape autour de la communauté, de l’application et du token STL.',
+
+  'roadmapStellaIntro':
+      'Stella accompagnera Stelluriini à chaque étape de son développement.',
+
+  'roadmapFooter':
+      'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
   // 🪙 TOKEN
@@ -546,10 +696,6 @@ const Map<String, String> frTranslations = {
   'addressCopied':
       'Adresse copiée.',
 
-  // ============================================================
-  // 🪙 SOLANA COMMUNITY TOKEN
-  // ============================================================
-
   'solanaCommunityToken':
       'Token communautaire Solana',
 
@@ -586,6 +732,9 @@ const Map<String, String> frTranslations = {
   'couldNotOpenSolscan':
       'Impossible d’ouvrir Solscan.',
 
+  'communityCuriositySolana':
+      'Communauté • Curiosité • Solana',
+
   // ============================================================
   // 📊 TOKENOMICS
   // ============================================================
@@ -614,38 +763,41 @@ const Map<String, String> frTranslations = {
   'tokenDistribution':
       'Répartition des tokens',
 
-  'communityAllocation':
-      'Communauté',
+  'tokenAllocation':
+      'Répartition des tokens',
 
   'communityRewards':
       'Communauté et récompenses',
 
-  'ecosystemAllocation':
-      'Écosystème',
+  'liquidity':
+      'Liquidité',
 
   'ecosystem':
       'Écosystème',
 
-  'developmentAllocation':
-      'Développement',
-
   'development':
       'Développement',
-
-  'liquidityAllocation':
-      'Liquidité',
-
-  'liquidity':
-      'Liquidité',
-
-  'marketingAllocation':
-      'Marketing',
 
   'marketing':
       'Marketing',
 
   'stlTokens':
       'TOKENS STL',
+
+  'communityAllocation':
+      'Communauté',
+
+  'ecosystemAllocation':
+      'Écosystème',
+
+  'developmentAllocation':
+      'Développement',
+
+  'liquidityAllocation':
+      'Liquidité',
+
+  'marketingAllocation':
+      'Marketing',
 
   'totalSupplyDescription':
       'L’offre totale de Stelluriini est de 17 602 539 062 STL. La répartition présentée ci-dessous représente la totalité de l’offre de tokens prévue.',
@@ -707,15 +859,6 @@ const Map<String, String> frTranslations = {
   'communityCuriosityDevelopmentSolana':
       'Communauté • Curiosité • Développement • Solana',
 
-  'communityCuriositySolana':
-      'Communauté • Curiosité • Solana',
-
-  'tokenAllocation':
-      'Répartition des tokens',
-
-  'tokenomicsImportant':
-      'Les allocations exactes de tokens peuvent être mises à jour pendant le développement du projet. Toute modification doit être communiquée de manière transparente à la communauté.',
-
   'importantNotice':
       'Avis important',
 
@@ -724,6 +867,9 @@ const Map<String, String> frTranslations = {
 
   'stellaStelluriiniStlSolana':
       'STELLA • STELLURIINI • STL • SOLANA',
+
+  'tokenomicsImportant':
+      'Les allocations exactes de tokens peuvent être mises à jour pendant le développement du projet. Toute modification doit être communiquée de manière transparente à la communauté.',
 
   // ============================================================
   // 📄 WHITEPAPER
@@ -782,24 +928,21 @@ const Map<String, String> frTranslations = {
       'Les récompenses STL affichées dans l’application sont actuellement des points virtuels intégrés à l’application.',
 
   'virtualPointsInformation':
-      'Les STL affichés dans l’application représentent actuellement des points virtuels. Ils ne constituent pas automatiquement des tokens de cryptomonnaie retirables.',
+      'Les récompenses STL affichées dans l’application représentent actuellement des points virtuels. Elles ne sont pas automatiquement connectées à un système de retrait de cryptomonnaie.',
 
   'withdrawalsDisabled':
       'Les retraits ne sont actuellement pas disponibles.',
-
-  'futureWithdrawals':
-      'Un éventuel futur système de retrait sera conçu séparément et ses conditions seront annoncées avant sa mise en œuvre.',
 
   // ============================================================
   // 🐾 FOOTER
   // ============================================================
 
   'footerTagline':
-      'Minons ensemble pour l’avenir de Stelluriini.',
+      'Minons ensemble avec Stella pour l’avenir de Stelluriini. 🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
   'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
+      'STELLA • STELLURIINI • STL • SOLANA',
 };
