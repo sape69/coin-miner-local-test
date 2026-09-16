@@ -17,7 +17,14 @@ const Map<String, String> zhTranslations = {
   'selectLanguage': '选择语言',
   'logout': '退出登录',
   'menu': '菜单',
+  'refresh': '刷新',
   'ready': '准备就绪',
+  'close': '关闭',
+  'cancel': '取消',
+  'error': '错误',
+  'success': '成功',
+  'comingSoon': '即将推出',
+  'information': '信息',
 
   // ============================================================
   // 💰 BALANCE / MINING
@@ -33,57 +40,125 @@ const Map<String, String> zhTranslations = {
   'dailyHashRateLabel': '每日哈希率',
   'dailyHashRateDay': '第 {day} 天',
   'dailyHashRateMaximum': '最高：{rate} HR',
-  'dailyHashRateSuccess': '第 {day} 天哈希率：{rate} HR',
+  'dailyHashRateSuccess':
+      '第 {day} 天哈希率：{rate} HR',
 
-  'stellaMiningProgress': 'Stella 挖矿进度',
-  'stlPerHour': '每小时 STL',
-  'hashRateBonus': '哈希率奖励',
+  'stellaMiningProgress':
+      'Stella 挖矿进度',
 
-  'startMining': '开始挖矿',
-  'claimMining': '领取 STL',
-  'miningActive': '挖矿进行中',
-  'miningComplete': '挖矿周期已完成',
+  'miningProgress':
+      '挖矿进度',
 
-  'timeRemaining': '剩余时间',
-  'remaining': '剩余时间：{time}',
+  'miningProgressStella':
+      'Stella 挖矿进度',
 
-  'streak': '连续天数',
-  'days': '天',
+  'stlPerHour':
+      '每小时 STL',
+
+  'hashRateBonus':
+      '哈希率奖励',
+
+  'startMining':
+      '开始挖矿',
+
+  'claimMining':
+      '领取 STL',
+
+  'watchAdStartMining':
+      '观看广告并开始挖矿',
+
+  'watchAdCollectReward':
+      '观看广告并领取奖励',
+
+  'miningActive':
+      '挖矿进行中',
+
+  'miningComplete':
+      '挖矿周期已完成',
+
+  'miningFinished':
+      '挖矿已完成',
+
+  'timeRemaining':
+      '剩余时间',
+
+  'timeRemainingLabel':
+      '剩余时间',
+
+  'remaining':
+      '剩余时间：{time}',
+
+  'timeRemainingText':
+      '剩余时间：{time}',
+
+  'miningTimeRemaining':
+      '剩余时间：{time}',
+
+  'waitingForStella':
+      '正在等待 Stella 🐱💜',
+
+  'streak':
+      '连续天数',
+
+  'days':
+      '天',
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
-  'dailyBonus': '每日奖励',
-  'dailyClaim': '领取每日奖励',
-  'dailyReward': '每日奖励',
-  'claimedToday': '今日已领取',
-  'alreadyClaimed': '您今天已经领取过奖励。',
+  'dailyBonus':
+      '每日奖励',
+
+  'dailyClaim':
+      '领取每日奖励',
+
+  'dailyReward':
+      '每日奖励',
+
+  'claimedToday':
+      '今日已领取',
+
+  'alreadyClaimed':
+      '您今天已经领取过奖励。',
 
   // ============================================================
   // 📺 ADS
   // ============================================================
 
-  'watchAd': '观看广告',
-  'watchAndEarn': '观看并赚取',
-  'loadingAd': '正在加载广告...',
-  'adLoading': '正在加载广告...',
-  'adReward': '+{amount} HR',
+  'watchAd':
+      '观看广告',
+
+  'watchAndEarn':
+      '观看并赚取',
+
+  'loadingAd':
+      '正在加载广告...',
+
+  'adLoading':
+      '正在加载广告...',
+
+  'prepareAd':
+      '正在准备广告...',
+
+  'adReward':
+      '+{amount} HR',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
-  'powerBoost': 'Stella Power Boost',
+  'powerBoost':
+      'Stella Power Boost',
 
   'powerBoostOffer':
-      '观看广告，激活 +{amount} HR Stella Power Boost，持续 4 小时。',
+      '观看广告，激活 +{amount} HR Stella Power Boost，持续 4 小时。🐱⚡',
 
   'powerBoostActive':
       'Power Boost 已激活',
 
   'powerBoostActiveTitle':
-      'Stella Power Boost 已激活！',
+      'Stella Power Boost 已激活！🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HR 将在您的挖矿周期中生效。',
@@ -112,6 +187,9 @@ const Map<String, String> zhTranslations = {
   'adRewardDuplicate':
       '此广告奖励已经处理过。',
 
+  'powerBoostFailed':
+      '无法激活 Power Boost。',
+
   'testAdRewardFailed':
       '广告奖励处理失败。',
 
@@ -122,21 +200,12 @@ const Map<String, String> zhTranslations = {
   'serverConnectionFailed':
       '服务器连接失败。',
 
-  'refresh':
-      '刷新',
-
   // ============================================================
   // 👤 GENERAL UI
   // ============================================================
 
   'profile':
       '个人资料',
-
-  'comingSoon':
-      '即将推出',
-
-  'information':
-      '信息',
 
   // ============================================================
   // 🐱 STELLA
@@ -158,13 +227,13 @@ const Map<String, String> zhTranslations = {
       'Stella 正在挖矿',
 
   'stellaMiningNow':
-      'Stella 正在挖矿',
+      'Stella 正在挖矿。🐱⛏️',
 
   'stellaIsResting':
-      'Stella 正在休息',
+      'Stella 正在休息。🐱💜',
 
   'stellaWaiting':
-      'Stella 正在等待下一轮挖矿',
+      'Stella 正在等待下一轮挖矿。',
 
   'stlReadyToCollect':
       'STL 已准备好领取',
@@ -172,26 +241,36 @@ const Map<String, String> zhTranslations = {
   'stlMined':
       '已挖取的 STL',
 
-  'waitingForStella':
-      '正在等待 Stella',
-
   'stellaIsWorking':
-      'STELLA 正在工作...',
+      'STELLA 正在工作... 🐱⛏️',
 
   'stellaIsMiningButton':
       '挖矿进行中',
 
   'stellaAlreadyMining':
-      'Stella 已经在挖矿。',
+      'Stella 已经在挖矿。🐱💜',
 
-  'prepareAd':
-      '正在准备广告...',
+  // ============================================================
+  // ⛏️ MINING MESSAGES
+  // ============================================================
 
   'miningCollected':
       '已领取 {amount} STL',
 
   'miningStartFailed':
       '挖矿启动失败。',
+
+  'miningStarted':
+      'Stella 已开始挖矿！🐱⛏️',
+
+  'miningCycleStarted':
+      'Stella 的新挖矿周期已经开始。🐱💜',
+
+  'miningCycleComplete':
+      'Stella 的挖矿周期已经完成！✨',
+
+  'miningReady':
+      'Stella 的挖矿奖励已经可以领取。🐾',
 
   // ============================================================
   // 💎 TRANSACTIONS
@@ -222,20 +301,8 @@ const Map<String, String> zhTranslations = {
   'resetConfirm':
       '确定要重置测试账户吗？',
 
-  'cancel':
-      '取消',
-
   'reset':
       '重置',
-
-  'error':
-      '错误',
-
-  'success':
-      '成功',
-
-  'close':
-      '关闭',
 
   // ============================================================
   // 🔐 LOGIN
@@ -380,19 +447,19 @@ const Map<String, String> zhTranslations = {
       '暂无交易',
 
   'rewardsAppearHere':
-      '您的 STL 奖励将显示在这里。🐱',
+      '您的 STL 奖励将显示在这里。🐱💜',
 
   'startMiningWithStella':
-      '与 Stella 一起开始挖矿',
+      '与 Stella 一起开始挖矿。🐱⛏️',
 
   'historyRecorded':
       '您的挖矿、每日奖励和广告奖励都会记录在这里。',
 
   'stellaCheckingHistory':
-      'Stella 正在检查您的历史记录...',
+      'Stella 正在检查您的历史记录... 🐱🔎',
 
   'everyRewardJourney':
-      '每一份奖励都是您 Stelluriini 旅程的一部分。🐾',
+      '每一份奖励都是您 Stelluriini 旅程的一部分。🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -408,7 +475,7 @@ const Map<String, String> zhTranslations = {
       'Stelluriini 将社区、数字代币以及围绕 Stella 打造的应用体验结合在一起。',
 
   'meetStella':
-      '认识 Stella',
+      '认识 Stella 🐱💜',
 
   'aboutStellaIntro':
       'Stella 是 Stelluriini 的核心，也是项目可爱的猫咪吉祥物。',
@@ -452,6 +519,9 @@ const Map<String, String> zhTranslations = {
 
   'roadmapJourney':
       'Stelluriini 的发展历程',
+
+  'roadmapJourneyDescription':
+      'Stelluriini 的发展一步一步迈向更大的社区、更完整的生态系统以及新的使用场景。',
 
   'roadmapPhase1':
       '阶段 1 – 基础',
@@ -499,13 +569,22 @@ const Map<String, String> zhTranslations = {
       '探索新功能、潜在合作伙伴关系以及社区提出的想法。',
 
   'roadmapPhase6':
-      '阶段 6 – 扩展',
+      '阶段 6 – 长期发展',
 
   'roadmapPhase6Title':
-      '扩展 Stelluriini',
+      'Stelluriini 的长期发展',
 
   'roadmapPhase6Description':
-      '继续发展 Stelluriini 生态系统、集成、STL 代币的实用功能以及社区的新机会。',
+      '持续发展 Stelluriini 生态系统、新功能以及满足社区需求的能力。',
+
+  'roadmapInProgress':
+      '进行中',
+
+  'roadmapPlanned':
+      '已计划',
+
+  'roadmapFuture':
+      '未来',
 
   'roadmapStatusCompleted':
       '已完成',
@@ -516,11 +595,68 @@ const Map<String, String> zhTranslations = {
   'roadmapStatusPlanned':
       '已计划',
 
-  'roadmapDevelopmentPrinciples':
-      '发展原则',
+  'futureWithdrawalsTitle':
+      '未来可能推出 STL 提现',
+
+  'futureWithdrawals':
+      '未来可能推出的 STL 提现系统将单独设计，并会在实施之前公布相关条件。',
 
   'plannedWithdrawalModel':
       '如果未来推出 STL 提现模式，该模式将单独设计，并在实施前向社区透明公布。',
+
+  'developmentPrinciples':
+      '发展原则',
+
+  'roadmapDevelopmentPrinciples':
+      '发展原则',
+
+  'roadmapCommunity':
+      '社区',
+
+  'roadmapCommunityDescription':
+      '社区是 Stelluriini 开发的核心。用户的反馈和想法将帮助指导未来的发展。',
+
+  'roadmapStella':
+      'Stella 🐱💜',
+
+  'roadmapStellaDescription':
+      'Stella 将继续作为 Stelluriini 的视觉吉祥物，并成为用户体验的重要组成部分。',
+
+  'roadmapSecurity':
+      '安全性',
+
+  'roadmapSecurityDescription':
+      '安全性、服务器基础设施和应用可靠性将持续得到改善。',
+
+  'roadmapInnovation':
+      '创新',
+
+  'roadmapInnovationDescription':
+      '随着项目的发展，我们将探索新的使用场景、功能和技术。',
+
+  'roadmapLongTermGrowth':
+      '长期增长',
+
+  'roadmapLongTermGrowthDescription':
+      '目标是建立一个可持续并逐步发展的 Stelluriini 生态系统。',
+
+  'roadmapNotice':
+      '重要提示',
+
+  'roadmapNoticeDescription':
+      '路线图描述了 Stelluriini 计划中的发展方向。阶段、功能和时间安排可能会在项目开发过程中发生变化。',
+
+  'roadmapStellaJourney':
+      'Stella 的旅程 🐾',
+
+  'roadmapEcosystemDescription':
+      'Stelluriini 生态系统将围绕社区、应用和 STL 代币逐步发展。',
+
+  'roadmapStellaIntro':
+      'Stella 将在 Stelluriini 的每一个发展阶段一路陪伴。',
+
+  'roadmapFooter':
+      'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
   // 🪙 TOKEN
@@ -559,10 +695,6 @@ const Map<String, String> zhTranslations = {
   'addressCopied':
       '地址已复制。',
 
-  // ============================================================
-  // 🪙 SOLANA COMMUNITY TOKEN
-  // ============================================================
-
   'solanaCommunityToken':
       'Solana 社区代币',
 
@@ -599,6 +731,9 @@ const Map<String, String> zhTranslations = {
   'couldNotOpenSolscan':
       '无法打开 Solscan。',
 
+  'communityCuriositySolana':
+      '社区 • 好奇心 • Solana',
+
   // ============================================================
   // 📊 TOKENOMICS
   // ============================================================
@@ -627,38 +762,41 @@ const Map<String, String> zhTranslations = {
   'tokenDistribution':
       '代币分配',
 
-  'communityAllocation':
-      '社区',
+  'tokenAllocation':
+      '代币分配',
 
   'communityRewards':
       '社区与奖励',
 
-  'ecosystemAllocation':
-      '生态系统',
+  'liquidity':
+      '流动性',
 
   'ecosystem':
       '生态系统',
 
-  'developmentAllocation':
-      '开发',
-
   'development':
       '开发',
-
-  'liquidityAllocation':
-      '流动性',
-
-  'liquidity':
-      '流动性',
-
-  'marketingAllocation':
-      '市场营销',
 
   'marketing':
       '市场营销',
 
   'stlTokens':
       'STL 代币',
+
+  'communityAllocation':
+      '社区',
+
+  'ecosystemAllocation':
+      '生态系统',
+
+  'developmentAllocation':
+      '开发',
+
+  'liquidityAllocation':
+      '流动性',
+
+  'marketingAllocation':
+      '市场营销',
 
   'totalSupplyDescription':
       'Stelluriini 的总供应量为 17 602 539 062 STL。下方所示的分配代表计划中的全部代币供应量。',
@@ -720,15 +858,6 @@ const Map<String, String> zhTranslations = {
   'communityCuriosityDevelopmentSolana':
       '社区 • 好奇心 • 开发 • Solana',
 
-  'communityCuriositySolana':
-      '社区 • 好奇心 • Solana',
-
-  'tokenAllocation':
-      '代币分配',
-
-  'tokenomicsImportant':
-      '具体的代币分配可能会在项目开发过程中进行更新。所有更改都应向社区透明地公布。',
-
   'importantNotice':
       '重要提示',
 
@@ -737,6 +866,9 @@ const Map<String, String> zhTranslations = {
 
   'stellaStelluriiniStlSolana':
       'STELLA • STELLURIINI • STL • SOLANA',
+
+  'tokenomicsImportant':
+      '具体的代币分配可能会在项目开发过程中进行更新。所有更改都应向社区透明地公布。',
 
   // ============================================================
   // 📄 WHITEPAPER
@@ -808,11 +940,11 @@ const Map<String, String> zhTranslations = {
   // ============================================================
 
   'footerTagline':
-      '一起挖矿，共创 Stelluriini 的未来。',
+      '与 Stella 一起挖矿，共创 Stelluriini 的未来。🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
   'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
+      'STELLA • STELLURIINI • STL • SOLANA',
 };
