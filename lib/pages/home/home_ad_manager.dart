@@ -8,39 +8,41 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 // 🐱 STELLURIINI HOME AD MANAGER
 // ============================================================
 //
-// TESTIVAIHE
+// STELLURIININ OIKEAT ADMOB-MAINOSYKSIKÖT
 //
-// Käytetään Googlen virallista Android Rewarded-testimainosta.
+// Käytetään Stelluriini-projektin omia Rewarded-mainosyksiköitä.
 //
-// Tämän testin tarkoitus:
-//
-//   Flutter
-//      ↓
-//   Google Mobile Ads SDK
-//      ↓
-//   RewardedAd.load()
-//      ↓
-//   Testimainos
-//
-// Jos tämä toimii, tiedämme että Flutterin AdMob-integraatio
-// toimii ja ongelma liittyy nykyisiin omiin AdMob-mainosyksiköihin
-// tai niiden tarjoiluun.
-//
-// ============================================================
-//
-// ⚠️ TESTI-ID
-//
-// Google Android Rewarded test ad:
-//
-//   ca-app-pub-3940256099942544/5224354917
-//
-// Sama testimainosyksikkö on tässä käytössä sekä:
-//   mining_start
-//   power_boost
+// Flutter
+//    ↓
+// Google Mobile Ads SDK
+//    ↓
+// Stelluriinin Rewarded Ad
+//    ↓
+// käyttäjä katsoo mainoksen
+//    ↓
+// Google AdMob SSV
+//    ↓
+// Stelluriinin Cloud Function
+//    ↓
+// Firestore admobRewards
+//    ↓
+// powerBoost / claimMining
 //
 // ============================================================
 //
-// SSV customData:
+// 📺 ADMOB-MAINOSYKSIKÖT
+//
+// Mining Start:
+//
+//   ca-app-pub-1131012057145658/6674097787
+//
+// Power Boost:
+//
+//   ca-app-pub-1131012057145658/7225738491
+//
+// ============================================================
+//
+// 🔐 SSV CUSTOM DATA
 //
 //   UID:mining_start
 //   UID:power_boost
@@ -49,31 +51,18 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeAdManager extends ChangeNotifier {
   // ============================================================
-  // 🧪 GOOGLE REWARDED TEST AD
-  // ============================================================
-  //
-  // Tämä on tarkoituksella Googlen virallinen TEST-mainosyksikkö.
-  //
-  // ÄLÄ käytä tätä tuotannossa.
-  //
-  // ============================================================
-
-  static const String testRewardedAdUnitId =
-      'ca-app-pub-3940256099942544/5224354917';
-
-  // ============================================================
   // 📺 MINING START REWARDED AD
   // ============================================================
 
   static const String miningRewardedAdUnitId =
-      testRewardedAdUnitId;
+      'ca-app-pub-1131012057145658/6674097787';
 
   // ============================================================
   // ⚡ POWER BOOST REWARDED AD
   // ============================================================
 
   static const String powerBoostRewardedAdUnitId =
-      testRewardedAdUnitId;
+      'ca-app-pub-1131012057145658/7225738491';
 
   // ============================================================
   // 🔐 SSV PURPOSES
@@ -237,7 +226,7 @@ class HomeAdManager extends ChangeNotifier {
         _adReady &&
         _rewardedAdPurpose == purpose) {
       debugPrint(
-        'Rewarded ad already ready: $purpose',
+        '🐱 Stelluriini Rewarded ad already ready: $purpose',
       );
 
       return true;
@@ -250,7 +239,7 @@ class HomeAdManager extends ChangeNotifier {
     if (_rewardedAd != null &&
         _rewardedAdPurpose != purpose) {
       debugPrint(
-        'Different Rewarded ad is loaded. '
+        '🐱 Different Rewarded ad is loaded. '
         'Replacing it with: $purpose',
       );
 
@@ -264,7 +253,7 @@ class HomeAdManager extends ChangeNotifier {
     if (_adLoading &&
         _loadingPurpose != purpose) {
       debugPrint(
-        'Different Rewarded ad is currently loading. '
+        '🐱 Different Rewarded ad is currently loading. '
         'Cancelling stale load logically and switching to: '
         '$purpose',
       );
@@ -316,7 +305,7 @@ class HomeAdManager extends ChangeNotifier {
           _adReady &&
           _rewardedAdPurpose == purpose) {
         debugPrint(
-          'Rewarded ad became ready: $purpose',
+          '🐱 Stelluriini Rewarded ad became ready: $purpose',
         );
 
         return true;
@@ -325,7 +314,7 @@ class HomeAdManager extends ChangeNotifier {
       if (_adLoading &&
           _loadingPurpose != purpose) {
         debugPrint(
-          'Rewarded ad loading purpose changed. '
+          '🐱 Rewarded ad loading purpose changed. '
           'Expected: $purpose '
           'Current: $_loadingPurpose',
         );
@@ -349,7 +338,7 @@ class HomeAdManager extends ChangeNotifier {
         _rewardedAdPurpose == purpose;
 
     debugPrint(
-      'Rewarded ad wait finished. '
+      '🐱 Rewarded ad wait finished. '
       'Purpose: $purpose '
       'Ready: $ready',
     );
@@ -377,7 +366,7 @@ class HomeAdManager extends ChangeNotifier {
         _adReady &&
         _rewardedAdPurpose == purpose) {
       debugPrint(
-        'Rewarded ad already ready: $purpose',
+        '🐱 Stelluriini Rewarded ad already ready: $purpose',
       );
 
       return;
@@ -390,7 +379,7 @@ class HomeAdManager extends ChangeNotifier {
     if (_adLoading) {
       if (_loadingPurpose == purpose) {
         debugPrint(
-          'Rewarded ad loading already in progress: '
+          '🐱 Rewarded ad loading already in progress: '
           '$purpose',
         );
 
@@ -398,7 +387,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       debugPrint(
-        'Replacing stale Rewarded ad load. '
+        '🐱 Replacing stale Rewarded ad load. '
         'Old: $_loadingPurpose '
         'New: $purpose',
       );
@@ -418,7 +407,7 @@ class HomeAdManager extends ChangeNotifier {
 
     if (user == null) {
       debugPrint(
-        'Cannot load rewarded ad: '
+        '🐱 Cannot load rewarded ad: '
         'no authenticated Firebase user.',
       );
 
@@ -473,11 +462,7 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     debugPrint(
-      'STELLURIINI ADMOB TEST LOAD START',
-    );
-
-    debugPrint(
-      'TEST MODE: Google Rewarded Test Ad',
+      '🐱 STELLURIINI ADMOB LOAD START',
     );
 
     debugPrint(
@@ -485,7 +470,7 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     debugPrint(
-      'Test Ad Unit ID: $adUnitId',
+      'Ad Unit ID: $adUnitId',
     );
 
     debugPrint(
@@ -523,7 +508,7 @@ class HomeAdManager extends ChangeNotifier {
 
           if (requestId != _loadRequestId) {
             debugPrint(
-              'Ignoring stale rewarded ad callback.',
+              '🐱 Ignoring stale rewarded ad callback.',
             );
 
             ad.dispose();
@@ -535,11 +520,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI ADMOB TEST LOAD SUCCESS',
-          );
-
-          debugPrint(
-            'TEST MODE: Google Rewarded Test Ad',
+            '🐱 STELLURIINI ADMOB LOAD SUCCESS',
           );
 
           debugPrint(
@@ -547,7 +528,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'Test Ad Unit ID: $adUnitId',
+            'Ad Unit ID: $adUnitId',
           );
 
           debugPrint(
@@ -571,7 +552,7 @@ class HomeAdManager extends ChangeNotifier {
             );
 
             debugPrint(
-              'STELLURIINI SSV CUSTOM DATA SET',
+              '🐱 STELLURIINI SSV CUSTOM DATA SET',
             );
 
             debugPrint(
@@ -583,7 +564,7 @@ class HomeAdManager extends ChangeNotifier {
             );
           } catch (error) {
             debugPrint(
-              'AdMob SSV setup failed: $error',
+              '🐱 AdMob SSV setup failed: $error',
             );
 
             ad.dispose();
@@ -630,7 +611,7 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'STELLURIINI ADMOB TEST SHOWN',
+                '🐱 STELLURIINI ADMOB SHOWN',
               );
 
               debugPrint(
@@ -650,7 +631,7 @@ class HomeAdManager extends ChangeNotifier {
               RewardedAd impressionAd,
             ) {
               debugPrint(
-                'STELLURIINI ADMOB TEST IMPRESSION',
+                '🐱 STELLURIINI ADMOB IMPRESSION',
               );
 
               debugPrint(
@@ -666,7 +647,7 @@ class HomeAdManager extends ChangeNotifier {
               RewardedAd clickedAd,
             ) {
               debugPrint(
-                'STELLURIINI ADMOB TEST CLICKED',
+                '🐱 STELLURIINI ADMOB CLICKED',
               );
 
               debugPrint(
@@ -686,7 +667,7 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'STELLURIINI ADMOB TEST DISMISSED',
+                '🐱 STELLURIINI ADMOB DISMISSED',
               );
 
               debugPrint(
@@ -744,7 +725,7 @@ class HomeAdManager extends ChangeNotifier {
               );
 
               debugPrint(
-                'STELLURIINI ADMOB TEST SHOW FAILED',
+                '🐱 STELLURIINI ADMOB SHOW FAILED',
               );
 
               debugPrint(
@@ -828,11 +809,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI ADMOB TEST LOAD FAILED',
-          );
-
-          debugPrint(
-            'TEST MODE: Google Rewarded Test Ad',
+            '🐱 STELLURIINI ADMOB LOAD FAILED',
           );
 
           debugPrint(
@@ -840,7 +817,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'Test Ad Unit ID: $adUnitId',
+            'Ad Unit ID: $adUnitId',
           );
 
           debugPrint(
@@ -891,7 +868,7 @@ class HomeAdManager extends ChangeNotifier {
             );
           } else {
             debugPrint(
-              'Silent background ad load failure. '
+              '🐱 Silent background ad load failure. '
               'No user notification.',
             );
           }
@@ -939,7 +916,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     debugPrint(
-      'Starting silent background TEST ad reload: $purpose',
+      '🐱 Starting silent background AdMob reload: $purpose',
     );
 
     await loadRewardedAd(
@@ -964,7 +941,7 @@ class HomeAdManager extends ChangeNotifier {
         );
 
         debugPrint(
-          'STELLURIINI SSV GRACE PERIOD START',
+          '🐱 STELLURIINI SSV GRACE PERIOD START',
         );
 
         debugPrint(
@@ -986,7 +963,7 @@ class HomeAdManager extends ChangeNotifier {
 
         if (_disposed) {
           debugPrint(
-            'SSV reward callback cancelled: manager disposed.',
+            '🐱 SSV reward callback cancelled: manager disposed.',
           );
 
           return;
@@ -994,7 +971,7 @@ class HomeAdManager extends ChangeNotifier {
 
         if (isRewardAlreadyHandled()) {
           debugPrint(
-            'SSV reward callback already handled.',
+            '🐱 SSV reward callback already handled.',
           );
 
           return;
@@ -1007,7 +984,7 @@ class HomeAdManager extends ChangeNotifier {
         );
 
         debugPrint(
-          'STELLURIINI SSV GRACE PERIOD COMPLETE',
+          '🐱 STELLURIINI SSV GRACE PERIOD COMPLETE',
         );
 
         debugPrint(
@@ -1030,7 +1007,7 @@ class HomeAdManager extends ChangeNotifier {
           }
         } catch (error) {
           debugPrint(
-            'Verified reward callback error: $error',
+            '🐱 Verified reward callback error: $error',
           );
         }
       }(),
@@ -1048,7 +1025,7 @@ class HomeAdManager extends ChangeNotifier {
 
     if (_miningAdFlowActive) {
       debugPrint(
-        'Mining Start ad flow already active.',
+        '🐱 Mining Start ad flow already active.',
       );
 
       return false;
@@ -1056,7 +1033,7 @@ class HomeAdManager extends ChangeNotifier {
 
     if (_powerBoostAdFlowActive) {
       debugPrint(
-        'Power Boost ad flow is active.',
+        '🐱 Power Boost ad flow is active.',
       );
 
       return false;
@@ -1108,11 +1085,11 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'STELLURIINI SHOW MINING START TEST AD',
+        '🐱 STELLURIINI SHOW MINING START AD',
       );
 
       debugPrint(
-        'TEST Ad Unit ID: $miningRewardedAdUnitId',
+        'Ad Unit ID: $miningRewardedAdUnitId',
       );
 
       debugPrint(
@@ -1135,7 +1112,7 @@ class HomeAdManager extends ChangeNotifier {
         ) {
           if (rewardEarned) {
             debugPrint(
-              'Mining Start reward callback already received.',
+              '🐱 Mining Start reward callback already received.',
             );
 
             return;
@@ -1148,7 +1125,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI MINING START TEST REWARD RECEIVED',
+            '🐱 STELLURIINI MINING START REWARD RECEIVED',
           );
 
           debugPrint(
@@ -1182,7 +1159,7 @@ class HomeAdManager extends ChangeNotifier {
       return true;
     } catch (error) {
       debugPrint(
-        'Mining Start test ad flow error: $error',
+        '🐱 Mining Start ad flow error: $error',
       );
 
       _miningAdFlowActive = false;
@@ -1204,7 +1181,7 @@ class HomeAdManager extends ChangeNotifier {
 
     if (_powerBoostAdFlowActive) {
       debugPrint(
-        'Power Boost ad flow already active.',
+        '🐱 Power Boost ad flow already active.',
       );
 
       return false;
@@ -1212,7 +1189,7 @@ class HomeAdManager extends ChangeNotifier {
 
     if (_miningAdFlowActive) {
       debugPrint(
-        'Mining Start ad flow is active.',
+        '🐱 Mining Start ad flow is active.',
       );
 
       return false;
@@ -1242,7 +1219,7 @@ class HomeAdManager extends ChangeNotifier {
           _loadingPurpose !=
               powerBoostPurpose) {
         debugPrint(
-          'Switching active ad load to Power Boost.',
+          '🐱 Switching active ad load to Power Boost.',
         );
 
         _loadRequestId++;
@@ -1252,7 +1229,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // --------------------------------------------------------
-      // Ladataan nimenomaan Power Boost -testimainos.
+      // Ladataan nimenomaan Power Boost -mainos.
       // --------------------------------------------------------
 
       final bool ready =
@@ -1295,11 +1272,11 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'STELLURIINI SHOW POWER BOOST TEST AD',
+        '🐱 STELLURIINI SHOW POWER BOOST AD',
       );
 
       debugPrint(
-        'TEST Ad Unit ID: $powerBoostRewardedAdUnitId',
+        'Ad Unit ID: $powerBoostRewardedAdUnitId',
       );
 
       debugPrint(
@@ -1322,7 +1299,7 @@ class HomeAdManager extends ChangeNotifier {
         ) {
           if (rewardEarned) {
             debugPrint(
-              'Power Boost reward callback already received.',
+              '🐱 Power Boost reward callback already received.',
             );
 
             return;
@@ -1335,7 +1312,7 @@ class HomeAdManager extends ChangeNotifier {
           );
 
           debugPrint(
-            'STELLURIINI POWER BOOST TEST REWARD RECEIVED',
+            '🐱 STELLURIINI POWER BOOST REWARD RECEIVED',
           );
 
           debugPrint(
@@ -1369,7 +1346,7 @@ class HomeAdManager extends ChangeNotifier {
       return true;
     } catch (error) {
       debugPrint(
-        'Power Boost test ad flow error: $error',
+        '🐱 Power Boost ad flow error: $error',
       );
 
       _powerBoostAdFlowActive = false;
