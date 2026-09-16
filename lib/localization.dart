@@ -25,8 +25,10 @@ import 'localization/languages/zh.dart';
 // • Tiếng Việt
 // • 日本語
 //
-// Sovelluksen pääasiallinen kieli tulee main.dartista
-// ja kulkee languageCode-arvona sivuille.
+// Stella-teema säilytetään kaikissa käännöksissä. 🐱💜
+//
+// Sovelluksen pääasiallinen kieli voidaan antaa
+// languageCode-arvona sivuille.
 //
 // Tämä tiedosto sisältää myös BuildContext-pohjaisen
 // fallback-menetelmän vanhempia widgettejä varten.
@@ -75,10 +77,9 @@ class AppLocalizations {
     final Map<String, String>? languageTranslations =
         _translations[languageCode];
 
-    final String? translatedValue =
-        languageTranslations?[key];
+    final String? translatedValue = languageTranslations?[key];
 
-    if (translatedValue != null) {
+    if (translatedValue != null && translatedValue.isNotEmpty) {
       return translatedValue;
     }
 
@@ -86,10 +87,9 @@ class AppLocalizations {
     // English fallback
     // ----------------------------------------------------------
 
-    final String? englishValue =
-        _translations['en']?[key];
+    final String? englishValue = _translations['en']?[key];
 
-    if (englishValue != null) {
+    if (englishValue != null && englishValue.isNotEmpty) {
       return englishValue;
     }
 
@@ -165,12 +165,10 @@ class AppLocalizations {
   static bool isSupportedLanguage(
     String? code,
   ) {
-    if (code == null) {
-      return false;
-    }
+    final String normalizedCode = _extractLanguageCode(code);
 
     return supportedLanguages.containsKey(
-      code,
+      normalizedCode,
     );
   }
 
@@ -181,12 +179,52 @@ class AppLocalizations {
   static String normalizeLanguageCode(
     String? code,
   ) {
-    if (code != null &&
-        supportedLanguages.containsKey(code)) {
-      return code;
+    final String normalizedCode = _extractLanguageCode(code);
+
+    if (supportedLanguages.containsKey(normalizedCode)) {
+      return normalizedCode;
     }
 
     return 'fi';
+  }
+
+  // ============================================================
+  // 🌍 LANGUAGE CODE EXTRACTION
+  // ============================================================
+  //
+  // Tukee esimerkiksi:
+  //
+  // fi
+  // fi-FI
+  // en
+  // en-US
+  // de-DE
+  //
+  // Näin laitteen Locale ei aiheuta turhaa fallbackia.
+  // ============================================================
+
+  static String _extractLanguageCode(
+    String? code,
+  ) {
+    if (code == null || code.trim().isEmpty) {
+      return '';
+    }
+
+    final String normalized = code
+        .trim()
+        .toLowerCase()
+        .replaceAll('_', '-');
+
+    final int separatorIndex = normalized.indexOf('-');
+
+    if (separatorIndex == -1) {
+      return normalized;
+    }
+
+    return normalized.substring(
+      0,
+      separatorIndex,
+    );
   }
 
   // ============================================================
@@ -196,28 +234,21 @@ class AppLocalizations {
   // Tätä voidaan käyttää widgeteissä, jotka eivät vielä
   // saa languageCodea suoraan konstruktorissa.
   //
-  // HUOM:
-  // Stelluriinin uusissa pääsivuissa suositellaan käyttämään:
+  // Uusissa pääsivuissa suositellaan edelleen:
   //
   // AppLocalizations(widget.languageCode)
   //
-  // eikä tätä metodia.
-  //
-  // Tämä metodi käyttää Flutterin Locale-arvoa vain fallbackina.
+  // Tämä metodi käyttää Flutterin Locale-arvoa fallbackina.
   // ============================================================
 
   static AppLocalizations of(
     BuildContext context,
   ) {
-    final Locale locale =
-        Localizations.localeOf(context);
+    final Locale locale = Localizations.localeOf(context);
 
-    final String code =
-        supportedLanguages.containsKey(
-          locale.languageCode,
-        )
-            ? locale.languageCode
-            : 'fi';
+    final String code = normalizeLanguageCode(
+      locale.languageCode,
+    );
 
     return AppLocalizations(code);
   }
