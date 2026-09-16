@@ -860,9 +860,6 @@ const Map<String, String> deTranslations = {
   'withdrawalsDisabled':
       'Auszahlungen sind derzeit nicht verfügbar.',
 
-  'futureWithdrawals':
-      'Ein mögliches zukünftiges Auszahlungssystem wird separat entwickelt. Die Bedingungen werden vor der Einführung bekannt gegeben.',
-
   // ============================================================
   // 🐾 FOOTER
   // ============================================================
