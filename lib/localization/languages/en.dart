@@ -42,7 +42,14 @@ const Map<String, String> enTranslations = {
   'dailyHashRateMaximum': 'Maximum: {rate} HR',
   'dailyHashRateSuccess': 'Day {day} Hashrate: {rate} HR',
 
+  // 🐱 Stella Mining
   'stellaMiningProgress':
+      'Stella Mining Progress',
+
+  'miningProgress':
+      'Mining Progress',
+
+  'miningProgressStella':
       'Stella Mining Progress',
 
   'stlPerHour':
@@ -64,22 +71,31 @@ const Map<String, String> enTranslations = {
       'WATCH AD & COLLECT REWARD',
 
   'miningActive':
-      'Mining active',
+      'Mining Active',
 
   'miningComplete':
-      'Mining cycle complete',
+      'Mining Cycle Complete',
 
   'miningFinished':
-      'Mining finished',
+      'Mining Finished',
 
   'timeRemaining':
-      'Time remaining',
+      'Time Remaining',
+
+  'timeRemainingLabel':
+      'Time Remaining',
 
   'remaining':
-      'Time remaining: {time}',
+      'Time Remaining: {time}',
+
+  'timeRemainingText':
+      'Time Remaining: {time}',
+
+  'miningTimeRemaining':
+      'Time Remaining: {time}',
 
   'waitingForStella':
-      'Waiting for Stella',
+      'Waiting for Stella 🐱💜',
 
   'streak':
       'Streak',
@@ -101,7 +117,7 @@ const Map<String, String> enTranslations = {
       'Daily Reward',
 
   'claimedToday':
-      'Claimed today',
+      'Claimed Today',
 
   'alreadyClaimed':
       'You have already claimed today’s reward.',
@@ -136,13 +152,13 @@ const Map<String, String> enTranslations = {
       'Stella Power Boost',
 
   'powerBoostOffer':
-      'Watch an ad to activate +{amount} HR Stella Power Boost for 4 hours.',
+      'Watch an ad to activate +{amount} HR Stella Power Boost for 4 hours. 🐱⚡',
 
   'powerBoostActive':
-      'Power Boost active',
+      'Power Boost Active',
 
   'powerBoostActiveTitle':
-      'Stella Power Boost is active!',
+      'Stella Power Boost is Active! 🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HR is active during your mining cycle.',
@@ -170,6 +186,9 @@ const Map<String, String> enTranslations = {
 
   'adRewardDuplicate':
       'This ad reward has already been processed.',
+
+  'powerBoostFailed':
+      'Failed to activate Power Boost.',
 
   'testAdRewardFailed':
       'Failed to process the ad reward.',
@@ -208,10 +227,10 @@ const Map<String, String> enTranslations = {
       'Stella is mining',
 
   'stellaMiningNow':
-      'Stella is mining right now',
+      'Stella is mining right now 🐱⛏️',
 
   'stellaIsResting':
-      'Stella is resting',
+      'Stella is resting 🐱💜',
 
   'stellaWaiting':
       'Stella is waiting for the next mining cycle',
@@ -223,13 +242,13 @@ const Map<String, String> enTranslations = {
       'STL MINED',
 
   'stellaIsWorking':
-      'STELLA IS WORKING...',
+      'STELLA IS WORKING... 🐱⛏️',
 
   'stellaIsMiningButton':
       'MINING ACTIVE',
 
   'stellaAlreadyMining':
-      'Stella is already mining.',
+      'Stella is already mining. 🐱💜',
 
   // ============================================================
   // ⛏️ MINING MESSAGES
@@ -240,6 +259,18 @@ const Map<String, String> enTranslations = {
 
   'miningStartFailed':
       'Failed to start mining.',
+
+  'miningStarted':
+      'Stella has started mining! 🐱⛏️',
+
+  'miningCycleStarted':
+      'Stella’s new mining cycle has started. 🐱💜',
+
+  'miningCycleComplete':
+      'Stella’s mining cycle is complete! ✨',
+
+  'miningReady':
+      'Stella’s mining is ready to collect. 🐾',
 
   // ============================================================
   // 💎 TRANSACTIONS
@@ -404,7 +435,7 @@ const Map<String, String> enTranslations = {
       'STL Transaction',
 
   'stelluriiniActivity':
-      'Stelluriini activity',
+      'Stelluriini Activity',
 
   'transactionBalance':
       'Balance: {balance} STL',
@@ -416,19 +447,19 @@ const Map<String, String> enTranslations = {
       'No transactions yet',
 
   'rewardsAppearHere':
-      'Your STL rewards will appear here. 🐱',
+      'Your STL rewards will appear here. 🐱💜',
 
   'startMiningWithStella':
-      'Start mining with Stella',
+      'Start mining with Stella 🐱⛏️',
 
   'historyRecorded':
       'Your mining, daily bonuses and ad rewards will be recorded here.',
 
   'stellaCheckingHistory':
-      'Stella is checking your history...',
+      'Stella is checking your history... 🐱🔎',
 
   'everyRewardJourney':
-      'Every reward is part of your Stelluriini journey. 🐾',
+      'Every reward is part of your Stelluriini journey. 🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -444,7 +475,7 @@ const Map<String, String> enTranslations = {
       'Stelluriini combines community, a digital token and an app experience built around Stella.',
 
   'meetStella':
-      'Meet Stella',
+      'Meet Stella 🐱💜',
 
   'aboutStellaIntro':
       'Stella is the heart of Stelluriini and the project’s lovable cat mascot.',
@@ -571,7 +602,7 @@ const Map<String, String> enTranslations = {
       'The community is at the heart of Stelluriini development. Feedback and user ideas help guide future development.',
 
   'roadmapStella':
-      'Stella',
+      'Stella 🐱💜',
 
   'roadmapStellaDescription':
       'Stella will remain the visual mascot of Stelluriini and an important part of the user experience.',
@@ -601,7 +632,7 @@ const Map<String, String> enTranslations = {
       'The roadmap describes the planned development direction of Stelluriini. Phases, features and timelines may change during project development.',
 
   'roadmapStellaJourney':
-      'Stella’s Journey',
+      'Stella’s Journey 🐾',
 
   'roadmapEcosystemDescription':
       'The Stelluriini ecosystem will be developed step by step around the community, app and STL token.',
@@ -891,11 +922,11 @@ const Map<String, String> enTranslations = {
   // ============================================================
 
   'footerTagline':
-      'Mining together for the future of Stelluriini.',
+      'Mining together with Stella for the future of Stelluriini. 🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
   'stelluriiniStlSolanaFooter':
-      'STELLURIINI • STL • SOLANA',
+      'STELLA • STELLURIINI • STL • SOLANA',
 };
