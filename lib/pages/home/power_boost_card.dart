@@ -91,6 +91,10 @@ class PowerBoostCard extends StatelessWidget {
         boostActive &&
         boostRemainingMs > 0;
 
+    final bool dailyLimitReached =
+        maxAdsPerDay > 0 &&
+        adsToday >= maxAdsPerDay;
+
     return Container(
       padding:
           const EdgeInsets.all(18),
@@ -163,6 +167,10 @@ class PowerBoostCard extends StatelessWidget {
                       hasActiveBoost
                           ? activeText
                           : subtitle,
+                      maxLines:
+                          2,
+                      overflow:
+                          TextOverflow.ellipsis,
                       style:
                           const TextStyle(
                         color:
@@ -211,26 +219,29 @@ class PowerBoostCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(
-            height: 4,
-          ),
-
           // ====================================================
           // DAILY LIMIT INFORMATION
+          // Only shown when the actual daily limit is reached.
+          // This prevents duplicate "1/6" text.
           // ====================================================
 
-          Text(
-            maxBoostsInfoText,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  veryMutedTextColor,
-              fontSize:
-                  10,
+          if (dailyLimitReached) ...[
+            const SizedBox(
+              height: 4,
             ),
-          ),
+            Text(
+              maxBoostsInfoText,
+              textAlign:
+                  TextAlign.center,
+              style:
+                  const TextStyle(
+                color:
+                    veryMutedTextColor,
+                fontSize:
+                    10,
+              ),
+            ),
+          ],
         ],
       ),
     );
