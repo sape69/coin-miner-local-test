@@ -26,6 +26,11 @@ const Map<String, String> enTranslations = {
   'comingSoon': 'Coming Soon',
   'information': 'Information',
 
+  'loading': 'Loading...',
+  'active': 'Active',
+  'welcome': 'Welcome',
+  'stellaWelcome': 'Stella is here to help you. 🐱💜',
+
   // ============================================================
   // 💰 BALANCE / MINING
   // ============================================================
@@ -43,6 +48,12 @@ const Map<String, String> enTranslations = {
   'dailyHashRateSuccess': 'Day {day} Hashrate: {rate} HR',
 
   // 🐱 Stella Mining
+  'stellaMiningTitle':
+      'Stella Mining',
+
+  'stellaMiningSubtitle':
+      'Stella is working for you. 🐱⛏️',
+
   'stellaMiningProgress':
       'Stella Mining Progress',
 
@@ -92,7 +103,7 @@ const Map<String, String> enTranslations = {
       'Time Remaining: {time}',
 
   'miningTimeRemaining':
-      'Time Remaining: {time}',
+      'Time Remaining',
 
   'waitingForStella':
       'Waiting for Stella 🐱💜',
@@ -102,6 +113,9 @@ const Map<String, String> enTranslations = {
 
   'days':
       'days',
+
+  'day':
+      'Day',
 
   // ============================================================
   // 🎁 DAILY BONUS
@@ -132,6 +146,9 @@ const Map<String, String> enTranslations = {
   'watchAndEarn':
       'WATCH & EARN',
 
+  'watchAdSubtitle':
+      'Watch an ad and give Stella a Power Boost. 🐱⚡',
+
   'loadingAd':
       'LOADING AD...',
 
@@ -143,6 +160,15 @@ const Map<String, String> enTranslations = {
 
   'adReward':
       '+{amount} HR',
+
+  'adNotAvailable':
+      'The ad is not currently available.',
+
+  'adLoadError':
+      'Failed to load the ad.',
+
+  'adShowError':
+      'Failed to show the ad.',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
@@ -173,7 +199,7 @@ const Map<String, String> enTranslations = {
       'The next ad is available after the boost ends.',
 
   'maxBoostsInfo':
-      'You can activate up to {count} Power Boosts per day.',
+      'The daily Power Boost limit has been reached.',
 
   'adsToday':
       'Ads today: {current}/{max}',
@@ -567,6 +593,9 @@ const Map<String, String> enTranslations = {
 
   'roadmapPhase5Description':
       'Exploring new features, potential partnerships and community ideas.',
+
+  'roadmapPhase6':
+      'Phase 6 – Long-Term Development',
 
   'roadmapPhase6Title':
       'Phase 6 – Long-Term Development',
