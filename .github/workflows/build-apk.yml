@@ -31,7 +31,7 @@ jobs:
           cache: true
 
       # ========================================================
-      # JAVA
+      # JAVA 17
       # ========================================================
 
       - name: Setup Java 17
@@ -42,20 +42,30 @@ jobs:
 
       # ========================================================
       # ANDROID SDK
+      #
+      # ÄLÄ käytä android-actions/setup-android@v3:
+      # se yrittää tässä ympäristössä hakea vanhaa "tools"
+      # pakettia, jota nykyinen SDK ei enää tarjoa.
       # ========================================================
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.1"
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.1
 
       # ========================================================
-      # BASIC PROJECT CHECK
+      # ACCEPT ANDROID LICENSES
+      # ========================================================
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+
+      # ========================================================
+      # VERIFY FLUTTER PROJECT
       # ========================================================
 
       - name: Verify Flutter project
@@ -68,7 +78,7 @@ jobs:
           test -d lib
           test -d android
 
-          echo "Flutter project found."
+          echo "Flutter project FOUND."
 
       # ========================================================
       # FIREBASE CHECK
@@ -88,7 +98,7 @@ jobs:
           fi
 
       # ========================================================
-      # STELLA LOGO CHECK
+      # STELLA ASSETS CHECK
       # ========================================================
 
       - name: Verify Stelluriini assets
@@ -100,7 +110,7 @@ jobs:
           if [ -d "assets" ]; then
             echo "assets folder FOUND."
           else
-            echo "WARNING: assets folder not found."
+            echo "WARNING: assets folder NOT FOUND."
           fi
 
       # ========================================================
@@ -120,7 +130,11 @@ jobs:
             exit 1
           fi
 
+          echo ""
+          echo "===== MainActivity.kt ====="
           cat "$MAIN_ACTIVITY"
+
+          echo ""
 
           if grep -q 'io.flutter.embedding.android.FlutterActivity' "$MAIN_ACTIVITY"; then
             echo "FlutterActivity v2 FOUND."
@@ -206,7 +220,7 @@ jobs:
           flutter clean
 
       # ========================================================
-      # GET DEPENDENCIES
+      # PUB GET
       # ========================================================
 
       - name: Flutter pub get
@@ -222,7 +236,7 @@ jobs:
           dart run flutter_launcher_icons
 
       # ========================================================
-      # REMOVE OLD TEST PAGE IF PRESENT
+      # REMOVE TEMPORARY TEST PAGE
       # ========================================================
 
       - name: Remove temporary test pages
@@ -242,9 +256,6 @@ jobs:
 
       # ========================================================
       # FINAL ANDROID EMBEDDING CHECK
-      #
-      # TÄMÄ ON TÄRKEÄ:
-      # Tarkistus tehdään VASTA juuri ennen buildia.
       # ========================================================
 
       - name: Final Android embedding check
@@ -254,6 +265,7 @@ jobs:
           echo "========================================"
 
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          MAIN_ACTIVITY="android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt"
 
           echo ""
           echo "Manifest path:"
@@ -264,8 +276,16 @@ jobs:
           test -f "$MANIFEST"
 
           echo ""
+          echo "MainActivity exists:"
+          test -f "$MAIN_ACTIVITY"
+
+          echo ""
           echo "===== FINAL AndroidManifest.xml ====="
           cat "$MANIFEST"
+
+          echo ""
+          echo "===== FINAL MainActivity.kt ====="
+          cat "$MAIN_ACTIVITY"
 
           echo ""
           echo "===== FINAL flutterEmbedding SEARCH ====="
@@ -299,6 +319,13 @@ jobs:
             exit 1
           else
             echo "No old FlutterApplication found."
+          fi
+
+          if grep -q 'io.flutter.embedding.android.FlutterActivity' "$MAIN_ACTIVITY"; then
+            echo "FlutterActivity v2 FOUND."
+          else
+            echo "ERROR: FlutterActivity v2 NOT FOUND."
+            exit 1
           fi
 
           echo ""
