@@ -783,6 +783,19 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
+    // ==========================================================
+    // ⛏️ MINING MUST BE ACTIVE BEFORE POWER BOOST
+    // ==========================================================
+
+    if (!_miningActive ||
+        _miningRemainingMs <= 0) {
+      _showMessage(
+        '🐱 Aloita louhinta ensin',
+      );
+
+      return;
+    }
+
     if (!_canUseBoost) {
       _showMessage(
         '🐱 ${_t('maxBoostsInfo')}',
