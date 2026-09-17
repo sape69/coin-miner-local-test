@@ -108,7 +108,7 @@ jobs:
           echo "===== ANDROID DIRECTORY ====="
 
           find android \
-            -maxdepth 5 \
+            -maxdepth 6 \
             -type f \
             | sort
 
@@ -125,7 +125,7 @@ jobs:
           echo "Firebase configuration found."
 
       # ==========================================================
-      # 8. Diagnose Android manifests
+      # 8. Diagnose ALL Android manifests
       # ==========================================================
       - name: Diagnose Android manifests
         run: |
@@ -319,7 +319,7 @@ jobs:
           flutter doctor -v
 
       # ==========================================================
-      # 13. Diagnose Gradle
+      # 13. Diagnose Gradle configuration
       # ==========================================================
       - name: Diagnose Gradle configuration
         run: |
@@ -383,7 +383,160 @@ jobs:
           fi
 
       # ==========================================================
-      # 14. Configure AndroidX
+      # 14. EXACT FLUTTER MANIFEST DETECTION TEST
+      #
+      # This reproduces the important part of Flutter's
+      # AndroidProject.computeEmbeddingVersion() logic.
+      # ==========================================================
+      - name: Exact Flutter embedding detection test
+        shell: bash
+        run: |
+          echo ""
+          echo "=================================================="
+          echo "EXACT FLUTTER EMBEDDING DETECTION TEST"
+          echo "=================================================="
+
+          echo ""
+          echo "Flutter 3.29.3 checks whether the Android project"
+          echo "uses Gradle and then selects its manifest."
+          echo ""
+
+          if [ -f android/build.gradle ]; then
+            echo "Gradle detection:"
+            echo "android/build.gradle EXISTS"
+            echo "Flutter should use:"
+            echo "android/app/src/main/AndroidManifest.xml"
+
+            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          elif [ -f android/build.gradle.kts ]; then
+            echo "Gradle detection:"
+            echo "android/build.gradle.kts EXISTS"
+            echo "Flutter should use:"
+            echo "android/app/src/main/AndroidManifest.xml"
+
+            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          else
+            echo "Gradle detection:"
+            echo "NO android/build.gradle"
+            echo "NO android/build.gradle.kts"
+
+            echo ""
+            echo "Flutter would fall back to:"
+            echo "android/AndroidManifest.xml"
+
+            SELECTED_MANIFEST="android/AndroidManifest.xml"
+          fi
+
+          echo ""
+          echo "=================================================="
+          echo "SELECTED MANIFEST"
+          echo "=================================================="
+
+          echo "$SELECTED_MANIFEST"
+
+          if [ ! -f "$SELECTED_MANIFEST" ]; then
+            echo ""
+            echo "ERROR:"
+            echo "Selected Flutter manifest does not exist."
+            exit 1
+          fi
+
+          echo ""
+          echo "=================================================="
+          echo "SELECTED MANIFEST CONTENT"
+          echo "=================================================="
+
+          cat "$SELECTED_MANIFEST"
+
+          echo ""
+          echo "=================================================="
+          echo "XML PARSER RESULT"
+          echo "=================================================="
+
+          python3 - "$SELECTED_MANIFEST" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          manifest_path = sys.argv[1]
+
+          print(f"Parsing: {manifest_path}")
+
+          try:
+              tree = ET.parse(manifest_path)
+              root = tree.getroot()
+          except Exception as exc:
+              print(f"ERROR: XML parsing failed: {exc}")
+              sys.exit(1)
+
+          ANDROID_NS = "http://schemas.android.com/apk/res/android"
+          NAME = f"{{{ANDROID_NS}}}name"
+          VALUE = f"{{{ANDROID_NS}}}value"
+
+          print("")
+          print("XML parsing succeeded.")
+
+          for application in root.iter("application"):
+              application_name = application.attrib.get(NAME)
+
+              print("")
+              print("Application android:name:")
+              print(repr(application_name))
+
+              if application_name == "io.flutter.app.FlutterApplication":
+                  print("")
+                  print("RESULT: FLUTTER V1")
+                  print("Reason: FlutterApplication V1 detected.")
+                  sys.exit(2)
+
+          for metadata in root.iter("meta-data"):
+              name = metadata.attrib.get(NAME)
+              value = metadata.attrib.get(VALUE)
+
+              if name == "flutterEmbedding":
+                  print("")
+                  print("Found flutterEmbedding metadata.")
+                  print(f"android:name = {name!r}")
+                  print(f"android:value = {value!r}")
+
+                  if value == "1":
+                      print("")
+                      print("RESULT: FLUTTER V1")
+                      print("Reason: flutterEmbedding value is 1.")
+                      sys.exit(2)
+
+                  if value == "2":
+                      print("")
+                      print("RESULT: FLUTTER V2")
+                      print("Reason: flutterEmbedding value is 2.")
+                      sys.exit(0)
+
+          print("")
+          print("RESULT: FLUTTER V1")
+          print("Reason: flutterEmbedding value 2 was not found.")
+          sys.exit(2)
+          PY
+
+          XML_RESULT=$?
+
+          echo ""
+          echo "=================================================="
+          echo "EXACT DETECTION EXIT CODE: $XML_RESULT"
+          echo "=================================================="
+
+          if [ "$XML_RESULT" -ne 0 ]; then
+            echo ""
+            echo "Flutter's expected V2 embedding was NOT detected"
+            echo "in the manifest selected by the same basic logic."
+            exit 1
+          fi
+
+          echo ""
+          echo "EXACT FLUTTER EMBEDDING TEST PASSED."
+
+      # ==========================================================
+      # 15. Configure AndroidX
       # ==========================================================
       - name: Configure AndroidX
         run: |
@@ -405,99 +558,73 @@ jobs:
           cat android/gradle.properties
 
       # ==========================================================
-      # 15. Flutter clean
+      # 16. Flutter clean
       # ==========================================================
       - name: Flutter clean
         run: |
           flutter clean
 
       # ==========================================================
-      # 16. Flutter pub get
+      # 17. Flutter pub get
       # ==========================================================
       - name: Flutter pub get
         run: |
           flutter pub get
 
       # ==========================================================
-      # 17. Flutter analyze
+      # 18. Flutter analyze
       # ==========================================================
       - name: Flutter analyze
         run: |
           flutter analyze
 
       # ==========================================================
-      # 18. Final Android embedding diagnostics
+      # 19. FINAL EXACT EMBEDDING CHECK
       # ==========================================================
-      - name: Final Android embedding diagnostics
+      - name: Final exact embedding check
+        shell: bash
         run: |
           echo ""
           echo "=================================================="
-          echo "FINAL CHECK BEFORE FLUTTER BUILD"
+          echo "FINAL EMBEDDING CHECK BEFORE BUILD"
           echo "=================================================="
 
-          echo ""
-          echo "===== ALL ANDROID MANIFESTS ====="
+          if [ -f android/build.gradle ]; then
+            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
+          elif [ -f android/build.gradle.kts ]; then
+            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
+          else
+            SELECTED_MANIFEST="android/AndroidManifest.xml"
+          fi
 
-          find android \
-            -type f \
-            -name "AndroidManifest.xml" \
-            -print \
-            | sort
-
-          while IFS= read -r file; do
-            echo ""
-            echo "-----------------------------------------------"
-            echo "FILE: $file"
-            echo "-----------------------------------------------"
-
-            cat "$file"
-
-          done < <(
-            find android \
-              -type f \
-              -name "AndroidManifest.xml" \
-              -print \
-              | sort
-          )
+          echo "Flutter-selected manifest:"
+          echo "$SELECTED_MANIFEST"
 
           echo ""
-          echo "===== FLUTTER V1 SEARCH ====="
+          echo "Manifest exists?"
 
-          grep -Rni \
-            --exclude-dir=.gradle \
-            --exclude-dir=build \
-            "io.flutter.app" \
-            android 2>/dev/null || true
+          if [ ! -f "$SELECTED_MANIFEST" ]; then
+            echo "NO"
+            exit 1
+          fi
 
-          echo ""
-          echo "===== FLUTTER EMBEDDING SEARCH ====="
-
-          grep -Rni \
-            --exclude-dir=.gradle \
-            --exclude-dir=build \
-            "flutterEmbedding" \
-            android 2>/dev/null || true
+          echo "YES"
 
           echo ""
-          echo "===== MAIN ACTIVITY SEARCH ====="
-
-          find android/app/src \
-            -type f \
-            \( \
-              -name "MainActivity.kt" \
-              -o \
-              -name "MainActivity.java" \
-            \) \
-            -print \
-            | sort
+          echo "Manifest:"
+          cat "$SELECTED_MANIFEST"
 
           echo ""
-          echo "=================================================="
-          echo "END OF FINAL DIAGNOSTICS"
-          echo "=================================================="
+          echo "Embedding metadata:"
+
+          grep -n "flutterEmbedding" "$SELECTED_MANIFEST" || true
+          grep -n 'android:value="2"' "$SELECTED_MANIFEST" || true
+
+          echo ""
+          echo "Final exact check passed."
 
       # ==========================================================
-      # 19. Verbose APK build
+      # 20. Verbose APK build
       # ==========================================================
       - name: Build release APK - verbose diagnostics
         shell: bash
@@ -548,7 +675,7 @@ jobs:
           exit "$BUILD_EXIT"
 
       # ==========================================================
-      # 20. Upload verbose Flutter build log
+      # 21. Upload verbose build log
       # ==========================================================
       - name: Upload Flutter build diagnostics
         if: always()
@@ -559,7 +686,7 @@ jobs:
           if-no-files-found: ignore
 
       # ==========================================================
-      # 21. Verify APK
+      # 22. Verify APK
       # ==========================================================
       - name: Verify APK
         if: success()
@@ -576,7 +703,7 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 22. Upload APK
+      # 23. Upload APK
       # ==========================================================
       - name: Upload APK
         if: success()
