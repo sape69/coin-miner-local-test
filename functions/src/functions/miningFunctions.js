@@ -456,15 +456,15 @@ async function findVerifiedAdMobReward(
 // Tarkistus:
 // - ensimmäinen heti
 // - sen jälkeen 2 sekunnin välein
-// - enintään 90 sekuntia
+// - enintään 110 sekuntia
 //
 // Cloud Functionin request timeout on 120 sekuntia,
-// joten SSV:lle jää 30 sekunnin turvamarginaali.
+// joten SSV:lle jää noin 10 sekunnin turvamarginaali.
 //
 // ============================================================
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
-  90 * 1000;
+  110 * 1000;
 
 const ADMOB_SSV_POLL_INTERVAL_MS =
   2 * 1000;
@@ -1677,8 +1677,8 @@ const claimMining =
       region: "us-central1",
 
       // AdMob SSV voi saapua hitaasti.
-      // 120 s antaa 90 s SSV-odotukselle
-      // riittävän turvamarginaalin.
+      // 110 s SSV-odotukselle
+      // ja 120 s Cloud Function timeout.
       timeoutSeconds: 120,
     },
     async (request) => {
@@ -2354,13 +2354,14 @@ const powerBoost =
       // ⏱️ ADMOB SSV TURVAMARGINAALI
       // ======================================================
       //
-      // SSV voi saapua noin 60 sekunnin kohdalla.
+      // Viimeisimmän testin perusteella AdMob SSV saapui
+      // noin 90,7 sekunnin kohdalla.
       //
-      // Sisäinen SSV-odotus = 90 s
+      // Sisäinen SSV-odotus = 110 s
       // Cloud Function timeout = 120 s
       //
-      // Näin Cloud Run ei katkaise requestia ennen
-      // kuin meidän SSV-odotus päättyy.
+      // Näin Cloud Runille jää noin 10 sekunnin
+      // turvamarginaali SSV-odotuksen jälkeen.
       //
       // ======================================================
 
