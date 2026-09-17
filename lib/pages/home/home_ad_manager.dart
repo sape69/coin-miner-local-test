@@ -8,13 +8,13 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 // 🐱 STELLURIINI HOME AD MANAGER
 // ============================================================
 //
-// STELLURIININ OIKEAT ADMOB-MAINOSYKSIKÖT
+// STELLURIINI REWARDED ADS
 //
 // Flutter
 //    ↓
 // Google Mobile Ads SDK
 //    ↓
-// Stelluriini Rewarded Ad
+// Rewarded Ad
 //    ↓
 // käyttäjä katsoo mainoksen
 //    ↓
@@ -36,7 +36,22 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //
 // Power Boost:
 //
-//   ca-app-pub-1131012057145658/7225738491
+//   TESTITILA:
+//   ca-app-pub-3940256099942544/5224354917
+//
+// HUOM:
+//
+// Power Boost käyttää tässä tiedostossa väliaikaisesti
+// Googlen virallista Rewarded TEST -mainosyksikköä.
+//
+// Tämän testin tarkoitus on selvittää:
+//
+//   1. Toimiiko RewardedAd Flutterissa?
+//   2. Latautuuko mainos?
+//   3. Näkyykö Rewarded-mainos?
+//   4. Tuleeko onUserEarnedReward?
+//
+// Kun testi on valmis, palautetaan oma tuotanto-ID.
 //
 // ============================================================
 //
@@ -59,8 +74,16 @@ class HomeAdManager extends ChangeNotifier {
   // ⚡ POWER BOOST REWARDED AD
   // ============================================================
 
+  // ------------------------------------------------------------
+  // VÄLIAIKAINEN TESTIMAINOS
+  // ------------------------------------------------------------
+  //
+  // Googlen virallinen Rewarded TEST -mainosyksikkö.
+  //
+  // Älä jätä tätä pysyvästi tuotantoon.
+  //
   static const String powerBoostRewardedAdUnitId =
-      'ca-app-pub-1131012057145658/7225738491';
+      'ca-app-pub-3940256099942544/5224354917';
 
   // ============================================================
   // 🔐 SSV PURPOSES
@@ -216,10 +239,6 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    // ----------------------------------------------------------
-    // AD ALREADY READY FOR THIS PURPOSE
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _adReady &&
         _rewardedAdPurpose == purpose) {
@@ -229,10 +248,6 @@ class HomeAdManager extends ChangeNotifier {
 
       return true;
     }
-
-    // ----------------------------------------------------------
-    // WRONG READY AD
-    // ----------------------------------------------------------
 
     if (_rewardedAd != null &&
         _rewardedAdPurpose != purpose) {
@@ -244,16 +259,11 @@ class HomeAdManager extends ChangeNotifier {
       _disposeCurrentAd();
     }
 
-    // ----------------------------------------------------------
-    // WRONG AD IS CURRENTLY LOADING
-    // ----------------------------------------------------------
-
     if (_adLoading &&
         _loadingPurpose != purpose) {
       debugPrint(
         '🐱 Different Rewarded ad is currently loading. '
-        'Cancelling stale load logically and switching to: '
-        '$purpose',
+        'Switching to: $purpose',
       );
 
       _loadRequestId++;
@@ -268,20 +278,12 @@ class HomeAdManager extends ChangeNotifier {
       _notify();
     }
 
-    // ----------------------------------------------------------
-    // START LOAD
-    // ----------------------------------------------------------
-
     if (!_adLoading) {
       await loadRewardedAd(
         purpose: purpose,
         notifyOnLoadError: true,
       );
     }
-
-    // ----------------------------------------------------------
-    // WAIT
-    // ----------------------------------------------------------
 
     const int maxWaitChecks = 150;
 
@@ -357,10 +359,6 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // ALREADY READY
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _adReady &&
         _rewardedAdPurpose == purpose) {
@@ -370,10 +368,6 @@ class HomeAdManager extends ChangeNotifier {
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // DIFFERENT AD IS ALREADY LOADING
-    // ----------------------------------------------------------
 
     if (_adLoading) {
       if (_loadingPurpose == purpose) {
@@ -397,10 +391,6 @@ class HomeAdManager extends ChangeNotifier {
       _loadingPurpose = '';
     }
 
-    // ----------------------------------------------------------
-    // AUTH CHECK
-    // ----------------------------------------------------------
-
     final User? user =
         _auth.currentUser;
 
@@ -413,6 +403,7 @@ class HomeAdManager extends ChangeNotifier {
       _adLoading = false;
       _loadingPurpose = '';
       _adReady = false;
+
       _adLoadError =
           'NO_AUTH_USER | '
           'Purpose: $purpose';
@@ -422,24 +413,12 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // CLEAR OLD AD
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null) {
       _disposeCurrentAd();
     }
 
-    // ----------------------------------------------------------
-    // REQUEST ID
-    // ----------------------------------------------------------
-
     final int requestId =
         ++_loadRequestId;
-
-    // ----------------------------------------------------------
-    // STATE
-    // ----------------------------------------------------------
 
     _adLoading = true;
     _loadingPurpose = purpose;
@@ -448,10 +427,6 @@ class HomeAdManager extends ChangeNotifier {
     _rewardedAdPurpose = purpose;
 
     _notify();
-
-    // ----------------------------------------------------------
-    // AD UNIT
-    // ----------------------------------------------------------
 
     final String adUnitId =
         _getAdUnitId(
@@ -474,6 +449,16 @@ class HomeAdManager extends ChangeNotifier {
       'Ad Unit ID: $adUnitId',
     );
 
+    if (purpose == powerBoostPurpose) {
+      debugPrint(
+        '🐱 POWER BOOST TEST AD ENABLED',
+      );
+
+      debugPrint(
+        'Using Google official Rewarded TEST ad unit.',
+      );
+    }
+
     debugPrint(
       'User UID length: ${user.uid.length}',
     );
@@ -486,19 +471,11 @@ class HomeAdManager extends ChangeNotifier {
       '==================================================',
     );
 
-    // ==========================================================
-    // LOAD
-    // ==========================================================
-
     RewardedAd.load(
       adUnitId: adUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback:
           RewardedAdLoadCallback(
-        // ======================================================
-        // ✅ LOADED
-        // ======================================================
-
         onAdLoaded: (
           RewardedAd ad,
         ) {
@@ -535,10 +512,6 @@ class HomeAdManager extends ChangeNotifier {
           debugPrint(
             '==================================================',
           );
-
-          // ----------------------------------------------------
-          // SSV
-          // ----------------------------------------------------
 
           try {
             final ServerSideVerificationOptions
@@ -586,10 +559,6 @@ class HomeAdManager extends ChangeNotifier {
             return;
           }
 
-          // ----------------------------------------------------
-          // STORE AD
-          // ----------------------------------------------------
-
           _rewardedAd = ad;
           _rewardedAdPurpose = purpose;
           _adReady = true;
@@ -597,16 +566,8 @@ class HomeAdManager extends ChangeNotifier {
           _loadingPurpose = '';
           _adLoadError = '';
 
-          // ====================================================
-          // FULL SCREEN CALLBACKS
-          // ====================================================
-
           ad.fullScreenContentCallback =
               FullScreenContentCallback<RewardedAd>(
-            // --------------------------------------------------
-            // SHOWN
-            // --------------------------------------------------
-
             onAdShowedFullScreenContent: (
               RewardedAd showedAd,
             ) {
@@ -631,10 +592,6 @@ class HomeAdManager extends ChangeNotifier {
               );
             },
 
-            // --------------------------------------------------
-            // IMPRESSION
-            // --------------------------------------------------
-
             onAdImpression: (
               RewardedAd impressionAd,
             ) {
@@ -651,10 +608,6 @@ class HomeAdManager extends ChangeNotifier {
               );
             },
 
-            // --------------------------------------------------
-            // CLICK
-            // --------------------------------------------------
-
             onAdClicked: (
               RewardedAd clickedAd,
             ) {
@@ -670,10 +623,6 @@ class HomeAdManager extends ChangeNotifier {
                 'Ad Unit ID: $adUnitId',
               );
             },
-
-            // --------------------------------------------------
-            // DISMISSED
-            // --------------------------------------------------
 
             onAdDismissedFullScreenContent: (
               RewardedAd dismissedAd,
@@ -719,10 +668,6 @@ class HomeAdManager extends ChangeNotifier {
                 purpose,
               );
 
-              // ------------------------------------------------
-              // Hiljainen taustalataus.
-              // ------------------------------------------------
-
               if (!_disposed) {
                 unawaited(
                   _reloadAfterDismiss(
@@ -731,10 +676,6 @@ class HomeAdManager extends ChangeNotifier {
                 );
               }
             },
-
-            // --------------------------------------------------
-            // SHOW FAILED
-            // --------------------------------------------------
 
             onAdFailedToShowFullScreenContent: (
               RewardedAd failedAd,
@@ -815,10 +756,6 @@ class HomeAdManager extends ChangeNotifier {
           _notify();
         },
 
-        // ======================================================
-        // ❌ LOAD FAILED
-        // ======================================================
-
         onAdFailedToLoad: (
           LoadAdError error,
         ) {
@@ -889,10 +826,6 @@ class HomeAdManager extends ChangeNotifier {
 
           _notify();
 
-          // ----------------------------------------------------
-          // Vain käyttäjän aloittama lataus ilmoittaa virheestä.
-          // ----------------------------------------------------
-
           if (notifyOnLoadError) {
             onAdLoadError?.call(
               purpose,
@@ -930,18 +863,10 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // ----------------------------------------------------------
-    // Jos toinen mainostyyppi on jo valmis, ei korvata sitä.
-    // ----------------------------------------------------------
-
     if (_rewardedAd != null &&
         _adReady) {
       return;
     }
-
-    // ----------------------------------------------------------
-    // Jos toinen mainostyyppi on latautumassa, ei korvata sitä.
-    // ----------------------------------------------------------
 
     if (_adLoading) {
       return;
@@ -1241,19 +1166,11 @@ class HomeAdManager extends ChangeNotifier {
     _notify();
 
     try {
-      // --------------------------------------------------------
-      // Varmistetaan, ettei väärä valmis mainos ole käytössä.
-      // --------------------------------------------------------
-
       if (_rewardedAd != null &&
           _rewardedAdPurpose !=
               powerBoostPurpose) {
         _disposeCurrentAd();
       }
-
-      // --------------------------------------------------------
-      // Varmistetaan, ettei väärä mainostyyppi jää latautumaan.
-      // --------------------------------------------------------
 
       if (_adLoading &&
           _loadingPurpose !=
@@ -1267,10 +1184,6 @@ class HomeAdManager extends ChangeNotifier {
         _adLoading = false;
         _loadingPurpose = '';
       }
-
-      // --------------------------------------------------------
-      // Ladataan nimenomaan Power Boost -mainos.
-      // --------------------------------------------------------
 
       final bool ready =
           await waitForRewardedAd(
