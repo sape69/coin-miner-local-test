@@ -456,12 +456,15 @@ async function findVerifiedAdMobReward(
 // Tarkistus:
 // - ensimmäinen heti
 // - sen jälkeen 2 sekunnin välein
-// - enintään 60 sekuntia
+// - enintään 90 sekuntia
+//
+// Cloud Functionin request timeout on 120 sekuntia,
+// joten SSV:lle jää 30 sekunnin turvamarginaali.
 //
 // ============================================================
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
-  60 * 1000;
+  90 * 1000;
 
 const ADMOB_SSV_POLL_INTERVAL_MS =
   2 * 1000;
@@ -499,6 +502,8 @@ async function waitForVerifiedAdMobReward(
           transactionId:
             reward.transactionId,
           attempt,
+          elapsedMs:
+            Date.now() - startedAt,
         }
       );
 
@@ -1670,6 +1675,11 @@ const claimMining =
   onCall(
     {
       region: "us-central1",
+
+      // AdMob SSV voi saapua hitaasti.
+      // 120 s antaa 90 s SSV-odotukselle
+      // riittävän turvamarginaalin.
+      timeoutSeconds: 120,
     },
     async (request) => {
       try {
@@ -1766,14 +1776,6 @@ const claimMining =
 
             // ==================================================
             // ⚠️ JOS MINING ON JO KÄYNNISSÄ
-            // ==================================================
-            //
-            // TÄRKEÄ KORJAUS:
-            // AdMob reward kulutetaan myös tässä tilanteessa.
-            //
-            // Muuten sama SSV reward voisi jäädä käyttämättömäksi
-            // ja löytyä uudelleen seuraavissa kutsuissa.
-            //
             // ==================================================
 
             if (
@@ -2347,6 +2349,22 @@ const powerBoost =
   onCall(
     {
       region: "us-central1",
+
+      // ======================================================
+      // ⏱️ ADMOB SSV TURVAMARGINAALI
+      // ======================================================
+      //
+      // SSV voi saapua noin 60 sekunnin kohdalla.
+      //
+      // Sisäinen SSV-odotus = 90 s
+      // Cloud Function timeout = 120 s
+      //
+      // Näin Cloud Run ei katkaise requestia ennen
+      // kuin meidän SSV-odotus päättyy.
+      //
+      // ======================================================
+
+      timeoutSeconds: 120,
     },
     async (request) => {
       try {
@@ -2429,14 +2447,6 @@ const powerBoost =
 
             // ==================================================
             // 🛡️ IDEMPOTENCY
-            // ==================================================
-            //
-            // Jos sama callable-kutsu tulee useita kertoja
-            // saman transaction ID:n kanssa, jo käsitelty
-            // reward palautetaan turvallisesti onnistuneena.
-            //
-            // Tämä on tärkeää Flutterin retry-loopin aikana.
-            //
             // ==================================================
 
             if (
@@ -2649,10 +2659,6 @@ const powerBoost =
 
                 adBoostEndsAt:
                   boostEndsAt,
-
-                // ==============================================
-                // 🛡️ IDEMPOTENCY REFERENCE
-                // ==============================================
 
                 powerBoostTransactionId:
                   verifiedReward.transactionId,
