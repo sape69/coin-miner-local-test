@@ -456,12 +456,12 @@ async function findVerifiedAdMobReward(
 // Tarkistus:
 // - ensimmäinen heti
 // - sen jälkeen 2 sekunnin välein
-// - enintään 30 sekuntia
+// - enintään 60 sekuntia
 //
 // ============================================================
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
-  30 * 1000;
+  60 * 1000;
 
 const ADMOB_SSV_POLL_INTERVAL_MS =
   2 * 1000;
