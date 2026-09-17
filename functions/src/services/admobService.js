@@ -27,7 +27,11 @@ const crypto = require("crypto");
  *
  * IMPORTANT:
  * Do NOT use URLSearchParams.toString() to recreate the signed
- * content because that can change encoding or parameter format.
+ * query because that can change encoding or parameter format.
+ *
+ * Production logging is intentionally kept concise.
+ * Detailed URL/signature diagnostics are not logged because
+ * they are only needed during troubleshooting.
  * ============================================================
  */
 
@@ -148,125 +152,7 @@ async function getAdMobPublicKeys(
   cachedPublicKeys = keys;
   cachedPublicKeysAt = now;
 
-  console.log(
-    "🐱 AdMob public keys loaded:",
-    {
-      count: keys.size,
-      keyIds: Array.from(
-        keys.keys(),
-      ),
-    },
-  );
-
   return keys;
-}
-
-// ============================================================
-// SHA-256 diagnostic helper
-// ============================================================
-
-function sha256(value) {
-  return crypto
-    .createHash("sha256")
-    .update(value, "utf8")
-    .digest("hex");
-}
-
-// ============================================================
-// Query diagnostic helper
-// ============================================================
-
-/**
- * Logs only safe diagnostics about the incoming URL.
- *
- * IMPORTANT:
- * We intentionally DO NOT print the complete URL because
- * the query contains UID/custom data/signature information.
- *
- * These hashes allow us to determine whether Firebase/Express
- * changes the query string before signature verification.
- */
-function logRawQueryDiagnostics(req) {
-  const sources = [];
-
-  if (
-    typeof req.originalUrl ===
-    "string"
-  ) {
-    sources.push({
-      name: "originalUrl",
-      value: req.originalUrl,
-    });
-  }
-
-  if (
-    typeof req.url === "string"
-  ) {
-    sources.push({
-      name: "url",
-      value: req.url,
-    });
-  }
-
-  if (
-    typeof req.rawUrl === "string"
-  ) {
-    sources.push({
-      name: "rawUrl",
-      value: req.rawUrl,
-    });
-  }
-
-  const diagnostics = {};
-
-  for (const source of sources) {
-    const questionMark =
-      source.value.indexOf("?");
-
-    const query =
-      questionMark >= 0
-        ? source.value.substring(
-            questionMark + 1,
-          )
-        : "";
-
-    diagnostics[source.name] = {
-      totalLength:
-        source.value.length,
-
-      queryLength:
-        query.length,
-
-      querySha256:
-        query
-          ? sha256(query)
-          : null,
-    };
-  }
-
-  if (
-    typeof req.originalUrl ===
-      "string" &&
-    typeof req.url === "string"
-  ) {
-    diagnostics.originalUrlEqualsUrl =
-      req.originalUrl === req.url;
-  }
-
-  if (
-    typeof req.originalUrl ===
-      "string" &&
-    typeof req.rawUrl === "string"
-  ) {
-    diagnostics.originalUrlEqualsRawUrl =
-      req.originalUrl ===
-      req.rawUrl;
-  }
-
-  console.log(
-    "🐱🔎 AdMob SSV URL diagnostics:",
-    diagnostics,
-  );
 }
 
 // ============================================================
@@ -293,9 +179,6 @@ function getRawQueryString(req) {
     );
   }
 
-  // Diagnostic information only.
-  logRawQueryDiagnostics(req);
-
   if (
     typeof req.originalUrl ===
     "string"
@@ -311,7 +194,8 @@ function getRawQueryString(req) {
   }
 
   if (
-    typeof req.url === "string"
+    typeof req.url ===
+    "string"
   ) {
     const questionMark =
       req.url.indexOf("?");
@@ -324,7 +208,8 @@ function getRawQueryString(req) {
   }
 
   if (
-    typeof req.rawUrl === "string"
+    typeof req.rawUrl ===
+    "string"
   ) {
     const questionMark =
       req.rawUrl.indexOf("?");
@@ -349,9 +234,6 @@ function getRawQueryString(req) {
  * Decode the signed query content for cryptographic
  * verification.
  *
- * Google's AdMob SSV verifier obtains the query through the
- * URI query representation before converting it to UTF-8 bytes.
- *
  * IMPORTANT:
  *
  * - decodeURIComponent() decodes percent-encoded data.
@@ -359,7 +241,7 @@ function getRawQueryString(req) {
  * - It does NOT reorder parameters.
  * - It does NOT rebuild or re-encode the query.
  *
- * Therefore:
+ * Example:
  *
  *   foo=hello%20world
  *
@@ -374,9 +256,6 @@ function getRawQueryString(req) {
  * remains:
  *
  *   foo=a+b
- *
- * This matches the URI query decoding behavior used by the
- * Google verifier.
  */
 function decodeSignedQueryString(
   signedQueryString,
@@ -461,19 +340,8 @@ async function verifyAdMobSignature(
   const rawQueryString =
     getRawQueryString(req);
 
-  console.log(
-    "🐱🔐 AdMob SSV raw query received.",
-    {
-      length:
-        rawQueryString.length,
-
-      sha256:
-        sha256(rawQueryString),
-    },
-  );
-
   /**
-   * Google's SSV format always puts:
+   * Google's SSV format places:
    *
    *   ...signed parameters...
    *   &signature=...
@@ -481,7 +349,7 @@ async function verifyAdMobSignature(
    *
    * at the end.
    *
-   * The raw query is used to locate these parameters.
+   * We use the raw query to locate these parameters.
    */
 
   const signatureMarker =
@@ -499,8 +367,7 @@ async function verifyAdMobSignature(
   }
 
   /**
-   * This is the exact raw content received before
-   * &signature=.
+   * Exact raw content received before &signature=.
    */
   const rawSignedQueryString =
     rawQueryString.substring(
@@ -547,39 +414,13 @@ async function verifyAdMobSignature(
   }
 
   /**
-   * Google's verifier decodes the query content before
-   * cryptographic verification.
+   * Google's verifier decodes the signed query content
+   * before cryptographic verification.
    */
   const signedQueryString =
     decodeSignedQueryString(
       rawSignedQueryString,
     );
-
-  console.log(
-    "🐱🔐 AdMob SSV signature information:",
-    {
-      keyId,
-
-      rawSignedLength:
-        rawSignedQueryString.length,
-
-      rawSignedSha256:
-        sha256(
-          rawSignedQueryString,
-        ),
-
-      signedLength:
-        signedQueryString.length,
-
-      signedSha256:
-        sha256(
-          signedQueryString,
-        ),
-
-      signatureLength:
-        signature.length,
-    },
-  );
 
   const signatureBuffer =
     decodeAdMobSignature(
@@ -591,7 +432,6 @@ async function verifyAdMobSignature(
    *
    * Google's verifier uses DER-encoded ECDSA signatures.
    */
-
   let publicKeys =
     await getAdMobPublicKeys(
       false,
@@ -609,13 +449,6 @@ async function verifyAdMobSignature(
    * AdMob rotates public keys.
    */
   if (!publicKey) {
-    console.log(
-      "🐱 AdMob SSV key ID not found in cache. Refreshing keys.",
-      {
-        keyId,
-      },
-    );
-
     publicKeys =
       await getAdMobPublicKeys(
         true,
@@ -638,9 +471,9 @@ async function verifyAdMobSignature(
    *
    * IMPORTANT:
    *
-   * We verify the Google-compatible decoded query string.
+   * Verify the Google-compatible decoded query string.
    *
-   * We do NOT:
+   * Do NOT:
    *
    *  - use URLSearchParams.toString()
    *  - reorder parameters
@@ -672,25 +505,6 @@ async function verifyAdMobSignature(
       "🐱❌ AdMob SSV signature INVALID.",
       {
         keyId,
-
-        rawSignedLength:
-          rawSignedQueryString.length,
-
-        rawSignedSha256:
-          sha256(
-            rawSignedQueryString,
-          ),
-
-        signedLength:
-          signedQueryString.length,
-
-        signedSha256:
-          sha256(
-            signedQueryString,
-          ),
-
-        signatureLength:
-          signature.length,
       },
     );
 
@@ -703,20 +517,14 @@ async function verifyAdMobSignature(
     "🐱✅ AdMob SSV signature VERIFIED.",
     {
       keyId,
-
-      rawSignedLength:
-        rawSignedQueryString.length,
-
-      signedLength:
-        signedQueryString.length,
     },
   );
 
   /**
    * Only parse parameters AFTER signature verification.
    *
-   * URLSearchParams is safe here because it is used only to
-   * read the already verified callback parameters.
+   * URLSearchParams is safe here because it is used only
+   * to read the already verified callback parameters.
    */
   const params =
     new URLSearchParams(
@@ -838,10 +646,6 @@ function parseCustomData(
 async function verifyAdMobCallback(
   req,
 ) {
-  console.log(
-    "🐱🔐 Verifying AdMob SSV callback...",
-  );
-
   const verification =
     await verifyAdMobSignature(
       req,
@@ -908,22 +712,6 @@ async function verifyAdMobCallback(
 
   const rewardPurpose =
     parsedCustomData.rewardPurpose;
-
-  console.log(
-    "🐱 AdMob SSV verified parameters:",
-    {
-      adNetwork,
-      adUnit,
-      rewardAmount,
-      rewardItem,
-      timestamp,
-      transactionId,
-      userId,
-      rewardPurpose,
-      hasCustomData:
-        Boolean(customData),
-    },
-  );
 
   // ==========================================================
   // Purpose validation
@@ -1089,10 +877,7 @@ async function verifyAdMobCallback(
     {
       uid,
       rewardPurpose,
-      adUnit,
       transactionId,
-      rewardAmount,
-      rewardItem,
     },
   );
 
