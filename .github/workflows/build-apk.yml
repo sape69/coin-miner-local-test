@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================================
-      # 2. Flutter
+      # 2. Setup Flutter
       # ==========================================================
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -34,7 +34,7 @@ jobs:
           cache: true
 
       # ==========================================================
-      # 3. Java 17
+      # 3. Setup Java 17
       # ==========================================================
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -43,7 +43,7 @@ jobs:
           java-version: "17"
 
       # ==========================================================
-      # 4. Android SDK
+      # 4. Verify Android SDK
       # ==========================================================
       - name: Verify Android SDK
         run: |
@@ -51,7 +51,7 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
 
           if [ ! -d "$ANDROID_SDK_ROOT" ]; then
-            echo "ERROR: Android SDK not found."
+            echo "ERROR: Android SDK directory not found."
             exit 1
           fi
 
@@ -59,28 +59,33 @@ jobs:
 
           if [ ! -x "$SDKMANAGER" ]; then
             echo "ERROR: sdkmanager not found."
+
             find "$ANDROID_SDK_ROOT/cmdline-tools" \
               -maxdepth 4 \
               -type f \
               -name sdkmanager \
               -print || true
+
             exit 1
           fi
 
-          echo "sdkmanager:"
+          echo ""
+          echo "===== SDKMANAGER VERSION ====="
           "$SDKMANAGER" --version
 
       # ==========================================================
-      # 5. Android SDK packages
+      # 5. Install Android SDK packages
       # ==========================================================
       - name: Install Android SDK packages
         run: |
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
 
           echo "Accepting Android SDK licenses..."
+
           yes | "$SDKMANAGER" --licenses >/dev/null || true
 
-          echo "Installing Android SDK packages..."
+          echo ""
+          echo "Installing required Android SDK packages..."
 
           "$SDKMANAGER" \
             "platform-tools" \
@@ -88,7 +93,7 @@ jobs:
             "build-tools;35.0.1"
 
       # ==========================================================
-      # 6. Flutter project check
+      # 6. Verify Flutter project
       # ==========================================================
       - name: Verify Flutter project
         run: |
@@ -101,22 +106,26 @@ jobs:
 
           echo ""
           echo "===== ANDROID DIRECTORY ====="
-          find android -maxdepth 4 -type f | sort
+
+          find android \
+            -maxdepth 5 \
+            -type f \
+            | sort
 
       # ==========================================================
-      # 7. Firebase
+      # 7. Verify Firebase configuration
       # ==========================================================
       - name: Verify Firebase configuration
         run: |
           if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: google-services.json not found."
+            echo "ERROR: android/app/google-services.json not found."
             exit 1
           fi
 
           echo "Firebase configuration found."
 
       # ==========================================================
-      # 8. Print Android manifests
+      # 8. Diagnose Android manifests
       # ==========================================================
       - name: Diagnose Android manifests
         run: |
@@ -131,7 +140,8 @@ jobs:
           find android \
             -type f \
             -name "AndroidManifest.xml" \
-            -print | sort
+            -print \
+            | sort
 
           echo ""
           echo "===== MANIFEST CONTENTS ====="
@@ -141,16 +151,19 @@ jobs:
             echo "-----------------------------------------------"
             echo "FILE: $file"
             echo "-----------------------------------------------"
+
             cat "$file"
+
           done < <(
             find android \
               -type f \
               -name "AndroidManifest.xml" \
-              -print | sort
+              -print \
+              | sort
           )
 
       # ==========================================================
-      # 9. Search ALL Android files for Flutter V1 references
+      # 9. Search Flutter V1 references
       # ==========================================================
       - name: Diagnose Flutter V1 references
         run: |
@@ -160,7 +173,7 @@ jobs:
           echo "=================================================="
 
           echo ""
-          echo "Searching android/ for io.flutter.app ..."
+          echo "===== SEARCH android/ FOR io.flutter.app ====="
 
           if grep -Rni \
             --exclude-dir=.gradle \
@@ -169,17 +182,16 @@ jobs:
             android 2>/dev/null; then
 
             echo ""
-            echo "WARNING: Flutter V1 reference found."
+            echo "WARNING: Flutter V1 reference found in android/."
 
           else
 
-            echo ""
-            echo "No io.flutter.app references found."
+            echo "No io.flutter.app references found in android/."
 
           fi
 
           echo ""
-          echo "Searching entire repository for io.flutter.app ..."
+          echo "===== SEARCH ENTIRE REPOSITORY FOR io.flutter.app ====="
 
           if grep -Rni \
             --exclude-dir=.git \
@@ -194,13 +206,12 @@ jobs:
 
           else
 
-            echo ""
             echo "No io.flutter.app references found in repository."
 
           fi
 
       # ==========================================================
-      # 10. Search flutterEmbedding
+      # 10. Diagnose flutterEmbedding
       # ==========================================================
       - name: Diagnose flutterEmbedding metadata
         run: |
@@ -210,7 +221,7 @@ jobs:
           echo "=================================================="
 
           echo ""
-          echo "Searching android/ for flutterEmbedding ..."
+          echo "===== SEARCH FOR flutterEmbedding ====="
 
           grep -Rni \
             --exclude-dir=.gradle \
@@ -219,7 +230,7 @@ jobs:
             android 2>/dev/null || true
 
           echo ""
-          echo "Searching android/ for embedding value 1 ..."
+          echo "===== SEARCH FOR EMBEDDING VALUE 1 ====="
 
           grep -Rni \
             --exclude-dir=.gradle \
@@ -228,7 +239,7 @@ jobs:
             android 2>/dev/null || true
 
           echo ""
-          echo "Searching android/ for embedding value 2 ..."
+          echo "===== SEARCH FOR EMBEDDING VALUE 2 ====="
 
           grep -Rni \
             --exclude-dir=.gradle \
@@ -237,7 +248,7 @@ jobs:
             android 2>/dev/null || true
 
       # ==========================================================
-      # 11. MainActivity diagnostics
+      # 11. Diagnose MainActivity
       # ==========================================================
       - name: Diagnose MainActivity
         run: |
@@ -246,28 +257,44 @@ jobs:
           echo "MAIN ACTIVITY DIAGNOSTICS"
           echo "=================================================="
 
+          echo ""
+          echo "===== MAIN ACTIVITY FILES ====="
+
           find android/app/src \
             -type f \
-            \( -name "MainActivity.kt" -o -name "MainActivity.java" \) \
-            -print | sort
+            \( \
+              -name "MainActivity.kt" \
+              -o \
+              -name "MainActivity.java" \
+            \) \
+            -print \
+            | sort
 
           echo ""
+          echo "===== MAIN ACTIVITY CONTENT ====="
 
           while IFS= read -r file; do
             echo ""
             echo "-----------------------------------------------"
             echo "FILE: $file"
             echo "-----------------------------------------------"
+
             cat "$file"
+
           done < <(
             find android/app/src \
               -type f \
-              \( -name "MainActivity.kt" -o -name "MainActivity.java" \) \
-              -print | sort
+              \( \
+                -name "MainActivity.kt" \
+                -o \
+                -name "MainActivity.java" \
+              \) \
+              -print \
+              | sort
           )
 
       # ==========================================================
-      # 12. Flutter project diagnostics
+      # 12. Diagnose Flutter
       # ==========================================================
       - name: Diagnose Flutter project
         run: |
@@ -278,22 +305,21 @@ jobs:
 
           echo ""
           echo "===== FLUTTER VERSION ====="
+
           flutter --version
 
           echo ""
           echo "===== DART VERSION ====="
+
           dart --version
 
           echo ""
           echo "===== FLUTTER DOCTOR ====="
+
           flutter doctor -v
 
-          echo ""
-          echo "===== FLUTTER CONFIG ====="
-          flutter config
-
       # ==========================================================
-      # 13. Gradle diagnostics
+      # 13. Diagnose Gradle
       # ==========================================================
       - name: Diagnose Gradle configuration
         run: |
@@ -307,6 +333,8 @@ jobs:
 
           if [ -f android/settings.gradle ]; then
             cat android/settings.gradle
+          else
+            echo "File not found."
           fi
 
           echo ""
@@ -314,6 +342,8 @@ jobs:
 
           if [ -f android/settings.gradle.kts ]; then
             cat android/settings.gradle.kts
+          else
+            echo "File not found."
           fi
 
           echo ""
@@ -321,6 +351,8 @@ jobs:
 
           if [ -f android/build.gradle ]; then
             cat android/build.gradle
+          else
+            echo "File not found."
           fi
 
           echo ""
@@ -328,6 +360,8 @@ jobs:
 
           if [ -f android/build.gradle.kts ]; then
             cat android/build.gradle.kts
+          else
+            echo "File not found."
           fi
 
           echo ""
@@ -335,6 +369,8 @@ jobs:
 
           if [ -f android/app/build.gradle ]; then
             cat android/app/build.gradle
+          else
+            echo "File not found."
           fi
 
           echo ""
@@ -342,10 +378,12 @@ jobs:
 
           if [ -f android/app/build.gradle.kts ]; then
             cat android/app/build.gradle.kts
+          else
+            echo "File not found."
           fi
 
       # ==========================================================
-      # 14. AndroidX
+      # 14. Configure AndroidX
       # ==========================================================
       - name: Configure AndroidX
         run: |
@@ -363,6 +401,7 @@ jobs:
 
           echo ""
           echo "===== android/gradle.properties ====="
+
           cat android/gradle.properties
 
       # ==========================================================
@@ -373,21 +412,21 @@ jobs:
           flutter clean
 
       # ==========================================================
-      # 16. Pub get
+      # 16. Flutter pub get
       # ==========================================================
       - name: Flutter pub get
         run: |
           flutter pub get
 
       # ==========================================================
-      # 17. Analyze
+      # 17. Flutter analyze
       # ==========================================================
       - name: Flutter analyze
         run: |
           flutter analyze
 
       # ==========================================================
-      # 18. FINAL diagnostics immediately before build
+      # 18. Final Android embedding diagnostics
       # ==========================================================
       - name: Final Android embedding diagnostics
         run: |
@@ -397,28 +436,32 @@ jobs:
           echo "=================================================="
 
           echo ""
-          echo "===== ALL MANIFESTS ====="
+          echo "===== ALL ANDROID MANIFESTS ====="
 
           find android \
             -type f \
             -name "AndroidManifest.xml" \
-            -print | sort
+            -print \
+            | sort
 
           while IFS= read -r file; do
             echo ""
             echo "-----------------------------------------------"
             echo "FILE: $file"
             echo "-----------------------------------------------"
+
             cat "$file"
+
           done < <(
             find android \
               -type f \
               -name "AndroidManifest.xml" \
-              -print | sort
+              -print \
+              | sort
           )
 
           echo ""
-          echo "===== V1 SEARCH ====="
+          echo "===== FLUTTER V1 SEARCH ====="
 
           grep -Rni \
             --exclude-dir=.gradle \
@@ -427,7 +470,7 @@ jobs:
             android 2>/dev/null || true
 
           echo ""
-          echo "===== EMBEDDING SEARCH ====="
+          echo "===== FLUTTER EMBEDDING SEARCH ====="
 
           grep -Rni \
             --exclude-dir=.gradle \
@@ -436,21 +479,109 @@ jobs:
             android 2>/dev/null || true
 
           echo ""
-          echo "===== MAIN ACTIVITY ====="
+          echo "===== MAIN ACTIVITY SEARCH ====="
 
           find android/app/src \
             -type f \
-            \( -name "MainActivity.kt" -o -name "MainActivity.java" \) \
-            -print | sort
+            \( \
+              -name "MainActivity.kt" \
+              -o \
+              -name "MainActivity.java" \
+            \) \
+            -print \
+            | sort
 
           echo ""
           echo "=================================================="
-          echo "END OF DIAGNOSTICS"
+          echo "END OF FINAL DIAGNOSTICS"
           echo "=================================================="
 
       # ==========================================================
-      # 19. Build APK
+      # 19. Verbose APK build
       # ==========================================================
-      - name: Build release APK
+      - name: Build release APK - verbose diagnostics
+        shell: bash
         run: |
-          flutter build apk --release
+          set +e
+
+          echo ""
+          echo "=================================================="
+          echo "FLUTTER VERBOSE APK BUILD"
+          echo "=================================================="
+
+          flutter build apk --release -v 2>&1 | tee flutter_build.log
+
+          BUILD_EXIT=${PIPESTATUS[0]}
+
+          echo ""
+          echo "=================================================="
+          echo "SEARCHING BUILD LOG"
+          echo "=================================================="
+
+          echo ""
+          echo "--- Android embedding references ---"
+
+          grep -ni -E \
+            "embedding|FlutterActivity|FlutterApplication|AndroidManifest|project.dart|v1|v2" \
+            flutter_build.log \
+            | tail -200 || true
+
+          echo ""
+          echo "--- Manifest references ---"
+
+          grep -ni -E \
+            "AndroidManifest.xml|flutterEmbedding" \
+            flutter_build.log \
+            | tail -100 || true
+
+          echo ""
+          echo "--- Final Flutter error ---"
+
+          grep -ni -E \
+            "Build failed due to use of deleted Android v1 embedding|FAILURE|ERROR|Exception" \
+            flutter_build.log \
+            | tail -100 || true
+
+          echo ""
+          echo "Flutter build exit code: $BUILD_EXIT"
+
+          exit "$BUILD_EXIT"
+
+      # ==========================================================
+      # 20. Upload verbose Flutter build log
+      # ==========================================================
+      - name: Upload Flutter build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-build-diagnostics
+          path: flutter_build.log
+          if-no-files-found: ignore
+
+      # ==========================================================
+      # 21. Verify APK
+      # ==========================================================
+      - name: Verify APK
+        if: success()
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not created."
+            exit 1
+          fi
+
+          echo ""
+          echo "APK successfully created:"
+          ls -lh "$APK"
+
+      # ==========================================================
+      # 22. Upload APK
+      # ==========================================================
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stelluriini-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
