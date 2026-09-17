@@ -36,22 +36,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //
 // Power Boost:
 //
-//   TESTITILA:
-//   ca-app-pub-3940256099942544/5224354917
-//
-// HUOM:
-//
-// Power Boost käyttää tässä tiedostossa väliaikaisesti
-// Googlen virallista Rewarded TEST -mainosyksikköä.
-//
-// Tämän testin tarkoitus on selvittää:
-//
-//   1. Toimiiko RewardedAd Flutterissa?
-//   2. Latautuuko mainos?
-//   3. Näkyykö Rewarded-mainos?
-//   4. Tuleeko onUserEarnedReward?
-//
-// Kun testi on valmis, palautetaan oma tuotanto-ID.
+//   ca-app-pub-1131012057145658/7225738491
 //
 // ============================================================
 //
@@ -74,16 +59,8 @@ class HomeAdManager extends ChangeNotifier {
   // ⚡ POWER BOOST REWARDED AD
   // ============================================================
 
-  // ------------------------------------------------------------
-  // VÄLIAIKAINEN TESTIMAINOS
-  // ------------------------------------------------------------
-  //
-  // Googlen virallinen Rewarded TEST -mainosyksikkö.
-  //
-  // Älä jätä tätä pysyvästi tuotantoon.
-  //
   static const String powerBoostRewardedAdUnitId =
-      'ca-app-pub-3940256099942544/5224354917';
+      'ca-app-pub-1131012057145658/7225738491';
 
   // ============================================================
   // 🔐 SSV PURPOSES
@@ -448,16 +425,6 @@ class HomeAdManager extends ChangeNotifier {
     debugPrint(
       'Ad Unit ID: $adUnitId',
     );
-
-    if (purpose == powerBoostPurpose) {
-      debugPrint(
-        '🐱 POWER BOOST TEST AD ENABLED',
-      );
-
-      debugPrint(
-        'Using Google official Rewarded TEST ad unit.',
-      );
-    }
 
     debugPrint(
       'User UID length: ${user.uid.length}',
