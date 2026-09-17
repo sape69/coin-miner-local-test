@@ -314,6 +314,74 @@ jobs:
           echo "Application name set to Stelluriini."
 
       # ========================================================
+      # VERIFY FLUTTER ANDROID EMBEDDING
+      # ========================================================
+
+      - name: Verify Flutter Android embedding
+        run: |
+          echo "========================================"
+          echo "VERIFYING FLUTTER ANDROID EMBEDDING"
+          echo "========================================"
+
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          MAIN_ACTIVITY="android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt"
+
+          echo ""
+          echo "===== AndroidManifest.xml ====="
+          cat "$MANIFEST"
+
+          echo ""
+          echo "===== MainActivity.kt ====="
+          cat "$MAIN_ACTIVITY"
+
+          echo ""
+          echo "===== Checking flutterEmbedding ====="
+
+          if ! grep -q 'android:name="flutterEmbedding"' "$MANIFEST"; then
+            echo ""
+            echo "ERROR: flutterEmbedding metadata was not found."
+            exit 1
+          fi
+
+          if ! grep -q 'android:value="2"' "$MANIFEST"; then
+            echo ""
+            echo "ERROR: flutterEmbedding is not set to value 2."
+            exit 1
+          fi
+
+          echo ""
+          echo "flutterEmbedding = 2 FOUND."
+
+          echo ""
+          echo "===== Checking for Android v1 FlutterApplication ====="
+
+          if grep -q 'io.flutter.app.FlutterApplication' "$MANIFEST"; then
+            echo ""
+            echo "ERROR: Old FlutterApplication v1 embedding found."
+            exit 1
+          fi
+
+          echo ""
+          echo "No old FlutterApplication found."
+
+          echo ""
+          echo "===== Checking MainActivity embedding ====="
+
+          if ! grep -q 'io.flutter.embedding.android.FlutterActivity' "$MAIN_ACTIVITY"; then
+            echo ""
+            echo "ERROR: MainActivity is not using Flutter v2 embedding."
+            exit 1
+          fi
+
+          echo ""
+          echo "MainActivity uses Flutter v2 embedding."
+
+          echo ""
+          echo "========================================"
+          echo "FLUTTER ANDROID EMBEDDING VERIFIED"
+          echo "========================================"
+
+      # ========================================================
       # ANDROIDX
       # ========================================================
 
