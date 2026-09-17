@@ -98,7 +98,9 @@ async function getAdMobPublicKeys(forceRefresh = false) {
   const data = await fetchJson(ADMOB_SSV_KEYS_URL);
 
   if (!data || !Array.isArray(data.keys)) {
-    throw new Error("AdMob public key response is invalid.");
+    throw new Error(
+      "AdMob public key response is invalid.",
+    );
   }
 
   const keys = new Map();
@@ -115,18 +117,110 @@ async function getAdMobPublicKeys(forceRefresh = false) {
   }
 
   if (keys.size === 0) {
-    throw new Error("No usable AdMob public keys were returned.");
+    throw new Error(
+      "No usable AdMob public keys were returned.",
+    );
   }
 
   cachedPublicKeys = keys;
   cachedPublicKeysAt = now;
 
-  console.log("🐱 AdMob public keys loaded:", {
-    count: keys.size,
-    keyIds: Array.from(keys.keys()),
-  });
+  console.log(
+    "🐱 AdMob public keys loaded:",
+    {
+      count: keys.size,
+      keyIds: Array.from(keys.keys()),
+    },
+  );
 
   return keys;
+}
+
+// ============================================================
+// Query diagnostic helper
+// ============================================================
+
+function sha256(value) {
+  return crypto
+    .createHash("sha256")
+    .update(value, "utf8")
+    .digest("hex");
+}
+
+/**
+ * Logs only safe diagnostics about the incoming URL.
+ *
+ * IMPORTANT:
+ * We intentionally DO NOT print the complete URL because
+ * the query contains UID/custom data/signature information.
+ *
+ * These hashes allow us to determine whether Firebase/Express
+ * changes the query string before signature verification.
+ */
+function logRawQueryDiagnostics(req) {
+  const sources = [];
+
+  if (typeof req.originalUrl === "string") {
+    sources.push({
+      name: "originalUrl",
+      value: req.originalUrl,
+    });
+  }
+
+  if (typeof req.url === "string") {
+    sources.push({
+      name: "url",
+      value: req.url,
+    });
+  }
+
+  if (typeof req.rawUrl === "string") {
+    sources.push({
+      name: "rawUrl",
+      value: req.rawUrl,
+    });
+  }
+
+  const diagnostics = {};
+
+  for (const source of sources) {
+    const questionMark =
+      source.value.indexOf("?");
+
+    const query =
+      questionMark >= 0
+        ? source.value.substring(questionMark + 1)
+        : "";
+
+    diagnostics[source.name] = {
+      totalLength: source.value.length,
+      queryLength: query.length,
+      querySha256: query
+        ? sha256(query)
+        : null,
+    };
+  }
+
+  if (
+    typeof req.originalUrl === "string" &&
+    typeof req.url === "string"
+  ) {
+    diagnostics.originalUrlEqualsUrl =
+      req.originalUrl === req.url;
+  }
+
+  if (
+    typeof req.originalUrl === "string" &&
+    typeof req.rawUrl === "string"
+  ) {
+    diagnostics.originalUrlEqualsRawUrl =
+      req.originalUrl === req.rawUrl;
+  }
+
+  console.log(
+    "🐱🔎 AdMob SSV URL diagnostics:",
+    diagnostics,
+  );
 }
 
 // ============================================================
@@ -143,27 +237,51 @@ async function getAdMobPublicKeys(forceRefresh = false) {
  */
 function getRawQueryString(req) {
   if (!req) {
-    throw new Error("Missing HTTP request.");
+    throw new Error(
+      "Missing HTTP request.",
+    );
   }
+
+  // Diagnostic information only.
+  logRawQueryDiagnostics(req);
 
   // Express normally preserves the original URL here.
   if (typeof req.originalUrl === "string") {
-    const questionMark = req.originalUrl.indexOf("?");
+    const questionMark =
+      req.originalUrl.indexOf("?");
 
     if (questionMark >= 0) {
-      return req.originalUrl.substring(questionMark + 1);
+      return req.originalUrl.substring(
+        questionMark + 1,
+      );
     }
   }
 
   if (typeof req.url === "string") {
-    const questionMark = req.url.indexOf("?");
+    const questionMark =
+      req.url.indexOf("?");
 
     if (questionMark >= 0) {
-      return req.url.substring(questionMark + 1);
+      return req.url.substring(
+        questionMark + 1,
+      );
     }
   }
 
-  throw new Error("AdMob SSV query string is missing.");
+  if (typeof req.rawUrl === "string") {
+    const questionMark =
+      req.rawUrl.indexOf("?");
+
+    if (questionMark >= 0) {
+      return req.rawUrl.substring(
+        questionMark + 1,
+      );
+    }
+  }
+
+  throw new Error(
+    "AdMob SSV query string is missing.",
+  );
 }
 
 // ============================================================
@@ -171,8 +289,13 @@ function getRawQueryString(req) {
 // ============================================================
 
 function decodeAdMobSignature(signature) {
-  if (!signature || typeof signature !== "string") {
-    throw new Error("AdMob SSV signature is missing.");
+  if (
+    !signature ||
+    typeof signature !== "string"
+  ) {
+    throw new Error(
+      "AdMob SSV signature is missing.",
+    );
   }
 
   // AdMob uses URL-safe Base64.
@@ -180,14 +303,19 @@ function decodeAdMobSignature(signature) {
     .replace(/-/g, "+")
     .replace(/_/g, "/");
 
-  const padding = normalized.length % 4;
+  const padding =
+    normalized.length % 4;
 
   const padded =
     padding === 0
       ? normalized
-      : normalized + "=".repeat(4 - padding);
+      : normalized +
+        "=".repeat(4 - padding);
 
-  return Buffer.from(padded, "base64");
+  return Buffer.from(
+    padded,
+    "base64",
+  );
 }
 
 // ============================================================
@@ -195,11 +323,16 @@ function decodeAdMobSignature(signature) {
 // ============================================================
 
 async function verifyAdMobSignature(req) {
-  const rawQueryString = getRawQueryString(req);
+  const rawQueryString =
+    getRawQueryString(req);
 
-  console.log("🐱🔐 AdMob SSV raw query received.", {
-    length: rawQueryString.length,
-  });
+  console.log(
+    "🐱🔐 AdMob SSV raw query received.",
+    {
+      length: rawQueryString.length,
+      sha256: sha256(rawQueryString),
+    },
+  );
 
   /**
    * Google's SSV format always puts:
@@ -213,9 +346,13 @@ async function verifyAdMobSignature(req) {
    * We MUST verify the exact bytes before &signature=.
    */
 
-  const signatureMarker = "&signature=";
+  const signatureMarker =
+    "&signature=";
 
-  const signatureIndex = rawQueryString.indexOf(signatureMarker);
+  const signatureIndex =
+    rawQueryString.indexOf(
+      signatureMarker,
+    );
 
   if (signatureIndex === -1) {
     throw new Error(
@@ -224,7 +361,10 @@ async function verifyAdMobSignature(req) {
   }
 
   const signedQueryString =
-    rawQueryString.substring(0, signatureIndex);
+    rawQueryString.substring(
+      0,
+      signatureIndex,
+    );
 
   const signatureAndKeyId =
     rawQueryString.substring(
@@ -232,13 +372,19 @@ async function verifyAdMobSignature(req) {
     );
 
   const signatureParams =
-    new URLSearchParams(signatureAndKeyId);
+    new URLSearchParams(
+      signatureAndKeyId,
+    );
 
   const signature =
-    signatureParams.get("signature");
+    signatureParams.get(
+      "signature",
+    );
 
   const keyId =
-    signatureParams.get("key_id");
+    signatureParams.get(
+      "key_id",
+    );
 
   if (!signature) {
     throw new Error(
@@ -252,14 +398,23 @@ async function verifyAdMobSignature(req) {
     );
   }
 
-  console.log("🐱🔐 AdMob SSV signature information:", {
-    keyId,
-    signedLength: signedQueryString.length,
-    signatureLength: signature.length,
-  });
+  console.log(
+    "🐱🔐 AdMob SSV signature information:",
+    {
+      keyId,
+      signedLength:
+        signedQueryString.length,
+      signedSha256:
+        sha256(signedQueryString),
+      signatureLength:
+        signature.length,
+    },
+  );
 
   const signatureBuffer =
-    decodeAdMobSignature(signature);
+    decodeAdMobSignature(
+      signature,
+    );
 
   /**
    * AdMob uses ECDSA with SHA-256.
@@ -271,10 +426,13 @@ async function verifyAdMobSignature(req) {
     await getAdMobPublicKeys(false);
 
   let publicKey =
-    publicKeys.get(String(keyId));
+    publicKeys.get(
+      String(keyId),
+    );
 
   /**
-   * If the key ID is not in our cached list, refresh once.
+   * If the key ID is not in our cached list,
+   * refresh once.
    *
    * AdMob rotates public keys.
    */
@@ -287,10 +445,14 @@ async function verifyAdMobSignature(req) {
     );
 
     publicKeys =
-      await getAdMobPublicKeys(true);
+      await getAdMobPublicKeys(
+        true,
+      );
 
     publicKey =
-      publicKeys.get(String(keyId));
+      publicKeys.get(
+        String(keyId),
+      );
   }
 
   if (!publicKey) {
@@ -300,7 +462,9 @@ async function verifyAdMobSignature(req) {
   }
 
   const verifier =
-    crypto.createVerify("SHA256");
+    crypto.createVerify(
+      "SHA256",
+    );
 
   /**
    * IMPORTANT:
@@ -332,7 +496,10 @@ async function verifyAdMobSignature(req) {
       "🐱❌ AdMob SSV signature INVALID.",
       {
         keyId,
-        signedLength: signedQueryString.length,
+        signedLength:
+          signedQueryString.length,
+        signedSha256:
+          sha256(signedQueryString),
       },
     );
 
@@ -352,7 +519,9 @@ async function verifyAdMobSignature(req) {
    * Only parse parameters AFTER signature verification.
    */
   const params =
-    new URLSearchParams(rawQueryString);
+    new URLSearchParams(
+      rawQueryString,
+    );
 
   return {
     verified: true,
@@ -368,17 +537,25 @@ async function verifyAdMobSignature(req) {
 // ============================================================
 
 function getParam(params, name) {
-  const value = params.get(name);
+  const value =
+    params.get(name);
 
-  if (value === null || value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return "";
   }
 
   return value;
 }
 
-function parseInteger(value, fallback = 0) {
-  const number = Number(value);
+function parseInteger(
+  value,
+  fallback = 0,
+) {
+  const number =
+    Number(value);
 
   if (!Number.isFinite(number)) {
     return fallback;
@@ -392,7 +569,10 @@ function parseInteger(value, fallback = 0) {
 // ============================================================
 
 function parseCustomData(customData) {
-  if (!customData || typeof customData !== "string") {
+  if (
+    !customData ||
+    typeof customData !== "string"
+  ) {
     return {
       uid: "",
       rewardPurpose: "",
@@ -424,11 +604,16 @@ function parseCustomData(customData) {
 
   return {
     uid: decoded
-      .substring(0, separator)
+      .substring(
+        0,
+        separator,
+      )
       .trim(),
 
     rewardPurpose: decoded
-      .substring(separator + 1)
+      .substring(
+        separator + 1,
+      )
       .trim(),
   };
 }
@@ -438,7 +623,9 @@ function parseCustomData(customData) {
 // ============================================================
 
 async function verifyAdMobCallback(req) {
-  console.log("🐱🔐 Verifying AdMob SSV callback...");
+  console.log(
+    "🐱🔐 Verifying AdMob SSV callback...",
+  );
 
   const verification =
     await verifyAdMobSignature(req);
@@ -447,31 +634,57 @@ async function verifyAdMobCallback(req) {
     verification.params;
 
   const adNetwork =
-    getParam(params, "ad_network");
+    getParam(
+      params,
+      "ad_network",
+    );
 
   const adUnit =
-    getParam(params, "ad_unit");
+    getParam(
+      params,
+      "ad_unit",
+    );
 
   const customData =
-    getParam(params, "custom_data");
+    getParam(
+      params,
+      "custom_data",
+    );
 
   const rewardAmount =
-    getParam(params, "reward_amount");
+    getParam(
+      params,
+      "reward_amount",
+    );
 
   const rewardItem =
-    getParam(params, "reward_item");
+    getParam(
+      params,
+      "reward_item",
+    );
 
   const timestamp =
-    getParam(params, "timestamp");
+    getParam(
+      params,
+      "timestamp",
+    );
 
   const transactionId =
-    getParam(params, "transaction_id");
+    getParam(
+      params,
+      "transaction_id",
+    );
 
   const userId =
-    getParam(params, "user_id");
+    getParam(
+      params,
+      "user_id",
+    );
 
   const parsedCustomData =
-    parseCustomData(customData);
+    parseCustomData(
+      customData,
+    );
 
   const uid =
     parsedCustomData.uid;
@@ -479,25 +692,31 @@ async function verifyAdMobCallback(req) {
   const rewardPurpose =
     parsedCustomData.rewardPurpose;
 
-  console.log("🐱 AdMob SSV verified parameters:", {
-    adNetwork,
-    adUnit,
-    rewardAmount,
-    rewardItem,
-    timestamp,
-    transactionId,
-    userId,
-    rewardPurpose,
-    hasCustomData: Boolean(customData),
-  });
+  console.log(
+    "🐱 AdMob SSV verified parameters:",
+    {
+      adNetwork,
+      adUnit,
+      rewardAmount,
+      rewardItem,
+      timestamp,
+      transactionId,
+      userId,
+      rewardPurpose,
+      hasCustomData:
+        Boolean(customData),
+    },
+  );
 
   // ==========================================================
   // Purpose validation
   // ==========================================================
 
   if (
-    rewardPurpose !== "mining_start" &&
-    rewardPurpose !== "power_boost"
+    rewardPurpose !==
+      "mining_start" &&
+    rewardPurpose !==
+      "power_boost"
   ) {
     throw new Error(
       `Invalid AdMob reward purpose: ${rewardPurpose}`,
@@ -519,7 +738,9 @@ async function verifyAdMobCallback(req) {
   // ==========================================================
 
   const expectedAdUnit =
-    ADMOB_AD_UNITS[rewardPurpose];
+    ADMOB_AD_UNITS[
+      rewardPurpose
+    ];
 
   if (!expectedAdUnit) {
     throw new Error(
@@ -527,7 +748,9 @@ async function verifyAdMobCallback(req) {
     );
   }
 
-  if (adUnit !== expectedAdUnit) {
+  if (
+    adUnit !== expectedAdUnit
+  ) {
     throw new Error(
       `Invalid AdMob ad unit. Expected ${expectedAdUnit}, received ${adUnit}.`,
     );
@@ -538,11 +761,15 @@ async function verifyAdMobCallback(req) {
   // ==========================================================
 
   const rewardDefinition =
-    REWARD_DEFINITIONS[rewardPurpose];
+    REWARD_DEFINITIONS[
+      rewardPurpose
+    ];
 
   if (
     rewardAmount !==
-    String(rewardDefinition.rewardAmount)
+    String(
+      rewardDefinition.rewardAmount,
+    )
   ) {
     throw new Error(
       `Invalid AdMob reward amount. Expected ${rewardDefinition.rewardAmount}, received ${rewardAmount}.`,
@@ -572,7 +799,11 @@ async function verifyAdMobCallback(req) {
    * Google documents transaction_id as a unique
    * hex-encoded reward identifier.
    */
-  if (!/^[a-fA-F0-9]+$/.test(transactionId)) {
+  if (
+    !/^[a-fA-F0-9]+$/.test(
+      transactionId,
+    )
+  ) {
     throw new Error(
       "AdMob transaction_id is not valid hexadecimal.",
     );
@@ -586,7 +817,9 @@ async function verifyAdMobCallback(req) {
     Number(timestamp);
 
   if (
-    !Number.isFinite(timestampMs) ||
+    !Number.isFinite(
+      timestampMs,
+    ) ||
     timestampMs <= 0
   ) {
     throw new Error(
@@ -598,7 +831,9 @@ async function verifyAdMobCallback(req) {
     Date.now();
 
   const ageMs =
-    Math.abs(now - timestampMs);
+    Math.abs(
+      now - timestampMs,
+    );
 
   const maxAgeMs =
     24 * 60 * 60 * 1000;
@@ -654,7 +889,9 @@ async function verifyAdMobCallback(req) {
     adNetwork,
 
     rewardAmount:
-      parseInteger(rewardAmount),
+      parseInteger(
+        rewardAmount,
+      ),
 
     rewardItem,
 
