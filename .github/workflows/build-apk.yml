@@ -8,21 +8,24 @@ on:
 
 jobs:
   build:
-    name: Build Stelluriini Android APK
+    name: Build Android APK
     runs-on: ubuntu-latest
 
-    steps:
-      # ========================================================
-      # CHECKOUT
-      # ========================================================
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Checkout
+    steps:
+
+      # ==========================================================
+      # 1. Checkout
+      # ==========================================================
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ========================================================
-      # FLUTTER
-      # ========================================================
-
+      # ==========================================================
+      # 2. Flutter
+      # ==========================================================
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -30,343 +33,300 @@ jobs:
           channel: stable
           cache: true
 
-      # ========================================================
-      # JAVA 17
-      # ========================================================
-
+      # ==========================================================
+      # 3. Java
+      # ==========================================================
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # ========================================================
-      # ANDROID SDK
+      # ==========================================================
+      # 4. Android SDK
       #
-      # ÄLÄ käytä android-actions/setup-android@v3:
-      # se yrittää tässä ympäristössä hakea vanhaa "tools"
-      # pakettia, jota nykyinen SDK ei enää tarjoa.
-      # ========================================================
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.1
-
-      # ========================================================
-      # ACCEPT ANDROID LICENSES
-      # ========================================================
-
-      - name: Accept Android SDK licenses
+      # IMPORTANT:
+      # Do NOT use android-actions/setup-android@v3.
+      # It may try to install the obsolete "tools" package.
+      # ==========================================================
+      - name: Verify Android SDK
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME"
 
-      # ========================================================
-      # VERIFY FLUTTER PROJECT
-      # ========================================================
+          if [ ! -d "$ANDROID_SDK_ROOT" ]; then
+            echo "ERROR: Android SDK directory not found."
+            exit 1
+          fi
 
-      - name: Verify Flutter project
+          if [ ! -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "ERROR: sdkmanager not found."
+            find "$ANDROID_SDK_ROOT/cmdline-tools" -maxdepth 3 -type f -name sdkmanager -print || true
+            exit 1
+          fi
+
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --version
+
+      # ==========================================================
+      # 5. Install required Android SDK packages
+      # ==========================================================
+      - name: Install Android SDK packages
         run: |
-          echo "========================================"
-          echo "VERIFY FLUTTER PROJECT"
-          echo "========================================"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
 
-          test -f pubspec.yaml
-          test -d lib
-          test -d android
+          echo "Accepting Android SDK licenses..."
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
 
-          echo "Flutter project FOUND."
+          echo "Installing required Android SDK packages..."
+          "$SDKMANAGER" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.1"
 
-      # ========================================================
-      # FIREBASE CHECK
-      # ========================================================
+      # ==========================================================
+      # 6. Verify Flutter Android project
+      # ==========================================================
+      - name: Verify Flutter Android project
+        run: |
+          echo "Checking Android project..."
 
+          test -f android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt
+          test -f android/app/build.gradle
+          test -f android/build.gradle
+
+          echo "Android project files found."
+
+      # ==========================================================
+      # 7. Verify Firebase configuration
+      # ==========================================================
       - name: Verify Firebase configuration
         run: |
-          echo "========================================"
-          echo "VERIFY FIREBASE"
-          echo "========================================"
-
-          if [ -f "android/app/google-services.json" ]; then
-            echo "google-services.json FOUND."
-          else
-            echo "ERROR: google-services.json NOT FOUND."
+          if [ ! -f android/app/google-services.json ]; then
+            echo "ERROR: android/app/google-services.json not found."
             exit 1
           fi
 
-      # ========================================================
-      # STELLA ASSETS CHECK
-      # ========================================================
+          echo "Firebase configuration found."
 
-      - name: Verify Stelluriini assets
+      # ==========================================================
+      # 8. Verify application assets
+      # ==========================================================
+      - name: Verify application assets
         run: |
-          echo "========================================"
-          echo "VERIFY STELLURIINI ASSETS"
-          echo "========================================"
-
           if [ -d "assets" ]; then
-            echo "assets folder FOUND."
+            echo "Assets directory found."
+            find assets -maxdepth 2 -type f | head -50
           else
-            echo "WARNING: assets folder NOT FOUND."
+            echo "No assets directory found."
           fi
 
-      # ========================================================
-      # MAIN ACTIVITY CHECK
-      # ========================================================
-
-      - name: Verify MainActivity
+      # ==========================================================
+      # 9. Verify MainActivity uses Flutter V2 embedding
+      # ==========================================================
+      - name: Verify MainActivity Flutter V2 embedding
         run: |
-          echo "========================================"
-          echo "VERIFY MAIN ACTIVITY"
-          echo "========================================"
-
           MAIN_ACTIVITY="android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt"
 
-          if [ ! -f "$MAIN_ACTIVITY" ]; then
-            echo "ERROR: MainActivity.kt NOT FOUND."
-            exit 1
-          fi
-
-          echo ""
           echo "===== MainActivity.kt ====="
           cat "$MAIN_ACTIVITY"
+          echo "==========================="
 
-          echo ""
-
-          if grep -q 'io.flutter.embedding.android.FlutterActivity' "$MAIN_ACTIVITY"; then
-            echo "FlutterActivity v2 FOUND."
-          else
-            echo "ERROR: FlutterActivity v2 NOT FOUND."
+          if ! grep -q "io.flutter.embedding.android.FlutterActivity" "$MAIN_ACTIVITY"; then
+            echo "ERROR: MainActivity does not use Flutter V2 embedding."
             exit 1
           fi
 
-          echo "MainActivity check PASSED."
+          if grep -q "io.flutter.app.FlutterActivity" "$MAIN_ACTIVITY"; then
+            echo "ERROR: Old Flutter V1 embedding detected."
+            exit 1
+          fi
 
-      # ========================================================
-      # ANDROID MANIFEST CHECK
-      # ========================================================
+          echo "Flutter V2 MainActivity verified."
 
-      - name: Verify Android Manifest
+      # ==========================================================
+      # 10. Verify AndroidManifest Flutter V2 embedding
+      # ==========================================================
+      - name: Verify AndroidManifest Flutter V2 embedding
         run: |
-          echo "========================================"
-          echo "VERIFY ANDROID MANIFEST"
-          echo "========================================"
-
           MANIFEST="android/app/src/main/AndroidManifest.xml"
 
-          if [ ! -f "$MANIFEST" ]; then
-            echo "ERROR: AndroidManifest.xml NOT FOUND."
-            exit 1
-          fi
-
-          echo ""
-          echo "Manifest path:"
-          realpath "$MANIFEST"
-
-          echo ""
           echo "===== AndroidManifest.xml ====="
           cat "$MANIFEST"
+          echo "================================"
 
-          echo ""
-          echo "===== flutterEmbedding ====="
-
-          grep -n -C 3 "flutterEmbedding" "$MANIFEST" || true
-
-          echo ""
-          echo "===== Embedding checks ====="
-
-          if grep -q 'flutterEmbedding' "$MANIFEST"; then
-            echo "flutterEmbedding text FOUND."
-          else
-            echo "ERROR: flutterEmbedding text NOT FOUND."
+          if ! grep -q "flutterEmbedding" "$MANIFEST"; then
+            echo "ERROR: flutterEmbedding metadata not found."
             exit 1
           fi
 
-          if grep -q 'android:value="2"' "$MANIFEST"; then
-            echo "flutterEmbedding value 2 FOUND."
-          else
-            echo "ERROR: flutterEmbedding value 2 NOT FOUND."
+          if ! grep -q 'android:value="2"' "$MANIFEST"; then
+            echo "ERROR: Flutter V2 embedding value not found."
             exit 1
           fi
 
-          if grep -q 'io.flutter.app.FlutterApplication' "$MANIFEST"; then
-            echo "ERROR: Old FlutterApplication FOUND."
+          if grep -q "io.flutter.app.FlutterApplication" "$MANIFEST"; then
+            echo "ERROR: Old Flutter V1 application detected."
             exit 1
-          else
-            echo "No old FlutterApplication found."
           fi
 
-          echo ""
-          echo "Android Manifest check PASSED."
+          echo "Flutter V2 AndroidManifest verified."
 
-      # ========================================================
-      # ANDROIDX
-      # ========================================================
-
+      # ==========================================================
+      # 11. Configure AndroidX
+      # ==========================================================
       - name: Configure AndroidX
         run: |
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
+          mkdir -p android/gradle
 
-      # ========================================================
-      # FLUTTER CLEAN
-      # ========================================================
+          if [ -f android/gradle.properties ]; then
+            echo "Existing android/gradle.properties found."
+          else
+            touch android/gradle.properties
+          fi
 
+          if ! grep -q "^android.useAndroidX=true" android/gradle.properties; then
+            echo "android.useAndroidX=true" >> android/gradle.properties
+          fi
+
+          if ! grep -q "^android.enableJetifier=true" android/gradle.properties; then
+            echo "android.enableJetifier=true" >> android/gradle.properties
+          fi
+
+          echo "===== android/gradle.properties ====="
+          cat android/gradle.properties
+          echo "======================================"
+
+      # ==========================================================
+      # 12. Flutter clean
+      # ==========================================================
       - name: Flutter clean
         run: |
           flutter clean
 
-      # ========================================================
-      # PUB GET
-      # ========================================================
-
+      # ==========================================================
+      # 13. Flutter pub get
+      # ==========================================================
       - name: Flutter pub get
         run: |
           flutter pub get
 
-      # ========================================================
-      # LAUNCHER ICONS
-      # ========================================================
-
+      # ==========================================================
+      # 14. Generate launcher icons
+      # ==========================================================
       - name: Generate launcher icons
         run: |
-          dart run flutter_launcher_icons
-
-      # ========================================================
-      # REMOVE TEMPORARY TEST PAGE
-      # ========================================================
-
-      - name: Remove temporary test pages
-        run: |
-          if [ -f "lib/pages/minimal_test_page.dart" ]; then
-            echo "Removing temporary MinimalTestPage..."
-            rm -f "lib/pages/minimal_test_page.dart"
+          if grep -q "flutter_launcher_icons" pubspec.yaml; then
+            dart run flutter_launcher_icons
+          else
+            echo "flutter_launcher_icons not configured."
           fi
 
-      # ========================================================
-      # FLUTTER ANALYZE
-      # ========================================================
+      # ==========================================================
+      # 15. Remove temporary test pages if present
+      # ==========================================================
+      - name: Remove temporary test pages
+        run: |
+          rm -f lib/pages/minimal_test_page.dart
+          rm -f lib/minimal_test_page.dart
+          rm -f lib/pages/home/minimal_test_page.dart
 
+          echo "Temporary test pages removed if they existed."
+
+      # ==========================================================
+      # 16. Flutter analyze
+      # ==========================================================
       - name: Flutter analyze
         run: |
           flutter analyze
 
-      # ========================================================
-      # FINAL ANDROID EMBEDDING CHECK
-      # ========================================================
-
-      - name: Final Android embedding check
+      # ==========================================================
+      # 17. FINAL Android V2 embedding check
+      #
+      # This is intentionally immediately before the build.
+      # It tells us exactly what Flutter sees at build time.
+      # ==========================================================
+      - name: Final Flutter V2 embedding check
         run: |
-          echo "========================================"
-          echo "FINAL ANDROID EMBEDDING CHECK"
-          echo "========================================"
-
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           MAIN_ACTIVITY="android/app/src/main/kotlin/com/example/stelluriini/MainActivity.kt"
 
           echo ""
-          echo "Manifest path:"
-          realpath "$MANIFEST"
+          echo "=================================================="
+          echo "FINAL ANDROID EMBEDDING CHECK"
+          echo "=================================================="
 
           echo ""
-          echo "Manifest exists:"
-          test -f "$MANIFEST"
-
-          echo ""
-          echo "MainActivity exists:"
-          test -f "$MAIN_ACTIVITY"
-
-          echo ""
-          echo "===== FINAL AndroidManifest.xml ====="
+          echo "--- AndroidManifest.xml ---"
           cat "$MANIFEST"
 
           echo ""
-          echo "===== FINAL MainActivity.kt ====="
+          echo "--- MainActivity.kt ---"
           cat "$MAIN_ACTIVITY"
 
           echo ""
-          echo "===== FINAL flutterEmbedding SEARCH ====="
+          echo "--- Checking manifest ---"
 
-          grep -n -C 3 "flutterEmbedding" "$MANIFEST" || true
-
-          echo ""
-          echo "===== FINAL APPLICATION NAME ====="
-
-          grep -n -C 2 'android:name=' "$MANIFEST" || true
-
-          echo ""
-          echo "===== FINAL EMBEDDING CHECK ====="
-
-          if grep -q 'flutterEmbedding' "$MANIFEST"; then
-            echo "flutterEmbedding text FOUND."
-          else
-            echo "ERROR: flutterEmbedding text NOT FOUND."
+          if ! grep -q "flutterEmbedding" "$MANIFEST"; then
+            echo "ERROR: flutterEmbedding is missing."
             exit 1
           fi
 
-          if grep -q 'android:value="2"' "$MANIFEST"; then
-            echo "flutterEmbedding value 2 FOUND."
-          else
-            echo "ERROR: flutterEmbedding value 2 NOT FOUND."
+          if ! grep -q 'android:value="2"' "$MANIFEST"; then
+            echo "ERROR: flutterEmbedding value 2 is missing."
             exit 1
           fi
 
-          if grep -q 'io.flutter.app.FlutterApplication' "$MANIFEST"; then
-            echo "ERROR: Old FlutterApplication FOUND."
-            exit 1
-          else
-            echo "No old FlutterApplication found."
-          fi
-
-          if grep -q 'io.flutter.embedding.android.FlutterActivity' "$MAIN_ACTIVITY"; then
-            echo "FlutterActivity v2 FOUND."
-          else
-            echo "ERROR: FlutterActivity v2 NOT FOUND."
+          if grep -q "io.flutter.app.FlutterApplication" "$MANIFEST"; then
+            echo "ERROR: Flutter V1 application detected."
             exit 1
           fi
 
           echo ""
-          echo "========================================"
-          echo "FINAL ANDROID EMBEDDING CHECK PASSED"
-          echo "========================================"
+          echo "--- Checking MainActivity ---"
 
-      # ========================================================
-      # BUILD APK
-      # ========================================================
+          if ! grep -q "io.flutter.embedding.android.FlutterActivity" "$MAIN_ACTIVITY"; then
+            echo "ERROR: Flutter V2 FlutterActivity not found."
+            exit 1
+          fi
 
-      - name: Build Stelluriini APK
+          if grep -q "io.flutter.app.FlutterActivity" "$MAIN_ACTIVITY"; then
+            echo "ERROR: Flutter V1 FlutterActivity detected."
+            exit 1
+          fi
+
+          echo ""
+          echo "FINAL EMBEDDING CHECK PASSED."
+          echo "=================================================="
+
+      # ==========================================================
+      # 18. Build APK
+      # ==========================================================
+      - name: Build release APK
         run: |
           flutter build apk --release
 
-      # ========================================================
-      # VERIFY APK
-      # ========================================================
-
+      # ==========================================================
+      # 19. Verify APK
+      # ==========================================================
       - name: Verify APK
         run: |
-          echo "========================================"
-          echo "VERIFY APK"
-          echo "========================================"
-
           APK="build/app/outputs/flutter-apk/app-release.apk"
 
-          if [ -f "$APK" ]; then
-            ls -lh "$APK"
-            echo "APK FOUND."
-          else
-            echo "ERROR: APK NOT FOUND."
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not created."
             exit 1
           fi
 
-      # ========================================================
-      # UPLOAD APK
-      # ========================================================
+          echo "APK successfully created:"
+          ls -lh "$APK"
 
+      # ==========================================================
+      # 20. Upload APK
+      # ==========================================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: stelluriini-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
