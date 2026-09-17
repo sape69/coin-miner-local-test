@@ -572,14 +572,44 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # 18. Flutter analyze
+      # 18. Generate Stelluriini app icon
+      # ==========================================================
+      - name: Generate Stelluriini app icon
+        run: |
+          echo ""
+          echo "=================================================="
+          echo "GENERATING STELLURIINI APP ICON"
+          echo "=================================================="
+
+          echo ""
+          echo "Checking logo asset..."
+
+          if [ ! -f assets/images/stelluriini_logo.png ]; then
+            echo "ERROR: Stelluriini logo was not found:"
+            echo "assets/images/stelluriini_logo.png"
+            exit 1
+          fi
+
+          echo "Logo found:"
+          ls -lh assets/images/stelluriini_logo.png
+
+          echo ""
+          echo "Running flutter_launcher_icons..."
+
+          dart run flutter_launcher_icons
+
+          echo ""
+          echo "Stelluriini app icon generation completed."
+
+      # ==========================================================
+      # 19. Flutter analyze
       # ==========================================================
       - name: Flutter analyze
         run: |
           flutter analyze
 
       # ==========================================================
-      # 19. FINAL EXACT EMBEDDING CHECK
+      # 20. FINAL EXACT EMBEDDING CHECK
       # ==========================================================
       - name: Final exact embedding check
         shell: bash
@@ -624,7 +654,7 @@ jobs:
           echo "Final exact check passed."
 
       # ==========================================================
-      # 20. Verbose APK build
+      # 21. Verbose APK build
       # ==========================================================
       - name: Build release APK - verbose diagnostics
         shell: bash
@@ -675,7 +705,7 @@ jobs:
           exit "$BUILD_EXIT"
 
       # ==========================================================
-      # 21. Upload verbose build log
+      # 22. Upload verbose build log
       # ==========================================================
       - name: Upload Flutter build diagnostics
         if: always()
@@ -686,7 +716,7 @@ jobs:
           if-no-files-found: ignore
 
       # ==========================================================
-      # 22. Verify APK
+      # 23. Verify APK
       # ==========================================================
       - name: Verify APK
         if: success()
@@ -703,7 +733,7 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 23. Upload APK
+      # 24. Upload APK
       # ==========================================================
       - name: Upload APK
         if: success()
