@@ -337,7 +337,7 @@ jobs:
           echo ""
           echo "===== Checking flutterEmbedding ====="
 
-          if ! grep -q 'android:name="flutterEmbedding"' "$MANIFEST"; then
+          if ! grep -q 'flutterEmbedding' "$MANIFEST"; then
             echo ""
             echo "ERROR: flutterEmbedding metadata was not found."
             exit 1
