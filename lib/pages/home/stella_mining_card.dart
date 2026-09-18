@@ -80,9 +80,6 @@ class _StellaMiningCardState
   static const Color backgroundColor =
       Color(0xFF120B24);
 
-  static const Color cardColor =
-      Color(0xFF21113B);
-
   static const Color accentColor =
       Color(0xFFB58CFF);
 
