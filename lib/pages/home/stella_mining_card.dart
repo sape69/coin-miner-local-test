@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import 'mining_progress_card.dart';
@@ -31,18 +29,16 @@ class StellaMiningCard extends StatefulWidget {
   final int dailyStreak;
 
   // ------------------------------------------------------------
-  // Mining-painike
+  // ⚡ POWER BOOST
   // ------------------------------------------------------------
-  final Widget miningButton;
-
-  // ------------------------------------------------------------
-  // 🐾 POWER BOOST
-  // ------------------------------------------------------------
-  // Kun arvo muuttuu false -> true, bonus-animaatio käynnistyy.
   final bool boostActive;
 
-  // Teksti näytetään bonusanimaation aikana.
-  final String boostLabel;
+  // ------------------------------------------------------------
+  // Mining-painike
+  // ------------------------------------------------------------
+  // HomePage rakentaa varsinaisen painikkeen ja sen toiminnallisuuden.
+  // StellaMiningCard vain sijoittaa sen oikeaan kohtaan käyttöliittymässä.
+  final Widget miningButton;
 
   static const Color backgroundColor = Color(0xFF120B24);
   static const Color cardColor = Color(0xFF21113B);
@@ -68,11 +64,8 @@ class StellaMiningCard extends StatefulWidget {
     required this.dailyHashRateText,
     required this.dailyHashRateDayText,
     required this.dailyStreak,
+    required this.boostActive,
     required this.miningButton,
-
-    // Power Boost
-    this.boostActive = false,
-    this.boostLabel = 'POWER BOOST!',
   });
 
   @override
@@ -81,67 +74,152 @@ class StellaMiningCard extends StatefulWidget {
 }
 
 // ============================================================
-// 🐱 STATE
+// 🐱 STELLA MINING CARD STATE
 // ============================================================
 
-class _StellaMiningCardState extends State<StellaMiningCard>
+class _StellaMiningCardState
+    extends State<StellaMiningCard>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _boostController;
+  // ============================================================
+  // ⚡ POWER BOOST ANIMATION
+  // ============================================================
+
+  late final AnimationController _boostAnimationController;
 
   late final Animation<double> _boostScale;
+
   late final Animation<double> _boostRotation;
+
   late final Animation<double> _boostGlow;
-  late final Animation<double> _boostParticles;
+
   late final Animation<double> _boostOpacity;
+
+  // ============================================================
+  // INIT
+  // ============================================================
 
   @override
   void initState() {
     super.initState();
 
-    _boostController = AnimationController(
+    _boostAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(
-        milliseconds: 1500,
+        milliseconds: 1100,
       ),
     );
 
-    _boostScale = Tween<double>(
-      begin: 1.0,
-      end: 1.18,
+    _boostScale = TweenSequence<double>(
+      [
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 1.0,
+            end: 1.18,
+          ),
+          weight: 25,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 1.18,
+            end: 0.94,
+          ),
+          weight: 20,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 0.94,
+            end: 1.08,
+          ),
+          weight: 20,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 1.08,
+            end: 1.0,
+          ),
+          weight: 35,
+        ),
+      ],
     ).animate(
       CurvedAnimation(
-        parent: _boostController,
-        curve: Curves.elasticOut,
-      ),
-    );
-
-    _boostRotation = Tween<double>(
-      begin: -0.04,
-      end: 0.04,
-    ).animate(
-      CurvedAnimation(
-        parent: _boostController,
-        curve: Curves.easeOutBack,
-      ),
-    );
-
-    _boostGlow = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _boostController,
+        parent: _boostAnimationController,
         curve: Curves.easeOut,
       ),
     );
 
-    _boostParticles = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
+    _boostRotation = TweenSequence<double>(
+      [
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 0.0,
+            end: -0.08,
+          ),
+          weight: 20,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: -0.08,
+            end: 0.08,
+          ),
+          weight: 25,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 0.08,
+            end: -0.035,
+          ),
+          weight: 20,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: -0.035,
+            end: 0.0,
+          ),
+          weight: 35,
+        ),
+      ],
     ).animate(
       CurvedAnimation(
-        parent: _boostController,
-        curve: Curves.easeOutCubic,
+        parent: _boostAnimationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _boostGlow = TweenSequence<double>(
+      [
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ),
+          weight: 25,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 1.0,
+            end: 0.35,
+          ),
+          weight: 30,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 0.35,
+            end: 0.8,
+          ),
+          weight: 15,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(
+            begin: 0.8,
+            end: 0.0,
+          ),
+          weight: 30,
+        ),
+      ],
+    ).animate(
+      CurvedAnimation(
+        parent: _boostAnimationController,
+        curve: Curves.easeOut,
       ),
     );
 
@@ -155,26 +233,27 @@ class _StellaMiningCardState extends State<StellaMiningCard>
           weight: 20,
         ),
         TweenSequenceItem(
-          tween: ConstantTween<double>(1.0),
-          weight: 45,
+          tween: Tween<double>(
+            begin: 1.0,
+            end: 1.0,
+          ),
+          weight: 25,
         ),
         TweenSequenceItem(
           tween: Tween<double>(
             begin: 1.0,
             end: 0.0,
           ),
-          weight: 35,
+          weight: 55,
         ),
       ],
     ).animate(
       CurvedAnimation(
-        parent: _boostController,
-        curve: Curves.easeInOut,
+        parent: _boostAnimationController,
+        curve: Curves.easeOut,
       ),
     );
 
-    // Jos boost on jo aktiivinen kortin ensimmäisessä
-    // rakentumisessa, näytetään animaatio kerran.
     if (widget.boostActive) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) {
@@ -186,38 +265,237 @@ class _StellaMiningCardState extends State<StellaMiningCard>
     }
   }
 
+  // ============================================================
+  // 🔄 DID UPDATE WIDGET
+  // ============================================================
+
   @override
   void didUpdateWidget(
     covariant StellaMiningCard oldWidget,
   ) {
     super.didUpdateWidget(oldWidget);
 
-    // Käynnistetään animaatio vain, kun Power Boost
-    // muuttuu pois päältä -> päälle.
+    // Bonus aktivoitui juuri nyt.
     if (!oldWidget.boostActive &&
         widget.boostActive) {
       _playBoostAnimation();
     }
   }
 
+  // ============================================================
+  // ⚡ PLAY BOOST ANIMATION
+  // ============================================================
+
   void _playBoostAnimation() {
-    _boostController.forward(
+    _boostAnimationController.forward(
       from: 0.0,
     );
   }
 
+  // ============================================================
+  // DISPOSE
+  // ============================================================
+
   @override
   void dispose() {
-    _boostController.dispose();
+    _boostAnimationController.dispose();
+
     super.dispose();
   }
 
-  String _formatStl(double value) {
+  // ============================================================
+  // 🔢 FORMAT STL
+  // ============================================================
+
+  String _formatStl(
+    double value,
+  ) {
     return value.toStringAsFixed(4);
   }
 
+  // ============================================================
+  // 🐱 STELLA ICON
+  // ============================================================
+
+  Widget _buildStellaIcon() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        widget.catAnimation,
+        _boostAnimationController,
+      ]),
+      builder: (
+        BuildContext context,
+        Widget? child,
+      ) {
+        final double floatingOffset =
+            -widget.catAnimation.value;
+
+        final double boostScale =
+            _boostScale.value;
+
+        final double boostRotation =
+            _boostRotation.value;
+
+        final double glow =
+            _boostGlow.value;
+
+        return Transform.translate(
+          offset: Offset(
+            0,
+            floatingOffset,
+          ),
+          child: Transform.rotate(
+            angle: boostRotation,
+            child: Transform.scale(
+              scale: boostScale,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  // ------------------------------------------------
+                  // 🌟 POWER GLOW
+                  // ------------------------------------------------
+                  if (glow > 0)
+                    Container(
+                      width: 135,
+                      height: 135,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                goldColor.withValues(
+                              alpha: 0.55 * glow,
+                            ),
+                            blurRadius:
+                                28 * glow,
+                            spreadRadius:
+                                8 * glow,
+                          ),
+                          BoxShadow(
+                            color:
+                                pinkColor.withValues(
+                              alpha: 0.35 * glow,
+                            ),
+                            blurRadius:
+                                45 * glow,
+                            spreadRadius:
+                                5 * glow,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // ------------------------------------------------
+                  // 🐱 STELLA CIRCLE
+                  // ------------------------------------------------
+                  Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          accentColor.withValues(
+                        alpha: 0.15,
+                      ),
+                      border: Border.all(
+                        color:
+                            accentColor.withValues(
+                          alpha: 0.10,
+                        ),
+                      ),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '🐱⛏️',
+                        style: TextStyle(
+                          fontSize: 55,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ------------------------------------------------
+                  // ✨ BOOST SPARKLES
+                  // ------------------------------------------------
+                  if (_boostAnimationController
+                          .value >
+                      0)
+                    Positioned(
+                      top: -12,
+                      right: -12,
+                      child: Opacity(
+                        opacity:
+                            _boostOpacity.value,
+                        child: Transform.scale(
+                          scale:
+                              0.7 +
+                              (_boostScale.value -
+                                      1.0)
+                                  .abs() *
+                                  2,
+                          child: const Text(
+                            '✨',
+                            style: TextStyle(
+                              fontSize: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (_boostAnimationController
+                          .value >
+                      0)
+                    Positioned(
+                      bottom: -8,
+                      left: -18,
+                      child: Opacity(
+                        opacity:
+                            _boostOpacity.value,
+                        child: const Text(
+                          '⚡',
+                          style: TextStyle(
+                            fontSize: 27,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (_boostAnimationController
+                          .value >
+                      0)
+                    Positioned(
+                      top: 5,
+                      left: -20,
+                      child: Opacity(
+                        opacity:
+                            _boostOpacity.value,
+                        child: const Text(
+                          '💫',
+                          style: TextStyle(
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -246,254 +524,17 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       child: Column(
         children: [
           // ----------------------------------------------------
-          // 🐱 STELLA + BOOST ANIMATION
+          // 🐱 STELLA / MINING ICON
           // ----------------------------------------------------
+          _buildStellaIcon(),
 
-          AnimatedBuilder(
-            animation: Listenable.merge([
-              widget.catAnimation,
-              _boostController,
-            ]),
-            builder: (context, child) {
-              final double normalMovement =
-                  widget.catAnimation.value;
-
-              final double boostScale =
-                  _boostScale.value;
-
-              final double boostRotation =
-                  _boostRotation.value *
-                  _boostController.value;
-
-              return SizedBox(
-                width: 150,
-                height: 150,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // ------------------------------------------
-                    // ✨ BOOST GLOW
-                    // ------------------------------------------
-
-                    if (_boostController.value > 0)
-                      Opacity(
-                        opacity:
-                            _boostGlow.value *
-                            0.65,
-                        child: Container(
-                          width:
-                              120 +
-                              (25 *
-                                  _boostGlow.value),
-                          height:
-                              120 +
-                              (25 *
-                                  _boostGlow.value),
-                          decoration:
-                              BoxDecoration(
-                            shape:
-                                BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    goldColor
-                                        .withValues(
-                                  alpha:
-                                      0.45 *
-                                      _boostGlow.value,
-                                ),
-                                blurRadius:
-                                    35 *
-                                    _boostGlow.value,
-                                spreadRadius:
-                                    8 *
-                                    _boostGlow.value,
-                              ),
-                              BoxShadow(
-                                color:
-                                    pinkColor
-                                        .withValues(
-                                  alpha:
-                                      0.35 *
-                                      _boostGlow.value,
-                                ),
-                                blurRadius:
-                                    50 *
-                                    _boostGlow.value,
-                                spreadRadius:
-                                    5 *
-                                    _boostGlow.value,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                    // ------------------------------------------
-                    // ✨ STAR PARTICLES
-                    // ------------------------------------------
-
-                    if (_boostController.value > 0)
-                      ..._buildBoostParticles(),
-
-                    // ------------------------------------------
-                    // 🟣 STELLA CIRCLE
-                    // ------------------------------------------
-
-                    Transform.translate(
-                      offset: Offset(
-                        0,
-                        -normalMovement,
-                      ),
-                      child: Transform.rotate(
-                        angle:
-                            boostRotation,
-                        child: Transform.scale(
-                          scale:
-                              boostScale,
-                          child:
-                              Container(
-                            width: 110,
-                            height: 110,
-                            decoration:
-                                BoxDecoration(
-                              shape:
-                                  BoxShape.circle,
-                              color:
-                                  accentColor
-                                      .withValues(
-                                alpha:
-                                    0.15,
-                              ),
-                              border:
-                                  Border.all(
-                                color:
-                                    _boostController
-                                                .value >
-                                            0
-                                        ? goldColor
-                                            .withValues(
-                                          alpha:
-                                              0.65,
-                                        )
-                                        : accentColor
-                                            .withValues(
-                                          alpha:
-                                              0.10,
-                                        ),
-                                width:
-                                    _boostController
-                                                .value >
-                                            0
-                                        ? 2
-                                        : 1,
-                              ),
-                            ),
-                            child:
-                                const Center(
-                              child:
-                                  Text(
-                                '🐱⛏️',
-                                style:
-                                    TextStyle(
-                                  fontSize:
-                                      55,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // ------------------------------------------
-                    // ⚡ BOOST LABEL
-                    // ------------------------------------------
-
-                    if (_boostController.value > 0.05)
-                      Positioned(
-                        bottom: 2,
-                        child: Opacity(
-                          opacity:
-                              _boostOpacity
-                                  .value,
-                          child:
-                              Transform.scale(
-                            scale:
-                                0.85 +
-                                (_boostScale
-                                        .value -
-                                    1.0),
-                            child:
-                                Container(
-                              padding:
-                                  const EdgeInsets
-                                      .symmetric(
-                                horizontal:
-                                    12,
-                                vertical: 6,
-                              ),
-                              decoration:
-                                  BoxDecoration(
-                                gradient:
-                                    const LinearGradient(
-                                  colors: [
-                                    goldColor,
-                                    pinkColor,
-                                  ],
-                                ),
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                  14,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        goldColor
-                                            .withValues(
-                                      alpha:
-                                          0.35,
-                                    ),
-                                    blurRadius:
-                                        12,
-                                  ),
-                                ],
-                              ),
-                              child:
-                                  Text(
-                                widget.boostLabel,
-                                style:
-                                    const TextStyle(
-                                  color:
-                                      Color(
-                                    0xFF120B24,
-                                  ),
-                                  fontSize:
-                                      10,
-                                  fontWeight:
-                                      FontWeight
-                                          .w900,
-                                  letterSpacing:
-                                      1,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
+          const SizedBox(
+            height: 18,
           ),
-
-          const SizedBox(height: 8),
 
           // ----------------------------------------------------
           // Mining title
           // ----------------------------------------------------
-
           Text(
             widget.miningTitle,
             textAlign: TextAlign.center,
@@ -505,12 +546,13 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(
+            height: 8,
+          ),
 
           // ----------------------------------------------------
           // Mining subtitle
           // ----------------------------------------------------
-
           Text(
             widget.miningSubtitle,
             textAlign: TextAlign.center,
@@ -520,12 +562,13 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(
+            height: 24,
+          ),
 
           // ----------------------------------------------------
           // Unclaimed STL
           // ----------------------------------------------------
-
           Text(
             _formatStl(
               widget.unclaimedMining,
@@ -538,7 +581,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(
+            height: 4,
+          ),
 
           const Text(
             'STL',
@@ -550,12 +595,13 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(
+            height: 24,
+          ),
 
           // ----------------------------------------------------
           // Mining time remaining
           // ----------------------------------------------------
-
           Container(
             width: double.infinity,
             padding:
@@ -569,7 +615,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                 alpha: 0.55,
               ),
               borderRadius:
-                  BorderRadius.circular(18),
+                  BorderRadius.circular(
+                18,
+              ),
               border: Border.all(
                 color:
                     accentColor.withValues(
@@ -581,23 +629,21 @@ class _StellaMiningCardState extends State<StellaMiningCard>
               children: [
                 Text(
                   widget.timerText,
-                  textAlign:
-                      TextAlign.center,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(
+                  height: 5,
+                ),
                 Text(
                   widget.timerLabel,
-                  textAlign:
-                      TextAlign.center,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color:
-                        secondaryTextColor,
+                    color: secondaryTextColor,
                     fontSize: 11,
                     letterSpacing: 1.5,
                   ),
@@ -606,20 +652,22 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(
+            height: 14,
+          ),
 
           // ----------------------------------------------------
           // 🐾 START MINING / MINING ACTIVE
           // ----------------------------------------------------
-
           widget.miningButton,
 
-          const SizedBox(height: 20),
+          const SizedBox(
+            height: 20,
+          ),
 
           // ----------------------------------------------------
           // Stella Mining Days
           // ----------------------------------------------------
-
           StellaMiningDaysCard(
             languageCode:
                 widget.languageCode,
@@ -627,12 +675,13 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                 widget.dailyStreak,
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(
+            height: 20,
+          ),
 
           // ----------------------------------------------------
           // Mining progress
           // ----------------------------------------------------
-
           MiningProgressCard(
             miningActive:
                 widget.miningActive,
@@ -651,78 +700,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
           ),
         ],
       ),
-    );
-  }
-
-  // ============================================================
-  // ✨ BOOST PARTICLES
-  // ============================================================
-
-  List<Widget> _buildBoostParticles() {
-    const List<IconData> icons = [
-      Icons.auto_awesome,
-      Icons.star_rounded,
-      Icons.bolt_rounded,
-      Icons.pets_rounded,
-      Icons.auto_awesome,
-      Icons.star_rounded,
-    ];
-
-    const List<double> angles = [
-      0.0,
-      math.pi / 3,
-      2 * math.pi / 3,
-      math.pi,
-      4 * math.pi / 3,
-      5 * math.pi / 3,
-    ];
-
-    return List.generate(
-      icons.length,
-      (index) {
-        final double progress =
-            _boostParticles.value;
-
-        final double radius =
-            42 + (35 * progress);
-
-        final double x =
-            math.cos(angles[index]) *
-            radius;
-
-        final double y =
-            math.sin(angles[index]) *
-            radius;
-
-        final double scale =
-            0.5 +
-            (0.8 *
-                (1 -
-                    progress));
-
-        return Transform.translate(
-          offset: Offset(x, y),
-          child: Opacity(
-            opacity:
-                (1 - progress)
-                    .clamp(
-                      0.0,
-                      1.0,
-                    ),
-            child: Transform.scale(
-              scale: scale,
-              child: Icon(
-                icons[index],
-                color:
-                    index.isEven
-                        ? goldColor
-                        : pinkColor,
-                size: 18,
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
