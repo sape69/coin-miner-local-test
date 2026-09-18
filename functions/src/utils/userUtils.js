@@ -13,7 +13,7 @@
 // 🎁 AdMob Reward -referenssistä
 //
 // Firestore-polut pidetään tässä tiedostossa keskitetysti,
-// jotta kaikki backend-palvelut käyttävät samoja polkuja.
+// jotta backend käyttää aina samoja polkuja.
 //
 // TÄMÄ TIEDOSTO EI:
 //
@@ -41,25 +41,35 @@ const {
 // 🔐 VALIDATE FIRESTORE DOCUMENT ID
 // ============================================================
 //
-// Firestore-dokumentin ID ei saa olla tyhjä.
+// Firestore-dokumentin ID:
 //
-// UID:t ja transactionId:t validoidaan varsinaisessa
-// business/service-kerroksessa.
+// ✅ täytyy olla merkkijono
+// ✅ ei saa olla tyhjä
+// ❌ ei saa sisältää "/"-merkkiä
 //
-// Tämä tarkistus estää kuitenkin yleiset ohjelmointivirheet,
-// kuten undefined/null/tyhjä ID.
+// UID:t ja transactionId:t validoidaan lisäksi
+// niiden omissa business/service-kerroksissa.
+//
+// Tämä funktio estää yleiset ohjelmointivirheet,
+// kuten:
+//
+// undefined
+// null
+// ""
+// "   "
+// "abc/def"
 //
 // ============================================================
 
 function validateDocumentId(
   value,
-  name
+  name,
 ) {
   if (
     typeof value !== "string"
   ) {
     throw new Error(
-      `${name} must be a string.`
+      `${name} must be a string.`,
     );
   }
 
@@ -70,7 +80,15 @@ function validateDocumentId(
     id.length === 0
   ) {
     throw new Error(
-      `${name} cannot be empty.`
+      `${name} cannot be empty.`,
+    );
+  }
+
+  if (
+    id.includes("/")
+  ) {
+    throw new Error(
+      `${name} cannot contain "/".`,
     );
   }
 
@@ -89,12 +107,12 @@ function validateDocumentId(
 // ============================================================
 
 function getUserRef(
-  uid
+  uid,
 ) {
   const validUid =
     validateDocumentId(
       uid,
-      "uid"
+      "uid",
     );
 
   return db
@@ -117,10 +135,13 @@ function getUserRef(
 // ============================================================
 
 function getHistoryCollection(
-  uid
+  uid,
 ) {
-  return getUserRef(uid)
-    .collection("transactions");
+  return getUserRef(
+    uid,
+  ).collection(
+    "transactions",
+  );
 }
 
 
@@ -136,8 +157,8 @@ function getHistoryCollection(
 //
 // Tämä mahdollistaa atomisen duplicate-tarkistuksen:
 //
-//   transactionId
-//        ↓
+// transactionId
+//      ↓
 // admobRewards/{transactionId}
 //
 // Jos sama transaction_id vastaanotetaan uudelleen,
@@ -146,17 +167,21 @@ function getHistoryCollection(
 // ============================================================
 
 function getAdMobRewardRef(
-  transactionId
+  transactionId,
 ) {
   const validTransactionId =
     validateDocumentId(
       transactionId,
-      "transactionId"
+      "transactionId",
     );
 
   return db
-    .collection("admobRewards")
-    .doc(validTransactionId);
+    .collection(
+      "admobRewards",
+    )
+    .doc(
+      validTransactionId,
+    );
 }
 
 
