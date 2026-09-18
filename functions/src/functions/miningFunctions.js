@@ -155,7 +155,8 @@ function validateAdMobTransactionId(
   if (
     transactionId.length === 0 ||
     transactionId.length > 256 ||
-    transactionId.includes("/")
+    transactionId.includes("/") ||
+    transactionId.includes("\\")
   ) {
     return "";
   }
@@ -286,22 +287,17 @@ function getRewardCreatedAtMs(
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
 //
-// TÄRKEÄ KORJAUS:
-//
 // Firestore-haussa käytetään vain UID:tä.
 //
-// ÄLÄ käytä tässä:
-//   .where("rewardType", "==", "admob")
-//   .where("rewardPurpose", "==", rewardPurpose)
-//   .where(claimedField, "==", false)
+// Muut ehdot tarkistetaan JavaScriptissä:
+//  - rewardType
+//  - rewardPurpose
+//  - claim-status
+//  - adUnit
+//  - rewardItem
+//  - transaction ID
 //
-// Syitä:
-// 1. claimedField voi puuttua uudesta dokumentista.
-// 2. Usean kentän yhdistelmä voi vaatia Firestore-indeksin.
-// 3. SSV-dokumentti voi olla olemassa, mutta claim-kenttä
-//    voi olla eri tavalla alustettu.
-//
-// Kaikki ehdot tarkistetaan turvallisesti JavaScriptissä.
+// Näin vältetään tarpeettomat yhdistelmäindeksit.
 //
 // ============================================================
 
@@ -377,13 +373,6 @@ async function findVerifiedAdMobReward(
       // ======================================================
       // 🔐 CLAIM STATUS
       // ======================================================
-      //
-      // Puuttuva kenttä tulkitaan käyttämättömäksi.
-      //
-      // Tämä on tärkeää uudella tilillä ja mahdollisissa
-      // vanhoissa SSV-dokumenteissa.
-      //
-      // ======================================================
 
       if (
         rewardData[claimedField] === true
@@ -426,7 +415,7 @@ async function findVerifiedAdMobReward(
 
       if (
         typeof rewardData.adUnit !== "string" ||
-        rewardData.adUnit.length === 0
+        rewardData.adUnit.trim().length === 0
       ) {
         return;
       }
@@ -437,7 +426,25 @@ async function findVerifiedAdMobReward(
 
       if (
         typeof rewardData.rewardItem !== "string" ||
-        rewardData.rewardItem.length === 0
+        rewardData.rewardItem.trim().length === 0
+      ) {
+        return;
+      }
+
+      // ======================================================
+      // 🔢 REWARD AMOUNT
+      // ======================================================
+
+      const rewardAmount =
+        Number(
+          rewardData.rewardAmount
+        );
+
+      if (
+        !Number.isFinite(
+          rewardAmount
+        ) ||
+        rewardAmount !== 1
       ) {
         return;
       }
@@ -452,6 +459,19 @@ async function findVerifiedAdMobReward(
         );
 
       if (!transactionId) {
+        return;
+      }
+
+      // ======================================================
+      // 🔐 STORED TRANSACTION ID
+      // ======================================================
+
+      if (
+        rewardData.transactionId &&
+        String(
+          rewardData.transactionId
+        ) !== transactionId
+      ) {
         return;
       }
 
@@ -498,9 +518,18 @@ async function findVerifiedAdMobReward(
 
   candidates.sort(
     (a, b) => {
-      return (
-        b.createdAtMs -
+      if (
+        b.createdAtMs !==
         a.createdAtMs
+      ) {
+        return (
+          b.createdAtMs -
+          a.createdAtMs
+        );
+      }
+
+      return b.transactionId.localeCompare(
+        a.transactionId
       );
     }
   );
@@ -530,7 +559,7 @@ async function findVerifiedAdMobReward(
 // AdMob SSV ei välttämättä ehdi Firestoreen ennen kuin
 // Flutter kutsuu claimMining/powerBoost.
 //
-// Backend odottaa vahvistusta.
+// Backend odottaa vahvistettua tapahtumaa.
 //
 // ============================================================
 
@@ -642,6 +671,10 @@ function validateVerifiedRewardDocument(
   const rewardData =
     rewardSnapshot.data() || {};
 
+  // ==========================================================
+  // 👤 UID
+  // ==========================================================
+
   if (
     rewardData.uid !== uid
   ) {
@@ -650,6 +683,10 @@ function validateVerifiedRewardDocument(
       "🐱 AdMob-palkinnon käyttäjä ei täsmää."
     );
   }
+
+  // ==========================================================
+  // 🔐 REWARD TYPE
+  // ==========================================================
 
   if (
     rewardData.rewardType !==
@@ -661,6 +698,10 @@ function validateVerifiedRewardDocument(
     );
   }
 
+  // ==========================================================
+  // 🎯 REWARD PURPOSE
+  // ==========================================================
+
   if (
     rewardData.rewardPurpose !==
     rewardPurpose
@@ -671,6 +712,87 @@ function validateVerifiedRewardDocument(
     );
   }
 
+  // ==========================================================
+  // 📺 AD UNIT
+  // ==========================================================
+
+  if (
+    typeof rewardData.adUnit !== "string" ||
+    rewardData.adUnit.trim().length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-mainoksen tunnistetiedot puuttuvat."
+    );
+  }
+
+  // ==========================================================
+  // 🎁 REWARD ITEM
+  // ==========================================================
+
+  if (
+    typeof rewardData.rewardItem !== "string" ||
+    rewardData.rewardItem.trim().length === 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-palkinnon tiedot puuttuvat."
+    );
+  }
+
+  // ==========================================================
+  // 🔢 REWARD AMOUNT
+  // ==========================================================
+
+  const rewardAmount =
+    Number(
+      rewardData.rewardAmount
+    );
+
+  if (
+    !Number.isFinite(
+      rewardAmount
+    ) ||
+    rewardAmount !== 1
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob-palkinnon määrä ei ole kelvollinen."
+    );
+  }
+
+  // ==========================================================
+  // 🔐 TRANSACTION ID
+  // ==========================================================
+
+  const documentTransactionId =
+    validateAdMobTransactionId(
+      rewardSnapshot.id
+    );
+
+  if (!documentTransactionId) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob transaction_id ei ole kelvollinen."
+    );
+  }
+
+  if (
+    rewardData.transactionId &&
+    String(
+      rewardData.transactionId
+    ) !== documentTransactionId
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "🐱 AdMob transaction_id ei täsmää palkintodokumenttiin."
+    );
+  }
+
+  // ==========================================================
+  // 🔐 CLAIM STATUS
+  // ==========================================================
+
   if (
     rewardData[claimedField] === true
   ) {
@@ -679,6 +801,10 @@ function validateVerifiedRewardDocument(
       "🐱 Tämä AdMob-palkinto on jo käytetty."
     );
   }
+
+  // ==========================================================
+  // ⛏️ MINING START CLAIM STATUS
+  // ==========================================================
 
   if (
     rewardPurpose === "mining_start" &&
@@ -694,6 +820,10 @@ function validateVerifiedRewardDocument(
     );
   }
 
+  // ==========================================================
+  // ⚡ POWER BOOST CLAIM STATUS
+  // ==========================================================
+
   if (
     rewardPurpose === "power_boost" &&
     (
@@ -704,26 +834,6 @@ function validateVerifiedRewardDocument(
     throw new HttpsError(
       "already-exists",
       "🐱 Tämä Power Boost -palkinto on jo käytetty."
-    );
-  }
-
-  if (
-    typeof rewardData.adUnit !== "string" ||
-    rewardData.adUnit.length === 0
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob-mainoksen tunnistetiedot puuttuvat."
-    );
-  }
-
-  if (
-    typeof rewardData.rewardItem !== "string" ||
-    rewardData.rewardItem.length === 0
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob-palkinnon tiedot puuttuvat."
     );
   }
 
@@ -1159,31 +1269,103 @@ function calculateAdBoostMilliseconds(
   miningStartMs,
   miningEndMs
 ) {
+  if (
+    !Array.isArray(boosts) ||
+    !miningStartMs ||
+    !miningEndMs ||
+    miningEndMs <= miningStartMs
+  ) {
+    return 0;
+  }
+
+  const intervals =
+    boosts
+      .map(
+        (boost) => {
+          const overlapStart =
+            Math.max(
+              miningStartMs,
+              boost.boostStartedMs
+            );
+
+          const overlapEnd =
+            Math.min(
+              miningEndMs,
+              boost.boostEndsMs
+            );
+
+          if (
+            overlapEnd <= overlapStart
+          ) {
+            return null;
+          }
+
+          return {
+            start:
+              overlapStart,
+            end:
+              overlapEnd,
+          };
+        }
+      )
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          a.start -
+          b.start
+      );
+
+  if (
+    intervals.length === 0
+  ) {
+    return 0;
+  }
+
+  // ==========================================================
+  // YHDISTÄ PÄÄLLEKKÄISET BOOSTIT
+  // ==========================================================
+
   let totalMs = 0;
 
-  for (
-    const boost of boosts
-  ) {
-    const overlapStart =
-      Math.max(
-        miningStartMs,
-        boost.boostStartedMs
-      );
+  let currentStart =
+    intervals[0].start;
 
-    const overlapEnd =
-      Math.min(
-        miningEndMs,
-        boost.boostEndsMs
-      );
+  let currentEnd =
+    intervals[0].end;
+
+  for (
+    let index = 1;
+    index < intervals.length;
+    index += 1
+  ) {
+    const interval =
+      intervals[index];
 
     if (
-      overlapEnd > overlapStart
+      interval.start <=
+      currentEnd
     ) {
+      currentEnd =
+        Math.max(
+          currentEnd,
+          interval.end
+        );
+    } else {
       totalMs +=
-        overlapEnd -
-        overlapStart;
+        currentEnd -
+        currentStart;
+
+      currentStart =
+        interval.start;
+
+      currentEnd =
+        interval.end;
     }
   }
+
+  totalMs +=
+    currentEnd -
+    currentStart;
 
   return Math.max(
     0,
@@ -1482,6 +1664,10 @@ const getMiningStatus =
         const hashRate =
           dailyStatus.dailyHashRate;
 
+        // ======================================================
+        // ⛏️ JAKSON OMA HASH RATE
+        // ======================================================
+
         const miningHashRate =
           getMiningHashRate(
             data,
@@ -1527,6 +1713,10 @@ const getMiningStatus =
           );
 
         let adBoostMining = 0;
+
+        // ======================================================
+        // ⚡ LASKE TOTEUTUNUT POWER BOOST
+        // ======================================================
 
         if (
           miningStartedAt &&
@@ -1586,9 +1776,9 @@ const getMiningStatus =
 
         const effectiveHashRate =
           adStatus.adBoostActive
-            ? hashRate +
+            ? miningHashRate +
                 AD_HASH_RATE_BONUS
-            : hashRate;
+            : miningHashRate;
 
         const miningPerHour =
           effectiveHashRate *
@@ -1823,25 +2013,23 @@ const claimMining =
                 : {};
 
             // ==================================================
-            // 🐱 UUSI TILI
-            // ==================================================
-            //
-            // Jos users/{uid} puuttuu, sitä ei hylätä.
-            // transaction.set(..., merge:true) luo dokumentin.
-            //
+            // ⛏️ NYKYINEN MINING HASH RATE
             // ==================================================
 
             const currentDailyStreak =
               getDailyStreak(data);
 
+            const fallbackDailyHashRate =
+              calculateDailyHashRate(
+                currentDailyStreak > 0
+                  ? currentDailyStreak
+                  : 1
+              );
+
             const existingMiningHashRate =
               getMiningHashRate(
                 data,
-                calculateDailyHashRate(
-                  currentDailyStreak > 0
-                    ? currentDailyStreak
-                    : 1
-                )
+                fallbackDailyHashRate
               );
 
             const existingMiningStatus =
@@ -1897,21 +2085,13 @@ const claimMining =
                 miningActive: true,
 
                 hashRate:
-                  calculateDailyHashRate(
-                    currentDailyStreak > 0
-                      ? currentDailyStreak
-                      : 1
-                  ),
+                  fallbackDailyHashRate,
 
                 miningHashRate:
                   existingMiningHashRate,
 
                 dailyHashRate:
-                  calculateDailyHashRate(
-                    currentDailyStreak > 0
-                      ? currentDailyStreak
-                      : 1
-                  ),
+                  fallbackDailyHashRate,
 
                 dailyStreak:
                   currentDailyStreak,
@@ -2020,6 +2200,10 @@ const claimMining =
                     previousStartMs
                 );
 
+              // ==================================================
+              // ⛏️ BASE MINING
+              // ==================================================
+
               const baseCollected =
                 Math.max(
                   0,
@@ -2031,6 +2215,10 @@ const claimMining =
                     0
                   )
                 );
+
+              // ==================================================
+              // ⚡ POWER BOOST
+              // ==================================================
 
               const boosts =
                 await getAdBoostHistory(
@@ -2103,6 +2291,10 @@ const claimMining =
                   MINING_DURATION_MS
               );
 
+            // ==================================================
+            // 🔐 TÄMÄN JAKSON HASH RATE
+            // ==================================================
+
             const newMiningHashRate =
               dailyHashRate;
 
@@ -2174,6 +2366,12 @@ const claimMining =
                   FieldValue.serverTimestamp(),
 
                 miningStartClaimedBy:
+                  uid,
+
+                consumedAt:
+                  FieldValue.serverTimestamp(),
+
+                consumedBy:
                   uid,
               },
               {
@@ -2353,9 +2551,9 @@ const claimMining =
 
             const effectiveHashRate =
               adBoostActive
-                ? dailyHashRate +
+                ? newMiningHashRate +
                     AD_HASH_RATE_BONUS
-                : dailyHashRate;
+                : newMiningHashRate;
 
             // ==================================================
             // 🎁 DAILY MESSAGE
@@ -2706,7 +2904,7 @@ const powerBoost =
 
             // ==================================================
             // 📊 DAILY AD COUNT
-            // ==================================================
+            // ==========================================================
 
             const storedAdDate =
               typeof userData.lastAdDate === "string"
@@ -2780,6 +2978,12 @@ const powerBoost =
 
                 powerBoostTransactionId:
                   verifiedReward.transactionId,
+
+                consumedAt:
+                  FieldValue.serverTimestamp(),
+
+                consumedBy:
+                  uid,
               },
               {
                 merge: true,
