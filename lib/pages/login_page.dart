@@ -1,14 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'register_page.dart';
 
 // ============================================================
 // 🐱 STELLURIINI LOGIN PAGE
 // ============================================================
-//
-// OIKEA FIREBASE-KIRJAUTUMINEN
 //
 // LoginPage
 //     ↓
@@ -58,69 +55,10 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   bool _obscurePassword = true;
+
   bool _loginLoading = false;
 
-  bool _accountCreatedOnDevice = false;
-  bool _accountStatusLoading = true;
-
-  // ==========================================================
-  // SHARED PREFERENCES KEY
-  // ==========================================================
-
-  static const String _accountCreatedKey =
-      'stelluriini_account_created';
-
-  // ==========================================================
-  // INIT
-  // ==========================================================
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadAccountStatus();
-  }
-
-  // ==========================================================
-  // LOAD ACCOUNT STATUS
-  // ==========================================================
-
-  Future<void> _loadAccountStatus() async {
-    try {
-      final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
-
-      final bool accountCreated =
-          preferences.getBool(
-                _accountCreatedKey,
-              ) ??
-              false;
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _accountCreatedOnDevice =
-            accountCreated;
-
-        _accountStatusLoading = false;
-      });
-    } catch (error) {
-      debugPrint(
-        'Account status load error: $error',
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _accountCreatedOnDevice = false;
-        _accountStatusLoading = false;
-      });
-    }
-  }
+  bool _resetPasswordLoading = false;
 
   // ==========================================================
   // DISPOSE
@@ -139,7 +77,8 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   Future<void> _login() async {
-    if (_loginLoading) {
+    if (_loginLoading ||
+        _resetPasswordLoading) {
       return;
     }
 
@@ -191,24 +130,6 @@ class _LoginPageState extends State<LoginPage> {
         password: password,
       );
 
-      // ======================================================
-      // SAVE ACCOUNT EXISTENCE
-      // ======================================================
-
-      try {
-        final SharedPreferences preferences =
-            await SharedPreferences.getInstance();
-
-        await preferences.setBool(
-          _accountCreatedKey,
-          true,
-        );
-      } catch (error) {
-        debugPrint(
-          'Account status save after login error: $error',
-        );
-      }
-
       if (mounted) {
         _showMessage(
           'Kirjautuminen onnistui!',
@@ -225,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        _firebaseErrorMessage(
+        _firebaseLoginErrorMessage(
           error.code,
         ),
       );
@@ -252,33 +173,152 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
+  // 🔐 RESET PASSWORD
+  // ==========================================================
+
+  Future<void> _resetPassword() async {
+    if (_loginLoading ||
+        _resetPasswordLoading) {
+      return;
+    }
+
+    final String email =
+        _emailController.text.trim();
+
+    // ========================================================
+    // EMAIL REQUIRED
+    // ========================================================
+
+    if (email.isEmpty) {
+      _showMessage(
+        'Kirjoita sähköpostiosoitteesi ensin.',
+      );
+
+      return;
+    }
+
+    // ========================================================
+    // EMAIL FORMAT CHECK
+    // ========================================================
+
+    if (!_isValidEmail(email)) {
+      _showMessage(
+        'Kirjoita kelvollinen sähköpostiosoite.',
+      );
+
+      return;
+    }
+
+    // ========================================================
+    // START RESET
+    // ========================================================
+
+    setState(() {
+      _resetPasswordLoading = true;
+    });
+
+    try {
+      // ======================================================
+      // FIREBASE PASSWORD RESET EMAIL
+      // ======================================================
+
+      await _auth.sendPasswordResetEmail(
+        email: email,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Salasanan palautuslinkki lähetettiin '
+        'sähköpostiisi.',
+      );
+    } on FirebaseAuthException catch (error) {
+      debugPrint(
+        'Firebase password reset error: '
+        '${error.code} - ${error.message}',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        _firebaseResetErrorMessage(
+          error.code,
+        ),
+      );
+    } catch (error) {
+      debugPrint(
+        'Password reset error: $error',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Salasanan palautus epäonnistui. '
+        'Yritä uudelleen.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _resetPasswordLoading = false;
+        });
+      }
+    }
+  }
+
+  // ==========================================================
+  // 📧 EMAIL VALIDATION
+  // ==========================================================
+
+  bool _isValidEmail(
+    String email,
+  ) {
+    final RegExp emailRegex =
+        RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    );
+
+    return emailRegex.hasMatch(
+      email,
+    );
+  }
+
+  // ==========================================================
   // OPEN REGISTER PAGE
   // ==========================================================
 
   Future<void> _openRegisterPage() async {
-    if (_loginLoading) {
+    if (_loginLoading ||
+        _resetPasswordLoading) {
       return;
     }
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) {
+        builder: (
+          BuildContext context,
+        ) {
           return RegisterPage(
-            languageCode: widget.languageCode,
-            changeLanguage: widget.changeLanguage,
+            languageCode:
+                widget.languageCode,
+            changeLanguage:
+                widget.changeLanguage,
           );
         },
       ),
     );
-
-    await _loadAccountStatus();
   }
 
   // ==========================================================
-  // FIREBASE ERROR MESSAGES
+  // FIREBASE LOGIN ERROR MESSAGES
   // ==========================================================
 
-  String _firebaseErrorMessage(
+  String _firebaseLoginErrorMessage(
     String code,
   ) {
     switch (code) {
@@ -309,6 +349,40 @@ class _LoginPageState extends State<LoginPage> {
 
       default:
         return 'Kirjautuminen epäonnistui. '
+            'Yritä uudelleen.';
+    }
+  }
+
+  // ==========================================================
+  // FIREBASE PASSWORD RESET ERROR MESSAGES
+  // ==========================================================
+
+  String _firebaseResetErrorMessage(
+    String code,
+  ) {
+    switch (code) {
+      case 'invalid-email':
+        return 'Sähköpostiosoite ei ole kelvollinen.';
+
+      case 'user-not-found':
+        return 'Tälle sähköpostiosoitteelle ei löytynyt tiliä.';
+
+      case 'user-disabled':
+        return 'Tämä käyttäjätili on poistettu käytöstä.';
+
+      case 'too-many-requests':
+        return 'Liian monta yritystä. '
+            'Yritä myöhemmin uudelleen.';
+
+      case 'network-request-failed':
+        return 'Verkkoyhteys epäonnistui. '
+            'Tarkista internetyhteys.';
+
+      case 'operation-not-allowed':
+        return 'Salasanan palautus ei ole käytössä.';
+
+      default:
+        return 'Salasanan palautus epäonnistui. '
             'Yritä uudelleen.';
     }
   }
@@ -351,7 +425,13 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
+    final bool interactionLocked =
+        _loginLoading ||
+        _resetPasswordLoading;
+
     return Scaffold(
       backgroundColor:
           const Color(0xFF120B24),
@@ -378,7 +458,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               // ==================================================
-              // STELLURIINI LOGO
+              // 🐱 STELLURIINI LOGO
               // ==================================================
 
               Container(
@@ -394,7 +474,7 @@ class _LoginPageState extends State<LoginPage> {
                     BoxShadow(
                       color:
                           const Color(
-                        0xFF35D0A0,
+                        0xFFB58CFF,
                       ).withValues(
                         alpha: 0.25,
                       ),
@@ -426,7 +506,7 @@ class _LoginPageState extends State<LoginPage> {
                         Icons.pets,
                         color:
                             Color(
-                          0xFF35D0A0,
+                          0xFFB58CFF,
                         ),
                         size: 80,
                       );
@@ -469,7 +549,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextStyle(
                   color:
                       Color(
-                    0xFF35D0A0,
+                    0xFFB58CFF,
                   ),
                   fontSize: 21,
                   fontWeight:
@@ -517,7 +597,7 @@ class _LoginPageState extends State<LoginPage> {
                     _emailController,
 
                 enabled:
-                    !_loginLoading,
+                    !interactionLocked,
 
                 keyboardType:
                     TextInputType.emailAddress,
@@ -527,7 +607,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 onSubmitted:
                     (_) {
-                  if (!_loginLoading) {
+                  if (!interactionLocked) {
                     FocusScope.of(
                       context,
                     ).nextFocus();
@@ -560,7 +640,7 @@ class _LoginPageState extends State<LoginPage> {
                     Icons.email_outlined,
                     color:
                         Color(
-                      0xFF35D0A0,
+                      0xFFB58CFF,
                     ),
                   ),
 
@@ -583,7 +663,7 @@ class _LoginPageState extends State<LoginPage> {
                         const BorderSide(
                       color:
                           Color(
-                        0xFF35D0A0,
+                        0xFFB58CFF,
                       ),
                       width: 2,
                     ),
@@ -599,7 +679,9 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide:
                         const BorderSide(
                       color:
-                          Colors.white,
+                          Color(
+                        0xFFFFB7E8,
+                      ),
                       width: 3,
                     ),
                   ),
@@ -619,7 +701,7 @@ class _LoginPageState extends State<LoginPage> {
                     _passwordController,
 
                 enabled:
-                    !_loginLoading,
+                    !interactionLocked,
 
                 obscureText:
                     _obscurePassword,
@@ -632,7 +714,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 onSubmitted:
                     (_) {
-                  if (!_loginLoading) {
+                  if (!interactionLocked) {
                     _login();
                   }
                 },
@@ -663,14 +745,14 @@ class _LoginPageState extends State<LoginPage> {
                     Icons.lock_outline,
                     color:
                         Color(
-                      0xFF35D0A0,
+                      0xFFB58CFF,
                     ),
                   ),
 
                   suffixIcon:
                       IconButton(
                     onPressed:
-                        _loginLoading
+                        interactionLocked
                             ? null
                             : () {
                                 setState(() {
@@ -689,7 +771,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       color:
                           const Color(
-                        0xFF35D0A0,
+                        0xFFB58CFF,
                       ),
                     ),
                   ),
@@ -713,7 +795,7 @@ class _LoginPageState extends State<LoginPage> {
                         const BorderSide(
                       color:
                           Color(
-                        0xFF35D0A0,
+                        0xFFB58CFF,
                       ),
                       width: 2,
                     ),
@@ -729,7 +811,9 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide:
                         const BorderSide(
                       color:
-                          Colors.white,
+                          Color(
+                        0xFFFFB7E8,
+                      ),
                       width: 3,
                     ),
                   ),
@@ -737,7 +821,69 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(
-                height: 28,
+                height: 10,
+              ),
+
+              // ==================================================
+              // 🔐 FORGOT PASSWORD
+              // ==================================================
+
+              Align(
+                alignment:
+                    Alignment.centerRight,
+
+                child:
+                    TextButton(
+                  onPressed:
+                      interactionLocked
+                          ? null
+                          : _resetPassword,
+
+                  style:
+                      TextButton.styleFrom(
+                    foregroundColor:
+                        const Color(
+                      0xFFFFB7E8,
+                    ),
+
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                  ),
+
+                  child:
+                      _resetPasswordLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth:
+                                    2,
+                                color:
+                                    Color(
+                                  0xFFFFB7E8,
+                                ),
+                              ),
+                            )
+                          : const Text(
+                              'Unohtuiko salasana?',
+
+                              style:
+                                  TextStyle(
+                                fontSize:
+                                    15,
+                                fontWeight:
+                                    FontWeight.w600,
+                              ),
+                            ),
+                ),
+              ),
+
+              const SizedBox(
+                height: 18,
               ),
 
               // ==================================================
@@ -753,7 +899,7 @@ class _LoginPageState extends State<LoginPage> {
                 child:
                     ElevatedButton(
                   onPressed:
-                      _loginLoading
+                      interactionLocked
                           ? null
                           : _login,
 
@@ -761,7 +907,7 @@ class _LoginPageState extends State<LoginPage> {
                       ElevatedButton.styleFrom(
                     backgroundColor:
                         const Color(
-                      0xFF35D0A0,
+                      0xFFB58CFF,
                     ),
 
                     foregroundColor:
@@ -771,7 +917,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     disabledBackgroundColor:
                         const Color(
-                      0xFF587D72,
+                      0xFF5E5274,
                     ),
 
                     disabledForegroundColor:
@@ -820,68 +966,69 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
+              const SizedBox(
+                height: 16,
+              ),
+
               // ==================================================
-              // REGISTER BUTTON
+              // 🐱 REGISTER BUTTON
+              // ==================================================
+              //
+              // AINA NÄKYVISSÄ
+              //
               // ==================================================
 
-              if (!_accountStatusLoading &&
-                  !_accountCreatedOnDevice) ...[
-                const SizedBox(
-                  height: 16,
-                ),
+              SizedBox(
+                width:
+                    double.infinity,
 
-                SizedBox(
-                  width:
-                      double.infinity,
+                height: 50,
 
-                  height: 50,
+                child:
+                    OutlinedButton(
+                  onPressed:
+                      interactionLocked
+                          ? null
+                          : _openRegisterPage,
 
-                  child:
-                      OutlinedButton(
-                    onPressed:
-                        _loginLoading
-                            ? null
-                            : _openRegisterPage,
-
-                    style:
-                        OutlinedButton.styleFrom(
-                      foregroundColor:
-                          const Color(
-                        0xFF35D0A0,
-                      ),
-
-                      side:
-                          const BorderSide(
-                        color:
-                            Color(
-                          0xFF35D0A0,
-                        ),
-                        width: 2,
-                      ),
-
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                          16,
-                        ),
-                      ),
+                  style:
+                      OutlinedButton.styleFrom(
+                    foregroundColor:
+                        const Color(
+                      0xFFFFB7E8,
                     ),
 
-                    child:
-                        const Text(
-                      'LUO UUSI TILI',
+                    side:
+                        const BorderSide(
+                      color:
+                          Color(
+                        0xFFFFB7E8,
+                      ),
+                      width: 2,
+                    ),
 
-                      style:
-                          TextStyle(
-                        fontSize: 16,
-                        fontWeight:
-                            FontWeight.bold,
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                        16,
                       ),
                     ),
                   ),
+
+                  child:
+                      const Text(
+                    'LUO UUSI TILI',
+
+                    style:
+                        TextStyle(
+                      fontSize: 16,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ],
+              ),
 
               // ==================================================
               // EXTRA VERTICAL SPACE
