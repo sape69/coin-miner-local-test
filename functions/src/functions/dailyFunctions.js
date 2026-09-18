@@ -27,6 +27,22 @@
 //
 // Kaikki päivät käsitellään UTC-ajassa.
 //
+// TÄRKEÄ:
+// Daily Hash Rate tallennetaan erilliseen
+// `dailyHashRate`-kenttään.
+//
+// Tämä tiedosto EI ylikirjoita käyttäjän varsinaista
+// `hashRate`-arvoa.
+//
+// Esimerkiksi:
+//
+// hashRate       → aktiivinen / varsinainen mining-teho
+// dailyHashRate  → Stella Daily Streak -teho
+//
+// Power Boost ja muut mining-toiminnot voivat käyttää
+// `hashRate`-kenttää ilman, että Daily Check-In tuhoaa
+// niiden arvoa.
+//
 // ============================================================
 
 
@@ -116,9 +132,12 @@ const {
 //
 // ============================================================
 
-function calculateDailyHashRate(streak) {
+function calculateDailyHashRate(
+  streak
+) {
   const safeStreak =
-    Number.isFinite(streak) && streak > 0
+    Number.isFinite(streak) &&
+    streak > 0
       ? Math.floor(streak)
       : 1;
 
@@ -130,7 +149,10 @@ function calculateDailyHashRate(streak) {
 
   const calculatedHashRate =
     DAILY_HASH_RATE_START +
-    ((effectiveDay - 1) * DAILY_HASH_RATE_STEP);
+    (
+      (effectiveDay - 1) *
+      DAILY_HASH_RATE_STEP
+    );
 
   return Math.min(
     calculatedHashRate,
@@ -143,7 +165,9 @@ function calculateDailyHashRate(streak) {
 // 🏆 ACHIEVEMENT COLLECTION
 // ============================================================
 
-function getAchievementCollection(uid) {
+function getAchievementCollection(
+  uid
+) {
   return getUserRef(uid)
     .collection(
       "achievements"
@@ -174,6 +198,7 @@ async function getAchievementData(
 
   return {
     ref,
+
     data:
       snapshot.exists
         ? snapshot.data() || {}
@@ -206,7 +231,9 @@ function buildAchievementUpdate(
     Math.max(
       0,
       Math.floor(
-        Number(existingData.progress) || 0
+        Number(
+          existingData.progress
+        ) || 0
       )
     );
 
@@ -239,13 +266,22 @@ function buildAchievementUpdate(
 
   const update = {
     achievementId,
-    progress: safeProgress,
-    target: safeTarget,
+
+    progress:
+      safeProgress,
+
+    target:
+      safeTarget,
+
     reward,
+
     unlocked,
+
     rewardClaimed:
       existingData.rewardClaimed === true,
-    updatedAt: now,
+
+    updatedAt:
+      now,
   };
 
   if (
@@ -253,7 +289,8 @@ function buildAchievementUpdate(
     !alreadyUnlocked &&
     !existingData.unlockedAt
   ) {
-    update.unlockedAt = now;
+    update.unlockedAt =
+      now;
   }
 
   return update;
@@ -293,6 +330,7 @@ async function updateDailyAchievements(
       "hot_streak"
     );
 
+
   // ----------------------------------------------------------
   // 🐱 READ STELLA'S FRIEND
   // ----------------------------------------------------------
@@ -303,6 +341,7 @@ async function updateDailyAchievements(
       uid,
       "stellas_friend"
     );
+
 
   // ----------------------------------------------------------
   // 🔥 HOT STREAK
@@ -326,6 +365,7 @@ async function updateDailyAchievements(
     }
   );
 
+
   // ----------------------------------------------------------
   // 🐱 STELLA'S FRIEND
   // ----------------------------------------------------------
@@ -347,6 +387,7 @@ async function updateDailyAchievements(
 
   const newCheckIns =
     previousCheckIns + 1;
+
 
   const stellasFriendUpdate =
     buildAchievementUpdate(
@@ -375,23 +416,31 @@ async function updateDailyAchievements(
 const dailyCheckIn =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
-    async (request) => {
+
+    async (
+      request
+    ) => {
 
       // ======================================================
       // 🔐 AUTHENTICATION
       // ======================================================
 
-      if (!request.auth) {
-
+      if (
+        !request.auth
+      ) {
         throw new HttpsError(
           "unauthenticated",
           "🐱 Kirjaudu sisään saadaksesi Daily Bonus -palkinnon."
         );
-
       }
 
+
+      // ======================================================
+      // 👤 UID
+      // ======================================================
 
       const uid =
         request.auth.uid;
@@ -420,7 +469,9 @@ const dailyCheckIn =
         // ====================================================
 
         return await db.runTransaction(
-          async (transaction) => {
+          async (
+            transaction
+          ) => {
 
             // ==================================================
             // 👤 GET USER
@@ -449,28 +500,55 @@ const dailyCheckIn =
 
 
             // ==================================================
-            // ⚡ CURRENT HASH RATE
+            // ⚡ CURRENT ACTIVE HASH RATE
             // ==================================================
             //
-            // Hash Rate voidaan säilyttää käyttäjädatassa.
+            // Tämä on käyttäjän varsinainen hashRate.
             //
-            // Uudessa mallissa Daily Check-In määrittää
-            // Daily Hash Raten streakin perusteella.
+            // TÄTÄ EI MUUTETA Daily Check-Inissä.
             //
-            // Mainosboostit voivat nostaa aktiivista Hash Ratea
-            // väliaikaisesti erillisessä ad-logiikassa.
+            // Power Boost / Mining Start / muu mining-logiikka
+            // voi hallita tätä kenttää omassa service-kerroksessaan.
             //
             // ==================================================
 
             const savedHashRate =
-              Number(data.hashRate);
+              Number(
+                data.hashRate
+              );
 
 
             const currentHashRate =
-              Number.isFinite(savedHashRate) &&
-                      savedHashRate >= 0
-                  ? savedHashRate
-                  : 0;
+              Number.isFinite(
+                savedHashRate
+              ) &&
+              savedHashRate >= 0
+                ? savedHashRate
+                : 0;
+
+
+            // ==================================================
+            // ⚡ CURRENT DAILY HASH RATE
+            // ==================================================
+            //
+            // Tämä on viimeisin onnistunut Stella Daily
+            // Hash Rate.
+            //
+            // ==================================================
+
+            const savedDailyHashRate =
+              Number(
+                data.dailyHashRate
+              );
+
+
+            const currentDailyHashRate =
+              Number.isFinite(
+                savedDailyHashRate
+              ) &&
+              savedDailyHashRate >= 0
+                ? savedDailyHashRate
+                : 0;
 
 
             // ==================================================
@@ -478,47 +556,71 @@ const dailyCheckIn =
             // ==================================================
 
             const savedStreak =
-              Number(data.dailyStreak);
+              Number(
+                data.dailyStreak
+              );
 
 
             const currentStreak =
-              Number.isFinite(savedStreak) &&
-                      savedStreak >= 0
-                  ? Math.floor(savedStreak)
-                  : 0;
+              Number.isFinite(
+                savedStreak
+              ) &&
+              savedStreak >= 0
+                ? Math.floor(
+                    savedStreak
+                  )
+                : 0;
 
 
             // ==================================================
             // 🛡️ ALREADY CLAIMED TODAY
             // ==================================================
 
-            if (lastDailyDate === today) {
+            if (
+              lastDailyDate === today
+            ) {
 
               return {
 
-                success: true,
+                success:
+                  true,
 
-                claimed: false,
+                claimed:
+                  false,
 
-                alreadyClaimed: true,
+                alreadyClaimed:
+                  true,
 
-                dailyClaimed: true,
+                dailyClaimed:
+                  true,
 
-                date: today,
+                date:
+                  today,
 
-                bonus: 0,
+                bonus:
+                  0,
 
-                hashRate: currentHashRate,
+                // Varsinainen aktiivinen
+                // mining Hash Rate.
 
-                streak: currentStreak,
+                hashRate:
+                  currentHashRate,
 
-                dailyStreak: currentStreak,
+                // Viimeisin Daily Hash Rate.
+
+                dailyHashRate:
+                  currentDailyHashRate,
+
+                streak:
+                  currentStreak,
+
+                dailyStreak:
+                  currentStreak,
 
                 message:
-                  "🐱🎁 Stella Daily Bonus on jo kerätty tänään!",
+                  "🐱🎁 Stella Daily Bonus on jo kerätty tänään.",
 
               };
-
             }
 
 
@@ -553,45 +655,47 @@ const dailyCheckIn =
 
 
             // ==================================================
-            // 📊 PREVIOUS HASH RATE
+            // 📊 PREVIOUS DAILY HASH RATE
+            // ==================================================
+            //
+            // TÄMÄ EI ole `hashRate`.
+            //
+            // Tämä on edellinen Stella Daily Hash Rate.
+            //
             // ==================================================
 
-            const previousHashRate =
-              currentHashRate;
+            const previousDailyHashRate =
+              currentDailyHashRate;
 
 
             // ==================================================
-            // ⚡ NEW HASH RATE
-            // ============================================================
+            // ⚡ NEW ACTIVE HASH RATE
+            // ==================================================
             //
-            // Daily Hash Rate korvaa vanhan Daily-bonuksen
-            // kumulatiivisen lisäämisen.
+            // Daily Check-In EI muuta käyttäjän varsinaista
+            // `hashRate`-kenttää.
             //
-            // Esimerkiksi:
+            // Se pysyy sellaisena kuin mining-järjestelmä
+            // on sen määrittänyt.
             //
-            // vanha HR = 1.5
-            // uusi streak = päivä 4
-            // Daily HR = 2.0
-            //
-            // => hashRate = 2.0
-            //
-            // ============================================================
+            // ==================================================
 
             const newHashRate =
-              dailyHashRate;
+              currentHashRate;
 
 
             // ==================================================
             // 🏆 ACHIEVEMENTS
             // ==================================================
             //
-            // Luetaan Hot Streak ja Stella's Friend ennen
-            // transactionin ensimmäisiä kirjoituksia.
+            // Luetaan achievementit ennen transactionin
+            // kirjoituksia.
             //
             // ==================================================
 
             const achievementNow =
               new Date();
+
 
             await updateDailyAchievements(
               transaction,
@@ -614,29 +718,48 @@ const dailyCheckIn =
 
             // ==================================================
             // 👤 UPDATE USER
-            // ==================================================
+            // ============================================================
+            //
+            // TÄRKEÄ MUUTOS:
+            //
+            // ❌ hashRate: dailyHashRate
+            //
+            // ei enää tehdä.
+            //
+            // Sen sijaan:
+            //
+            // ✅ dailyHashRate: dailyHashRate
+            //
+            // Varsinainen `hashRate` säilyy ennallaan.
+            //
+            // ============================================================
 
             transaction.set(
               userRef,
               {
 
-                // ⚡ DAILY HASH RATE
+                // ==================================================
+                // ⚡ STELLA DAILY HASH RATE
+                // ==================================================
 
-                hashRate:
-                  newHashRate,
+                dailyHashRate:
+                  dailyHashRate,
 
 
+                // ==================================================
                 // 📅 DAILY
+                // ==================================================
 
                 lastDailyDate:
                   today,
-
 
                 dailyStreak:
                   newDailyStreak,
 
 
+                // ==================================================
                 // 🕒 METADATA
+                // ==================================================
 
                 updatedAt:
                   FieldValue.serverTimestamp(),
@@ -651,6 +774,16 @@ const dailyCheckIn =
             // ==================================================
             // 📜 SAVE DAILY HISTORY
             // ==================================================
+            //
+            // Historiaan tallennetaan erikseen:
+            //
+            // hashRate
+            // dailyHashRate
+            //
+            // jotta myöhemmin voidaan nähdä tarkasti,
+            // mitä Daily Check-In teki.
+            //
+            // ==================================================
 
             transaction.set(
               dailyHistoryRef,
@@ -664,47 +797,66 @@ const dailyCheckIn =
                   "dailyHashRate",
 
 
-                // Daily Hash Rate kyseisenä päivänä
+                // ==================================================
+                // 🎁 DAILY BONUS
+                // ==================================================
 
                 bonus:
                   dailyHashRate,
 
 
-                // Hash Rate ennen Daily Check-Iniä
+                // ==================================================
+                // ⚡ ACTIVE HASH RATE
+                // ==================================================
 
                 previousHashRate:
-                  previousHashRate,
-
-
-                // Hash Rate Daily Check-Inin jälkeen
+                  currentHashRate,
 
                 newHashRate:
                   newHashRate,
 
 
-                // Daily Streak
+                // ==================================================
+                // ⚡ DAILY HASH RATE
+                // ==================================================
 
-                streak:
-                  newDailyStreak,
-
-
-                dailyStreak:
-                  newDailyStreak,
-
-
-                // Päivän Hash Rate
+                previousDailyHashRate:
+                  previousDailyHashRate,
 
                 dailyHashRate:
                   dailyHashRate,
 
 
+                // ==================================================
+                // 🔥 STREAK
+                // ==================================================
+
+                streak:
+                  newDailyStreak,
+
+                dailyStreak:
+                  newDailyStreak,
+
+
+                // ==================================================
+                // 📅 DATE
+                // ==================================================
+
                 date:
                   today,
 
 
+                // ==================================================
+                // 👤 UID
+                // ==================================================
+
                 uid:
                   uid,
 
+
+                // ==================================================
+                // 🕒 CREATED
+                // ==================================================
 
                 createdAt:
                   FieldValue.serverTimestamp(),
@@ -722,17 +874,25 @@ const dailyCheckIn =
 
             return {
 
-              success: true,
+              success:
+                true,
 
-              claimed: true,
+              claimed:
+                true,
 
-              alreadyClaimed: false,
+              alreadyClaimed:
+                false,
 
-              dailyClaimed: true,
+              dailyClaimed:
+                true,
 
-              date: today,
+              date:
+                today,
 
-              // Päivän Daily Hash Rate
+
+              // ==================================================
+              // 🎁 DAILY BONUS
+              // ==================================================
 
               bonus:
                 dailyHashRate,
@@ -740,18 +900,33 @@ const dailyCheckIn =
               dailyHashRate:
                 dailyHashRate,
 
-              // Uusi käyttäjän Hash Rate
+
+              // ==================================================
+              // ⚡ ACTIVE HASH RATE
+              // ==================================================
+              //
+              // Tämä pysyi muuttumattomana.
+              //
+              // ==================================================
 
               hashRate:
                 newHashRate,
 
-              // Streak
+
+              // ==================================================
+              // 🔥 STREAK
+              // ==================================================
 
               streak:
                 newDailyStreak,
 
               dailyStreak:
                 newDailyStreak,
+
+
+              // ==================================================
+              // 🐱 MESSAGE
+              // ==================================================
 
               message:
                 `🐱🎁 Daily Bonus kerätty! Päivä ${Math.min(
@@ -764,7 +939,13 @@ const dailyCheckIn =
           }
         );
 
-      } catch (error) {
+      } catch (
+        error
+      ) {
+
+        // ======================================================
+        // ❌ ERROR LOG
+        // ======================================================
 
         console.error(
           "dailyCheckIn error:",
@@ -772,10 +953,20 @@ const dailyCheckIn =
         );
 
 
-        if (error instanceof HttpsError) {
+        // ======================================================
+        // 🔐 HttpsError
+        // ======================================================
+
+        if (
+          error instanceof HttpsError
+        ) {
           throw error;
         }
 
+
+        // ======================================================
+        // ❌ INTERNAL ERROR
+        // ======================================================
 
         throw new HttpsError(
           "internal",
