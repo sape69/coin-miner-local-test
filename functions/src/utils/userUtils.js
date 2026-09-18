@@ -1,7 +1,7 @@
 "use strict";
 
 // ============================================================
-// 🐱 STELLA USER UTILITIES
+// 🐱 STELLURIINI - USER UTILITIES
 // ============================================================
 //
 // Keskitetyt käyttäjä- ja Firestore-apufunktiot.
@@ -12,8 +12,16 @@
 // 📜 Käyttäjän tapahtumahistoriasta
 // 🎁 AdMob Reward -referenssistä
 //
-// Kaikki Firestore-polut pidetään tässä tiedostossa,
-// jotta muu backend käyttää samoja polkuja keskitetysti.
+// Firestore-polut pidetään tässä tiedostossa keskitetysti,
+// jotta kaikki backend-palvelut käyttävät samoja polkuja.
+//
+// TÄMÄ TIEDOSTO EI:
+//
+// ❌ muuta käyttäjän saldoa
+// ❌ aktivoi Power Boostia
+// ❌ käynnistä Mining Startia
+// ❌ käsittele AdMob SSV:tä
+// ❌ muuta mining-tilaa
 //
 // ============================================================
 
@@ -30,6 +38,47 @@ const {
 
 
 // ============================================================
+// 🔐 VALIDATE FIRESTORE DOCUMENT ID
+// ============================================================
+//
+// Firestore-dokumentin ID ei saa olla tyhjä.
+//
+// UID:t ja transactionId:t validoidaan varsinaisessa
+// business/service-kerroksessa.
+//
+// Tämä tarkistus estää kuitenkin yleiset ohjelmointivirheet,
+// kuten undefined/null/tyhjä ID.
+//
+// ============================================================
+
+function validateDocumentId(
+  value,
+  name
+) {
+  if (
+    typeof value !== "string"
+  ) {
+    throw new Error(
+      `${name} must be a string.`
+    );
+  }
+
+  const id =
+    value.trim();
+
+  if (
+    id.length === 0
+  ) {
+    throw new Error(
+      `${name} cannot be empty.`
+    );
+  }
+
+  return id;
+}
+
+
+// ============================================================
 // 👤 USER DOCUMENT
 // ============================================================
 //
@@ -42,9 +91,15 @@ const {
 function getUserRef(
   uid
 ) {
+  const validUid =
+    validateDocumentId(
+      uid,
+      "uid"
+    );
+
   return db
     .collection("users")
-    .doc(uid);
+    .doc(validUid);
 }
 
 
@@ -55,6 +110,9 @@ function getUserRef(
 // Firestore:
 //
 // users/{uid}/transactions
+//
+// Käytetään käyttäjän reward-, mining- ja muiden
+// tapahtumien historian tallentamiseen.
 //
 // ============================================================
 
@@ -74,16 +132,31 @@ function getHistoryCollection(
 //
 // admobRewards/{transactionId}
 //
-// AdMob transaction ID toimii dokumentin ID:nä.
+// AdMob transaction_id toimii dokumentin ID:nä.
+//
+// Tämä mahdollistaa atomisen duplicate-tarkistuksen:
+//
+//   transactionId
+//        ↓
+// admobRewards/{transactionId}
+//
+// Jos sama transaction_id vastaanotetaan uudelleen,
+// backend voi tunnistaa sen jo käsitellyksi.
 //
 // ============================================================
 
 function getAdMobRewardRef(
   transactionId
 ) {
+  const validTransactionId =
+    validateDocumentId(
+      transactionId,
+      "transactionId"
+    );
+
   return db
     .collection("admobRewards")
-    .doc(transactionId);
+    .doc(validTransactionId);
 }
 
 
