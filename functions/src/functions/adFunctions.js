@@ -95,7 +95,7 @@ const {
 const {
   verifyAdMobCallback,
 } = require(
-  "../services/adMobService"
+  "../services/admobService"
 );
 
 
