@@ -278,8 +278,7 @@ class _StellaMiningCardState
     // jossa Power Boost on jo aktiivinen,
     // näytetään animaatio kerran.
     if (widget.boostActive) {
-      WidgetsBinding.instance
-          .addPostFrameCallback(
+      WidgetsBinding.instance.addPostFrameCallback(
         (_) {
           if (mounted) {
             _playBoostAnimation();
@@ -302,7 +301,7 @@ class _StellaMiningCardState
     // Power Boost vaihtui:
     // false → true
     //
-    // Tällöin Stella reagoi boostin aktivointiin.
+    // Stella reagoi boostin aktivointiin.
     if (!oldWidget.boostActive &&
         widget.boostActive) {
       _playBoostAnimation();
@@ -396,33 +395,22 @@ class _StellaMiningCardState
                     Container(
                       width: 135,
                       height: 135,
-                      decoration:
-                          BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                goldColor
-                                    .withValues(
-                              alpha:
-                                  0.55 * glow,
+                            color: goldColor.withValues(
+                              alpha: 0.55 * glow,
                             ),
-                            blurRadius:
-                                28 * glow,
-                            spreadRadius:
-                                8 * glow,
+                            blurRadius: 28 * glow,
+                            spreadRadius: 8 * glow,
                           ),
                           BoxShadow(
-                            color:
-                                pinkColor
-                                    .withValues(
-                              alpha:
-                                  0.35 * glow,
+                            color: pinkColor.withValues(
+                              alpha: 0.35 * glow,
                             ),
-                            blurRadius:
-                                45 * glow,
-                            spreadRadius:
-                                5 * glow,
+                            blurRadius: 45 * glow,
+                            spreadRadius: 5 * glow,
                           ),
                         ],
                       ),
@@ -435,28 +423,21 @@ class _StellaMiningCardState
                   Container(
                     width: 110,
                     height: 110,
-                    decoration:
-                        BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color:
-                          accentColor
-                              .withValues(
+                      color: accentColor.withValues(
                         alpha: 0.15,
                       ),
                       border: Border.all(
-                        color:
-                            accentColor
-                                .withValues(
+                        color: accentColor.withValues(
                           alpha: 0.10,
                         ),
                       ),
                     ),
-                    child:
-                        const Center(
+                    child: const Center(
                       child: Text(
                         '🐱⛏️',
-                        style:
-                            TextStyle(
+                        style: TextStyle(
                           fontSize: 55,
                         ),
                       ),
@@ -473,11 +454,9 @@ class _StellaMiningCardState
                       right: -12,
                       child: Opacity(
                         opacity: opacity,
-                        child:
-                            const Text(
+                        child: const Text(
                           '✨',
-                          style:
-                              TextStyle(
+                          style: TextStyle(
                             fontSize: 30,
                           ),
                         ),
@@ -494,11 +473,9 @@ class _StellaMiningCardState
                       left: -18,
                       child: Opacity(
                         opacity: opacity,
-                        child:
-                            const Text(
+                        child: const Text(
                           '⚡',
-                          style:
-                              TextStyle(
+                          style: TextStyle(
                             fontSize: 27,
                           ),
                         ),
@@ -515,11 +492,9 @@ class _StellaMiningCardState
                       left: -20,
                       child: Opacity(
                         opacity: opacity,
-                        child:
-                            const Text(
+                        child: const Text(
                           '💫',
-                          style:
-                              TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                           ),
                         ),
@@ -545,10 +520,8 @@ class _StellaMiningCardState
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(30),
-        gradient:
-            const LinearGradient(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -557,8 +530,7 @@ class _StellaMiningCardState
           ],
         ),
         border: Border.all(
-          color:
-              accentColor.withValues(
+          color: accentColor.withValues(
             alpha: 0.40,
           ),
         ),
@@ -589,12 +561,10 @@ class _StellaMiningCardState
           Text(
             widget.miningTitle,
             textAlign: TextAlign.center,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
               letterSpacing: 1,
             ),
           ),
@@ -610,10 +580,8 @@ class _StellaMiningCardState
           Text(
             widget.miningSubtitle,
             textAlign: TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
+            style: const TextStyle(
+              color: secondaryTextColor,
               fontSize: 14,
             ),
           ),
@@ -631,12 +599,10 @@ class _StellaMiningCardState
               widget.unclaimedMining,
             ),
             textAlign: TextAlign.center,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               color: goldColor,
               fontSize: 38,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
@@ -647,12 +613,10 @@ class _StellaMiningCardState
           const Text(
             'STL',
             style: TextStyle(
-              color:
-                  secondaryTextColor,
+              color: secondaryTextColor,
               letterSpacing: 2,
               fontSize: 12,
-              fontWeight:
-                  FontWeight.w600,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
@@ -666,27 +630,17 @@ class _StellaMiningCardState
 
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets
-                    .symmetric(
+            padding: const EdgeInsets.symmetric(
               vertical: 15,
               horizontal: 20,
             ),
-            decoration:
-                BoxDecoration(
-              color:
-                  backgroundColor
-                      .withValues(
+            decoration: BoxDecoration(
+              color: backgroundColor.withValues(
                 alpha: 0.55,
               ),
-              borderRadius:
-                  BorderRadius.circular(
-                18,
-              ),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color:
-                    accentColor
-                        .withValues(
+                color: accentColor.withValues(
                   alpha: 0.08,
                 ),
               ),
@@ -695,14 +649,11 @@ class _StellaMiningCardState
               children: [
                 Text(
                   widget.timerText,
-                  textAlign:
-                      TextAlign.center,
-                  style:
-                      const TextStyle(
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(
@@ -710,15 +661,11 @@ class _StellaMiningCardState
                 ),
                 Text(
                   widget.timerLabel,
-                  textAlign:
-                      TextAlign.center,
-                  style:
-                      const TextStyle(
-                    color:
-                        secondaryTextColor,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: secondaryTextColor,
                     fontSize: 11,
-                    letterSpacing:
-                        1.5,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ],
@@ -744,10 +691,8 @@ class _StellaMiningCardState
           // ----------------------------------------------------
 
           StellaMiningDaysCard(
-            languageCode:
-                widget.languageCode,
-            dailyStreak:
-                widget.dailyStreak,
+            languageCode: widget.languageCode,
+            dailyStreak: widget.dailyStreak,
           ),
 
           const SizedBox(
@@ -759,18 +704,12 @@ class _StellaMiningCardState
           // ----------------------------------------------------
 
           MiningProgressCard(
-            miningActive:
-                widget.miningActive,
-            miningRemainingMs:
-                widget.miningRemainingMs,
-            miningDurationMs:
-                widget.miningDurationMs,
-            title:
-                widget.miningProgressTitle,
-            stlPerHourText:
-                widget.stlPerHourText,
-            dailyHashRateText:
-                widget.dailyHashRateText,
+            miningActive: widget.miningActive,
+            miningRemainingMs: widget.miningRemainingMs,
+            miningDurationMs: widget.miningDurationMs,
+            title: widget.miningProgressTitle,
+            stlPerHourText: widget.stlPerHourText,
+            dailyHashRateText: widget.dailyHashRateText,
             dailyHashRateDayText:
                 widget.dailyHashRateDayText,
           ),
