@@ -4,32 +4,39 @@
 // 🐱 STELLA AD FUNCTIONS
 // ============================================================
 //
-// AdMob SSV:n tehtävä:
+// Stelluriini AdMob SSV -vastaanotto.
+//
+// Vastuu:
 //
 // 📺 Vastaanottaa AdMob SSV callbackin
-// 🔐 Tarkistaa allekirjoituksen
+// 🔐 Luottaa vain admobService.js:n suorittamaan
+//    kryptografiseen allekirjoituksen tarkistukseen
 // 🆔 Tunnistaa käyttäjän
 // 🎯 Tunnistaa rewardin käyttötarkoituksen
 // 💾 Tallentaa vahvistetun rewardin admobRewards-kokoelmaan
 //
 // TÄRKEÄ ARKKITEHTUURI:
 //
-// AdMob SSV EI aktivoi Power Boostia.
-//
 // AdMob SSV
+//      ↓
+// admobService.verifyAdMobCallback()
+//      ↓
+// allekirjoitus + parametrien validointi
 //      ↓
 // admobRewards/{transactionId}
 //      ↓
 // Flutter
 //      ↓
-// powerBoost()
-//      ↓
-// 4 h Power Boost
+// powerBoost() / miningStart()
 //
-// Sama periaate koskee Mining Startia.
+// Tämä tiedosto EI:
 //
-// AdMob SSV ainoastaan vahvistaa ja tallentaa mainoksen.
-// Varsinainen toiminto suoritetaan erillisessä Cloud Functionissa.
+// ❌ aktivoi Power Boostia
+// ❌ käynnistä Mining Startia
+// ❌ lisää STL-saldoa
+// ❌ muuta adsToday-arvoa
+// ❌ muuta cooldownia
+// ❌ muuta mining-tilaa
 //
 // ============================================================
 
@@ -72,6 +79,10 @@ const {
 // ============================================================
 // 🔐 ADMOB SERVICE
 // ============================================================
+//
+// KAIKKI SSV:n kryptografinen tarkistus tehdään täällä.
+//
+// ============================================================
 
 const {
   verifyAdMobCallback,
@@ -91,9 +102,15 @@ function getSafeNumber(
   const number =
     Number(value);
 
-  return Number.isFinite(number)
-    ? number
-    : fallback;
+  if (
+    !Number.isFinite(
+      number
+    )
+  ) {
+    return fallback;
+  }
+
+  return number;
 }
 
 
@@ -101,18 +118,11 @@ function getSafeNumber(
 // 🔐 DECODE CUSTOM DATA
 // ============================================================
 //
-// AdMob custom_data voi saapua URL-koodattuna.
+// Google kertoo, että custom_data voi olla
+// percent-escaped / URL-koodattu.
 //
-// Esimerkiksi:
-//
-// UID%3Amining_start
-//
-// muuttuu:
-//
-// UID:mining_start
-//
-// Jos arvo ei ole URL-koodattu,
-// se palautetaan sellaisenaan.
+// Tämä tehdään vasta sen jälkeen,
+// kun admobService on tarkistanut allekirjoituksen.
 //
 // ============================================================
 
@@ -120,7 +130,8 @@ function decodeCustomData(
   value
 ) {
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     return "";
   }
@@ -129,7 +140,8 @@ function decodeCustomData(
     value.trim();
 
   if (
-    trimmed.length === 0
+    trimmed.length ===
+    0
   ) {
     return "";
   }
@@ -152,133 +164,20 @@ function decodeCustomData(
 
 
 // ============================================================
-// 🔐 PARSE ADMOB CUSTOM DATA
-// ============================================================
-//
-// Uusi muoto:
-//
-// UID:power_boost
-// UID:mining_start
-//
-// Vanha muoto:
-//
-// UID
-//
-// Vanha pelkkä UID tulkitaan Power Boostiksi.
-//
-// ============================================================
-
-function parseAdMobCustomData(
-  customData
-) {
-  const decoded =
-    decodeCustomData(
-      customData
-    );
-
-  if (
-    decoded.length === 0 ||
-    decoded.length > 128
-  ) {
-    return null;
-  }
-
-
-  // ==========================================================
-  // 🐱 VANHA MUOTO: PELKKÄ UID
-  // ==========================================================
-
-  if (
-    !decoded.includes(":")
-  ) {
-    if (
-      !/^[A-Za-z0-9._-]+$/.test(
-        decoded
-      )
-    ) {
-      return null;
-    }
-
-    return {
-      uid:
-        decoded,
-
-      rewardPurpose:
-        "power_boost",
-    };
-  }
-
-
-  // ==========================================================
-  // 🎯 UUSI MUOTO
-  // ==========================================================
-
-  const separatorIndex =
-    decoded.lastIndexOf(":");
-
-  if (
-    separatorIndex <= 0 ||
-    separatorIndex >=
-      decoded.length - 1
-  ) {
-    return null;
-  }
-
-  const uid =
-    decoded.substring(
-      0,
-      separatorIndex
-    );
-
-  const rewardPurpose =
-    decoded.substring(
-      separatorIndex + 1
-    );
-
-
-  // ==========================================================
-  // 🛡️ UID VALIDATION
-  // ==========================================================
-
-  if (
-    uid.length === 0 ||
-    uid.length > 128 ||
-    !/^[A-Za-z0-9._-]+$/.test(
-      uid
-    )
-  ) {
-    return null;
-  }
-
-
-  // ==========================================================
-  // 🛡️ PURPOSE VALIDATION
-  // ==========================================================
-
-  if (
-    rewardPurpose !== "power_boost" &&
-    rewardPurpose !== "mining_start"
-  ) {
-    return null;
-  }
-
-
-  return {
-    uid,
-    rewardPurpose,
-  };
-}
-
-
-// ============================================================
 // 🔐 VALIDATE TRANSACTION ID
+// ============================================================
+//
+// AdMob dokumentoi transaction_id:n hex-enkoodatuksi
+// yksilölliseksi reward-tunnisteeksi.
+//
 // ============================================================
 
 function validateTransactionId(
   value
 ) {
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     return "";
   }
@@ -287,8 +186,18 @@ function validateTransactionId(
     value.trim();
 
   if (
-    transactionId.length === 0 ||
-    transactionId.length > 256
+    transactionId.length ===
+      0 ||
+    transactionId.length >
+      256
+  ) {
+    return "";
+  }
+
+  if (
+    !/^[a-fA-F0-9]+$/.test(
+      transactionId
+    )
   ) {
     return "";
   }
@@ -301,21 +210,13 @@ function validateTransactionId(
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
 //
-// Tämä funktio tekee VAIN tämän:
+// Tämä funktio tekee VAIN:
 //
 // AdMob SSV
 //      ↓
 // admobRewards/{transactionId}
 //
-// Se EI:
-//
-// ❌ aktivoi Power Boostia
-// ❌ muuta adsToday-arvoa
-// ❌ muuta cooldownia
-// ❌ muuta mining-tilaa
-// ❌ lisää STL-saldoa
-//
-// Näistä asioista vastaavat erilliset toiminnot.
+// Varsinaiset pelitoiminnot tehdään muualla.
 //
 // ============================================================
 
@@ -333,7 +234,7 @@ async function saveVerifiedAdMobReward(
   const now =
     new Date();
 
-  return await db.runTransaction(
+  return db.runTransaction(
     async (
       transaction
     ) => {
@@ -351,7 +252,8 @@ async function saveVerifiedAdMobReward(
         existingSnapshot.exists
       ) {
         console.log(
-          `🐱 AdMob transaction already exists: ${transactionId}`
+          "🐱 AdMob transaction already exists:",
+          transactionId
         );
 
         return {
@@ -375,7 +277,7 @@ async function saveVerifiedAdMobReward(
 
 
       // ======================================================
-      // 🎯 REWARD DATA
+      // 🎁 REWARD DATA
       // ======================================================
 
       const rewardAmount =
@@ -418,43 +320,14 @@ async function saveVerifiedAdMobReward(
       // ======================================================
       // 🔐 CUSTOM DATA
       // ======================================================
-      //
-      // Tuetaan kaikkia käytössä olevia muotoja:
-      //
-      // verifiedAd.customData
-      // verifiedAd.custom_data
-      // verifiedAd.parameters.custom_data
-      // verifiedAd.parameters.customData
-      //
-      // ======================================================
-
-      const parameters =
-        verifiedAd &&
-        verifiedAd.parameters &&
-        typeof verifiedAd.parameters ===
-          "object"
-          ? verifiedAd.parameters
-          : {};
-
-      const rawCustomData =
-        typeof verifiedAd.customData ===
-          "string"
-          ? verifiedAd.customData
-          : typeof verifiedAd.custom_data ===
-              "string"
-              ? verifiedAd.custom_data
-              : typeof parameters.custom_data ===
-                  "string"
-                  ? parameters.custom_data
-                  : typeof parameters.customData ===
-                      "string"
-                      ? parameters.customData
-                      : "";
 
       const customData =
-        decodeCustomData(
-          rawCustomData
-        );
+        typeof verifiedAd.customData ===
+          "string"
+          ? decodeCustomData(
+              verifiedAd.customData
+            )
+          : "";
 
 
       // ======================================================
@@ -465,14 +338,11 @@ async function saveVerifiedAdMobReward(
         typeof verifiedAd.userId ===
           "string"
           ? verifiedAd.userId
-          : typeof parameters.user_id ===
-              "string"
-              ? parameters.user_id
-              : "";
+          : "";
 
 
       // ======================================================
-      // 💾 SAVE REWARD
+      // 💾 SAVE VERIFIED REWARD
       // ======================================================
 
       transaction.set(
@@ -549,16 +419,18 @@ async function saveVerifiedAdMobReward(
       // 📜 HISTORY
       // ======================================================
       //
-      // Historia kertoo vain siitä, että AdMob-palkinto
-      // vastaanotettiin ja vahvistettiin.
+      // Tämä historia kertoo VAIN:
       //
-      // Se EI tarkoita Power Boostin aktivointia.
+      // "AdMob reward vastaanotettiin ja vahvistettiin."
+      //
+      // Se ei tarkoita, että Power Boost olisi aktivoitu.
       //
       // ======================================================
 
       const historyRef =
-        getHistoryCollection(uid)
-          .doc();
+        getHistoryCollection(
+          uid
+        ).doc();
 
       transaction.set(
         historyRef,
@@ -598,7 +470,7 @@ async function saveVerifiedAdMobReward(
 
 
       // ======================================================
-      // 📤 RESPONSE
+      // 📤 RESULT
       // ======================================================
 
       return {
@@ -631,10 +503,10 @@ async function saveVerifiedAdMobReward(
 
 
 // ============================================================
-// 🔐 ADMOB REWARD CALLBACK
+// 📺 ADMOB REWARD CALLBACK
 // ============================================================
 //
-// Google AdMob SSV kutsuu tätä endpointia.
+// Google AdMob kutsuu tätä HTTP endpointia.
 //
 // ============================================================
 
@@ -644,6 +516,7 @@ const adMobReward =
       region:
         "us-central1",
     },
+
     async (
       req,
       res
@@ -656,10 +529,14 @@ const adMobReward =
         // ======================================================
 
         if (
-          req.method !== "GET" &&
-          req.method !== "HEAD"
+          req.method !==
+            "GET" &&
+          req.method !==
+            "HEAD"
         ) {
-          res.status(405).json({
+          res.status(
+            405
+          ).json({
             success:
               false,
 
@@ -686,13 +563,16 @@ const adMobReward =
         // ======================================================
 
         if (
-          queryKeys.length === 0
+          queryKeys.length ===
+          0
         ) {
           console.log(
             "🐱 AdMob SSV endpoint health check."
           );
 
-          res.status(200).json({
+          res.status(
+            200
+          ).json({
             success:
               true,
 
@@ -711,13 +591,11 @@ const adMobReward =
         // 🧪 ADMOB VERIFY URL TEST
         // ======================================================
         //
-        // AdMob Verify URL voi lähettää callbackin ilman
+        // AdMobin Verify URL -testissä ei välttämättä ole
         // custom_dataa.
         //
-        // Tässä tapauksessa:
-        //
-        // ✅ tarkistetaan endpointin saavutettavuus
-        // ❌ EI anneta palkkiota
+        // Tällöin endpointin saavutettavuus voidaan vahvistaa,
+        // mutta rewardia EI tallenneta.
         //
         // ======================================================
 
@@ -726,33 +604,37 @@ const adMobReward =
             "string" &&
           req.query.custom_data
             .trim()
-            .length > 0;
+            .length >
+            0;
 
         const hasSignature =
           typeof req.query.signature ===
             "string" &&
           req.query.signature
             .trim()
-            .length > 0;
+            .length >
+            0;
 
         const hasKeyId =
           typeof req.query.key_id ===
             "string" &&
           req.query.key_id
             .trim()
-            .length > 0;
+            .length >
+            0;
 
         if (
           !hasCustomData &&
           hasSignature &&
           hasKeyId
         ) {
-
           console.log(
             "🐱 AdMob Verify URL test detected without custom_data. No reward granted."
           );
 
-          res.status(200).json({
+          res.status(
+            200
+          ).json({
             success:
               true,
 
@@ -790,38 +672,21 @@ const adMobReward =
 
 
         // ======================================================
-        // 🛡️ VERIFY RESULT CHECK
-        // ======================================================
-        //
-        // verifyAdMobCallback() voi palauttaa:
-        //
-        // {
-        //   verified: false,
-        //   error: "..."
-        // }
-        //
-        // Tätä ei saa käsitellä normaalina verifiedAd-objektina.
-        //
+        // 🛡️ VERIFY RESULT
         // ======================================================
 
         if (
           !verifiedAd ||
-          verifiedAd.verified !== true
+          verifiedAd.verified !==
+            true
         ) {
-
-          const verificationError =
-            verifiedAd &&
-            typeof verifiedAd.error ===
-              "string"
-              ? verifiedAd.error
-              : "AdMob SSV verification failed.";
-
           console.error(
-            "❌ AdMob SSV verification failed:",
-            verificationError
+            "❌ AdMob SSV verification failed."
           );
 
-          res.status(400).json({
+          res.status(
+            400
+          ).json({
             success:
               false,
 
@@ -840,92 +705,31 @@ const adMobReward =
 
 
         // ======================================================
-        // 🎯 GET VERIFIED PARAMETERS
-        // ======================================================
-
-        const parameters =
-          verifiedAd &&
-          verifiedAd.parameters &&
-          typeof verifiedAd.parameters ===
-            "object"
-            ? verifiedAd.parameters
-            : {};
-
-
-        // ======================================================
-        // 🎯 GET CUSTOM DATA
+        // 🔐 VERIFIED CUSTOM DATA
         // ======================================================
         //
-        // AdMob SSV:n custom_data voi olla:
+        // admobService on jo vahvistanut allekirjoituksen.
         //
-        // parameters.custom_data
-        //
-        // eikä välttämättä:
-        //
-        // verifiedAd.customData
+        // Tässä vaiheessa custom_data voidaan käsitellä.
         //
         // ======================================================
-
-        const rawCustomData =
-          typeof verifiedAd.customData ===
-            "string"
-            ? verifiedAd.customData
-            : typeof verifiedAd.custom_data ===
-                "string"
-                ? verifiedAd.custom_data
-                : typeof parameters.custom_data ===
-                    "string"
-                    ? parameters.custom_data
-                    : typeof parameters.customData ===
-                        "string"
-                        ? parameters.customData
-                        : "";
 
         const customData =
           decodeCustomData(
-            rawCustomData
-          );
-
-
-        // ======================================================
-        // 🔎 DEBUG LOG
-        // ======================================================
-
-        console.log(
-          "🐱 AdMob verified custom_data:",
-          customData
-            ? "present"
-            : "missing"
-        );
-
-
-        // ======================================================
-        // 🎯 PARSE CUSTOM DATA
-        // ======================================================
-
-        const parsedCustomData =
-          parseAdMobCustomData(
-            customData
+            verifiedAd.customData
           );
 
         if (
-          !parsedCustomData
+          customData.length ===
+          0
         ) {
-
           console.error(
-            "❌ Invalid AdMob custom_data."
+            "❌ AdMob SSV custom_data is missing."
           );
 
-          // ----------------------------------------------------
-          // Custom_data on pysyvästi virheellinen callbackin
-          // sisältö.
-          //
-          // Kuittaamme callbackin vastaanotetuksi HTTP 200:
-          // AdMob ei saa käynnistää tarpeetonta retry-kierrettä.
-          //
-          // ----------------------------------------------------
-
-          res.status(200).json({
+          res.status(
+            200
+          ).json({
             success:
               false,
 
@@ -939,7 +743,7 @@ const adMobReward =
               true,
 
             error:
-              "Invalid AdMob custom_data. No reward granted.",
+              "Missing AdMob custom_data. No reward granted.",
           });
 
           return;
@@ -947,11 +751,44 @@ const adMobReward =
 
 
         // ======================================================
-        // 👤 USER ID
+        // 👤 VERIFIED UID
         // ======================================================
 
         const uid =
-          parsedCustomData.uid;
+          typeof verifiedAd.uid ===
+            "string"
+            ? verifiedAd.uid.trim()
+            : "";
+
+        if (
+          uid.length ===
+          0
+        ) {
+          console.error(
+            "❌ AdMob verified UID is missing."
+          );
+
+          res.status(
+            200
+          ).json({
+            success:
+              false,
+
+            verified:
+              true,
+
+            rewarded:
+              false,
+
+            ignored:
+              true,
+
+            error:
+              "Missing verified user ID. No reward granted.",
+          });
+
+          return;
+        }
 
 
         // ======================================================
@@ -959,38 +796,25 @@ const adMobReward =
         // ======================================================
 
         const rewardPurpose =
-          parsedCustomData.rewardPurpose;
-
-
-        // ======================================================
-        // 🔐 TRANSACTION ID
-        // ======================================================
-        //
-        // Ensisijainen lähde:
-        //
-        // verifiedAd.transactionId
-        //
-        // Fallback:
-        //
-        // parameters.transaction_id
-        //
-        // ======================================================
-
-        const transactionId =
-          validateTransactionId(
-            verifiedAd.transactionId ||
-            parameters.transaction_id
-          );
+          typeof verifiedAd.rewardPurpose ===
+            "string"
+            ? verifiedAd.rewardPurpose
+            : "";
 
         if (
-          !transactionId
+          rewardPurpose !==
+            "power_boost" &&
+          rewardPurpose !==
+            "mining_start"
         ) {
-
           console.error(
-            "❌ AdMob SSV missing transaction_id."
+            "❌ Invalid verified AdMob reward purpose:",
+            rewardPurpose
           );
 
-          res.status(200).json({
+          res.status(
+            200
+          ).json({
             success:
               false,
 
@@ -1004,7 +828,7 @@ const adMobReward =
               true,
 
             error:
-              "Missing AdMob transaction_id. No reward granted.",
+              "Invalid AdMob reward purpose. No reward granted.",
           });
 
           return;
@@ -1012,28 +836,66 @@ const adMobReward =
 
 
         // ======================================================
-        // 🛡️ USER ID CONSISTENCY
+        // 🔐 TRANSACTION ID
+        // ======================================================
+
+        const transactionId =
+          validateTransactionId(
+            verifiedAd.transactionId
+          );
+
+        if (
+          !transactionId
+        ) {
+          console.error(
+            "❌ AdMob SSV transaction_id is missing or invalid."
+          );
+
+          res.status(
+            200
+          ).json({
+            success:
+              false,
+
+            verified:
+              true,
+
+            rewarded:
+              false,
+
+            ignored:
+              true,
+
+            error:
+              "Invalid AdMob transaction_id. No reward granted.",
+          });
+
+          return;
+        }
+
+
+        // ======================================================
+        // 👤 USER ID CONSISTENCY
         // ======================================================
 
         const callbackUserId =
           typeof verifiedAd.userId ===
             "string"
             ? verifiedAd.userId.trim()
-            : typeof parameters.user_id ===
-                "string"
-                ? parameters.user_id.trim()
-                : "";
+            : "";
 
         if (
           callbackUserId &&
-          callbackUserId !== uid
+          callbackUserId !==
+            uid
         ) {
-
           console.error(
-            "❌ AdMob user_id does not match custom_data UID."
+            "❌ AdMob user_id does not match verified custom_data UID."
           );
 
-          res.status(200).json({
+          res.status(
+            200
+          ).json({
             success:
               false,
 
@@ -1055,16 +917,22 @@ const adMobReward =
 
 
         // ======================================================
-        // 📺 BUILD NORMALIZED VERIFIED AD
+        // 📺 NORMALIZED VERIFIED AD
         // ======================================================
         //
-        // saveVerifiedAdMobReward() saa tästä aina
-        // yhdenmukaisen rakenteen.
+        // Tähän kopioidaan vain jo varmennetut arvot.
+        //
+        // Ei rakenneta allekirjoitettavaa sisältöä uudelleen.
         //
         // ======================================================
 
         const normalizedVerifiedAd = {
-          ...verifiedAd,
+          verified:
+            true,
+
+          uid,
+
+          rewardPurpose,
 
           transactionId,
 
@@ -1074,28 +942,22 @@ const adMobReward =
             callbackUserId || uid,
 
           rewardAmount:
-            verifiedAd.rewardAmount ??
-            parameters.reward_amount,
+            verifiedAd.rewardAmount,
 
           rewardItem:
-            verifiedAd.rewardItem ??
-            parameters.reward_item,
+            verifiedAd.rewardItem,
 
           adUnit:
-            verifiedAd.adUnit ??
-            parameters.ad_unit,
-
-          timestamp:
-            verifiedAd.timestamp ??
-            parameters.timestamp,
-
-          keyId:
-            verifiedAd.keyId ??
-            parameters.key_id,
+            verifiedAd.adUnit,
 
           adNetwork:
-            verifiedAd.adNetwork ||
-            "admob",
+            verifiedAd.adNetwork,
+
+          timestamp:
+            verifiedAd.timestamp,
+
+          keyId:
+            verifiedAd.keyId,
         };
 
 
@@ -1107,14 +969,20 @@ const adMobReward =
           "🐱 Verified AdMob reward:",
           {
             uid,
+
             transactionId,
+
             rewardPurpose,
+
             adUnit:
               normalizedVerifiedAd.adUnit,
+
             rewardAmount:
               normalizedVerifiedAd.rewardAmount,
+
             rewardItem:
               normalizedVerifiedAd.rewardItem,
+
             keyId:
               normalizedVerifiedAd.keyId,
           }
@@ -1128,28 +996,36 @@ const adMobReward =
         const result =
           await saveVerifiedAdMobReward(
             uid,
+
             transactionId,
+
             normalizedVerifiedAd,
+
             rewardPurpose
           );
 
 
         // ======================================================
-        // 📤 RESPONSE
+        // 📤 SUCCESS RESPONSE
         // ======================================================
 
         console.log(
           "🐱 AdMob SSV processed successfully:",
           {
             uid,
+
             transactionId,
+
             rewardPurpose,
+
             duplicate:
               result.duplicate,
           }
         );
 
-        res.status(200).json(
+        res.status(
+          200
+        ).json(
           result
         );
 
@@ -1157,20 +1033,18 @@ const adMobReward =
         error
       ) {
 
+        // ======================================================
+        // ❌ ERROR
+        // ======================================================
+
         console.error(
           "❌ AdMob reward verification failed:",
           error
         );
 
-        // ======================================================
-        // ❗ SERVER ERROR
-        // ======================================================
-        //
-        // Todellinen palvelinvirhe palautetaan 400.
-        //
-        // ======================================================
-
-        res.status(400).json({
+        res.status(
+          400
+        ).json({
           success:
             false,
 
