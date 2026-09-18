@@ -31,7 +31,7 @@ const crypto = require("crypto");
  *
  * Google allekirjoittaa callback-URL:n query-stringin.
  *
- * Allekirjoitettava sisältö on KAIKKI query-parametrit ennen:
+ * Allekirjoitettava sisältö on kaikki query-parametrit ennen:
  *
  *   &signature=
  *
@@ -59,7 +59,9 @@ const ADMOB_SSV_KEYS_URL =
 /**
  * AdMob vaihtaa allekirjoitusavaimia.
  *
- * Avaimia ei pidetä cachessa yli 24 tuntia.
+ * Google suosittelee, ettei public key -avaimia
+ * cacheteta yli 24 tuntia.
+ *
  * Käytetään 23 tuntia.
  */
 const PUBLIC_KEY_CACHE_MS =
@@ -113,10 +115,17 @@ const REWARD_DEFINITIONS = {
  * ============================================================
  */
 
-async function fetchJson(url) {
-  const response = await fetch(url);
+async function fetchJson(
+  url,
+) {
+  const response =
+    await fetch(
+      url,
+    );
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
       `AdMob public key server returned HTTP ${response.status}.`,
     );
@@ -135,7 +144,8 @@ async function fetchJson(url) {
 async function getAdMobPublicKeys(
   forceRefresh = false,
 ) {
-  const now = Date.now();
+  const now =
+    Date.now();
 
   /**
    * Käytetään cachea, jos se on vielä voimassa.
@@ -156,42 +166,57 @@ async function getAdMobPublicKeys(
 
   if (
     !data ||
-    !Array.isArray(data.keys)
+    !Array.isArray(
+      data.keys,
+    )
   ) {
     throw new Error(
       "AdMob public key response is invalid.",
     );
   }
 
-  const keys = new Map();
+  const keys =
+    new Map();
 
-  for (const key of data.keys) {
+  for (
+    const key of data.keys
+  ) {
     if (
       key &&
       key.keyId !== undefined &&
-      typeof key.pem === "string" &&
+      typeof key.pem ===
+        "string" &&
       key.pem.length > 0
     ) {
       keys.set(
-        String(key.keyId),
+        String(
+          key.keyId,
+        ),
         key.pem,
       );
     }
   }
 
-  if (keys.size === 0) {
+  if (
+    keys.size === 0
+  ) {
     throw new Error(
       "No usable AdMob public keys were returned.",
     );
   }
 
-  cachedPublicKeys = keys;
-  cachedPublicKeysAt = now;
+  cachedPublicKeys =
+    keys;
+
+  cachedPublicKeysAt =
+    now;
 
   console.log(
     "🐱 AdMob public keys loaded.",
     {
-      count: keys.size,
+      count:
+        keys.size,
+
       keyIds:
         Array.from(
           keys.keys(),
@@ -223,16 +248,21 @@ function extractQueryStringFromUrl(
   value,
 ) {
   if (
-    typeof value !== "string" ||
+    typeof value !==
+      "string" ||
     value.length === 0
   ) {
     return "";
   }
 
   const questionMark =
-    value.indexOf("?");
+    value.indexOf(
+      "?",
+    );
 
-  if (questionMark < 0) {
+  if (
+    questionMark < 0
+  ) {
     return "";
   }
 
@@ -280,13 +310,17 @@ function getRawQueryString(
     req.rawUrl,
   ];
 
-  for (const value of candidates) {
+  for (
+    const value of candidates
+  ) {
     const query =
       extractQueryStringFromUrl(
         value,
       );
 
-    if (query.length > 0) {
+    if (
+      query.length > 0
+    ) {
       return query;
     }
   }
@@ -304,10 +338,14 @@ function getRawQueryString(
       req._parsedUrl.search;
 
     if (
-      search.startsWith("?") &&
+      search.startsWith(
+        "?",
+      ) &&
       search.length > 1
     ) {
-      return search.substring(1);
+      return search.substring(
+        1,
+      );
     }
   }
 
@@ -331,7 +369,8 @@ function decodeAdMobSignature(
   signature,
 ) {
   if (
-    typeof signature !== "string" ||
+    typeof signature !==
+      "string" ||
     signature.length === 0
   ) {
     throw new Error(
@@ -347,15 +386,22 @@ function decodeAdMobSignature(
    */
   const normalized =
     signature
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
+      .replace(
+        /-/g,
+        "+",
+      )
+      .replace(
+        /_/g,
+        "/",
+      );
 
   /**
    * Base64-merkkijonon pituus ei saa olla
    * muodossa 1 mod 4.
    */
   if (
-    normalized.length % 4 === 1
+    normalized.length % 4 ===
+      1
   ) {
     throw new Error(
       "AdMob SSV signature has invalid Base64URL length.",
@@ -393,7 +439,8 @@ function decodeAdMobSignature(
     );
 
   if (
-    signatureBuffer.length === 0
+    signatureBuffer.length ===
+      0
   ) {
     throw new Error(
       "AdMob SSV signature could not be decoded.",
@@ -435,7 +482,8 @@ function extractSignatureData(
   rawQueryString,
 ) {
   if (
-    typeof rawQueryString !== "string" ||
+    typeof rawQueryString !==
+      "string" ||
     rawQueryString.length === 0
   ) {
     throw new Error(
@@ -443,11 +491,6 @@ function extractSignatureData(
     );
   }
 
-  /**
-   * Googlen callbackissa signature tulee
-   * ennen key_id:tä ja niiden tulee olla
-   * kaksi viimeistä parametria.
-   */
   const signatureMarker =
     "&signature=";
 
@@ -456,7 +499,9 @@ function extractSignatureData(
       signatureMarker,
     );
 
-  if (signatureIndex < 0) {
+  if (
+    signatureIndex < 0
+  ) {
     throw new Error(
       "AdMob SSV signature parameter was not found.",
     );
@@ -473,7 +518,8 @@ function extractSignatureData(
     );
 
   if (
-    signedQueryString.length === 0
+    signedQueryString.length ===
+      0
   ) {
     throw new Error(
       "AdMob SSV signed query string is empty.",
@@ -490,16 +536,19 @@ function extractSignatureData(
     );
 
   const parts =
-    signatureAndKeyId.split("&");
+    signatureAndKeyId.split(
+      "&",
+    );
 
   /**
    * Vain:
    *
    * signature=...
    * key_id=...
-   *
    */
-  if (parts.length !== 2) {
+  if (
+    parts.length !== 2
+  ) {
     throw new Error(
       "AdMob SSV signature and key_id must be the final two query parameters.",
     );
@@ -542,7 +591,9 @@ function extractSignatureData(
           "key_id=".length,
         ),
       );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     throw new Error(
       `AdMob SSV signature/key_id URL decoding failed: ${error.message}`,
     );
@@ -572,7 +623,9 @@ function extractSignatureData(
    * vastaanotettu.
    */
   if (
-    !/^\d+$/.test(keyId)
+    !/^\d+$/.test(
+      keyId,
+    )
   ) {
     throw new Error(
       "AdMob SSV key_id is invalid.",
@@ -581,7 +634,9 @@ function extractSignatureData(
 
   return {
     signedQueryString,
+
     signature,
+
     keyId,
   };
 }
@@ -623,7 +678,9 @@ async function verifyRawQueryString(
 
   let publicKey =
     publicKeys.get(
-      String(keyId),
+      String(
+        keyId,
+      ),
     );
 
   /**
@@ -633,7 +690,9 @@ async function verifyRawQueryString(
    * ----------------------------------------------------------
    */
 
-  if (!publicKey) {
+  if (
+    !publicKey
+  ) {
     console.log(
       "🐱 AdMob key not found in cache. Refreshing public keys.",
       {
@@ -648,11 +707,15 @@ async function verifyRawQueryString(
 
     publicKey =
       publicKeys.get(
-        String(keyId),
+        String(
+          keyId,
+        ),
       );
   }
 
-  if (!publicKey) {
+  if (
+    !publicKey
+  ) {
     const error =
       new Error(
         `AdMob SSV public key not found for key_id=${keyId}`,
@@ -698,18 +761,24 @@ async function verifyRawQueryString(
 
   verifier.end();
 
-  let verified = false;
+  let verified =
+    false;
 
   try {
     verified =
       verifier.verify(
         {
-          key: publicKey,
-          dsaEncoding: "der",
+          key:
+            publicKey,
+
+          dsaEncoding:
+            "der",
         },
         signatureBuffer,
       );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const verificationError =
       new Error(
         `AdMob SSV cryptographic verification failed: ${error.message}`,
@@ -724,7 +793,9 @@ async function verifyRawQueryString(
     throw verificationError;
   }
 
-  if (!verified) {
+  if (
+    !verified
+  ) {
     const error =
       new Error(
         "AdMob SSV signature verification failed.",
@@ -798,7 +869,9 @@ async function verifyAdMobSignature(
     );
 
     return verification;
-  } catch (error) {
+  } catch (
+    error
+  ) {
     console.error(
       "🐱❌ AdMob SSV signature verification FAILED.",
       {
@@ -840,7 +913,9 @@ function getParam(
   }
 
   const value =
-    params.get(name);
+    params.get(
+      name,
+    );
 
   if (
     value === null ||
@@ -849,7 +924,9 @@ function getParam(
     return "";
   }
 
-  return String(value);
+  return String(
+    value,
+  );
 }
 
 
@@ -892,15 +969,21 @@ function parseInteger(
   fallback = 0,
 ) {
   const number =
-    Number(value);
+    Number(
+      value,
+    );
 
   if (
-    !Number.isFinite(number)
+    !Number.isFinite(
+      number,
+    )
   ) {
     return fallback;
   }
 
-  return Math.trunc(number);
+  return Math.trunc(
+    number,
+  );
 }
 
 
@@ -914,7 +997,8 @@ function validateUid(
   uid,
 ) {
   if (
-    typeof uid !== "string"
+    typeof uid !==
+      "string"
   ) {
     return false;
   }
@@ -955,11 +1039,17 @@ function validateUid(
  *   UID:mining_start
  *   UID:power_boost
  *
- * Tuettu myös vanha muoto:
+ * Aikaisempi yhteensopivuusmuoto:
  *
  *   UID
  *
- * Vanha muoto tulkitaan Power Boostiksi.
+ * POISTETTU TÄSSÄ VERSIOSSA.
+ *
+ * Pelkkä UID ei enää saa automaattisesti muuttua
+ * Power Boost -rewardiksi.
+ *
+ * Tämä estää epäselvän tai vanhan custom_data-arvon
+ * tulkitsemisen vääräksi reward-tyypiksi.
  *
  * ============================================================
  */
@@ -968,10 +1058,12 @@ function parseCustomData(
   customData,
 ) {
   if (
-    typeof customData !== "string"
+    typeof customData !==
+      "string"
   ) {
     return {
       uid: "",
+
       rewardPurpose: "",
     };
   }
@@ -985,31 +1077,28 @@ function parseCustomData(
   ) {
     return {
       uid: "",
+
       rewardPurpose: "",
     };
   }
 
   /**
-   * Vanha custom_data:
+   * ==========================================================
+   * VAADITTU MUOTO
+   * ==========================================================
    *
-   * UID
+   * UID:mining_start
    *
-   * Säilytetään yhteensopivuus.
-   */
-  if (
-    !value.includes(":")
-  ) {
-    return {
-      uid: value,
-      rewardPurpose: "power_boost",
-    };
-  }
-
-  /**
-   * Käytetään viimeistä ":"-merkkiä.
+   * tai
+   *
+   * UID:power_boost
+   *
+   * Pelkkä UID ei ole enää hyväksytty.
    */
   const separatorIndex =
-    value.lastIndexOf(":");
+    value.lastIndexOf(
+      ":",
+    );
 
   if (
     separatorIndex <= 0 ||
@@ -1018,6 +1107,7 @@ function parseCustomData(
   ) {
     return {
       uid: "",
+
       rewardPurpose: "",
     };
   }
@@ -1037,8 +1127,42 @@ function parseCustomData(
       )
       .trim();
 
+  /**
+   * UID validoidaan tässä jo parserin yhteydessä.
+   */
+  if (
+    !validateUid(
+      uid,
+    )
+  ) {
+    return {
+      uid: "",
+
+      rewardPurpose: "",
+    };
+  }
+
+  /**
+   * Reward purpose validoidaan tässäkin,
+   * mutta varsinainen reward-kohtainen tarkistus
+   * tehdään verifyAdMobCallbackissa.
+   */
+  if (
+    rewardPurpose !==
+      "mining_start" &&
+    rewardPurpose !==
+      "power_boost"
+  ) {
+    return {
+      uid: "",
+
+      rewardPurpose: "",
+    };
+  }
+
   return {
     uid,
+
     rewardPurpose,
   };
 }
@@ -1098,11 +1222,18 @@ function validateTransactionId(
  * Tässä tarkistetaan:
  *
  * - timestamp on numero
+ * - timestamp on kokonaisluku
  * - timestamp > 0
- * - timestamp ei ole kohtuuttoman kaukana nykyhetkestä
  *
- * 24 tunnin raja toimii lisäsuojana, mutta varsinainen
- * replay-suojaus tehdään transaction_id:n avulla myöhemmin.
+ * TÄRKEÄ MUUTOS:
+ *
+ * Emme enää käytä keinotekoista 24 tunnin ikärajaa.
+ *
+ * AdMob SSV callback voi viivästyä, ja Googlen dokumentaatio
+ * ei määrittele 24 tunnin hylkäysrajaa timestampille.
+ *
+ * Replay-suojaus tehdään transaction_id:n avulla myöhemmässä
+ * Firestore transaction -käsittelyssä.
  *
  * ============================================================
  */
@@ -1111,45 +1242,29 @@ function validateTimestamp(
   timestamp,
 ) {
   const timestampMs =
-    Number(timestamp);
+    Number(
+      timestamp,
+    );
 
   if (
     !Number.isFinite(
       timestampMs,
     ) ||
-    timestampMs <= 0
-  ) {
-    return {
-      valid: false,
-      timestampMs: 0,
-    };
-  }
-
-  const now =
-    Date.now();
-
-  const ageMs =
-    Math.abs(
-      now - timestampMs,
-    );
-
-  const maxAgeMs =
-    24 *
-    60 *
-    60 *
-    1000;
-
-  if (
-    ageMs > maxAgeMs
-  ) {
-    return {
-      valid: false,
+    timestampMs <= 0 ||
+    !Number.isInteger(
       timestampMs,
+    )
+  ) {
+    return {
+      valid: false,
+
+      timestampMs: 0,
     };
   }
 
   return {
     valid: true,
+
     timestampMs,
   };
 }
@@ -1299,7 +1414,9 @@ async function verifyAdMobCallback(
   // ==========================================================
 
   if (
-    !validateUid(uid)
+    !validateUid(
+      uid,
+    )
   ) {
     throw new Error(
       "AdMob SSV custom_data does not contain a valid UID.",
@@ -1316,7 +1433,9 @@ async function verifyAdMobCallback(
       rewardPurpose
     ];
 
-  if (!expectedAdUnit) {
+  if (
+    !expectedAdUnit
+  ) {
     throw new Error(
       `No AdMob ad unit configured for ${rewardPurpose}.`,
     );
@@ -1341,7 +1460,9 @@ async function verifyAdMobCallback(
       rewardPurpose
     ];
 
-  if (!rewardDefinition) {
+  if (
+    !rewardDefinition
+  ) {
     throw new Error(
       `No reward definition configured for ${rewardPurpose}.`,
     );
@@ -1410,7 +1531,7 @@ async function verifyAdMobCallback(
     !timestampResult.valid
   ) {
     throw new Error(
-      "AdMob timestamp is invalid or older/newer than the allowed 24-hour window.",
+      "AdMob timestamp is invalid.",
     );
   }
 
