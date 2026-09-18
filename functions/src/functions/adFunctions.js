@@ -9,7 +9,7 @@
 // Vastuu:
 //
 // 📺 Vastaanottaa AdMob SSV callbackin
-// 🔐 Varmistaa AdMob SSV:n admobService.js:n kautta
+// 🔐 Varmistaa AdMob SSV:n adMobService.js:n kautta
 // 🆔 Käyttää vain varmennettua UID:tä
 // 🎯 Tunnistaa rewardin käyttötarkoituksen
 // 💾 Tallentaa varmennetun rewardin Firestoreen
@@ -32,7 +32,7 @@
 //   ↓
 // adMobReward()
 //   ↓
-// admobService.verifyAdMobCallback()
+// adMobService.verifyAdMobCallback()
 //   ↓
 // kryptografinen SSV-varmennus
 //   ↓
@@ -91,7 +91,7 @@ const {
 //
 // Tiedoston todellinen nimi on:
 //
-//   functions/src/services/admobService.js
+//   functions/src/services/adMobService.js
 //
 // Linux/GitHub Actions on kirjainkoon suhteen tarkka.
 //
@@ -100,7 +100,7 @@ const {
 const {
   verifyAdMobCallback,
 } = require(
-  "../services/admobService"
+  "../services/adMobService"
 );
 
 
@@ -141,13 +141,6 @@ function getSafeNumber(
 // ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
-//
-// admobService.js on jo validoinut UID:n.
-//
-// Tämä toinen tarkistus pidetään täällä puolustuskerroksena
-// ennen Firestore-kirjoitusta.
-//
-// ============================================================
 
 function validateUid(
   value,
@@ -182,11 +175,6 @@ function validateUid(
 
 // ============================================================
 // 🔐 VALIDATE TRANSACTION ID
-// ============================================================
-//
-// AdMob dokumentoi transaction_id:n yksilölliseksi
-// hex-enkoodatuksi reward-tunnisteeksi.
-//
 // ============================================================
 
 function validateTransactionId(
