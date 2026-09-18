@@ -55,7 +55,7 @@
 const {
   onRequest,
 } = require(
-  "firebase-functions/v2/https"
+  "firebase-functions/v2/https",
 );
 
 
@@ -67,7 +67,7 @@ const {
   db,
   FieldValue,
 } = require(
-  "../firebase/firebase"
+  "../firebase/firebase",
 );
 
 
@@ -79,7 +79,7 @@ const {
   getHistoryCollection,
   getAdMobRewardRef,
 } = require(
-  "../utils/userUtils"
+  "../utils/userUtils",
 );
 
 
@@ -95,7 +95,7 @@ const {
 const {
   verifyAdMobCallback,
 } = require(
-  "../services/admobService"
+  "../services/adMobService",
 );
 
 
@@ -180,7 +180,7 @@ function validateUid(
 // ============================================================
 //
 // AdMob dokumentoi transaction_id:n yksilölliseksi
-// hex-enkoodatuksi reward-tunnisteeksi.
+// reward-tunnisteeksi.
 //
 // ============================================================
 
@@ -408,12 +408,8 @@ async function saveVerifiedAdMobReward(
         );
 
       // ------------------------------------------------------
-      // IMPORTANT:
-      //
-      // userId tallennetaan vain silloin, kun AdMob todella
+      // user_id tallennetaan vain silloin, kun AdMob todella
       // lähetti user_id-parametrin.
-      //
-      // Emme muuta sitä UID:ksi täällä.
       // ------------------------------------------------------
 
       const userId =
@@ -1046,7 +1042,8 @@ const adMobReward =
         // ======================================================
 
         const normalizedVerifiedAd = {
-          verified: true,
+          verified:
+            true,
 
           uid,
 
@@ -1056,8 +1053,6 @@ const adMobReward =
 
           customData,
 
-          // Säilytetään tyhjänä, jos AdMob ei lähettänyt
-          // user_id-parametria.
           userId:
             callbackUserId,
 
@@ -1124,11 +1119,8 @@ const adMobReward =
         const result =
           await saveVerifiedAdMobReward(
             uid,
-
             transactionId,
-
             normalizedVerifiedAd,
-
             rewardPurpose,
           );
 
