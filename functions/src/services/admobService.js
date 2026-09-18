@@ -13,25 +13,25 @@ const crypto = require("crypto");
  *  - SSV parameter validation
  *
  * IMPORTANT:
- * AdMob SSV signature verification follows Google's verifier
- * behavior:
  *
- * 1. The original query string is received from Google.
- * 2. The signature and key_id parameters are extracted without
- *    modifying the original query string.
- * 3. The content before &signature= is URL-decoded for the
- *    cryptographic verification step.
- * 4. Parameter order is preserved.
- * 5. The decoded query content is verified using ECDSA SHA-256
- *    with DER-encoded signatures.
+ * AdMob SSV signature verification must preserve the exact
+ * query-string content received from Google.
  *
- * IMPORTANT:
- * Do NOT use URLSearchParams.toString() to recreate the signed
- * query because that can change encoding or parameter format.
+ * The signed content:
  *
- * Production logging is intentionally kept concise.
- * Detailed URL/signature diagnostics are not logged because
- * they are only needed during troubleshooting.
+ *  - must NOT be reordered
+ *  - must NOT be rebuilt
+ *  - must NOT be decoded before verification
+ *  - must NOT be re-encoded
+ *  - must NOT be converted with URLSearchParams.toString()
+ *
+ * Google signs the original query-string content before the
+ * signature parameter.
+ *
+ * The query parameters are parsed only AFTER the signature
+ * has been successfully verified.
+ *
+ * Production logging is intentionally concise.
  * ============================================================
  */
 
@@ -163,14 +163,15 @@ async function getAdMobPublicKeys(
  * Get the original query string from the request.
  *
  * IMPORTANT:
- * This function intentionally does NOT decode the query.
  *
- * The raw query is required so that we can:
+ * The returned string must remain exactly as received.
  *
- *  - locate signature=
- *  - locate key_id
- *  - preserve Google's original parameter order
- *  - avoid re-encoding the query
+ * Do NOT:
+ *
+ *  - decode it
+ *  - reorder it
+ *  - rebuild it
+ *  - encode it again
  */
 function getRawQueryString(req) {
   if (!req) {
@@ -227,71 +228,6 @@ function getRawQueryString(req) {
 }
 
 // ============================================================
-// Google-compatible query decoding
-// ============================================================
-
-/**
- * Decode the signed query content for cryptographic
- * verification.
- *
- * IMPORTANT:
- *
- * - decodeURIComponent() decodes percent-encoded data.
- * - It does NOT convert "+" to a space.
- * - It does NOT reorder parameters.
- * - It does NOT rebuild or re-encode the query.
- *
- * Example:
- *
- *   foo=hello%20world
- *
- * becomes:
- *
- *   foo=hello world
- *
- * while:
- *
- *   foo=a+b
- *
- * remains:
- *
- *   foo=a+b
- */
-function decodeSignedQueryString(
-  signedQueryString,
-) {
-  if (
-    typeof signedQueryString !==
-    "string"
-  ) {
-    throw new Error(
-      "AdMob signed query string is invalid.",
-    );
-  }
-
-  try {
-    return decodeURIComponent(
-      signedQueryString,
-    );
-  } catch (error) {
-    console.error(
-      "🐱❌ AdMob SSV signed query decoding failed.",
-      {
-        message:
-          error &&
-          error.message
-            ? error.message
-            : String(error),
-      },
-    );
-
-    throw new Error(
-      "AdMob SSV signed query contains invalid URL encoding.",
-    );
-  }
-}
-
-// ============================================================
 // Base64 URL-safe decoding
 // ============================================================
 
@@ -324,10 +260,21 @@ function decodeAdMobSignature(
           4 - padding,
         );
 
-  return Buffer.from(
-    padded,
-    "base64",
-  );
+  const signatureBuffer =
+    Buffer.from(
+      padded,
+      "base64",
+    );
+
+  if (
+    signatureBuffer.length === 0
+  ) {
+    throw new Error(
+      "AdMob SSV signature could not be decoded.",
+    );
+  }
+
+  return signatureBuffer;
 }
 
 // ============================================================
@@ -341,15 +288,24 @@ async function verifyAdMobSignature(
     getRawQueryString(req);
 
   /**
-   * Google's SSV format places:
+   * Google documents that the last two query parameters
+   * are:
    *
-   *   ...signed parameters...
+   *   signature
+   *   key_id
+   *
+   * and that the content before signature is the exact
+   * content that must be verified.
+   *
+   * Example:
+   *
+   *   ad_network=...
+   *   &ad_unit=...
+   *   &reward_amount=...
    *   &signature=...
    *   &key_id=...
    *
-   * at the end.
-   *
-   * We use the raw query to locate these parameters.
+   * We intentionally keep the raw signed content unchanged.
    */
 
   const signatureMarker =
@@ -367,7 +323,13 @@ async function verifyAdMobSignature(
   }
 
   /**
-   * Exact raw content received before &signature=.
+   * IMPORTANT:
+   *
+   * Do NOT decode this string.
+   * Do NOT rebuild it.
+   * Do NOT use URLSearchParams.toString().
+   *
+   * Google verifies the original query-string bytes.
    */
   const rawSignedQueryString =
     rawQueryString.substring(
@@ -376,10 +338,8 @@ async function verifyAdMobSignature(
     );
 
   /**
-   * Extract signature and key_id from the raw query.
-   *
-   * We do NOT reconstruct the signed content from these
-   * parameters.
+   * Extract signature and key_id only after identifying
+   * the exact signed portion.
    */
   const signatureAndKeyId =
     rawQueryString.substring(
@@ -413,25 +373,15 @@ async function verifyAdMobSignature(
     );
   }
 
-  /**
-   * Google's verifier decodes the signed query content
-   * before cryptographic verification.
-   */
-  const signedQueryString =
-    decodeSignedQueryString(
-      rawSignedQueryString,
-    );
-
   const signatureBuffer =
     decodeAdMobSignature(
       signature,
     );
 
-  /**
-   * AdMob uses ECDSA with SHA-256.
-   *
-   * Google's verifier uses DER-encoded ECDSA signatures.
-   */
+  // ==========================================================
+  // Public key
+  // ==========================================================
+
   let publicKeys =
     await getAdMobPublicKeys(
       false,
@@ -443,10 +393,10 @@ async function verifyAdMobSignature(
     );
 
   /**
-   * If the key ID is not in our cached list,
-   * refresh once.
-   *
    * AdMob rotates public keys.
+   *
+   * If the current cache does not contain the key,
+   * refresh once before failing.
    */
   if (!publicKey) {
     publicKeys =
@@ -466,20 +416,24 @@ async function verifyAdMobSignature(
     );
   }
 
-  /**
-   * ECDSA SHA-256 verification.
-   *
-   * IMPORTANT:
-   *
-   * Verify the Google-compatible decoded query string.
-   *
-   * Do NOT:
-   *
-   *  - use URLSearchParams.toString()
-   *  - reorder parameters
-   *  - rebuild the query
-   *  - JSON.stringify()
-   */
+  // ==========================================================
+  // ECDSA SHA-256 verification
+  // ==========================================================
+  //
+  // IMPORTANT:
+  //
+  // Verify the exact raw query content.
+  //
+  // No:
+  //  - decodeURIComponent()
+  //  - URLSearchParams.toString()
+  //  - parameter reordering
+  //  - query reconstruction
+  //  - JSON serialization
+  //
+  // Google documents ECDSA SHA-256 with DER encoding.
+  // ==========================================================
+
   const verifier =
     crypto.createVerify(
       "SHA256",
@@ -487,7 +441,7 @@ async function verifyAdMobSignature(
 
   verifier.update(
     Buffer.from(
-      signedQueryString,
+      rawSignedQueryString,
       "utf8",
     ),
   );
@@ -523,8 +477,8 @@ async function verifyAdMobSignature(
   /**
    * Only parse parameters AFTER signature verification.
    *
-   * URLSearchParams is safe here because it is used only
-   * to read the already verified callback parameters.
+   * URLSearchParams is safe here because it is now being
+   * used only to read the already authenticated callback.
    */
   const params =
     new URLSearchParams(
@@ -538,7 +492,8 @@ async function verifyAdMobSignature(
 
     rawQueryString,
 
-    signedQueryString,
+    signedQueryString:
+      rawSignedQueryString,
 
     params,
   };
@@ -599,39 +554,39 @@ function parseCustomData(
     };
   }
 
-  const decoded =
-    customData;
-
   /**
+   * URLSearchParams has already decoded the SSV parameter
+   * before this function receives it.
+   *
    * Supported formats:
    *
-   * UID
+   *   UID
    *
-   * UID:power_boost
+   *   UID:power_boost
    *
-   * UID:mining_start
+   *   UID:mining_start
    */
 
   const separator =
-    decoded.indexOf(":");
+    customData.indexOf(":");
 
   if (separator === -1) {
     return {
-      uid: decoded.trim(),
+      uid: customData.trim(),
       rewardPurpose:
         "power_boost",
     };
   }
 
   return {
-    uid: decoded
+    uid: customData
       .substring(
         0,
         separator,
       )
       .trim(),
 
-    rewardPurpose: decoded
+    rewardPurpose: customData
       .substring(
         separator + 1,
       )
