@@ -9,7 +9,7 @@
 // Vastuu:
 //
 // 📺 Vastaanottaa AdMob SSV callbackin
-// 🔐 Varmistaa AdMob SSV:n adMobService.js:n kautta
+// 🔐 Varmistaa AdMob SSV:n admobService.js:n kautta
 // 🆔 Käyttää vain varmennettua UID:tä
 // 🎯 Tunnistaa rewardin käyttötarkoituksen
 // 💾 Tallentaa varmennetun rewardin Firestoreen
@@ -32,7 +32,7 @@
 //   ↓
 // adMobReward()
 //   ↓
-// adMobService.verifyAdMobCallback()
+// admobService.verifyAdMobCallback()
 //   ↓
 // kryptografinen SSV-varmennus
 //   ↓
@@ -91,7 +91,7 @@ const {
 //
 // Tiedoston todellinen nimi on:
 //
-//   functions/src/services/adMobService.js
+//   functions/src/services/admobService.js
 //
 // Linux/GitHub Actions on kirjainkoon suhteen tarkka.
 //
@@ -100,7 +100,7 @@ const {
 const {
   verifyAdMobCallback,
 } = require(
-  "../services/adMobService"
+  "../services/admobService"
 );
 
 
