@@ -1220,6 +1220,13 @@ class _HomePageState extends State<HomePage>
       dailyHashRateDayText:
           '${_t('day')} $_streak',
       dailyStreak: _streak,
+
+      // ========================================================
+      // ⚡ POWER BOOST
+      // ========================================================
+
+      boostActive: _boostActive,
+
       miningButton: _buildMiningButton(),
     );
   }
