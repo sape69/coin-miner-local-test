@@ -9,10 +9,15 @@ import '../../widgets/stelluriini_logo.dart';
 // ============================================================
 
 const Color roadmapBackgroundColor = Color(0xFF120B24);
+const Color roadmapSurfaceColor = Color(0xFF1A0E31);
 const Color roadmapCardColor = Color(0xFF21113B);
+
 const Color roadmapAccentColor = Color(0xFFB58CFF);
 const Color roadmapPinkColor = Color(0xFFFFB7E8);
 const Color roadmapGoldColor = Color(0xFFFFD166);
+
+const Color roadmapTextColor = Color(0xFFF8F4FF);
+const Color roadmapSecondaryTextColor = Color(0xFFBDB4D1);
 
 // ============================================================
 // ROADMAP PAGE
@@ -70,9 +75,14 @@ class RoadmapPage extends StatelessWidget {
       'roadmapJourneyDescription',
       fallback:
           'Stelluriinin tiekartta kuvaa projektin suunniteltua '
-          'suuntaa. Kehitys voi muuttua ajan myötä yhteisön, '
-          'teknologian, turvallisuuden ja ekosysteemin kasvaessa.',
+          'suuntaa. Kehitys tapahtuu vaiheittain ja järjestelmiä '
+          'tasapainotetaan käyttäjämäärän, turvallisuuden ja '
+          'ekosysteemin kasvun mukaan.',
     );
+
+    // ==========================================================
+    // PHASE 1
+    // ==========================================================
 
     final String phase1Title = _t(
       localization,
@@ -87,16 +97,21 @@ class RoadmapPage extends StatelessWidget {
           '🐱 Stelluriini-identiteetin rakentaminen\n'
           '🎨 Stellan visuaalisen tyylin luominen\n'
           '📱 Stelluriini-sovelluksen kehittäminen\n'
-          '⛏️ Stella Miningin julkaisu\n'
-          '🎁 Päivittäinen Hash Rate -kehitys\n'
-          '📺 Stella Power Boost\n'
-          '📜 Tapahtumahistoria',
+          '⛏️ Stella Mining -järjestelmän käyttöönotto\n'
+          '⚡ Hash Rate -järjestelmä\n'
+          '📺 Power Boost -järjestelmä\n'
+          '⏱️ Louhintajaksojen hallinta\n'
+          '📜 Louhinta- ja tapahtumahistoria',
     );
+
+    // ==========================================================
+    // PHASE 2
+    // ==========================================================
 
     final String phase2Title = _t(
       localization,
       'roadmapPhase2Title',
-      fallback: 'Yhteisö ja testaus',
+      fallback: 'Yhteisö ja Referral',
     );
 
     final String phase2Description = _t(
@@ -104,84 +119,128 @@ class RoadmapPage extends StatelessWidget {
       'roadmapPhase2Description',
       fallback:
           '🐾 Stelluriini-yhteisön kasvattaminen\n'
+          '👥 Referral-järjestelmän käyttöönotto\n'
+          '🎁 Kutsujalle 5 % bonus kutsutun käyttäjän louhintatuotosta\n'
+          '📉 Referral-bonusten asteittainen pienentäminen käyttäjämäärän kasvaessa\n'
+          '🛡️ Bottien ja väärinkäytösten torjunta\n'
           '🌍 Kielituen laajentaminen\n'
-          '🧪 Louhinta- ja palkkiojärjestelmien parantaminen\n'
-          '🔐 Turvallisuuden ja backend-järjestelmien vahvistaminen\n'
-          '📊 Token- ja ekosysteemitietojen parantaminen\n'
-          '💬 Tulevien yhteisöominaisuuksien valmistelu',
+          '💬 Yhteisöominaisuuksien valmistelu',
     );
+
+    // ==========================================================
+    // PHASE 3
+    // ==========================================================
 
     final String phase3Title = _t(
       localization,
       'roadmapPhase3Title',
-      fallback: 'STL-ekosysteemi',
+      fallback: 'Louhinnan tasapainotus',
     );
 
     final String phase3Description = _t(
       localization,
       'roadmapPhase3Description',
       fallback:
-          '🪙 STL-ekosysteemin kehittäminen\n'
-          '🔗 Solana-lohkoketjuintegraation valmistelu\n'
-          '👛 Lompakkoyhteyden valmistelu\n'
-          '📊 Token-tilastojen ja läpinäkyvyyden laajentaminen\n'
-          '🧪 Tulevan STL-siirto-ominaisuuden testaaminen\n'
-          '🚀 Projektin seuraavaan vaiheeseen valmistautuminen',
+          '📊 Hash Rate -talouden tarkempi tasapainotus\n'
+          '⛏️ Louhintatuoton säätäminen käyttäjämäärän mukaan\n'
+          '⚡ Power Boost -järjestelmän kehittäminen\n'
+          '👥 Referral-järjestelmän käyttäjämäärärajat\n'
+          '📉 Bonusprosenttien asteittainen laskeminen kasvun mukana\n'
+          '🤖 Bot- ja monikäyttäjäväärinkäytösten tunnistaminen\n'
+          '🔐 Backend- ja turvallisuusjärjestelmien vahvistaminen',
     );
+
+    // ==========================================================
+    // PHASE 4
+    // ==========================================================
 
     final String phase4Title = _t(
       localization,
       'roadmapPhase4Title',
-      fallback: 'Mainnet-valmistelu',
+      fallback: 'STL-ekosysteemi',
     );
 
     final String phase4Description = _t(
       localization,
       'roadmapPhase4Description',
       fallback:
-          '🔐 Turvallisen Mainnet-infrastruktuurin valmistelu\n'
-          '👛 Solana-lompakkointegraation viimeistely\n'
-          '📤 STL-nostojärjestelmän kehittäminen\n'
-          '🧪 Nostojen testaaminen ennen julkista julkaisua\n'
-          '💎 100 STL:n vähimmäisnostorajan valmistelu\n'
-          '🛡️ Turvallisuuden ja transaktioiden käsittelyn tarkistus',
+          '🪙 STL-ekosysteemin kehittäminen\n'
+          '🔗 Solana-lohkoketjuintegraation valmistelu\n'
+          '👛 Lompakkoyhteyden valmistelu\n'
+          '📊 Token- ja ekosysteemitietojen laajentaminen\n'
+          '🧪 STL-siirto-ominaisuuksien testaaminen\n'
+          '🔐 Lohkoketju- ja turvallisuusratkaisujen tarkistus',
     );
+
+    // ==========================================================
+    // PHASE 5
+    // ==========================================================
 
     final String phase5Title = _t(
       localization,
       'roadmapPhase5Title',
-      fallback: 'Mainnet ja STL-nostot',
+      fallback: 'Mainnet-valmistelu',
     );
 
     final String phase5Description = _t(
       localization,
       'roadmapPhase5Description',
       fallback:
-          '🚀 Stelluriinin Mainnet-vaiheen avaaminen\n'
-          '👛 Solana-lompakon yhdistäminen\n'
-          '📤 STL-nostojen käyttöönotto\n'
-          '💎 Vähimmäisnostotavoite: 100 STL\n'
-          '⛽ Käyttäjä maksaa oman Solana-verkkokulunsa\n'
-          '🪙 STL-siirto suoraan käyttäjän lompakkoon',
+          '🔐 Turvallisen Mainnet-infrastruktuurin valmistelu\n'
+          '👛 Solana-lompakkointegraation viimeistely\n'
+          '📤 STL-nostojärjestelmän kehittäminen\n'
+          '🧪 Nostojen testaaminen\n'
+          '💎 100 STL:n vähimmäisnostorajan valmistelu\n'
+          '🛡️ Transaktioiden ja turvallisuuden tarkistus',
     );
+
+    // ==========================================================
+    // PHASE 6
+    // ==========================================================
 
     final String phase6Title = _t(
       localization,
       'roadmapPhase6Title',
-      fallback: 'Pörssi ja ekosysteemi',
+      fallback: 'Mainnet ja STL-nostot',
     );
 
     final String phase6Description = _t(
       localization,
       'roadmapPhase6Description',
       fallback:
+          '🚀 Stelluriinin Mainnet-vaiheen avaaminen\n'
+          '👛 Solana-lompakon yhdistäminen\n'
+          '📤 STL-nostojen käyttöönotto\n'
+          '💎 Vähimmäisnostotavoite: 100 STL\n'
+          '⛽ Käyttäjä maksaa oman Solana-verkkokulunsa\n'
+          '🪙 STL-siirto käyttäjän lompakkoon',
+    );
+
+    // ==========================================================
+    // PHASE 7
+    // ==========================================================
+
+    final String phase7Title = _t(
+      localization,
+      'roadmapPhase7Title',
+      fallback: 'Pörssi ja ekosysteemi',
+    );
+
+    final String phase7Description = _t(
+      localization,
+      'roadmapPhase7Description',
+      fallback:
           '🌟 DEX- ja CEX-mahdollisuuksien tutkiminen\n'
-          '💧 Sopivien likviditeettiratkaisujen valmistelu\n'
+          '💧 Likviditeettiratkaisujen valmistelu\n'
           '📈 STL-ekosysteemin laajentaminen\n'
-          '🤝 Kumppanuuksien ja yhteisön osallistumisen kasvattaminen\n'
+          '🤝 Kumppanuuksien kehittäminen\n'
           '🐱 Uusien Stella-kokemusten esittely\n'
           '🚀 STL:n tulevien käyttötapojen tutkiminen',
     );
+
+    // ==========================================================
+    // STATUS TEXT
+    // ==========================================================
 
     final String inProgressText = _t(
       localization,
@@ -200,6 +259,111 @@ class RoadmapPage extends StatelessWidget {
       'roadmapFuture',
       fallback: 'TULEVAISUUS',
     );
+
+    // ==========================================================
+    // REFERRAL CARD
+    // ==========================================================
+
+    final String referralTitle = _t(
+      localization,
+      'roadmapReferralTitle',
+      fallback: 'Referral-järjestelmä',
+    );
+
+    final String referralDescription = _t(
+      localization,
+      'roadmapReferralDescription',
+      fallback:
+          'Stelluriiniin suunnitellaan referral-järjestelmää, '
+          'jossa käyttäjä voi kutsua uusia käyttäjiä mukaan. '
+          'Kutsuja saa suunnitelman mukaan 5 % bonusosuuden '
+          'kutsutun käyttäjän louhintatuotosta.',
+    );
+
+    final String referralBalanceTitle = _t(
+      localization,
+      'roadmapReferralBalanceTitle',
+      fallback: 'Kasvun mukana tasapainottuva bonus',
+    );
+
+    final String referralBalanceText = _t(
+      localization,
+      'roadmapReferralBalanceText',
+      fallback:
+          'Referral-bonusta ei ole tarkoitus pitää jatkuvasti '
+          'samalla tasolla. Kun Stelluriinin käyttäjämäärä kasvaa, '
+          'bonusprosenttia voidaan pienentää vaiheittain. '
+          'Tavoitteena on pitää koko louhintatalous hallittuna.',
+    );
+
+    final String referralMilestoneTitle = _t(
+      localization,
+      'roadmapReferralMilestoneTitle',
+      fallback: 'Käyttäjämäärän vaikutus',
+    );
+
+    final String referralMilestoneText = _t(
+      localization,
+      'roadmapReferralMilestoneText',
+      fallback:
+          'Esimerkiksi 1 000 käyttäjän kohdalla referral-bonuksen '
+          'tasoa voidaan pienentää. Tarkat rajat ja prosentit '
+          'määritellään ennen järjestelmän julkaisua.',
+    );
+
+    // ==========================================================
+    // MINING BALANCE CARD
+    // ==========================================================
+
+    final String miningBalanceTitle = _t(
+      localization,
+      'roadmapMiningBalanceTitle',
+      fallback: 'Louhintatalouden tasapaino',
+    );
+
+    final String miningBalanceText = _t(
+      localization,
+      'roadmapMiningBalanceText',
+      fallback:
+          'Louhintajärjestelmän tavoitteena ei ole kasvattaa '
+          'päivittäistä STL-määrää rajattomasti. Hash Rate, '
+          'Power Boost ja Referral-bonukset suunnitellaan '
+          'yhdessä niin, että kokonaismäärä pysyy hallittavana.',
+    );
+
+    final String miningRateTitle = _t(
+      localization,
+      'roadmapMiningRateTitle',
+      fallback: 'Hash Rate',
+    );
+
+    final String miningRateText = _t(
+      localization,
+      'roadmapMiningRateText',
+      fallback:
+          'Peruslouhinta muodostaa käyttäjän normaalin Hash Rate '
+          '-tason. Käyttäjä voi kehittää omaa louhintatehoaan '
+          'sovelluksen sisäisten järjestelmien kautta.',
+    );
+
+    final String boostTitle = _t(
+      localization,
+      'roadmapBoostTitle',
+      fallback: 'Power Boost',
+    );
+
+    final String boostText = _t(
+      localization,
+      'roadmapBoostText',
+      fallback:
+          'Power Boost tarjoaa määräaikaisen lisäyksen käyttäjän '
+          'louhintatehoon. Boostin nykyinen suunniteltu kesto on '
+          '4 tuntia.',
+    );
+
+    // ==========================================================
+    // WITHDRAWAL
+    // ==========================================================
 
     final String futureWithdrawalsTitle = _t(
       localization,
@@ -226,6 +390,10 @@ class RoadmapPage extends StatelessWidget {
           'Käyttäjä maksaa Solana-verkkokulun',
     );
 
+    // ==========================================================
+    // DEVELOPMENT PRINCIPLES
+    // ==========================================================
+
     final String developmentPrinciplesTitle = _t(
       localization,
       'developmentPrinciples',
@@ -242,7 +410,7 @@ class RoadmapPage extends StatelessWidget {
       localization,
       'roadmapCommunityDescription',
       fallback:
-          'Rakennetaan yhdessä Stelluriini-yhteisön kanssa.',
+          'Rakennetaan Stelluriini-yhteisöä vaiheittain.',
     );
 
     final String stellaTitle = _t(
@@ -268,8 +436,22 @@ class RoadmapPage extends StatelessWidget {
       localization,
       'roadmapSecurityDescription',
       fallback:
-          'Lohkoketju- ja lompakko-ominaisuudet kehitetään '
-          'huolellisesti ja testataan ennen julkaisua.',
+          'Louhinta-, referral-, lompakko- ja blockchain-ominaisuudet '
+          'kehitetään ja testataan ennen julkaisua.',
+    );
+
+    final String antiBotTitle = _t(
+      localization,
+      'roadmapAntiBot',
+      fallback: 'Botintorjunta',
+    );
+
+    final String antiBotText = _t(
+      localization,
+      'roadmapAntiBotDescription',
+      fallback:
+          'Järjestelmässä huomioidaan bottien, automaation ja '
+          'väärinkäytösten tunnistaminen.',
     );
 
     final String innovationTitle = _t(
@@ -283,7 +465,7 @@ class RoadmapPage extends StatelessWidget {
       'roadmapInnovationDescription',
       fallback:
           'Tutkitaan uusia sovelluksia, pelejä ja digitaalisia '
-          'kokemuksia.',
+          'Stella-kokemuksia.',
     );
 
     final String growthTitle = _t(
@@ -296,8 +478,13 @@ class RoadmapPage extends StatelessWidget {
       localization,
       'roadmapLongTermGrowthDescription',
       fallback:
-          'Ekosysteemiä kehitetään vaiheittain ja kestävästi.',
+          'Ekosysteemiä kasvatetaan vaiheittain ja louhintataloutta '
+          'tasapainotetaan käyttäjämäärän mukaan.',
     );
+
+    // ==========================================================
+    // NOTICE
+    // ==========================================================
 
     final String noticeTitle = _t(
       localization,
@@ -310,8 +497,9 @@ class RoadmapPage extends StatelessWidget {
       'roadmapNoticeDescription',
       fallback:
           'Tiekartta kuvaa Stelluriinin tämänhetkistä suunniteltua '
-          'suuntaa. Päivämäärät, ominaisuudet, prioriteetit ja '
-          'julkaisusuunnitelmat voivat muuttua projektin kehittyessä.',
+          'suuntaa. Päivämäärät, ominaisuudet, bonusprosentit, '
+          'käyttäjämäärärajat, prioriteetit ja julkaisusuunnitelmat '
+          'voivat muuttua projektin kehittyessä.',
     );
 
     final String stellaJourneyText = _t(
@@ -329,6 +517,10 @@ class RoadmapPage extends StatelessWidget {
           'Stelluriini-ekosysteemiä.',
     );
 
+    // ============================================================
+    // UI
+    // ============================================================
+
     return Scaffold(
       backgroundColor: roadmapBackgroundColor,
 
@@ -338,7 +530,7 @@ class RoadmapPage extends StatelessWidget {
 
       appBar: AppBar(
         backgroundColor: roadmapBackgroundColor,
-        foregroundColor: Colors.white,
+        foregroundColor: roadmapTextColor,
         elevation: 0,
         centerTitle: true,
         title: Text(
@@ -410,14 +602,11 @@ class RoadmapPage extends StatelessWidget {
                   const SizedBox(height: 18),
                   const Text(
                     'STELLURIINI',
-                    textAlign:
-                        TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color:
-                          roadmapPinkColor,
+                      color: roadmapPinkColor,
                       fontSize: 27,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 3,
                     ),
                   ),
@@ -425,11 +614,9 @@ class RoadmapPage extends StatelessWidget {
                   const Text(
                     'STL • SOLANA',
                     style: TextStyle(
-                      color:
-                          roadmapAccentColor,
+                      color: roadmapAccentColor,
                       fontSize: 14,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
                   ),
@@ -441,11 +628,9 @@ class RoadmapPage extends StatelessWidget {
                       fallback:
                           'Seuraa Stellan matkaa kohti tulevaisuutta.',
                     )} 🐾',
-                    textAlign:
-                        TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color:
-                          Colors.white70,
+                      color: roadmapSecondaryTextColor,
                       fontSize: 15,
                       height: 1.5,
                     ),
@@ -461,18 +646,13 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapInfoCard(
-              icon:
-                  Icons.map_rounded,
-              title:
-                  journeyTitle,
-              accent:
-                  roadmapAccentColor,
+              icon: Icons.map_rounded,
+              title: journeyTitle,
+              accent: roadmapAccentColor,
               child: Text(
                 journeyDescription,
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white70,
+                style: const TextStyle(
+                  color: roadmapSecondaryTextColor,
                   fontSize: 15,
                   height: 1.6,
                 ),
@@ -486,22 +666,16 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapStep(
-              phase:
-                  _t(
-                    localization,
-                    'roadmapPhase1',
-                    fallback: 'VAIHE 1',
-                  ),
-              title:
-                  phase1Title,
-              description:
-                  phase1Description,
-              status:
-                  inProgressText,
-              accent:
-                  roadmapPinkColor,
-              icon:
-                  '🐱',
+              phase: _t(
+                localization,
+                'roadmapPhase1',
+                fallback: 'VAIHE 1',
+              ),
+              title: phase1Title,
+              description: phase1Description,
+              status: inProgressText,
+              accent: roadmapPinkColor,
+              icon: '🐱',
             ),
 
             const _RoadmapLine(),
@@ -511,22 +685,16 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapStep(
-              phase:
-                  _t(
-                    localization,
-                    'roadmapPhase2',
-                    fallback: 'VAIHE 2',
-                  ),
-              title:
-                  phase2Title,
-              description:
-                  phase2Description,
-              status:
-                  plannedText,
-              accent:
-                  roadmapAccentColor,
-              icon:
-                  '🐾',
+              phase: _t(
+                localization,
+                'roadmapPhase2',
+                fallback: 'VAIHE 2',
+              ),
+              title: phase2Title,
+              description: phase2Description,
+              status: plannedText,
+              accent: roadmapAccentColor,
+              icon: '👥',
             ),
 
             const _RoadmapLine(),
@@ -536,22 +704,16 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapStep(
-              phase:
-                  _t(
-                    localization,
-                    'roadmapPhase3',
-                    fallback: 'VAIHE 3',
-                  ),
-              title:
-                  phase3Title,
-              description:
-                  phase3Description,
-              status:
-                  futureText,
-              accent:
-                  roadmapGoldColor,
-              icon:
-                  '🪙',
+              phase: _t(
+                localization,
+                'roadmapPhase3',
+                fallback: 'VAIHE 3',
+              ),
+              title: phase3Title,
+              description: phase3Description,
+              status: plannedText,
+              accent: roadmapGoldColor,
+              icon: '⚖️',
             ),
 
             const _RoadmapLine(),
@@ -561,22 +723,16 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapStep(
-              phase:
-                  _t(
-                    localization,
-                    'roadmapPhase4',
-                    fallback: 'VAIHE 4',
-                  ),
-              title:
-                  phase4Title,
-              description:
-                  phase4Description,
-              status:
-                  futureText,
-              accent:
-                  roadmapPinkColor,
-              icon:
-                  '🔐',
+              phase: _t(
+                localization,
+                'roadmapPhase4',
+                fallback: 'VAIHE 4',
+              ),
+              title: phase4Title,
+              description: phase4Description,
+              status: futureText,
+              accent: roadmapPinkColor,
+              icon: '🪙',
             ),
 
             const _RoadmapLine(),
@@ -586,22 +742,16 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapStep(
-              phase:
-                  _t(
-                    localization,
-                    'roadmapPhase5',
-                    fallback: 'VAIHE 5',
-                  ),
-              title:
-                  phase5Title,
-              description:
-                  phase5Description,
-              status:
-                  futureText,
-              accent:
-                  roadmapGoldColor,
-              icon:
-                  '🚀',
+              phase: _t(
+                localization,
+                'roadmapPhase5',
+                fallback: 'VAIHE 5',
+              ),
+              title: phase5Title,
+              description: phase5Description,
+              status: futureText,
+              accent: roadmapAccentColor,
+              icon: '🔐',
             ),
 
             const _RoadmapLine(),
@@ -611,22 +761,135 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapStep(
-              phase:
-                  _t(
-                    localization,
-                    'roadmapPhase6',
-                    fallback: 'VAIHE 6',
+              phase: _t(
+                localization,
+                'roadmapPhase6',
+                fallback: 'VAIHE 6',
+              ),
+              title: phase6Title,
+              description: phase6Description,
+              status: futureText,
+              accent: roadmapGoldColor,
+              icon: '🚀',
+            ),
+
+            const _RoadmapLine(),
+
+            // ==================================================
+            // PHASE 7
+            // ==================================================
+
+            _RoadmapStep(
+              phase: _t(
+                localization,
+                'roadmapPhase7',
+                fallback: 'VAIHE 7',
+              ),
+              title: phase7Title,
+              description: phase7Description,
+              status: futureText,
+              accent: roadmapPinkColor,
+              icon: '🌟',
+            ),
+
+            const SizedBox(height: 20),
+
+            // ==================================================
+            // REFERRAL SYSTEM
+            // ==================================================
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: roadmapCardColor,
+                borderRadius:
+                    BorderRadius.circular(22),
+                border: Border.all(
+                  color:
+                      roadmapAccentColor.withValues(
+                    alpha: 0.22,
                   ),
-              title:
-                  phase6Title,
-              description:
-                  phase6Description,
-              status:
-                  futureText,
-              accent:
-                  roadmapPinkColor,
-              icon:
-                  '🌟',
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.group_add_rounded,
+                    color: roadmapAccentColor,
+                    size: 34,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    referralTitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapAccentColor,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    referralDescription,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapSecondaryTextColor,
+                      fontSize: 13,
+                      height: 1.55,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _ReferralInfoRow(
+                    icon: Icons.auto_awesome_rounded,
+                    title: referralBalanceTitle,
+                    text: referralBalanceText,
+                  ),
+                  const SizedBox(height: 14),
+                  _ReferralInfoRow(
+                    icon: Icons.people_alt_rounded,
+                    title: referralMilestoneTitle,
+                    text: referralMilestoneText,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // ==================================================
+            // MINING ECONOMY
+            // ==================================================
+
+            _RoadmapInfoCard(
+              icon: Icons.speed_rounded,
+              title: miningBalanceTitle,
+              accent: roadmapGoldColor,
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    miningBalanceText,
+                    style: const TextStyle(
+                      color: roadmapSecondaryTextColor,
+                      fontSize: 14,
+                      height: 1.55,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _PrincipleRow(
+                    icon: Icons.bolt_rounded,
+                    title: miningRateTitle,
+                    text: miningRateText,
+                  ),
+                  const SizedBox(height: 14),
+                  _PrincipleRow(
+                    icon: Icons.flash_on_rounded,
+                    title: boostTitle,
+                    text: boostText,
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -636,16 +899,12 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             Container(
-              padding:
-                  const EdgeInsets.all(20),
-              decoration:
-                  BoxDecoration(
-                color:
-                    roadmapCardColor,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: roadmapCardColor,
                 borderRadius:
                     BorderRadius.circular(22),
-                border:
-                    Border.all(
+                border: Border.all(
                   color:
                       roadmapGoldColor.withValues(
                     alpha: 0.20,
@@ -655,35 +914,26 @@ class RoadmapPage extends StatelessWidget {
               child: Column(
                 children: [
                   const Icon(
-                    Icons
-                        .account_balance_wallet_rounded,
-                    color:
-                        roadmapGoldColor,
+                    Icons.account_balance_wallet_rounded,
+                    color: roadmapGoldColor,
                     size: 32,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     futureWithdrawalsTitle,
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      color:
-                          roadmapGoldColor,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapGoldColor,
                       fontSize: 18,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     futureWithdrawalsDescription,
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.white60,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapSecondaryTextColor,
                       fontSize: 13,
                       height: 1.55,
                     ),
@@ -695,18 +945,14 @@ class RoadmapPage extends StatelessWidget {
                       horizontal: 14,
                       vertical: 10,
                     ),
-                    decoration:
-                        BoxDecoration(
+                    decoration: BoxDecoration(
                       color:
                           roadmapGoldColor.withValues(
                         alpha: 0.08,
                       ),
                       borderRadius:
-                          BorderRadius.circular(
-                        14,
-                      ),
-                      border:
-                          Border.all(
+                          BorderRadius.circular(14),
+                      border: Border.all(
                         color:
                             roadmapGoldColor.withValues(
                           alpha: 0.15,
@@ -715,12 +961,10 @@ class RoadmapPage extends StatelessWidget {
                     ),
                     child: Text(
                       plannedWithdrawalModel,
-                      textAlign:
-                          TextAlign.center,
-                      style:
-                          const TextStyle(
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
                         color:
-                            Colors.white70,
+                            roadmapSecondaryTextColor,
                         fontSize: 12,
                         height: 1.45,
                       ),
@@ -737,16 +981,12 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             Container(
-              padding:
-                  const EdgeInsets.all(22),
-              decoration:
-                  BoxDecoration(
-                color:
-                    roadmapCardColor,
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: roadmapCardColor,
                 borderRadius:
                     BorderRadius.circular(22),
-                border:
-                    Border.all(
+                border: Border.all(
                   color:
                       roadmapPinkColor.withValues(
                     alpha: 0.20,
@@ -761,26 +1001,20 @@ class RoadmapPage extends StatelessWidget {
                   const SizedBox(height: 14),
                   Text(
                     stellaJourneyText,
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      color:
-                          roadmapPinkColor,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapPinkColor,
                       fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     ecosystemText,
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       color:
-                          Colors.white60,
+                          roadmapSecondaryTextColor,
                       fontSize: 13,
                       height: 1.5,
                     ),
@@ -796,59 +1030,47 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             _RoadmapInfoCard(
-              icon:
-                  Icons.rocket_launch_rounded,
-              title:
-                  developmentPrinciplesTitle,
-              accent:
-                  roadmapGoldColor,
+              icon: Icons.rocket_launch_rounded,
+              title: developmentPrinciplesTitle,
+              accent: roadmapGoldColor,
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
                   _PrincipleRow(
-                    icon:
-                        Icons.groups_rounded,
-                    title:
-                        communityTitle,
-                    text:
-                        communityText,
+                    icon: Icons.groups_rounded,
+                    title: communityTitle,
+                    text: communityText,
                   ),
                   const SizedBox(height: 14),
                   _PrincipleRow(
-                    icon:
-                        Icons.pets_rounded,
-                    title:
-                        stellaTitle,
-                    text:
-                        stellaText,
+                    icon: Icons.pets_rounded,
+                    title: stellaTitle,
+                    text: stellaText,
                   ),
                   const SizedBox(height: 14),
                   _PrincipleRow(
-                    icon:
-                        Icons.security_rounded,
-                    title:
-                        securityTitle,
-                    text:
-                        securityText,
+                    icon: Icons.security_rounded,
+                    title: securityTitle,
+                    text: securityText,
                   ),
                   const SizedBox(height: 14),
                   _PrincipleRow(
-                    icon:
-                        Icons.auto_awesome_rounded,
-                    title:
-                        innovationTitle,
-                    text:
-                        innovationText,
+                    icon: Icons.shield_rounded,
+                    title: antiBotTitle,
+                    text: antiBotText,
                   ),
                   const SizedBox(height: 14),
                   _PrincipleRow(
-                    icon:
-                        Icons.trending_up_rounded,
-                    title:
-                        growthTitle,
-                    text:
-                        growthText,
+                    icon: Icons.auto_awesome_rounded,
+                    title: innovationTitle,
+                    text: innovationText,
+                  ),
+                  const SizedBox(height: 14),
+                  _PrincipleRow(
+                    icon: Icons.trending_up_rounded,
+                    title: growthTitle,
+                    text: growthText,
                   ),
                 ],
               ),
@@ -861,18 +1083,15 @@ class RoadmapPage extends StatelessWidget {
             // ==================================================
 
             Container(
-              padding:
-                  const EdgeInsets.all(20),
-              decoration:
-                  BoxDecoration(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
                 color:
                     Colors.orangeAccent.withValues(
                   alpha: 0.07,
                 ),
                 borderRadius:
                     BorderRadius.circular(20),
-                border:
-                    Border.all(
+                border: Border.all(
                   color:
                       Colors.orangeAccent.withValues(
                     alpha: 0.22,
@@ -883,31 +1102,25 @@ class RoadmapPage extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.info_outline_rounded,
-                    color:
-                        Colors.orangeAccent,
+                    color: Colors.orangeAccent,
                     size: 30,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     noticeTitle,
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.orangeAccent,
+                    style: const TextStyle(
+                      color: Colors.orangeAccent,
                       fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     noticeText,
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       color:
-                          Colors.white60,
+                          roadmapSecondaryTextColor,
                       fontSize: 13,
                       height: 1.5,
                     ),
@@ -929,15 +1142,11 @@ class RoadmapPage extends StatelessWidget {
                 fallback:
                     '🐾 STELLA • STELLURIINI • STL • SOLANA 🐾',
               ),
-              textAlign:
-                  TextAlign.center,
-              style:
-                  const TextStyle(
-                color:
-                    roadmapPinkColor,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: roadmapPinkColor,
                 fontSize: 12,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
                 letterSpacing: 1,
               ),
             ),
@@ -946,15 +1155,11 @@ class RoadmapPage extends StatelessWidget {
 
             const Text(
               '17 602 539 062 STL',
-              textAlign:
-                  TextAlign.center,
-              style:
-                  TextStyle(
-                color:
-                    roadmapGoldColor,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: roadmapGoldColor,
                 fontSize: 12,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
@@ -994,43 +1199,32 @@ class _RoadmapStep extends StatelessWidget {
           CrossAxisAlignment.start,
       children: [
         // ======================================================
-        // STELLA / PAW MARKER
+        // MARKER
         // ======================================================
 
         Container(
           width: 54,
           height: 54,
-          decoration:
-              BoxDecoration(
+          decoration: BoxDecoration(
             color:
-                accent.withValues(
-              alpha: 0.12,
-            ),
-            shape:
-                BoxShape.circle,
-            border:
-                Border.all(
+                accent.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            border: Border.all(
               color:
-                  accent.withValues(
-                alpha: 0.45,
-              ),
+                  accent.withValues(alpha: 0.45),
             ),
             boxShadow: [
               BoxShadow(
                 color:
-                    accent.withValues(
-                  alpha: 0.08,
-                ),
+                    accent.withValues(alpha: 0.08),
                 blurRadius: 12,
               ),
             ],
           ),
-          child:
-              Center(
+          child: Center(
             child: Text(
               icon,
-              style:
-                  const TextStyle(
+              style: const TextStyle(
                 fontSize: 25,
               ),
             ),
@@ -1044,85 +1238,60 @@ class _RoadmapStep extends StatelessWidget {
         // ======================================================
 
         Expanded(
-          child:
-              Container(
-            padding:
-                const EdgeInsets.all(18),
-            decoration:
-                BoxDecoration(
-              color:
-                  roadmapCardColor,
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: roadmapCardColor,
               borderRadius:
-                  BorderRadius.circular(
-                20,
-              ),
-              border:
-                  Border.all(
+                  BorderRadius.circular(20),
+              border: Border.all(
                 color:
-                    accent.withValues(
-                  alpha: 0.17,
-                ),
+                    accent.withValues(alpha: 0.17),
               ),
             ),
-            child:
-                Column(
+            child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Expanded(
-                      child:
-                          Text(
+                      child: Text(
                         phase,
-                        style:
-                            TextStyle(
-                          color:
-                              accent,
+                        style: TextStyle(
+                          color: accent,
                           fontSize: 12,
                           fontWeight:
                               FontWeight.bold,
-                          letterSpacing:
-                              1.5,
+                          letterSpacing: 1.5,
                         ),
                       ),
                     ),
-
-                    const SizedBox(
-                      width: 8,
-                    ),
-
+                    const SizedBox(width: 8),
                     Container(
                       padding:
                           const EdgeInsets.symmetric(
                         horizontal: 9,
                         vertical: 5,
                       ),
-                      decoration:
-                          BoxDecoration(
+                      decoration: BoxDecoration(
                         color:
                             accent.withValues(
                           alpha: 0.12,
                         ),
                         borderRadius:
-                            BorderRadius.circular(
-                          10,
-                        ),
-                        border:
-                            Border.all(
+                            BorderRadius.circular(10),
+                        border: Border.all(
                           color:
                               accent.withValues(
                             alpha: 0.15,
                           ),
                         ),
                       ),
-                      child:
-                          Text(
+                      child: Text(
                         status,
-                        style:
-                            TextStyle(
-                          color:
-                              accent,
+                        style: TextStyle(
+                          color: accent,
                           fontSize: 9,
                           fontWeight:
                               FontWeight.bold,
@@ -1136,13 +1305,10 @@ class _RoadmapStep extends StatelessWidget {
 
                 Text(
                   title,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
+                  style: const TextStyle(
+                    color: roadmapTextColor,
                     fontSize: 20,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
@@ -1150,10 +1316,9 @@ class _RoadmapStep extends StatelessWidget {
 
                 Text(
                   description,
-                  style:
-                      const TextStyle(
+                  style: const TextStyle(
                     color:
-                        Colors.white60,
+                        roadmapSecondaryTextColor,
                     fontSize: 14,
                     height: 1.6,
                   ),
@@ -1177,24 +1342,20 @@ class _RoadmapLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin:
-          const EdgeInsets.only(
+      margin: const EdgeInsets.only(
         left: 26,
         top: 4,
         bottom: 4,
       ),
       width: 2,
       height: 35,
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color:
             roadmapAccentColor.withValues(
           alpha: 0.25,
         ),
         borderRadius:
-            BorderRadius.circular(
-          2,
-        ),
+            BorderRadius.circular(2),
       ),
     );
   }
@@ -1220,28 +1381,18 @@ class _RoadmapInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width:
-          double.infinity,
-      padding:
-          const EdgeInsets.all(20),
-      decoration:
-          BoxDecoration(
-        color:
-            roadmapCardColor,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: roadmapCardColor,
         borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
-        border:
-            Border.all(
+            BorderRadius.circular(22),
+        border: Border.all(
           color:
-              accent.withValues(
-            alpha: 0.18,
-          ),
+              accent.withValues(alpha: 0.18),
         ),
       ),
-      child:
-          Column(
+      child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
@@ -1250,38 +1401,26 @@ class _RoadmapInfoCard extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration:
-                    BoxDecoration(
+                decoration: BoxDecoration(
                   color:
                       accent.withValues(
                     alpha: 0.11,
                   ),
                   borderRadius:
-                      BorderRadius.circular(
-                    14,
-                  ),
+                      BorderRadius.circular(14),
                 ),
-                child:
-                    Icon(
+                child: Icon(
                   icon,
-                  color:
-                      accent,
+                  color: accent,
                   size: 24,
                 ),
               ),
-
-              const SizedBox(
-                width: 12,
-              ),
-
+              const SizedBox(width: 12),
               Expanded(
-                child:
-                    Text(
+                child: Text(
                   title,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
+                  style: const TextStyle(
+                    color: roadmapTextColor,
                     fontSize: 20,
                     fontWeight:
                         FontWeight.bold,
@@ -1291,11 +1430,83 @@ class _RoadmapInfoCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(
-            height: 16,
-          ),
+          const SizedBox(height: 16),
 
           child,
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// REFERRAL INFO ROW
+// ============================================================
+
+class _ReferralInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String text;
+
+  const _ReferralInfoRow({
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color:
+            roadmapSurfaceColor,
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              roadmapAccentColor.withValues(
+            alpha: 0.10,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: roadmapAccentColor,
+            size: 21,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: roadmapTextColor,
+                    fontSize: 14,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color:
+                        roadmapSecondaryTextColor,
+                    fontSize: 12.5,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1325,43 +1536,30 @@ class _PrincipleRow extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color:
-              roadmapAccentColor,
+          color: roadmapAccentColor,
           size: 20,
         ),
-
-        const SizedBox(
-          width: 10,
-        ),
-
+        const SizedBox(width: 10),
         Expanded(
-          child:
-              Column(
+          child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white,
+                style: const TextStyle(
+                  color: roadmapTextColor,
                   fontSize: 15,
                   fontWeight:
                       FontWeight.bold,
                 ),
               ),
-
-              const SizedBox(
-                height: 3,
-              ),
-
+              const SizedBox(height: 3),
               Text(
                 text,
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   color:
-                      Colors.white60,
+                      roadmapSecondaryTextColor,
                   fontSize: 13,
                   height: 1.45,
                 ),
