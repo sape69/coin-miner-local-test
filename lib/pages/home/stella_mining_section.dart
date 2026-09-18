@@ -29,6 +29,12 @@ class StellaMiningSection extends StatelessWidget {
   final int dailyStreak;
 
   // ============================================================
+  // ⚡ POWER BOOST
+  // ============================================================
+
+  final bool boostActive;
+
+  // ============================================================
   // 📊 MINING PROGRESS TEXTS
   // ============================================================
 
@@ -100,6 +106,12 @@ class StellaMiningSection extends StatelessWidget {
     // ==========================================================
 
     required this.dailyStreak,
+
+    // ==========================================================
+    // ⚡ POWER BOOST
+    // ==========================================================
+
+    required this.boostActive,
 
     // ==========================================================
     // 📊 MINING PROGRESS
@@ -249,6 +261,13 @@ class StellaMiningSection extends StatelessWidget {
 
       dailyStreak:
           dailyStreak,
+
+      // ========================================================
+      // ⚡ POWER BOOST
+      // ========================================================
+
+      boostActive:
+          boostActive,
 
       // ========================================================
       // 📊 MINING TEXTS
