@@ -286,12 +286,22 @@ function getRewardCreatedAtMs(
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
 //
-// Yksi Firestore-haku.
+// TÄRKEÄ KORJAUS:
 //
-// AdMob SSV voi saapua hieman myöhemmin kuin Flutterin
-// RewardedAd.onUserEarnedReward tapahtuma.
+// Firestore-haussa käytetään vain UID:tä.
 //
-// Backend odottaa tarvittaessa SSV:tä.
+// ÄLÄ käytä tässä:
+//   .where("rewardType", "==", "admob")
+//   .where("rewardPurpose", "==", rewardPurpose)
+//   .where(claimedField, "==", false)
+//
+// Syitä:
+// 1. claimedField voi puuttua uudesta dokumentista.
+// 2. Usean kentän yhdistelmä voi vaatia Firestore-indeksin.
+// 3. SSV-dokumentti voi olla olemassa, mutta claim-kenttä
+//    voi olla eri tavalla alustettu.
+//
+// Kaikki ehdot tarkistetaan turvallisesti JavaScriptissä.
 //
 // ============================================================
 
@@ -308,22 +318,7 @@ async function findVerifiedAdMobReward(
         "==",
         uid
       )
-      .where(
-        "rewardType",
-        "==",
-        "admob"
-      )
-      .where(
-        "rewardPurpose",
-        "==",
-        rewardPurpose
-      )
-      .where(
-        claimedField,
-        "==",
-        false
-      )
-      .limit(20);
+      .limit(100);
 
   const rewardSnapshot =
     await rewardsQuery.get();
@@ -331,6 +326,11 @@ async function findVerifiedAdMobReward(
   if (
     rewardSnapshot.empty
   ) {
+    console.warn(
+      "🐱 No AdMob rewards found for UID:",
+      uid
+    );
+
     return null;
   }
 
@@ -341,12 +341,20 @@ async function findVerifiedAdMobReward(
       const rewardData =
         doc.data() || {};
 
+      // ======================================================
+      // 👤 UID
+      // ======================================================
+
       if (
         typeof rewardData.uid !== "string" ||
         rewardData.uid !== uid
       ) {
         return;
       }
+
+      // ======================================================
+      // 🔐 REWARD TYPE
+      // ======================================================
 
       if (
         rewardData.rewardType !==
@@ -355,6 +363,10 @@ async function findVerifiedAdMobReward(
         return;
       }
 
+      // ======================================================
+      // 🎯 REWARD PURPOSE
+      // ======================================================
+
       if (
         rewardData.rewardPurpose !==
         rewardPurpose
@@ -362,11 +374,26 @@ async function findVerifiedAdMobReward(
         return;
       }
 
+      // ======================================================
+      // 🔐 CLAIM STATUS
+      // ======================================================
+      //
+      // Puuttuva kenttä tulkitaan käyttämättömäksi.
+      //
+      // Tämä on tärkeää uudella tilillä ja mahdollisissa
+      // vanhoissa SSV-dokumenteissa.
+      //
+      // ======================================================
+
       if (
         rewardData[claimedField] === true
       ) {
         return;
       }
+
+      // ======================================================
+      // ⛏️ MINING START CLAIM STATUS
+      // ======================================================
 
       if (
         rewardPurpose === "mining_start" &&
@@ -379,6 +406,10 @@ async function findVerifiedAdMobReward(
         return;
       }
 
+      // ======================================================
+      // ⚡ POWER BOOST CLAIM STATUS
+      // ======================================================
+
       if (
         rewardPurpose === "power_boost" &&
         (
@@ -389,6 +420,10 @@ async function findVerifiedAdMobReward(
         return;
       }
 
+      // ======================================================
+      // 📺 ADMOB AD UNIT
+      // ======================================================
+
       if (
         typeof rewardData.adUnit !== "string" ||
         rewardData.adUnit.length === 0
@@ -396,12 +431,20 @@ async function findVerifiedAdMobReward(
         return;
       }
 
+      // ======================================================
+      // 🎁 REWARD ITEM
+      // ======================================================
+
       if (
         typeof rewardData.rewardItem !== "string" ||
         rewardData.rewardItem.length === 0
       ) {
         return;
       }
+
+      // ======================================================
+      // 🔐 TRANSACTION ID
+      // ======================================================
 
       const transactionId =
         validateAdMobTransactionId(
@@ -411,6 +454,10 @@ async function findVerifiedAdMobReward(
       if (!transactionId) {
         return;
       }
+
+      // ======================================================
+      // 🕒 CREATED AT
+      // ======================================================
 
       const createdAtMs =
         getRewardCreatedAtMs(
@@ -426,11 +473,28 @@ async function findVerifiedAdMobReward(
     }
   );
 
+  // ==========================================================
+  // ❌ NO VALID REWARD
+  // ==========================================================
+
   if (
     candidates.length === 0
   ) {
+    console.warn(
+      "🐱 No valid unused AdMob reward found:",
+      {
+        uid,
+        rewardPurpose,
+        claimedField,
+      }
+    );
+
     return null;
   }
+
+  // ==========================================================
+  // 🕒 UUSIN ENSIMMÄISEKSI
+  // ==========================================================
 
   candidates.sort(
     (a, b) => {
@@ -441,7 +505,22 @@ async function findVerifiedAdMobReward(
     }
   );
 
-  return candidates[0];
+  const selected =
+    candidates[0];
+
+  console.log(
+    "🐱 Selected AdMob SSV reward:",
+    {
+      uid,
+      rewardPurpose,
+      transactionId:
+        selected.transactionId,
+      createdAtMs:
+        selected.createdAtMs,
+    }
+  );
+
+  return selected;
 }
 
 // ============================================================
@@ -452,14 +531,6 @@ async function findVerifiedAdMobReward(
 // Flutter kutsuu claimMining/powerBoost.
 //
 // Backend odottaa vahvistusta.
-//
-// Tarkistus:
-// - ensimmäinen heti
-// - sen jälkeen 2 sekunnin välein
-// - enintään 110 sekuntia
-//
-// Cloud Functionin request timeout on 120 sekuntia,
-// joten SSV:lle jää noin 10 sekunnin turvamarginaali.
 //
 // ============================================================
 
@@ -1675,10 +1746,6 @@ const claimMining =
   onCall(
     {
       region: "us-central1",
-
-      // AdMob SSV voi saapua hitaasti.
-      // 110 s SSV-odotukselle
-      // ja 120 s Cloud Function timeout.
       timeoutSeconds: 120,
     },
     async (request) => {
@@ -1726,6 +1793,10 @@ const claimMining =
           );
         }
 
+        // ======================================================
+        // 🔥 FIRESTORE TRANSACTION
+        // ======================================================
+
         return await db.runTransaction(
           async (transaction) => {
             const snapshot =
@@ -1750,6 +1821,15 @@ const claimMining =
               snapshot.exists
                 ? snapshot.data() || {}
                 : {};
+
+            // ==================================================
+            // 🐱 UUSI TILI
+            // ==================================================
+            //
+            // Jos users/{uid} puuttuu, sitä ei hylätä.
+            // transaction.set(..., merge:true) luo dokumentin.
+            //
+            // ==================================================
 
             const currentDailyStreak =
               getDailyStreak(data);
@@ -1865,6 +1945,10 @@ const claimMining =
               };
             }
 
+            // ==================================================
+            // 🎁 DAILY CLAIM
+            // ==================================================
+
             const dailyClaim =
               calculateNextDailyClaim(
                 data,
@@ -1877,26 +1961,24 @@ const claimMining =
             const dailyStreak =
               dailyClaim.streak;
 
+            // ==================================================
+            // 💰 BALANCE
+            // ==================================================
+
             const oldBalance =
               getSafeNonNegativeNumber(
                 data.miningBalance,
                 0
               );
 
+            // ==================================================
+            // ⛏️ PREVIOUS MINING
+            // ==================================================
+
             const previousMiningHashRate =
               getMiningHashRate(
                 data,
                 dailyHashRate
-              );
-
-            const miningStatus =
-              calculateMiningStatus(
-                {
-                  ...data,
-                  hashRate:
-                    previousMiningHashRate,
-                },
-                now
               );
 
             const previousStart =
@@ -1914,6 +1996,10 @@ const claimMining =
               false;
 
             let previousAdBoostMining = 0;
+
+            // ==================================================
+            // 💰 COLLECT COMPLETED PREVIOUS CYCLE
+            // ==================================================
 
             if (
               previousStart &&
@@ -1992,6 +2078,10 @@ const claimMining =
               }
             }
 
+            // ==================================================
+            // 🏆 ACHIEVEMENTS
+            // ==================================================
+
             await updateMiningAchievements(
               transaction,
               uid,
@@ -1999,6 +2089,10 @@ const claimMining =
               true,
               now
             );
+
+            // ==================================================
+            // ⛏️ NEW MINING CYCLE
+            // ==================================================
 
             const newMiningStartedAt =
               now;
@@ -2011,6 +2105,10 @@ const claimMining =
 
             const newMiningHashRate =
               dailyHashRate;
+
+            // ==================================================
+            // 👤 USER UPDATE
+            // ==================================================
 
             const userUpdate = {
               hashRate:
@@ -2057,7 +2155,7 @@ const claimMining =
             );
 
             // ==================================================
-            // 🔐 KULUTA ADMOB MINING START -PALKKIO
+            // 🔐 CONSUME ADMOB MINING START REWARD
             // ==================================================
 
             transaction.set(
@@ -2082,6 +2180,10 @@ const claimMining =
                 merge: true,
               }
             );
+
+            // ==================================================
+            // 🎁 DAILY HISTORY
+            // ==================================================
 
             if (
               !dailyClaim.claimedToday
@@ -2126,6 +2228,10 @@ const claimMining =
                 }
               );
             }
+
+            // ==================================================
+            // 📜 COMPLETED MINING HISTORY
+            // ==================================================
 
             if (
               completedPreviousCycle
@@ -2177,6 +2283,10 @@ const claimMining =
               );
             }
 
+            // ==================================================
+            // 📜 START HISTORY
+            // ==================================================
+
             const startHistoryRef =
               getHistoryCollection(uid)
                 .doc();
@@ -2214,6 +2324,10 @@ const claimMining =
               }
             );
 
+            // ==================================================
+            // ⚡ CURRENT POWER BOOST
+            // ==================================================
+
             const boostStartedMs =
               getTimestampMilliseconds(
                 data.adBoostStartedAt
@@ -2243,10 +2357,18 @@ const claimMining =
                     AD_HASH_RATE_BONUS
                 : dailyHashRate;
 
+            // ==================================================
+            // 🎁 DAILY MESSAGE
+            // ==================================================
+
             const dailyMessage =
               dailyClaim.claimedToday
                 ? "🐱⛏️ Stella jatkaa tämän päivän louhintaa!"
                 : `🐱✨ Stella sai päivän ${dailyStreak} Daily Hash Raten: ${dailyHashRate.toFixed(4)} HR!`;
+
+            // ==================================================
+            // ✅ RESPONSE
+            // ==================================================
 
             return {
               success: true,
@@ -2332,39 +2454,11 @@ const claimMining =
 // ============================================================
 // ⚡ POWER BOOST
 // ============================================================
-//
-// Mainos näytetään Flutterissa.
-//
-// AdMob SSV
-//      ↓
-// admobRewards/{transactionId}
-//      ↓
-// powerBoost()
-//      ↓
-// 4 h Power Boost
-//
-// ============================================================
 
 const powerBoost =
   onCall(
     {
       region: "us-central1",
-
-      // ======================================================
-      // ⏱️ ADMOB SSV TURVAMARGINAALI
-      // ======================================================
-      //
-      // Viimeisimmän testin perusteella AdMob SSV saapui
-      // noin 90,7 sekunnin kohdalla.
-      //
-      // Sisäinen SSV-odotus = 110 s
-      // Cloud Function timeout = 120 s
-      //
-      // Näin Cloud Runille jää noin 10 sekunnin
-      // turvamarginaali SSV-odotuksen jälkeen.
-      //
-      // ======================================================
-
       timeoutSeconds: 120,
     },
     async (request) => {
@@ -2396,7 +2490,7 @@ const powerBoost =
           getUtcDateString();
 
         // ======================================================
-        // 🔐 ODOTA ADMOB SSV -VAHVISTUSTA
+        // 🔐 ODOTA ADMOB SSV
         // ======================================================
 
         const verifiedReward =
@@ -2422,10 +2516,6 @@ const powerBoost =
 
         return await db.runTransaction(
           async (transaction) => {
-            // ==================================================
-            // 👤 USER
-            // ==================================================
-
             const userSnapshot =
               await transaction.get(
                 userRef
@@ -2575,7 +2665,7 @@ const powerBoost =
             }
 
             // ==================================================
-            // 🚫 EXISTING ACTIVE BOOST
+            // 🚫 ACTIVE BOOST
             // ==================================================
 
             if (
@@ -2615,7 +2705,7 @@ const powerBoost =
               );
 
             // ==================================================
-            // 📊 NEW DAILY AD COUNT
+            // 📊 DAILY AD COUNT
             // ==================================================
 
             const storedAdDate =
