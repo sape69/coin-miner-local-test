@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'register_page.dart';
 
@@ -8,7 +7,7 @@ import 'register_page.dart';
 // 🐱 STELLURIINI LOGIN PAGE
 // ============================================================
 //
-// OIKEA FIREBASE-KIRJAUTUMINEN
+// Firebase-kirjautuminen:
 //
 // LoginPage
 //     ↓
@@ -19,6 +18,18 @@ import 'register_page.dart';
 // AuthGate huomaa kirjautumisen
 //     ↓
 // HomePage
+//
+// Lisäksi:
+//
+// UNOHTUITKO SALASANA?
+//     ↓
+// FirebaseAuth.sendPasswordResetEmail()
+//     ↓
+// Firebase lähettää palautuslinkin sähköpostiin
+//
+// LUO UUSI TILI
+//     ↓
+// RegisterPage
 //
 // ============================================================
 
@@ -38,13 +49,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   // ==========================================================
-  // FIREBASE AUTH
+  // 🔥 FIREBASE AUTH
   // ==========================================================
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // ==========================================================
-  // CONTROLLERS
+  // 📝 CONTROLLERS
   // ==========================================================
 
   final TextEditingController _emailController =
@@ -54,76 +65,43 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   // ==========================================================
-  // STATE
+  // 🔄 STATE
   // ==========================================================
 
   bool _obscurePassword = true;
   bool _loginLoading = false;
-
-  bool _accountCreatedOnDevice = false;
-  bool _accountStatusLoading = true;
+  bool _resetPasswordLoading = false;
 
   // ==========================================================
-  // SHARED PREFERENCES KEY
+  // 🎨 STELLA COLORS
   // ==========================================================
 
-  static const String _accountCreatedKey =
-      'stelluriini_account_created';
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color surfaceColor =
+      Color(0xFF1A0E31);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color purpleColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color goldColor =
+      Color(0xFFFFD166);
+
+  static const Color primaryTextColor =
+      Color(0xFFF8F4FF);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBDB4D1);
 
   // ==========================================================
-  // INIT
-  // ==========================================================
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadAccountStatus();
-  }
-
-  // ==========================================================
-  // LOAD ACCOUNT STATUS
-  // ==========================================================
-
-  Future<void> _loadAccountStatus() async {
-    try {
-      final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
-
-      final bool accountCreated =
-          preferences.getBool(
-                _accountCreatedKey,
-              ) ??
-              false;
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _accountCreatedOnDevice =
-            accountCreated;
-
-        _accountStatusLoading = false;
-      });
-    } catch (error) {
-      debugPrint(
-        'Account status load error: $error',
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _accountCreatedOnDevice = false;
-        _accountStatusLoading = false;
-      });
-    }
-  }
-
-  // ==========================================================
-  // DISPOSE
+  // 🧹 DISPOSE
   // ==========================================================
 
   @override
@@ -135,11 +113,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // FIREBASE LOGIN
+  // 🔥 FIREBASE LOGIN
   // ==========================================================
 
   Future<void> _login() async {
-    if (_loginLoading) {
+    if (_loginLoading ||
+        _resetPasswordLoading) {
       return;
     }
 
@@ -150,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text;
 
     // ========================================================
-    // EMAIL CHECK
+    // 📧 EMAIL CHECK
     // ========================================================
 
     if (email.isEmpty) {
@@ -162,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     // ========================================================
-    // PASSWORD CHECK
+    // 🔐 PASSWORD CHECK
     // ========================================================
 
     if (password.isEmpty) {
@@ -174,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     // ========================================================
-    // START LOGIN
+    // 🔄 START LOGIN
     // ========================================================
 
     setState(() {
@@ -183,7 +162,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       // ======================================================
-      // FIREBASE EMAIL/PASSWORD LOGIN
+      // 🔥 FIREBASE EMAIL/PASSWORD LOGIN
       // ======================================================
 
       await _auth.signInWithEmailAndPassword(
@@ -192,22 +171,12 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // ======================================================
-      // SAVE ACCOUNT EXISTENCE
+      // ✅ LOGIN SUCCESS
       // ======================================================
-
-      try {
-        final SharedPreferences preferences =
-            await SharedPreferences.getInstance();
-
-        await preferences.setBool(
-          _accountCreatedKey,
-          true,
-        );
-      } catch (error) {
-        debugPrint(
-          'Account status save after login error: $error',
-        );
-      }
+      //
+      // AuthGate siirtyy HomePageen automaattisesti.
+      //
+      // ======================================================
 
       if (mounted) {
         _showMessage(
@@ -252,30 +221,122 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // OPEN REGISTER PAGE
+  // 🔐 FORGOT PASSWORD
+  // ==========================================================
+
+  Future<void> _resetPassword() async {
+    if (_loginLoading ||
+        _resetPasswordLoading) {
+      return;
+    }
+
+    final String email =
+        _emailController.text.trim();
+
+    // ========================================================
+    // 📧 EMAIL REQUIRED
+    // ========================================================
+
+    if (email.isEmpty) {
+      _showMessage(
+        'Kirjoita sähköpostiosoitteesi ensin.',
+      );
+
+      return;
+    }
+
+    // ========================================================
+    // 🔄 START PASSWORD RESET
+    // ========================================================
+
+    setState(() {
+      _resetPasswordLoading = true;
+    });
+
+    try {
+      // ======================================================
+      // 🔥 FIREBASE PASSWORD RESET
+      // ======================================================
+
+      await _auth.sendPasswordResetEmail(
+        email: email,
+      );
+
+      // ======================================================
+      // ✅ SUCCESS
+      // ======================================================
+
+      if (mounted) {
+        _showMessage(
+          'Salasanan palautuslinkki lähetettiin '
+          'sähköpostiisi.',
+        );
+      }
+    } on FirebaseAuthException catch (error) {
+      debugPrint(
+        'Firebase password reset error: '
+        '${error.code} - ${error.message}',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        _passwordResetErrorMessage(
+          error.code,
+        ),
+      );
+    } catch (error) {
+      debugPrint(
+        'Password reset error: $error',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Salasanan palautus epäonnistui. '
+        'Yritä uudelleen.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _resetPasswordLoading = false;
+        });
+      }
+    }
+  }
+
+  // ==========================================================
+  // 👤 OPEN REGISTER PAGE
   // ==========================================================
 
   Future<void> _openRegisterPage() async {
-    if (_loginLoading) {
+    if (_loginLoading ||
+        _resetPasswordLoading) {
       return;
     }
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) {
+        builder: (
+          BuildContext context,
+        ) {
           return RegisterPage(
-            languageCode: widget.languageCode,
-            changeLanguage: widget.changeLanguage,
+            languageCode:
+                widget.languageCode,
+            changeLanguage:
+                widget.changeLanguage,
           );
         },
       ),
     );
-
-    await _loadAccountStatus();
   }
 
   // ==========================================================
-  // FIREBASE ERROR MESSAGES
+  // 🔥 FIREBASE LOGIN ERROR MESSAGES
   // ==========================================================
 
   String _firebaseErrorMessage(
@@ -314,7 +375,42 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // MESSAGE
+  // 🔐 PASSWORD RESET ERROR MESSAGES
+  // ==========================================================
+
+  String _passwordResetErrorMessage(
+    String code,
+  ) {
+    switch (code) {
+      case 'invalid-email':
+        return 'Sähköpostiosoite ei ole kelvollinen.';
+
+      case 'user-not-found':
+        return 'Sähköpostiosoitteelle ei löytynyt '
+            'käyttäjätiliä.';
+
+      case 'user-disabled':
+        return 'Tämä käyttäjätili on poistettu käytöstä.';
+
+      case 'too-many-requests':
+        return 'Liian monta palautusyritystä. '
+            'Yritä myöhemmin uudelleen.';
+
+      case 'network-request-failed':
+        return 'Verkkoyhteys epäonnistui. '
+            'Tarkista internetyhteys.';
+
+      case 'operation-not-allowed':
+        return 'Salasanan palautus ei ole käytössä.';
+
+      default:
+        return 'Salasanan palautus epäonnistui. '
+            'Yritä uudelleen.';
+    }
+  }
+
+  // ==========================================================
+  // 💬 MESSAGE
   // ==========================================================
 
   void _showMessage(
@@ -334,7 +430,7 @@ class _LoginPageState extends State<LoginPage> {
           behavior:
               SnackBarBehavior.floating,
           backgroundColor:
-              const Color(0xFF21113B),
+              cardColor,
           shape:
               RoundedRectangleBorder(
             borderRadius:
@@ -347,14 +443,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // BUILD
+  // 🖥️ BUILD
   // ==========================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
+    final bool interactionDisabled =
+        _loginLoading ||
+        _resetPasswordLoading;
+
     return Scaffold(
       backgroundColor:
-          const Color(0xFF120B24),
+          backgroundColor,
 
       resizeToAvoidBottomInset:
           true,
@@ -378,7 +480,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               // ==================================================
-              // STELLURIINI LOGO
+              // 🐱 STELLURIINI LOGO
               // ==================================================
 
               Container(
@@ -393,13 +495,19 @@ class _LoginPageState extends State<LoginPage> {
                   boxShadow: [
                     BoxShadow(
                       color:
-                          const Color(
-                        0xFF35D0A0,
-                      ).withValues(
-                        alpha: 0.25,
+                          purpleColor.withValues(
+                        alpha: 0.28,
                       ),
-                      blurRadius: 25,
-                      spreadRadius: 4,
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                    BoxShadow(
+                      color:
+                          pinkColor.withValues(
+                        alpha: 0.12,
+                      ),
+                      blurRadius: 50,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
@@ -425,9 +533,7 @@ class _LoginPageState extends State<LoginPage> {
                       return const Icon(
                         Icons.pets,
                         color:
-                            Color(
-                          0xFF35D0A0,
-                        ),
+                            purpleColor,
                         size: 80,
                       );
                     },
@@ -440,7 +546,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               // ==================================================
-              // TITLE
+              // 🌟 TITLE
               // ==================================================
 
               const Text(
@@ -449,9 +555,7 @@ class _LoginPageState extends State<LoginPage> {
                 style:
                     TextStyle(
                   color:
-                      Color(
-                    0xFFF8F4FF,
-                  ),
+                      primaryTextColor,
                   fontSize: 36,
                   fontWeight:
                       FontWeight.bold,
@@ -468,9 +572,7 @@ class _LoginPageState extends State<LoginPage> {
                 style:
                     TextStyle(
                   color:
-                      Color(
-                    0xFF35D0A0,
-                  ),
+                      goldColor,
                   fontSize: 21,
                   fontWeight:
                       FontWeight.bold,
@@ -483,7 +585,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               // ==================================================
-              // LOGIN TITLE
+              // 🔐 LOGIN TITLE
               // ==================================================
 
               const Text(
@@ -495,9 +597,7 @@ class _LoginPageState extends State<LoginPage> {
                 style:
                     TextStyle(
                   color:
-                      Color(
-                    0xFFF8F4FF,
-                  ),
+                      primaryTextColor,
                   fontSize: 25,
                   fontWeight:
                       FontWeight.bold,
@@ -509,7 +609,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               // ==================================================
-              // EMAIL
+              // 📧 EMAIL
               // ==================================================
 
               TextField(
@@ -517,7 +617,7 @@ class _LoginPageState extends State<LoginPage> {
                     _emailController,
 
                 enabled:
-                    !_loginLoading,
+                    !interactionDisabled,
 
                 keyboardType:
                     TextInputType.emailAddress,
@@ -527,7 +627,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 onSubmitted:
                     (_) {
-                  if (!_loginLoading) {
+                  if (!interactionDisabled) {
                     FocusScope.of(
                       context,
                     ).nextFocus();
@@ -549,9 +649,7 @@ class _LoginPageState extends State<LoginPage> {
                   hintStyle:
                       const TextStyle(
                     color:
-                        Color(
-                      0xFFBDB4D1,
-                    ),
+                        secondaryTextColor,
                     fontSize: 18,
                   ),
 
@@ -559,18 +657,14 @@ class _LoginPageState extends State<LoginPage> {
                       const Icon(
                     Icons.email_outlined,
                     color:
-                        Color(
-                      0xFF35D0A0,
-                    ),
+                        purpleColor,
                   ),
 
                   filled:
                       true,
 
                   fillColor:
-                      const Color(
-                    0xFF21113B,
-                  ),
+                      cardColor,
 
                   enabledBorder:
                       OutlineInputBorder(
@@ -582,9 +676,7 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide:
                         const BorderSide(
                       color:
-                          Color(
-                        0xFF35D0A0,
-                      ),
+                          purpleColor,
                       width: 2,
                     ),
                   ),
@@ -599,7 +691,7 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide:
                         const BorderSide(
                       color:
-                          Colors.white,
+                          pinkColor,
                       width: 3,
                     ),
                   ),
@@ -611,7 +703,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               // ==================================================
-              // PASSWORD
+              // 🔐 PASSWORD
               // ==================================================
 
               TextField(
@@ -619,7 +711,7 @@ class _LoginPageState extends State<LoginPage> {
                     _passwordController,
 
                 enabled:
-                    !_loginLoading,
+                    !interactionDisabled,
 
                 obscureText:
                     _obscurePassword,
@@ -632,7 +724,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 onSubmitted:
                     (_) {
-                  if (!_loginLoading) {
+                  if (!interactionDisabled) {
                     _login();
                   }
                 },
@@ -652,9 +744,7 @@ class _LoginPageState extends State<LoginPage> {
                   hintStyle:
                       const TextStyle(
                     color:
-                        Color(
-                      0xFFBDB4D1,
-                    ),
+                        secondaryTextColor,
                     fontSize: 18,
                   ),
 
@@ -662,15 +752,13 @@ class _LoginPageState extends State<LoginPage> {
                       const Icon(
                     Icons.lock_outline,
                     color:
-                        Color(
-                      0xFF35D0A0,
-                    ),
+                        purpleColor,
                   ),
 
                   suffixIcon:
                       IconButton(
                     onPressed:
-                        _loginLoading
+                        interactionDisabled
                             ? null
                             : () {
                                 setState(() {
@@ -688,9 +776,7 @@ class _LoginPageState extends State<LoginPage> {
                               .visibility_off_outlined,
 
                       color:
-                          const Color(
-                        0xFF35D0A0,
-                      ),
+                          purpleColor,
                     ),
                   ),
 
@@ -698,9 +784,7 @@ class _LoginPageState extends State<LoginPage> {
                       true,
 
                   fillColor:
-                      const Color(
-                    0xFF21113B,
-                  ),
+                      cardColor,
 
                   enabledBorder:
                       OutlineInputBorder(
@@ -712,9 +796,7 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide:
                         const BorderSide(
                       color:
-                          Color(
-                        0xFF35D0A0,
-                      ),
+                          purpleColor,
                       width: 2,
                     ),
                   ),
@@ -729,7 +811,7 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide:
                         const BorderSide(
                       color:
-                          Colors.white,
+                          pinkColor,
                       width: 3,
                     ),
                   ),
@@ -737,11 +819,67 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(
-                height: 28,
+                height: 10,
               ),
 
               // ==================================================
-              // LOGIN BUTTON
+              // 🔐 FORGOT PASSWORD
+              // ==================================================
+
+              Align(
+                alignment:
+                    Alignment.centerRight,
+
+                child:
+                    TextButton(
+                  onPressed:
+                      interactionDisabled
+                          ? null
+                          : _resetPassword,
+
+                  style:
+                      TextButton.styleFrom(
+                    foregroundColor:
+                        pinkColor,
+
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                  ),
+
+                  child:
+                      _resetPasswordLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child:
+                                  CircularProgressIndicator(
+                                strokeWidth:
+                                    2.2,
+                                color:
+                                    pinkColor,
+                              ),
+                            )
+                          : const Text(
+                              'UNOHTUIKO SALASANA?',
+                              style:
+                                  TextStyle(
+                                fontSize: 14,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                ),
+              ),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              // ==================================================
+              // 🔐 LOGIN BUTTON
               // ==================================================
 
               SizedBox(
@@ -753,25 +891,21 @@ class _LoginPageState extends State<LoginPage> {
                 child:
                     ElevatedButton(
                   onPressed:
-                      _loginLoading
+                      interactionDisabled
                           ? null
                           : _login,
 
                   style:
                       ElevatedButton.styleFrom(
                     backgroundColor:
-                        const Color(
-                      0xFF35D0A0,
-                    ),
+                        purpleColor,
 
                     foregroundColor:
-                        const Color(
-                      0xFF120B24,
-                    ),
+                        backgroundColor,
 
                     disabledBackgroundColor:
                         const Color(
-                      0xFF587D72,
+                      0xFF5E5275,
                     ),
 
                     disabledForegroundColor:
@@ -801,9 +935,7 @@ class _LoginPageState extends State<LoginPage> {
                                 strokeWidth:
                                     2.5,
                                 color:
-                                    Color(
-                                  0xFF120B24,
-                                ),
+                                    backgroundColor,
                               ),
                             )
                           : const Text(
@@ -820,89 +952,143 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
+              const SizedBox(
+                height: 18,
+              ),
+
               // ==================================================
-              // REGISTER BUTTON
+              // ✨ DIVIDER
               // ==================================================
 
-              if (!_accountStatusLoading &&
-                  !_accountCreatedOnDevice) ...[
-                const SizedBox(
-                  height: 16,
-                ),
-
-                SizedBox(
-                  width:
-                      double.infinity,
-
-                  height: 50,
-
-                  child:
-                      OutlinedButton(
-                    onPressed:
-                        _loginLoading
-                            ? null
-                            : _openRegisterPage,
-
-                    style:
-                        OutlinedButton.styleFrom(
-                      foregroundColor:
-                          const Color(
-                        0xFF35D0A0,
-                      ),
-
-                      side:
-                          const BorderSide(
-                        color:
-                            Color(
-                          0xFF35D0A0,
-                        ),
-                        width: 2,
-                      ),
-
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                          16,
-                        ),
+              Row(
+                children: [
+                  Expanded(
+                    child:
+                        Divider(
+                      color:
+                          purpleColor.withValues(
+                        alpha: 0.25,
                       ),
                     ),
+                  ),
 
+                  const Padding(
+                    padding:
+                        EdgeInsets.symmetric(
+                      horizontal: 14,
+                    ),
                     child:
-                        const Text(
-                      'LUO UUSI TILI',
-
+                        Text(
+                      'TAI',
                       style:
                           TextStyle(
-                        fontSize: 16,
+                        color:
+                            secondaryTextColor,
+                        fontSize: 12,
                         fontWeight:
                             FontWeight.bold,
+                        letterSpacing:
+                            1.5,
+                      ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child:
+                        Divider(
+                      color:
+                          purpleColor.withValues(
+                        alpha: 0.25,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(
+                height: 18,
+              ),
+
+              // ==================================================
+              // 👤 CREATE ACCOUNT
+              // ==================================================
+              //
+              // Tämä on AINA näkyvissä.
+              //
+              // Ei SharedPreferences-tarkistusta.
+              //
+              // ==================================================
+
+              SizedBox(
+                width:
+                    double.infinity,
+
+                height: 52,
+
+                child:
+                    OutlinedButton.icon(
+                  onPressed:
+                      interactionDisabled
+                          ? null
+                          : _openRegisterPage,
+
+                  icon:
+                      const Icon(
+                    Icons.person_add_alt_1,
+                    size: 21,
+                  ),
+
+                  label:
+                      const Text(
+                    'LUO UUSI TILI',
+                    style:
+                        TextStyle(
+                      fontSize: 16,
+                      fontWeight:
+                          FontWeight.bold,
+                      letterSpacing:
+                          0.3,
+                    ),
+                  ),
+
+                  style:
+                      OutlinedButton.styleFrom(
+                    foregroundColor:
+                        pinkColor,
+
+                    disabledForegroundColor:
+                        const Color(
+                      0xFF756A87,
+                    ),
+
+                    side:
+                        const BorderSide(
+                      color:
+                          pinkColor,
+                      width: 2,
+                    ),
+
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                        16,
                       ),
                     ),
                   ),
                 ),
-              ],
-
-              // ==================================================
-              // EXTRA VERTICAL SPACE
-              // ==================================================
-              //
-              // Tämä tekee sivusta hieman pidemmän ja antaa
-              // käyttäjälle enemmän vieritysvaraa näppäimistön
-              // ollessa auki.
-              //
-              // ==================================================
+              ),
 
               const SizedBox(
                 height: 70,
               ),
 
               // ==================================================
-              // FOOTER
+              // 🐱 FOOTER
               // ==================================================
 
               const Text(
-                'STELLA • STELLURIINI • STL',
+                '🐱  STELLA • STELLURIINI • STL  ✨',
 
                 textAlign:
                     TextAlign.center,
@@ -910,9 +1096,7 @@ class _LoginPageState extends State<LoginPage> {
                 style:
                     TextStyle(
                   color:
-                      Color(
-                    0xFFBDB4D1,
-                  ),
+                      secondaryTextColor,
                   fontSize: 12,
                   letterSpacing: 1,
                 ),
