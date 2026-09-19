@@ -128,26 +128,153 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   // 💬 MESSAGE
   // ==========================================================
+  //
+  // Näyttää näkyvän Stella-tyylisen ilmoituskortin.
+  //
+  // isError = true:
+  //   Virheilmoitus
+  //
+  // isError = false:
+  //   Onnistumisilmoitus
+  //
+  // ==========================================================
 
-  void _message(String text) {
+  void _message(
+    String text, {
+    bool isError = true,
+  }) {
     if (!mounted) {
       return;
     }
 
-    ScaffoldMessenger.of(context)
+    final ScaffoldMessengerState messenger =
+        ScaffoldMessenger.of(context);
+
+    messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            text,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-            ),
+          duration: Duration(
+            seconds: isError ? 4 : 3,
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: cardColor,
+          margin: const EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            24,
+          ),
+          padding: EdgeInsets.zero,
+          elevation: 12,
+          backgroundColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 16,
+            ),
+            decoration: BoxDecoration(
+              color: isError
+                  ? const Color(0xFF2A163A)
+                  : const Color(0xFF24183D),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isError
+                    ? const Color(0xFFFF8FB8)
+                    : goldColor,
+                width: 1.4,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isError
+                      ? const Color(0x66FF8FB8)
+                      : const Color(0x66FFD166),
+                  blurRadius: 18,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isError
+                        ? const Color(0x33FF8FB8)
+                        : const Color(0x33FFD166),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isError
+                        ? Icons.error_outline_rounded
+                        : Icons.check_circle_outline_rounded,
+                    color: isError
+                        ? const Color(0xFFFFB0C9)
+                        : goldColor,
+                    size: 27,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isError
+                            ? 'Stelluriini'
+                            : 'Stelluriini',
+                        style: TextStyle(
+                          color: isError
+                              ? const Color(0xFFFFB0C9)
+                              : goldColor,
+                          fontSize: 15,
+                          fontWeight:
+                              FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        text,
+                        style: const TextStyle(
+                          color: primaryTextColor,
+                          fontSize: 14,
+                          height: 1.35,
+                          fontWeight:
+                              FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  visualDensity:
+                      VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: secondaryTextColor,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -297,6 +424,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       _message(
         _t('accountCreated'),
+        isError: false,
       );
 
       await Future<void>.delayed(
