@@ -3215,4 +3215,371 @@ const powerBoost =
                   AD_BOOST_DURATION_MS,
 
                 adBoostStartedAt:
-                  currentAd
+                  currentAdStatus.adBoostStartedAt
+                    ? currentAdStatus.adBoostStartedAt.toISOString()
+                    : null,
+
+                adBoostEndsAt:
+                  currentAdStatus.adBoostEndsAt
+                    ? currentAdStatus.adBoostEndsAt.toISOString()
+                    : null,
+
+                effectiveHashRate,
+
+                transactionId:
+                  verifiedRewardTransactionId,
+
+                rewardConsumed:
+                  true,
+
+                message:
+                  currentAdStatus.adBoostActive
+                    ? "🐱⚡ Stella Power Boost on jo aktiivinen!"
+                    : "🐱⚡ Tämä Power Boost on jo käsitelty.",
+              };
+            }
+
+
+            // ==================================================
+            // 🔐 VALIDATE VERIFIED REWARD
+            // ==================================================
+
+            const validatedRewardData =
+              validateVerifiedRewardDocument(
+                rewardSnapshot,
+                uid,
+                "power_boost",
+                "powerBoostClaimed"
+              );
+
+
+            // ==================================================
+            // 📊 CURRENT AD STATUS
+            // ==================================================
+
+            const currentAdStatus =
+              getAdStatus(
+                userData,
+                nowMs,
+                today
+              );
+
+
+            // ==================================================
+            // 🚫 MAX DAILY ADS
+            // ==================================================
+
+            if (
+              currentAdStatus.adsToday >=
+              MAX_ADS_PER_DAY
+            ) {
+              throw new HttpsError(
+                "resource-exhausted",
+                "🐱 Päivän Power Boost -mainosraja on täynnä."
+              );
+            }
+
+
+            // ==================================================
+            // 🚫 ACTIVE BOOST
+            // ==================================================
+
+            if (
+              currentAdStatus.adBoostActive
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱 Power Boost on jo aktiivinen."
+              );
+            }
+
+
+            // ==================================================
+            // 🚫 COOLDOWN
+            // ==================================================
+
+            if (
+              currentAdStatus.cooldownRemainingMs >
+              0
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱 Power Boost ei ole vielä valmis käytettäväksi uudelleen."
+              );
+            }
+
+
+            // ==================================================
+            // 🕒 BOOST TIME
+            // ==================================================
+
+            const boostStartedAt =
+              now;
+
+
+            const boostEndsAt =
+              new Date(
+                nowMs +
+                  AD_BOOST_DURATION_MS
+              );
+
+
+            // ==================================================
+            // 📊 DAILY AD COUNT
+            // ==================================================
+
+            const storedAdDate =
+              typeof userData.lastAdDate === "string"
+                ? userData.lastAdDate
+                : "";
+
+
+            const currentAdsToday =
+              storedAdDate === today
+                ? Math.max(
+                    0,
+                    Math.floor(
+                      getSafeNumber(
+                        userData.adsToday,
+                        0
+                      )
+                    )
+                  )
+                : 0;
+
+
+            const newAdsToday =
+              currentAdsToday + 1;
+
+
+            // ==================================================
+            // 👤 USER UPDATE
+            // ==================================================
+
+            transaction.set(
+              userRef,
+              {
+                adsToday:
+                  newAdsToday,
+
+                lastAdDate:
+                  today,
+
+                lastAdRewardAt:
+                  FieldValue.serverTimestamp(),
+
+                adBoostStartedAt:
+                  boostStartedAt,
+
+                adBoostEndsAt:
+                  boostEndsAt,
+
+                powerBoostTransactionId:
+                  verifiedRewardTransactionId,
+
+                updatedAt:
+                  FieldValue.serverTimestamp(),
+              },
+              {
+                merge: true,
+              }
+            );
+
+
+            // ==================================================
+            // 🔐 CONSUME ADMOB REWARD
+            // ==================================================
+
+            transaction.set(
+              verifiedRewardRef,
+              {
+                powerBoostClaimed:
+                  true,
+
+                powerBoostClaimedAt:
+                  FieldValue.serverTimestamp(),
+
+                powerBoostClaimedBy:
+                  uid,
+
+                powerBoostTransactionId:
+                  verifiedRewardTransactionId,
+
+                consumedAt:
+                  FieldValue.serverTimestamp(),
+
+                consumedBy:
+                  uid,
+
+                rewardConsumed:
+                  true,
+              },
+              {
+                merge: true,
+              }
+            );
+
+
+            // ==================================================
+            // 📜 POWER BOOST HISTORY
+            // ==================================================
+
+            const historyRef =
+              getHistoryCollection(uid)
+                .doc();
+
+
+            transaction.set(
+              historyRef,
+              {
+                type:
+                  "ad_reward",
+
+                title:
+                  "Stella Power Boost 🐱⚡",
+
+                amount:
+                  0,
+
+                adRewardTransactionId:
+                  validatedRewardData.transactionId ||
+                  verifiedRewardTransactionId,
+
+                rewardPurpose:
+                  "power_boost",
+
+                adHashRateBonus:
+                  AD_HASH_RATE_BONUS,
+
+                boostStartedAt:
+                  boostStartedAt,
+
+                boostEndsAt:
+                  boostEndsAt,
+
+                boostDurationMs:
+                  AD_BOOST_DURATION_MS,
+
+                adsToday:
+                  newAdsToday,
+
+                maxAdsPerDay:
+                  MAX_ADS_PER_DAY,
+
+                createdAt:
+                  FieldValue.serverTimestamp(),
+              }
+            );
+
+
+            // ==================================================
+            // 📊 EFFECTIVE HASH RATE
+            // ==================================================
+
+            const dailyStatus =
+              getDailyStatus(
+                userData,
+                today
+              );
+
+
+            const baseHashRate =
+              getMiningHashRate(
+                userData,
+                dailyStatus.dailyHashRate
+              );
+
+
+            const effectiveHashRate =
+              baseHashRate +
+              AD_HASH_RATE_BONUS;
+
+
+            // ==================================================
+            // ✅ RESPONSE
+            // ==================================================
+
+            return {
+              success:
+                true,
+
+              boostActive:
+                true,
+
+              active:
+                true,
+
+              alreadyActivated:
+                false,
+
+              adsToday:
+                newAdsToday,
+
+              maxAdsPerDay:
+                MAX_ADS_PER_DAY,
+
+              adHashRateBonus:
+                AD_HASH_RATE_BONUS,
+
+              boostRemainingMs:
+                AD_BOOST_DURATION_MS,
+
+              remainingBoostMs:
+                AD_BOOST_DURATION_MS,
+
+              adBoostDurationMs:
+                AD_BOOST_DURATION_MS,
+
+              adBoostStartedAt:
+                boostStartedAt.toISOString(),
+
+              adBoostEndsAt:
+                boostEndsAt.toISOString(),
+
+              effectiveHashRate,
+
+              transactionId:
+                verifiedRewardTransactionId,
+
+              rewardConsumed:
+                true,
+
+              message:
+                "🐱⚡ Stella Power Boost on aktiivinen!",
+            };
+          }
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "powerBoost error:",
+          error
+        );
+
+
+        if (
+          error instanceof HttpsError
+        ) {
+          throw error;
+        }
+
+
+        throw new HttpsError(
+          "internal",
+          "🐱 Power Boostin aktivointi epäonnistui."
+        );
+      }
+    }
+  );
+
+
+// ============================================================
+// 📦 EXPORTS
+// ============================================================
+
+module.exports = {
+  getMiningStatus,
+  claimMining,
+  powerBoost,
+};
