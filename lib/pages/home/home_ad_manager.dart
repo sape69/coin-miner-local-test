@@ -75,6 +75,18 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
   // ⏳ SSV WAIT
   // ============================================================
+  //
+  // AdMob SSV is asynchronous.
+  //
+  // This delay gives the backend time to receive the
+  // AdMob SSV callback before the client calls the
+  // mining / boost Cloud Function.
+  //
+  // IMPORTANT:
+  // The delay does NOT itself verify the reward.
+  // The backend remains responsible for verification.
+  //
+  // ============================================================
 
   static const Duration ssvGracePeriod =
       Duration(
@@ -850,13 +862,26 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🛡️ DELAYED SSV REWARD CALLBACK
+  // 🛡️ DELAYED REWARD CALLBACK
+  // ============================================================
+  //
+  // The local AdMob reward callback is the signal that the user
+  // actually earned the rewarded ad.
+  //
+  // We still wait briefly before calling the backend so that
+  // the AdMob SSV request has time to reach our server.
+  //
+  // IMPORTANT:
+  // The callback is NOT marked handled until the Firebase
+  // callback itself has completed successfully.
+  //
+  // This allows a failed backend call to be retried instead of
+  // permanently losing the mining start / Power Boost action.
+  //
   // ============================================================
 
   void _scheduleVerifiedRewardCallback({
     required String purpose,
-    required bool Function() isRewardAlreadyHandled,
-    required void Function() markRewardHandled,
   }) {
     unawaited(
       () async {
@@ -893,16 +918,6 @@ class HomeAdManager extends ChangeNotifier {
           return;
         }
 
-        if (isRewardAlreadyHandled()) {
-          debugPrint(
-            '🐱 SSV reward callback already handled.',
-          );
-
-          return;
-        }
-
-        markRewardHandled();
-
         debugPrint(
           '==================================================',
         );
@@ -929,9 +944,19 @@ class HomeAdManager extends ChangeNotifier {
           } else if (purpose == powerBoostPurpose) {
             await onPowerBoostReward?.call();
           }
+
+          debugPrint(
+            '🐱 Firebase reward callback completed: '
+            '$purpose',
+          );
         } catch (error) {
           debugPrint(
-            '🐱 Verified reward callback error: $error',
+            '🐱 Firebase reward callback failed: '
+            '$purpose',
+          );
+
+          debugPrint(
+            '🐱 Error: $error',
           );
         }
       }(),
@@ -1009,9 +1034,6 @@ class HomeAdManager extends ChangeNotifier {
 
       bool rewardEarned = false;
 
-      bool rewardCallbackHandled =
-          false;
-
       debugPrint(
         '==================================================',
       );
@@ -1079,11 +1101,6 @@ class HomeAdManager extends ChangeNotifier {
 
           _scheduleVerifiedRewardCallback(
             purpose: miningStartPurpose,
-            isRewardAlreadyHandled: () =>
-                rewardCallbackHandled,
-            markRewardHandled: () {
-              rewardCallbackHandled = true;
-            },
           );
         },
       );
@@ -1192,9 +1209,6 @@ class HomeAdManager extends ChangeNotifier {
 
       bool rewardEarned = false;
 
-      bool rewardCallbackHandled =
-          false;
-
       debugPrint(
         '==================================================',
       );
@@ -1262,11 +1276,6 @@ class HomeAdManager extends ChangeNotifier {
 
           _scheduleVerifiedRewardCallback(
             purpose: powerBoostPurpose,
-            isRewardAlreadyHandled: () =>
-                rewardCallbackHandled,
-            markRewardHandled: () {
-              rewardCallbackHandled = true;
-            },
           );
         },
       );
