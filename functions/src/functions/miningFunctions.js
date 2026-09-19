@@ -14,6 +14,13 @@
 // IMPORTANT:
 // AdMob reward itself is NOT an STL token reward.
 // AdMob is used to authorize Mining Start / Power Boost.
+//
+// POWER BOOST RULES:
+//
+// ⚡ Power Boost can ONLY be activated while mining is active.
+// ⛏️ Power Boost can NEVER continue after mining ends.
+// 🔒 Power Boost end time is always capped to miningEndsAt.
+// 🛑 A boost cannot carry over into the next mining cycle.
 // ============================================================
 
 
@@ -304,9 +311,6 @@ function getExpectedRewardItem(
     return ADMOB_SSV_REWARD_ITEM;
   }
 
-  // Mining Start uses its own logical purpose.
-  // If AdMob sends a generic reward item,
-  // the non-empty validation below still applies.
   return null;
 }
 
@@ -412,8 +416,6 @@ async function findVerifiedAdMobReward(
         return;
       }
 
-      // Accept either the full production
-      // AdMob ID or the numeric SSV ID.
       if (
         adUnit !== ADMOB_REWARDED_AD_UNIT_ID &&
         adUnit !== ADMOB_SSV_AD_UNIT_ID
@@ -1039,6 +1041,18 @@ function calculateNextDailyClaim(
 // ============================================================
 // 📺 GET AD STATUS
 // ============================================================
+//
+// Power Boostin aktiivisuus perustuu aina:
+//
+// 1. Mining Start
+// 2. Mining End
+// 3. Boost Start
+// 4. Boost End
+//
+// Boost ei koskaan saa olla aktiivinen
+// mining-jakson ulkopuolella.
+//
+// ============================================================
 
 function getAdStatus(
   data,
@@ -1089,28 +1103,50 @@ function getAdStatus(
     );
 
   // ==========================================================
-  // ⛏️ POWER BOOST MUST BE INSIDE ACTIVE MINING
+  // ⛏️ GET MINING WINDOW
   // ==========================================================
+
+  const miningStartedAt =
+    getMiningStartTime(
+      data
+    );
 
   const miningEndsAt =
     getMiningEndTime(
       data
     );
 
+  const miningStartedMs =
+    miningStartedAt
+      ? miningStartedAt.getTime()
+      : 0;
+
   const miningEndsMs =
     miningEndsAt
       ? miningEndsAt.getTime()
       : 0;
 
+  // ==========================================================
+  // ⛏️ MINING MUST ACTUALLY BE ACTIVE
+  // ==========================================================
+
   const miningActive =
-    miningEndsMs > nowMs;
+    miningStartedMs > 0 &&
+    miningEndsMs > miningStartedMs &&
+    nowMs >= miningStartedMs &&
+    nowMs < miningEndsMs;
 
   // ==========================================================
-  // ⚡ BOOST CANNOT OUTLIVE MINING
+  // ⚡ BOOST MUST BE INSIDE MINING WINDOW
   // ==========================================================
+
+  const boostStartedInsideMining =
+    boostStartedMs >= miningStartedMs &&
+    boostStartedMs < miningEndsMs;
 
   const effectiveBoostEndsMs =
     miningActive &&
+    boostStartedInsideMining &&
     boostEndsMs > 0
       ? Math.min(
           boostEndsMs,
@@ -1121,6 +1157,7 @@ function getAdStatus(
   const adBoostActive =
     miningActive &&
     boostStartedMs > 0 &&
+    boostStartedInsideMining &&
     effectiveBoostEndsMs > nowMs;
 
   const adBoostRemainingMs =
@@ -1131,6 +1168,10 @@ function getAdStatus(
             nowMs
         )
       : 0;
+
+  // ==========================================================
+  // 🚫 NO BOOST OUTSIDE MINING
+  // ==========================================================
 
   const canWatchAd =
     miningActive &&
@@ -2434,7 +2475,12 @@ const claimMining =
               dailyHashRate;
 
             // ==================================================
-            // 👤 USER UPDATE
+            // 🧹 CLEAR OLD POWER BOOST
+            // ==================================================
+            //
+            // A previous boost is never carried
+            // into a new mining cycle.
+            //
             // ==================================================
 
             const userUpdate = {
@@ -2468,6 +2514,15 @@ const claimMining =
 
               miningEndsAt:
                 newMiningEndsAt,
+
+              adBoostStartedAt:
+                null,
+
+              adBoostEndsAt:
+                null,
+
+              powerBoostTransactionId:
+                null,
 
               updatedAt:
                 FieldValue.serverTimestamp(),
@@ -2664,34 +2719,14 @@ const claimMining =
             // ⚡ CURRENT POWER BOOST
             // ==================================================
 
-            const boostStartedMs =
-              getTimestampMilliseconds(
-                data.adBoostStartedAt
-              );
-
-            const boostEndsMs =
-              getTimestampMilliseconds(
-                data.adBoostEndsAt
-              );
-
             const adBoostActive =
-              boostStartedMs > 0 &&
-              boostEndsMs > nowMs;
+              false;
 
             const adBoostRemainingMs =
-              adBoostActive
-                ? Math.max(
-                    0,
-                    boostEndsMs -
-                      nowMs
-                  )
-                : 0;
+              0;
 
             const effectiveHashRate =
-              adBoostActive
-                ? newMiningHashRate +
-                  AD_HASH_RATE_BONUS
-                : newMiningHashRate;
+              newMiningHashRate;
 
             const dailyMessage =
               dailyClaim.claimedToday
@@ -2791,6 +2826,16 @@ const claimMining =
 // ============================================================
 // ⚡ POWER BOOST
 // ============================================================
+//
+// Power Boost:
+//
+// 🟢 sallittu vain aktiivisen miningin aikana
+// 🟢 alkaa heti
+// 🟢 päättyy viimeistään miningEndsAt-aikaan
+// 🔴 ei voi jatkaa seuraavaan mining-jaksoon
+// 🔴 ei voi aktivoitua, jos mining on päättynyt
+//
+// ============================================================
 
 const powerBoost =
   onCall(
@@ -2841,7 +2886,53 @@ const powerBoost =
             : {};
 
         // ======================================================
+        // ⛏️ GET EARLY MINING WINDOW
+        // ======================================================
+
+        const earlyMiningStartedAt =
+          getMiningStartTime(
+            earlyUserData
+          );
+
+        const earlyMiningEndsAt =
+          getMiningEndTime(
+            earlyUserData
+          );
+
+        const earlyMiningStartMs =
+          earlyMiningStartedAt
+            ? earlyMiningStartedAt.getTime()
+            : 0;
+
+        const earlyMiningEndMs =
+          earlyMiningEndsAt
+            ? earlyMiningEndsAt.getTime()
+            : 0;
+
+        // ======================================================
         // ⛏️ POWER BOOST REQUIRES ACTIVE MINING
+        // ======================================================
+
+        const earlyMiningActive =
+          earlyMiningStartMs > 0 &&
+          earlyMiningEndMs >
+            earlyMiningStartMs &&
+          nowMs >=
+            earlyMiningStartMs &&
+          nowMs <
+            earlyMiningEndMs;
+
+        if (
+          !earlyMiningActive
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱⚡ Power Boostia voi käyttää vain aktiivisen louhinnan aikana."
+          );
+        }
+
+        // ======================================================
+        // 🔥 EARLY MINING STATUS
         // ======================================================
 
         const earlyMiningHashRate =
@@ -2867,7 +2958,7 @@ const powerBoost =
         ) {
           throw new HttpsError(
             "failed-precondition",
-            "🐱⚡ Power Boostia voi käyttää vain aktiivisen louhinnan aikana."
+            "🐱⚡ Stella Mining ei ole aktiivinen."
           );
         }
 
@@ -2974,7 +3065,49 @@ const powerBoost =
                 : {};
 
             // ==================================================
-            // ⛏️ FINAL ACTIVE MINING CHECK
+            // ⛏️ FINAL MINING WINDOW
+            // ==================================================
+
+            const miningStartedAt =
+              getMiningStartTime(
+                userData
+              );
+
+            const miningEndsAt =
+              getMiningEndTime(
+                userData
+              );
+
+            const miningStartMs =
+              miningStartedAt
+                ? miningStartedAt.getTime()
+                : 0;
+
+            const miningEndsMs =
+              miningEndsAt
+                ? miningEndsAt.getTime()
+                : 0;
+
+            const miningActive =
+              miningStartMs > 0 &&
+              miningEndsMs >
+                miningStartMs &&
+              nowMs >=
+                miningStartMs &&
+              nowMs <
+                miningEndsMs;
+
+            if (
+              !miningActive
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱⚡ Power Boostia voi käyttää vain aktiivisen louhinnan aikana."
+              );
+            }
+
+            // ==================================================
+            // 🔥 FINAL MINING STATUS
             // ==================================================
 
             const currentMiningHashRate =
@@ -3000,7 +3133,7 @@ const powerBoost =
             ) {
               throw new HttpsError(
                 "failed-precondition",
-                "🐱⚡ Power Boostia voi käyttää vain aktiivisen louhinnan aikana."
+                "🐱⚡ Stella Mining ei ole enää aktiivinen."
               );
             }
 
@@ -3065,13 +3198,8 @@ const powerBoost =
             }
 
             // ==================================================
-            // ⛏️ GET MINING END TIME
+            // 🛡️ FINAL MINING END VALIDATION
             // ==================================================
-
-            const miningEndsAt =
-              getMiningEndTime(
-                userData
-              );
 
             if (
               !miningEndsAt
@@ -3081,9 +3209,6 @@ const powerBoost =
                 "🐱⚡ Aktiivisen louhinnan päättymisaikaa ei löytynyt."
               );
             }
-
-            const miningEndsMs =
-              miningEndsAt.getTime();
 
             if (
               !Number.isFinite(
@@ -3108,9 +3233,11 @@ const powerBoost =
               nowMs +
               AD_BOOST_DURATION_MS;
 
-            // IMPORTANT:
-            // Power Boost can NEVER continue
-            // after the current mining cycle.
+            // ==================================================
+            // 🛡️ HARD CAP:
+            // BOOST CAN NEVER OUTLIVE MINING
+            // ==================================================
+
             const actualBoostEndsMs =
               Math.min(
                 requestedBoostEndsMs,
@@ -3268,6 +3395,9 @@ const powerBoost =
                 boostDurationMs:
                   actualBoostDurationMs,
 
+                miningStartedAt:
+                  miningStartedAt,
+
                 miningEndsAt:
                   miningEndsAt,
 
@@ -3345,6 +3475,9 @@ const powerBoost =
 
               adBoostEndsAt:
                 boostEndsAt.toISOString(),
+
+              miningStartedAt:
+                miningStartedAt.toISOString(),
 
               miningEndsAt:
                 miningEndsAt.toISOString(),
