@@ -25,27 +25,6 @@
 // ❌ muuta mining-tilaa
 //
 // ============================================================
-//
-// ARKKITEHTUURI:
-//
-// AdMob
-//   ↓
-// adMobReward()
-//   ↓
-// admobService.verifyAdMobCallback()
-//   ↓
-// kryptografinen SSV-varmennus
-//   ↓
-// reward-parametrien validointi
-//   ↓
-// Firestore transaction
-//   ↓
-// admobRewards/{transactionId}
-//
-// Varsinainen rewardin käyttäminen tapahtuu myöhemmin
-// erillisessä service-/function-kerroksessa.
-//
-// ============================================================
 
 
 // ============================================================
@@ -86,16 +65,6 @@ const {
 // ============================================================
 // 🔐 ADMOB SERVICE
 // ============================================================
-//
-// TÄRKEÄÄ:
-//
-// Tiedoston todellinen nimi on:
-//
-//   functions/src/services/admobService.js
-//
-// Linux/GitHub Actions on kirjainkoon suhteen tarkka.
-//
-// ============================================================
 
 const {
   verifyAdMobCallback,
@@ -126,15 +95,9 @@ function getSafeNumber(
   const number =
     Number(value);
 
-  if (
-    !Number.isFinite(
-      number,
-    )
-  ) {
-    return fallback;
-  }
-
-  return number;
+  return Number.isFinite(number)
+    ? number
+    : fallback;
 }
 
 
@@ -176,6 +139,13 @@ function validateUid(
 // ============================================================
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
+//
+// Transaction ID toimii Firestore-dokumentin ID:nä.
+//
+// Sallitaan AdMob transaction_id:n turvallinen merkkijono,
+// mutta estetään Firestore-polun rikkominen.
+//
+// ============================================================
 
 function validateTransactionId(
   value,
@@ -197,9 +167,11 @@ function validateTransactionId(
   }
 
   if (
-    !/^[a-fA-F0-9]+$/.test(
-      transactionId,
-    )
+    transactionId.includes("/") ||
+    transactionId.includes("\\") ||
+    transactionId.includes(".") &&
+    transactionId === "." ||
+    transactionId === ".."
   ) {
     return "";
   }
@@ -268,6 +240,20 @@ async function saveVerifiedAdMobReward(
       transactionId,
     );
 
+  if (
+    !rewardRef
+  ) {
+    const error =
+      new Error(
+        "Unable to create AdMob reward reference.",
+      );
+
+    error.code =
+      "ADMOB_REWARD_REFERENCE_ERROR";
+
+    throw error;
+  }
+
   const historyCollection =
     getHistoryCollection(
       uid,
@@ -303,10 +289,20 @@ async function saveVerifiedAdMobReward(
             existingData.rewardPurpose,
           );
 
+        const existingTransactionId =
+          normalizeString(
+            existingData.transactionId,
+          );
+
         if (
           existingUid !== uid ||
           existingPurpose !==
-            rewardPurpose
+            rewardPurpose ||
+          (
+            existingTransactionId &&
+            existingTransactionId !==
+              transactionId
+          )
         ) {
           const error =
             new Error(
@@ -330,6 +326,8 @@ async function saveVerifiedAdMobReward(
 
         return {
           success: true,
+
+          verified: true,
 
           rewarded: false,
 
@@ -397,7 +395,7 @@ async function saveVerifiedAdMobReward(
       // ======================================================
 
       if (
-        rewardAmount <= 0
+        rewardAmount !== 1
       ) {
         const error =
           new Error(
@@ -503,10 +501,17 @@ async function saveVerifiedAdMobReward(
 
           userId,
 
+          // ==================================================
+          // ⛏️ MINING START CLAIM STATE
+          // ==================================================
+
           miningClaimed:
             false,
 
           miningClaimedAt:
+            null,
+
+          miningClaimedBy:
             null,
 
           miningStartClaimed:
@@ -518,6 +523,10 @@ async function saveVerifiedAdMobReward(
           miningStartClaimedBy:
             null,
 
+          // ==================================================
+          // ⚡ POWER BOOST CLAIM STATE
+          // ==================================================
+
           powerBoostClaimed:
             false,
 
@@ -527,7 +536,17 @@ async function saveVerifiedAdMobReward(
           powerBoostClaimedBy:
             null,
 
+          powerBoostTransactionId:
+            null,
+
+          // ==================================================
+          // 🕒 SERVER TIMESTAMPS
+          // ==================================================
+
           createdAt:
+            FieldValue.serverTimestamp(),
+
+          updatedAt:
             FieldValue.serverTimestamp(),
         },
       );
@@ -563,6 +582,8 @@ async function saveVerifiedAdMobReward(
           adMobTransactionId:
             transactionId,
 
+          transactionId,
+
           adNetwork,
 
           adUnit,
@@ -583,6 +604,8 @@ async function saveVerifiedAdMobReward(
 
       return {
         success: true,
+
+        verified: true,
 
         rewarded: true,
 
@@ -684,6 +707,8 @@ const adMobReward =
             200,
           ).json({
             success: true,
+
+            verified: true,
 
             endpoint:
               "adMobReward",
