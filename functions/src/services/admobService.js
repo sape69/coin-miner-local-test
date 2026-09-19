@@ -39,10 +39,11 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// AdMobin avaimia ei haeta jokaisella callbackilla.
+// AdMobin julkisia avaimia voidaan välimuistittaa,
+// mutta välimuistin tulee olla alle 24 tuntia.
 //
-// 23 tuntia antaa turvallisen välimuistin mutta mahdollistaa
-// avainten päivittymisen ennen seuraavaa vuorokautta.
+// 23 tuntia antaa turvallisen marginaalin avainten
+// mahdolliselle rotaatiolle.
 //
 // ============================================================
 
@@ -56,6 +57,19 @@ let cachedPublicKeysAt = 0;
 // ============================================================
 // 📺 ADMOB AD UNITS
 // ============================================================
+//
+// AdMob SSV lähettää ad_unit-arvon ilman
+// "ca-app-pub-..."-alkua.
+//
+// Esimerkiksi:
+//
+// Full Flutter ID:
+// ca-app-pub-xxxxxxxxxxxxxxxx/7225738491
+//
+// SSV:
+// 7225738491
+//
+// ============================================================
 
 const ADMOB_AD_UNITS = {
   mining_start: "6674097787",
@@ -65,6 +79,15 @@ const ADMOB_AD_UNITS = {
 
 // ============================================================
 // 🎁 EXPECTED REWARDS
+// ============================================================
+//
+// Nämä ovat AdMobin reward metadata-arvot.
+//
+// NE EIVÄT OLE STL-TOKENIPALKINTOJA.
+//
+// Varsinainen Stelluriini-toiminto käsitellään
+// erillisessä service/business-kerroksessa.
+//
 // ============================================================
 
 const REWARD_DEFINITIONS = {
@@ -218,10 +241,17 @@ function extractQueryStringFromUrl(
 //
 // TÄRKEÄÄ:
 //
-// AdMob allekirjoittaa raakakyselymerkkijonon.
+// AdMob allekirjoittaa alkuperäisen query stringin.
 //
-// Siksi emme rakenna allekirjoitettavaa dataa uudelleen
-// URLSearchParamsista.
+// Siksi emme:
+//
+// ❌ järjestä parametreja uudelleen
+// ❌ rakenna query stringiä uudelleen
+// ❌ käytä URLSearchParamsia allekirjoitettavan datan
+//    muodostamiseen
+//
+// URLSearchParamsia käytetään vasta allekirjoituksen
+// onnistuneen tarkistamisen jälkeen parametrien lukemiseen.
 //
 // ============================================================
 
@@ -357,8 +387,11 @@ function decodeAdMobSignature(
 //
 // ...&signature=...&key_id=...
 //
+// Google dokumentoi, että signature ja key_id ovat
+// callbackin kaksi viimeistä query-parametria.
+//
 // Allekirjoitettava data on kaikki ennen
-// &signature= -osaa oleva raakamerkkijono.
+// "&signature="-osaa.
 //
 // ============================================================
 
@@ -410,7 +443,9 @@ function extractSignatureData(
     );
 
   const parts =
-    signatureAndKeyId.split("&");
+    signatureAndKeyId.split(
+      "&",
+    );
 
   if (
     parts.length !== 2
@@ -530,6 +565,10 @@ async function verifyRawQueryString(
       String(keyId),
     );
 
+  // ----------------------------------------------------------
+  // 🔄 KEY ROTATION FALLBACK
+  // ----------------------------------------------------------
+
   if (!publicKey) {
     console.log(
       "🐱 AdMob key not found in cache. Refreshing public keys.",
@@ -563,6 +602,10 @@ async function verifyRawQueryString(
 
     throw error;
   }
+
+  // ----------------------------------------------------------
+  // 🔐 ECDSA / SHA-256
+  // ----------------------------------------------------------
 
   let verified =
     false;
@@ -937,6 +980,11 @@ function parseCustomData(
 
 // ============================================================
 // 🔐 TRANSACTION ID VALIDATION
+// ============================================================
+//
+// AdMob dokumentoi transaction_id:n hex-enkoodatuksi
+// yksilölliseksi reward-tapahtuman tunnisteeksi.
+//
 // ============================================================
 
 function validateTransactionId(
