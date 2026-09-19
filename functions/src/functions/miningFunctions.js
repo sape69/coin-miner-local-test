@@ -954,10 +954,6 @@ function getDailyStatus(
     getDailyStreak(data);
 
 
-  // ==========================================================
-  // 🛡️ VAIN TÄMÄN PÄIVÄN STREAK ON AKTIIVINEN
-  // ==========================================================
-
   let effectiveStreak =
     storedStreak;
 
@@ -2182,17 +2178,6 @@ const claimMining =
         // ======================================================
         // 🛡️ EARLY ACTIVE-MINING CHECK
         // ======================================================
-        //
-        // Tarkistetaan ennen SSV-palkinnon odottamista,
-        // ettei käyttäjällä ole jo aktiivista louhintaa.
-        //
-        // Tämä estää turhan AdMob-palkinnon odottamisen
-        // ja kuluttamisen.
-        //
-        // Lopullinen tarkistus tehdään silti transactionissa,
-        // koska kaksi samanaikaista kutsua voivat muuten ohittaa
-        // tämän ensimmäisen tarkistuksen.
-        // ======================================================
 
         const earlyUserSnapshot =
           await userRef.get();
@@ -2287,6 +2272,9 @@ const claimMining =
                 )
               ),
 
+            rewardConsumed:
+              false,
+
             message:
               "🐱⛏️ Stella louhii jo STL:ää!",
           };
@@ -2357,13 +2345,6 @@ const claimMining =
 
             // ==================================================
             // 🛡️ FINAL ACTIVE-MINING CHECK
-            // ==================================================
-            //
-            // Tämä on tärkeämpi kuin early check.
-            //
-            // Jos toinen claimMining-kutsu käynnisti louhinnan
-            // sillä aikaa kun tämä kutsu odotti SSV:tä, emme
-            // kuluta tämän kutsun AdMob-palkintoa.
             // ==================================================
 
             const currentDailyStreak =
@@ -2447,7 +2428,6 @@ const claimMining =
                     )
                   ),
 
-                // ⚠️ Rewardia EI kuluteta tässä tilanteessa.
                 adRewardTransactionId:
                   verifiedRewardTransactionId,
 
@@ -3075,6 +3055,77 @@ const powerBoost =
 
 
         // ======================================================
+        // 👤 READ CURRENT USER BEFORE SSV WAIT
+        // ======================================================
+        //
+        // Tarkistetaan ensin paikalliset ehdot.
+        // Näin käyttäjä ei joudu odottamaan SSV:tä,
+        // jos Power Boostia ei kuitenkaan voida käyttää.
+        // ======================================================
+
+        const earlyUserSnapshot =
+          await userRef.get();
+
+
+        const earlyUserData =
+          earlyUserSnapshot.exists
+            ? earlyUserSnapshot.data() || {}
+            : {};
+
+
+        const earlyAdStatus =
+          getAdStatus(
+            earlyUserData,
+            nowMs,
+            today
+          );
+
+
+        // ======================================================
+        // 🚫 MAX DAILY ADS
+        // ======================================================
+
+        if (
+          earlyAdStatus.adsToday >=
+          MAX_ADS_PER_DAY
+        ) {
+          throw new HttpsError(
+            "resource-exhausted",
+            "🐱 Päivän Power Boost -mainosraja on täynnä."
+          );
+        }
+
+
+        // ======================================================
+        // 🚫 ACTIVE BOOST
+        // ======================================================
+
+        if (
+          earlyAdStatus.adBoostActive
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱 Power Boost on jo aktiivinen."
+          );
+        }
+
+
+        // ======================================================
+        // 🚫 COOLDOWN
+        // ======================================================
+
+        if (
+          earlyAdStatus.cooldownRemainingMs >
+          0
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱 Power Boost ei ole vielä valmis käytettäväksi uudelleen."
+          );
+        }
+
+
+        // ======================================================
         // 🔐 WAIT FOR ADMOB SSV
         // ======================================================
 
@@ -3143,7 +3194,41 @@ const powerBoost =
 
 
             // ==================================================
+            // 🔐 VALIDATE VERIFIED REWARD
+            // ==================================================
+
+            const validatedRewardData =
+              validateVerifiedRewardDocument(
+                rewardSnapshot,
+                uid,
+                "power_boost",
+                "powerBoostClaimed"
+              );
+
+
+            // ==================================================
+            // 📊 CURRENT AD STATUS
+            // ==================================================
+
+            const currentAdStatus =
+              getAdStatus(
+                userData,
+                nowMs,
+                today
+              );
+
+
+            // ==================================================
             // 🛡️ IDEMPOTENCY
+            // ==================================================
+            //
+            // Jos sama transaction yritetään käsitellä uudelleen,
+            // palautetaan nykyinen tila ilman uuden boostin luontia.
+            //
+            // Tämä tarkistus tehdään reward-dokumentin validoinnin
+            // jälkeen vain silloin, kun reward on jo merkitty
+            // käsitellyksi. Normaalissa tapauksessa
+            // validateVerifiedRewardDocument pysäyttää käsittelyn.
             // ==================================================
 
             if (
@@ -3156,14 +3241,6 @@ const powerBoost =
               rewardData.powerBoostTransactionId ===
                 verifiedRewardTransactionId
             ) {
-              const currentAdStatus =
-                getAdStatus(
-                  userData,
-                  nowMs,
-                  today
-                );
-
-
               const dailyStatus =
                 getDailyStatus(
                   userData,
@@ -3179,8 +3256,10 @@ const powerBoost =
 
 
               const effectiveHashRate =
-                baseHashRate +
-                AD_HASH_RATE_BONUS;
+                currentAdStatus.adBoostActive
+                  ? baseHashRate +
+                    AD_HASH_RATE_BONUS
+                  : baseHashRate;
 
 
               return {
@@ -3238,31 +3317,6 @@ const powerBoost =
                     : "🐱⚡ Tämä Power Boost on jo käsitelty.",
               };
             }
-
-
-            // ==================================================
-            // 🔐 VALIDATE VERIFIED REWARD
-            // ==================================================
-
-            const validatedRewardData =
-              validateVerifiedRewardDocument(
-                rewardSnapshot,
-                uid,
-                "power_boost",
-                "powerBoostClaimed"
-              );
-
-
-            // ==================================================
-            // 📊 CURRENT AD STATUS
-            // ==================================================
-
-            const currentAdStatus =
-              getAdStatus(
-                userData,
-                nowMs,
-                today
-              );
 
 
             // ==================================================
