@@ -24,7 +24,7 @@
 // ❌ muuta cooldownia
 // ❌ muuta mining-tilaa
 //
-// Varsinainen reward-toiminto tehdään myöhemmin
+// Varsinainen reward-toiminto tehdään erillisessä
 // mining/business/service-kerroksessa.
 //
 // ============================================================
@@ -89,6 +89,7 @@ const {
 // 🎁 reward metadata validation
 // 🆔 UID validation
 // 🧾 transaction_id validation
+// ⏱️ timestamp validation
 //
 // ============================================================
 
@@ -172,6 +173,13 @@ function validateUid(
 // ============================================================
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
+//
+// admobService.js tekee varsinaisen transaction_id-validoinnin.
+// Tässä tehdään defense-in-depth -tarkistus.
+//
+// AdMobin transaction_id on hex-muotoinen.
+//
+// ============================================================
 
 function validateTransactionId(
   value,
@@ -193,10 +201,9 @@ function validateTransactionId(
   }
 
   if (
-    transactionId.includes("/") ||
-    transactionId.includes("\\") ||
-    transactionId === "." ||
-    transactionId === ".."
+    !/^[a-fA-F0-9]+$/.test(
+      transactionId,
+    )
   ) {
     return "";
   }
@@ -257,6 +264,7 @@ function normalizeString(
 // admobService.js on jo tarkistanut:
 //
 // ✅ allekirjoituksen
+// ✅ public keyn
 // ✅ ad_unitin
 // ✅ reward amountin
 // ✅ reward itemin
@@ -265,7 +273,8 @@ function normalizeString(
 // ✅ transaction_id:n
 // ✅ timestampin
 //
-// Tässä tehdään toinen defense-in-depth -tarkistus.
+// Tässä tehdään toinen defense-in-depth -tarkistus
+// ennen Firestore-kirjoitusta.
 //
 // ============================================================
 
@@ -505,6 +514,22 @@ function validateVerifiedAdData(
 // ============================================================
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
+//
+// Tärkeää:
+//
+// Tämä funktio EI anna käyttäjälle STL:ää.
+//
+// Se ainoastaan:
+//
+// 1. tarkistaa varmennetun datan
+// 2. tarkistaa transaction_id:n
+// 3. tallentaa AdMob reward -tapahtuman
+// 4. tallentaa historian
+//
+// Varsinainen Mining Start / Power Boost käsitellään
+// myöhemmin erillisessä business/service-kerroksessa.
+//
+// ============================================================
 
 async function saveVerifiedAdMobReward(
   verifiedAd,
@@ -580,7 +605,7 @@ async function saveVerifiedAdMobReward(
 
 
   // ----------------------------------------------------------
-  // HISTORY
+  // HISTORY COLLECTION
   // ----------------------------------------------------------
 
   const historyCollection =
@@ -714,7 +739,7 @@ async function saveVerifiedAdMobReward(
           transactionId,
 
           // --------------------------------------------------
-          // REWARD
+          // REWARD METADATA
           // --------------------------------------------------
 
           rewardType:
@@ -727,7 +752,7 @@ async function saveVerifiedAdMobReward(
           rewardItem,
 
           // --------------------------------------------------
-          // ADMOB
+          // ADMOB METADATA
           // --------------------------------------------------
 
           adNetwork,
@@ -813,7 +838,10 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-          // AdMob reward ei ole STL-token.
+          // --------------------------------------------------
+          // AdMob reward metadata ei ole STL-token.
+          // --------------------------------------------------
+
           amount:
             0,
 
@@ -1179,7 +1207,7 @@ const adMobReward =
 
         // ======================================================
         // 📤 SUCCESS RESPONSE
-        // ============================================================
+        // ======================================================
 
         console.log(
           "🐱 AdMob SSV processed successfully.",
@@ -1223,7 +1251,7 @@ const adMobReward =
               error &&
               error.message
                 ? error.message
-                : "Unknown error.",
+                : "Unknown AdMob error.",
           },
         );
 
@@ -1264,9 +1292,17 @@ const adMobReward =
 
         const knownValidationCodes =
           new Set([
+            "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+            "ADMOB_PUBLIC_KEY_HTTP_ERROR",
+            "ADMOB_PUBLIC_KEY_JSON_ERROR",
+            "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+            "ADMOB_PUBLIC_KEYS_EMPTY",
             "ADMOB_PUBLIC_KEY_NOT_FOUND",
             "ADMOB_CRYPTO_VERIFICATION_ERROR",
             "ADMOB_INVALID_SIGNATURE",
+            "ADMOB_INVALID_KEY_ID",
+            "ADMOB_REQUEST_MISSING",
+            "ADMOB_QUERY_STRING_MISSING",
             "ADMOB_INVALID_UID",
             "ADMOB_INVALID_REWARD_PURPOSE",
             "ADMOB_INVALID_TRANSACTION_ID",
@@ -1274,7 +1310,7 @@ const adMobReward =
             "ADMOB_INVALID_REWARD_ITEM",
             "ADMOB_INVALID_AD_UNIT",
             "ADMOB_INVALID_TIMESTAMP",
-            "ADMOB_INVALID_KEY_ID",
+            "ADMOB_REQUIRED_PARAMETER_MISSING",
             "ADMOB_VERIFIED_DATA_MISSING",
           ]);
 
