@@ -3,6 +3,16 @@
 // ============================================================
 // 🐱 STELLURIINI CLOUD FUNCTIONS
 // ============================================================
+//
+// Stelluriini Cloud Functions -päävientitiedosto.
+//
+// Kaikki varsinaiset funktiot sijaitsevat:
+//
+// functions/src/functions/
+//
+// Tämä tiedosto toimii vain keskitettynä export-pisteenä.
+// ============================================================
+
 
 // ============================================================
 // ⛏️ MINING
