@@ -1088,20 +1088,52 @@ function getAdStatus(
       data.adBoostEndsAt
     );
 
+  // ==========================================================
+  // ⛏️ POWER BOOST MUST BE INSIDE ACTIVE MINING
+  // ==========================================================
+
+  const miningEndsAt =
+    getMiningEndTime(
+      data
+    );
+
+  const miningEndsMs =
+    miningEndsAt
+      ? miningEndsAt.getTime()
+      : 0;
+
+  const miningActive =
+    miningEndsMs > nowMs;
+
+  // ==========================================================
+  // ⚡ BOOST CANNOT OUTLIVE MINING
+  // ==========================================================
+
+  const effectiveBoostEndsMs =
+    miningActive &&
+    boostEndsMs > 0
+      ? Math.min(
+          boostEndsMs,
+          miningEndsMs
+        )
+      : 0;
+
   const adBoostActive =
+    miningActive &&
     boostStartedMs > 0 &&
-    boostEndsMs > nowMs;
+    effectiveBoostEndsMs > nowMs;
 
   const adBoostRemainingMs =
     adBoostActive
       ? Math.max(
           0,
-          boostEndsMs -
+          effectiveBoostEndsMs -
             nowMs
         )
       : 0;
 
   const canWatchAd =
+    miningActive &&
     adsToday < MAX_ADS_PER_DAY &&
     cooldownRemainingMs === 0 &&
     !adBoostActive;
@@ -1121,6 +1153,7 @@ function getAdStatus(
     adBoostRemainingMs,
 
     adBoostStartedAt:
+      adBoostActive &&
       boostStartedMs > 0
         ? new Date(
             boostStartedMs
@@ -1128,9 +1161,10 @@ function getAdStatus(
         : null,
 
     adBoostEndsAt:
-      boostEndsMs > 0
+      adBoostActive &&
+      effectiveBoostEndsMs > 0
         ? new Date(
-            boostEndsMs
+            effectiveBoostEndsMs
           )
         : null,
   };
@@ -2806,6 +2840,37 @@ const powerBoost =
             ? earlyUserSnapshot.data() || {}
             : {};
 
+        // ======================================================
+        // ⛏️ POWER BOOST REQUIRES ACTIVE MINING
+        // ======================================================
+
+        const earlyMiningHashRate =
+          getMiningHashRate(
+            earlyUserData,
+            DAILY_HASH_RATE_START
+          );
+
+        const earlyMiningStatus =
+          calculateMiningStatus(
+            {
+              ...earlyUserData,
+
+              hashRate:
+                earlyMiningHashRate,
+            },
+
+            now
+          );
+
+        if (
+          !earlyMiningStatus.miningActive
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱⚡ Power Boostia voi käyttää vain aktiivisen louhinnan aikana."
+          );
+        }
+
         const earlyAdStatus =
           getAdStatus(
             earlyUserData,
@@ -2909,6 +2974,37 @@ const powerBoost =
                 : {};
 
             // ==================================================
+            // ⛏️ FINAL ACTIVE MINING CHECK
+            // ==================================================
+
+            const currentMiningHashRate =
+              getMiningHashRate(
+                userData,
+                DAILY_HASH_RATE_START
+              );
+
+            const currentMiningStatus =
+              calculateMiningStatus(
+                {
+                  ...userData,
+
+                  hashRate:
+                    currentMiningHashRate,
+                },
+
+                now
+              );
+
+            if (
+              !currentMiningStatus.miningActive
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱⚡ Power Boostia voi käyttää vain aktiivisen louhinnan aikana."
+              );
+            }
+
+            // ==================================================
             // 🔐 VALIDATE SSV
             // ==================================================
 
@@ -2969,17 +3065,78 @@ const powerBoost =
             }
 
             // ==================================================
+            // ⛏️ GET MINING END TIME
+            // ==================================================
+
+            const miningEndsAt =
+              getMiningEndTime(
+                userData
+              );
+
+            if (
+              !miningEndsAt
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱⚡ Aktiivisen louhinnan päättymisaikaa ei löytynyt."
+              );
+            }
+
+            const miningEndsMs =
+              miningEndsAt.getTime();
+
+            if (
+              !Number.isFinite(
+                miningEndsMs
+              ) ||
+              miningEndsMs <= nowMs
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱⚡ Louhinta ei ole enää aktiivinen."
+              );
+            }
+
+            // ==================================================
             // 🕒 BOOST TIME
             // ==================================================
 
             const boostStartedAt =
               now;
 
+            const requestedBoostEndsMs =
+              nowMs +
+              AD_BOOST_DURATION_MS;
+
+            // IMPORTANT:
+            // Power Boost can NEVER continue
+            // after the current mining cycle.
+            const actualBoostEndsMs =
+              Math.min(
+                requestedBoostEndsMs,
+                miningEndsMs
+              );
+
             const boostEndsAt =
               new Date(
-                nowMs +
-                  AD_BOOST_DURATION_MS
+                actualBoostEndsMs
               );
+
+            const actualBoostDurationMs =
+              Math.max(
+                0,
+                actualBoostEndsMs -
+                  nowMs
+              );
+
+            if (
+              actualBoostDurationMs <= 0
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱⚡ Louhintaa ei ole enää tarpeeksi jäljellä Power Boostia varten."
+              );
+            }
 
             // ==================================================
             // 📊 DAILY AD COUNT
@@ -3109,7 +3266,10 @@ const powerBoost =
                   boostEndsAt,
 
                 boostDurationMs:
-                  AD_BOOST_DURATION_MS,
+                  actualBoostDurationMs,
+
+                miningEndsAt:
+                  miningEndsAt,
 
                 adsToday:
                   newAdsToday,
@@ -3169,12 +3329,15 @@ const powerBoost =
                 AD_HASH_RATE_BONUS,
 
               boostRemainingMs:
-                AD_BOOST_DURATION_MS,
+                actualBoostDurationMs,
 
               remainingBoostMs:
-                AD_BOOST_DURATION_MS,
+                actualBoostDurationMs,
 
               adBoostDurationMs:
+                actualBoostDurationMs,
+
+              configuredBoostDurationMs:
                 AD_BOOST_DURATION_MS,
 
               adBoostStartedAt:
@@ -3182,6 +3345,9 @@ const powerBoost =
 
               adBoostEndsAt:
                 boostEndsAt.toISOString(),
+
+              miningEndsAt:
+                miningEndsAt.toISOString(),
 
               effectiveHashRate,
 
@@ -3192,7 +3358,10 @@ const powerBoost =
                 true,
 
               message:
-                "🐱⚡ Stella Power Boost on aktiivinen!",
+                actualBoostDurationMs <
+                AD_BOOST_DURATION_MS
+                  ? "🐱⚡ Stella Power Boost on aktiivinen louhinnan loppuun asti!"
+                  : "🐱⚡ Stella Power Boost on aktiivinen!",
             };
           }
         );
