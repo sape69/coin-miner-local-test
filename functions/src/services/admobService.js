@@ -26,55 +26,15 @@ const crypto = require("crypto");
  * ❌ kirjoita Firestoreen
  *
  * ============================================================
- *
- * ADMOB SSV
- *
- * Google allekirjoittaa callback-URL:n query-stringin.
- *
- * Allekirjoitettavaa sisältöä EI saa muuttaa ennen
- * kryptografista tarkistusta.
- *
- * Googlen SSV-formaatissa:
- *
- *   signature
- *   key_id
- *
- * ovat callbackin kaksi viimeistä parametria.
- *
- * Allekirjoitettava query-string sisältää kaikki parametrit
- * ennen "&signature=" kohtaa.
- *
- * ============================================================
- */
-
-
-/**
- * ============================================================
- * 🌐 ADMOB PUBLIC KEY URL
- * ============================================================
  */
 
 const ADMOB_SSV_KEYS_URL =
   "https://www.gstatic.com/admob/reward/verifier-keys.json";
 
-
-/**
- * ============================================================
- * ⏱️ PUBLIC KEY CACHE
- * ============================================================
- *
- * Google voi kierrättää AdMob SSV public key -avaimia.
- *
- * Cache pidetään alle 24 tuntia.
- *
- * ============================================================
- */
-
 const PUBLIC_KEY_CACHE_MS =
   23 * 60 * 60 * 1000;
 
 let cachedPublicKeys = null;
-
 let cachedPublicKeysAt = 0;
 
 
@@ -82,22 +42,11 @@ let cachedPublicKeysAt = 0;
  * ============================================================
  * 📺 STELLURIINI ADMOB AD UNITS
  * ============================================================
- *
- * AdMob SSV callbackissa:
- *
- *   ad_unit
- *
- * on numeric AdMob ad unit ID.
- *
- * ============================================================
  */
 
 const ADMOB_AD_UNITS = {
-  mining_start:
-    "6674097787",
-
-  power_boost:
-    "7225738491",
+  mining_start: "6674097787",
+  power_boost: "7225738491",
 };
 
 
@@ -105,64 +54,19 @@ const ADMOB_AD_UNITS = {
  * ============================================================
  * 🎁 EXPECTED REWARDS
  * ============================================================
- *
- * Näiden arvojen tulee vastata AdMobin rewarded
- * ad unit -asetuksia.
- *
- * Näitä arvoja EI käytetä STL-saldon lisäämiseen.
- *
- * ============================================================
  */
 
 const REWARD_DEFINITIONS = {
   mining_start: {
-    rewardItem:
-      "Mining",
-
-    rewardAmount:
-      1,
+    rewardItem: "Mining",
+    rewardAmount: 1,
   },
 
   power_boost: {
-    rewardItem:
-      "Power Boost",
-
-    rewardAmount:
-      1,
+    rewardItem: "Power Boost",
+    rewardAmount: 1,
   },
 };
-
-
-/**
- * ============================================================
- * 🧾 CREATE ERROR
- * ============================================================
- *
- * Yhtenäinen virheiden luonti.
- *
- * ============================================================
- */
-
-function createAdMobError(
-  code,
-  message,
-  extra = {},
-) {
-  const error =
-    new Error(
-      message,
-    );
-
-  error.code =
-    code;
-
-  Object.assign(
-    error,
-    extra,
-  );
-
-  return error;
-}
 
 
 /**
@@ -182,26 +86,18 @@ async function fetchJson(
   if (
     !response.ok
   ) {
-    throw createAdMobError(
-      "ADMOB_PUBLIC_KEY_HTTP_ERROR",
-      `AdMob public key server returned HTTP ${response.status}.`,
-      {
-        status:
-          response.status,
-      },
-    );
+    const error =
+      new Error(
+        `AdMob public key server returned HTTP ${response.status}.`,
+      );
+
+    error.code =
+      "ADMOB_KEY_SERVER_HTTP_ERROR";
+
+    throw error;
   }
 
-  try {
-    return await response.json();
-  } catch (
-    error
-  ) {
-    throw createAdMobError(
-      "ADMOB_PUBLIC_KEY_JSON_ERROR",
-      `AdMob public key response could not be parsed as JSON: ${error.message}`,
-    );
-  }
+  return response.json();
 }
 
 
@@ -227,18 +123,9 @@ async function getAdMobPublicKeys(
   if (
     !forceRefresh &&
     cachedPublicKeys &&
-    now -
-      cachedPublicKeysAt <
+    now - cachedPublicKeysAt <
       PUBLIC_KEY_CACHE_MS
   ) {
-    console.log(
-      "🐱 AdMob public key cache HIT.",
-      {
-        count:
-          cachedPublicKeys.size,
-      },
-    );
-
     return cachedPublicKeys;
   }
 
@@ -248,14 +135,6 @@ async function getAdMobPublicKeys(
    * FETCH
    * ----------------------------------------------------------
    */
-
-  console.log(
-    "🐱 AdMob public key cache MISS. Loading keys from Google.",
-    {
-      forceRefresh,
-    },
-  );
-
 
   const data =
     await fetchJson(
@@ -275,10 +154,15 @@ async function getAdMobPublicKeys(
       data.keys,
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
-      "AdMob public key response is invalid.",
-    );
+    const error =
+      new Error(
+        "AdMob public key response is invalid.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_KEY_RESPONSE";
+
+    throw error;
   }
 
 
@@ -290,7 +174,6 @@ async function getAdMobPublicKeys(
 
   const keys =
     new Map();
-
 
   for (
     const key of data.keys
@@ -315,10 +198,15 @@ async function getAdMobPublicKeys(
   if (
     keys.size === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_PUBLIC_KEY_EMPTY",
-      "No usable AdMob public keys were returned.",
-    );
+    const error =
+      new Error(
+        "No usable AdMob public keys were returned.",
+      );
+
+    error.code =
+      "ADMOB_NO_PUBLIC_KEYS";
+
+    throw error;
   }
 
 
@@ -355,14 +243,7 @@ async function getAdMobPublicKeys(
 
 /**
  * ============================================================
- * 🔎 EXTRACT RAW QUERY STRING FROM URL
- * ============================================================
- *
- * Tärkeää:
- *
- * Tätä merkkijonoa ei parsita eikä rakenneta uudelleen
- * ennen kryptografista tarkistusta.
- *
+ * 🔎 EXTRACT QUERY STRING FROM URL
  * ============================================================
  */
 
@@ -399,7 +280,15 @@ function extractQueryStringFromUrl(
 
 /**
  * ============================================================
- * 🔎 GET RAW QUERY STRING
+ * 🔎 GET ORIGINAL QUERY STRING
+ * ============================================================
+ *
+ * Tärkeää:
+ *
+ * Tässä vaiheessa emme vielä dekoodaa mitään.
+ *
+ * Tarvitsemme ensin AdMobilta vastaanotetun query-stringin.
+ *
  * ============================================================
  */
 
@@ -409,10 +298,15 @@ function getRawQueryString(
   if (
     !req
   ) {
-    throw createAdMobError(
-      "ADMOB_REQUEST_MISSING",
-      "Missing HTTP request.",
-    );
+    const error =
+      new Error(
+        "Missing HTTP request.",
+      );
+
+    error.code =
+      "ADMOB_MISSING_REQUEST";
+
+    throw error;
   }
 
 
@@ -431,27 +325,9 @@ function getRawQueryString(
         value,
       );
 
-
     if (
       query.length > 0
     ) {
-      console.log(
-        "🐱 AdMob raw query string obtained.",
-        {
-          source:
-            value ===
-            req.originalUrl
-              ? "originalUrl"
-              : value ===
-                req.url
-                ? "url"
-                : "rawUrl",
-
-          length:
-            query.length,
-        },
-      );
-
       return query;
     }
   }
@@ -471,37 +347,103 @@ function getRawQueryString(
     const search =
       req._parsedUrl.search;
 
-
     if (
       search.startsWith(
         "?",
       ) &&
       search.length > 1
     ) {
-      const query =
-        search.substring(
-          1,
-        );
-
-
-      console.log(
-        "🐱 AdMob raw query string obtained from _parsedUrl.search.",
-        {
-          length:
-            query.length,
-        },
+      return search.substring(
+        1,
       );
-
-
-      return query;
     }
   }
 
 
-  throw createAdMobError(
-    "ADMOB_QUERY_STRING_MISSING",
-    "AdMob SSV query string is missing.",
-  );
+  const error =
+    new Error(
+      "AdMob SSV query string is missing.",
+    );
+
+  error.code =
+    "ADMOB_QUERY_STRING_MISSING";
+
+  throw error;
+}
+
+
+/**
+ * ============================================================
+ * 🔓 DECODE QUERY STRING FOR ADMOB VERIFICATION
+ * ============================================================
+ *
+ * TÄMÄ ON TÄRKEÄ KORJAUS.
+ *
+ * AdMob lähettää esimerkiksi:
+ *
+ *   custom_data=UID%3Amining_start
+ *
+ * Googlen verifier käsittelee query-stringin dekoodattuna:
+ *
+ *   custom_data=UID:mining_start
+ *
+ * Google Tink RewardedAdsVerifier käyttää URI.getQuery():
+ *
+ *   https://...
+ *   ?foo=hello%20world
+ *
+ * muuttuu varmennettavaksi dataksi:
+ *
+ *   foo=hello world
+ *
+ * Siksi emme käytä allekirjoitukseen raakaa:
+ *
+ *   %3A
+ *
+ * vaan dekoodattua:
+ *
+ *   :
+ *
+ * ============================================================
+ */
+
+function decodeQueryStringForVerification(
+  rawQueryString,
+) {
+  if (
+    typeof rawQueryString !==
+      "string" ||
+    rawQueryString.length === 0
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV raw query string is empty.",
+      );
+
+    error.code =
+      "ADMOB_EMPTY_RAW_QUERY";
+
+    throw error;
+  }
+
+
+  try {
+    return decodeURIComponent(
+      rawQueryString,
+    );
+  } catch (
+    error
+  ) {
+    const decodingError =
+      new Error(
+        `AdMob SSV query string URL decoding failed: ${error.message}`,
+      );
+
+    decodingError.code =
+      "ADMOB_QUERY_DECODE_ERROR";
+
+    throw decodingError;
+  }
 }
 
 
@@ -519,10 +461,15 @@ function decodeAdMobSignature(
       "string" ||
     signature.length === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_MISSING",
-      "AdMob SSV signature is missing.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature is missing.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_MISSING";
+
+    throw error;
   }
 
 
@@ -538,18 +485,19 @@ function decodeAdMobSignature(
       );
 
 
-  /**
-   * Base64URL-pituus ei saa olla 1 mod 4.
-   */
-
   if (
     normalized.length % 4 ===
       1
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_BASE64_LENGTH",
-      "AdMob SSV signature has invalid Base64URL length.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature has invalid Base64URL length.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_INVALID_BASE64_LENGTH";
+
+    throw error;
   }
 
 
@@ -562,24 +510,24 @@ function decodeAdMobSignature(
       ? normalized
       : normalized +
         "=".repeat(
-          4 -
-            remainder,
+          4 - remainder,
         );
 
-
-  /**
-   * Tarkistetaan Base64-merkistö.
-   */
 
   if (
     !/^[A-Za-z0-9+/]*={0,2}$/.test(
       padded,
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_BASE64_INVALID",
-      "AdMob SSV signature contains invalid Base64URL characters.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature contains invalid Base64URL characters.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_INVALID_BASE64";
+
+    throw error;
   }
 
 
@@ -594,10 +542,15 @@ function decodeAdMobSignature(
     signatureBuffer.length ===
       0
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_DECODE_FAILED",
-      "AdMob SSV signature could not be decoded.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature could not be decoded.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_DECODE_ERROR";
+
+    throw error;
   }
 
 
@@ -609,31 +562,26 @@ function decodeAdMobSignature(
  * ============================================================
  * 🔎 EXTRACT SIGNATURE DATA
  * ============================================================
- *
- * Googlen SSV-formaatti:
- *
- *   ...&signature=...&key_id=...
- *
- * Allekirjoitettavaa sisältöä on kaikki ennen:
- *
- *   &signature=
- *
- * ============================================================
  */
 
 function extractSignatureData(
-  rawQueryString,
+  verificationQueryString,
 ) {
   if (
-    typeof rawQueryString !==
+    typeof verificationQueryString !==
       "string" ||
-    rawQueryString.length ===
+    verificationQueryString.length ===
       0
   ) {
-    throw createAdMobError(
-      "ADMOB_RAW_QUERY_MISSING",
-      "AdMob SSV raw query string is missing.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV verification query string is missing.",
+      );
+
+    error.code =
+      "ADMOB_VERIFICATION_QUERY_MISSING";
+
+    throw error;
   }
 
 
@@ -648,7 +596,7 @@ function extractSignatureData(
 
 
   const signatureIndex =
-    rawQueryString.indexOf(
+    verificationQueryString.indexOf(
       signatureMarker,
     );
 
@@ -656,10 +604,15 @@ function extractSignatureData(
   if (
     signatureIndex < 0
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_PARAMETER_NOT_FOUND",
-      "AdMob SSV signature parameter was not found.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature parameter was not found.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_PARAMETER_MISSING";
+
+    throw error;
   }
 
 
@@ -668,11 +621,14 @@ function extractSignatureData(
    * SIGNED CONTENT
    * ----------------------------------------------------------
    *
-   * Tätä merkkijonoa ei muuteta.
+   * Tätä sisältöä ei enää muuteta.
+   *
+   * Tämä on Googlen allekirjoittama data.
+   * ----------------------------------------------------------
    */
 
   const signedQueryString =
-    rawQueryString.substring(
+    verificationQueryString.substring(
       0,
       signatureIndex,
     );
@@ -682,10 +638,15 @@ function extractSignatureData(
     signedQueryString.length ===
       0
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNED_QUERY_EMPTY",
-      "AdMob SSV signed query string is empty.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signed query string is empty.",
+      );
+
+    error.code =
+      "ADMOB_SIGNED_QUERY_EMPTY";
+
+    throw error;
   }
 
 
@@ -696,7 +657,7 @@ function extractSignatureData(
    */
 
   const signatureAndKeyId =
-    rawQueryString.substring(
+    verificationQueryString.substring(
       signatureIndex + 1,
     );
 
@@ -707,21 +668,18 @@ function extractSignatureData(
     );
 
 
-  /**
-   * AdMob lähettää signature + key_id viimeisinä.
-   */
-
   if (
     parts.length !== 2
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_POSITION_INVALID",
-      "AdMob SSV signature and key_id must be the final two query parameters.",
-      {
-        partsCount:
-          parts.length,
-      },
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature and key_id must be the final two query parameters.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_POSITION_INVALID";
+
+    throw error;
   }
 
 
@@ -730,10 +688,15 @@ function extractSignatureData(
       "signature=",
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_POSITION_INVALID",
-      "AdMob SSV signature is not in the expected position.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature is not in the expected position.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_POSITION_INVALID";
+
+    throw error;
   }
 
 
@@ -742,67 +705,82 @@ function extractSignatureData(
       "key_id=",
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_KEY_ID_POSITION_INVALID",
-      "AdMob SSV key_id is not in the expected position.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV key_id is not in the expected position.",
+      );
+
+    error.code =
+      "ADMOB_KEY_ID_POSITION_INVALID";
+
+    throw error;
   }
 
 
   let signature;
-
   let keyId;
 
 
   try {
     signature =
-      decodeURIComponent(
-        parts[0].substring(
-          "signature=".length,
-        ),
+      parts[0].substring(
+        "signature=".length,
       );
 
-
     keyId =
-      decodeURIComponent(
-        parts[1].substring(
-          "key_id=".length,
-        ),
+      parts[1].substring(
+        "key_id=".length,
       );
   } catch (
     error
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_URL_DECODE_FAILED",
-      `AdMob SSV signature/key_id URL decoding failed: ${error.message}`,
-    );
+    const parsingError =
+      new Error(
+        `AdMob SSV signature/key_id parsing failed: ${error.message}`,
+      );
+
+    parsingError.code =
+      "ADMOB_SIGNATURE_KEY_ID_PARSE_ERROR";
+
+    throw parsingError;
   }
 
 
   if (
-    signature.length ===
-      0
+    signature.length === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_VALUE_MISSING",
-      "AdMob SSV signature value is missing.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature value is missing.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_VALUE_MISSING";
+
+    throw error;
   }
 
 
   if (
-    keyId.length ===
-      0
+    keyId.length === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_KEY_ID_VALUE_MISSING",
-      "AdMob SSV key_id value is missing.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV key_id value is missing.",
+      );
+
+    error.code =
+      "ADMOB_KEY_ID_VALUE_MISSING";
+
+    throw error;
   }
 
 
   /**
    * key_id on numeerinen tunniste.
+   *
+   * Käytämme String-muotoa, koska Googlella key_id
+   * voi olla suurempi kuin 32-bit integer.
    */
 
   if (
@@ -810,13 +788,15 @@ function extractSignatureData(
       keyId,
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_KEY_ID_INVALID",
-      "AdMob SSV key_id is invalid.",
-      {
-        keyId,
-      },
-    );
+    const error =
+      new Error(
+        "AdMob SSV key_id is invalid.",
+      );
+
+    error.code =
+      "ADMOB_KEY_ID_INVALID";
+
+    throw error;
   }
 
 
@@ -832,20 +812,44 @@ function extractSignatureData(
 
 /**
  * ============================================================
- * 🔐 VERIFY ONE RAW QUERY STRING
+ * 🔐 VERIFY ONE QUERY STRING
  * ============================================================
  */
 
 async function verifyRawQueryString(
   rawQueryString,
 ) {
+  /**
+   * ----------------------------------------------------------
+   * GOOGLE-COMPATIBLE QUERY STRING
+   * ----------------------------------------------------------
+   *
+   * Tämä on tärkeä ero:
+   *
+   * raw:
+   *
+   *   custom_data=UID%3Amining_start
+   *
+   * verification:
+   *
+   *   custom_data=UID:mining_start
+   *
+   * Googlen oma verifier toimii jälkimmäisen kanssa.
+   */
+
+  const verificationQueryString =
+    decodeQueryStringForVerification(
+      rawQueryString,
+    );
+
+
   const {
     signedQueryString,
     signature,
     keyId,
   } =
     extractSignatureData(
-      rawQueryString,
+      verificationQueryString,
     );
 
 
@@ -916,19 +920,24 @@ async function verifyRawQueryString(
   if (
     !publicKey
   ) {
-    throw createAdMobError(
-      "ADMOB_PUBLIC_KEY_NOT_FOUND",
-      `AdMob SSV public key not found for key_id=${keyId}`,
-      {
-        keyId,
-      },
-    );
+    const error =
+      new Error(
+        `AdMob SSV public key not found for key_id=${keyId}`,
+      );
+
+    error.code =
+      "ADMOB_PUBLIC_KEY_NOT_FOUND";
+
+    error.keyId =
+      keyId;
+
+    throw error;
   }
 
 
   /**
    * ==========================================================
-   * 🔐 ECDSA SHA-256
+   * 🔐 ECDSA SHA-256 / DER
    * ==========================================================
    */
 
@@ -968,43 +977,49 @@ async function verifyRawQueryString(
   } catch (
     error
   ) {
-    throw createAdMobError(
-      "ADMOB_CRYPTO_VERIFICATION_ERROR",
-      `AdMob SSV cryptographic verification failed: ${error.message}`,
-      {
-        keyId,
-      },
-    );
+    const verificationError =
+      new Error(
+        `AdMob SSV cryptographic verification failed: ${error.message}`,
+      );
+
+    verificationError.code =
+      "ADMOB_CRYPTO_VERIFICATION_ERROR";
+
+    verificationError.keyId =
+      keyId;
+
+    throw verificationError;
   }
 
 
   if (
     !verified
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_SIGNATURE",
-      "AdMob SSV signature verification failed.",
-      {
-        keyId,
-      },
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature verification failed.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_SIGNATURE";
+
+    error.keyId =
+      keyId;
+
+    throw error;
   }
 
 
   /**
-   * ==========================================================
-   * IMPORTANT
-   * ==========================================================
+   * ----------------------------------------------------------
+   * PARAMS
+   * ----------------------------------------------------------
    *
-   * Vasta kryptografisen tarkistuksen jälkeen
-   * query-string parsitaan.
-   *
-   * ==========================================================
+   * Parsitaan vasta kryptografisen tarkistuksen jälkeen.
    */
 
   return {
-    verified:
-      true,
+    verified: true,
 
     keyId,
 
@@ -1016,7 +1031,7 @@ async function verifyRawQueryString(
 
     params:
       new URLSearchParams(
-        rawQueryString,
+        verificationQueryString,
       ),
   };
 }
@@ -1031,36 +1046,10 @@ async function verifyRawQueryString(
 async function verifyAdMobSignature(
   req,
 ) {
-  let rawQueryString;
-
-
-  try {
-    rawQueryString =
-      getRawQueryString(
-        req,
-      );
-  } catch (
-    error
-  ) {
-    console.error(
-      "🐱❌ AdMob SSV raw query extraction FAILED.",
-      {
-        code:
-          error &&
-          error.code
-            ? error.code
-            : "ADMOB_QUERY_ERROR",
-
-        message:
-          error &&
-          error.message
-            ? error.message
-            : "Unknown query extraction error.",
-      },
+  const rawQueryString =
+    getRawQueryString(
+      req,
     );
-
-    throw error;
-  }
 
 
   try {
@@ -1083,19 +1072,6 @@ async function verifyAdMobSignature(
   } catch (
     error
   ) {
-    /**
-     * --------------------------------------------------------
-     * TÄRKEÄ DIAGNOSTIIKKA
-     * --------------------------------------------------------
-     *
-     * Aikaisemmin Cloud Loggingiin tuli käytännössä vain
-     * "verification failed".
-     *
-     * Nyt kirjataan sekä code että message.
-     *
-     * Tämä auttaa selvittämään miksi AdMob palauttaa 400.
-     */
-
     console.error(
       "🐱❌ AdMob SSV signature verification FAILED.",
       {
@@ -1103,19 +1079,19 @@ async function verifyAdMobSignature(
           error &&
           error.code
             ? error.code
-            : "ADMOB_SIGNATURE_UNKNOWN_ERROR",
-
-        message:
-          error &&
-          error.message
-            ? error.message
-            : "Unknown AdMob SSV verification error.",
+            : "UNKNOWN",
 
         keyId:
           error &&
           error.keyId
             ? error.keyId
             : "",
+
+        message:
+          error &&
+          error.message
+            ? error.message
+            : "Unknown error.",
       },
     );
 
@@ -1182,17 +1158,20 @@ function requireParam(
 
 
   if (
-    value.length ===
-      0
+    value.length === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_REQUIRED_PARAMETER_MISSING",
-      `AdMob SSV required parameter "${name}" is missing.`,
-      {
-        parameter:
-          name,
-      },
-    );
+    const error =
+      new Error(
+        `AdMob SSV required parameter "${name}" is missing.`,
+      );
+
+    error.code =
+      "ADMOB_REQUIRED_PARAMETER_MISSING";
+
+    error.parameter =
+      name;
+
+    throw error;
   }
 
 
@@ -1253,8 +1232,7 @@ function validateUid(
 
 
   if (
-    trimmed.length ===
-      0 ||
+    trimmed.length === 0 ||
     trimmed.length > 128
   ) {
     return false;
@@ -1272,15 +1250,11 @@ function validateUid(
  * 🧩 CUSTOM DATA PARSER
  * ============================================================
  *
- * Stelluriini käyttää:
+ * Formaatti:
  *
  *   UID:mining_start
  *
- * tai:
- *
  *   UID:power_boost
- *
- * Pelkkä UID ei ole hyväksytty reward-käyttötarkoitukseksi.
  *
  * ============================================================
  */
@@ -1293,11 +1267,9 @@ function parseCustomData(
       "string"
   ) {
     return {
-      uid:
-        "",
+      uid: "",
 
-      rewardPurpose:
-        "",
+      rewardPurpose: "",
     };
   }
 
@@ -1307,25 +1279,16 @@ function parseCustomData(
 
 
   if (
-    value.length ===
-      0 ||
+    value.length === 0 ||
     value.length > 128
   ) {
     return {
-      uid:
-        "",
+      uid: "",
 
-      rewardPurpose:
-        "",
+      rewardPurpose: "",
     };
   }
 
-
-  /**
-   * ----------------------------------------------------------
-   * FIND LAST SEPARATOR
-   * ----------------------------------------------------------
-   */
 
   const separatorIndex =
     value.lastIndexOf(
@@ -1339,11 +1302,9 @@ function parseCustomData(
       value.length - 1
   ) {
     return {
-      uid:
-        "",
+      uid: "",
 
-      rewardPurpose:
-        "",
+      rewardPurpose: "",
     };
   }
 
@@ -1365,32 +1326,18 @@ function parseCustomData(
       .trim();
 
 
-  /**
-   * ----------------------------------------------------------
-   * UID
-   * ----------------------------------------------------------
-   */
-
   if (
     !validateUid(
       uid,
     )
   ) {
     return {
-      uid:
-        "",
+      uid: "",
 
-      rewardPurpose:
-        "",
+      rewardPurpose: "",
     };
   }
 
-
-  /**
-   * ----------------------------------------------------------
-   * REWARD PURPOSE
-   * ----------------------------------------------------------
-   */
 
   if (
     rewardPurpose !==
@@ -1399,11 +1346,9 @@ function parseCustomData(
       "power_boost"
   ) {
     return {
-      uid:
-        "",
+      uid: "",
 
-      rewardPurpose:
-        "",
+      rewardPurpose: "",
     };
   }
 
@@ -1438,8 +1383,7 @@ function validateTransactionId(
 
 
   if (
-    value.length ===
-      0 ||
+    value.length === 0 ||
     value.length > 256
   ) {
     return false;
@@ -1455,15 +1399,6 @@ function validateTransactionId(
 /**
  * ============================================================
  * ⏱️ TIMESTAMP VALIDATION
- * ============================================================
- *
- * AdMob timestamp:
- *
- *   Epoch time in milliseconds.
- *
- * Replay-suojaus perustuu transaction_id:n atomiseen
- * käsittelyyn Firestoressa.
- *
  * ============================================================
  */
 
@@ -1486,18 +1421,15 @@ function validateTimestamp(
     )
   ) {
     return {
-      valid:
-        false,
+      valid: false,
 
-      timestampMs:
-        0,
+      timestampMs: 0,
     };
   }
 
 
   return {
-    valid:
-      true,
+    valid: true,
 
     timestampMs,
   };
@@ -1597,7 +1529,7 @@ async function verifyAdMobCallback(
 
   /**
    * ----------------------------------------------------------
-   * CUSTOM DATA
+   * 3. CUSTOM DATA
    * ----------------------------------------------------------
    */
 
@@ -1617,7 +1549,7 @@ async function verifyAdMobCallback(
 
   /**
    * ----------------------------------------------------------
-   * REWARD PURPOSE
+   * 4. REWARD PURPOSE
    * ----------------------------------------------------------
    */
 
@@ -1627,16 +1559,21 @@ async function verifyAdMobCallback(
     rewardPurpose !==
       "power_boost"
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_REWARD_PURPOSE",
-      `Invalid AdMob reward purpose: ${rewardPurpose}`,
-    );
+    const error =
+      new Error(
+        `Invalid AdMob reward purpose: ${rewardPurpose}`,
+      );
+
+    error.code =
+      "ADMOB_INVALID_REWARD_PURPOSE";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * UID
+   * 5. UID
    * ----------------------------------------------------------
    */
 
@@ -1645,16 +1582,21 @@ async function verifyAdMobCallback(
       uid,
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_UID",
-      "AdMob SSV custom_data does not contain a valid UID.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV custom_data does not contain a valid UID.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_UID";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * AD UNIT
+   * 6. AD UNIT
    * ----------------------------------------------------------
    */
 
@@ -1667,10 +1609,15 @@ async function verifyAdMobCallback(
   if (
     !expectedAdUnit
   ) {
-    throw createAdMobError(
-      "ADMOB_AD_UNIT_NOT_CONFIGURED",
-      `No AdMob ad unit configured for ${rewardPurpose}.`,
-    );
+    const error =
+      new Error(
+        `No AdMob ad unit configured for ${rewardPurpose}.`,
+      );
+
+    error.code =
+      "ADMOB_AD_UNIT_NOT_CONFIGURED";
+
+    throw error;
   }
 
 
@@ -1678,24 +1625,21 @@ async function verifyAdMobCallback(
     adUnit !==
     expectedAdUnit
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_AD_UNIT",
-      `Invalid AdMob ad unit. Expected ${expectedAdUnit}, received ${adUnit}.`,
-      {
-        expectedAdUnit,
+    const error =
+      new Error(
+        `Invalid AdMob ad unit. Expected ${expectedAdUnit}, received ${adUnit}.`,
+      );
 
-        receivedAdUnit:
-          adUnit,
+    error.code =
+      "ADMOB_INVALID_AD_UNIT";
 
-        rewardPurpose,
-      },
-    );
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * REWARD DEFINITION
+   * 7. REWARD DEFINITION
    * ----------------------------------------------------------
    */
 
@@ -1708,16 +1652,21 @@ async function verifyAdMobCallback(
   if (
     !rewardDefinition
   ) {
-    throw createAdMobError(
-      "ADMOB_REWARD_DEFINITION_MISSING",
-      `No reward definition configured for ${rewardPurpose}.`,
-    );
+    const error =
+      new Error(
+        `No reward definition configured for ${rewardPurpose}.`,
+      );
+
+    error.code =
+      "ADMOB_REWARD_DEFINITION_MISSING";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * REWARD AMOUNT
+   * 8. REWARD AMOUNT
    * ----------------------------------------------------------
    */
 
@@ -1732,25 +1681,21 @@ async function verifyAdMobCallback(
     parsedRewardAmount !==
     rewardDefinition.rewardAmount
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_REWARD_AMOUNT",
-      `Invalid AdMob reward amount. Expected ${rewardDefinition.rewardAmount}, received ${rewardAmount}.`,
-      {
-        expected:
-          rewardDefinition.rewardAmount,
+    const error =
+      new Error(
+        `Invalid AdMob reward amount. Expected ${rewardDefinition.rewardAmount}, received ${rewardAmount}.`,
+      );
 
-        received:
-          rewardAmount,
+    error.code =
+      "ADMOB_INVALID_REWARD_AMOUNT";
 
-        rewardPurpose,
-      },
-    );
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * REWARD ITEM
+   * 9. REWARD ITEM
    * ----------------------------------------------------------
    */
 
@@ -1758,25 +1703,21 @@ async function verifyAdMobCallback(
     rewardItem !==
     rewardDefinition.rewardItem
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_REWARD_ITEM",
-      `Invalid AdMob reward item. Expected "${rewardDefinition.rewardItem}", received "${rewardItem}".`,
-      {
-        expected:
-          rewardDefinition.rewardItem,
+    const error =
+      new Error(
+        `Invalid AdMob reward item. Expected "${rewardDefinition.rewardItem}", received "${rewardItem}".`,
+      );
 
-        received:
-          rewardItem,
+    error.code =
+      "ADMOB_INVALID_REWARD_ITEM";
 
-        rewardPurpose,
-      },
-    );
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * TRANSACTION ID
+   * 10. TRANSACTION ID
    * ----------------------------------------------------------
    */
 
@@ -1785,16 +1726,21 @@ async function verifyAdMobCallback(
       transactionId,
     )
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_TRANSACTION_ID",
-      "AdMob SSV transaction_id is missing or invalid.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV transaction_id is missing or invalid.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_TRANSACTION_ID";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * TIMESTAMP
+   * 11. TIMESTAMP
    * ----------------------------------------------------------
    */
 
@@ -1807,43 +1753,43 @@ async function verifyAdMobCallback(
   if (
     !timestampResult.valid
   ) {
-    throw createAdMobError(
-      "ADMOB_INVALID_TIMESTAMP",
-      "AdMob timestamp is invalid.",
-      {
-        received:
-          timestamp,
-      },
-    );
+    const error =
+      new Error(
+        "AdMob timestamp is invalid.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_TIMESTAMP";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * USER ID
+   * 12. USER ID
    * ----------------------------------------------------------
    */
 
   if (
     userId &&
-    userId !==
-      uid
+    userId !== uid
   ) {
-    throw createAdMobError(
-      "ADMOB_USER_ID_MISMATCH",
-      "AdMob SSV user_id does not match custom_data UID.",
-      {
-        uid,
+    const error =
+      new Error(
+        "AdMob SSV user_id does not match custom_data UID.",
+      );
 
-        userId,
-      },
-    );
+    error.code =
+      "ADMOB_USER_ID_MISMATCH";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * SIGNATURE / KEY ID
+   * 13. SIGNATURE / KEY ID
    * ----------------------------------------------------------
    */
 
@@ -1862,30 +1808,38 @@ async function verifyAdMobCallback(
 
 
   if (
-    signature.length ===
-      0
+    signature.length === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_SIGNATURE_PARAMETER_MISSING",
-      "AdMob SSV signature parameter is missing.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV signature parameter is missing.",
+      );
+
+    error.code =
+      "ADMOB_SIGNATURE_PARAMETER_MISSING";
+
+    throw error;
   }
 
 
   if (
-    keyId.length ===
-      0
+    keyId.length === 0
   ) {
-    throw createAdMobError(
-      "ADMOB_KEY_ID_PARAMETER_MISSING",
-      "AdMob SSV key_id parameter is missing.",
-    );
+    const error =
+      new Error(
+        "AdMob SSV key_id parameter is missing.",
+      );
+
+    error.code =
+      "ADMOB_KEY_ID_PARAMETER_MISSING";
+
+    throw error;
   }
 
 
   /**
    * ----------------------------------------------------------
-   * NORMALIZED PARAMETERS
+   * 14. NORMALIZED PARAMETERS
    * ----------------------------------------------------------
    */
 
@@ -1923,7 +1877,7 @@ async function verifyAdMobCallback(
 
   /**
    * ----------------------------------------------------------
-   * VERIFIED LOG
+   * 15. VERIFIED LOG
    * ----------------------------------------------------------
    */
 
@@ -1953,13 +1907,12 @@ async function verifyAdMobCallback(
 
   /**
    * ----------------------------------------------------------
-   * RETURN VERIFIED AD
+   * 16. RETURN VERIFIED AD
    * ----------------------------------------------------------
    */
 
   return {
-    verified:
-      true,
+    verified: true,
 
     uid,
 
