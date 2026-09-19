@@ -24,8 +24,8 @@
 // ❌ muuta cooldownia
 // ❌ muuta mining-tilaa
 //
-// Varsinainen reward-toiminto tehdään myöhemmässä
-// business/service-kerroksessa.
+// Varsinainen reward-toiminto tehdään myöhemmin
+// mining/business/service-kerroksessa.
 //
 // ============================================================
 
@@ -50,6 +50,17 @@ const {
   FieldValue,
 } = require(
   "../firebase/firebase",
+);
+
+
+// ============================================================
+// ⚙️ MINING CONFIG
+// ============================================================
+
+const {
+  ADMOB_SSV_REWARD_AMOUNT,
+} = require(
+  "../config/miningConfig",
 );
 
 
@@ -126,11 +137,6 @@ function getSafeNumber(
 // ✅ 1–128 merkkiä
 // ❌ ei "/" tai "\"
 //
-// Varsinainen AdMob UID-validointi tehdään
-// jo admobService.js:ssa.
-//
-// Tämä on toinen defense-in-depth -tarkistus.
-//
 // ============================================================
 
 function validateUid(
@@ -165,13 +171,6 @@ function validateUid(
 
 // ============================================================
 // 🔐 VALIDATE TRANSACTION ID
-// ============================================================
-//
-// AdMob service on jo varmistanut transaction_id:n.
-//
-// Tämä tarkistus suojaa myös Firestore-document ID:nä
-// käytettävää arvoa.
-//
 // ============================================================
 
 function validateTransactionId(
@@ -255,8 +254,6 @@ function normalizeString(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// TÄRKEÄÄ:
-//
 // admobService.js on jo tarkistanut:
 //
 // ✅ allekirjoituksen
@@ -268,8 +265,7 @@ function normalizeString(
 // ✅ transaction_id:n
 // ✅ timestampin
 //
-// Tässä tehdään vielä toinen palvelinkerroksen
-// defense-in-depth -tarkistus.
+// Tässä tehdään toinen defense-in-depth -tarkistus.
 //
 // ============================================================
 
@@ -374,7 +370,8 @@ function validateVerifiedAdData(
     );
 
   if (
-    rewardAmount !== 1
+    rewardAmount !==
+    ADMOB_SSV_REWARD_AMOUNT
   ) {
     const error =
       new Error(
@@ -1182,7 +1179,7 @@ const adMobReward =
 
         // ======================================================
         // 📤 SUCCESS RESPONSE
-        // ======================================================
+        // ============================================================
 
         console.log(
           "🐱 AdMob SSV processed successfully.",
