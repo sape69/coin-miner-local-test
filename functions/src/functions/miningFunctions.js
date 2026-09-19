@@ -165,15 +165,6 @@ function getSafePositiveNumber(
 // ============================================================
 // 🔐 VALIDATE ADMOB TRANSACTION ID
 // ============================================================
-//
-// Firestore-dokumentin ID ei saa sisältää:
-//
-// /
-// \
-//
-// Lisäksi pituus rajoitetaan turvalliseksi.
-//
-// ============================================================
 
 function validateAdMobTransactionId(
   value
@@ -202,15 +193,6 @@ function validateAdMobTransactionId(
 
 // ============================================================
 // 🔐 GET TIMESTAMP MILLISECONDS
-// ============================================================
-//
-// Tukee:
-//
-// 🔥 Firestore Timestamp
-// 📅 JavaScript Date
-// 📝 Date string
-// 🔢 Milliseconds
-//
 // ============================================================
 
 function getTimestampMilliseconds(
@@ -327,23 +309,6 @@ function getRewardCreatedAtMs(
 
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
-// ============================================================
-//
-// Firestore-haussa käytetään vain UID:tä.
-//
-// Muut ehdot tarkistetaan JavaScriptissä:
-//
-// 👤 UID
-// 🔐 rewardType
-// 🎯 rewardPurpose
-// 🔐 claim-status
-// 📺 adUnit
-// 🎁 rewardItem
-// 🔢 rewardAmount
-// 🔐 transaction ID
-//
-// Näin vältetään tarpeettomat yhdistelmäindeksit.
-//
 // ============================================================
 
 async function findVerifiedAdMobReward(
@@ -552,10 +517,6 @@ async function findVerifiedAdMobReward(
   );
 
 
-  // ==========================================================
-  // ❌ NO VALID REWARD
-  // ==========================================================
-
   if (
     candidates.length === 0
   ) {
@@ -621,13 +582,6 @@ async function findVerifiedAdMobReward(
 // ============================================================
 // 🔐 WAIT FOR VERIFIED ADMOB REWARD
 // ============================================================
-//
-// AdMob SSV ei välttämättä ehdi Firestoreen ennen kuin
-// Flutter kutsuu claimMining/powerBoost.
-//
-// Backend odottaa vahvistettua tapahtumaa.
-//
-// ============================================================
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
   110 * 1000;
@@ -679,19 +633,6 @@ async function waitForVerifiedAdMobReward(
       );
 
       return reward;
-    }
-
-
-    const elapsedMs =
-      Date.now() -
-      startedAt;
-
-
-    if (
-      elapsedMs >=
-      ADMOB_SSV_WAIT_TIMEOUT_MS
-    ) {
-      break;
     }
 
 
@@ -750,10 +691,6 @@ function validateVerifiedRewardDocument(
     rewardSnapshot.data() || {};
 
 
-  // ==========================================================
-  // 👤 UID
-  // ==========================================================
-
   if (
     rewardData.uid !== uid
   ) {
@@ -763,10 +700,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-
-  // ==========================================================
-  // 🔐 REWARD TYPE
-  // ==========================================================
 
   if (
     rewardData.rewardType !==
@@ -779,10 +712,6 @@ function validateVerifiedRewardDocument(
   }
 
 
-  // ==========================================================
-  // 🎯 REWARD PURPOSE
-  // ==========================================================
-
   if (
     rewardData.rewardPurpose !==
     rewardPurpose
@@ -793,10 +722,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-
-  // ==========================================================
-  // 📺 AD UNIT
-  // ==========================================================
 
   if (
     typeof rewardData.adUnit !== "string" ||
@@ -809,10 +734,6 @@ function validateVerifiedRewardDocument(
   }
 
 
-  // ==========================================================
-  // 🎁 REWARD ITEM
-  // ==========================================================
-
   if (
     typeof rewardData.rewardItem !== "string" ||
     rewardData.rewardItem.trim().length === 0
@@ -823,10 +744,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-
-  // ==========================================================
-  // 🔢 REWARD AMOUNT
-  // ==========================================================
 
   const rewardAmount =
     Number(
@@ -845,10 +762,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-
-  // ==========================================================
-  // 🔐 TRANSACTION ID
-  // ==========================================================
 
   const documentTransactionId =
     validateAdMobTransactionId(
@@ -877,10 +790,6 @@ function validateVerifiedRewardDocument(
   }
 
 
-  // ==========================================================
-  // 🔐 CLAIM STATUS
-  // ==========================================================
-
   if (
     rewardData[claimedField] === true
   ) {
@@ -890,10 +799,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-
-  // ==========================================================
-  // ⛏️ MINING START CLAIM STATUS
-  // ==========================================================
 
   if (
     rewardPurpose === "mining_start" &&
@@ -909,10 +814,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-
-  // ==========================================================
-  // ⚡ POWER BOOST CLAIM STATUS
-  // ==========================================================
 
   if (
     rewardPurpose === "power_boost" &&
@@ -1472,10 +1373,6 @@ function calculateAdBoostMilliseconds(
   }
 
 
-  // ==========================================================
-  // 🔗 YHDISTÄ PÄÄLLEKKÄISET BOOSTIT
-  // ==========================================================
-
   let totalMs = 0;
 
 
@@ -1740,7 +1637,7 @@ async function updateMiningAchievements(
 
 
   // ==========================================================
-  // ⛏️ LITTLE MINER + STL HUNTER
+  // ⛏️ LITTLE MINER
   // ==========================================================
 
   if (
@@ -1782,6 +1679,10 @@ async function updateMiningAchievements(
       }
     );
 
+
+    // ========================================================
+    // 🐱 STL HUNTER
+    // ========================================================
 
     const oldHunterProgress =
       Math.max(
@@ -2226,10 +2127,6 @@ const claimMining =
       request
     ) => {
       try {
-        // ======================================================
-        // 🔐 AUTH
-        // ======================================================
-
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
@@ -2298,10 +2195,6 @@ const claimMining =
         }
 
 
-        // ======================================================
-        // 🔥 FIRESTORE TRANSACTION
-        // ======================================================
-
         return await db.runTransaction(
           async (
             transaction
@@ -2331,10 +2224,6 @@ const claimMining =
                 ? snapshot.data() || {}
                 : {};
 
-
-            // ==================================================
-            // ⛏️ CURRENT DAILY STREAK
-            // ==================================================
 
             const currentDailyStreak =
               getDailyStreak(data);
@@ -2522,10 +2411,6 @@ const claimMining =
               0;
 
 
-            // ==================================================
-            // 💰 COLLECT COMPLETED CYCLE
-            // ==================================================
-
             if (
               previousStart &&
               previousEnd &&
@@ -2548,10 +2433,6 @@ const claimMining =
                 );
 
 
-              // ==============================================
-              // ⛏️ BASE MINING
-              // ==============================================
-
               const baseCollected =
                 Math.max(
                   0,
@@ -2564,10 +2445,6 @@ const claimMining =
                   )
                 );
 
-
-              // ==============================================
-              // ⚡ POWER BOOST
-              // ==============================================
 
               const boosts =
                 await getAdBoostHistory(
@@ -2648,10 +2525,6 @@ const claimMining =
                   MINING_DURATION_MS
               );
 
-
-            // ==================================================
-            // 🔐 THIS CYCLE HASH RATE
-            // ==================================================
 
             const newMiningHashRate =
               dailyHashRate;
@@ -2928,19 +2801,11 @@ const claimMining =
                 : newMiningHashRate;
 
 
-            // ==================================================
-            // 🎁 DAILY MESSAGE
-            // ==================================================
-
             const dailyMessage =
               dailyClaim.claimedToday
                 ? "🐱⛏️ Stella jatkaa tämän päivän louhintaa!"
                 : `🐱✨ Stella sai päivän ${dailyStreak} Daily Hash Raten: ${dailyHashRate.toFixed(4)} HR!`;
 
-
-            // ==================================================
-            // ✅ RESPONSE
-            // ==================================================
 
             return {
               success:
@@ -3049,10 +2914,6 @@ const powerBoost =
       request
     ) => {
       try {
-        // ======================================================
-        // 🔐 AUTHENTICATION
-        // ======================================================
-
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
@@ -3121,10 +2982,6 @@ const powerBoost =
         }
 
 
-        // ======================================================
-        // 🔥 FIRESTORE TRANSACTION
-        // ======================================================
-
         return await db.runTransaction(
           async (
             transaction
@@ -3175,82 +3032,76 @@ const powerBoost =
                 );
 
 
-              if (
-                currentAdStatus.adBoostActive
-              ) {
-                const remainingMs =
-                  currentAdStatus.adBoostRemainingMs;
+              const dailyStatus =
+                getDailyStatus(
+                  userData,
+                  today
+                );
 
 
-                const dailyStatus =
-                  getDailyStatus(
-                    userData,
-                    today
-                  );
+              const baseHashRate =
+                getMiningHashRate(
+                  userData,
+                  dailyStatus.dailyHashRate
+                );
 
 
-                const baseHashRate =
-                  getMiningHashRate(
-                    userData,
-                    dailyStatus.dailyHashRate
-                  );
+              const effectiveHashRate =
+                baseHashRate +
+                AD_HASH_RATE_BONUS;
 
 
-                const effectiveHashRate =
-                  baseHashRate +
-                  AD_HASH_RATE_BONUS;
+              return {
+                success:
+                  true,
 
+                boostActive:
+                  currentAdStatus.adBoostActive,
 
-                return {
-                  success:
-                    true,
+                active:
+                  currentAdStatus.adBoostActive,
 
-                  boostActive:
-                    true,
+                alreadyActivated:
+                  true,
 
-                  active:
-                    true,
+                adsToday:
+                  currentAdStatus.adsToday,
 
-                  alreadyActivated:
-                    true,
+                maxAdsPerDay:
+                  MAX_ADS_PER_DAY,
 
-                  adsToday:
-                    currentAdStatus.adsToday,
+                adHashRateBonus:
+                  AD_HASH_RATE_BONUS,
 
-                  maxAdsPerDay:
-                    MAX_ADS_PER_DAY,
+                boostRemainingMs:
+                  currentAdStatus.adBoostRemainingMs,
 
-                  adHashRateBonus:
-                    AD_HASH_RATE_BONUS,
+                remainingBoostMs:
+                  currentAdStatus.adBoostRemainingMs,
 
-                  boostRemainingMs:
-                    remainingMs,
+                adBoostDurationMs:
+                  AD_BOOST_DURATION_MS,
 
-                  remainingBoostMs:
-                    remainingMs,
+                adBoostStartedAt:
+                  currentAdStatus.adBoostStartedAt
+                    ? currentAdStatus.adBoostStartedAt.toISOString()
+                    : null,
 
-                  adBoostDurationMs:
-                    AD_BOOST_DURATION_MS,
+                adBoostEndsAt:
+                  currentAdStatus.adBoostEndsAt
+                    ? currentAdStatus.adBoostEndsAt.toISOString()
+                    : null,
 
-                  adBoostStartedAt:
-                    currentAdStatus.adBoostStartedAt
-                      ? currentAdStatus.adBoostStartedAt.toISOString()
-                      : null,
+                effectiveHashRate,
 
-                  adBoostEndsAt:
-                    currentAdStatus.adBoostEndsAt
-                      ? currentAdStatus.adBoostEndsAt.toISOString()
-                      : null,
+                transactionId:
+                  verifiedRewardTransactionId,
 
-                  effectiveHashRate,
-
-                  transactionId:
-                    verifiedRewardTransactionId,
-
-                  message:
-                    "🐱⚡ Stella Power Boost on jo aktiivinen!",
-                };
-              }
+                message:
+                  currentAdStatus.adBoostActive
+                    ? "🐱⚡ Stella Power Boost on jo aktiivinen!"
+                    : "🐱⚡ Tämä Power Boost on jo käsitelty.",
+              };
             }
 
 
@@ -3325,7 +3176,7 @@ const powerBoost =
 
             // ==================================================
             // 🕒 BOOST TIME
-            // ==================================================
+            // ============================================================
 
             const boostStartedAt =
               now;
@@ -3340,7 +3191,7 @@ const powerBoost =
 
             // ==================================================
             // 📊 DAILY AD COUNT
-            // ==================================================
+            // ============================================================
 
             const storedAdDate =
               typeof userData.lastAdDate === "string"
@@ -3368,7 +3219,7 @@ const powerBoost =
 
             // ==================================================
             // 👤 USER UPDATE
-            // ==================================================
+            // ============================================================
 
             transaction.set(
               userRef,
@@ -3402,7 +3253,7 @@ const powerBoost =
 
             // ==================================================
             // 🔐 CONSUME ADMOB REWARD
-            // ==================================================
+            // ============================================================
 
             transaction.set(
               verifiedRewardRef,
@@ -3433,7 +3284,7 @@ const powerBoost =
 
             // ==================================================
             // 📜 POWER BOOST HISTORY
-            // ==================================================
+            // ============================================================
 
             const historyRef =
               getHistoryCollection(uid)
@@ -3485,7 +3336,7 @@ const powerBoost =
 
             // ==================================================
             // 📊 EFFECTIVE HASH RATE
-            // ==================================================
+            // ============================================================
 
             const dailyStatus =
               getDailyStatus(
@@ -3508,7 +3359,7 @@ const powerBoost =
 
             // ==================================================
             // ✅ RESPONSE
-            // ==================================================
+            // ============================================================
 
             return {
               success:
@@ -3553,7 +3404,7 @@ const powerBoost =
                 verifiedRewardTransactionId,
 
               message:
-                "🐱⚡ Stella Power Boost on aktiivinen 4 tunnin ajan!",
+                "🐱⚡ Stella Power Boost on aktiivinen!",
             };
           }
         );
