@@ -328,7 +328,7 @@ function decodeAdMobSignature(signature) {
  * 🔎 EXTRACT SIGNATURE DATA
  * ============================================================
  *
- * AdMobin SSV-formaat:
+ * AdMobin SSV-formaatti:
  *
  * ...&signature=...&key_id=...
  *
@@ -551,7 +551,18 @@ async function verifyRawQueryString(
 
   /**
    * ==========================================================
-   * 🔐 RSA SHA-256 VERIFICATION
+   * 🔐 ECDSA SHA-256 VERIFICATION
+   * ==========================================================
+   *
+   * AdMob käyttää:
+   *
+   * ECDSA
+   * SHA-256
+   * DER encoded signature
+   *
+   * Node.js crypto.verify() käyttää ECDSA-public
+   * keytä ja DER-signaturea oletusmuodossa.
+   *
    * ==========================================================
    */
 
@@ -560,7 +571,7 @@ async function verifyRawQueryString(
   try {
     verified =
       crypto.verify(
-        "RSA-SHA256",
+        "sha256",
         Buffer.from(
           signedQueryString,
           "utf8",
@@ -601,7 +612,7 @@ async function verifyRawQueryString(
   }
 
   console.log(
-    "🐱✅ AdMob RSA-SHA256 signature VERIFIED.",
+    "🐱✅ AdMob ECDSA-SHA256 signature VERIFIED.",
     {
       keyId,
     },
