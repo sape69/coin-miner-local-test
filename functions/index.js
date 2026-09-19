@@ -6,11 +6,17 @@
 //
 // Stelluriini Cloud Functions -päävientitiedosto.
 //
-// Kaikki varsinaiset funktiot sijaitsevat:
+// Firebase käyttää tätä tiedostoa Cloud Functions -entry pointina,
+// koska functions/package.json sisältää:
+//
+// "main": "index.js"
+//
+// Varsinaiset funktiot sijaitsevat:
 //
 // functions/src/functions/
 //
 // Tämä tiedosto toimii vain keskitettynä export-pisteenä.
+//
 // ============================================================
 
 
@@ -23,7 +29,7 @@ const {
   claimMining,
   powerBoost,
 } = require(
-  "./src/functions/miningFunctions"
+  "./src/functions/miningFunctions",
 );
 
 
@@ -34,7 +40,7 @@ const {
 const {
   dailyCheckIn,
 } = require(
-  "./src/functions/dailyFunctions"
+  "./src/functions/dailyFunctions",
 );
 
 
@@ -45,7 +51,7 @@ const {
 const {
   adMobReward,
 } = require(
-  "./src/functions/adFunctions"
+  "./src/functions/adFunctions",
 );
 
 
@@ -56,7 +62,7 @@ const {
 const {
   getTransactionHistory,
 } = require(
-  "./src/functions/historyFunctions"
+  "./src/functions/historyFunctions",
 );
 
 
@@ -68,7 +74,7 @@ const {
   getAchievements,
   getAchievementsCompleted,
 } = require(
-  "./src/functions/achievementFunctions"
+  "./src/functions/achievementFunctions",
 );
 
 
