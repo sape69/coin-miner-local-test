@@ -141,13 +141,17 @@ function getTimestampMilliseconds(value) {
   }
 
   if (typeof value.toDate === "function") {
-    const date = value.toDate();
+    try {
+      const date = value.toDate();
 
-    if (
-      date instanceof Date &&
-      !Number.isNaN(date.getTime())
-    ) {
-      return date.getTime();
+      if (
+        date instanceof Date &&
+        !Number.isNaN(date.getTime())
+      ) {
+        return date.getTime();
+      }
+    } catch (error) {
+      return 0;
     }
   }
 
@@ -267,6 +271,26 @@ function getExpectedRewardItem(rewardPurpose) {
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
+//
+// IMPORTANT:
+//
+// Älä luota siihen, että ensimmäisten 100 dokumentin joukosta
+// löytyy juuri saapunut SSV-tapahtuma.
+//
+// Haemme kaikki kyseisen käyttäjän potentiaaliset rewardit
+// ja suodatamme ne tämän jälkeen tarkasti:
+//
+// - reward purpose
+// - reward type
+// - ad unit
+// - reward item
+// - reward amount
+// - claimed state
+// - transaction ID
+//
+// Lopuksi valitaan uusin validi reward.
+//
+// ============================================================
 
 async function findVerifiedAdMobReward(
   uid,
@@ -285,7 +309,11 @@ async function findVerifiedAdMobReward(
   const snapshot = await db
     .collection("admobRewards")
     .where("uid", "==", uid)
-    .limit(100)
+    .where(
+      "rewardPurpose",
+      "==",
+      rewardPurpose
+    )
     .get();
 
   if (snapshot.empty) {
@@ -302,7 +330,10 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    if (rewardData.rewardType !== "admob") {
+    if (
+      rewardData.rewardType !==
+      "admob"
+    ) {
       return;
     }
 
@@ -387,7 +418,9 @@ async function findVerifiedAdMobReward(
       );
 
     if (
-      !Number.isFinite(rewardAmount) ||
+      !Number.isFinite(
+        rewardAmount
+      ) ||
       rewardAmount !==
         configuration.rewardAmount
     ) {
@@ -413,9 +446,11 @@ async function findVerifiedAdMobReward(
     }
 
     candidates.push({
-      ref: doc.ref,
+      ref:
+        doc.ref,
 
-      data: rewardData,
+      data:
+        rewardData,
 
       transactionId,
 
@@ -429,6 +464,10 @@ async function findVerifiedAdMobReward(
   if (!candidates.length) {
     return null;
   }
+
+  // ----------------------------------------------------------
+  // 🕒 NEWEST VALID REWARD FIRST
+  // ----------------------------------------------------------
 
   candidates.sort((a, b) => {
     if (
@@ -1185,13 +1224,19 @@ function calculateAdBoostMilliseconds(
         const start =
           Math.max(
             miningStartMs,
-            boost.boostStartedMs
+            getSafeNumber(
+              boost.boostStartedMs,
+              0
+            )
           );
 
         const end =
           Math.min(
             miningEndMs,
-            boost.boostEndsMs
+            getSafeNumber(
+              boost.boostEndsMs,
+              0
+            )
           );
 
         if (end <= start) {
@@ -1329,15 +1374,6 @@ function buildAchievementUpdate(
         0
       )
     );
-
-  // ----------------------------------------------------------
-  // IMPORTANT:
-  // Älä pyöristä progressia alaspäin.
-  //
-  // Mining voi tuottaa murto-osia STL:stä. Jos progress
-  // pyöristetään jokaisessa transaktiossa alaspäin, osa
-  // achievement-progressista katoaa pysyvästi.
-  // ----------------------------------------------------------
 
   const safeProgress =
     Math.min(
