@@ -148,6 +148,28 @@ function getSafeDate(
 
 
   // ==========================================================
+  // 📅 JAVASCRIPT DATE
+  // ==========================================================
+
+  if (
+    value instanceof Date
+  ) {
+    if (
+      Number.isNaN(
+        value.getTime(),
+      )
+    ) {
+      return null;
+    }
+
+
+    return new Date(
+      value.getTime(),
+    );
+  }
+
+
+  // ==========================================================
   // 🔥 FIRESTORE TIMESTAMP
   // ==========================================================
 
@@ -166,7 +188,9 @@ function getSafeDate(
           date.getTime(),
         )
       ) {
-        return date;
+        return new Date(
+          date.getTime(),
+        );
       }
     } catch (
       error
@@ -176,26 +200,6 @@ function getSafeDate(
 
 
     return null;
-  }
-
-
-  // ==========================================================
-  // 📅 JAVASCRIPT DATE
-  // ==========================================================
-
-  if (
-    value instanceof Date
-  ) {
-    if (
-      Number.isNaN(
-        value.getTime(),
-      )
-    ) {
-      return null;
-    }
-
-
-    return value;
   }
 
 
@@ -238,7 +242,7 @@ function getSafeDate(
 
 
   // ==========================================================
-  // 🔢 MILLISECONDS
+  // 🔢 UNIX MILLISECONDS
   // ==========================================================
 
   if (
@@ -333,10 +337,19 @@ function calculateMining(
     );
 
 
+  const safeMiningRate =
+    Number(
+      MINING_PER_HASH_PER_HOUR,
+    );
+
+
   if (
     safeHashRate <= 0 ||
     safeElapsedMilliseconds <= 0 ||
-    MINING_PER_HASH_PER_HOUR <= 0
+    !Number.isFinite(
+      safeMiningRate,
+    ) ||
+    safeMiningRate <= 0
   ) {
     return 0;
   }
@@ -353,7 +366,7 @@ function calculateMining(
 
   const minedAmount =
     safeHashRate *
-    MINING_PER_HASH_PER_HOUR *
+    safeMiningRate *
     hours;
 
 
@@ -378,13 +391,6 @@ function calculateMining(
 // ============================================================
 //
 // Hakee mining-jakson aloitusajan.
-//
-// Tukee:
-//
-// 🔥 Firestore Timestamp
-// 📅 JavaScript Date
-// 📝 ISO Date String
-// 🔢 millisekunnit
 //
 // ============================================================
 
@@ -411,13 +417,6 @@ function getMiningStartTime(
 // ============================================================
 //
 // Hakee mining-jakson päättymisajan.
-//
-// Tukee:
-//
-// 🔥 Firestore Timestamp
-// 📅 JavaScript Date
-// 📝 ISO Date String
-// 🔢 millisekunnit
 //
 // ============================================================
 
@@ -639,9 +638,13 @@ function calculateMiningStatus(
     nowMs < endMs
   ) {
     const elapsedMs =
-      Math.max(
-        0,
-        nowMs -
+      Math.min(
+        Math.max(
+          0,
+          nowMs -
+            startMs,
+        ),
+        endMs -
           startMs,
       );
 
