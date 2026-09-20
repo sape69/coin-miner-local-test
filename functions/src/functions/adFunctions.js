@@ -56,9 +56,24 @@ const {
 // ============================================================
 // ⚙️ MINING CONFIG
 // ============================================================
+//
+// Mining ja Power Boost käyttävät erillisiä
+// AdMob Rewarded -asetuksia.
+//
+// ============================================================
 
 const {
-  ADMOB_SSV_REWARD_AMOUNT,
+  ADMOB_MINING_SSV_AD_UNIT_ID,
+
+  ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
+
+  ADMOB_MINING_SSV_REWARD_AMOUNT,
+
+  ADMOB_MINING_SSV_REWARD_ITEM,
+
+  ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
+
+  ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
 } = require(
   "../config/miningConfig",
 );
@@ -131,14 +146,6 @@ function getSafeNumber(
 // ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
-//
-// Firebase Auth UID:
-//
-// ✅ merkkijono
-// ✅ 1–128 merkkiä
-// ❌ ei "/" tai "\"
-//
-// ============================================================
 
 function validateUid(
   value,
@@ -172,13 +179,6 @@ function validateUid(
 
 // ============================================================
 // 🔐 VALIDATE TRANSACTION ID
-// ============================================================
-//
-// admobService.js tekee varsinaisen transaction_id-validoinnin.
-// Tässä tehdään defense-in-depth -tarkistus.
-//
-// AdMobin transaction_id on hex-muotoinen.
-//
 // ============================================================
 
 function validateTransactionId(
@@ -258,6 +258,66 @@ function normalizeString(
 
 
 // ============================================================
+// 🎯 GET EXPECTED ADMOB CONFIG
+// ============================================================
+//
+// Valitsee rewardPurpose-arvon perusteella:
+//
+// ⛏️ Mining
+// 🐱 Power Boost
+//
+// ============================================================
+
+function getExpectedAdMobConfig(
+  rewardPurpose,
+) {
+  if (
+    rewardPurpose ===
+    "mining_start"
+  ) {
+    return {
+      adUnit:
+        ADMOB_MINING_SSV_AD_UNIT_ID,
+
+      rewardAmount:
+        ADMOB_MINING_SSV_REWARD_AMOUNT,
+
+      rewardItem:
+        ADMOB_MINING_SSV_REWARD_ITEM,
+    };
+  }
+
+
+  if (
+    rewardPurpose ===
+    "power_boost"
+  ) {
+    return {
+      adUnit:
+        ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
+
+      rewardAmount:
+        ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
+
+      rewardItem:
+        ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
+    };
+  }
+
+
+  const error =
+    new Error(
+      "Unknown AdMob reward purpose.",
+    );
+
+  error.code =
+    "ADMOB_INVALID_REWARD_PURPOSE";
+
+  throw error;
+}
+
+
+// ============================================================
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
@@ -265,16 +325,19 @@ function normalizeString(
 //
 // ✅ allekirjoituksen
 // ✅ public keyn
-// ✅ ad_unitin
-// ✅ reward amountin
-// ✅ reward itemin
-// ✅ custom_datan
 // ✅ UID:n
 // ✅ transaction_id:n
 // ✅ timestampin
 //
 // Tässä tehdään toinen defense-in-depth -tarkistus
 // ennen Firestore-kirjoitusta.
+//
+// Lisäksi tarkistetaan:
+//
+// ✅ reward purpose
+// ✅ oikea Ad Unit
+// ✅ oikea reward amount
+// ✅ oikea reward item
 //
 // ============================================================
 
@@ -345,6 +408,16 @@ function validateVerifiedAdData(
 
 
   // ----------------------------------------------------------
+  // EXPECTED ADMOB CONFIG
+  // ----------------------------------------------------------
+
+  const expectedAdMob =
+    getExpectedAdMobConfig(
+      rewardPurpose,
+    );
+
+
+  // ----------------------------------------------------------
   // TRANSACTION ID
   // ----------------------------------------------------------
 
@@ -380,7 +453,7 @@ function validateVerifiedAdData(
 
   if (
     rewardAmount !==
-    ADMOB_SSV_REWARD_AMOUNT
+    expectedAdMob.rewardAmount
   ) {
     const error =
       new Error(
@@ -404,11 +477,12 @@ function validateVerifiedAdData(
     );
 
   if (
-    rewardItem.length === 0
+    rewardItem !==
+    expectedAdMob.rewardItem
   ) {
     const error =
       new Error(
-        "Verified AdMob reward item is missing.",
+        "Verified AdMob reward item is invalid.",
       );
 
     error.code =
@@ -428,11 +502,12 @@ function validateVerifiedAdData(
     );
 
   if (
-    adUnit.length === 0
+    adUnit !==
+    expectedAdMob.adUnit
   ) {
     const error =
       new Error(
-        "Verified AdMob ad unit is missing.",
+        "Verified AdMob ad unit is invalid.",
       );
 
     error.code =
@@ -515,11 +590,9 @@ function validateVerifiedAdData(
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
 //
-// Tärkeää:
-//
 // Tämä funktio EI anna käyttäjälle STL:ää.
 //
-// Se ainoastaan:
+// Se:
 //
 // 1. tarkistaa varmennetun datan
 // 2. tarkistaa transaction_id:n
