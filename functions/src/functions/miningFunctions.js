@@ -56,7 +56,6 @@ const {
 
   ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
   ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
-
 } = require("../config/miningConfig");
 
 const {
@@ -1316,35 +1315,38 @@ function buildAchievementUpdate(
   const oldProgress =
     Math.max(
       0,
-      Math.floor(
-        getSafeNumber(
-          existingData.progress,
-          0
-        )
+      getSafeNumber(
+        existingData.progress,
+        0
       )
     );
 
   const safeTarget =
     Math.max(
       0,
-      Math.floor(
-        getSafeNumber(
-          target,
-          0
-        )
+      getSafeNumber(
+        target,
+        0
       )
     );
+
+  // ----------------------------------------------------------
+  // IMPORTANT:
+  // Älä pyöristä progressia alaspäin.
+  //
+  // Mining voi tuottaa murto-osia STL:stä. Jos progress
+  // pyöristetään jokaisessa transaktiossa alaspäin, osa
+  // achievement-progressista katoaa pysyvästi.
+  // ----------------------------------------------------------
 
   const safeProgress =
     Math.min(
       safeTarget,
       Math.max(
         oldProgress,
-        Math.floor(
-          getSafeNumber(
-            progress,
-            0
-          )
+        getSafeNonNegativeNumber(
+          progress,
+          0
         )
       )
     );
@@ -1459,9 +1461,7 @@ async function updateMiningAchievements(
       "little_miner",
       10,
       5,
-      Math.floor(
-        littleProgress
-      ),
+      littleProgress,
       littleMiner.data,
       now
     ),
@@ -1485,9 +1485,7 @@ async function updateMiningAchievements(
       "stl_hunter",
       100,
       10,
-      Math.floor(
-        hunterProgress
-      ),
+      hunterProgress,
       stlHunter.data,
       now
     ),
