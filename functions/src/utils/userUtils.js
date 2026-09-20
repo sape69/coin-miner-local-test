@@ -116,8 +116,12 @@ function getUserRef(
     );
 
   return db
-    .collection("users")
-    .doc(validUid);
+    .collection(
+      "users",
+    )
+    .doc(
+      validUid,
+    );
 }
 
 
