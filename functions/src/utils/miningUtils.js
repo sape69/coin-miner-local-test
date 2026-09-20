@@ -1,22 +1,32 @@
 "use strict";
 
 // ============================================================
-// 🐱 STELLA MINING UTILITIES
+// 🐱 STELLURIINI - MINING UTILITIES
 // ============================================================
 //
-// Stella Miningin keskitetty laskentalogiikka.
+// Keskitetty Stelluriini Mining -laskentalogiikka.
 //
-// ⛏️ Reaaliaikainen louhinta
-// ⏱️ 24 tunnin mining-jakso
-// ⚡ Daily Hash Rate
-// 💰 STL-tuoton laskenta
+// Vastuu:
+//
+// ⛏️ Mining-tuoton laskeminen
+// ⏱️ Mining-ajan käsittely
+// ⚡ Hash Rate -arvon turvallinen käsittely
+// 📅 Firestore Timestamp / Date / ISO / milliseconds
+// 🐱 Mining-status
 //
 // TÄRKEÄÄ:
 //
-// Tämä tiedosto vastaa vain mining-laskennasta.
+// Tämä tiedosto EI:
 //
-// Daily Hash Rate määritetään miningFunctions.js:ssä
-// Daily Streak -logiikan perusteella.
+// ❌ kirjoita Firestoreen
+// ❌ lisää STL-saldoa
+// ❌ käsittele Daily Streakia
+// ❌ käsittele Power Boostia
+// ❌ muuta adsToday-arvoa
+// ❌ muuta cooldownia
+// ❌ käynnistä mining-jaksoa
+//
+// Daily Hash Rate määritetään miningFunctions.js:ssä.
 //
 // Power Boost käsitellään erillisenä väliaikaisena
 // boostina miningFunctions.js:ssä.
@@ -34,7 +44,7 @@
 const {
   MINING_PER_HASH_PER_HOUR,
 } = require(
-  "../config/miningConfig"
+  "../config/miningConfig",
 );
 
 
@@ -44,24 +54,34 @@ const {
 //
 // Muuntaa Hash Raten turvallisesti numeroksi.
 //
-// 0 on sallittu.
+// Sallittu:
 //
-// Virheellinen tai negatiivinen arvo palautetaan arvona 0.
+// 0
+// positiivinen numero
+//
+// Virheellinen tai negatiivinen arvo
+// palautetaan arvona 0.
 //
 // ============================================================
 
 function getSafeHashRate(
-  value
+  value,
 ) {
   const number =
-    Number(value);
+    Number(
+      value,
+    );
+
 
   if (
-    Number.isFinite(number) &&
+    Number.isFinite(
+      number,
+    ) &&
     number >= 0
   ) {
     return number;
   }
+
 
   return 0;
 }
@@ -77,17 +97,23 @@ function getSafeHashRate(
 // ============================================================
 
 function getSafeElapsedMilliseconds(
-  value
+  value,
 ) {
   const number =
-    Number(value);
+    Number(
+      value,
+    );
+
 
   if (
-    Number.isFinite(number) &&
+    Number.isFinite(
+      number,
+    ) &&
     number >= 0
   ) {
     return number;
   }
+
 
   return 0;
 }
@@ -111,7 +137,7 @@ function getSafeElapsedMilliseconds(
 // ============================================================
 
 function getSafeDate(
-  value
+  value,
 ) {
   if (
     value === null ||
@@ -133,10 +159,11 @@ function getSafeDate(
       const date =
         value.toDate();
 
+
       if (
         date instanceof Date &&
         !Number.isNaN(
-          date.getTime()
+          date.getTime(),
         )
       ) {
         return date;
@@ -146,6 +173,7 @@ function getSafeDate(
     ) {
       return null;
     }
+
 
     return null;
   }
@@ -160,11 +188,12 @@ function getSafeDate(
   ) {
     if (
       Number.isNaN(
-        value.getTime()
+        value.getTime(),
       )
     ) {
       return null;
     }
+
 
     return value;
   }
@@ -175,10 +204,12 @@ function getSafeDate(
   // ==========================================================
 
   if (
-    typeof value === "string"
+    typeof value ===
+    "string"
   ) {
     const trimmed =
       value.trim();
+
 
     if (
       trimmed.length === 0
@@ -186,16 +217,21 @@ function getSafeDate(
       return null;
     }
 
+
     const date =
-      new Date(trimmed);
+      new Date(
+        trimmed,
+      );
+
 
     if (
       !Number.isNaN(
-        date.getTime()
+        date.getTime(),
       )
     ) {
       return date;
     }
+
 
     return null;
   }
@@ -206,15 +242,21 @@ function getSafeDate(
   // ==========================================================
 
   if (
-    typeof value === "number" &&
-    Number.isFinite(value)
+    typeof value ===
+      "number" &&
+    Number.isFinite(
+      value,
+    )
   ) {
     const date =
-      new Date(value);
+      new Date(
+        value,
+      );
+
 
     if (
       !Number.isNaN(
-        date.getTime()
+        date.getTime(),
       )
     ) {
       return date;
@@ -236,14 +278,20 @@ function getSafeDate(
 // ============================================================
 
 function getSafeNow(
-  value
+  value,
 ) {
   const date =
-    getSafeDate(value);
+    getSafeDate(
+      value,
+    );
 
-  if (date) {
+
+  if (
+    date
+  ) {
     return date;
   }
+
 
   return new Date();
 }
@@ -271,17 +319,19 @@ function getSafeNow(
 
 function calculateMining(
   hashRate,
-  elapsedMilliseconds
+  elapsedMilliseconds,
 ) {
   const safeHashRate =
     getSafeHashRate(
-      hashRate
+      hashRate,
     );
+
 
   const safeElapsedMilliseconds =
     getSafeElapsedMilliseconds(
-      elapsedMilliseconds
+      elapsedMilliseconds,
     );
+
 
   if (
     safeHashRate <= 0 ||
@@ -291,26 +341,34 @@ function calculateMining(
     return 0;
   }
 
+
   const hours =
     safeElapsedMilliseconds /
-    (1000 * 60 * 60);
+    (
+      1000 *
+      60 *
+      60
+    );
+
 
   const minedAmount =
     safeHashRate *
     MINING_PER_HASH_PER_HOUR *
     hours;
 
+
   if (
     !Number.isFinite(
-      minedAmount
+      minedAmount,
     )
   ) {
     return 0;
   }
 
+
   return Math.max(
     0,
-    minedAmount
+    minedAmount,
   );
 }
 
@@ -331,17 +389,19 @@ function calculateMining(
 // ============================================================
 
 function getMiningStartTime(
-  data
+  data,
 ) {
   if (
     !data ||
-    typeof data !== "object"
+    typeof data !==
+      "object"
   ) {
     return null;
   }
 
+
   return getSafeDate(
-    data.miningStartedAt
+    data.miningStartedAt,
   );
 }
 
@@ -362,17 +422,19 @@ function getMiningStartTime(
 // ============================================================
 
 function getMiningEndTime(
-  data
+  data,
 ) {
   if (
     !data ||
-    typeof data !== "object"
+    typeof data !==
+      "object"
   ) {
     return null;
   }
 
+
   return getSafeDate(
-    data.miningEndsAt
+    data.miningEndsAt,
   );
 }
 
@@ -398,11 +460,12 @@ function getMiningEndTime(
 
 function calculateMiningStatus(
   data,
-  now = new Date()
+  now = new Date(),
 ) {
   const safeData =
     data &&
-    typeof data === "object"
+    typeof data ===
+      "object"
       ? data
       : {};
 
@@ -413,7 +476,7 @@ function calculateMiningStatus(
 
   const hashRate =
     getSafeHashRate(
-      safeData.hashRate
+      safeData.hashRate,
     );
 
 
@@ -423,12 +486,13 @@ function calculateMiningStatus(
 
   const miningStartedAt =
     getMiningStartTime(
-      safeData
+      safeData,
     );
+
 
   const miningEndsAt =
     getMiningEndTime(
-      safeData
+      safeData,
     );
 
 
@@ -473,14 +537,17 @@ function calculateMiningStatus(
 
   const safeNow =
     getSafeNow(
-      now
+      now,
     );
+
 
   const nowMs =
     safeNow.getTime();
 
+
   const startMs =
     miningStartedAt.getTime();
+
 
   const endMs =
     miningEndsAt.getTime();
@@ -492,13 +559,13 @@ function calculateMiningStatus(
 
   if (
     !Number.isFinite(
-      nowMs
+      nowMs,
     ) ||
     !Number.isFinite(
-      startMs
+      startMs,
     ) ||
     !Number.isFinite(
-      endMs
+      endMs,
     ) ||
     endMs <= startMs
   ) {
@@ -575,21 +642,24 @@ function calculateMiningStatus(
       Math.max(
         0,
         nowMs -
-          startMs
+          startMs,
       );
+
 
     const remainingMs =
       Math.max(
         0,
         endMs -
-          nowMs
+          nowMs,
       );
+
 
     const minedAmount =
       calculateMining(
         hashRate,
-        elapsedMs
+        elapsedMs,
       );
+
 
     return {
       miningActive:
@@ -622,14 +692,16 @@ function calculateMiningStatus(
     Math.max(
       0,
       endMs -
-        startMs
+        startMs,
     );
+
 
   const minedAmount =
     calculateMining(
       hashRate,
-      fullDurationMs
+      fullDurationMs,
     );
+
 
   return {
     miningActive:
