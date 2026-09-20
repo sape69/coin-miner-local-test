@@ -1,31 +1,40 @@
 "use strict";
 
+
 // ============================================================
 // 🐱 STELLURIINI - MINING SERVICE
 // ============================================================
 //
-// Varsinainen server-authoritative mining-logiikka.
+// Vastaa Stelluriinin varsinaisesta mining-logiikasta.
 //
 // Vastuu:
 //
-// ⛏️ Mining cyclen hallinta
-// 📈 Hash Raten laskeminen
-// 🕒 Mining-ajan laskeminen
-// 🧮 Mining-tuoton laskeminen
-// ⚡ Power Boostin hallinta
-// 💾 Mining-tilan tallentaminen Firestoreen
-// 📜 Mining-tapahtumien historian luominen
+// ⛏️ Mining Start
+// 🕒 24 h mining-jakso
+// 💜 Daily Hash Rate
+// 💰 Mining Balance
+// 📺 Power Boost
+// ⚡ Power Boost -cooldown
+// 🔢 Daily Ad Limit
+// 📜 Mining History
+// 🛡️ AdMob Reward -claim
+// 🔐 Firestore transaction -turvallisuus
 //
 // TÄMÄ TIEDOSTO EI:
 //
-// ❌ varmista AdMob SSV-signaturea
-// ❌ käsittele AdMob public keytä
-// ❌ vastaanota HTTP callbackia
-// ❌ luota clientin lähettämään STL-määrään
-// ❌ anna clientin päättää mining-tuottoa
+// ❌ tarkista AdMob SSV-signatuuria
+// ❌ vastaanota AdMob callbackia
+// ❌ hae AdMob public keytä
 //
-// AdMob SSV käsitellään admobService.js / adMobReward
-// -kerroksessa.
+// AdMob SSV varmennetaan:
+//
+// services/admobService.js
+//
+// Varmennettu reward tallennetaan:
+//
+// functions/src/functions/adMobFunctions.js
+//
+// Varsinainen rewardin käyttö tehdään täällä.
 //
 // ============================================================
 
@@ -43,21 +52,11 @@ const {
 
 
 // ============================================================
-// ⚙️ MINING CONFIG
-// ============================================================
-
-const miningConfig =
-  require(
-    "../config/miningConfig",
-  );
-
-
-// ============================================================
 // 👤 USER UTILITIES
 // ============================================================
 
 const {
-  getUserRef,
+  getAdMobRewardRef,
 } = require(
   "../utils/userUtils",
 );
@@ -75,213 +74,101 @@ const {
 
 
 // ============================================================
-// ⚙️ CONFIG HELPERS
-// ============================================================
-//
-// Koska miningConfigia on kehitetty vaiheittain,
-// tuetaan tässä myös vanhoja/eri nimisiä config-exportteja.
-//
-// Varsinaiset nykyiset arvot pidetään Stelluriinin
-// tämänhetkisen mining-mallin mukaisina.
-//
+// ⚙️ MINING CONFIG
 // ============================================================
 
-function getConfigNumber(
-  names,
-  fallback,
-) {
-  for (
-    const name of names
-  ) {
-    const value =
-      miningConfig[name];
+const {
+  DAILY_HASH_RATE_START,
 
-    const number =
-      Number(value);
+  DAILY_HASH_RATE_STEP,
 
-    if (
-      Number.isFinite(number)
-    ) {
-      return number;
-    }
-  }
+  DAILY_HASH_RATE_MAX_DAY,
 
-  return fallback;
-}
+  MAX_DAILY_HASH_RATE,
+
+  AD_HASH_RATE_BONUS,
+
+  AD_BOOST_DURATION_MS,
+
+  MAX_ADS_PER_DAY,
+
+  AD_COOLDOWN_MS,
+
+  MINING_DURATION_MS,
+
+  MINING_PER_HASH_PER_HOUR,
+} = require(
+  "../config/miningConfig",
+);
 
 
 // ============================================================
-// ⛏️ MINING CONSTANTS
+// 🎯 REWARD PURPOSES
 // ============================================================
 
-const DEFAULT_HASH_RATE =
-  getConfigNumber(
-    [
-      "DEFAULT_HASH_RATE",
-      "BASE_HASH_RATE",
-      "MINING_BASE_HASH_RATE",
-    ],
-    0.5,
-  );
+const REWARD_MINING_START =
+  "mining_start";
 
-
-const DAILY_HASH_RATE_STEP =
-  getConfigNumber(
-    [
-      "DAILY_HASH_RATE_STEP",
-      "DAILY_HASH_RATE_BONUS",
-      "HASH_RATE_DAILY_BONUS",
-    ],
-    0.5,
-  );
-
-
-const MAX_HASH_RATE =
-  getConfigNumber(
-    [
-      "MAX_HASH_RATE",
-      "MAX_MINING_HASH_RATE",
-    ],
-    3.5,
-  );
-
-
-const MAX_HASH_RATE_DAY =
-  getConfigNumber(
-    [
-      "MAX_HASH_RATE_DAY",
-      "MAX_DAILY_HASH_RATE_DAY",
-      "MAX_HASH_RATE_AT_DAY",
-    ],
-    7,
-  );
+const REWARD_POWER_BOOST =
+  "power_boost";
 
 
 // ============================================================
-// ⚡ POWER BOOST
+// 👤 CREATE USER REFERENCE
 // ============================================================
 
-const POWER_BOOST_HASH_RATE =
-  getConfigNumber(
-    [
-      "POWER_BOOST_HASH_RATE",
-      "POWER_BOOST_BONUS",
-      "POWER_BOOST_HASH_RATE_BONUS",
-      "POWER_BOOST_HR_BONUS",
-    ],
-    0.5833,
-  );
-
-
-const POWER_BOOST_DURATION_MS =
-  getConfigNumber(
-    [
-      "POWER_BOOST_DURATION_MS",
-    ],
-    4 * 60 * 60 * 1000,
-  );
-
-
-// ============================================================
-// ⏱️ MINING DURATION
-// ============================================================
-
-const MINING_DURATION_MS =
-  getConfigNumber(
-    [
-      "MINING_DURATION_MS",
-    ],
-    24 * 60 * 60 * 1000,
-  );
-
-
-// ============================================================
-// 🧮 MINING YIELD
-// ============================================================
-
-const MINING_PER_HASH_PER_HOUR =
-  getConfigNumber(
-    [
-      "MINING_PER_HASH_PER_HOUR",
-      "STL_PER_HASH_PER_HOUR",
-    ],
-    0.10,
-  );
-
-
-// ============================================================
-// 🔢 PRECISION
-// ============================================================
-//
-// Firestoreen tallennettava mining-arvo pyöristetään
-// turvallisesti kuuteen desimaaliin.
-//
-// Tämä ei muuta laskennan server-authoritative luonnetta.
-//
-// ============================================================
-
-const MINING_DECIMAL_PLACES =
-  6;
-
-
-function roundMiningAmount(
-  value,
-) {
-  const number =
-    Number(value);
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return 0;
-  }
-
-  const multiplier =
-    10 **
-    MINING_DECIMAL_PLACES;
-
-  return (
-    Math.round(
-      number *
-        multiplier,
-    ) /
-    multiplier
-  );
-}
-
-
-// ============================================================
-// 👤 VALIDATE UID
-// ============================================================
-
-function validateUid(
+function getUserRef(
   uid,
 ) {
   if (
     typeof uid !==
-    "string"
+      "string"
   ) {
-    return false;
+    const error =
+      new Error(
+        "Invalid user UID.",
+      );
+
+    error.code =
+      "MINING_INVALID_UID";
+
+    throw error;
   }
+
 
   const value =
     uid.trim();
 
+
   if (
-    value.length === 0 ||
-    value.length > 128
+    !/^[A-Za-z0-9._-]{1,128}$/.test(
+      value,
+    )
   ) {
-    return false;
+    const error =
+      new Error(
+        "Invalid user UID.",
+      );
+
+    error.code =
+      "MINING_INVALID_UID";
+
+    throw error;
   }
 
-  return /^[A-Za-z0-9._-]+$/.test(
-    value,
-  );
+
+  return db
+    .collection(
+      "users",
+    )
+    .doc(
+      value,
+    );
 }
 
 
 // ============================================================
-// 🕒 DATE CONVERSION
+// ⏱️ FIRESTORE VALUE -> MILLISECONDS
 // ============================================================
 
 function toMillis(
@@ -296,35 +183,13 @@ function toMillis(
 
 
   if (
-    typeof value === "number"
+    typeof value ===
+      "number"
   ) {
     return Number.isFinite(
       value,
     )
       ? value
-      : 0;
-  }
-
-
-  if (
-    typeof value === "string"
-  ) {
-    const number =
-      Number(value);
-
-    if (
-      Number.isFinite(number)
-    ) {
-      return number;
-    }
-
-    const parsed =
-      Date.parse(value);
-
-    return Number.isFinite(
-      parsed,
-    )
-      ? parsed
       : 0;
   }
 
@@ -338,15 +203,26 @@ function toMillis(
 
   if (
     typeof value.toMillis ===
-    "function"
+      "function"
   ) {
-    const millis =
-      value.toMillis();
+    return value.toMillis();
+  }
+
+
+  if (
+    typeof value ===
+      "string"
+  ) {
+    const milliseconds =
+      Date.parse(
+        value,
+      );
+
 
     return Number.isFinite(
-      millis,
+      milliseconds,
     )
-      ? millis
+      ? milliseconds
       : 0;
   }
 
@@ -356,392 +232,233 @@ function toMillis(
 
 
 // ============================================================
-// 📅 DAY NUMBER
-// ============================================================
-//
-// Käytetään käyttäjän mining progression
-// laskemiseen.
-//
-// Päivä 1 = 0.5 HR
-// Päivä 2 = 1.0 HR
-// ...
-// Päivä 7 = 3.5 HR
-// Päivä 8+ = 3.5 HR
-//
+// 💰 ROUND STL
 // ============================================================
 
-function getMiningDay(
-  userData,
+function roundStl(
+  value,
 ) {
-  const candidates = [
-    userData.miningDay,
-    userData.currentMiningDay,
-    userData.day,
-    userData.streak,
-  ];
-
-
-  for (
-    const candidate of candidates
+  if (
+    !Number.isFinite(
+      value,
+    )
   ) {
-    const value =
-      Number(candidate);
-
-    if (
-      Number.isSafeInteger(
-        value,
-      ) &&
-      value > 0
-    ) {
-      return value;
-    }
+    return 0;
   }
 
 
-  return 1;
+  return (
+    Math.round(
+      value * 1000000,
+    ) /
+    1000000
+  );
 }
 
 
 // ============================================================
-// 📈 CALCULATE BASE HASH RATE
+// 🗓️ UTC DATE KEY
+// ============================================================
+//
+// Ad limit käyttää UTC-päivää.
+//
+// Esimerkiksi:
+//
+// 2026-09-20
+//
 // ============================================================
 
-function calculateBaseHashRate(
-  miningDay,
+function getUtcDateKey(
+  milliseconds = Date.now(),
 ) {
-  const day =
-    Math.max(
-      1,
-      Number(
-        miningDay,
-      ) || 1,
+  return new Date(
+    milliseconds,
+  )
+    .toISOString()
+    .slice(
+      0,
+      10,
+    );
+}
+
+
+// ============================================================
+// 💜 DAILY HASH RATE
+// ============================================================
+//
+// Päivä 1 = 0.5 HR
+// Päivä 2 = 1.0 HR
+// Päivä 3 = 1.5 HR
+// ...
+// Päivä 7+ = 3.5 HR
+//
+// ============================================================
+
+function getDailyHashRate(
+  streak,
+) {
+  const numericStreak =
+    Number(
+      streak,
     );
 
 
-  const progressionDay =
+  const day =
+    Number.isFinite(
+      numericStreak,
+    )
+      ? Math.max(
+          1,
+          Math.floor(
+            numericStreak,
+          ),
+        )
+      : 1;
+
+
+  const cappedDay =
     Math.min(
       day,
-      MAX_HASH_RATE_DAY,
+      DAILY_HASH_RATE_MAX_DAY,
     );
 
 
   const hashRate =
-    DEFAULT_HASH_RATE +
+    DAILY_HASH_RATE_START +
     (
-      progressionDay - 1
+      cappedDay - 1
     ) *
       DAILY_HASH_RATE_STEP;
 
 
-  return roundMiningAmount(
+  return Math.min(
+    MAX_DAILY_HASH_RATE,
+    hashRate,
+  );
+}
+
+
+// ============================================================
+// ⚡ BOOST OVERLAP
+// ============================================================
+//
+// Laskee kuinka monta tuntia Power Boost
+// oli aktiivinen mining-jakson sisällä.
+//
+// ============================================================
+
+function getBoostOverlapHours(
+  miningStartMs,
+  miningEndMs,
+  boostStartMs,
+  boostEndMs,
+) {
+  const start =
+    Math.max(
+      miningStartMs,
+      boostStartMs,
+    );
+
+
+  const end =
     Math.min(
-      hashRate,
-      MAX_HASH_RATE,
-    ),
-  );
-}
-
-
-// ============================================================
-// 📈 GET EFFECTIVE HASH RATE
-// ============================================================
-
-function calculateEffectiveHashRate(
-  baseHashRate,
-  powerBoostActive,
-) {
-  const base =
-    Number(
-      baseHashRate,
+      miningEndMs,
+      boostEndMs,
     );
 
 
   if (
-    !Number.isFinite(base) ||
-    base < 0
-  ) {
-    return 0;
-  }
-
-
-  const effective =
-    powerBoostActive
-      ? base +
-        POWER_BOOST_HASH_RATE
-      : base;
-
-
-  return roundMiningAmount(
-    effective,
-  );
-}
-
-
-// ============================================================
-// ⚡ POWER BOOST ACTIVE CHECK
-// ============================================================
-
-function isPowerBoostActive(
-  powerBoostStartedAt,
-  nowMs = Date.now(),
-) {
-  const startedAt =
-    toMillis(
-      powerBoostStartedAt,
-    );
-
-
-  if (
-    startedAt <= 0
-  ) {
-    return false;
-  }
-
-
-  return (
-    nowMs <
-    startedAt +
-      POWER_BOOST_DURATION_MS
-  );
-}
-
-
-// ============================================================
-// ⚡ POWER BOOST END
-// ============================================================
-
-function calculatePowerBoostEndsAt(
-  startedAt,
-) {
-  const startMs =
-    toMillis(
-      startedAt,
-    );
-
-
-  if (
-    startMs <= 0
+    end <= start
   ) {
     return 0;
   }
 
 
   return (
-    startMs +
-    POWER_BOOST_DURATION_MS
-  );
-}
-
-
-// ============================================================
-// ⏱️ MINING END
-// ============================================================
-
-function calculateMiningEndsAt(
-  startedAt,
-) {
-  const startMs =
-    toMillis(
-      startedAt,
-    );
-
-
-  if (
-    startMs <= 0
-  ) {
-    return 0;
-  }
-
-
-  return (
-    startMs +
-    MINING_DURATION_MS
-  );
-}
-
-
-// ============================================================
-// ⏳ MINING ACTIVE
-// ============================================================
-
-function isMiningActive(
-  miningStartedAt,
-  miningEndsAt,
-  nowMs = Date.now(),
-) {
-  const startedAt =
-    toMillis(
-      miningStartedAt,
-    );
-
-
-  const endsAt =
-    toMillis(
-      miningEndsAt,
-    );
-
-
-  if (
-    startedAt <= 0 ||
-    endsAt <= 0
-  ) {
-    return false;
-  }
-
-
-  return (
-    nowMs >= startedAt &&
-    nowMs < endsAt
-  );
-}
-
-
-// ============================================================
-// ⏱️ ELAPSED MINING HOURS
-// ============================================================
-
-function calculateElapsedMiningHours(
-  miningStartedAt,
-  miningEndsAt,
-  nowMs = Date.now(),
-) {
-  const startedAt =
-    toMillis(
-      miningStartedAt,
-    );
-
-
-  const endsAt =
-    toMillis(
-      miningEndsAt,
-    );
-
-
-  if (
-    startedAt <= 0 ||
-    endsAt <= 0 ||
-    endsAt <= startedAt
-  ) {
-    return 0;
-  }
-
-
-  const effectiveNow =
-    Math.min(
-      Math.max(
-        nowMs,
-        startedAt,
-      ),
-      endsAt,
-    );
-
-
-  const elapsedMs =
-    effectiveNow -
-    startedAt;
-
-
-  if (
-    elapsedMs <= 0
-  ) {
-    return 0;
-  }
-
-
-  return (
-    elapsedMs /
+    end - start
+  ) /
     (
       60 *
       60 *
       1000
-    )
-  );
+    );
 }
 
 
 // ============================================================
-// 🧮 CALCULATE MINING REWARD
+// 💰 CALCULATE MINING REWARD
 // ============================================================
 //
-// Formula:
+// Base:
 //
 // Hash Rate
-// ×
-// STL per Hash per Hour
-// ×
-// elapsed hours
+// × STL / Hash / Hour
+// × Mining Hours
 //
-// Power Boostin vaikutus otetaan huomioon
-// aikajaksoittain.
+// Power Boost:
+//
+// Boost Hash Rate
+// × STL / Hash / Hour
+// × Boost Hours
 //
 // ============================================================
 
-function calculateMiningReward(
+function calculateMiningReward({
   miningStartedAt,
+
   miningEndsAt,
-  baseHashRate,
-  powerBoostStartedAt = null,
-  nowMs = Date.now(),
-) {
-  const startedAt =
+
+  miningHashRate,
+
+  powerBoostHistory = [],
+
+  adBoostStartedAt = null,
+
+  adBoostEndsAt = null,
+}) {
+  const miningStartMs =
     toMillis(
       miningStartedAt,
     );
 
 
-  const endsAt =
+  const miningEndMs =
     toMillis(
       miningEndsAt,
     );
 
 
   if (
-    startedAt <= 0 ||
-    endsAt <= startedAt
+    !miningStartMs ||
+    !miningEndMs ||
+    miningEndMs <=
+      miningStartMs
   ) {
-    return {
-      amount:
-        0,
-
-      elapsedHours:
-        0,
-
-      baseHashRate:
-        roundMiningAmount(
-          Number(
-            baseHashRate,
-          ) || 0,
-        ),
-
-      powerBoostHours:
-        0,
-
-      normalHours:
-        0,
-    };
+    return 0;
   }
 
 
-  const effectiveNow =
-    Math.min(
-      Math.max(
-        nowMs,
-        startedAt,
-      ),
-      endsAt,
+  const hashRate =
+    Number(
+      miningHashRate,
     );
 
 
-  const totalElapsedMs =
-    Math.max(
-      0,
-      effectiveNow -
-        startedAt,
-    );
+  if (
+    !Number.isFinite(
+      hashRate,
+    ) ||
+    hashRate <= 0
+  ) {
+    return 0;
+  }
 
 
-  const totalElapsedHours =
-    totalElapsedMs /
+  const miningHours =
+    (
+      miningEndMs -
+      miningStartMs
+    ) /
     (
       60 *
       60 *
@@ -749,348 +466,430 @@ function calculateMiningReward(
     );
 
 
+  const baseReward =
+    hashRate *
+    MINING_PER_HASH_PER_HOUR *
+    miningHours;
+
+
+  // ----------------------------------------------------------
+  // POWER BOOSTS
+  // ----------------------------------------------------------
+
+  let boosts =
+    Array.isArray(
+      powerBoostHistory,
+    )
+      ? powerBoostHistory
+      : [];
+
+
+  // ----------------------------------------------------------
+  // BACKWARD COMPATIBILITY
+  // ----------------------------------------------------------
+  //
+  // Jos vanhassa käyttäjädokumentissa ei vielä ole
+  // powerBoostHistory-kenttää, käytetään nykyisiä
+  // adBoostStartedAt / adBoostEndsAt -kenttiä.
+  //
+  // ----------------------------------------------------------
+
   if (
-    totalElapsedHours <= 0
+    boosts.length === 0 &&
+    adBoostStartedAt &&
+    adBoostEndsAt
   ) {
-    return {
-      amount:
-        0,
+    boosts = [
+      {
+        startedAt:
+          adBoostStartedAt,
 
-      elapsedHours:
-        0,
+        endsAt:
+          adBoostEndsAt,
 
-      baseHashRate:
-        roundMiningAmount(
-          Number(
-            baseHashRate,
-          ) || 0,
-        ),
-
-      powerBoostHours:
-        0,
-
-      normalHours:
-        0,
-    };
+        hashRateBonus:
+          AD_HASH_RATE_BONUS,
+      },
+    ];
   }
 
 
-  // ----------------------------------------------------------
-  // POWER BOOST WINDOW
-  // ----------------------------------------------------------
-
-  const boostStartedAt =
-    toMillis(
-      powerBoostStartedAt,
-    );
-
-
-  let powerBoostHours =
+  let boostReward =
     0;
 
 
-  if (
-    boostStartedAt > 0 &&
-    boostStartedAt <
-      effectiveNow
+  for (
+    const boost of boosts
   ) {
-    const boostEnd =
-      boostStartedAt +
-      POWER_BOOST_DURATION_MS;
-
-
-    const boostEffectiveEnd =
-      Math.min(
-        boostEnd,
-        effectiveNow,
-        endsAt,
+    const boostStartMs =
+      toMillis(
+        boost.startedAt,
       );
 
 
-    const boostStart =
-      Math.max(
-        boostStartedAt,
-        startedAt,
+    const boostEndMs =
+      toMillis(
+        boost.endsAt,
+      );
+
+
+    const bonus =
+      Number(
+        boost.hashRateBonus,
       );
 
 
     if (
-      boostEffectiveEnd >
-      boostStart
+      !boostStartMs ||
+      !boostEndMs ||
+      boostEndMs <=
+        boostStartMs
     ) {
-      powerBoostHours =
-        (
-          boostEffectiveEnd -
-          boostStart
-        ) /
-        (
-          60 *
-          60 *
-          1000
-        );
+      continue;
     }
+
+
+    if (
+      !Number.isFinite(
+        bonus,
+      ) ||
+      bonus <= 0
+    ) {
+      continue;
+    }
+
+
+    const boostHours =
+      getBoostOverlapHours(
+        miningStartMs,
+        miningEndMs,
+        boostStartMs,
+        boostEndMs,
+      );
+
+
+    boostReward +=
+      bonus *
+      MINING_PER_HASH_PER_HOUR *
+      boostHours;
   }
 
 
-  powerBoostHours =
-    Math.min(
-      powerBoostHours,
-      totalElapsedHours,
-    );
-
-
-  const normalHours =
-    Math.max(
-      0,
-      totalElapsedHours -
-        powerBoostHours,
-    );
-
-
-  const safeBaseHashRate =
-    Math.max(
-      0,
-      Number(
-        baseHashRate,
-      ) || 0,
-    );
-
-
-  const normalReward =
-    safeBaseHashRate *
-    MINING_PER_HASH_PER_HOUR *
-    normalHours;
-
-
-  const boostedReward =
-    (
-      safeBaseHashRate +
-      POWER_BOOST_HASH_RATE
-    ) *
-    MINING_PER_HASH_PER_HOUR *
-    powerBoostHours;
-
-
-  const amount =
-    roundMiningAmount(
-      normalReward +
-        boostedReward,
-    );
-
-
-  return {
-    amount,
-
-    elapsedHours:
-      totalElapsedHours,
-
-    baseHashRate:
-      roundMiningAmount(
-        safeBaseHashRate,
-      ),
-
-    powerBoostHours,
-
-    normalHours,
-
-    normalReward:
-      roundMiningAmount(
-        normalReward,
-      ),
-
-    boostedReward:
-      roundMiningAmount(
-        boostedReward,
-      ),
-  };
+  return roundStl(
+    baseReward +
+      boostReward,
+  );
 }
 
 
 // ============================================================
-// 🧮 GET CURRENT MINING PREVIEW
-// ============================================================
-//
-// Tätä voidaan käyttää esimerkiksi HomePagen
-// live mining -näkymässä.
-//
-// Tämä EI kirjoita Firestoreen.
-//
+// 🛡️ VALIDATE ADMOB REWARD DOCUMENT
 // ============================================================
 
-function calculateCurrentMiningState(
-  userData,
-  nowMs = Date.now(),
-) {
-  const data =
-    userData || {};
-
-
-  const miningStartedAt =
-    data.miningStartedAt ||
-    data.miningStartAt ||
-    null;
-
-
-  const miningEndsAt =
-    data.miningEndsAt ||
-    data.miningEndAt ||
-    (
-      toMillis(
-        miningStartedAt,
-      ) > 0
-        ? calculateMiningEndsAt(
-            miningStartedAt,
-          )
-        : null
-    );
-
-
-  const miningDay =
-    getMiningDay(
-      data,
-    );
-
-
-  const baseHashRate =
-    Number.isFinite(
-      Number(
-        data.miningBaseHashRate,
-      ),
-    )
-      ? Number(
-          data.miningBaseHashRate,
-        )
-      : calculateBaseHashRate(
-          miningDay,
-        );
-
-
-  const powerBoostStartedAt =
-    data.powerBoostStartedAt ||
-    null;
-
-
-  const powerBoostActive =
-    isPowerBoostActive(
-      powerBoostStartedAt,
-      nowMs,
-    );
-
-
-  const effectiveHashRate =
-    calculateEffectiveHashRate(
-      baseHashRate,
-      powerBoostActive,
-    );
-
-
-  const miningActive =
-    isMiningActive(
-      miningStartedAt,
-      miningEndsAt,
-      nowMs,
-    );
-
-
-  const reward =
-    calculateMiningReward(
-      miningStartedAt,
-      miningEndsAt,
-      baseHashRate,
-      powerBoostStartedAt,
-      nowMs,
-    );
-
-
-  const remainingMs =
-    miningActive
-      ? Math.max(
-          0,
-          toMillis(
-            miningEndsAt,
-          ) -
-            nowMs,
-        )
-      : 0;
-
-
-  return {
-    miningActive,
-
-    miningStartedAt,
-
-    miningEndsAt,
-
-    miningDay,
-
-    baseHashRate:
-      roundMiningAmount(
-        baseHashRate,
-      ),
-
-    powerBoostActive,
-
-    powerBoostStartedAt,
-
-    powerBoostEndsAt:
-      powerBoostStartedAt
-        ? calculatePowerBoostEndsAt(
-            powerBoostStartedAt,
-          )
-        : null,
-
-    effectiveHashRate,
-
-    elapsedHours:
-      reward.elapsedHours,
-
-    remainingMs,
-
-    pendingMiningReward:
-      reward.amount,
-
-    powerBoostHours:
-      reward.powerBoostHours,
-  };
-}
-
-
-// ============================================================
-// ⛏️ START MINING
-// ============================================================
-//
-// Aloittaa uuden 24 h mining-cyclen.
-//
-// Tärkeää:
-//
-// Tämä funktio ei luota clientin lähettämään
-// hash rateen tai reward amountiin.
-//
-// Hash rate lasketaan serverillä.
-//
-// ============================================================
-
-async function startMining(
+function validateRewardDocument(
+  data,
   uid,
-  options = {},
+  transactionId,
+  rewardPurpose,
 ) {
   if (
-    !validateUid(
-      uid,
-    )
+    !data
   ) {
     const error =
       new Error(
-        "Invalid user UID.",
+        "AdMob reward document does not exist.",
       );
 
     error.code =
-      "MINING_INVALID_UID";
+      "MINING_REWARD_NOT_FOUND";
 
     throw error;
   }
 
 
+  if (
+    data.uid !== uid
+  ) {
+    const error =
+      new Error(
+        "AdMob reward UID does not match user UID.",
+      );
+
+    error.code =
+      "MINING_REWARD_UID_MISMATCH";
+
+    throw error;
+  }
+
+
+  if (
+    data.transactionId !==
+      transactionId
+  ) {
+    const error =
+      new Error(
+        "AdMob reward transaction ID mismatch.",
+      );
+
+    error.code =
+      "MINING_REWARD_TRANSACTION_MISMATCH";
+
+    throw error;
+  }
+
+
+  if (
+    data.rewardPurpose !==
+      rewardPurpose
+  ) {
+    const error =
+      new Error(
+        "AdMob reward purpose is invalid.",
+      );
+
+    error.code =
+      "MINING_REWARD_PURPOSE_MISMATCH";
+
+    throw error;
+  }
+}
+
+
+// ============================================================
+// ❌ MINING ERROR HELPER
+// ============================================================
+
+function throwMiningError(
+  code,
+  message,
+) {
+  const error =
+    new Error(
+      message,
+    );
+
+  error.code =
+    code;
+
+  throw error;
+}
+
+
+// ============================================================
+// 📊 GET MINING STATUS
+// ============================================================
+
+async function getMiningStatus(
+  uid,
+) {
+  const userRef =
+    getUserRef(
+      uid,
+    );
+
+
+  const snapshot =
+    await userRef.get();
+
+
+  if (
+    !snapshot.exists
+  ) {
+    throwMiningError(
+      "MINING_USER_NOT_FOUND",
+      "User document does not exist.",
+    );
+  }
+
+
+  const data =
+    snapshot.data() || {};
+
+
+  const now =
+    Date.now();
+
+
+  const miningStartedMs =
+    toMillis(
+      data.miningStartedAt,
+    );
+
+
+  const miningEndsMs =
+    toMillis(
+      data.miningEndsAt,
+    );
+
+
+  const miningActive =
+    miningStartedMs > 0 &&
+    miningEndsMs > now;
+
+
+  const miningCompleted =
+    miningStartedMs > 0 &&
+    miningEndsMs > 0 &&
+    miningEndsMs <= now;
+
+
+  const boostStartedMs =
+    toMillis(
+      data.adBoostStartedAt,
+    );
+
+
+  const boostEndsMs =
+    toMillis(
+      data.adBoostEndsAt,
+    );
+
+
+  const boostActive =
+    miningActive &&
+    boostStartedMs > 0 &&
+    boostEndsMs > now;
+
+
+  const lastAdRewardMs =
+    toMillis(
+      data.lastAdRewardAt,
+    );
+
+
+  const lastAdDate =
+    typeof data.lastAdDate ===
+      "string"
+      ? data.lastAdDate
+      : "";
+
+
+  const today =
+    getUtcDateKey(
+      now,
+    );
+
+
+  const adsToday =
+    lastAdDate === today
+      ? Math.max(
+          0,
+          Number(
+            data.adsToday,
+          ) || 0,
+        )
+      : 0;
+
+
+  const cooldownRemainingMs =
+    lastAdRewardMs > 0
+      ? Math.max(
+          0,
+          AD_COOLDOWN_MS -
+            (
+              now -
+              lastAdRewardMs
+            ),
+        )
+      : 0;
+
+
+  return {
+    success:
+      true,
+
+    uid:
+      userRef.id,
+
+    miningActive,
+
+    miningCompleted,
+
+    miningStartedAt:
+      data.miningStartedAt ||
+      null,
+
+    miningEndsAt:
+      data.miningEndsAt ||
+      null,
+
+    miningHashRate:
+      Number(
+        data.miningHashRate,
+      ) || 0,
+
+    dailyHashRate:
+      Number(
+        data.dailyHashRate,
+      ) || 0,
+
+    miningBalance:
+      Number(
+        data.miningBalance,
+      ) || 0,
+
+    boostActive,
+
+    boostRemainingMs:
+      boostActive
+        ? Math.max(
+            0,
+            boostEndsMs -
+              now,
+          )
+        : 0,
+
+    adBoostStartedAt:
+      data.adBoostStartedAt ||
+      null,
+
+    adBoostEndsAt:
+      data.adBoostEndsAt ||
+      null,
+
+    powerBoostTransactionId:
+      data.powerBoostTransactionId ||
+      null,
+
+    adsToday,
+
+    maxAdsPerDay:
+      MAX_ADS_PER_DAY,
+
+    adHashRateBonus:
+      AD_HASH_RATE_BONUS,
+
+    adCooldownMs:
+      AD_COOLDOWN_MS,
+
+    cooldownRemainingMs,
+  };
+}
+
+
+// ============================================================
+// ⛏️ CLAIM MINING / START NEXT CYCLE
+// ============================================================
+//
+// Käyttää varmennettua:
+//
+// rewardPurpose = mining_start
+//
+// AdMob reward kulutetaan vasta tässä vaiheessa.
+//
+// Jos edellinen mining-jakso on valmis:
+//
+// 1. lasketaan edellisen jakson tuotto
+// 2. lisätään se miningBalanceen
+// 3. käynnistetään uusi 24 h mining
+// 4. kulutetaan Mining Start -reward
+//
+// ============================================================
+
+async function claimMining(
+  uid,
+  transactionId,
+) {
   const userRef =
     getUserRef(
       uid,
@@ -1098,17 +897,36 @@ async function startMining(
 
 
   if (
-    !userRef
+    typeof transactionId !==
+      "string" ||
+    !/^[A-Fa-f0-9]{1,256}$/.test(
+      transactionId.trim(),
+    )
   ) {
-    const error =
-      new Error(
-        "Unable to create user reference.",
-      );
+    throwMiningError(
+      "MINING_INVALID_TRANSACTION_ID",
+      "Invalid mining AdMob transaction ID.",
+    );
+  }
 
-    error.code =
-      "MINING_USER_REFERENCE_ERROR";
 
-    throw error;
+  transactionId =
+    transactionId.trim();
+
+
+  const rewardRef =
+    getAdMobRewardRef(
+      transactionId,
+    );
+
+
+  if (
+    !rewardRef
+  ) {
+    throwMiningError(
+      "MINING_REWARD_REFERENCE_ERROR",
+      "Unable to create AdMob reward reference.",
+    );
   }
 
 
@@ -1116,109 +934,227 @@ async function startMining(
     async (
       transaction,
     ) => {
-      const snapshot =
+      // ------------------------------------------------------
+      // READS
+      // ------------------------------------------------------
+
+      const userSnapshot =
         await transaction.get(
           userRef,
         );
 
 
-      const userData =
-        snapshot.exists
-          ? snapshot.data() || {}
-          : {};
-
-
-      const nowMs =
-        Date.now();
-
-
-      const currentMining =
-        calculateCurrentMiningState(
-          userData,
-          nowMs,
+      const rewardSnapshot =
+        await transaction.get(
+          rewardRef,
         );
 
 
+      if (
+        !userSnapshot.exists
+      ) {
+        throwMiningError(
+          "MINING_USER_NOT_FOUND",
+          "User document does not exist.",
+        );
+      }
+
+
+      validateRewardDocument(
+        rewardSnapshot.exists
+          ? rewardSnapshot.data()
+          : null,
+
+        uid,
+
+        transactionId,
+
+        REWARD_MINING_START,
+      );
+
+
+      const rewardData =
+        rewardSnapshot.data();
+
+
       // ------------------------------------------------------
-      // ALREADY ACTIVE
+      // DUPLICATE PROTECTION
       // ------------------------------------------------------
 
       if (
-        currentMining.miningActive
+        rewardData.miningStartClaimed ===
+          true ||
+        rewardData.miningClaimed ===
+          true
       ) {
-        const error =
-          new Error(
-            "Mining is already active.",
-          );
+        throwMiningError(
+          "MINING_REWARD_ALREADY_CLAIMED",
+          "This Mining Start reward has already been claimed.",
+        );
+      }
 
-        error.code =
-          "MINING_ALREADY_ACTIVE";
 
-        throw error;
+      const user =
+        userSnapshot.data() || {};
+
+
+      const now =
+        Date.now();
+
+
+      // ------------------------------------------------------
+      // PREVIOUS MINING
+      // ------------------------------------------------------
+
+      const previousMiningStart =
+        toMillis(
+          user.miningStartedAt,
+        );
+
+
+      const previousMiningEnd =
+        toMillis(
+          user.miningEndsAt,
+        );
+
+
+      const miningActive =
+        previousMiningStart > 0 &&
+        previousMiningEnd > now;
+
+
+      if (
+        miningActive
+      ) {
+        throwMiningError(
+          "MINING_ALREADY_ACTIVE",
+          "Mining is already active.",
+        );
       }
 
 
       // ------------------------------------------------------
-      // MINING DAY
+      // COMPLETE PREVIOUS CYCLE
       // ------------------------------------------------------
 
-      const miningDay =
-        getMiningDay(
-          userData,
+      let previousMiningReward =
+        0;
+
+
+      if (
+        previousMiningStart > 0 &&
+        previousMiningEnd > 0 &&
+        previousMiningEnd <= now
+      ) {
+        previousMiningReward =
+          calculateMiningReward({
+            miningStartedAt:
+              user.miningStartedAt,
+
+            miningEndsAt:
+              user.miningEndsAt,
+
+            miningHashRate:
+              user.miningHashRate,
+
+            powerBoostHistory:
+              user.powerBoostHistory,
+
+            adBoostStartedAt:
+              user.adBoostStartedAt,
+
+            adBoostEndsAt:
+              user.adBoostEndsAt,
+          });
+      }
+
+
+      // ------------------------------------------------------
+      // BALANCE
+      // ------------------------------------------------------
+
+      const currentBalance =
+        Number(
+          user.miningBalance,
+        ) || 0;
+
+
+      const newBalance =
+        roundStl(
+          currentBalance +
+            previousMiningReward,
         );
 
 
-      const baseHashRate =
-        calculateBaseHashRate(
-          miningDay,
+      // ------------------------------------------------------
+      // NEW DAILY HASH RATE
+      // ------------------------------------------------------
+
+      const dailyHashRate =
+        getDailyHashRate(
+          user.streak,
         );
 
+
+      // ------------------------------------------------------
+      // NEW MINING CYCLE
+      // ------------------------------------------------------
 
       const miningStartedAt =
-        FieldValue.serverTimestamp();
+        new Date(
+          now,
+        );
 
 
-      const miningEndsAtMs =
-        nowMs +
-        MINING_DURATION_MS;
+      const miningEndsAt =
+        new Date(
+          now +
+            MINING_DURATION_MS,
+        );
 
 
       // ------------------------------------------------------
-      // SAVE
+      // HISTORY REFERENCE
+      // ------------------------------------------------------
+
+      const miningHistoryRef =
+        createHistoryRef(
+          uid,
+        );
+
+
+      // ------------------------------------------------------
+      // USER UPDATE
       // ------------------------------------------------------
 
       transaction.set(
         userRef,
         {
-          miningActive:
-            true,
-
           miningStartedAt,
 
-          miningEndsAt:
-            new Date(
-              miningEndsAtMs,
-            ),
+          miningEndsAt,
 
-          miningDay,
+          miningHashRate:
+            dailyHashRate,
 
-          miningBaseHashRate:
-            baseHashRate,
+          dailyHashRate,
 
-          miningEffectiveHashRate:
-            baseHashRate,
+          miningBalance:
+            newBalance,
 
-          miningLastCalculatedAt:
-            FieldValue.serverTimestamp(),
+          // Power Boost kuuluu aina
+          // uuteen mining-jaksoon.
+          adBoostStartedAt:
+            null,
 
-          miningPendingReward:
-            0,
+          adBoostEndsAt:
+            null,
 
-          miningClaimed:
-            false,
+          powerBoostTransactionId:
+            null,
 
-          miningCompleted:
-            false,
+          powerBoostHistory:
+            [],
 
           updatedAt:
             FieldValue.serverTimestamp(),
@@ -1231,17 +1167,42 @@ async function startMining(
 
 
       // ------------------------------------------------------
-      // HISTORY
+      // CONSUME MINING START REWARD
       // ------------------------------------------------------
 
-      const historyRef =
-        createHistoryRef(
-          uid,
-        );
+      transaction.update(
+        rewardRef,
+        {
+          miningClaimed:
+            true,
 
+          miningClaimedAt:
+            FieldValue.serverTimestamp(),
+
+          miningClaimedBy:
+            "miningService.claimMining",
+
+          miningStartClaimed:
+            true,
+
+          miningStartClaimedAt:
+            FieldValue.serverTimestamp(),
+
+          miningStartClaimedBy:
+            "miningService.claimMining",
+
+          updatedAt:
+            FieldValue.serverTimestamp(),
+        },
+      );
+
+
+      // ------------------------------------------------------
+      // NEW MINING HISTORY
+      // ------------------------------------------------------
 
       transaction.set(
-        historyRef,
+        miningHistoryRef,
         {
           type:
             "mining_started",
@@ -1252,582 +1213,83 @@ async function startMining(
           amount:
             0,
 
-          hashRate:
-            baseHashRate,
-
-          miningDay,
-
-          durationHours:
-            MINING_DURATION_MS /
-            (
-              60 *
-              60 *
-              1000
-            ),
-
-          createdAt:
-            FieldValue.serverTimestamp(),
-        },
-      );
-
-
-      return {
-        success:
-          true,
-
-        miningActive:
-          true,
-
-        miningDay,
-
-        hashRate:
-          baseHashRate,
-
-        miningDurationMs:
-          MINING_DURATION_MS,
-
-        miningEndsAt:
-          new Date(
-            miningEndsAtMs,
-          ),
-      };
-    },
-  );
-}
-
-
-// ============================================================
-// ⚡ APPLY POWER BOOST
-// ============================================================
-//
-// Aktivoi Power Boostin.
-//
-// Tämä funktio ei itse varmista AdMob SSV:tä.
-// AdMob rewardin transaction_id tulee ylemmältä
-// business-kerrokselta.
-//
-// ============================================================
-
-async function applyPowerBoost(
-  uid,
-  options = {},
-) {
-  if (
-    !validateUid(
-      uid,
-    )
-  ) {
-    const error =
-      new Error(
-        "Invalid user UID.",
-      );
-
-    error.code =
-      "MINING_INVALID_UID";
-
-    throw error;
-  }
-
-
-  const userRef =
-    getUserRef(
-      uid,
-    );
-
-
-  if (
-    !userRef
-  ) {
-    const error =
-      new Error(
-        "Unable to create user reference.",
-      );
-
-    error.code =
-      "MINING_USER_REFERENCE_ERROR";
-
-    throw error;
-  }
-
-
-  const transactionId =
-    typeof options.transactionId ===
-    "string"
-      ? options.transactionId.trim()
-      : "";
-
-
-  return db.runTransaction(
-    async (
-      transaction,
-    ) => {
-      const snapshot =
-        await transaction.get(
-          userRef,
-        );
-
-
-      const userData =
-        snapshot.exists
-          ? snapshot.data() || {}
-          : {};
-
-
-      const nowMs =
-        Date.now();
-
-
-      const currentMining =
-        calculateCurrentMiningState(
-          userData,
-          nowMs,
-        );
-
-
-      if (
-        !currentMining.miningActive
-      ) {
-        const error =
-          new Error(
-            "Mining must be active before Power Boost can be applied.",
-          );
-
-        error.code =
-          "MINING_NOT_ACTIVE";
-
-        throw error;
-      }
-
-
-      // ------------------------------------------------------
-      // PREVENT ACTIVE BOOST RESTART
-      // ------------------------------------------------------
-
-      if (
-        currentMining.powerBoostActive
-      ) {
-        const error =
-          new Error(
-            "Power Boost is already active.",
-          );
-
-        error.code =
-          "POWER_BOOST_ALREADY_ACTIVE";
-
-        throw error;
-      }
-
-
-      // ------------------------------------------------------
-      // BOOST
-      // ------------------------------------------------------
-
-      const effectiveHashRate =
-        calculateEffectiveHashRate(
-          currentMining.baseHashRate,
-          true,
-        );
-
-
-      transaction.set(
-        userRef,
-        {
-          powerBoostActive:
-            true,
-
-          powerBoostStartedAt:
-            FieldValue.serverTimestamp(),
-
-          powerBoostEndsAt:
-            new Date(
-              nowMs +
-                POWER_BOOST_DURATION_MS,
-            ),
-
-          powerBoostHashRateBonus:
-            POWER_BOOST_HASH_RATE,
-
-          miningEffectiveHashRate:
-            effectiveHashRate,
-
-          powerBoostTransactionId:
-            transactionId || null,
-
-          updatedAt:
-            FieldValue.serverTimestamp(),
-        },
-        {
-          merge:
-            true,
-        },
-      );
-
-
-      // ------------------------------------------------------
-      // HISTORY
-      // ------------------------------------------------------
-
-      const historyRef =
-        createHistoryRef(
-          uid,
-        );
-
-
-      transaction.set(
-        historyRef,
-        {
-          type:
-            "power_boost_activated",
-
-          title:
-            "Stella Power Boost Activated 🐱⚡",
-
-          amount:
-            0,
-
-          hashRateBonus:
-            POWER_BOOST_HASH_RATE,
-
-          durationHours:
-            POWER_BOOST_DURATION_MS /
-            (
-              60 *
-              60 *
-              1000
-            ),
-
-          transactionId:
-            transactionId || null,
-
-          createdAt:
-            FieldValue.serverTimestamp(),
-        },
-      );
-
-
-      return {
-        success:
-          true,
-
-        powerBoostActive:
-          true,
-
-        hashRateBonus:
-          POWER_BOOST_HASH_RATE,
-
-        effectiveHashRate,
-
-        durationMs:
-          POWER_BOOST_DURATION_MS,
-
-        transactionId:
-          transactionId || null,
-      };
-    },
-  );
-}
-
-
-// ============================================================
-// 💰 CLAIM MINING REWARD
-// ============================================================
-//
-// Claim tehdään serverillä.
-//
-// Reward lasketaan aina Firestoren
-// server-authoritative datasta.
-//
-// Client ei voi lähettää claim-määrää.
-//
-// ============================================================
-
-async function claimMining(
-  uid,
-) {
-  if (
-    !validateUid(
-      uid,
-    )
-  ) {
-    const error =
-      new Error(
-        "Invalid user UID.",
-      );
-
-    error.code =
-      "MINING_INVALID_UID";
-
-    throw error;
-  }
-
-
-  const userRef =
-    getUserRef(
-      uid,
-    );
-
-
-  if (
-    !userRef
-  ) {
-    const error =
-      new Error(
-        "Unable to create user reference.",
-      );
-
-    error.code =
-      "MINING_USER_REFERENCE_ERROR";
-
-    throw error;
-  }
-
-
-  return db.runTransaction(
-    async (
-      transaction,
-    ) => {
-      const snapshot =
-        await transaction.get(
-          userRef,
-        );
-
-
-      if (
-        !snapshot.exists
-      ) {
-        const error =
-          new Error(
-            "User document does not exist.",
-          );
-
-        error.code =
-          "MINING_USER_NOT_FOUND";
-
-        throw error;
-      }
-
-
-      const userData =
-        snapshot.data() || {};
-
-
-      const nowMs =
-        Date.now();
-
-
-      const miningStartedAt =
-        userData.miningStartedAt ||
-        userData.miningStartAt ||
-        null;
-
-
-      const miningEndsAt =
-        userData.miningEndsAt ||
-        userData.miningEndAt ||
-        null;
-
-
-      if (
-        !miningStartedAt ||
-        !miningEndsAt
-      ) {
-        const error =
-          new Error(
-            "No mining cycle is available.",
-          );
-
-        error.code =
-          "MINING_NOT_FOUND";
-
-        throw error;
-      }
-
-
-      const endsAtMs =
-        toMillis(
-          miningEndsAt,
-        );
-
-
-      if (
-        nowMs <
-        endsAtMs
-      ) {
-        const error =
-          new Error(
-            "Mining cycle has not completed yet.",
-          );
-
-        error.code =
-          "MINING_NOT_COMPLETED";
-
-        throw error;
-      }
-
-
-      // ------------------------------------------------------
-      // ALREADY CLAIMED
-      // ------------------------------------------------------
-
-      if (
-        userData.miningClaimed ===
-        true
-      ) {
-        return {
-          success:
-            true,
-
-          claimed:
-            false,
-
-          duplicate:
-            true,
-
-          amount:
-            0,
-
-          message:
-            "🐱 Tämä mining-cycle on jo lunastettu.",
-        };
-      }
-
-
-      // ------------------------------------------------------
-      // HASH RATE
-      // ------------------------------------------------------
-
-      const miningDay =
-        getMiningDay(
-          userData,
-        );
-
-
-      const baseHashRate =
-        Number.isFinite(
-          Number(
-            userData.miningBaseHashRate,
-          ),
-        )
-          ? Number(
-              userData.miningBaseHashRate,
-            )
-          : calculateBaseHashRate(
-              miningDay,
-            );
-
-
-      const powerBoostStartedAt =
-        userData.powerBoostStartedAt ||
-        null;
-
-
-      // ------------------------------------------------------
-      // FINAL REWARD
-      // ------------------------------------------------------
-
-      const reward =
-        calculateMiningReward(
-          miningStartedAt,
-          miningEndsAt,
-          baseHashRate,
-          powerBoostStartedAt,
-          endsAtMs,
-        );
-
-
-      const amount =
-        reward.amount;
-
-
-      // ------------------------------------------------------
-      // IMPORTANT
-      // ------------------------------------------------------
-      //
-      // Tämä service ei lisää STL-tokenisaldoa.
-      //
-      // Se merkitsee mining rewardin lunastetuksi
-      // ja tallentaa tapahtuman.
-      //
-      // Varsinainen STL-balance / token accounting
-      // voidaan käsitellä erillisessä reward/accounting
-      // -kerroksessa.
-      //
-      // ------------------------------------------------------
-
-      transaction.set(
-        userRef,
-        {
-          miningActive:
-            false,
-
-          miningCompleted:
-            true,
-
-          miningClaimed:
-            true,
-
-          miningClaimedAt:
-            FieldValue.serverTimestamp(),
-
-          miningPendingReward:
-            amount,
-
-          miningLastCalculatedAt:
-            FieldValue.serverTimestamp(),
-
-          powerBoostActive:
-            false,
-
-          updatedAt:
-            FieldValue.serverTimestamp(),
-        },
-        {
-          merge:
-            true,
-        },
-      );
-
-
-      // ------------------------------------------------------
-      // HISTORY
-      // ------------------------------------------------------
-
-      const historyRef =
-        createHistoryRef(
-          uid,
-        );
-
-
-      transaction.set(
-        historyRef,
-        {
-          type:
-            "mining_completed",
-
-          title:
-            "Stella Mining Completed 🐱⛏️",
-
-          // Tämä on mining-laskennan tulos.
-          // Ei suora AdMob reward.
-          amount,
-
           rewardType:
             "mining",
 
-          hashRate:
-            reward.baseHashRate,
+          rewardPurpose:
+            REWARD_MINING_START,
 
-          elapsedHours:
-            reward.elapsedHours,
+          adMobTransactionId:
+            transactionId,
 
-          powerBoostHours:
-            reward.powerBoostHours,
+          dailyHashRate,
+
+          miningHashRate:
+            dailyHashRate,
+
+          miningStartedAt,
+
+          miningEndsAt,
+
+          previousMiningReward,
 
           createdAt:
             FieldValue.serverTimestamp(),
         },
       );
 
+
+      // ------------------------------------------------------
+      // PREVIOUS MINING HISTORY
+      // ------------------------------------------------------
+
+      if (
+        previousMiningReward >
+        0
+      ) {
+        const completeHistoryRef =
+          createHistoryRef(
+            uid,
+          );
+
+
+        transaction.set(
+          completeHistoryRef,
+          {
+            type:
+              "mining_complete",
+
+            title:
+              "Stella Mining Complete 🐱💜⛏️",
+
+            amount:
+              previousMiningReward,
+
+            rewardType:
+              "mining",
+
+            miningHashRate:
+              user.miningHashRate ||
+              0,
+
+            miningStartedAt:
+              user.miningStartedAt ||
+              null,
+
+            miningEndsAt:
+              user.miningEndsAt ||
+              null,
+
+            createdAt:
+              FieldValue.serverTimestamp(),
+          },
+        );
+      }
+
+
+      // ------------------------------------------------------
+      // RESULT
+      // ------------------------------------------------------
 
       return {
         success:
@@ -1836,22 +1298,19 @@ async function claimMining(
         claimed:
           true,
 
-        duplicate:
-          false,
+        transactionId,
 
-        amount,
+        previousMiningReward,
 
-        hashRate:
-          reward.baseHashRate,
+        miningBalance:
+          newBalance,
 
-        elapsedHours:
-          reward.elapsedHours,
+        miningStartedAt,
 
-        powerBoostHours:
-          reward.powerBoostHours,
+        miningEndsAt,
 
-        message:
-          "🐱⛏️ Stella Mining -cycle on valmis.",
+        miningHashRate:
+          dailyHashRate,
       };
     },
   );
@@ -1859,35 +1318,35 @@ async function claimMining(
 
 
 // ============================================================
-// 📊 GET MINING STATE
+// ⚡ POWER BOOST
 // ============================================================
 //
-// Hakee käyttäjän mining-tilan Firestoresta.
+// Käyttää varmennettua:
 //
-// Tämä funktio ei muuta mitään.
+// rewardPurpose = power_boost
+//
+// Tarkistaa:
+//
+// ✅ Mining aktiivinen
+// ✅ Reward oikealle käyttäjälle
+// ✅ Reward oikeaan tarkoitukseen
+// ✅ Rewardia ei ole käytetty
+// ✅ Max 6 mainosta / UTC-päivä
+// ✅ 4 h cooldown
+//
+// Power Boost:
+//
+// +0.5833 HR
+// 4 tuntia
+//
+// Boost ei voi jatkua mining-jakson yli.
 //
 // ============================================================
 
-async function getMiningState(
+async function powerBoost(
   uid,
+  transactionId,
 ) {
-  if (
-    !validateUid(
-      uid,
-    )
-  ) {
-    const error =
-      new Error(
-        "Invalid user UID.",
-      );
-
-    error.code =
-      "MINING_INVALID_UID";
-
-    throw error;
-  }
-
-
   const userRef =
     getUserRef(
       uid,
@@ -1895,71 +1354,413 @@ async function getMiningState(
 
 
   if (
-    !userRef
+    typeof transactionId !==
+      "string" ||
+    !/^[A-Fa-f0-9]{1,256}$/.test(
+      transactionId.trim(),
+    )
   ) {
-    const error =
-      new Error(
-        "Unable to create user reference.",
-      );
-
-    error.code =
-      "MINING_USER_REFERENCE_ERROR";
-
-    throw error;
+    throwMiningError(
+      "MINING_INVALID_TRANSACTION_ID",
+      "Invalid Power Boost AdMob transaction ID.",
+    );
   }
 
 
-  const snapshot =
-    await userRef.get();
+  transactionId =
+    transactionId.trim();
+
+
+  const rewardRef =
+    getAdMobRewardRef(
+      transactionId,
+    );
 
 
   if (
-    !snapshot.exists
+    !rewardRef
   ) {
-    const error =
-      new Error(
-        "User document does not exist.",
-      );
-
-    error.code =
-      "MINING_USER_NOT_FOUND";
-
-    throw error;
+    throwMiningError(
+      "MINING_REWARD_REFERENCE_ERROR",
+      "Unable to create AdMob reward reference.",
+    );
   }
 
 
-  const userData =
-    snapshot.data() || {};
+  return db.runTransaction(
+    async (
+      transaction,
+    ) => {
+      // ------------------------------------------------------
+      // READS
+      // ------------------------------------------------------
+
+      const userSnapshot =
+        await transaction.get(
+          userRef,
+        );
 
 
-  return calculateCurrentMiningState(
-    userData,
-    Date.now(),
+      const rewardSnapshot =
+        await transaction.get(
+          rewardRef,
+        );
+
+
+      if (
+        !userSnapshot.exists
+      ) {
+        throwMiningError(
+          "MINING_USER_NOT_FOUND",
+          "User document does not exist.",
+        );
+      }
+
+
+      validateRewardDocument(
+        rewardSnapshot.exists
+          ? rewardSnapshot.data()
+          : null,
+
+        uid,
+
+        transactionId,
+
+        REWARD_POWER_BOOST,
+      );
+
+
+      const rewardData =
+        rewardSnapshot.data();
+
+
+      // ------------------------------------------------------
+      // DUPLICATE PROTECTION
+      // ------------------------------------------------------
+
+      if (
+        rewardData.powerBoostClaimed ===
+          true
+      ) {
+        throwMiningError(
+          "POWER_BOOST_ALREADY_CLAIMED",
+          "This Power Boost reward has already been claimed.",
+        );
+      }
+
+
+      const user =
+        userSnapshot.data() || {};
+
+
+      const now =
+        Date.now();
+
+
+      // ------------------------------------------------------
+      // MINING WINDOW
+      // ------------------------------------------------------
+
+      const miningStartMs =
+        toMillis(
+          user.miningStartedAt,
+        );
+
+
+      const miningEndMs =
+        toMillis(
+          user.miningEndsAt,
+        );
+
+
+      if (
+        !miningStartMs ||
+        !miningEndMs ||
+        miningEndMs <= now
+      ) {
+        throwMiningError(
+          "MINING_NOT_ACTIVE",
+          "Power Boost requires an active mining cycle.",
+        );
+      }
+
+
+      // ------------------------------------------------------
+      // DAILY AD COUNT
+      // ------------------------------------------------------
+
+      const lastAdDate =
+        typeof user.lastAdDate ===
+          "string"
+          ? user.lastAdDate
+          : "";
+
+
+      const today =
+        getUtcDateKey(
+          now,
+        );
+
+
+      const adsToday =
+        lastAdDate === today
+          ? Math.max(
+              0,
+              Number(
+                user.adsToday,
+              ) || 0,
+            )
+          : 0;
+
+
+      if (
+        adsToday >=
+        MAX_ADS_PER_DAY
+      ) {
+        throwMiningError(
+          "POWER_BOOST_DAILY_LIMIT",
+          "Daily Power Boost ad limit reached.",
+        );
+      }
+
+
+      // ------------------------------------------------------
+      // COOLDOWN
+      // ------------------------------------------------------
+
+      const lastAdRewardMs =
+        toMillis(
+          user.lastAdRewardAt,
+        );
+
+
+      if (
+        lastAdRewardMs > 0 &&
+        now -
+          lastAdRewardMs <
+            AD_COOLDOWN_MS
+      ) {
+        throwMiningError(
+          "POWER_BOOST_COOLDOWN",
+          "Power Boost cooldown is still active.",
+        );
+      }
+
+
+      // ------------------------------------------------------
+      // BOOST WINDOW
+      // ------------------------------------------------------
+
+      const boostStartedAt =
+        new Date(
+          now,
+        );
+
+
+      const boostEndsAt =
+        new Date(
+          Math.min(
+            now +
+              AD_BOOST_DURATION_MS,
+
+            miningEndMs,
+          ),
+        );
+
+
+      if (
+        boostEndsAt.getTime() <=
+          now
+      ) {
+        throwMiningError(
+          "POWER_BOOST_WINDOW_INVALID",
+          "Power Boost cannot be started in the remaining mining window.",
+        );
+      }
+
+
+      // ------------------------------------------------------
+      // BOOST HISTORY
+      // ------------------------------------------------------
+      //
+      // Enintään 6 boostia / päivä.
+      //
+      // Säilytetään boostit nykyisen mining-jakson
+      // laskemista varten.
+      //
+      // ------------------------------------------------------
+
+      const existingBoostHistory =
+        Array.isArray(
+          user.powerBoostHistory,
+        )
+          ? user.powerBoostHistory
+          : [];
+
+
+      const nextBoostHistory =
+        existingBoostHistory
+          .slice(
+            -11,
+          );
+
+
+      nextBoostHistory.push(
+        {
+          transactionId,
+
+          startedAt:
+            boostStartedAt,
+
+          endsAt:
+            boostEndsAt,
+
+          hashRateBonus:
+            AD_HASH_RATE_BONUS,
+        },
+      );
+
+
+      // ------------------------------------------------------
+      // HISTORY REFERENCE
+      // ------------------------------------------------------
+
+      const historyRef =
+        createHistoryRef(
+          uid,
+        );
+
+
+      // ------------------------------------------------------
+      // USER UPDATE
+      // ------------------------------------------------------
+
+      transaction.set(
+        userRef,
+        {
+          adBoostStartedAt:
+            boostStartedAt,
+
+          adBoostEndsAt:
+            boostEndsAt,
+
+          powerBoostTransactionId:
+            transactionId,
+
+          powerBoostHistory:
+            nextBoostHistory,
+
+          adsToday:
+            adsToday + 1,
+
+          lastAdDate:
+            today,
+
+          lastAdRewardAt:
+            boostStartedAt,
+
+          updatedAt:
+            FieldValue.serverTimestamp(),
+        },
+        {
+          merge:
+            true,
+        },
+      );
+
+
+      // ------------------------------------------------------
+      // CONSUME POWER BOOST REWARD
+      // ------------------------------------------------------
+
+      transaction.update(
+        rewardRef,
+        {
+          powerBoostClaimed:
+            true,
+
+          powerBoostClaimedAt:
+            FieldValue.serverTimestamp(),
+
+          powerBoostClaimedBy:
+            "miningService.powerBoost",
+
+          powerBoostTransactionId:
+            transactionId,
+
+          updatedAt:
+            FieldValue.serverTimestamp(),
+        },
+      );
+
+
+      // ------------------------------------------------------
+      // HISTORY
+      // ------------------------------------------------------
+
+      transaction.set(
+        historyRef,
+        {
+          type:
+            "ad_reward",
+
+          title:
+            "Stella Power Boost 🐱📺⚡",
+
+          amount:
+            0,
+
+          rewardType:
+            "admob",
+
+          rewardPurpose:
+            REWARD_POWER_BOOST,
+
+          adMobTransactionId:
+            transactionId,
+
+          hashRateBonus:
+            AD_HASH_RATE_BONUS,
+
+          boostStartedAt,
+
+          boostEndsAt,
+
+          createdAt:
+            FieldValue.serverTimestamp(),
+        },
+      );
+
+
+      // ------------------------------------------------------
+      // RESULT
+      // ------------------------------------------------------
+
+      return {
+        success:
+          true,
+
+        claimed:
+          true,
+
+        transactionId,
+
+        boostStartedAt,
+
+        boostEndsAt,
+
+        hashRateBonus:
+          AD_HASH_RATE_BONUS,
+
+        adsToday:
+          adsToday + 1,
+
+        maxAdsPerDay:
+          MAX_ADS_PER_DAY,
+      };
+    },
   );
 }
-
-
-// ============================================================
-// 🧮 EXPORT CONFIG
-// ============================================================
-
-const MINING_CONSTANTS = {
-  DEFAULT_HASH_RATE,
-
-  DAILY_HASH_RATE_STEP,
-
-  MAX_HASH_RATE,
-
-  MAX_HASH_RATE_DAY,
-
-  POWER_BOOST_HASH_RATE,
-
-  POWER_BOOST_DURATION_MS,
-
-  MINING_DURATION_MS,
-
-  MINING_PER_HASH_PER_HOUR,
-};
 
 
 // ============================================================
@@ -1967,35 +1768,14 @@ const MINING_CONSTANTS = {
 // ============================================================
 
 module.exports = {
-  MINING_CONSTANTS,
 
-  calculateBaseHashRate,
-
-  calculateEffectiveHashRate,
-
-  calculatePowerBoostEndsAt,
-
-  calculateMiningEndsAt,
-
-  calculateElapsedMiningHours,
-
-  calculateMiningReward,
-
-  calculateCurrentMiningState,
-
-  isMiningActive,
-
-  isPowerBoostActive,
-
-  startMining,
-
-  applyPowerBoost,
+  getMiningStatus,
 
   claimMining,
 
-  getMiningState,
+  powerBoost,
 
-  roundMiningAmount,
+  calculateMiningReward,
 
-  validateUid,
+  getDailyHashRate,
 };
