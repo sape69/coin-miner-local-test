@@ -66,7 +66,7 @@ const ADMOB_SSV_KEYS_URL =
 // AdMobin julkisia avaimia voidaan välimuistittaa.
 //
 // Cache on tarkoituksella alle 24 tuntia,
-// jotta avainten rotaatio voidaan huomioida.
+// jotta AdMobin avainten rotaatio voidaan huomioida.
 //
 // ============================================================
 
@@ -81,8 +81,9 @@ let cachedPublicKeysAt = 0;
 // 📺 ADMOB AD UNITS
 // ============================================================
 //
-// AdMob SSV lähettää ad_unit-arvon ilman
-// "ca-app-pub-..."-alkua.
+// AdMob SSV lähettää ad_unit-arvon.
+// Sen pitää vastata juuri sitä ad unitia,
+// jolle callback kuuluu.
 //
 // ============================================================
 
@@ -1195,12 +1196,6 @@ function parseCustomData(
     customData.trim();
 
 
-  // UID voi olla enintään 128 merkkiä.
-  // Lisäksi tarvitsemme ":" + reward purpose.
-  //
-  // Sallitaan hieman suurempi kokonaispituus
-  // mahdollisia tulevia reward purpose -arvoja varten.
-
   if (
     value.length === 0 ||
     value.length > 256
@@ -1296,9 +1291,11 @@ function parseCustomData(
 // 🔐 TRANSACTION ID VALIDATION
 // ============================================================
 //
-// AdMob dokumentoi transaction_id:n
-// hex-enkoodatuksi yksilölliseksi
-// reward-tapahtuman tunnisteeksi.
+// AdMob käyttää transaction_id-arvoa
+// yksilöllisenä reward-tapahtuman tunnisteena.
+//
+// Google dokumentoi transaction_id:n
+// hex-enkoodatuksi tunnisteeksi.
 //
 // ============================================================
 
@@ -1335,8 +1332,8 @@ function validateTransactionId(
 // ⏱️ TIMESTAMP VALIDATION
 // ============================================================
 //
-// AdMob lähettää timestampin Epoch milliseconds
-// -muodossa.
+// AdMob lähettää timestampin
+// Epoch milliseconds -muodossa.
 //
 // Sallitaan:
 //
