@@ -33,7 +33,7 @@
 const {
   db,
 } = require(
-  "../firebase/firebase"
+  "../firebase/firebase",
 );
 
 
@@ -68,29 +68,60 @@ function validateDocumentId(
   if (
     typeof value !== "string"
   ) {
-    throw new Error(
-      `${name} must be a string.`,
-    );
+    const error =
+      new Error(
+        `${name} must be a string.`,
+      );
+
+    error.code =
+      "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      name;
+
+    throw error;
   }
+
 
   const id =
     value.trim();
 
+
   if (
     id.length === 0
   ) {
-    throw new Error(
-      `${name} cannot be empty.`,
-    );
+    const error =
+      new Error(
+        `${name} cannot be empty.`,
+      );
+
+    error.code =
+      "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      name;
+
+    throw error;
   }
+
 
   if (
     id.includes("/")
   ) {
-    throw new Error(
-      `${name} cannot contain "/".`,
-    );
+    const error =
+      new Error(
+        `${name} cannot contain "/".`,
+      );
+
+    error.code =
+      "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      name;
+
+    throw error;
   }
+
 
   return id;
 }
@@ -114,6 +145,7 @@ function getUserRef(
       uid,
       "uid",
     );
+
 
   return db
     .collection(
@@ -179,6 +211,7 @@ function getAdMobRewardRef(
       "transactionId",
     );
 
+
   return db
     .collection(
       "admobRewards",
@@ -195,6 +228,8 @@ function getAdMobRewardRef(
 
 module.exports = {
   getUserRef,
+
   getHistoryCollection,
+
   getAdMobRewardRef,
 };
