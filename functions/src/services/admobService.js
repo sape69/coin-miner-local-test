@@ -31,11 +31,6 @@ const crypto = require("crypto");
 // ============================================================
 // ⚙️ MINING CONFIG
 // ============================================================
-//
-// AdMob-asetukset pidetään keskitetysti
-// miningConfig.js-tiedostossa.
-//
-// ============================================================
 
 const {
   ADMOB_MINING_SSV_AD_UNIT_ID,
@@ -79,12 +74,6 @@ let cachedPublicKeysAt = 0;
 
 // ============================================================
 // 📺 ADMOB AD UNITS
-// ============================================================
-//
-// AdMob SSV lähettää ad_unit-arvon.
-// Sen pitää vastata juuri sitä ad unitia,
-// jolle callback kuuluu.
-//
 // ============================================================
 
 const ADMOB_AD_UNITS = {
@@ -543,8 +532,6 @@ function decodeAdMobSignature(
 //
 // signature
 // key_id
-//
-// Tässä järjestyksessä.
 //
 // Allekirjoitettava data on kaikki
 // ennen "&signature="-osaa.
@@ -1335,16 +1322,24 @@ function validateTransactionId(
 // AdMob lähettää timestampin
 // Epoch milliseconds -muodossa.
 //
-// Sallitaan:
+// TÄSSÄ EI KÄYTETÄ TIUKKAA 24 H VANHENEMISRAJAA.
 //
-// ⏪ enintään 24 h menneisyyteen
-// ⏩ enintään 5 min tulevaisuuteen
+// Syy:
+//
+// AdMob SSV callback voi saapua viiveellä.
+// Allekirjoitus varmistaa callbackin aitouden.
+//
+// Replay/duplicate-suojaus tehdään
+// transaction_id:n avulla Firestoressa.
+//
+// Tarkistamme silti:
+//
+// ✅ timestamp on numero
+// ✅ timestamp on kokonaisluku
+// ✅ timestamp on positiivinen
+// ✅ timestamp ei ole epärealistisen kaukana tulevaisuudessa
 //
 // ============================================================
-
-const TIMESTAMP_PAST_TOLERANCE_MS =
-  24 * 60 * 60 * 1000;
-
 
 const TIMESTAMP_FUTURE_TOLERANCE_MS =
   5 * 60 * 1000;
@@ -1382,19 +1377,17 @@ function validateTimestamp(
     Date.now();
 
 
-  if (
-    timestampMs <
-      now -
-        TIMESTAMP_PAST_TOLERANCE_MS
-  ) {
-    return {
-      valid:
-        false,
-
-      timestampMs,
-    };
-  }
-
+  // ----------------------------------------------------------
+  // FUTURE TIMESTAMP
+  // ----------------------------------------------------------
+  //
+  // Menneisyyteen ei aseteta kovaa rajaa.
+  //
+  // Tulevaisuuteen asetetaan pieni toleranssi,
+  // jotta selvästi virheelliset callbackit
+  // eivät mene läpi.
+  //
+  // ----------------------------------------------------------
 
   if (
     timestampMs >
@@ -1710,7 +1703,7 @@ async function verifyAdMobCallback(
   ) {
     const error =
       new Error(
-        "AdMob timestamp is outside the accepted time window.",
+        "AdMob timestamp is invalid or too far in the future.",
       );
 
     error.code =
