@@ -19,6 +19,18 @@
 // - Only active while mining is active.
 // - Never continues after miningEndsAt.
 // - Never carries into a new mining cycle.
+//
+// IMPORTANT CALCULATION RULE:
+// The hash rate stored in miningHashRate belongs to the
+// currently active mining cycle.
+// Daily Hash Rate is the rate assigned when a NEW mining
+// cycle starts.
+//
+// Therefore:
+// - getMiningStatus() uses miningHashRate for the active cycle.
+// - Daily status may show the NEXT Daily Hash Rate.
+// - Power Boost is calculated separately and only inside
+//   the current mining cycle.
 // ============================================================
 
 const {
@@ -208,12 +220,6 @@ function getRewardCreatedAtMs(rewardData) {
 // ============================================================
 // 🎁 EXPECTED REWARD CONFIGURATION
 // ============================================================
-//
-// Mining ja Power Boost käyttävät eri Ad Unit ID:tä,
-// SSV Ad Unit ID:tä, reward amountia ja reward itemiä.
-//
-// Näitä ei saa hyväksyä ristiin.
-// ============================================================
 
 function getRewardConfiguration(rewardPurpose) {
   if (rewardPurpose === "mining_start") {
@@ -270,26 +276,6 @@ function getExpectedRewardItem(rewardPurpose) {
 
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
-// ============================================================
-//
-// IMPORTANT:
-//
-// Älä luota siihen, että ensimmäisten 100 dokumentin joukosta
-// löytyy juuri saapunut SSV-tapahtuma.
-//
-// Haemme kaikki kyseisen käyttäjän potentiaaliset rewardit
-// ja suodatamme ne tämän jälkeen tarkasti:
-//
-// - reward purpose
-// - reward type
-// - ad unit
-// - reward item
-// - reward amount
-// - claimed state
-// - transaction ID
-//
-// Lopuksi valitaan uusin validi reward.
-//
 // ============================================================
 
 async function findVerifiedAdMobReward(
@@ -381,10 +367,6 @@ async function findVerifiedAdMobReward(
     const adUnit =
       rewardData.adUnit.trim();
 
-    // --------------------------------------------------------
-    // 🔐 EXACT AD UNIT VALIDATION
-    // --------------------------------------------------------
-
     if (
       adUnit !==
         configuration.rewardedAdUnitId &&
@@ -464,10 +446,6 @@ async function findVerifiedAdMobReward(
   if (!candidates.length) {
     return null;
   }
-
-  // ----------------------------------------------------------
-  // 🕒 NEWEST VALID REWARD FIRST
-  // ----------------------------------------------------------
 
   candidates.sort((a, b) => {
     if (
@@ -626,10 +604,6 @@ function validateVerifiedRewardDocument(
 
   const adUnit =
     rewardData.adUnit.trim();
-
-  // ----------------------------------------------------------
-  // 🔐 EXACT AD UNIT
-  // ----------------------------------------------------------
 
   if (
     adUnit !==
@@ -830,22 +804,6 @@ function getDailyStreak(data) {
 // ============================================================
 // 🎁 NEXT DAILY CLAIM
 // ============================================================
-//
-// Tämä laskee aina seuraavan oikean päivän.
-//
-// Jos käyttäjä on jo claimannut tänään:
-//   → käytetään nykyistä streakiä.
-//
-// Jos käyttäjä ei ole vielä claimannut tänään:
-//   → jos eilinen oli viimeinen claim,
-//     streak kasvaa yhdellä.
-//
-//   → jos edellinen claim oli vanhempi,
-//     streak alkaa uudelleen päivästä 1.
-//
-// Tämän funktion avulla myös GET STATUS voi näyttää
-// oikean seuraavan Daily Hash Raten ennen claimia.
-// ============================================================
 
 function calculateNextDailyClaim(
   data,
@@ -859,10 +817,6 @@ function calculateNextDailyClaim(
 
   const currentStreak =
     getDailyStreak(data);
-
-  // ----------------------------------------------------------
-  // 🐱 ALREADY CLAIMED TODAY
-  // ----------------------------------------------------------
 
   if (
     lastDailyDate === today
@@ -885,10 +839,6 @@ function calculateNextDailyClaim(
     };
   }
 
-  // ----------------------------------------------------------
-  // 📅 CALCULATE YESTERDAY
-  // ----------------------------------------------------------
-
   const yesterday =
     new Date(
       `${today}T00:00:00.000Z`
@@ -903,10 +853,6 @@ function calculateNextDailyClaim(
     yesterday
       .toISOString()
       .slice(0, 10);
-
-  // ----------------------------------------------------------
-  // 🐱 CONTINUE OR RESET STREAK
-  // ----------------------------------------------------------
 
   const newStreak =
     lastDailyDate ===
@@ -931,32 +877,6 @@ function calculateNextDailyClaim(
 
 // ============================================================
 // 📊 DAILY STATUS
-// ============================================================
-//
-// IMPORTANT FIX:
-//
-// Aikaisemmin tämä funktio palautti uudelle päivälle aina
-// streakin 1 ennen claimia.
-//
-// Nyt se käyttää calculateNextDailyClaim()-funktiota.
-//
-// Esimerkki:
-//
-// current streak = 10
-// lastDailyDate = yesterday
-// today = uusi päivä
-//
-// → dailyStatus.streak = 11
-// → dailyStatus.dailyHashRate = Day 11:n Hash Rate
-//
-// Jos käyttäjä on ollut useamman päivän poissa:
-//
-// current streak = 10
-// lastDailyDate = 3 päivää sitten
-//
-// → streak = 1
-// → dailyHashRate = Day 1
-//
 // ============================================================
 
 function getDailyStatus(
@@ -1159,16 +1079,6 @@ function getMiningHashRate(
 // ============================================================
 // 📺 BOOST HISTORY
 // ============================================================
-//
-// VAIN Power Boost -tapahtumat kuuluvat tähän laskentaan.
-//
-// Tämä on tärkeää, koska "ad_reward" voi olla myös jokin muu
-// mainostapahtuma. Pelkkä type == "ad_reward" ei riitä
-// tunnistamaan Power Boostia.
-//
-// Lisäksi boostin alkamis- ja päättymisajat rajataan myöhemmin
-// aina kyseiseen mining-sykliin.
-// ============================================================
 
 async function getAdBoostHistory(
   uid,
@@ -1212,10 +1122,6 @@ async function getAdBoostHistory(
       const data =
         doc.data() || {};
 
-      // --------------------------------------------------------
-      // 🔐 EXACT POWER BOOST VALIDATION
-      // --------------------------------------------------------
-
       if (
         data.type !==
         "ad_reward"
@@ -1246,10 +1152,6 @@ async function getAdBoostHistory(
       ) {
         return;
       }
-
-      // --------------------------------------------------------
-      // ⛏️ ONLY THIS MINING CYCLE
-      // --------------------------------------------------------
 
       if (
         end <= miningStartMs ||
@@ -1377,6 +1279,113 @@ function calculateAdBoostMilliseconds(
     0,
     totalMs
   );
+}
+
+
+// ============================================================
+// ⛏️ CALCULATE COMPLETE MINING CYCLE
+// ============================================================
+//
+// Tämä keskittää mining-cycle-laskennan yhteen paikkaan.
+//
+// base mining:
+//   miningHashRate × elapsed time
+//
+// Power Boost:
+//   AD_HASH_RATE_BONUS × boost duration
+//
+// Boost duration rajataan aina mining cyclen sisälle.
+// ============================================================
+
+async function calculateMiningCycle(
+  uid,
+  miningStartMs,
+  miningEndMs,
+  miningHashRate,
+  transaction = null
+) {
+  if (
+    !miningStartMs ||
+    !miningEndMs ||
+    miningEndMs <=
+      miningStartMs
+  ) {
+    return {
+      baseMining: 0,
+      adBoostMining: 0,
+      boostMilliseconds: 0,
+      totalMining: 0,
+    };
+  }
+
+  const safeHashRate =
+    getSafePositiveNumber(
+      miningHashRate,
+      DAILY_HASH_RATE_START
+    );
+
+  const durationMs =
+    Math.max(
+      0,
+      miningEndMs -
+        miningStartMs
+    );
+
+  const baseMining =
+    Math.max(
+      0,
+      getSafeNumber(
+        calculateMining(
+          safeHashRate,
+          durationMs
+        ),
+        0
+      )
+    );
+
+  const boosts =
+    await getAdBoostHistory(
+      uid,
+      miningStartMs,
+      miningEndMs,
+      transaction
+    );
+
+  const boostMilliseconds =
+    calculateAdBoostMilliseconds(
+      boosts,
+      miningStartMs,
+      miningEndMs
+    );
+
+  const adBoostMining =
+    Math.max(
+      0,
+      getSafeNumber(
+        calculateMining(
+          AD_HASH_RATE_BONUS,
+          boostMilliseconds
+        ),
+        0
+      )
+    );
+
+  const totalMining =
+    Math.max(
+      0,
+      baseMining +
+        adBoostMining
+    );
+
+  return {
+    baseMining,
+
+    adBoostMining,
+
+    boostMilliseconds,
+
+    totalMining,
+  };
 }
 
 
@@ -1654,6 +1663,18 @@ const getMiningStatus =
             today
           );
 
+        // ------------------------------------------------------
+        // ⛏️ ACTIVE CYCLE HASH RATE
+        // ------------------------------------------------------
+        //
+        // miningHashRate is the rate belonging to the current
+        // mining cycle.
+        //
+        // dailyStatus.dailyHashRate may represent the NEXT
+        // Daily Hash Rate if today has not yet been claimed.
+        // They must not be mixed.
+        // ------------------------------------------------------
+
         const miningHashRate =
           getMiningHashRate(
             data,
@@ -1687,16 +1708,17 @@ const getMiningStatus =
             data
           );
 
-        let unclaimedMining =
-          Math.max(
-            0,
-            getSafeNumber(
-              miningStatus.minedAmount,
-              0
-            )
-          );
+        let unclaimedMining = 0;
+
+        let baseMining = 0;
 
         let adBoostMining = 0;
+
+        let boostMilliseconds = 0;
+
+        // ------------------------------------------------------
+        // ⛏️ CURRENT MINING CYCLE
+        // ------------------------------------------------------
 
         if (
           miningStartedAt &&
@@ -1705,47 +1727,40 @@ const getMiningStatus =
           const miningStartMs =
             miningStartedAt.getTime();
 
-          const miningEndMs =
+          const miningCycleEndMs =
+            miningEndsAt.getTime();
+
+          const calculationEndMs =
             Math.min(
-              miningEndsAt.getTime(),
+              miningCycleEndMs,
               nowMs
             );
 
           if (
-            miningEndMs >
+            calculationEndMs >
             miningStartMs
           ) {
-            const boosts =
-              await getAdBoostHistory(
+            const cycle =
+              await calculateMiningCycle(
                 uid,
                 miningStartMs,
-                miningEndMs
+                calculationEndMs,
+                miningHashRate
               );
 
-            const boostMilliseconds =
-              calculateAdBoostMilliseconds(
-                boosts,
-                miningStartMs,
-                miningEndMs
-              );
+            baseMining =
+              cycle.baseMining;
 
             adBoostMining =
-              Math.max(
-                0,
-                getSafeNumber(
-                  calculateMining(
-                    AD_HASH_RATE_BONUS,
-                    boostMilliseconds
-                  ),
-                  0
-                )
-              );
+              cycle.adBoostMining;
+
+            boostMilliseconds =
+              cycle.boostMilliseconds;
 
             unclaimedMining =
               Math.max(
                 0,
-                unclaimedMining +
-                  adBoostMining
+                cycle.totalMining
               );
           }
         }
@@ -1785,8 +1800,12 @@ const getMiningStatus =
                 ? "🐱✨ Louhinta on valmis kerättäväksi!"
                 : "🐱 Stella odottaa seuraavaa louhintaa.",
 
+          // ----------------------------------------------------
+          // CURRENT CYCLE
+          // ----------------------------------------------------
+
           hashRate:
-            dailyStatus.dailyHashRate,
+            miningHashRate,
 
           miningHashRate,
 
@@ -1794,7 +1813,11 @@ const getMiningStatus =
 
           unclaimedMining,
 
+          baseMining,
+
           adBoostMining,
+
+          boostMilliseconds,
 
           estimatedTotal,
 
@@ -1847,6 +1870,16 @@ const getMiningStatus =
 
           activeMiningPerHour,
 
+          // ----------------------------------------------------
+          // DAILY HASH RATE
+          // ----------------------------------------------------
+          //
+          // dailyHashRate is the current Daily Hash Rate state.
+          // When the user has not claimed today yet, this is the
+          // rate that will be assigned when the next mining cycle
+          // starts.
+          // ----------------------------------------------------
+
           dailyClaimed:
             dailyStatus.claimedToday,
 
@@ -1861,6 +1894,16 @@ const getMiningStatus =
 
           dailyHashRateBonus:
             dailyStatus.dailyHashRate,
+
+          nextDailyHashRate:
+            dailyStatus.dailyHashRate,
+
+          nextDailyStreak:
+            dailyStatus.streak,
+
+          // ----------------------------------------------------
+          // ADMOB / POWER BOOST
+          // ----------------------------------------------------
 
           adsToday:
             adStatus.adsToday,
@@ -2001,6 +2044,68 @@ const claimMining =
         if (
           earlyStatus.miningActive
         ) {
+          let earlyUnclaimedMining =
+            Math.max(
+              0,
+              getSafeNumber(
+                earlyStatus.minedAmount,
+                0
+              )
+            );
+
+          let earlyBaseMining = 0;
+
+          let earlyAdBoostMining = 0;
+
+          const earlyStart =
+            getMiningStartTime(
+              earlyData
+            );
+
+          const earlyEnd =
+            getMiningEndTime(
+              earlyData
+            );
+
+          if (
+            earlyStart &&
+            earlyEnd
+          ) {
+            const earlyStartMs =
+              earlyStart.getTime();
+
+            const earlyCalculationEndMs =
+              Math.min(
+                earlyEnd.getTime(),
+                nowMs
+              );
+
+            if (
+              earlyCalculationEndMs >
+              earlyStartMs
+            ) {
+              const cycle =
+                await calculateMiningCycle(
+                  uid,
+                  earlyStartMs,
+                  earlyCalculationEndMs,
+                  earlyMiningHashRate
+                );
+
+              earlyBaseMining =
+                cycle.baseMining;
+
+              earlyAdBoostMining =
+                cycle.adBoostMining;
+
+              earlyUnclaimedMining =
+                Math.max(
+                  0,
+                  cycle.totalMining
+                );
+            }
+          }
+
           return {
             success: true,
 
@@ -2012,7 +2117,7 @@ const claimMining =
               true,
 
             hashRate:
-              earlyDailyHashRate,
+              earlyMiningHashRate,
 
             miningHashRate:
               earlyMiningHashRate,
@@ -2027,13 +2132,13 @@ const claimMining =
               earlyStreak,
 
             unclaimedMining:
-              Math.max(
-                0,
-                getSafeNumber(
-                  earlyStatus.minedAmount,
-                  0
-                )
-              ),
+              earlyUnclaimedMining,
+
+            baseMining:
+              earlyBaseMining,
+
+            adBoostMining:
+              earlyAdBoostMining,
 
             miningRemainingMs:
               Math.max(
@@ -2147,7 +2252,7 @@ const claimMining =
                   true,
 
                 hashRate:
-                  fallbackRate,
+                  existingHashRate,
 
                 miningHashRate:
                   existingHashRate,
@@ -2203,7 +2308,7 @@ const claimMining =
 
             // --------------------------------------------------
             // 🎁 DAILY
-            // --------------------------------------------------
+            // ----------------------------------------------------
 
             const dailyClaim =
               calculateNextDailyClaim(
@@ -2235,7 +2340,13 @@ const claimMining =
             let completedPreviousCycle =
               false;
 
+            let previousBaseMining =
+              0;
+
             let previousAdBoostMining =
+              0;
+
+            let previousBoostMilliseconds =
               0;
 
             // --------------------------------------------------
@@ -2270,56 +2381,28 @@ const claimMining =
               const endMs =
                 previousEnd.getTime();
 
-              const durationMs =
-                Math.max(
-                  0,
-                  endMs - startMs
-                );
-
-              const baseMining =
-                Math.max(
-                  0,
-                  getSafeNumber(
-                    calculateMining(
-                      previousHashRate,
-                      durationMs
-                    ),
-                    0
-                  )
-                );
-
-              const boosts =
-                await getAdBoostHistory(
+              const previousCycle =
+                await calculateMiningCycle(
                   uid,
                   startMs,
                   endMs,
+                  previousHashRate,
                   transaction
                 );
 
-              const boostMs =
-                calculateAdBoostMilliseconds(
-                  boosts,
-                  startMs,
-                  endMs
-                );
+              previousBaseMining =
+                previousCycle.baseMining;
 
               previousAdBoostMining =
-                Math.max(
-                  0,
-                  getSafeNumber(
-                    calculateMining(
-                      AD_HASH_RATE_BONUS,
-                      boostMs
-                    ),
-                    0
-                  )
-                );
+                previousCycle.adBoostMining;
+
+              previousBoostMilliseconds =
+                previousCycle.boostMilliseconds;
 
               collected =
                 Math.max(
                   0,
-                  baseMining +
-                    previousAdBoostMining
+                  previousCycle.totalMining
                 );
 
               if (
@@ -2533,23 +2616,13 @@ const claimMining =
                     previousHashRate,
 
                   baseMining:
-                    Math.max(
-                      0,
-                      getSafeNumber(
-                        calculateMining(
-                          previousHashRate,
-                          Math.max(
-                            0,
-                            previousEnd.getTime() -
-                              previousStart.getTime()
-                          )
-                        ),
-                        0
-                      )
-                    ),
+                    previousBaseMining,
 
                   adBoostMining:
                     previousAdBoostMining,
+
+                  boostMilliseconds:
+                    previousBoostMilliseconds,
 
                   createdAt:
                     FieldValue.serverTimestamp(),
