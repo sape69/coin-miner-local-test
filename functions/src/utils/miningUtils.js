@@ -11,10 +11,9 @@
 // ⚡ Daily Hash Rate
 // 💰 STL-tuoton laskenta
 //
-// Kaikki mining-laskenta tapahtuu palvelimen antamien
-// aikojen perusteella.
+// TÄRKEÄÄ:
 //
-// HUOM:
+// Tämä tiedosto vastaa vain mining-laskennasta.
 //
 // Daily Hash Rate määritetään miningFunctions.js:ssä
 // Daily Streak -logiikan perusteella.
@@ -47,7 +46,7 @@ const {
 //
 // 0 on sallittu.
 //
-// Virheellinen arvo palautetaan arvona 0.
+// Virheellinen tai negatiivinen arvo palautetaan arvona 0.
 //
 // ============================================================
 
@@ -105,7 +104,7 @@ function getSafeElapsedMilliseconds(
 // 🔥 Firestore Timestamp
 // 📅 JavaScript Date
 // 📝 ISO Date String
-// 🔢 millisekunnit
+// 🔢 Unix milliseconds
 //
 // Virheellinen arvo palauttaa null.
 //
@@ -114,7 +113,10 @@ function getSafeElapsedMilliseconds(
 function getSafeDate(
   value
 ) {
-  if (!value) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return null;
   }
 
@@ -154,11 +156,15 @@ function getSafeDate(
   if (
     value instanceof Date
   ) {
-    return Number.isNaN(
-      value.getTime()
-    )
-      ? null
-      : value;
+    if (
+      Number.isNaN(
+        value.getTime()
+      )
+    ) {
+      return null;
+    }
+
+    return value;
   }
 
 
@@ -169,8 +175,17 @@ function getSafeDate(
   if (
     typeof value === "string"
   ) {
+    const trimmed =
+      value.trim();
+
+    if (
+      trimmed.length === 0
+    ) {
+      return null;
+    }
+
     const date =
-      new Date(value);
+      new Date(trimmed);
 
     if (
       !Number.isNaN(
@@ -210,6 +225,29 @@ function getSafeDate(
 
 
 // ============================================================
+// 🕒 GET SAFE CURRENT DATE
+// ============================================================
+//
+// Varmistaa, että mining-status saa aina
+// käyttöönsä kelvollisen Date-objektin.
+//
+// ============================================================
+
+function getSafeNow(
+  value
+) {
+  const date =
+    getSafeDate(value);
+
+  if (date) {
+    return date;
+  }
+
+  return new Date();
+}
+
+
+// ============================================================
 // ⛏️ CALCULATE MINING
 // ============================================================
 //
@@ -243,6 +281,14 @@ function calculateMining(
       elapsedMilliseconds
     );
 
+  if (
+    safeHashRate <= 0 ||
+    safeElapsedMilliseconds <= 0 ||
+    MINING_PER_HASH_PER_HOUR <= 0
+  ) {
+    return 0;
+  }
+
   const hours =
     safeElapsedMilliseconds /
     (1000 * 60 * 60);
@@ -251,6 +297,14 @@ function calculateMining(
     safeHashRate *
     MINING_PER_HASH_PER_HOUR *
     hours;
+
+  if (
+    !Number.isFinite(
+      minedAmount
+    )
+  ) {
+    return 0;
+  }
 
   return Math.max(
     0,
@@ -277,8 +331,15 @@ function calculateMining(
 function getMiningStartTime(
   data
 ) {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return null;
+  }
+
   return getSafeDate(
-    data?.miningStartedAt
+    data.miningStartedAt
   );
 }
 
@@ -301,32 +362,16 @@ function getMiningStartTime(
 function getMiningEndTime(
   data
 ) {
-  return getSafeDate(
-    data?.miningEndsAt
-  );
-}
-
-
-// ============================================================
-// 🕒 GET SAFE CURRENT DATE
-// ============================================================
-//
-// Varmistaa, että calculateMiningStatus saa
-// käyttöönsä kelvollisen Date-objektin.
-//
-// ============================================================
-
-function getSafeNow(
-  value
-) {
-  const date =
-    getSafeDate(value);
-
-  if (date) {
-    return date;
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return null;
   }
 
-  return new Date();
+  return getSafeDate(
+    data.miningEndsAt
+  );
 }
 
 
@@ -354,7 +399,10 @@ function calculateMiningStatus(
   now = new Date()
 ) {
   const safeData =
-    data || {};
+    data &&
+    typeof data === "object"
+      ? data
+      : {};
 
 
   // ==========================================================
@@ -383,7 +431,7 @@ function calculateMiningStatus(
 
 
   // ==========================================================
-  // 💤 NO MINING
+  // 💤 NO MINING DATA
   // ==========================================================
 
   if (
@@ -482,9 +530,6 @@ function calculateMiningStatus(
   // ==========================================================
   //
   // Louhinta ei ole vielä aktiivinen.
-  //
-  // Tämä tila on tärkeä erottaa aktiivisesta
-  // mining-jaksosta.
   //
   // ==========================================================
 
