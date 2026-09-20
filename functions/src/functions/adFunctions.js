@@ -180,6 +180,18 @@ function validateUid(
 // ============================================================
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
+//
+// Transaction ID:tä ei rajoiteta pelkästään
+// heksamerkkeihin.
+//
+// Tärkeää on:
+//
+// ✅ merkkijono
+// ✅ ei tyhjä
+// ✅ kohtuullinen maksimipituus
+// ✅ ei Firestore-polun erottimia
+//
+// ============================================================
 
 function validateTransactionId(
   value,
@@ -201,9 +213,8 @@ function validateTransactionId(
   }
 
   if (
-    !/^[a-fA-F0-9]+$/.test(
-      transactionId,
-    )
+    transactionId.includes("/") ||
+    transactionId.includes("\\")
   ) {
     return "";
   }
@@ -287,7 +298,6 @@ function getExpectedAdMobConfig(
     };
   }
 
-
   if (
     rewardPurpose ===
     "power_boost"
@@ -303,7 +313,6 @@ function getExpectedAdMobConfig(
         ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
     };
   }
-
 
   const error =
     new Error(
@@ -321,23 +330,21 @@ function getExpectedAdMobConfig(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// admobService.js on jo tarkistanut:
+// admobService.js on tarkistanut SSV:n.
 //
-// ✅ allekirjoituksen
-// ✅ public keyn
-// ✅ UID:n
-// ✅ transaction_id:n
-// ✅ timestampin
-//
-// Tässä tehdään toinen defense-in-depth -tarkistus
+// Tässä tehdään vielä defense-in-depth -tarkistus
 // ennen Firestore-kirjoitusta.
 //
-// Lisäksi tarkistetaan:
+// Tarkistetaan:
 //
+// ✅ UID
 // ✅ reward purpose
+// ✅ transaction ID
 // ✅ oikea Ad Unit
 // ✅ oikea reward amount
 // ✅ oikea reward item
+// ✅ timestamp
+// ✅ key ID
 //
 // ============================================================
 
@@ -695,7 +702,6 @@ async function saveVerifiedAdMobReward(
     async (
       transaction,
     ) => {
-
       // ======================================================
       // 🔐 DUPLICATE CHECK
       // ======================================================
@@ -911,9 +917,7 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-          // --------------------------------------------------
           // AdMob reward metadata ei ole STL-token.
-          // --------------------------------------------------
 
           amount:
             0,
@@ -994,7 +998,6 @@ const adMobReward =
       res,
     ) => {
       try {
-
         // ======================================================
         // 🔐 METHOD HANDLING
         // ======================================================
@@ -1306,7 +1309,6 @@ const adMobReward =
       } catch (
         error
       ) {
-
         // ======================================================
         // ❌ ERROR LOG
         // ======================================================
@@ -1385,6 +1387,7 @@ const adMobReward =
             "ADMOB_INVALID_TIMESTAMP",
             "ADMOB_REQUIRED_PARAMETER_MISSING",
             "ADMOB_VERIFIED_DATA_MISSING",
+            "ADMOB_REWARD_REFERENCE_ERROR",
           ]);
 
 
