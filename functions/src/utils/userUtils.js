@@ -45,7 +45,9 @@ const {
 //
 // ✅ täytyy olla merkkijono
 // ✅ ei saa olla tyhjä
-// ❌ ei saa sisältää "/"-merkkiä
+// ✅ ympäröivät whitespace-merkit poistetaan
+// ❌ ei saa sisältää "/"
+// ❌ ei saa sisältää "\"
 //
 // UID:t ja transactionId:t validoidaan lisäksi
 // niiden omissa business/service-kerroksissa.
@@ -58,6 +60,7 @@ const {
 // ""
 // "   "
 // "abc/def"
+// "abc\\def"
 //
 // ============================================================
 
@@ -106,11 +109,12 @@ function validateDocumentId(
 
 
   if (
-    id.includes("/")
+    id.includes("/") ||
+    id.includes("\\")
   ) {
     const error =
       new Error(
-        `${name} cannot contain "/".`,
+        `${name} cannot contain "/" or "\\".`,
       );
 
     error.code =
