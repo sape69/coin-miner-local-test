@@ -1123,6 +1123,16 @@ function getMiningHashRate(
 // ============================================================
 // 📺 BOOST HISTORY
 // ============================================================
+//
+// VAIN Power Boost -tapahtumat kuuluvat tähän laskentaan.
+//
+// Tämä on tärkeää, koska "ad_reward" voi olla myös jokin muu
+// mainostapahtuma. Pelkkä type == "ad_reward" ei riitä
+// tunnistamaan Power Boostia.
+//
+// Lisäksi boostin alkamis- ja päättymisajat rajataan myöhemmin
+// aina kyseiseen mining-sykliin.
+// ============================================================
 
 async function getAdBoostHistory(
   uid,
@@ -1145,6 +1155,11 @@ async function getAdBoostHistory(
         "type",
         "==",
         "ad_reward"
+      )
+      .where(
+        "rewardPurpose",
+        "==",
+        "power_boost"
       );
 
   const snapshot =
@@ -1160,6 +1175,24 @@ async function getAdBoostHistory(
     (doc) => {
       const data =
         doc.data() || {};
+
+      // --------------------------------------------------------
+      // 🔐 EXACT POWER BOOST VALIDATION
+      // --------------------------------------------------------
+
+      if (
+        data.type !==
+        "ad_reward"
+      ) {
+        return;
+      }
+
+      if (
+        data.rewardPurpose !==
+        "power_boost"
+      ) {
+        return;
+      }
 
       const start =
         getTimestampMilliseconds(
@@ -1177,6 +1210,10 @@ async function getAdBoostHistory(
       ) {
         return;
       }
+
+      // --------------------------------------------------------
+      // ⛏️ ONLY THIS MINING CYCLE
+      // --------------------------------------------------------
 
       if (
         end <= miningStartMs ||
