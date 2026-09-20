@@ -827,42 +827,25 @@ function getDailyStreak(data) {
 }
 
 
-function getDailyStatus(
-  data,
-  today
-) {
-  const lastDailyDate =
-    typeof data.lastDailyDate ===
-    "string"
-      ? data.lastDailyDate
-      : "";
-
-  const dailyClaimed =
-    lastDailyDate === today;
-
-  const storedStreak =
-    getDailyStreak(data);
-
-  const streak =
-    dailyClaimed
-      ? Math.max(
-          1,
-          storedStreak
-        )
-      : 1;
-
-  return {
-    dailyClaimed,
-
-    streak,
-
-    dailyHashRate:
-      calculateDailyHashRate(
-        streak
-      ),
-  };
-}
-
+// ============================================================
+// 🎁 NEXT DAILY CLAIM
+// ============================================================
+//
+// Tämä laskee aina seuraavan oikean päivän.
+//
+// Jos käyttäjä on jo claimannut tänään:
+//   → käytetään nykyistä streakiä.
+//
+// Jos käyttäjä ei ole vielä claimannut tänään:
+//   → jos eilinen oli viimeinen claim,
+//     streak kasvaa yhdellä.
+//
+//   → jos edellinen claim oli vanhempi,
+//     streak alkaa uudelleen päivästä 1.
+//
+// Tämän funktion avulla myös GET STATUS voi näyttää
+// oikean seuraavan Daily Hash Raten ennen claimia.
+// ============================================================
 
 function calculateNextDailyClaim(
   data,
@@ -876,6 +859,10 @@ function calculateNextDailyClaim(
 
   const currentStreak =
     getDailyStreak(data);
+
+  // ----------------------------------------------------------
+  // 🐱 ALREADY CLAIMED TODAY
+  // ----------------------------------------------------------
 
   if (
     lastDailyDate === today
@@ -898,6 +885,10 @@ function calculateNextDailyClaim(
     };
   }
 
+  // ----------------------------------------------------------
+  // 📅 CALCULATE YESTERDAY
+  // ----------------------------------------------------------
+
   const yesterday =
     new Date(
       `${today}T00:00:00.000Z`
@@ -912,6 +903,10 @@ function calculateNextDailyClaim(
     yesterday
       .toISOString()
       .slice(0, 10);
+
+  // ----------------------------------------------------------
+  // 🐱 CONTINUE OR RESET STREAK
+  // ----------------------------------------------------------
 
   const newStreak =
     lastDailyDate ===
@@ -931,6 +926,47 @@ function calculateNextDailyClaim(
         newStreak
       ),
   };
+}
+
+
+// ============================================================
+// 📊 DAILY STATUS
+// ============================================================
+//
+// IMPORTANT FIX:
+//
+// Aikaisemmin tämä funktio palautti uudelle päivälle aina
+// streakin 1 ennen claimia.
+//
+// Nyt se käyttää calculateNextDailyClaim()-funktiota.
+//
+// Esimerkki:
+//
+// current streak = 10
+// lastDailyDate = yesterday
+// today = uusi päivä
+//
+// → dailyStatus.streak = 11
+// → dailyStatus.dailyHashRate = Day 11:n Hash Rate
+//
+// Jos käyttäjä on ollut useamman päivän poissa:
+//
+// current streak = 10
+// lastDailyDate = 3 päivää sitten
+//
+// → streak = 1
+// → dailyHashRate = Day 1
+//
+// ============================================================
+
+function getDailyStatus(
+  data,
+  today
+) {
+  return calculateNextDailyClaim(
+    data,
+    today
+  );
 }
 
 
@@ -1812,7 +1848,7 @@ const getMiningStatus =
           activeMiningPerHour,
 
           dailyClaimed:
-            dailyStatus.dailyClaimed,
+            dailyStatus.claimedToday,
 
           streak:
             dailyStatus.streak,
