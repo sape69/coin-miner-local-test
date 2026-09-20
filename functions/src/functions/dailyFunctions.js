@@ -9,8 +9,16 @@
 // TÄRKEÄÄ:
 //
 // 🎁 Daily Check-In EI anna suoraa STL-tokenipalkkiota.
-// ⛏️ Daily Check-In kasvattaa käyttäjän Daily Hash Ratea.
-// 🐱 Hash Rate vaikuttaa myöhempään Stella Mining -tuottoon.
+// ⛏️ Daily Check-In määrittää käyttäjän Daily Hash Raten.
+// 🐱 Daily Hash Rate toimii mining-jakson peruslouhintatehona.
+//
+// Daily Check-In EI:
+//
+// ❌ lisää STL-saldoa
+// ❌ käynnistä Mining Startia
+// ❌ aktivoi Power Boostia
+// ❌ muuta Power Boostin tilaa
+// ❌ käsittele AdMob SSV:tä
 //
 // Firestore:
 //
@@ -31,7 +39,7 @@ const {
   onCall,
   HttpsError,
 } = require(
-  "firebase-functions/v2/https"
+  "firebase-functions/v2/https",
 );
 
 
@@ -43,7 +51,7 @@ const {
   db,
   FieldValue,
 } = require(
-  "../firebase/firebase"
+  "../firebase/firebase",
 );
 
 
@@ -57,7 +65,7 @@ const {
   DAILY_HASH_RATE_MAX_DAY,
   MAX_DAILY_HASH_RATE,
 } = require(
-  "../config/miningConfig"
+  "../config/miningConfig",
 );
 
 
@@ -68,7 +76,7 @@ const {
 const {
   getUtcDateString,
 } = require(
-  "../utils/dateUtils"
+  "../utils/dateUtils",
 );
 
 
@@ -80,7 +88,7 @@ const {
   getUserRef,
   getHistoryCollection,
 } = require(
-  "../utils/userUtils"
+  "../utils/userUtils",
 );
 
 
@@ -90,7 +98,7 @@ const {
 
 function getSafeNumber(
   value,
-  fallback = 0
+  fallback = 0,
 ) {
   const number =
     Number(value);
@@ -111,18 +119,25 @@ function getSafeNumber(
 // Päivä 2:
 // 1.0 HR
 //
-// ...
+// Päivä 3:
+// 1.5 HR
 //
-// Päivä 7:
-// 3.5 HR
+// Päivä 4:
+// 2.0 HR
 //
-// Päivä 8+:
+// Päivä 5:
+// 2.5 HR
+//
+// Päivä 6:
+// 3.0 HR
+//
+// Päivä 7+:
 // 3.5 HR
 //
 // ============================================================
 
 function calculateDailyHashRate(
-  streak
+  streak,
 ) {
   const safeStreak =
     Math.max(
@@ -130,15 +145,15 @@ function calculateDailyHashRate(
       Math.floor(
         getSafeNumber(
           streak,
-          1
-        )
-      )
+          1,
+        ),
+      ),
     );
 
   const effectiveDay =
     Math.min(
       safeStreak,
-      DAILY_HASH_RATE_MAX_DAY
+      DAILY_HASH_RATE_MAX_DAY,
     );
 
   const hashRate =
@@ -152,8 +167,8 @@ function calculateDailyHashRate(
     MAX_DAILY_HASH_RATE,
     Math.max(
       DAILY_HASH_RATE_START,
-      hashRate
-    )
+      hashRate,
+    ),
   );
 }
 
@@ -163,30 +178,30 @@ function calculateDailyHashRate(
 // ============================================================
 
 function getPreviousUtcDate(
-  dateString
+  dateString,
 ) {
   const date =
     new Date(
-      `${dateString}T00:00:00.000Z`
+      `${dateString}T00:00:00.000Z`,
     );
 
   if (
     Number.isNaN(
-      date.getTime()
+      date.getTime(),
     )
   ) {
     return "";
   }
 
   date.setUTCDate(
-    date.getUTCDate() - 1
+    date.getUTCDate() - 1,
   );
 
   return date
     .toISOString()
     .slice(
       0,
-      10
+      10,
     );
 }
 
@@ -197,10 +212,11 @@ function getPreviousUtcDate(
 
 function calculateDailyCheckIn(
   data,
-  today
+  today,
 ) {
   const lastDailyDate =
-    typeof data.lastDailyDate === "string"
+    typeof data.lastDailyDate ===
+      "string"
       ? data.lastDailyDate
       : "";
 
@@ -211,14 +227,15 @@ function calculateDailyCheckIn(
         getSafeNumber(
           data.dailyStreak ??
           data.streak,
-          0
-        )
-      )
+          0,
+        ),
+      ),
     );
 
-  // ----------------------------------------------------------
-  // Already claimed today
-  // ----------------------------------------------------------
+
+  // ==========================================================
+  // 🚫 ALREADY CLAIMED TODAY
+  // ==========================================================
 
   if (
     lastDailyDate === today
@@ -226,7 +243,7 @@ function calculateDailyCheckIn(
     const streak =
       Math.max(
         1,
-        storedStreak
+        storedStreak,
       );
 
     return {
@@ -237,21 +254,23 @@ function calculateDailyCheckIn(
 
       dailyHashRate:
         calculateDailyHashRate(
-          streak
+          streak,
         ),
     };
   }
 
-  // ----------------------------------------------------------
-  // Consecutive day
-  // ----------------------------------------------------------
+
+  // ==========================================================
+  // 📅 CONSECUTIVE DAY
+  // ==========================================================
 
   const yesterday =
     getPreviousUtcDate(
-      today
+      today,
     );
 
   let streak = 1;
+
 
   if (
     lastDailyDate === yesterday &&
@@ -261,10 +280,12 @@ function calculateDailyCheckIn(
       storedStreak + 1;
   }
 
+
   const dailyHashRate =
     calculateDailyHashRate(
-      streak
+      streak,
     );
+
 
   return {
     alreadyClaimed:
@@ -289,30 +310,36 @@ const dailyCheckIn =
     },
 
     async (
-      request
+      request,
     ) => {
       try {
         // ======================================================
         // 🔐 AUTHENTICATION
         // ======================================================
 
-        if (!request.auth) {
+        if (
+          !request.auth
+        ) {
           throw new HttpsError(
             "unauthenticated",
-            "🐱 Kirjaudu sisään käyttääksesi Stella Daily Check-Iniä."
+            "🐱 Kirjaudu sisään käyttääksesi Stella Daily Check-Iniä.",
           );
         }
+
 
         const uid =
           request.auth.uid;
 
+
         const userRef =
           getUserRef(
-            uid
+            uid,
           );
+
 
         const today =
           getUtcDateString();
+
 
         // ======================================================
         // 🔐 FIRESTORE TRANSACTION
@@ -320,27 +347,30 @@ const dailyCheckIn =
 
         return await db.runTransaction(
           async (
-            transaction
+            transaction,
           ) => {
             const snapshot =
               await transaction.get(
-                userRef
+                userRef,
               );
+
 
             const data =
               snapshot.exists
                 ? snapshot.data() || {}
                 : {};
 
+
             // ==================================================
-            // 🎁 DAILY CHECK-IN STATUS
+            // 🎁 CALCULATE DAILY STATE
             // ==================================================
 
             const daily =
               calculateDailyCheckIn(
                 data,
-                today
+                today,
               );
+
 
             // ==================================================
             // 🚫 ALREADY CLAIMED
@@ -371,6 +401,14 @@ const dailyCheckIn =
                 dailyHashRate:
                   daily.dailyHashRate,
 
+                // ------------------------------------------------
+                // Compatibility field.
+                //
+                // Tämä EI tarkoita aktiivista mining HR:ää.
+                // Uusi backend-logiikka käyttää dailyHashRatea
+                // Daily Check-In -arvona.
+                // ------------------------------------------------
+
                 hashRate:
                   daily.dailyHashRate,
 
@@ -379,29 +417,37 @@ const dailyCheckIn =
               };
             }
 
+
             // ==================================================
-            // 📊 OLD HASH RATE
+            // 📊 PREVIOUS DAILY HASH RATE
             // ==================================================
 
-            const oldHashRate =
+            const oldDailyHashRate =
               Math.max(
                 0,
                 getSafeNumber(
-                  data.hashRate,
-                  0
-                )
+                  data.dailyHashRate,
+                  0,
+                ),
               );
+
 
             // ==================================================
             // 👤 USER UPDATE
+            // ==================================================
+            //
+            // Tärkeää:
+            //
+            // Daily Check-In päivittää vain Daily Hash Rateen
+            // liittyvät kentät.
+            //
+            // Se EI kirjoita aktiivista mining-tilaa.
+            //
             // ==================================================
 
             transaction.set(
               userRef,
               {
-                hashRate:
-                  daily.dailyHashRate,
-
                 dailyHashRate:
                   daily.dailyHashRate,
 
@@ -418,9 +464,11 @@ const dailyCheckIn =
                   FieldValue.serverTimestamp(),
               },
               {
-                merge: true,
-              }
+                merge:
+                  true,
+              },
             );
+
 
             // ==================================================
             // 📜 HISTORY
@@ -428,8 +476,9 @@ const dailyCheckIn =
 
             const historyRef =
               getHistoryCollection(
-                uid
+                uid,
               ).doc();
+
 
             transaction.set(
               historyRef,
@@ -439,6 +488,8 @@ const dailyCheckIn =
 
                 title:
                   "Stella Daily Hash Rate 🐱✨",
+
+                // Daily Hash Rate ei ole STL-palkkio.
 
                 amount:
                   0,
@@ -450,9 +501,15 @@ const dailyCheckIn =
                   daily.dailyHashRate,
 
                 hashRateBefore:
-                  oldHashRate,
+                  oldDailyHashRate,
 
                 hashRateAfter:
+                  daily.dailyHashRate,
+
+                dailyHashRateBefore:
+                  oldDailyHashRate,
+
+                dailyHashRateAfter:
                   daily.dailyHashRate,
 
                 dailyStreak:
@@ -463,8 +520,9 @@ const dailyCheckIn =
 
                 createdAt:
                   FieldValue.serverTimestamp(),
-              }
+              },
             );
+
 
             // ==================================================
             // ✅ RESPONSE
@@ -496,27 +554,42 @@ const dailyCheckIn =
                 daily.dailyHashRate,
 
               previousHashRate:
-                oldHashRate,
+                oldDailyHashRate,
+
+              previousDailyHashRate:
+                oldDailyHashRate,
 
               hashRateIncrease:
                 Math.max(
                   0,
                   daily.dailyHashRate -
-                    oldHashRate
+                    oldDailyHashRate,
+                ),
+
+              dailyHashRateIncrease:
+                Math.max(
+                  0,
+                  daily.dailyHashRate -
+                    oldDailyHashRate,
                 ),
 
               message:
                 `🐱✨ Stella sai päivän ${daily.streak} Daily Hash Raten: ${daily.dailyHashRate.toFixed(4)} HR!`,
             };
-          }
+          },
         );
       } catch (
         error
       ) {
+        // ======================================================
+        // ❌ ERROR
+        // ======================================================
+
         console.error(
           "dailyCheckIn error:",
-          error
+          error,
         );
+
 
         if (
           error instanceof HttpsError
@@ -524,12 +597,13 @@ const dailyCheckIn =
           throw error;
         }
 
+
         throw new HttpsError(
           "internal",
-          "🐱 Stella Daily Check-Inin käsittely epäonnistui."
+          "🐱 Stella Daily Check-Inin käsittely epäonnistui.",
         );
       }
-    }
+    },
   );
 
 
