@@ -146,11 +146,18 @@ function getSafeNumber(
 // 🛡️ VALIDATE UID
 // ============================================================
 //
-// UID tulee lopullisesti varmennetuksi
-// admobService.js:ssa.
+// Firebase UID:tä ei rajoiteta tarpeettomasti tiettyyn
+// merkistöön.
 //
-// Tämä on defense-in-depth-tarkistus ennen
-// Firestore-kirjoitusta.
+// Tässä tarkistetaan:
+//
+// ✅ string
+// ✅ ei tyhjä
+// ✅ enintään 128 merkkiä
+// ❌ ei Firestore-polun erottimia
+//
+// admobService.js vastaa varsinaisesta
+// varmennuksesta.
 //
 // ============================================================
 
@@ -178,9 +185,8 @@ function validateUid(
 
 
   if (
-    !/^[A-Za-z0-9._-]+$/.test(
-      uid,
-    )
+    uid.includes("/") ||
+    uid.includes("\\")
   ) {
     return "";
   }
@@ -194,12 +200,23 @@ function validateUid(
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// admobService.js suorittaa varsinaisen
-// transaction_id-validoinnin.
+// transaction_id käsitellään turvallisena merkkijonona.
 //
-// Tämä on toinen defense-in-depth -tarkistus.
+// TÄRKEÄÄ:
 //
-// AdMob transaction_id säilytetään merkkijonona.
+// Emme rajoita transaction_id:tä vain heksamerkkeihin.
+// AdMobin transaction_id:n formaattia ei pidä täällä
+// tarpeettomasti kaventaa.
+//
+// Tässä tarkistetaan:
+//
+// ✅ string
+// ✅ ei tyhjä
+// ✅ enintään 256 merkkiä
+// ❌ ei Firestore-polun erottimia
+//
+// Varsinainen SSV-validointi tapahtuu
+// admobService.js:ssa.
 //
 // ============================================================
 
@@ -227,9 +244,8 @@ function validateTransactionId(
 
 
   if (
-    !/^[A-Fa-f0-9]+$/.test(
-      transactionId,
-    )
+    transactionId.includes("/") ||
+    transactionId.includes("\\")
   ) {
     return "";
   }
