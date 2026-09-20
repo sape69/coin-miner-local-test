@@ -100,41 +100,67 @@ const MAX_ADS_PER_DAY = 6;
 // Kahden Power Boost -mainoksen välinen
 // vähimmäisaika.
 //
-// Tässä sama kuin Power Boostin kesto.
-//
 // 4 tuntia.
 const AD_COOLDOWN_MS =
   4 * 60 * 60 * 1000;
 
 
 // ==========================================
-// 🔐 ADMOB REWARDED AD
+// 🔐 ADMOB REWARDED AD UNITS
 // ==========================================
 //
-// AdMob Rewarded Ad Unit ID.
+// Stelluriinilla on kaksi erillistä
+// AdMob Rewarded -mainosyksikköä:
 //
-// Tätä käytetään Flutter-sovelluksessa
-// Rewarded Ad -mainoksen lataamiseen.
+// ⛏️ Mining
+// 🐱 Power Boost
+//
+// Näitä EI saa sekoittaa keskenään.
 //
 // ==========================================
 
-const ADMOB_REWARDED_AD_UNIT_ID =
+
+// ⛏️ Stelluriini Mining
+//
+// AdMob-mainosyksikkö:
+//
+// ca-app-pub-1131012057145658/6674097787
+//
+const ADMOB_MINING_AD_UNIT_ID =
+  "ca-app-pub-1131012057145658/6674097787";
+
+
+// 🐱 Stelluriini Power Boost
+//
+// AdMob-mainosyksikkö:
+//
+// ca-app-pub-1131012057145658/7225738491
+//
+const ADMOB_POWER_BOOST_AD_UNIT_ID =
   "ca-app-pub-1131012057145658/7225738491";
 
 
 // ==========================================
-// 🔐 ADMOB SSV
+// 🔐 ADMOB SSV AD UNIT IDS
 // ==========================================
 //
-// AdMob Server-Side Verification
-// käyttää SSV callbackissa Ad Unit ID:tä.
+// AdMob SSV:n callbackissa käytettävä
+// `ad_unit` on numeerinen Ad Unit ID.
 //
-// Tässä käytetään AdMobin numeerista
-// Ad Unit ID -arvoa.
+// ⛏️ Mining:
+// 6674097787
+//
+// 🐱 Power Boost:
+// 7225738491
 //
 // ==========================================
 
-const ADMOB_SSV_AD_UNIT_ID =
+
+const ADMOB_MINING_SSV_AD_UNIT_ID =
+  "6674097787";
+
+
+const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
   "7225738491";
 
 
@@ -142,39 +168,30 @@ const ADMOB_SSV_AD_UNIT_ID =
 // 🎁 ADMOB SSV REWARD METADATA
 // ==========================================
 //
-// Nämä arvot vastaavat AdMob SSV:n
-// reward-metadataa.
+// AdMob reward metadata ei tarkoita,
+// että käyttäjälle siirretään STL-tokenia.
 //
-// TÄRKEÄÄ:
-//
-// rewardAmount = 1 EI tarkoita,
-// että käyttäjälle annetaan 1 STL.
-//
-// AdMob-palkinto toimii ainoastaan
-// mainoksen vahvistuksena.
-//
-// Stelluriini antaa vahvistetun mainoksen
-// perusteella käyttöoikeuden:
-//
-// 🐱 Mining Start
-// tai
-// 🐱 Power Boost
+// SSV vahvistaa ainoastaan sen,
+// että AdMob on hyväksynyt rewarded-mainoksen.
 //
 // ==========================================
 
 
-// AdMob reward amount.
-//
-// Tämä on AdMobin reward metadata,
-// ei STL-määrä.
-const ADMOB_SSV_REWARD_AMOUNT = 1;
+// ⛏️ Mining-mainoksen reward amount.
+const ADMOB_MINING_SSV_REWARD_AMOUNT = 1;
 
 
-// AdMob reward item.
-//
-// Tämän tulee vastata AdMob SSV:n
-// rewardItem-arvoa.
-const ADMOB_SSV_REWARD_ITEM =
+// ⛏️ Mining-mainoksen reward item.
+const ADMOB_MINING_SSV_REWARD_ITEM =
+  "Mining";
+
+
+// 🐱 Power Boost -mainoksen reward amount.
+const ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT = 1;
+
+
+// 🐱 Power Boost -mainoksen reward item.
+const ADMOB_POWER_BOOST_SSV_REWARD_ITEM =
   "Power Boost";
 
 
@@ -271,16 +288,34 @@ module.exports = {
 
 
   // ----------------------------------------
-  // 🔐 AdMob
+  // 🔐 AdMob Rewarded Ad Units
   // ----------------------------------------
 
-  ADMOB_REWARDED_AD_UNIT_ID,
+  ADMOB_MINING_AD_UNIT_ID,
 
-  ADMOB_SSV_AD_UNIT_ID,
+  ADMOB_POWER_BOOST_AD_UNIT_ID,
 
-  ADMOB_SSV_REWARD_AMOUNT,
 
-  ADMOB_SSV_REWARD_ITEM,
+  // ----------------------------------------
+  // 🔐 AdMob SSV Ad Unit IDs
+  // ----------------------------------------
+
+  ADMOB_MINING_SSV_AD_UNIT_ID,
+
+  ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
+
+
+  // ----------------------------------------
+  // 🎁 AdMob SSV Reward Metadata
+  // ----------------------------------------
+
+  ADMOB_MINING_SSV_REWARD_AMOUNT,
+
+  ADMOB_MINING_SSV_REWARD_ITEM,
+
+  ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
+
+  ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
 
 
   // ----------------------------------------
