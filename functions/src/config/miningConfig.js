@@ -70,6 +70,7 @@ const MAX_DAILY_HASH_RATE = 3.5;
 //
 // ==========================================
 
+// Power Boostin lisäämä Hash Rate.
 const AD_HASH_RATE_BONUS = 0.5833;
 
 
@@ -122,14 +123,27 @@ const ADMOB_POWER_BOOST_AD_UNIT_ID =
 // 🔐 ADMOB SSV AD UNIT IDS
 // ==========================================
 //
-// AdMob SSV callbackissa käytettävä
-// `ad_unit` on numeerinen Ad Unit ID.
+// AdMob SSV callbackin `ad_unit`
+// sisältää mainosyksikön numeerisen ID:n.
 //
 // ⛏️ Mining:
 // 6674097787
 //
 // 🐱 Power Boost:
 // 7225738491
+//
+// HUOM:
+//
+// Tämä EI ole sama arvo kuin Flutterissa
+// käytettävä koko AdMob Ad Unit ID.
+//
+// Flutter:
+//
+// ca-app-pub-1131012057145658/6674097787
+//
+// SSV:
+//
+// 6674097787
 //
 // ==========================================
 
@@ -147,8 +161,11 @@ const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
 // AdMob reward metadata ei tarkoita,
 // että käyttäjälle siirretään STL-tokenia.
 //
-// SSV vahvistaa ainoastaan sen,
-// että AdMob on hyväksynyt rewarded-mainoksen.
+// SSV vahvistaa rewarded-mainoksen
+// ja sen reward-metadata-arvot.
+//
+// Varsinainen Stelluriini-toiminto
+// käsitellään erillisessä backend-logiikassa.
 //
 // ==========================================
 
@@ -217,6 +234,11 @@ const MINING_PER_HASH_PER_HOUR = 0.10;
 
 // ==========================================
 // 📜 TRANSACTION HISTORY
+// ==========================================
+//
+// Käyttäjän transaction history -kokoelman
+// enimmäismäärä.
+//
 // ==========================================
 
 const MAX_TRANSACTION_HISTORY = 50;
