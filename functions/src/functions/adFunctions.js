@@ -146,8 +146,7 @@ function getSafeNumber(
 // 🛡️ VALIDATE UID
 // ============================================================
 //
-// Firebase UID:n validointi pidetään tässä samana kuin
-// admobService.js:ssa.
+// Firebase UID:n validointi.
 //
 // Sallitaan:
 //
@@ -172,10 +171,8 @@ function validateUid(
     return "";
   }
 
-
   const uid =
     value.trim();
-
 
   if (
     uid.length === 0 ||
@@ -183,7 +180,6 @@ function validateUid(
   ) {
     return "";
   }
-
 
   if (
     !/^[A-Za-z0-9._-]+$/.test(
@@ -193,7 +189,6 @@ function validateUid(
     return "";
   }
 
-
   return uid;
 }
 
@@ -202,13 +197,7 @@ function validateUid(
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// Vastaa admobService.js:n transaction_id-validointia.
-//
-// Sallitaan vain heksamerkit:
-//
-// 0-9
-// A-F
-// a-f
+// AdMob transaction_id:n defense-in-depth-validointi.
 //
 // ============================================================
 
@@ -222,10 +211,8 @@ function validateTransactionId(
     return "";
   }
 
-
   const transactionId =
     value.trim();
-
 
   if (
     transactionId.length === 0 ||
@@ -234,7 +221,6 @@ function validateTransactionId(
     return "";
   }
 
-
   if (
     !/^[A-Fa-f0-9]+$/.test(
       transactionId,
@@ -242,7 +228,6 @@ function validateTransactionId(
   ) {
     return "";
   }
-
 
   return transactionId;
 }
@@ -262,10 +247,8 @@ function validateRewardPurpose(
     return "";
   }
 
-
   const rewardPurpose =
     value.trim();
-
 
   if (
     !VALID_REWARD_PURPOSES.has(
@@ -274,7 +257,6 @@ function validateRewardPurpose(
   ) {
     return "";
   }
-
 
   return rewardPurpose;
 }
@@ -293,7 +275,6 @@ function normalizeString(
   ) {
     return "";
   }
-
 
   return value.trim();
 }
@@ -329,7 +310,6 @@ function getExpectedAdMobConfig(
     };
   }
 
-
   if (
     rewardPurpose ===
     "power_boost"
@@ -345,7 +325,6 @@ function getExpectedAdMobConfig(
         ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
     };
   }
-
 
   const error =
     new Error(
@@ -363,7 +342,7 @@ function getExpectedAdMobConfig(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// admobService.js on jo varmistanut:
+// admobService.js:n oletetaan jo varmistaneen:
 //
 // 🔐 kryptografisen allekirjoituksen
 // 🔑 public keyn
@@ -374,8 +353,8 @@ function getExpectedAdMobConfig(
 // 🧾 transaction_id:n
 // ⏱️ timestampin
 //
-// Tässä tehdään vielä defense-in-depth ennen
-// Firestore-kirjoitusta.
+// Tässä tehdään vielä defense-in-depth-validointi
+// ennen Firestore-kirjoitusta.
 //
 // ============================================================
 
@@ -426,7 +405,6 @@ function validateVerifiedAdData(
       verifiedAd.uid,
     );
 
-
   if (
     !uid
   ) {
@@ -450,7 +428,6 @@ function validateVerifiedAdData(
     validateRewardPurpose(
       verifiedAd.rewardPurpose,
     );
-
 
   if (
     !rewardPurpose
@@ -486,7 +463,6 @@ function validateVerifiedAdData(
       verifiedAd.transactionId,
     );
 
-
   if (
     !transactionId
   ) {
@@ -511,7 +487,6 @@ function validateVerifiedAdData(
       verifiedAd.rewardAmount,
       -1,
     );
-
 
   if (
     !Number.isSafeInteger(
@@ -541,7 +516,6 @@ function validateVerifiedAdData(
       verifiedAd.rewardItem,
     );
 
-
   if (
     rewardItem !==
       expectedAdMob.rewardItem
@@ -567,7 +541,6 @@ function validateVerifiedAdData(
       verifiedAd.adUnit,
     );
 
-
   if (
     adUnit.length === 0 ||
     adUnit !==
@@ -588,16 +561,11 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // AD NETWORK
   // ----------------------------------------------------------
-  //
-  // Vastaa admobService.js:n ad_network-validointia.
-  //
-  // ==========================================================
 
   const adNetwork =
     normalizeString(
       verifiedAd.adNetwork,
     );
-
 
   if (
     adNetwork.length === 0 ||
@@ -621,21 +589,12 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // TIMESTAMP
   // ----------------------------------------------------------
-  //
-  // admobService.js vastaa varsinaisesta
-  // timestamp-validoinnista.
-  //
-  // Tässä varmistetaan vielä, että kyseessä on
-  // positiivinen turvallinen kokonaisluku.
-  //
-  // ----------------------------------------------------------
 
   const timestamp =
     getSafeNumber(
       verifiedAd.timestamp,
       0,
     );
-
 
   if (
     !Number.isSafeInteger(
@@ -664,7 +623,6 @@ function validateVerifiedAdData(
       verifiedAd.keyId,
     );
 
-
   if (
     keyId.length === 0 ||
     !/^\d+$/.test(
@@ -692,7 +650,6 @@ function validateVerifiedAdData(
       verifiedAd.signature,
     );
 
-
   if (
     signature.length === 0
   ) {
@@ -716,7 +673,6 @@ function validateVerifiedAdData(
     normalizeString(
       verifiedAd.customData,
     );
-
 
   if (
     customData.length === 0 ||
@@ -743,7 +699,6 @@ function validateVerifiedAdData(
       verifiedAd.userId,
     );
 
-
   if (
     userId
   ) {
@@ -751,7 +706,6 @@ function validateVerifiedAdData(
       validateUid(
         userId,
       );
-
 
     if (
       !validatedUserId
@@ -766,7 +720,6 @@ function validateVerifiedAdData(
 
       throw error;
     }
-
 
     if (
       validatedUserId !==
@@ -784,6 +737,10 @@ function validateVerifiedAdData(
     }
   }
 
+
+  // ----------------------------------------------------------
+  // VERIFIED DATA
+  // ----------------------------------------------------------
 
   return {
     uid,
@@ -870,7 +827,6 @@ async function saveVerifiedAdMobReward(
       transactionId,
     );
 
-
   if (
     !rewardRef
   ) {
@@ -894,7 +850,6 @@ async function saveVerifiedAdMobReward(
     getHistoryCollection(
       uid,
     );
-
 
   if (
     !historyCollection
@@ -957,6 +912,12 @@ async function saveVerifiedAdMobReward(
 
         // ----------------------------------------------------
         // CONFLICT DETECTION
+        // ----------------------------------------------------
+        //
+        // Sama transaction_id ei saa koskaan
+        // yhdistyä toiseen käyttäjään tai toiseen
+        // reward-purposeen.
+        //
         // ----------------------------------------------------
 
         if (
@@ -1036,6 +997,7 @@ async function saveVerifiedAdMobReward(
 
           transactionId,
 
+
           // --------------------------------------------------
           // REWARD METADATA
           // --------------------------------------------------
@@ -1048,6 +1010,7 @@ async function saveVerifiedAdMobReward(
           rewardAmount,
 
           rewardItem,
+
 
           // --------------------------------------------------
           // ADMOB METADATA
@@ -1066,6 +1029,7 @@ async function saveVerifiedAdMobReward(
           customData,
 
           userId,
+
 
           // --------------------------------------------------
           // ⛏️ MINING START CLAIM STATE
@@ -1089,6 +1053,7 @@ async function saveVerifiedAdMobReward(
           miningStartClaimedBy:
             null,
 
+
           // --------------------------------------------------
           // ⚡ POWER BOOST CLAIM STATE
           // --------------------------------------------------
@@ -1104,6 +1069,7 @@ async function saveVerifiedAdMobReward(
 
           powerBoostTransactionId:
             null,
+
 
           // --------------------------------------------------
           // 🕒 SERVER TIMESTAMPS
@@ -1138,7 +1104,9 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
+          // --------------------------------------------------
           // AdMob reward metadata ei ole STL-token.
+          // --------------------------------------------------
 
           amount:
             0,
@@ -1516,7 +1484,6 @@ const adMobReward =
               "AdMob transaction conflict.",
           });
 
-
           return;
         }
 
@@ -1528,29 +1495,53 @@ const adMobReward =
         const knownValidationCodes =
           new Set([
             "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+
             "ADMOB_PUBLIC_KEY_HTTP_ERROR",
+
             "ADMOB_PUBLIC_KEY_JSON_ERROR",
+
             "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+
             "ADMOB_PUBLIC_KEYS_EMPTY",
+
             "ADMOB_PUBLIC_KEY_NOT_FOUND",
+
             "ADMOB_CRYPTO_VERIFICATION_ERROR",
+
             "ADMOB_INVALID_SIGNATURE",
+
             "ADMOB_INVALID_KEY_ID",
+
             "ADMOB_REQUEST_MISSING",
+
             "ADMOB_QUERY_STRING_MISSING",
+
             "ADMOB_INVALID_UID",
+
             "ADMOB_INVALID_REWARD_PURPOSE",
+
             "ADMOB_INVALID_TRANSACTION_ID",
+
             "ADMOB_INVALID_REWARD_AMOUNT",
+
             "ADMOB_INVALID_REWARD_ITEM",
+
             "ADMOB_INVALID_AD_UNIT",
+
             "ADMOB_INVALID_TIMESTAMP",
+
             "ADMOB_INVALID_AD_NETWORK",
+
             "ADMOB_REQUIRED_PARAMETER_MISSING",
+
             "ADMOB_VERIFIED_DATA_MISSING",
+
             "ADMOB_REWARD_REFERENCE_ERROR",
+
             "ADMOB_HISTORY_REFERENCE_ERROR",
+
             "ADMOB_USER_ID_MISMATCH",
+
             "ADMOB_CUSTOM_DATA_MISSING",
           ]);
 
@@ -1578,7 +1569,6 @@ const adMobReward =
                 ? "Verified AdMob callback failed final validation."
                 : "Invalid AdMob SSV callback.",
           });
-
 
           return;
         }
