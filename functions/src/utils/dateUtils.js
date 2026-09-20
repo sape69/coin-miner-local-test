@@ -33,30 +33,36 @@
 // ============================================================
 
 function getDateKey(
-  date = new Date()
+  date = new Date(),
 ) {
   const safeDate =
-    getDateFromValue(date) ||
+    getDateFromValue(
+      date,
+    ) ||
     new Date();
+
 
   const year =
     safeDate.getUTCFullYear();
 
+
   const month =
     String(
-      safeDate.getUTCMonth() + 1
+      safeDate.getUTCMonth() + 1,
     ).padStart(
       2,
-      "0"
+      "0",
     );
+
 
   const day =
     String(
-      safeDate.getUTCDate()
+      safeDate.getUTCDate(),
     ).padStart(
       2,
-      "0"
+      "0",
     );
+
 
   return `${year}-${month}-${day}`;
 }
@@ -70,17 +76,11 @@ function getDateKey(
 //
 // YYYY-MM-DD
 //
-// Tätä käyttävät:
-//
-// 🎁 Daily Bonus
-// 📺 Ad Rewards
-// ⛏️ Stella Mining
-//
 // ============================================================
 
 function getUtcDateString() {
   return getDateKey(
-    new Date()
+    new Date(),
   );
 }
 
@@ -101,12 +101,14 @@ function getYesterdayUtcDateString() {
   const yesterday =
     new Date();
 
+
   yesterday.setUTCDate(
-    yesterday.getUTCDate() - 1
+    yesterday.getUTCDate() - 1,
   );
 
+
   return getDateKey(
-    yesterday
+    yesterday,
   );
 }
 
@@ -124,10 +126,12 @@ function getYesterdayUtcDateString() {
 // 🔢 Milliseconds
 // 📝 Date-string
 //
+// Virheellinen arvo palauttaa null.
+//
 // ============================================================
 
 function getDateFromValue(
-  value
+  value,
 ) {
   if (
     value === null ||
@@ -150,10 +154,11 @@ function getDateFromValue(
       const date =
         value.toDate();
 
+
       if (
         date instanceof Date &&
         !Number.isNaN(
-          date.getTime()
+          date.getTime(),
         )
       ) {
         return date;
@@ -163,6 +168,7 @@ function getDateFromValue(
     ) {
       return null;
     }
+
 
     return null;
   }
@@ -176,7 +182,7 @@ function getDateFromValue(
     value instanceof Date
   ) {
     return Number.isNaN(
-      value.getTime()
+      value.getTime(),
     )
       ? null
       : value;
@@ -184,17 +190,72 @@ function getDateFromValue(
 
 
   // ==========================================================
-  // 🔢 NUMBER / STRING
+  // 🔢 NUMBER
   // ==========================================================
 
-  const date =
-    new Date(value);
+  if (
+    typeof value === "number"
+  ) {
+    if (
+      !Number.isFinite(
+        value,
+      )
+    ) {
+      return null;
+    }
 
-  return Number.isNaN(
-    date.getTime()
-  )
-    ? null
-    : date;
+
+    const date =
+      new Date(
+        value,
+      );
+
+
+    return Number.isNaN(
+      date.getTime(),
+    )
+      ? null
+      : date;
+  }
+
+
+  // ==========================================================
+  // 📝 STRING
+  // ==========================================================
+
+  if (
+    typeof value === "string"
+  ) {
+    const trimmed =
+      value.trim();
+
+
+    if (
+      trimmed.length === 0
+    ) {
+      return null;
+    }
+
+
+    const date =
+      new Date(
+        trimmed,
+      );
+
+
+    return Number.isNaN(
+      date.getTime(),
+    )
+      ? null
+      : date;
+  }
+
+
+  // ==========================================================
+  // ❌ UNSUPPORTED TYPE
+  // ==========================================================
+
+  return null;
 }
 
 
@@ -212,17 +273,19 @@ function getDateFromValue(
 
 function getElapsedMilliseconds(
   startDate,
-  now = new Date()
+  now = new Date(),
 ) {
   const start =
     getDateFromValue(
-      startDate
+      startDate,
     );
+
 
   const current =
     getDateFromValue(
-      now
+      now,
     );
+
 
   if (
     !start ||
@@ -231,10 +294,11 @@ function getElapsedMilliseconds(
     return 0;
   }
 
+
   return Math.max(
     0,
     current.getTime() -
-      start.getTime()
+      start.getTime(),
   );
 }
 
@@ -244,8 +308,9 @@ function getElapsedMilliseconds(
 // ============================================================
 
 module.exports = {
-
+  // ----------------------------------------
   // 📅 DATE
+  // ----------------------------------------
 
   getDateKey,
 
@@ -254,10 +319,11 @@ module.exports = {
   getYesterdayUtcDateString,
 
 
+  // ----------------------------------------
   // ⏱️ TIME
+  // ----------------------------------------
 
   getDateFromValue,
 
   getElapsedMilliseconds,
-
 };
