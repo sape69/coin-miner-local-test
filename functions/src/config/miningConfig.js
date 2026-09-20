@@ -10,7 +10,7 @@
 //
 // - Daily Hash Rate ei ole STL-palkkio.
 // - AdMob Rewarded Ad ei anna suoraan STL-tokenia.
-// - AdMob SSV ainoastaan vahvistaa mainoksen.
+// - AdMob SSV vahvistaa rewarded-mainoksen.
 // - Power Boost kasvattaa louhintatehoa määräajaksi.
 // - Power Boost ei voi jatkua mining-jakson yli.
 // - Power Boost ei siirry seuraavaan mining-jaksoon.
@@ -49,22 +49,12 @@
 //
 // ==========================================
 
-
-// Ensimmäisen päivän Hash Rate.
 const DAILY_HASH_RATE_START = 0.5;
 
-
-// Kuinka paljon Hash Rate kasvaa
-// jokaisena seuraavana streak-päivänä.
 const DAILY_HASH_RATE_STEP = 0.5;
 
-
-// Kuinka pitkälle Daily Hash Rate
-// kasvaa ennen kuin maksimi saavutetaan.
 const DAILY_HASH_RATE_MAX_DAY = 7;
 
-
-// Daily Hash Raten absoluuttinen maksimi.
 const MAX_DAILY_HASH_RATE = 3.5;
 
 
@@ -80,8 +70,6 @@ const MAX_DAILY_HASH_RATE = 3.5;
 //
 // ==========================================
 
-
-// Power Boostin antama lisä-Hash Rate.
 const AD_HASH_RATE_BONUS = 0.5833;
 
 
@@ -115,27 +103,17 @@ const AD_COOLDOWN_MS =
 // ⛏️ Mining
 // 🐱 Power Boost
 //
-// Näitä EI saa sekoittaa keskenään.
+// Näitä ei saa sekoittaa keskenään.
 //
 // ==========================================
 
 
 // ⛏️ Stelluriini Mining
-//
-// AdMob-mainosyksikkö:
-//
-// ca-app-pub-1131012057145658/6674097787
-//
 const ADMOB_MINING_AD_UNIT_ID =
   "ca-app-pub-1131012057145658/6674097787";
 
 
 // 🐱 Stelluriini Power Boost
-//
-// AdMob-mainosyksikkö:
-//
-// ca-app-pub-1131012057145658/7225738491
-//
 const ADMOB_POWER_BOOST_AD_UNIT_ID =
   "ca-app-pub-1131012057145658/7225738491";
 
@@ -144,7 +122,7 @@ const ADMOB_POWER_BOOST_AD_UNIT_ID =
 // 🔐 ADMOB SSV AD UNIT IDS
 // ==========================================
 //
-// AdMob SSV:n callbackissa käytettävä
+// AdMob SSV callbackissa käytettävä
 // `ad_unit` on numeerinen Ad Unit ID.
 //
 // ⛏️ Mining:
@@ -155,10 +133,8 @@ const ADMOB_POWER_BOOST_AD_UNIT_ID =
 //
 // ==========================================
 
-
 const ADMOB_MINING_SSV_AD_UNIT_ID =
   "6674097787";
-
 
 const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
   "7225738491";
@@ -212,10 +188,6 @@ const ADMOB_POWER_BOOST_SSV_REWARD_ITEM =
 //
 // ==========================================
 
-
-// Yhden mining-jakson pituus.
-//
-// 24 tuntia.
 const MINING_DURATION_MS =
   24 * 60 * 60 * 1000;
 
@@ -245,11 +217,6 @@ const MINING_PER_HASH_PER_HOUR = 0.10;
 
 // ==========================================
 // 📜 TRANSACTION HISTORY
-// ==========================================
-//
-// Käyttäjän transaction/history-logiikan
-// käyttämä enimmäismäärä.
-//
 // ==========================================
 
 const MAX_TRANSACTION_HISTORY = 50;
