@@ -72,7 +72,7 @@ function getSafeHashRate(
 // ============================================================
 //
 // Muuntaa kuluneen ajan turvallisesti
-// ei-negatiiviseksi millisekuntiarvoksi.
+// ei-negatiiviseksi millisekunniksi.
 //
 // ============================================================
 
@@ -146,6 +146,8 @@ function getSafeDate(
     ) {
       return null;
     }
+
+    return null;
   }
 
 
