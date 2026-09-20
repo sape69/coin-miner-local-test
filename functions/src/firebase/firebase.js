@@ -1,6 +1,5 @@
 "use strict";
 
-
 // ============================================================
 // 🐱 STELLA FIREBASE
 // ============================================================
@@ -9,7 +8,7 @@
 //
 // 🔥 Firebase Admin SDK:n alustuksesta
 // 📦 Firestore-yhteydestä
-// ⏱️ Firestore FieldValue -työkaluista
+// ⏱️ Firestore FieldValue -työkalusta
 //
 // ============================================================
 
@@ -53,9 +52,7 @@ const {
 if (
   getApps().length === 0
 ) {
-
   initializeApp();
-
 }
 
 
