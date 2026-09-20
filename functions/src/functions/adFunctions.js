@@ -56,11 +56,6 @@ const {
 // ============================================================
 // ⚙️ MINING CONFIG
 // ============================================================
-//
-// Mining ja Power Boost käyttävät erillisiä
-// AdMob Rewarded -asetuksia.
-//
-// ============================================================
 
 const {
   ADMOB_MINING_SSV_AD_UNIT_ID,
@@ -181,12 +176,16 @@ function validateUid(
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// Transaction ID:tä ei rajoiteta pelkästään
-// heksamerkkeihin.
+// AdMob dokumentoi transaction_id:n yksilöllisenä
+// reward-tapahtuman tunnisteena.
 //
-// Tärkeää on:
+// Emme rajoita sitä tässä vain heksamerkkeihin,
+// koska kryptografinen/SSV-validointi tehdään
+// admobService.js:n kautta.
 //
-// ✅ merkkijono
+// Tässä tarkistetaan:
+//
+// ✅ string
 // ✅ ei tyhjä
 // ✅ kohtuullinen maksimipituus
 // ✅ ei Firestore-polun erottimia
@@ -275,7 +274,7 @@ function normalizeString(
 // Valitsee rewardPurpose-arvon perusteella:
 //
 // ⛏️ Mining
-// 🐱 Power Boost
+// ⚡ Power Boost
 //
 // ============================================================
 
@@ -330,21 +329,10 @@ function getExpectedAdMobConfig(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// admobService.js on tarkistanut SSV:n.
+// admobService.js on jo varmistanut SSV-signaturen.
 //
-// Tässä tehdään vielä defense-in-depth -tarkistus
+// Tässä tehdään defense-in-depth -tarkistus
 // ennen Firestore-kirjoitusta.
-//
-// Tarkistetaan:
-//
-// ✅ UID
-// ✅ reward purpose
-// ✅ transaction ID
-// ✅ oikea Ad Unit
-// ✅ oikea reward amount
-// ✅ oikea reward item
-// ✅ timestamp
-// ✅ key ID
 //
 // ============================================================
 
@@ -527,6 +515,16 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // TIMESTAMP
   // ----------------------------------------------------------
+  //
+  // AdMob SSV timestamp on Epoch milliseconds.
+  //
+  // admobService.js vastaa varsinaisesta
+  // timestamp-validoinnista.
+  //
+  // Tässä tarkistetaan vain, että arvo on
+  // kelvollinen positiivinen numero.
+  //
+  // ----------------------------------------------------------
 
   const timestamp =
     getSafeNumber(
@@ -692,6 +690,21 @@ async function saveVerifiedAdMobReward(
     getHistoryCollection(
       uid,
     );
+
+
+  if (
+    !historyCollection
+  ) {
+    const error =
+      new Error(
+        "Unable to create user history collection.",
+      );
+
+    error.code =
+      "ADMOB_HISTORY_REFERENCE_ERROR";
+
+    throw error;
+  }
 
 
   // ----------------------------------------------------------
@@ -997,6 +1010,22 @@ const adMobReward =
       req,
       res,
     ) => {
+      // ------------------------------------------------------
+      // 🔐 TRACK SSV VERIFICATION STATE
+      // ------------------------------------------------------
+      //
+      // Tämä erottaa:
+      //
+      // 1. SSV ei ole varmennettu
+      // 2. SSV on kryptografisesti varmennettu,
+      //    mutta muu validointi epäonnistui
+      //
+      // ------------------------------------------------------
+
+      let ssvVerified =
+        false;
+
+
       try {
         // ======================================================
         // 🔐 METHOD HANDLING
@@ -1049,6 +1078,12 @@ const adMobReward =
         // ======================================================
         // 🩺 BASIC ENDPOINT CHECK
         // ======================================================
+        //
+        // Tämä EI ole varmennettu AdMob callback.
+        //
+        // Siksi verified = false.
+        //
+        // ======================================================
 
         if (
           queryKeys.length === 0
@@ -1065,7 +1100,7 @@ const adMobReward =
               true,
 
             verified:
-              true,
+              false,
 
             endpoint:
               "adMobReward",
@@ -1137,6 +1172,14 @@ const adMobReward =
         }
 
 
+        // ------------------------------------------------------
+        // SSV CRYPTOGRAPHICALLY VERIFIED
+        // ------------------------------------------------------
+
+        ssvVerified =
+          true;
+
+
         // ======================================================
         // 🛡️ FINAL VERIFIED DATA
         // ======================================================
@@ -1183,24 +1226,15 @@ const adMobReward =
           );
 
 
-          res.status(
-            400,
-          ).json({
-            success:
-              false,
-
-            verified:
-              true,
-
-            rewarded:
-              false,
-
-            error:
+          const error =
+            new Error(
               "AdMob user identity mismatch.",
-          });
+            );
 
+          error.code =
+            "ADMOB_USER_ID_MISMATCH";
 
-          return;
+          throw error;
         }
 
 
@@ -1217,29 +1251,15 @@ const adMobReward =
         if (
           customData.length === 0
         ) {
-          console.error(
-            "❌ Verified AdMob custom_data is missing.",
-          );
+          const error =
+            new Error(
+              "Verified AdMob custom_data is missing.",
+            );
 
+          error.code =
+            "ADMOB_CUSTOM_DATA_MISSING";
 
-          res.status(
-            400,
-          ).json({
-            success:
-              false,
-
-            verified:
-              true,
-
-            rewarded:
-              false,
-
-            error:
-              "Missing AdMob custom_data.",
-          });
-
-
-          return;
+          throw error;
         }
 
 
@@ -1347,7 +1367,7 @@ const adMobReward =
               false,
 
             verified:
-              true,
+              ssvVerified,
 
             rewarded:
               false,
@@ -1388,6 +1408,9 @@ const adMobReward =
             "ADMOB_REQUIRED_PARAMETER_MISSING",
             "ADMOB_VERIFIED_DATA_MISSING",
             "ADMOB_REWARD_REFERENCE_ERROR",
+            "ADMOB_HISTORY_REFERENCE_ERROR",
+            "ADMOB_USER_ID_MISMATCH",
+            "ADMOB_CUSTOM_DATA_MISSING",
           ]);
 
 
@@ -1404,13 +1427,15 @@ const adMobReward =
               false,
 
             verified:
-              false,
+              ssvVerified,
 
             rewarded:
               false,
 
             error:
-              "Invalid AdMob SSV callback.",
+              ssvVerified
+                ? "Verified AdMob callback failed final validation."
+                : "Invalid AdMob SSV callback.",
           });
 
 
@@ -1419,23 +1444,33 @@ const adMobReward =
 
 
         // ======================================================
-        // ❌ GENERAL SSV ERROR
+        // ❌ INTERNAL SERVER / FIRESTORE ERROR
+        // ======================================================
+        //
+        // Tärkeää:
+        //
+        // Jos SSV oli validi mutta Firestore-tallennus
+        // epäonnistui, emme väitä callbackia virheelliseksi.
+        //
+        // HTTP 500 antaa AdMobille mahdollisuuden yrittää
+        // callbackia uudelleen.
+        //
         // ======================================================
 
         res.status(
-          400,
+          500,
         ).json({
           success:
             false,
 
           verified:
-            false,
+            ssvVerified,
 
           rewarded:
             false,
 
           error:
-            "Invalid AdMob SSV callback.",
+            "AdMob reward processing failed.",
         });
       }
     },
