@@ -146,18 +146,19 @@ function getSafeNumber(
 // 🛡️ VALIDATE UID
 // ============================================================
 //
-// Firebase UID:tä ei rajoiteta tarpeettomasti tiettyyn
-// merkistöön.
+// Firebase UID:n validointi pidetään tässä samana kuin
+// admobService.js:ssa.
 //
-// Tässä tarkistetaan:
+// Sallitaan:
 //
-// ✅ string
-// ✅ ei tyhjä
-// ✅ enintään 128 merkkiä
-// ❌ ei Firestore-polun erottimia
+// A-Z
+// a-z
+// 0-9
+// .
+// _
+// -
 //
-// admobService.js vastaa varsinaisesta
-// varmennuksesta.
+// Enimmäispituus 128 merkkiä.
 //
 // ============================================================
 
@@ -185,8 +186,9 @@ function validateUid(
 
 
   if (
-    uid.includes("/") ||
-    uid.includes("\\")
+    !/^[A-Za-z0-9._-]+$/.test(
+      uid,
+    )
   ) {
     return "";
   }
@@ -200,23 +202,13 @@ function validateUid(
 // 🔐 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// transaction_id käsitellään turvallisena merkkijonona.
+// Vastaa admobService.js:n transaction_id-validointia.
 //
-// TÄRKEÄÄ:
+// Sallitaan vain heksamerkit:
 //
-// Emme rajoita transaction_id:tä vain heksamerkkeihin.
-// AdMobin transaction_id:n formaattia ei pidä täällä
-// tarpeettomasti kaventaa.
-//
-// Tässä tarkistetaan:
-//
-// ✅ string
-// ✅ ei tyhjä
-// ✅ enintään 256 merkkiä
-// ❌ ei Firestore-polun erottimia
-//
-// Varsinainen SSV-validointi tapahtuu
-// admobService.js:ssa.
+// 0-9
+// A-F
+// a-f
 //
 // ============================================================
 
@@ -244,8 +236,9 @@ function validateTransactionId(
 
 
   if (
-    transactionId.includes("/") ||
-    transactionId.includes("\\")
+    !/^[A-Fa-f0-9]+$/.test(
+      transactionId,
+    )
   ) {
     return "";
   }
@@ -595,6 +588,10 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // AD NETWORK
   // ----------------------------------------------------------
+  //
+  // Vastaa admobService.js:n ad_network-validointia.
+  //
+  // ==========================================================
 
   const adNetwork =
     normalizeString(
@@ -604,8 +601,8 @@ function validateVerifiedAdData(
 
   if (
     adNetwork.length === 0 ||
-    adNetwork.length > 128 ||
-    !/^[A-Za-z0-9._-]+$/.test(
+    adNetwork.length > 32 ||
+    !/^\d+$/.test(
       adNetwork,
     )
   ) {
@@ -830,7 +827,7 @@ function validateVerifiedAdData(
 // 4. tallentaa historian
 //
 // Varsinainen Mining Start / Power Boost käsitellään
-// myöhemmin erillisessä business/service-kerroksessa.
+// erillisessä business/service-kerroksessa.
 //
 // ============================================================
 
