@@ -39,10 +39,8 @@ function getDateKey(
     getDateFromValue(date) ||
     new Date();
 
-
   const year =
     safeDate.getUTCFullYear();
-
 
   const month =
     String(
@@ -52,7 +50,6 @@ function getDateKey(
       "0"
     );
 
-
   const day =
     String(
       safeDate.getUTCDate()
@@ -60,7 +57,6 @@ function getDateKey(
       2,
       "0"
     );
-
 
   return `${year}-${month}-${day}`;
 }
@@ -78,6 +74,7 @@ function getDateKey(
 //
 // 🎁 Daily Bonus
 // 📺 Ad Rewards
+// ⛏️ Stella Mining
 //
 // ============================================================
 
@@ -104,11 +101,9 @@ function getYesterdayUtcDateString() {
   const yesterday =
     new Date();
 
-
   yesterday.setUTCDate(
     yesterday.getUTCDate() - 1
   );
-
 
   return getDateKey(
     yesterday
@@ -151,19 +146,23 @@ function getDateFromValue(
     typeof value.toDate ===
     "function"
   ) {
-    const date =
-      value.toDate();
+    try {
+      const date =
+        value.toDate();
 
-
-    if (
-      date instanceof Date &&
-      !Number.isNaN(
-        date.getTime()
-      )
+      if (
+        date instanceof Date &&
+        !Number.isNaN(
+          date.getTime()
+        )
+      ) {
+        return date;
+      }
+    } catch (
+      error
     ) {
-      return date;
+      return null;
     }
-
 
     return null;
   }
@@ -191,7 +190,6 @@ function getDateFromValue(
   const date =
     new Date(value);
 
-
   return Number.isNaN(
     date.getTime()
   )
@@ -206,6 +204,10 @@ function getDateFromValue(
 //
 // Laskee kuinka paljon aikaa on kulunut.
 //
+// Virheelliset ajat palauttavat 0.
+//
+// Tulos ei voi olla negatiivinen.
+//
 // ============================================================
 
 function getElapsedMilliseconds(
@@ -217,12 +219,10 @@ function getElapsedMilliseconds(
       startDate
     );
 
-
   const current =
     getDateFromValue(
       now
     );
-
 
   if (
     !start ||
@@ -230,7 +230,6 @@ function getElapsedMilliseconds(
   ) {
     return 0;
   }
-
 
   return Math.max(
     0,
