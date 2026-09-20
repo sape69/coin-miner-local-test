@@ -59,13 +59,10 @@ const {
 // ============================================================
 
 const {
-  DAILY_HASH_RATE_START,
-  DAILY_HASH_RATE_STEP,
-  DAILY_HASH_RATE_MAX_DAY,
-  MAX_DAILY_HASH_RATE,
+  DEFAULT_HASH_RATE,
+  DAILY_HASH_RATE_BONUS,
 
   AD_HASH_RATE_BONUS,
-  AD_BOOST_DURATION_MS,
   MAX_ADS_PER_DAY,
   AD_COOLDOWN_MS,
 
@@ -308,14 +305,6 @@ function getSafeDate(
 // ============================================================
 // 📅 UTC DATE KEY
 // ============================================================
-//
-// Power Boostin päivärajoitus käyttää UTC-päivää.
-//
-// Muoto:
-//
-// YYYY-MM-DD
-//
-// ============================================================
 
 function getUtcDateKey(
   date = new Date(),
@@ -338,12 +327,17 @@ function getUtcDateKey(
 // 🎁 CALCULATE DAILY HASH RATE
 // ============================================================
 //
-// Daily Streak:
+// Daily Hash Rate:
 //
-// Päivä 1 = 0.5 HR
-// Päivä 2 = 1.0 HR
-// ...
-// Päivä 7+ = 3.5 HR
+// Päivä 1 = DEFAULT_HASH_RATE
+// Päivä 2 = DEFAULT_HASH_RATE + DAILY_HASH_RATE_BONUS
+// Päivä 3 = DEFAULT_HASH_RATE + 2 * DAILY_HASH_RATE_BONUS
+// jne.
+//
+// Arvo tallennetaan mining-jakson alkaessa.
+//
+// Näin aktiivisen mining-jakson Hash Rate ei muutu
+// kesken jakson.
 //
 // ============================================================
 
@@ -361,31 +355,32 @@ function calculateDailyHashRate(
       ),
     );
 
-  const effectiveDay =
-    Math.min(
-      streak,
-      DAILY_HASH_RATE_MAX_DAY,
+  const bonusDays =
+    Math.max(
+      0,
+      streak - 1,
     );
 
   const hashRate =
-    DAILY_HASH_RATE_START +
-    (
-      effectiveDay - 1
-    ) *
-    DAILY_HASH_RATE_STEP;
-
-  return Math.min(
-    MAX_DAILY_HASH_RATE,
-    Math.max(
+    getSafeNumber(
+      DEFAULT_HASH_RATE,
       0,
-      hashRate,
-    ),
+    ) +
+    bonusDays *
+    getSafeNumber(
+      DAILY_HASH_RATE_BONUS,
+      0,
+    );
+
+  return Math.max(
+    0,
+    hashRate,
   );
 }
 
 
 // ============================================================
-// 🧮 CALCULATE BOOST MINING
+// 🧮 CALCULATE POWER BOOST MINING
 // ============================================================
 //
 // Laskee Power Boostin tuottaman lisäosuuden.
@@ -435,7 +430,7 @@ function calculatePowerBoostMining(
 // 🧮 CALCULATE COMPLETED MINING
 // ============================================================
 //
-// Laskee koko mining-jakson tuotannon:
+// Laskee mining-jakson tuotannon:
 //
 // Base Hash Rate
 // +
@@ -534,6 +529,10 @@ function calculateCompletedMining(
         startMs,
     );
 
+  // ----------------------------------------------------------
+  // ⛏️ BASE HASH RATE
+  // ----------------------------------------------------------
+
   const baseHashRate =
     Math.max(
       0,
@@ -563,12 +562,19 @@ function calculateCompletedMining(
       data.powerBoostEndsAt,
     );
 
+  const storedBoostHashRate =
+    getSafeNumber(
+      data.powerBoostHashRate,
+      0,
+    );
+
   let boostElapsedMs =
     0;
 
   if (
     boostStartedAt &&
-    boostEndsAt
+    boostEndsAt &&
+    storedBoostHashRate > 0
   ) {
     const boostStartMs =
       Math.max(
@@ -595,7 +601,7 @@ function calculateCompletedMining(
 
   const boostAmount =
     calculatePowerBoostMining(
-      AD_HASH_RATE_BONUS,
+      storedBoostHashRate,
       boostElapsedMs,
     );
 
@@ -618,10 +624,6 @@ function calculateCompletedMining(
 
 // ============================================================
 // 🧮 CALCULATE CURRENT MINING
-// ============================================================
-//
-// Sama laskenta aktiiviselle jaksolle.
-//
 // ============================================================
 
 function calculateCurrentMining(
@@ -663,10 +665,7 @@ function getUserRef(
 //
 // Käynnistää uuden 24 h mining-jakson.
 //
-// Vaatimukset:
-//
-// - käyttäjää ei saa olla aktiivisessa miningissä
-// - Daily Hash Rate määräytyy streakistä
+// Hash Rate määräytyy daily streakistä.
 //
 // ============================================================
 
@@ -773,11 +772,20 @@ async function startMining(
           miningClaimed:
             false,
 
-          miningBalance:
-            getSafeNumber(
-              data.miningBalance,
-              0,
-            ),
+          miningClaimedAmount:
+            0,
+
+          powerBoostActive:
+            false,
+
+          powerBoostHashRate:
+            0,
+
+          powerBoostStartedAt:
+            null,
+
+          powerBoostEndsAt:
+            null,
 
           updatedAt:
             FieldValue.serverTimestamp(),
@@ -842,14 +850,9 @@ async function startMining(
 // Boost:
 //
 // + AD_HASH_RATE_BONUS
-// määräajaksi
+// määräajaksi.
 //
-// Boost ei saa:
-//
-// ❌ alkaa ennen mining-jaksoa
-// ❌ jatkua mining-jakson yli
-// ❌ ohittaa päivittäistä mainosrajaa
-// ❌ ohittaa cooldownia
+// Boost rajataan mining-jakson loppuun.
 //
 // ============================================================
 
@@ -1039,10 +1042,19 @@ async function applyPowerBoost(
       const boostStartedAt =
         now;
 
+      const requestedBoostDuration =
+        Math.max(
+          0,
+          getSafeNumber(
+            AD_COOLDOWN_MS,
+            0,
+          ),
+        );
+
       const requestedBoostEnd =
         new Date(
           now.getTime() +
-          AD_BOOST_DURATION_MS,
+          requestedBoostDuration,
         );
 
       const actualBoostEnd =
@@ -1050,6 +1062,21 @@ async function applyPowerBoost(
         miningEndsAt.getTime()
           ? miningEndsAt
           : requestedBoostEnd;
+
+      if (
+        actualBoostEnd.getTime() <=
+        boostStartedAt.getTime()
+      ) {
+        const error =
+          new Error(
+            "Power Boost duration is invalid.",
+          );
+
+        error.code =
+          "POWER_BOOST_INVALID_DURATION";
+
+        throw error;
+      }
 
       // ------------------------------------------------------
       // 💾 SAVE BOOST
@@ -1059,11 +1086,16 @@ async function applyPowerBoost(
         userRef,
         {
           powerBoostActive:
-            actualBoostEnd.getTime() >
-            now.getTime(),
+            true,
 
           powerBoostHashRate:
-            AD_HASH_RATE_BONUS,
+            Math.max(
+              0,
+              getSafeNumber(
+                AD_HASH_RATE_BONUS,
+                0,
+              ),
+            ),
 
           powerBoostStartedAt:
             boostStartedAt,
@@ -1179,12 +1211,6 @@ async function applyPowerBoost(
 // Power Boost mining
 //
 // ja lisää tuloksen miningBalanceen.
-//
-// Idempotenssi:
-//
-// miningClaimed === true
-//
-// estää saman jakson maksamisen uudelleen.
 //
 // ============================================================
 
@@ -1517,6 +1543,65 @@ async function getMiningStatus(
       now,
     );
 
+  const powerBoostStartedAt =
+    getSafeDate(
+      data.powerBoostStartedAt,
+    );
+
+  const powerBoostEndsAt =
+    getSafeDate(
+      data.powerBoostEndsAt,
+    );
+
+  const powerBoostHashRate =
+    Math.max(
+      0,
+      getSafeNumber(
+        data.powerBoostHashRate,
+        0,
+      ),
+    );
+
+  const powerBoostActive =
+    Boolean(
+      startedAt &&
+      endsAt &&
+      powerBoostStartedAt &&
+      powerBoostEndsAt &&
+      powerBoostHashRate > 0 &&
+      powerBoostStartedAt.getTime() <=
+        now.getTime() &&
+      powerBoostEndsAt.getTime() >
+        now.getTime() &&
+      powerBoostStartedAt.getTime() <
+        powerBoostEndsAt.getTime() &&
+      powerBoostStartedAt.getTime() <
+        endsAt.getTime(),
+    );
+
+  const adsTodayDate =
+    typeof data.adsTodayDate ===
+    "string"
+      ? data.adsTodayDate
+      : "";
+
+  const today =
+    getUtcDateKey(
+      now,
+    );
+
+  const adsToday =
+    adsTodayDate ===
+    today
+      ? Math.max(
+          0,
+          getSafeNumber(
+            data.adsToday,
+            0,
+          ),
+        )
+      : 0;
+
   return {
     success:
       true,
@@ -1572,35 +1657,21 @@ async function getMiningStatus(
     boostElapsedMs:
       current.boostElapsedMs,
 
-    powerBoostActive:
-      Boolean(
-        data.powerBoostActive,
-      ),
+    powerBoostActive,
 
-    powerBoostHashRate:
-      getSafeNumber(
-        data.powerBoostHashRate,
-        0,
-      ),
+    powerBoostHashRate,
 
-    powerBoostStartedAt:
-      getSafeDate(
-        data.powerBoostStartedAt,
-      ),
+    powerBoostStartedAt,
 
-    powerBoostEndsAt:
-      getSafeDate(
-        data.powerBoostEndsAt,
-      ),
+    powerBoostEndsAt,
 
-    adsToday:
-      getSafeNumber(
-        data.adsToday,
-        0,
-      ),
+    adsToday,
 
     adsTodayDate:
-      data.adsTodayDate || "",
+      adsTodayDate ===
+      today
+        ? adsTodayDate
+        : "",
   };
 }
 
