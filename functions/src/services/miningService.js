@@ -59,10 +59,13 @@ const {
 // ============================================================
 
 const {
-  DEFAULT_HASH_RATE,
-  DAILY_HASH_RATE_BONUS,
+  DAILY_HASH_RATE_START,
+  DAILY_HASH_RATE_STEP,
+  DAILY_HASH_RATE_MAX_DAY,
+  MAX_DAILY_HASH_RATE,
 
   AD_HASH_RATE_BONUS,
+  AD_BOOST_DURATION_MS,
   MAX_ADS_PER_DAY,
   AD_COOLDOWN_MS,
 
@@ -329,10 +332,12 @@ function getUtcDateKey(
 //
 // Daily Hash Rate:
 //
-// Päivä 1 = DEFAULT_HASH_RATE
-// Päivä 2 = DEFAULT_HASH_RATE + DAILY_HASH_RATE_BONUS
-// Päivä 3 = DEFAULT_HASH_RATE + 2 * DAILY_HASH_RATE_BONUS
-// jne.
+// Päivä 1 = 0.5 HR
+// Päivä 2 = 1.0 HR
+// Päivä 3 = 1.5 HR
+// ...
+// Päivä 7 = 3.5 HR
+// Päivä 8+ = 3.5 HR
 //
 // Arvo tallennetaan mining-jakson alkaessa.
 //
@@ -355,26 +360,63 @@ function calculateDailyHashRate(
       ),
     );
 
-  const bonusDays =
+  const maxDay =
+    Math.max(
+      1,
+      Math.floor(
+        getSafeNumber(
+          DAILY_HASH_RATE_MAX_DAY,
+          7,
+        ),
+      ),
+    );
+
+  const effectiveDay =
+    Math.min(
+      streak,
+      maxDay,
+    );
+
+  const startHashRate =
     Math.max(
       0,
-      streak - 1,
+      getSafeNumber(
+        DAILY_HASH_RATE_START,
+        0,
+      ),
+    );
+
+  const step =
+    Math.max(
+      0,
+      getSafeNumber(
+        DAILY_HASH_RATE_STEP,
+        0,
+      ),
     );
 
   const hashRate =
-    getSafeNumber(
-      DEFAULT_HASH_RATE,
+    startHashRate +
+    (
+      effectiveDay - 1
+    ) *
+    step;
+
+  const maximum =
+    Math.max(
       0,
-    ) +
-    bonusDays *
-    getSafeNumber(
-      DAILY_HASH_RATE_BONUS,
-      0,
+      getSafeNumber(
+        MAX_DAILY_HASH_RATE,
+        hashRate,
+      ),
     );
 
-  return Math.max(
-    0,
-    hashRate,
+  return Math.min(
+    Math.max(
+      0,
+      hashRate,
+    ),
+    maximum,
   );
 }
 
@@ -665,7 +707,7 @@ function getUserRef(
 //
 // Käynnistää uuden 24 h mining-jakson.
 //
-// Hash Rate määräytyy daily streakistä.
+// Hash Rate määräytyy Daily Streakistä.
 //
 // ============================================================
 
@@ -787,6 +829,9 @@ async function startMining(
           powerBoostEndsAt:
             null,
 
+          powerBoostTransactionId:
+            null,
+
           updatedAt:
             FieldValue.serverTimestamp(),
         },
@@ -850,9 +895,12 @@ async function startMining(
 // Boost:
 //
 // + AD_HASH_RATE_BONUS
-// määräajaksi.
+// AD_BOOST_DURATION_MS ajan.
 //
 // Boost rajataan mining-jakson loppuun.
+//
+// AD_COOLDOWN_MS määrittää vain seuraavan mainoksen
+// käyttöön liittyvän cooldown-ajan.
 //
 // ============================================================
 
@@ -1042,11 +1090,27 @@ async function applyPowerBoost(
       const boostStartedAt =
         now;
 
+      // ------------------------------------------------------
+      // ⚡ BOOST DURATION
+      // ------------------------------------------------------
+      //
+      // TÄRKEÄÄ:
+      //
+      // AD_BOOST_DURATION_MS =
+      // Power Boostin varsinainen kesto.
+      //
+      // AD_COOLDOWN_MS =
+      // seuraavan Power Boostin käyttörajoitus.
+      //
+      // Näitä ei sekoiteta keskenään.
+      //
+      // ------------------------------------------------------
+
       const requestedBoostDuration =
         Math.max(
           0,
           getSafeNumber(
-            AD_COOLDOWN_MS,
+            AD_BOOST_DURATION_MS,
             0,
           ),
         );
@@ -1079,6 +1143,33 @@ async function applyPowerBoost(
       }
 
       // ------------------------------------------------------
+      // ⚡ BOOST HASH RATE
+      // ------------------------------------------------------
+
+      const boostHashRate =
+        Math.max(
+          0,
+          getSafeNumber(
+            AD_HASH_RATE_BONUS,
+            0,
+          ),
+        );
+
+      if (
+        boostHashRate <= 0
+      ) {
+        const error =
+          new Error(
+            "Power Boost Hash Rate bonus is invalid.",
+          );
+
+        error.code =
+          "POWER_BOOST_INVALID_HASH_RATE";
+
+        throw error;
+      }
+
+      // ------------------------------------------------------
       // 💾 SAVE BOOST
       // ------------------------------------------------------
 
@@ -1089,13 +1180,7 @@ async function applyPowerBoost(
             true,
 
           powerBoostHashRate:
-            Math.max(
-              0,
-              getSafeNumber(
-                AD_HASH_RATE_BONUS,
-                0,
-              ),
-            ),
+            boostHashRate,
 
           powerBoostStartedAt:
             boostStartedAt,
@@ -1141,7 +1226,7 @@ async function applyPowerBoost(
             0,
 
           hashRateBonus:
-            AD_HASH_RATE_BONUS,
+            boostHashRate,
 
           durationMs:
             Math.max(
@@ -1182,7 +1267,7 @@ async function applyPowerBoost(
           validTransactionId,
 
         hashRateBonus:
-          AD_HASH_RATE_BONUS,
+          boostHashRate,
 
         powerBoostStartedAt:
           boostStartedAt,
@@ -1400,6 +1485,9 @@ async function completeMining(
           powerBoostEndsAt:
             null,
 
+          powerBoostTransactionId:
+            null,
+
           updatedAt:
             FieldValue.serverTimestamp(),
         },
@@ -1573,8 +1661,6 @@ async function getMiningStatus(
         now.getTime() &&
       powerBoostEndsAt.getTime() >
         now.getTime() &&
-      powerBoostStartedAt.getTime() <
-        powerBoostEndsAt.getTime() &&
       powerBoostStartedAt.getTime() <
         endsAt.getTime(),
     );
