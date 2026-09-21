@@ -4,28 +4,37 @@
 // 🐱 STELLURIINI - AD FUNCTIONS
 // ============================================================
 //
-// Stelluriini AdMob Rewarded SSV -vastaanotto.
+// AdMob Rewarded SSV callback.
 //
 // Vastuu:
 //
 // 📺 Vastaanottaa AdMob SSV callbackin
-// 🔐 Varmistaa AdMob SSV:n admobService.js:n kautta
+// 🔐 Varmistaa callbackin admobService.js:n kautta
 // 🆔 Käyttää vain varmennettua UID:tä
-// 🎯 Tunnistaa rewardin käyttötarkoituksen
+// 🎯 Tunnistaa reward purposen
 // 💾 Tallentaa varmennetun rewardin Firestoreen
-// 🛡️ Estää saman transaction_id:n uudelleenkäytön
+// 🛡️ Estää transaction_id:n uudelleenkäytön
 //
 // TÄMÄ TIEDOSTO EI:
 //
-// ❌ aktivoi Power Boostia
 // ❌ käynnistä Mining Startia
+// ❌ aktivoi Power Boostia
 // ❌ lisää STL-saldoa
+// ❌ muuta miningBalancea
 // ❌ muuta adsToday-arvoa
 // ❌ muuta cooldownia
 // ❌ muuta mining-tilaa
 //
-// Varsinainen reward-toiminto tehdään erillisessä
-// mining/business/service-kerroksessa.
+// Varsinainen Mining/Power Boost -business-logiikka
+// kuuluu miningService.js:lle.
+//
+// AdMob SSV:n kryptografinen varmennus kuuluu:
+//
+// services/admobService.js
+//
+// History-referenceihin liittyvä logiikka kuuluu:
+//
+// services/historyService.js
 //
 // ============================================================
 
@@ -160,13 +169,6 @@ function validateUid(
 // ============================================================
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
-//
-// AdMob transaction_id:n defense-in-depth-validointi.
-//
-// Transaction ID käsitellään tunnisteena.
-// Sitä ei oleteta heksadesimaaliseksi.
-//
-// ============================================================
 
 function validateTransactionId(
   value,
@@ -250,13 +252,6 @@ function normalizeString(
 // ============================================================
 // 🎯 GET EXPECTED ADMOB CONFIG
 // ============================================================
-//
-// Valitsee rewardPurpose-arvon perusteella:
-//
-// ⛏️ Mining Start
-// ⚡ Power Boost
-//
-// ============================================================
 
 function getExpectedAdMobConfig(
   rewardPurpose,
@@ -309,19 +304,13 @@ function getExpectedAdMobConfig(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// admobService.js:n oletetaan jo varmistaneen:
+// Defense-in-depth.
 //
-// 🔐 kryptografisen allekirjoituksen
-// 🔑 public keyn
-// 🎯 reward purposen
-// 📺 ad unitin
-// 🎁 reward metadata-arvot
-// 🆔 UID:n
-// 🧾 transaction_id:n
-// ⏱️ timestampin
+// admobService.js on jo varmistanut kryptografisen
+// allekirjoituksen ennen kuin data saapuu tähän.
 //
-// Tässä tehdään vielä defense-in-depth-validointi
-// ennen Firestore-kirjoitusta.
+// Täällä tarkistetaan vielä kaikki Firestoreen
+// kirjoitettava kriittinen metadata.
 //
 // ============================================================
 
@@ -412,7 +401,7 @@ function validateVerifiedAdData(
 
 
   // ----------------------------------------------------------
-  // EXPECTED ADMOB CONFIG
+  // EXPECTED CONFIG
   // ----------------------------------------------------------
 
   const expectedAdMob =
@@ -459,7 +448,9 @@ function validateVerifiedAdData(
       rewardAmount,
     ) ||
     rewardAmount !==
-    expectedAdMob.rewardAmount
+    Number(
+      expectedAdMob.rewardAmount,
+    )
   ) {
     const error =
       new Error(
@@ -484,7 +475,9 @@ function validateVerifiedAdData(
 
   if (
     rewardItem !==
-    expectedAdMob.rewardItem
+    normalizeString(
+      expectedAdMob.rewardItem,
+    )
   ) {
     const error =
       new Error(
@@ -510,7 +503,9 @@ function validateVerifiedAdData(
   if (
     adUnit.length === 0 ||
     adUnit !==
-    expectedAdMob.adUnit
+    normalizeString(
+      expectedAdMob.adUnit,
+    )
   ) {
     const error =
       new Error(
@@ -704,7 +699,7 @@ function validateVerifiedAdData(
 
 
   // ----------------------------------------------------------
-  // VERIFIED DATA
+  // RETURN NORMALIZED DATA
   // ----------------------------------------------------------
 
   return {
@@ -739,17 +734,14 @@ function validateVerifiedAdData(
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
 //
-// Tämä funktio EI anna käyttäjälle STL:ää.
+// Tämä EI suorita rewardia.
 //
-// Se:
+// Se tallentaa ainoastaan kryptografisesti varmennetun
+// AdMob-tapahtuman.
 //
-// 1. tarkistaa varmennetun datan
-// 2. tarkistaa transaction_id:n
-// 3. tallentaa AdMob reward -tapahtuman
-// 4. tallentaa historian
+// Varsinainen Mining Start / Power Boost:
 //
-// Varsinainen Mining Start / Power Boost käsitellään
-// erillisessä business/service-kerroksessa.
+// services/miningService.js
 //
 // ============================================================
 
@@ -780,7 +772,7 @@ async function saveVerifiedAdMobReward(
 
 
   // ----------------------------------------------------------
-  // REWARD DOCUMENT REFERENCE
+  // REWARD REFERENCE
   // ----------------------------------------------------------
 
   const rewardRef =
@@ -835,15 +827,15 @@ async function saveVerifiedAdMobReward(
     async (
       transaction,
     ) => {
-      // ======================================================
-      // 🔐 DUPLICATE CHECK
-      // ======================================================
-
       const existingSnapshot =
         await transaction.get(
           rewardRef,
         );
 
+
+      // ======================================================
+      // 🔐 DUPLICATE / CONFLICT
+      // ======================================================
 
       if (
         existingSnapshot.exists
@@ -871,10 +863,6 @@ async function saveVerifiedAdMobReward(
           );
 
 
-        // ----------------------------------------------------
-        // CONFLICT DETECTION
-        // ----------------------------------------------------
-
         if (
           existingUid !==
           uid ||
@@ -897,10 +885,6 @@ async function saveVerifiedAdMobReward(
           throw error;
         }
 
-
-        // ----------------------------------------------------
-        // DUPLICATE
-        // ----------------------------------------------------
 
         console.log(
           "🐱 AdMob transaction already processed.",
@@ -944,18 +928,9 @@ async function saveVerifiedAdMobReward(
       transaction.set(
         rewardRef,
         {
-          // --------------------------------------------------
-          // IDENTITY
-          // --------------------------------------------------
-
           uid,
 
           transactionId,
-
-
-          // --------------------------------------------------
-          // REWARD METADATA
-          // --------------------------------------------------
 
           rewardType:
             "admob",
@@ -965,11 +940,6 @@ async function saveVerifiedAdMobReward(
           rewardAmount,
 
           rewardItem,
-
-
-          // --------------------------------------------------
-          // ADMOB METADATA
-          // --------------------------------------------------
 
           adNetwork,
 
@@ -985,9 +955,8 @@ async function saveVerifiedAdMobReward(
 
           userId,
 
-
           // --------------------------------------------------
-          // ⛏️ MINING START CLAIM STATE
+          // ⛏️ MINING START STATE
           // --------------------------------------------------
 
           miningClaimed:
@@ -1008,9 +977,8 @@ async function saveVerifiedAdMobReward(
           miningStartClaimedBy:
             null,
 
-
           // --------------------------------------------------
-          // ⚡ POWER BOOST CLAIM STATE
+          // ⚡ POWER BOOST STATE
           // --------------------------------------------------
 
           powerBoostClaimed:
@@ -1025,9 +993,8 @@ async function saveVerifiedAdMobReward(
           powerBoostTransactionId:
             null,
 
-
           // --------------------------------------------------
-          // 🕒 SERVER TIMESTAMPS
+          // 🕒 TIMESTAMPS
           // --------------------------------------------------
 
           createdAt:
@@ -1059,10 +1026,7 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-          // --------------------------------------------------
-          // AdMob reward metadata ei ole STL-token.
-          // --------------------------------------------------
-
+          // AdMob rewardAmount ei ole STL-token.
           amount:
             0,
 
@@ -1147,7 +1111,7 @@ const adMobReward =
 
       try {
         // ======================================================
-        // 🔐 METHOD HANDLING
+        // 🔐 METHOD
         // ======================================================
 
         if (
@@ -1187,7 +1151,7 @@ const adMobReward =
 
 
         // ======================================================
-        // 🔎 QUERY KEYS
+        // 🔎 QUERY
         // ======================================================
 
         const queryKeys =
@@ -1197,7 +1161,7 @@ const adMobReward =
 
 
         // ======================================================
-        // 🩺 BASIC ENDPOINT CHECK
+        // 🩺 HEALTH CHECK
         // ======================================================
 
         if (
@@ -1228,13 +1192,12 @@ const adMobReward =
               "Stelluriini AdMob SSV endpoint is reachable.",
           });
 
-
           return;
         }
 
 
         // ======================================================
-        // 🔐 VERIFY ADMOB CALLBACK
+        // 🔐 VERIFY CALLBACK
         // ======================================================
 
         console.log(
@@ -1284,21 +1247,20 @@ const adMobReward =
               "Invalid AdMob SSV callback.",
           });
 
-
           return;
         }
 
 
-        // ------------------------------------------------------
-        // SSV CRYPTOGRAPHICALLY VERIFIED
-        // ------------------------------------------------------
+        // ======================================================
+        // 🔐 CRYPTOGRAPHICALLY VERIFIED
+        // ======================================================
 
         ssvVerified =
           true;
 
 
         // ======================================================
-        // 🛡️ FINAL VERIFIED DATA
+        // 🛡️ FINAL VALIDATION
         // ======================================================
 
         const validatedAd =
@@ -1307,30 +1269,17 @@ const adMobReward =
           );
 
 
-        const uid =
-          validatedAd.uid;
-
-
-        const rewardPurpose =
-          validatedAd.rewardPurpose;
-
-
-        const transactionId =
-          validatedAd.transactionId;
-
-
-        // ======================================================
-        // 📝 VERIFIED LOG
-        // ======================================================
-
         console.log(
           "🐱✅ Verified AdMob reward ready for Firestore.",
           {
-            uid,
+            uid:
+              validatedAd.uid,
 
-            transactionId,
+            transactionId:
+              validatedAd.transactionId,
 
-            rewardPurpose,
+            rewardPurpose:
+              validatedAd.rewardPurpose,
 
             adUnit:
               validatedAd.adUnit,
@@ -1351,27 +1300,30 @@ const adMobReward =
 
 
         // ======================================================
-        // 💾 SAVE VERIFIED REWARD
+        // 💾 SAVE
         // ======================================================
 
         const result =
           await saveVerifiedAdMobReward(
-            verifiedAd,
+            validatedAd,
           );
 
 
         // ======================================================
-        // 📤 SUCCESS RESPONSE
+        // 📤 SUCCESS
         // ======================================================
 
         console.log(
           "🐱 AdMob SSV processed successfully.",
           {
-            uid,
+            uid:
+              validatedAd.uid,
 
-            transactionId,
+            transactionId:
+              validatedAd.transactionId,
 
-            rewardPurpose,
+            rewardPurpose:
+              validatedAd.rewardPurpose,
 
             duplicate:
               result.duplicate,
@@ -1440,7 +1392,7 @@ const adMobReward =
 
 
         // ======================================================
-        // 🔐 KNOWN ADMOB VALIDATION ERROR
+        // 🔐 KNOWN VALIDATION ERRORS
         // ======================================================
 
         const knownValidationCodes =
@@ -1526,14 +1478,13 @@ const adMobReward =
 
 
         // ======================================================
-        // ❌ INTERNAL SERVER / FIRESTORE ERROR
+        // ❌ INTERNAL ERROR
         // ======================================================
         //
-        // Jos SSV oli validi mutta Firestore-tallennus
-        // epäonnistui, emme väitä callbackia virheelliseksi.
+        // Jos AdMob SSV oli kryptografisesti validi mutta
+        // Firestore-tallennus epäonnistui, palautetaan 500.
         //
-        // HTTP 500 antaa AdMobille mahdollisuuden yrittää
-        // callbackia uudelleen.
+        // Näin callback voidaan yrittää uudelleen.
         //
         // ======================================================
 
