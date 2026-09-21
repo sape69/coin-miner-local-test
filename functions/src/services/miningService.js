@@ -70,7 +70,6 @@ const {
   AD_COOLDOWN_MS,
 
   MINING_DURATION_MS,
-  MINING_PER_HASH_PER_HOUR,
 } = require(
   "../config/miningConfig",
 );
@@ -709,37 +708,39 @@ function getUserRef(
 //
 // Hash Rate määräytyy Daily Streakistä.
 //
+// transactionId on AdMob SSV transaction_id.
+//
+// Jos sama transactionId saapuu uudelleen,
+// sama Mining Start käsitellään vain kerran.
+//
 // ============================================================
 
 async function startMining(
   uid,
   dailyStreak = 1,
+  transactionId = null,
 ) {
   const validUid =
     validateUid(
       uid,
     );
 
+  let validTransactionId =
+    "";
+
+  if (
+    transactionId !== null &&
+    transactionId !== undefined
+  ) {
+    validTransactionId =
+      validateTransactionId(
+        transactionId,
+      );
+  }
+
   const userRef =
     getUserRef(
       validUid,
-    );
-
-  const now =
-    new Date();
-
-  const miningStartedAt =
-    now;
-
-  const miningEndsAt =
-    new Date(
-      now.getTime() +
-      MINING_DURATION_MS,
-    );
-
-  const hashRate =
-    calculateDailyHashRate(
-      dailyStreak,
     );
 
   const historyRef =
@@ -751,6 +752,9 @@ async function startMining(
     async (
       transaction,
     ) => {
+      const now =
+        new Date();
+
       const snapshot =
         await transaction.get(
           userRef,
@@ -760,6 +764,58 @@ async function startMining(
         snapshot.exists
           ? snapshot.data() || {}
           : {};
+
+      // ------------------------------------------------------
+      // 🛡️ MINING START TRANSACTION IDEMPOTENCY
+      // ------------------------------------------------------
+
+      const storedMiningStartTransactionId =
+        typeof data.miningStartTransactionId ===
+        "string"
+          ? data.miningStartTransactionId.trim()
+          : "";
+
+      if (
+        validTransactionId &&
+        storedMiningStartTransactionId ===
+        validTransactionId
+      ) {
+        return {
+          success:
+            true,
+
+          miningActive:
+            Boolean(
+              data.miningActive ===
+              true,
+            ),
+
+          duplicate:
+            true,
+
+          transactionId:
+            validTransactionId,
+
+          hashRate:
+            getSafeNumber(
+              data.hashRate,
+              0,
+            ),
+
+          miningStartedAt:
+            getSafeDate(
+              data.miningStartedAt,
+            ),
+
+          miningEndsAt:
+            getSafeDate(
+              data.miningEndsAt,
+            ),
+
+          message:
+            "🐱⛏️ Tämä Mining Start on jo käsitelty.",
+        };
+      }
 
       // ------------------------------------------------------
       // ⛏️ EXISTING MINING
@@ -793,48 +849,75 @@ async function startMining(
       }
 
       // ------------------------------------------------------
+      // ⏱️ NEW MINING TIMES
+      // ------------------------------------------------------
+
+      const miningStartedAt =
+        now;
+
+      const miningEndsAt =
+        new Date(
+          now.getTime() +
+          MINING_DURATION_MS,
+        );
+
+      const hashRate =
+        calculateDailyHashRate(
+          dailyStreak,
+        );
+
+      // ------------------------------------------------------
       // 💾 START NEW MINING
       // ------------------------------------------------------
 
+      const miningData = {
+        miningActive:
+          true,
+
+        miningFinished:
+          false,
+
+        miningStartedAt,
+
+        miningEndsAt,
+
+        hashRate,
+
+        miningClaimed:
+          false,
+
+        miningClaimedAmount:
+          0,
+
+        powerBoostActive:
+          false,
+
+        powerBoostHashRate:
+          0,
+
+        powerBoostStartedAt:
+          null,
+
+        powerBoostEndsAt:
+          null,
+
+        powerBoostTransactionId:
+          null,
+
+        updatedAt:
+          FieldValue.serverTimestamp(),
+      };
+
+      if (
+        validTransactionId
+      ) {
+        miningData.miningStartTransactionId =
+          validTransactionId;
+      }
+
       transaction.set(
         userRef,
-        {
-          miningActive:
-            true,
-
-          miningFinished:
-            false,
-
-          miningStartedAt,
-
-          miningEndsAt,
-
-          hashRate,
-
-          miningClaimed:
-            false,
-
-          miningClaimedAmount:
-            0,
-
-          powerBoostActive:
-            false,
-
-          powerBoostHashRate:
-            0,
-
-          powerBoostStartedAt:
-            null,
-
-          powerBoostEndsAt:
-            null,
-
-          powerBoostTransactionId:
-            null,
-
-          updatedAt:
-            FieldValue.serverTimestamp(),
-        },
+        miningData,
         {
           merge:
             true,
@@ -845,27 +928,36 @@ async function startMining(
       // 📜 HISTORY
       // ------------------------------------------------------
 
+      const historyData = {
+        type:
+          "mining_started",
+
+        title:
+          "Stella Mining Started 🐱⛏️",
+
+        amount:
+          0,
+
+        hashRate,
+
+        miningStartedAt,
+
+        miningEndsAt,
+
+        createdAt:
+          FieldValue.serverTimestamp(),
+      };
+
+      if (
+        validTransactionId
+      ) {
+        historyData.transactionId =
+          validTransactionId;
+      }
+
       transaction.set(
         historyRef,
-        {
-          type:
-            "mining_started",
-
-          title:
-            "Stella Mining Started 🐱⛏️",
-
-          amount:
-            0,
-
-          hashRate,
-
-          miningStartedAt,
-
-          miningEndsAt,
-
-          createdAt:
-            FieldValue.serverTimestamp(),
-        },
+        historyData,
       );
 
       return {
@@ -874,6 +966,13 @@ async function startMining(
 
         miningActive:
           true,
+
+        duplicate:
+          false,
+
+        transactionId:
+          validTransactionId ||
+          null,
 
         hashRate,
 
@@ -928,13 +1027,13 @@ async function applyPowerBoost(
       validUid,
     );
 
-  const now =
-    new Date();
-
   return db.runTransaction(
     async (
       transaction,
     ) => {
+      const now =
+        new Date();
+
       const snapshot =
         await transaction.get(
           userRef,
@@ -944,37 +1043,6 @@ async function applyPowerBoost(
         snapshot.exists
           ? snapshot.data() || {}
           : {};
-
-      // ------------------------------------------------------
-      // ⛏️ MINING MUST BE ACTIVE
-      // ------------------------------------------------------
-
-      const miningStartedAt =
-        getMiningStartTime(
-          data,
-        );
-
-      const miningEndsAt =
-        getMiningEndTime(
-          data,
-        );
-
-      if (
-        !miningStartedAt ||
-        !miningEndsAt ||
-        miningEndsAt.getTime() <=
-          now.getTime()
-      ) {
-        const error =
-          new Error(
-            "Power Boost requires an active mining session.",
-          );
-
-        error.code =
-          "POWER_BOOST_MINING_INACTIVE";
-
-        throw error;
-      }
 
       // ------------------------------------------------------
       // 🛡️ TRANSACTION ID IDEMPOTENCY
@@ -1006,6 +1074,37 @@ async function applyPowerBoost(
           message:
             "🐱⚡ Tämä Power Boost on jo käsitelty.",
         };
+      }
+
+      // ------------------------------------------------------
+      // ⛏️ MINING MUST BE ACTIVE
+      // ------------------------------------------------------
+
+      const miningStartedAt =
+        getMiningStartTime(
+          data,
+        );
+
+      const miningEndsAt =
+        getMiningEndTime(
+          data,
+        );
+
+      if (
+        !miningStartedAt ||
+        !miningEndsAt ||
+        miningEndsAt.getTime() <=
+          now.getTime()
+      ) {
+        const error =
+          new Error(
+            "Power Boost requires an active mining session.",
+          );
+
+        error.code =
+          "POWER_BOOST_MINING_INACTIVE";
+
+        throw error;
       }
 
       // ------------------------------------------------------
@@ -1093,8 +1192,6 @@ async function applyPowerBoost(
       // ------------------------------------------------------
       // ⚡ BOOST DURATION
       // ------------------------------------------------------
-      //
-      // TÄRKEÄÄ:
       //
       // AD_BOOST_DURATION_MS =
       // Power Boostin varsinainen kesto.
@@ -1317,13 +1414,13 @@ async function completeMining(
       validUid,
     );
 
-  const now =
-    new Date();
-
   return db.runTransaction(
     async (
       transaction,
     ) => {
+      const now =
+        new Date();
+
       const snapshot =
         await transaction.get(
           userRef,
@@ -1390,7 +1487,10 @@ async function completeMining(
             true,
 
           amount:
-            0,
+            getSafeNumber(
+              data.miningClaimedAmount,
+              0,
+            ),
 
           message:
             "🐱⛏️ Tämä mining-jakso on jo käsitelty.",
@@ -1757,6 +1857,12 @@ async function getMiningStatus(
       adsTodayDate ===
       today
         ? adsTodayDate
+        : "",
+
+    miningStartTransactionId:
+      typeof data.miningStartTransactionId ===
+      "string"
+        ? data.miningStartTransactionId
         : "",
   };
 }
