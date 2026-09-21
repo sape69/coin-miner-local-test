@@ -432,6 +432,14 @@ function getMiningEndTime(
 // miningStartedAt
 // miningEndsAt
 //
+// HUOM:
+//
+// minedAmount sisältää tässä vain annetun
+// perus-Hash-Raten perusteella lasketun
+// mining-tuoton.
+//
+// Power Boost lasketaan miningFunctions.js:ssä.
+//
 // ============================================================
 
 function calculateMiningStatus(
@@ -568,10 +576,6 @@ function calculateMiningStatus(
 
   // ==========================================================
   // ⏳ BEFORE START
-  // ==========================================================
-  //
-  // Louhinta ei ole vielä aktiivinen.
-  //
   // ==========================================================
 
   if (
