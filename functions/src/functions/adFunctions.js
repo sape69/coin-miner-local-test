@@ -145,28 +145,13 @@ function getSafeNumber(
 // ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
-//
-// Firebase UID:n validointi.
-//
-// Sallitaan:
-//
-// A-Z
-// a-z
-// 0-9
-// .
-// _
-// -
-//
-// Enimmäispituus 128 merkkiä.
-//
-// ============================================================
 
 function validateUid(
   value,
 ) {
   if (
     typeof value !==
-      "string"
+    "string"
   ) {
     return "";
   }
@@ -194,10 +179,13 @@ function validateUid(
 
 
 // ============================================================
-// 🔐 VALIDATE TRANSACTION ID
+// 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
 // AdMob transaction_id:n defense-in-depth-validointi.
+//
+// Transaction ID käsitellään tunnisteena.
+// Sitä ei oleteta heksadesimaaliseksi.
 //
 // ============================================================
 
@@ -206,7 +194,7 @@ function validateTransactionId(
 ) {
   if (
     typeof value !==
-      "string"
+    "string"
   ) {
     return "";
   }
@@ -222,7 +210,7 @@ function validateTransactionId(
   }
 
   if (
-    !/^[A-Fa-f0-9]+$/.test(
+    !/^[A-Za-z0-9._:-]+$/.test(
       transactionId,
     )
   ) {
@@ -242,7 +230,7 @@ function validateRewardPurpose(
 ) {
   if (
     typeof value !==
-      "string"
+    "string"
   ) {
     return "";
   }
@@ -271,7 +259,7 @@ function normalizeString(
 ) {
   if (
     typeof value !==
-      "string"
+    "string"
   ) {
     return "";
   }
@@ -382,7 +370,7 @@ function validateVerifiedAdData(
 
   if (
     verifiedAd.verified !==
-      true
+    true
   ) {
     const error =
       new Error(
@@ -493,7 +481,7 @@ function validateVerifiedAdData(
       rewardAmount,
     ) ||
     rewardAmount !==
-      expectedAdMob.rewardAmount
+    expectedAdMob.rewardAmount
   ) {
     const error =
       new Error(
@@ -518,7 +506,7 @@ function validateVerifiedAdData(
 
   if (
     rewardItem !==
-      expectedAdMob.rewardItem
+    expectedAdMob.rewardItem
   ) {
     const error =
       new Error(
@@ -544,7 +532,7 @@ function validateVerifiedAdData(
   if (
     adUnit.length === 0 ||
     adUnit !==
-      expectedAdMob.adUnit
+    expectedAdMob.adUnit
   ) {
     const error =
       new Error(
@@ -723,7 +711,7 @@ function validateVerifiedAdData(
 
     if (
       validatedUserId !==
-        uid
+      uid
     ) {
       const error =
         new Error(
@@ -791,10 +779,6 @@ function validateVerifiedAdData(
 async function saveVerifiedAdMobReward(
   verifiedAd,
 ) {
-  // ----------------------------------------------------------
-  // VALIDATE VERIFIED DATA
-  // ----------------------------------------------------------
-
   const validatedAd =
     validateVerifiedAdData(
       verifiedAd,
@@ -913,22 +897,16 @@ async function saveVerifiedAdMobReward(
         // ----------------------------------------------------
         // CONFLICT DETECTION
         // ----------------------------------------------------
-        //
-        // Sama transaction_id ei saa koskaan
-        // yhdistyä toiseen käyttäjään tai toiseen
-        // reward-purposeen.
-        //
-        // ----------------------------------------------------
 
         if (
           existingUid !==
-            uid ||
+          uid ||
           existingPurpose !==
-            rewardPurpose ||
+          rewardPurpose ||
           (
             existingTransactionId &&
             existingTransactionId !==
-              transactionId
+            transactionId
           )
         ) {
           const error =
@@ -1100,7 +1078,7 @@ async function saveVerifiedAdMobReward(
 
           title:
             rewardPurpose ===
-              "power_boost"
+            "power_boost"
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
@@ -1162,7 +1140,7 @@ async function saveVerifiedAdMobReward(
 
         message:
           rewardPurpose ===
-            "power_boost"
+          "power_boost"
             ? "🐱📺 Power Boost -mainos vahvistettu ja palkkio tallennettu."
             : "🐱📺 Mining Start -mainos vahvistettu ja palkkio tallennettu.",
       };
@@ -1186,10 +1164,6 @@ const adMobReward =
       req,
       res,
     ) => {
-      // ------------------------------------------------------
-      // 🔐 TRACK SSV VERIFICATION STATE
-      // ------------------------------------------------------
-
       let ssvVerified =
         false;
 
@@ -1201,7 +1175,7 @@ const adMobReward =
 
         if (
           req.method ===
-            "HEAD"
+          "HEAD"
         ) {
           res.status(
             200,
@@ -1213,7 +1187,7 @@ const adMobReward =
 
         if (
           req.method !==
-            "GET"
+          "GET"
         ) {
           res.status(
             405,
@@ -1251,7 +1225,7 @@ const adMobReward =
 
         if (
           queryKeys.length ===
-            0
+          0
         ) {
           console.log(
             "🐱 AdMob SSV endpoint health check.",
@@ -1310,7 +1284,7 @@ const adMobReward =
         if (
           !verifiedAd ||
           verifiedAd.verified !==
-            true
+          true
         ) {
           console.error(
             "❌ AdMob SSV verification failed.",
@@ -1466,7 +1440,7 @@ const adMobReward =
         if (
           error &&
           error.code ===
-            "ADMOB_TRANSACTION_CONFLICT"
+          "ADMOB_TRANSACTION_CONFLICT"
         ) {
           res.status(
             409,
