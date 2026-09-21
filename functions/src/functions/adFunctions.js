@@ -25,8 +25,10 @@
 // ❌ muuta cooldownia
 // ❌ muuta mining-tilaa
 //
-// Varsinainen Mining/Power Boost -business-logiikka
-// kuuluu miningService.js:lle.
+// Varsinainen Mining / Power Boost -business-logiikka
+// kuuluu:
+//
+// functions/src/functions/miningFunctions.js
 //
 // AdMob SSV:n kryptografinen varmennus kuuluu:
 //
@@ -739,9 +741,10 @@ function validateVerifiedAdData(
 // Se tallentaa ainoastaan kryptografisesti varmennetun
 // AdMob-tapahtuman.
 //
-// Varsinainen Mining Start / Power Boost:
+// Varsinainen Mining Start / Power Boost -business-logiikka
+// kuuluu:
 //
-// services/miningService.js
+// functions/src/functions/miningFunctions.js
 //
 // ============================================================
 
