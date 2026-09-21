@@ -122,27 +122,6 @@ const VALID_REWARD_PURPOSES =
 
 
 // ============================================================
-// 🔢 SAFE NUMBER
-// ============================================================
-
-function getSafeNumber(
-  value,
-  fallback = 0,
-) {
-  const number =
-    Number(
-      value,
-    );
-
-  return Number.isFinite(
-    number,
-  )
-    ? number
-    : fallback;
-}
-
-
-// ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
 
@@ -471,9 +450,8 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
 
   const rewardAmount =
-    getSafeNumber(
+    Number(
       verifiedAd.rewardAmount,
-      -1,
     );
 
   if (
@@ -579,9 +557,8 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
 
   const timestamp =
-    getSafeNumber(
+    Number(
       verifiedAd.timestamp,
-      0,
     );
 
   if (
