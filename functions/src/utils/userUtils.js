@@ -38,6 +38,26 @@ const {
 
 
 // ============================================================
+// 📏 FIRESTORE DOCUMENT ID LIMIT
+// ============================================================
+//
+// Firestore-dokumentin ID:n enimmäiskoko:
+//
+// 1 500 bytes
+//
+// Käytetään byte-pituutta eikä JavaScript-stringin
+// character length -arvoa.
+//
+// Tämä on tärkeää erityisesti Unicode-merkkien kanssa,
+// koska yksi merkki voi käyttää useamman tavun.
+//
+// ============================================================
+
+const MAX_DOCUMENT_ID_BYTES =
+  1500;
+
+
+// ============================================================
 // 🔐 VALIDATE FIRESTORE DOCUMENT ID
 // ============================================================
 //
@@ -48,6 +68,7 @@ const {
 // ✅ ympäröivät whitespace-merkit poistetaan
 // ❌ ei saa sisältää "/"
 // ❌ ei saa sisältää "\"
+// ❌ ei saa ylittää Firestoren ID-kokorajaa
 //
 // UID:t ja transactionId:t validoidaan lisäksi
 // niiden omissa business/service-kerroksissa.
@@ -61,6 +82,7 @@ const {
 // "   "
 // "abc/def"
 // "abc\\def"
+// liian pitkä document ID
 //
 // ============================================================
 
@@ -69,7 +91,8 @@ function validateDocumentId(
   name,
 ) {
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     const error =
       new Error(
@@ -90,8 +113,13 @@ function validateDocumentId(
     value.trim();
 
 
+  // ----------------------------------------------------------
+  // EMPTY ID
+  // ----------------------------------------------------------
+
   if (
-    id.length === 0
+    id.length ===
+    0
   ) {
     const error =
       new Error(
@@ -108,6 +136,10 @@ function validateDocumentId(
   }
 
 
+  // ----------------------------------------------------------
+  // INVALID PATH CHARACTERS
+  // ----------------------------------------------------------
+
   if (
     id.includes("/") ||
     id.includes("\\")
@@ -119,6 +151,36 @@ function validateDocumentId(
 
     error.code =
       "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      name;
+
+    throw error;
+  }
+
+
+  // ----------------------------------------------------------
+  // FIRESTORE SIZE LIMIT
+  // ----------------------------------------------------------
+
+  const byteLength =
+    Buffer.byteLength(
+      id,
+      "utf8",
+    );
+
+
+  if (
+    byteLength >
+    MAX_DOCUMENT_ID_BYTES
+  ) {
+    const error =
+      new Error(
+        `${name} exceeds the Firestore document ID size limit.`,
+      );
+
+    error.code =
+      "FIRESTORE_DOCUMENT_ID_TOO_LONG";
 
     error.parameter =
       name;
@@ -236,4 +298,6 @@ module.exports = {
   getHistoryCollection,
 
   getAdMobRewardRef,
+
+  validateDocumentId,
 };
