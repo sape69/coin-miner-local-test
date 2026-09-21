@@ -119,13 +119,13 @@ const VALID_REWARD_PURPOSES =
   ]);
 
 // ============================================================
-// 🛡️ VALIDATION ERROR CODES
+// 🛡️ CLIENT VALIDATION ERROR CODES
 // ============================================================
 //
-// Näitä virheitä ei pidä käsitellä palvelinvirheinä.
+// Näissä tapauksissa callback itsessään on virheellinen
+// tai sen sisältämä data ei ole hyväksyttävä.
 //
-// Jos AdMob lähettää aidosti virheellisen callbackin,
-// 400 on oikea vastaus.
+// HTTP 400 estää turhan retry-kierroksen.
 //
 // ============================================================
 
@@ -138,25 +138,23 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_INVALID_UID",
     "ADMOB_INVALID_REWARD_PURPOSE",
     "ADMOB_INVALID_TRANSACTION_ID",
-    "ADMOB_INVALID_REWARD_AMOUNT",
-    "ADMOB_INVALID_REWARD_ITEM",
-    "ADMOB_INVALID_AD_UNIT",
     "ADMOB_INVALID_TIMESTAMP",
     "ADMOB_INVALID_AD_NETWORK",
     "ADMOB_REQUIRED_PARAMETER_MISSING",
     "ADMOB_VERIFIED_DATA_MISSING",
     "ADMOB_USER_ID_MISMATCH",
     "ADMOB_CUSTOM_DATA_MISSING",
-]);
+  ]);
 
 // ============================================================
-// 🔥 SERVER / RETRY ERROR CODES
+// ⚙️ SERVER / CONFIG / RETRY ERROR CODES
 // ============================================================
 //
-// Näissä tilanteissa callbackia ei pidä kuitata pysyvästi
-// virheelliseksi 400-vastauksella.
+// Näissä tapauksissa callback voi olla täysin validi,
+// mutta palvelimen infrastruktuuri tai oma configuration
+// voi olla ongelmallinen.
 //
-// 500 antaa AdMobille mahdollisuuden retryyn.
+// HTTP 500 antaa AdMobille mahdollisuuden retryyn.
 //
 // ============================================================
 
@@ -169,8 +167,20 @@ const SERVER_RETRY_ERROR_CODES =
     "ADMOB_PUBLIC_KEYS_EMPTY",
     "ADMOB_PUBLIC_KEY_NOT_FOUND",
     "ADMOB_CRYPTO_VERIFICATION_ERROR",
+
     "ADMOB_REWARD_REFERENCE_ERROR",
     "ADMOB_HISTORY_REFERENCE_ERROR",
+
+    // --------------------------------------------------------
+    // Oma AdMob-config ei vastaa allekirjoitettua callbackia.
+    //
+    // Callback voi silti olla täysin oikea Googlen callback.
+    // Tämä on meidän palvelimen/configin korjausta vaativa tila.
+    // --------------------------------------------------------
+
+    "ADMOB_INVALID_REWARD_AMOUNT",
+    "ADMOB_INVALID_REWARD_ITEM",
+    "ADMOB_INVALID_AD_UNIT",
   ]);
 
 // ============================================================
@@ -476,6 +486,9 @@ function validateVerifiedAdData(
   //
   // Se EI ole STL-määrä.
   //
+  // Jos kryptografisesti validi callback sisältää eri arvon
+  // kuin oma config, kyseessä on palvelimen/configin ongelma.
+  //
   // ----------------------------------------------------------
 
   const rewardAmount =
@@ -500,7 +513,7 @@ function validateVerifiedAdData(
   ) {
     const error =
       new Error(
-        "Verified AdMob reward amount is invalid.",
+        "Verified AdMob reward amount does not match server configuration.",
       );
 
     error.code =
@@ -525,12 +538,13 @@ function validateVerifiedAdData(
 
   if (
     rewardItem.length === 0 ||
+    expectedRewardItem.length === 0 ||
     rewardItem !==
     expectedRewardItem
   ) {
     const error =
       new Error(
-        "Verified AdMob reward item is invalid.",
+        "Verified AdMob reward item does not match server configuration.",
       );
 
     error.code =
@@ -561,7 +575,7 @@ function validateVerifiedAdData(
   ) {
     const error =
       new Error(
-        "Verified AdMob ad unit is invalid.",
+        "Verified AdMob ad unit does not match server configuration.",
       );
 
     error.code =
@@ -606,16 +620,6 @@ function validateVerifiedAdData(
 
   // ----------------------------------------------------------
   // TIMESTAMP
-  // ----------------------------------------------------------
-  //
-  // Säilytetään timestamp numeroarvona.
-  //
-  // Tässä ei aseteta liian tiukkaa ikärajaa, koska AdMob voi
-  // yrittää SSV callbackia uudelleen.
-  //
-  // Vanhan callbackin estäminen ei kuulu tähän validointiin,
-  // ellei admobService.js erikseen määritä sitä.
-  //
   // ----------------------------------------------------------
 
   const timestamp =
@@ -918,7 +922,7 @@ async function saveVerifiedAdMobReward(
           );
 
         // ----------------------------------------------------
-        // SAME TRANSACTION + DIFFERENT DATA
+        // TRANSACTION ID CONFLICT
         // ----------------------------------------------------
 
         if (
@@ -945,12 +949,6 @@ async function saveVerifiedAdMobReward(
 
         // ----------------------------------------------------
         // SAME VERIFIED EVENT
-        // ----------------------------------------------------
-        //
-        // Tapahtuma on jo tallennettu.
-        //
-        // Tämä ei anna rewardia uudelleen.
-        //
         // ----------------------------------------------------
 
         console.log(
@@ -1437,6 +1435,15 @@ const adMobReward =
         // ====================================================
         // 🔐 TRANSACTION CONFLICT
         // ====================================================
+        //
+        // Tämä on pysyvä tietoristiriita.
+        //
+        // 409 johtaisi turhaan AdMob-retryyn.
+        //
+        // HTTP 400 kertoo, ettei callbackia pidä yrittää
+        // uudelleen tällä datalla.
+        //
+        // ====================================================
 
         if (
           error &&
@@ -1444,7 +1451,7 @@ const adMobReward =
           "ADMOB_TRANSACTION_CONFLICT"
         ) {
           res.status(
-            409,
+            400,
           ).json({
             success:
               false,
@@ -1467,11 +1474,6 @@ const adMobReward =
 
         // ====================================================
         // 🛡️ CLIENT VALIDATION ERROR
-        // ====================================================
-        //
-        // Virheellinen AdMob callback ei saa aiheuttaa
-        // turhaa retry-kierrettä.
-        //
         // ====================================================
 
         if (
@@ -1504,15 +1506,14 @@ const adMobReward =
         }
 
         // ====================================================
-        // 🔄 SERVER / RETRY ERROR
+        // 🔄 SERVER / CONFIG / RETRY ERROR
         // ====================================================
         //
-        // Jos kryptografisen varmennuksen infrastruktuuri
-        // tai Firestore-tallennus epäonnistuu, kyseessä ei
-        // välttämättä ole AdMobin virhe.
+        // Kryptografisesti validi callback voi epäonnistua
+        // esimerkiksi public key -palvelun, Firestoren tai
+        // oman AdMob-configuraation vuoksi.
         //
-        // Palautetaan 500, jotta callback voidaan yrittää
-        // uudelleen.
+        // HTTP 500 antaa AdMobille mahdollisuuden retryyn.
         //
         // ====================================================
 
@@ -1551,8 +1552,7 @@ const adMobReward =
         //
         // - callbackia ei kuitata onnistuneeksi
         // - AdMob voi yrittää uudelleen
-        // - todellista sisäistä virhettä ei paljasteta
-        //   ulospäin
+        // - sisäistä virhettä ei paljasteta ulospäin
         //
         // ====================================================
 
