@@ -135,9 +135,15 @@ function validateUid(
     typeof uid !==
     "string"
   ) {
-    throw new Error(
-      "uid must be a string.",
-    );
+    const error =
+      new Error(
+        "uid must be a string.",
+      );
+
+    error.code =
+      "MINING_INVALID_UID";
+
+    throw error;
   }
 
   const value =
@@ -147,9 +153,15 @@ function validateUid(
     value.length === 0 ||
     value.length > 128
   ) {
-    throw new Error(
-      "uid is invalid.",
-    );
+    const error =
+      new Error(
+        "uid is invalid.",
+      );
+
+    error.code =
+      "MINING_INVALID_UID";
+
+    throw error;
   }
 
   if (
@@ -157,9 +169,15 @@ function validateUid(
       value,
     )
   ) {
-    throw new Error(
-      "uid contains invalid characters.",
-    );
+    const error =
+      new Error(
+        "uid contains invalid characters.",
+      );
+
+    error.code =
+      "MINING_INVALID_UID";
+
+    throw error;
   }
 
   return value;
@@ -177,9 +195,15 @@ function validateTransactionId(
     typeof transactionId !==
     "string"
   ) {
-    throw new Error(
-      "transactionId must be a string.",
-    );
+    const error =
+      new Error(
+        "transactionId must be a string.",
+      );
+
+    error.code =
+      "MINING_INVALID_TRANSACTION_ID";
+
+    throw error;
   }
 
   const value =
@@ -189,9 +213,15 @@ function validateTransactionId(
     value.length === 0 ||
     value.length > 256
   ) {
-    throw new Error(
-      "transactionId is invalid.",
-    );
+    const error =
+      new Error(
+        "transactionId is invalid.",
+      );
+
+    error.code =
+      "MINING_INVALID_TRANSACTION_ID";
+
+    throw error;
   }
 
   if (
@@ -199,9 +229,15 @@ function validateTransactionId(
       value,
     )
   ) {
-    throw new Error(
-      "transactionId contains invalid characters.",
-    );
+    const error =
+      new Error(
+        "transactionId contains invalid characters.",
+      );
+
+    error.code =
+      "MINING_INVALID_TRANSACTION_ID";
+
+    throw error;
   }
 
   return value;
@@ -222,6 +258,7 @@ function getSafeDate(
     return null;
   }
 
+
   if (
     value instanceof Date
   ) {
@@ -233,6 +270,7 @@ function getSafeDate(
           value.getTime(),
         );
   }
+
 
   if (
     typeof value.toDate ===
@@ -259,13 +297,23 @@ function getSafeDate(
     }
   }
 
+
   if (
     typeof value ===
     "string"
   ) {
+    const normalized =
+      value.trim();
+
+    if (
+      normalized.length === 0
+    ) {
+      return null;
+    }
+
     const date =
       new Date(
-        value.trim(),
+        normalized,
       );
 
     if (
@@ -278,6 +326,7 @@ function getSafeDate(
 
     return null;
   }
+
 
   if (
     typeof value ===
@@ -299,6 +348,7 @@ function getSafeDate(
       return date;
     }
   }
+
 
   return null;
 }
@@ -329,14 +379,15 @@ function getUtcDateKey(
 // 🎁 CALCULATE DAILY HASH RATE
 // ============================================================
 //
-// Daily Hash Rate:
+// Päivittäinen Hash Rate:
 //
-// Päivä 1 = 0.5 HR
-// Päivä 2 = 1.0 HR
-// Päivä 3 = 1.5 HR
+// Päivä 1 = DAILY_HASH_RATE_START
+// Päivä 2 = START + STEP
+// Päivä 3 = START + 2 × STEP
 // ...
-// Päivä 7 = 3.5 HR
-// Päivä 8+ = 3.5 HR
+//
+// DAILY_HASH_RATE_MAX_DAY rajoittaa streak-päivän.
+// MAX_DAILY_HASH_RATE rajoittaa lopullisen arvon.
 //
 // Arvo tallennetaan mining-jakson alkaessa.
 //
@@ -359,6 +410,7 @@ function calculateDailyHashRate(
       ),
     );
 
+
   const maxDay =
     Math.max(
       1,
@@ -370,11 +422,13 @@ function calculateDailyHashRate(
       ),
     );
 
+
   const effectiveDay =
     Math.min(
       streak,
       maxDay,
     );
+
 
   const startHashRate =
     Math.max(
@@ -385,6 +439,7 @@ function calculateDailyHashRate(
       ),
     );
 
+
   const step =
     Math.max(
       0,
@@ -394,12 +449,14 @@ function calculateDailyHashRate(
       ),
     );
 
+
   const hashRate =
     startHashRate +
     (
       effectiveDay - 1
     ) *
     step;
+
 
   const maximum =
     Math.max(
@@ -409,6 +466,7 @@ function calculateDailyHashRate(
         hashRate,
       ),
     );
+
 
   return Math.min(
     Math.max(
@@ -424,7 +482,7 @@ function calculateDailyHashRate(
 // 🧮 CALCULATE POWER BOOST MINING
 // ============================================================
 //
-// Laskee Power Boostin tuottaman lisäosuuden.
+// Boostin tuottama lisäosuus.
 //
 // Boost ei korvaa base Hash Ratea.
 // Se lisätään base miningin päälle.
@@ -444,6 +502,7 @@ function calculatePowerBoostMining(
       ),
     );
 
+
   const safeElapsed =
     Math.max(
       0,
@@ -453,12 +512,14 @@ function calculatePowerBoostMining(
       ),
     );
 
+
   if (
     safeHashRate <= 0 ||
     safeElapsed <= 0
   ) {
     return 0;
   }
+
 
   return calculateMining(
     safeHashRate,
@@ -471,13 +532,21 @@ function calculatePowerBoostMining(
 // 🧮 CALCULATE COMPLETED MINING
 // ============================================================
 //
-// Laskee mining-jakson tuotannon:
+// Laskee mining-jakson tämänhetkisen tai lopullisen tuotannon:
 //
 // Base Hash Rate
 // +
 // Power Boostin lisätuotot
 //
-// Boost rajataan aina mining-jakson sisälle.
+// Boost rajataan aina:
+//
+// miningStartedAt
+//      ↓
+// powerBoostStartedAt
+//      ↓
+// powerBoostEndsAt
+//      ↓
+// miningEndsAt
 //
 // ============================================================
 
@@ -499,15 +568,18 @@ function calculateCompletedMining(
     };
   }
 
+
   const startedAt =
     getMiningStartTime(
       data,
     );
 
+
   const endsAt =
     getMiningEndTime(
       data,
     );
+
 
   if (
     !startedAt ||
@@ -522,11 +594,13 @@ function calculateCompletedMining(
     };
   }
 
+
   const startMs =
     startedAt.getTime();
 
   const endMs =
     endsAt.getTime();
+
 
   const nowDate =
     getSafeDate(
@@ -535,6 +609,7 @@ function calculateCompletedMining(
 
   const nowMs =
     nowDate.getTime();
+
 
   if (
     !Number.isFinite(
@@ -554,6 +629,7 @@ function calculateCompletedMining(
     };
   }
 
+
   const effectiveNow =
     Math.min(
       Math.max(
@@ -563,6 +639,7 @@ function calculateCompletedMining(
       endMs,
     );
 
+
   const elapsedMs =
     Math.max(
       0,
@@ -570,9 +647,10 @@ function calculateCompletedMining(
         startMs,
     );
 
-  // ----------------------------------------------------------
+
+  // ==========================================================
   // ⛏️ BASE HASH RATE
-  // ----------------------------------------------------------
+  // ==========================================================
 
   const baseHashRate =
     Math.max(
@@ -583,34 +661,43 @@ function calculateCompletedMining(
       ),
     );
 
+
   const baseAmount =
     calculateMining(
       baseHashRate,
       elapsedMs,
     );
 
-  // ----------------------------------------------------------
+
+  // ==========================================================
   // ⚡ POWER BOOST
-  // ----------------------------------------------------------
+  // ==========================================================
 
   const boostStartedAt =
     getSafeDate(
       data.powerBoostStartedAt,
     );
 
+
   const boostEndsAt =
     getSafeDate(
       data.powerBoostEndsAt,
     );
 
+
   const storedBoostHashRate =
-    getSafeNumber(
-      data.powerBoostHashRate,
+    Math.max(
       0,
+      getSafeNumber(
+        data.powerBoostHashRate,
+        0,
+      ),
     );
+
 
   let boostElapsedMs =
     0;
+
 
   if (
     boostStartedAt &&
@@ -623,12 +710,14 @@ function calculateCompletedMining(
         boostStartedAt.getTime(),
       );
 
+
     const boostEndMs =
       Math.min(
         endMs,
         boostEndsAt.getTime(),
         effectiveNow,
       );
+
 
     if (
       boostEndMs >
@@ -640,11 +729,13 @@ function calculateCompletedMining(
     }
   }
 
+
   const boostAmount =
     calculatePowerBoostMining(
       storedBoostHashRate,
       boostElapsedMs,
     );
+
 
   const totalAmount =
     Math.max(
@@ -652,6 +743,7 @@ function calculateCompletedMining(
       baseAmount +
       boostAmount,
     );
+
 
   return {
     baseAmount,
@@ -681,6 +773,12 @@ function calculateCurrentMining(
 // ============================================================
 // 👤 GET USER REF
 // ============================================================
+//
+// Firestore:
+//
+// users/{uid}
+//
+// ============================================================
 
 function getUserRef(
   uid,
@@ -689,6 +787,7 @@ function getUserRef(
     validateUid(
       uid,
     );
+
 
   return db
     .collection(
@@ -704,7 +803,9 @@ function getUserRef(
 // ⛏️ START MINING
 // ============================================================
 //
-// Käynnistää uuden 24 h mining-jakson.
+// Käynnistää uuden mining-jakson.
+//
+// Mining-jakson kesto tulee miningConfig.js:stä.
 //
 // Hash Rate määräytyy Daily Streakistä.
 //
@@ -725,8 +826,10 @@ async function startMining(
       uid,
     );
 
+
   let validTransactionId =
     "";
+
 
   if (
     transactionId !== null &&
@@ -738,15 +841,18 @@ async function startMining(
       );
   }
 
+
   const userRef =
     getUserRef(
       validUid,
     );
 
+
   const historyRef =
     createHistoryRef(
       validUid,
     );
+
 
   return db.runTransaction(
     async (
@@ -755,25 +861,29 @@ async function startMining(
       const now =
         new Date();
 
+
       const snapshot =
         await transaction.get(
           userRef,
         );
+
 
       const data =
         snapshot.exists
           ? snapshot.data() || {}
           : {};
 
-      // ------------------------------------------------------
-      // 🛡️ MINING START TRANSACTION IDEMPOTENCY
-      // ------------------------------------------------------
+
+      // ======================================================
+      // 🛡️ MINING START IDEMPOTENCY
+      // ======================================================
 
       const storedMiningStartTransactionId =
         typeof data.miningStartTransactionId ===
         "string"
           ? data.miningStartTransactionId.trim()
           : "";
+
 
       if (
         validTransactionId &&
@@ -817,19 +927,22 @@ async function startMining(
         };
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // ⛏️ EXISTING MINING
-      // ------------------------------------------------------
+      // ======================================================
 
       const existingStart =
         getMiningStartTime(
           data,
         );
 
+
       const existingEnd =
         getMiningEndTime(
           data,
         );
+
 
       if (
         existingStart &&
@@ -848,27 +961,76 @@ async function startMining(
         throw error;
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // ⏱️ NEW MINING TIMES
-      // ------------------------------------------------------
+      // ======================================================
 
       const miningStartedAt =
         now;
 
+
+      const durationMs =
+        Math.max(
+          0,
+          getSafeNumber(
+            MINING_DURATION_MS,
+            0,
+          ),
+        );
+
+
+      if (
+        durationMs <= 0
+      ) {
+        const error =
+          new Error(
+            "Mining duration is invalid.",
+          );
+
+        error.code =
+          "MINING_INVALID_DURATION";
+
+        throw error;
+      }
+
+
       const miningEndsAt =
         new Date(
           now.getTime() +
-          MINING_DURATION_MS,
+          durationMs,
         );
+
+
+      if (
+        miningEndsAt.getTime() <=
+        miningStartedAt.getTime()
+      ) {
+        const error =
+          new Error(
+            "Mining end time is invalid.",
+          );
+
+        error.code =
+          "MINING_INVALID_DURATION";
+
+        throw error;
+      }
+
+
+      // ======================================================
+      // 🧮 HASH RATE
+      // ======================================================
 
       const hashRate =
         calculateDailyHashRate(
           dailyStreak,
         );
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 💾 START NEW MINING
-      // ------------------------------------------------------
+      // ======================================================
 
       const miningData = {
         miningActive:
@@ -908,12 +1070,22 @@ async function startMining(
           FieldValue.serverTimestamp(),
       };
 
+
+      // ------------------------------------------------------
+      // 🆔 STORE TRANSACTION ID ONLY WHEN PROVIDED
+      // ------------------------------------------------------
+
       if (
         validTransactionId
       ) {
         miningData.miningStartTransactionId =
           validTransactionId;
+      } else {
+        // Poistetaan mahdollinen vanha transaction ID.
+        miningData.miningStartTransactionId =
+          FieldValue.delete();
       }
+
 
       transaction.set(
         userRef,
@@ -924,9 +1096,10 @@ async function startMining(
         },
       );
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 📜 HISTORY
-      // ------------------------------------------------------
+      // ======================================================
 
       const historyData = {
         type:
@@ -948,6 +1121,7 @@ async function startMining(
           FieldValue.serverTimestamp(),
       };
 
+
       if (
         validTransactionId
       ) {
@@ -955,10 +1129,16 @@ async function startMining(
           validTransactionId;
       }
 
+
       transaction.set(
         historyRef,
         historyData,
       );
+
+
+      // ======================================================
+      // 📤 RESULT
+      // ======================================================
 
       return {
         success:
@@ -998,8 +1178,7 @@ async function startMining(
 //
 // Boost rajataan mining-jakson loppuun.
 //
-// AD_COOLDOWN_MS määrittää vain seuraavan mainoksen
-// käyttöön liittyvän cooldown-ajan.
+// AD_COOLDOWN_MS määrittää seuraavan Boostin käyttörajoituksen.
 //
 // ============================================================
 
@@ -1012,20 +1191,24 @@ async function applyPowerBoost(
       uid,
     );
 
+
   const validTransactionId =
     validateTransactionId(
       transactionId,
     );
+
 
   const userRef =
     getUserRef(
       validUid,
     );
 
+
   const historyRef =
     createHistoryRef(
       validUid,
     );
+
 
   return db.runTransaction(
     async (
@@ -1034,25 +1217,29 @@ async function applyPowerBoost(
       const now =
         new Date();
 
+
       const snapshot =
         await transaction.get(
           userRef,
         );
+
 
       const data =
         snapshot.exists
           ? snapshot.data() || {}
           : {};
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 🛡️ TRANSACTION ID IDEMPOTENCY
-      // ------------------------------------------------------
+      // ======================================================
 
       const lastBoostTransactionId =
         typeof data.powerBoostTransactionId ===
         "string"
           ? data.powerBoostTransactionId.trim()
           : "";
+
 
       if (
         lastBoostTransactionId ===
@@ -1076,19 +1263,22 @@ async function applyPowerBoost(
         };
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // ⛏️ MINING MUST BE ACTIVE
-      // ------------------------------------------------------
+      // ======================================================
 
       const miningStartedAt =
         getMiningStartTime(
           data,
         );
 
+
       const miningEndsAt =
         getMiningEndTime(
           data,
         );
+
 
       if (
         !miningStartedAt ||
@@ -1107,26 +1297,30 @@ async function applyPowerBoost(
         throw error;
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 📅 DAILY LIMIT
-      // ------------------------------------------------------
+      // ======================================================
 
       const today =
         getUtcDateKey(
           now,
         );
 
+
       const storedAdDate =
         typeof data.adsTodayDate ===
         "string"
-          ? data.adsTodayDate
+          ? data.adsTodayDate.trim()
           : "";
+
 
       let adsToday =
         getSafeNumber(
           data.adsToday,
           0,
         );
+
 
       if (
         storedAdDate !==
@@ -1135,9 +1329,46 @@ async function applyPowerBoost(
         adsToday = 0;
       }
 
+
+      adsToday =
+        Math.max(
+          0,
+          Math.floor(
+            adsToday,
+          ),
+        );
+
+
+      const maxAdsPerDay =
+        Math.max(
+          0,
+          Math.floor(
+            getSafeNumber(
+              MAX_ADS_PER_DAY,
+              0,
+            ),
+          ),
+        );
+
+
+      if (
+        maxAdsPerDay <= 0
+      ) {
+        const error =
+          new Error(
+            "Power Boost daily limit is invalid.",
+          );
+
+        error.code =
+          "POWER_BOOST_INVALID_DAILY_LIMIT";
+
+        throw error;
+      }
+
+
       if (
         adsToday >=
-        MAX_ADS_PER_DAY
+        maxAdsPerDay
       ) {
         const error =
           new Error(
@@ -1150,25 +1381,39 @@ async function applyPowerBoost(
         throw error;
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // ⏱️ COOLDOWN
-      // ------------------------------------------------------
+      // ======================================================
 
       const lastBoostAt =
         getSafeDate(
           data.powerBoostLastUsedAt,
         );
 
+
+      const cooldownMs =
+        Math.max(
+          0,
+          getSafeNumber(
+            AD_COOLDOWN_MS,
+            0,
+          ),
+        );
+
+
       if (
-        lastBoostAt
+        lastBoostAt &&
+        cooldownMs > 0
       ) {
         const elapsedSinceLastBoost =
           now.getTime() -
           lastBoostAt.getTime();
 
+
         if (
           elapsedSinceLastBoost <
-          AD_COOLDOWN_MS
+          cooldownMs
         ) {
           const error =
             new Error(
@@ -1182,26 +1427,47 @@ async function applyPowerBoost(
         }
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
+      // ⚡ BOOST HASH RATE
+      // ======================================================
+
+      const boostHashRate =
+        Math.max(
+          0,
+          getSafeNumber(
+            AD_HASH_RATE_BONUS,
+            0,
+          ),
+        );
+
+
+      if (
+        boostHashRate <= 0
+      ) {
+        const error =
+          new Error(
+            "Power Boost Hash Rate bonus is invalid.",
+          );
+
+        error.code =
+          "POWER_BOOST_INVALID_HASH_RATE";
+
+        throw error;
+      }
+
+
+      // ======================================================
       // ⚡ BOOST START
-      // ------------------------------------------------------
+      // ======================================================
 
       const boostStartedAt =
         now;
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // ⚡ BOOST DURATION
-      // ------------------------------------------------------
-      //
-      // AD_BOOST_DURATION_MS =
-      // Power Boostin varsinainen kesto.
-      //
-      // AD_COOLDOWN_MS =
-      // seuraavan Power Boostin käyttörajoitus.
-      //
-      // Näitä ei sekoiteta keskenään.
-      //
-      // ------------------------------------------------------
+      // ======================================================
 
       const requestedBoostDuration =
         Math.max(
@@ -1212,17 +1478,35 @@ async function applyPowerBoost(
           ),
         );
 
+
+      if (
+        requestedBoostDuration <= 0
+      ) {
+        const error =
+          new Error(
+            "Power Boost duration is invalid.",
+          );
+
+        error.code =
+          "POWER_BOOST_INVALID_DURATION";
+
+        throw error;
+      }
+
+
       const requestedBoostEnd =
         new Date(
           now.getTime() +
           requestedBoostDuration,
         );
 
+
       const actualBoostEnd =
         requestedBoostEnd.getTime() >
         miningEndsAt.getTime()
           ? miningEndsAt
           : requestedBoostEnd;
+
 
       if (
         actualBoostEnd.getTime() <=
@@ -1239,36 +1523,10 @@ async function applyPowerBoost(
         throw error;
       }
 
-      // ------------------------------------------------------
-      // ⚡ BOOST HASH RATE
-      // ------------------------------------------------------
 
-      const boostHashRate =
-        Math.max(
-          0,
-          getSafeNumber(
-            AD_HASH_RATE_BONUS,
-            0,
-          ),
-        );
-
-      if (
-        boostHashRate <= 0
-      ) {
-        const error =
-          new Error(
-            "Power Boost Hash Rate bonus is invalid.",
-          );
-
-        error.code =
-          "POWER_BOOST_INVALID_HASH_RATE";
-
-        throw error;
-      }
-
-      // ------------------------------------------------------
+      // ======================================================
       // 💾 SAVE BOOST
-      // ------------------------------------------------------
+      // ======================================================
 
       transaction.set(
         userRef,
@@ -1306,9 +1564,10 @@ async function applyPowerBoost(
         },
       );
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 📜 HISTORY
-      // ------------------------------------------------------
+      // ======================================================
 
       transaction.set(
         historyRef,
@@ -1349,6 +1608,11 @@ async function applyPowerBoost(
             FieldValue.serverTimestamp(),
         },
       );
+
+
+      // ======================================================
+      // 📤 RESULT
+      // ======================================================
 
       return {
         success:
@@ -1404,15 +1668,18 @@ async function completeMining(
       uid,
     );
 
+
   const userRef =
     getUserRef(
       validUid,
     );
 
+
   const historyRef =
     createHistoryRef(
       validUid,
     );
+
 
   return db.runTransaction(
     async (
@@ -1421,10 +1688,12 @@ async function completeMining(
       const now =
         new Date();
 
+
       const snapshot =
         await transaction.get(
           userRef,
         );
+
 
       if (
         !snapshot.exists
@@ -1440,18 +1709,22 @@ async function completeMining(
         throw error;
       }
 
+
       const data =
         snapshot.data() || {};
+
 
       const miningStartedAt =
         getMiningStartTime(
           data,
         );
 
+
       const miningEndsAt =
         getMiningEndTime(
           data,
         );
+
 
       if (
         !miningStartedAt ||
@@ -1468,9 +1741,10 @@ async function completeMining(
         throw error;
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 🔒 ALREADY CLAIMED
-      // ------------------------------------------------------
+      // ======================================================
 
       if (
         data.miningClaimed ===
@@ -1487,9 +1761,12 @@ async function completeMining(
             true,
 
           amount:
-            getSafeNumber(
-              data.miningClaimedAmount,
+            Math.max(
               0,
+              getSafeNumber(
+                data.miningClaimedAmount,
+                0,
+              ),
             ),
 
           message:
@@ -1497,9 +1774,10 @@ async function completeMining(
         };
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // ⏱️ MINING MUST BE FINISHED
-      // ------------------------------------------------------
+      // ======================================================
 
       if (
         miningEndsAt.getTime() >
@@ -1516,15 +1794,17 @@ async function completeMining(
         throw error;
       }
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 🧮 CALCULATE FINAL AMOUNT
-      // ------------------------------------------------------
+      // ======================================================
 
       const miningResult =
         calculateCompletedMining(
           data,
           now,
         );
+
 
       const amount =
         Math.max(
@@ -1535,6 +1815,7 @@ async function completeMining(
           ),
         );
 
+
       const previousBalance =
         Math.max(
           0,
@@ -1544,13 +1825,15 @@ async function completeMining(
           ),
         );
 
+
       const newBalance =
         previousBalance +
         amount;
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 💾 SAVE FINAL MINING RESULT
-      // ------------------------------------------------------
+      // ======================================================
 
       transaction.set(
         userRef,
@@ -1597,9 +1880,10 @@ async function completeMining(
         },
       );
 
-      // ------------------------------------------------------
+
+      // ======================================================
       // 📜 HISTORY
-      // ------------------------------------------------------
+      // ======================================================
 
       transaction.set(
         historyRef,
@@ -1638,6 +1922,11 @@ async function completeMining(
             FieldValue.serverTimestamp(),
         },
       );
+
+
+      // ======================================================
+      // 📤 RESULT
+      // ======================================================
 
       return {
         success:
@@ -1687,13 +1976,16 @@ async function getMiningStatus(
       uid,
     );
 
+
   const userRef =
     getUserRef(
       validUid,
     );
 
+
   const snapshot =
     await userRef.get();
+
 
   if (
     !snapshot.exists
@@ -1709,21 +2001,26 @@ async function getMiningStatus(
     throw error;
   }
 
+
   const data =
     snapshot.data() || {};
 
+
   const now =
     new Date();
+
 
   const startedAt =
     getMiningStartTime(
       data,
     );
 
+
   const endsAt =
     getMiningEndTime(
       data,
     );
+
 
   const current =
     calculateCurrentMining(
@@ -1731,15 +2028,18 @@ async function getMiningStatus(
       now,
     );
 
+
   const powerBoostStartedAt =
     getSafeDate(
       data.powerBoostStartedAt,
     );
 
+
   const powerBoostEndsAt =
     getSafeDate(
       data.powerBoostEndsAt,
     );
+
 
   const powerBoostHashRate =
     Math.max(
@@ -1749,6 +2049,7 @@ async function getMiningStatus(
         0,
       ),
     );
+
 
   const powerBoostActive =
     Boolean(
@@ -1765,47 +2066,67 @@ async function getMiningStatus(
         endsAt.getTime(),
     );
 
+
   const adsTodayDate =
     typeof data.adsTodayDate ===
     "string"
-      ? data.adsTodayDate
+      ? data.adsTodayDate.trim()
       : "";
+
 
   const today =
     getUtcDateKey(
       now,
     );
 
+
   const adsToday =
     adsTodayDate ===
     today
       ? Math.max(
           0,
-          getSafeNumber(
-            data.adsToday,
-            0,
+          Math.floor(
+            getSafeNumber(
+              data.adsToday,
+              0,
+            ),
           ),
         )
       : 0;
+
+
+  // ==========================================================
+  // 📊 MINING ACTIVE STATE
+  // ==========================================================
+
+  const miningActive =
+    Boolean(
+      startedAt &&
+      endsAt &&
+      endsAt.getTime() >
+        now.getTime(),
+    );
+
+
+  const miningFinished =
+    Boolean(
+      endsAt &&
+      endsAt.getTime() <=
+        now.getTime(),
+    );
+
+
+  // ==========================================================
+  // 📤 STATUS
+  // ==========================================================
 
   return {
     success:
       true,
 
-    miningActive:
-      Boolean(
-        startedAt &&
-        endsAt &&
-        endsAt.getTime() >
-          now.getTime(),
-      ),
+    miningActive,
 
-    miningFinished:
-      Boolean(
-        endsAt &&
-        endsAt.getTime() <=
-          now.getTime(),
-      ),
+    miningFinished,
 
     hashRate:
       getSafeNumber(
@@ -1829,19 +2150,49 @@ async function getMiningStatus(
       endsAt,
 
     minedAmount:
-      current.totalAmount,
+      Math.max(
+        0,
+        getSafeNumber(
+          current.totalAmount,
+          0,
+        ),
+      ),
 
     baseAmount:
-      current.baseAmount,
+      Math.max(
+        0,
+        getSafeNumber(
+          current.baseAmount,
+          0,
+        ),
+      ),
 
     boostAmount:
-      current.boostAmount,
+      Math.max(
+        0,
+        getSafeNumber(
+          current.boostAmount,
+          0,
+        ),
+      ),
 
     elapsedMs:
-      current.elapsedMs,
+      Math.max(
+        0,
+        getSafeNumber(
+          current.elapsedMs,
+          0,
+        ),
+      ),
 
     boostElapsedMs:
-      current.boostElapsedMs,
+      Math.max(
+        0,
+        getSafeNumber(
+          current.boostElapsedMs,
+          0,
+        ),
+      ),
 
     powerBoostActive,
 
@@ -1862,7 +2213,7 @@ async function getMiningStatus(
     miningStartTransactionId:
       typeof data.miningStartTransactionId ===
       "string"
-        ? data.miningStartTransactionId
+        ? data.miningStartTransactionId.trim()
         : "",
   };
 }
