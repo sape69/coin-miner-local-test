@@ -320,6 +320,16 @@ async function findVerifiedAdMobReward(
       return;
     }
 
+    // --------------------------------------------------------
+    // 🔐 NEVER REUSE A GENERICALLY CONSUMED REWARD
+    // --------------------------------------------------------
+
+    if (
+      rewardData.rewardConsumed === true
+    ) {
+      return;
+    }
+
     if (
       rewardData[claimedField] === true
     ) {
@@ -579,6 +589,19 @@ function validateVerifiedRewardDocument(
     throw new HttpsError(
       "failed-precondition",
       "🐱 AdMob-palkinnon käyttötarkoitus ei täsmää."
+    );
+  }
+
+  // ----------------------------------------------------------
+  // 🔐 GENERIC CONSUMPTION CHECK
+  // ----------------------------------------------------------
+
+  if (
+    rewardData.rewardConsumed === true
+  ) {
+    throw new HttpsError(
+      "already-exists",
+      "🐱 Tämä AdMob-palkinto on jo käytetty."
     );
   }
 
@@ -1942,14 +1965,20 @@ const claimMining =
         const userRef =
           getUserRef(uid);
 
-        const now =
+        // ------------------------------------------------------
+        // 🕒 INITIAL TIME
+        // ------------------------------------------------------
+        //
+        // Used only for the early check.
+        // A fresh timestamp is created after SSV verification
+        // and again inside the Firestore transaction.
+        // ------------------------------------------------------
+
+        const earlyNow =
           new Date();
 
-        const nowMs =
-          now.getTime();
-
-        const today =
-          getUtcDateString();
+        const earlyNowMs =
+          earlyNow.getTime();
 
         // ------------------------------------------------------
         // 🛡️ EARLY CHECK
@@ -1989,7 +2018,7 @@ const claimMining =
               hashRate:
                 earlyMiningHashRate,
             },
-            now
+            earlyNow
           );
 
         if (
@@ -2024,7 +2053,7 @@ const claimMining =
             const earlyCalculationEndMs =
               Math.min(
                 earlyEnd.getTime(),
-                nowMs
+                earlyNowMs
               );
 
             if (
@@ -2157,6 +2186,27 @@ const claimMining =
 
         return await db.runTransaction(
           async (transaction) => {
+            // --------------------------------------------------
+            // 🕒 FRESH TRANSACTION TIME
+            // --------------------------------------------------
+            //
+            // IMPORTANT:
+            // The SSV wait can take up to 110 seconds.
+            // Never use the timestamp captured before that wait
+            // to start a new mining cycle.
+            // --------------------------------------------------
+
+            const transactionNow =
+              new Date();
+
+            const transactionNowMs =
+              transactionNow.getTime();
+
+            const transactionToday =
+              getUtcDateString(
+                transactionNow
+              );
+
             const userSnapshot =
               await transaction.get(
                 userRef
@@ -2200,7 +2250,7 @@ const claimMining =
                   hashRate:
                     existingHashRate,
                 },
-                now
+                transactionNow
               );
 
             if (
@@ -2235,7 +2285,7 @@ const claimMining =
                 const currentEndCalculationMs =
                   Math.min(
                     currentEnd.getTime(),
-                    nowMs
+                    transactionNowMs
                   );
 
                 if (
@@ -2343,7 +2393,7 @@ const claimMining =
             const dailyClaim =
               calculateNextDailyClaim(
                 data,
-                today
+                transactionToday
               );
 
             const dailyHashRate =
@@ -2403,7 +2453,7 @@ const claimMining =
               previousStart &&
               previousEnd &&
               previousEnd.getTime() <=
-                nowMs
+                transactionNowMs
             ) {
               const startMs =
                 previousStart.getTime();
@@ -2456,7 +2506,7 @@ const claimMining =
               uid,
               collected,
               true,
-              now
+              transactionNow
             );
 
             // --------------------------------------------------
@@ -2464,11 +2514,11 @@ const claimMining =
             // --------------------------------------------------
 
             const newMiningStartedAt =
-              now;
+              transactionNow;
 
             const newMiningEndsAt =
               new Date(
-                nowMs +
+                transactionNowMs +
                 MINING_DURATION_MS
               );
 
@@ -2489,9 +2539,9 @@ const claimMining =
                       typeof data.lastDailyDate ===
                       "string"
                         ? data.lastDailyDate
-                        : today
+                        : transactionToday
                     )
-                  : today,
+                  : transactionToday,
 
               miningHashRate:
                 dailyHashRate,
@@ -2824,14 +2874,20 @@ const powerBoost =
         const userRef =
           getUserRef(uid);
 
-        const now =
+        // ------------------------------------------------------
+        // 🕒 INITIAL TIME
+        // ------------------------------------------------------
+
+        const earlyNow =
           new Date();
 
-        const nowMs =
-          now.getTime();
+        const earlyNowMs =
+          earlyNow.getTime();
 
-        const today =
-          getUtcDateString();
+        const earlyToday =
+          getUtcDateString(
+            earlyNow
+          );
 
         // ------------------------------------------------------
         // 👤 EARLY CHECK
@@ -2869,8 +2925,8 @@ const powerBoost =
           earlyStartMs > 0 &&
           earlyEndMs >
             earlyStartMs &&
-          nowMs >= earlyStartMs &&
-          nowMs < earlyEndMs;
+          earlyNowMs >= earlyStartMs &&
+          earlyNowMs < earlyEndMs;
 
         if (
           !earlyMiningActive
@@ -2895,7 +2951,7 @@ const powerBoost =
               hashRate:
                 earlyHashRate,
             },
-            now
+            earlyNow
           );
 
         if (
@@ -2910,8 +2966,8 @@ const powerBoost =
         const earlyAdStatus =
           getAdStatus(
             earlyData,
-            nowMs,
-            today
+            earlyNowMs,
+            earlyToday
           );
 
         if (
@@ -2978,6 +3034,27 @@ const powerBoost =
 
         return await db.runTransaction(
           async (transaction) => {
+            // --------------------------------------------------
+            // 🕒 FRESH TRANSACTION TIME
+            // --------------------------------------------------
+            //
+            // The SSV wait can take up to 110 seconds.
+            // Power Boost must start from the actual current
+            // server execution time, not from the time before
+            // the SSV wait.
+            // --------------------------------------------------
+
+            const transactionNow =
+              new Date();
+
+            const transactionNowMs =
+              transactionNow.getTime();
+
+            const transactionToday =
+              getUtcDateString(
+                transactionNow
+              );
+
             const userSnapshot =
               await transaction.get(
                 userRef
@@ -3021,9 +3098,9 @@ const powerBoost =
               miningStartMs > 0 &&
               miningEndsMs >
                 miningStartMs &&
-              nowMs >=
+              transactionNowMs >=
                 miningStartMs &&
-              nowMs <
+              transactionNowMs <
                 miningEndsMs;
 
             if (
@@ -3053,7 +3130,7 @@ const powerBoost =
                   hashRate:
                     miningHashRate,
                 },
-                now
+                transactionNow
               );
 
             if (
@@ -3080,8 +3157,8 @@ const powerBoost =
             const adStatus =
               getAdStatus(
                 data,
-                nowMs,
-                today
+                transactionNowMs,
+                transactionToday
               );
 
             if (
@@ -3118,10 +3195,10 @@ const powerBoost =
             // --------------------------------------------------
 
             const boostStartedAt =
-              now;
+              transactionNow;
 
             const requestedEndMs =
-              nowMs +
+              transactionNowMs +
               AD_BOOST_DURATION_MS;
 
             const actualEndMs =
@@ -3139,7 +3216,7 @@ const powerBoost =
               Math.max(
                 0,
                 actualEndMs -
-                  nowMs
+                  transactionNowMs
               );
 
             if (
@@ -3162,7 +3239,7 @@ const powerBoost =
                 : "";
 
             const currentAds =
-              storedAdDate === today
+              storedAdDate === transactionToday
                 ? Math.max(
                     0,
                     Math.floor(
@@ -3188,7 +3265,7 @@ const powerBoost =
                   newAdsToday,
 
                 lastAdDate:
-                  today,
+                  transactionToday,
 
                 lastAdRewardAt:
                   FieldValue.serverTimestamp(),
@@ -3306,7 +3383,7 @@ const powerBoost =
             const dailyStatus =
               getDailyStatus(
                 data,
-                today
+                transactionToday
               );
 
             const baseHashRate =
