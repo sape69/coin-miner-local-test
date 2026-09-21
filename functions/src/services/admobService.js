@@ -58,7 +58,10 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// Public keyt cachetetaan enintään 23 tunniksi.
+// AdMob suosittelee public key -avainten cachetusta,
+// mutta avaimia ei saa pitää yli 24 tuntia.
+//
+// Käytämme 23 tuntia turvallisuusmarginaalilla.
 //
 // ============================================================
 
@@ -140,8 +143,16 @@ async function fetchJson(
       await fetch(
         url,
         {
+          method:
+            "GET",
+
           signal:
             controller.signal,
+
+          headers: {
+            Accept:
+              "application/json",
+          },
         },
       );
 
@@ -235,6 +246,7 @@ async function getAdMobPublicKeys(
   if (
     !forceRefresh &&
     cachedPublicKeys &&
+    cachedPublicKeysAt > 0 &&
     now -
       cachedPublicKeysAt <
       PUBLIC_KEY_CACHE_MS
@@ -313,7 +325,9 @@ async function getAdMobPublicKeys(
     }
 
 
-    // AdMob key_id on numeerinen.
+    // --------------------------------------------------------
+    // KEY ID
+    // --------------------------------------------------------
 
     if (
       !/^\d+$/.test(
@@ -324,7 +338,9 @@ async function getAdMobPublicKeys(
     }
 
 
-    // Varmistetaan PEM-avain.
+    // --------------------------------------------------------
+    // PUBLIC KEY
+    // --------------------------------------------------------
 
     try {
       crypto.createPublicKey(
@@ -437,15 +453,17 @@ function extractQueryStringFromUrl(
 // 🔎 GET RAW QUERY STRING
 // ============================================================
 //
+// TÄRKEÄÄ:
+//
 // AdMob allekirjoittaa alkuperäisen query stringin.
 //
-// Emme ennen verifiointia:
+// Ennen kryptografista verifiointia:
 //
-// ❌ järjestä parametreja
-// ❌ rakenna query stringiä uudelleen
-// ❌ URL-dekoodaa signed dataa
-// ❌ käytä URLSearchParamsia signed datan rakentamiseen
-// ❌ trimmaa signed query stringiä
+// ❌ ei järjestetä parametreja
+// ❌ ei rakenneta query stringiä uudelleen
+// ❌ ei käytetä URLSearchParamsia
+// ❌ ei URL-dekoodata signed-dataa
+// ❌ ei trimmaa signed-dataa
 //
 // ============================================================
 
@@ -638,10 +656,12 @@ function decodeAdMobSignature(
 // 🔎 EXTRACT SIGNATURE DATA
 // ============================================================
 //
-// AdMob callbackissa signature ja key_id ovat
-// query-parametreina.
+// AdMob SSV:n kaksi viimeistä query-parametria ovat:
 //
-// Signed data on kaikki ennen signature-parametria.
+// signature
+// key_id
+//
+// Kaikki niitä edeltävä data muodostaa signed data:n.
 //
 // ============================================================
 
@@ -1312,6 +1332,10 @@ function validateUid(
 //   abc123:mining_start
 //   abc123:power_boost
 //
+// Google kertoo, että custom_data voi olla
+// percent-escaped. URLSearchParams purkaa arvon vasta
+// allekirjoituksen tarkistamisen jälkeen.
+//
 // ============================================================
 
 function parseCustomData(
@@ -1429,6 +1453,12 @@ function parseCustomData(
 // ============================================================
 // 🔐 TRANSACTION ID VALIDATION
 // ============================================================
+//
+// AdMob dokumentoi transaction_id:n:
+//
+// Unique hex encoded identifier.
+//
+// ============================================================
 
 function validateTransactionId(
   transactionId,
@@ -1461,6 +1491,16 @@ function validateTransactionId(
 
 // ============================================================
 // ⏱️ TIMESTAMP VALIDATION
+// ============================================================
+//
+// AdMob timestamp on Epoch milliseconds.
+//
+// Emme hyväksy tulevaisuuteen sijoittuvaa callbackia
+// yli 5 minuutin toleranssilla.
+//
+// Varsinainen duplicate protection tehdään
+// transaction_id:n avulla Firestoressa.
+//
 // ============================================================
 
 const TIMESTAMP_FUTURE_TOLERANCE_MS =
