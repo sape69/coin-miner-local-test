@@ -101,7 +101,10 @@ function getSafeNumber(value, fallback = 0) {
 }
 
 
-function getSafeNonNegativeNumber(value, fallback = 0) {
+function getSafeNonNegativeNumber(
+  value,
+  fallback = 0
+) {
   const number = Number(value);
 
   return Number.isFinite(number) && number >= 0
@@ -110,7 +113,10 @@ function getSafeNonNegativeNumber(value, fallback = 0) {
 }
 
 
-function getSafePositiveNumber(value, fallback = 0) {
+function getSafePositiveNumber(
+  value,
+  fallback = 0
+) {
   const number = Number(value);
 
   return Number.isFinite(number) && number > 0
@@ -255,22 +261,6 @@ function getRewardConfiguration(rewardPurpose) {
   }
 
   return null;
-}
-
-
-// ============================================================
-// 🎁 EXPECTED REWARD ITEM
-// ============================================================
-
-function getExpectedRewardItem(rewardPurpose) {
-  const configuration =
-    getRewardConfiguration(
-      rewardPurpose
-    );
-
-  return configuration
-    ? configuration.rewardItem
-    : null;
 }
 
 
@@ -1122,20 +1112,6 @@ async function getAdBoostHistory(
       const data =
         doc.data() || {};
 
-      if (
-        data.type !==
-        "ad_reward"
-      ) {
-        return;
-      }
-
-      if (
-        data.rewardPurpose !==
-        "power_boost"
-      ) {
-        return;
-      }
-
       const start =
         getTimestampMilliseconds(
           data.boostStartedAt
@@ -1286,15 +1262,13 @@ function calculateAdBoostMilliseconds(
 // ⛏️ CALCULATE COMPLETE MINING CYCLE
 // ============================================================
 //
-// Tämä keskittää mining-cycle-laskennan yhteen paikkaan.
-//
-// base mining:
+// Base mining:
 //   miningHashRate × elapsed time
 //
 // Power Boost:
 //   AD_HASH_RATE_BONUS × boost duration
 //
-// Boost duration rajataan aina mining cyclen sisälle.
+// Boost duration is always limited to the mining cycle.
 // ============================================================
 
 async function calculateMiningCycle(
@@ -1312,8 +1286,11 @@ async function calculateMiningCycle(
   ) {
     return {
       baseMining: 0,
+
       adBoostMining: 0,
+
       boostMilliseconds: 0,
+
       totalMining: 0,
     };
   }
@@ -1664,15 +1641,7 @@ const getMiningStatus =
           );
 
         // ------------------------------------------------------
-        // ⛏️ ACTIVE CYCLE HASH RATE
-        // ------------------------------------------------------
-        //
-        // miningHashRate is the rate belonging to the current
-        // mining cycle.
-        //
-        // dailyStatus.dailyHashRate may represent the NEXT
-        // Daily Hash Rate if today has not yet been claimed.
-        // They must not be mixed.
+        // ⛏️ CURRENT CYCLE HASH RATE
         // ------------------------------------------------------
 
         const miningHashRate =
@@ -1800,10 +1769,6 @@ const getMiningStatus =
                 ? "🐱✨ Louhinta on valmis kerättäväksi!"
                 : "🐱 Stella odottaa seuraavaa louhintaa.",
 
-          // ----------------------------------------------------
-          // CURRENT CYCLE
-          // ----------------------------------------------------
-
           hashRate:
             miningHashRate,
 
@@ -1870,16 +1835,6 @@ const getMiningStatus =
 
           activeMiningPerHour,
 
-          // ----------------------------------------------------
-          // DAILY HASH RATE
-          // ----------------------------------------------------
-          //
-          // dailyHashRate is the current Daily Hash Rate state.
-          // When the user has not claimed today yet, this is the
-          // rate that will be assigned when the next mining cycle
-          // starts.
-          // ----------------------------------------------------
-
           dailyClaimed:
             dailyStatus.claimedToday,
 
@@ -1900,10 +1855,6 @@ const getMiningStatus =
 
           nextDailyStreak:
             dailyStatus.streak,
-
-          // ----------------------------------------------------
-          // ADMOB / POWER BOOST
-          // ----------------------------------------------------
 
           adsToday:
             adStatus.adsToday,
@@ -2045,17 +1996,13 @@ const claimMining =
           earlyStatus.miningActive
         ) {
           let earlyUnclaimedMining =
-            Math.max(
-              0,
-              getSafeNumber(
-                earlyStatus.minedAmount,
-                0
-              )
-            );
+            0;
 
           let earlyBaseMining = 0;
 
           let earlyAdBoostMining = 0;
+
+          let earlyBoostMilliseconds = 0;
 
           const earlyStart =
             getMiningStartTime(
@@ -2098,6 +2045,9 @@ const claimMining =
               earlyAdBoostMining =
                 cycle.adBoostMining;
 
+              earlyBoostMilliseconds =
+                cycle.boostMilliseconds;
+
               earlyUnclaimedMining =
                 Math.max(
                   0,
@@ -2123,13 +2073,25 @@ const claimMining =
               earlyMiningHashRate,
 
             dailyHashRate:
-              earlyDailyHashRate,
+              calculateDailyHashRate(
+                getDailyStreak(
+                  earlyData
+                ) > 0
+                  ? getDailyStreak(
+                      earlyData
+                    )
+                  : 1
+              ),
 
             dailyStreak:
-              earlyStreak,
+              getDailyStreak(
+                earlyData
+              ),
 
             streak:
-              earlyStreak,
+              getDailyStreak(
+                earlyData
+              ),
 
             unclaimedMining:
               earlyUnclaimedMining,
@@ -2139,6 +2101,9 @@ const claimMining =
 
             adBoostMining:
               earlyAdBoostMining,
+
+            boostMilliseconds:
+              earlyBoostMilliseconds,
 
             miningRemainingMs:
               Math.max(
@@ -2241,6 +2206,68 @@ const claimMining =
             if (
               existingStatus.miningActive
             ) {
+              let currentUnclaimedMining =
+                0;
+
+              let currentBaseMining = 0;
+
+              let currentAdBoostMining = 0;
+
+              let currentBoostMilliseconds = 0;
+
+              const currentStart =
+                getMiningStartTime(
+                  data
+                );
+
+              const currentEnd =
+                getMiningEndTime(
+                  data
+                );
+
+              if (
+                currentStart &&
+                currentEnd
+              ) {
+                const currentStartMs =
+                  currentStart.getTime();
+
+                const currentEndCalculationMs =
+                  Math.min(
+                    currentEnd.getTime(),
+                    nowMs
+                  );
+
+                if (
+                  currentEndCalculationMs >
+                  currentStartMs
+                ) {
+                  const cycle =
+                    await calculateMiningCycle(
+                      uid,
+                      currentStartMs,
+                      currentEndCalculationMs,
+                      existingHashRate,
+                      transaction
+                    );
+
+                  currentBaseMining =
+                    cycle.baseMining;
+
+                  currentAdBoostMining =
+                    cycle.adBoostMining;
+
+                  currentBoostMilliseconds =
+                    cycle.boostMilliseconds;
+
+                  currentUnclaimedMining =
+                    Math.max(
+                      0,
+                      cycle.totalMining
+                    );
+                }
+              }
+
               return {
                 success: true,
 
@@ -2267,13 +2294,16 @@ const claimMining =
                   currentStreak,
 
                 unclaimedMining:
-                  Math.max(
-                    0,
-                    getSafeNumber(
-                      existingStatus.minedAmount,
-                      0
-                    )
-                  ),
+                  currentUnclaimedMining,
+
+                baseMining:
+                  currentBaseMining,
+
+                adBoostMining:
+                  currentAdBoostMining,
+
+                boostMilliseconds:
+                  currentBoostMilliseconds,
 
                 miningRemainingMs:
                   Math.max(
@@ -2475,9 +2505,9 @@ const claimMining =
               miningEndsAt:
                 newMiningEndsAt,
 
-              // ----------------------------------------------
+              // ------------------------------------------------
               // 🧹 CLEAR OLD BOOST
-              // ----------------------------------------------
+              // ------------------------------------------------
 
               adBoostStartedAt:
                 null,
