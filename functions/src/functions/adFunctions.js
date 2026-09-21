@@ -168,11 +168,11 @@ function validateUid(
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// AdMob SSV transaction_id:n tulee olla
-// yksilöllinen hex-muotoinen tunniste.
+// Defense-in-depth.
 //
-// Tämän validoinnin pitää olla yhdenmukainen
-// admobService.js:n kanssa.
+// admobService.js tekee varsinaisen SSV-validoinnin.
+// Tässä tarkistetaan lisäksi, että Firestoreen kirjoitettava
+// transactionId on turvallinen ja odotetussa muodossa.
 //
 // ============================================================
 
@@ -442,6 +442,12 @@ function validateVerifiedAdData(
 
   // ----------------------------------------------------------
   // REWARD AMOUNT
+  // ----------------------------------------------------------
+  //
+  // Tämä on AdMob reward metadata.
+  //
+  // Se EI ole STL-määrä.
+  //
   // ----------------------------------------------------------
 
   const rewardAmount =
