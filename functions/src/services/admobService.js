@@ -58,10 +58,10 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// Public keyt cachetetaan enintään 23 tunniksi.
+// AdMob voi vaihtaa public key -avaimia.
 //
-// Tämä jättää turvallisuusmarginaalin alle AdMobin
-// 24 tunnin suosituksen.
+// Cache pidetään alle 24 tuntia.
+// 23 tuntia jättää turvallisuusmarginaalin.
 //
 // ============================================================
 
@@ -461,7 +461,6 @@ function extractQueryStringFromUrl(
 //
 // ❌ ei järjestetä parametreja
 // ❌ ei rakenneta query stringiä uudelleen
-// ❌ ei käytetä URLSearchParamsia signed dataan
 // ❌ ei URL-dekoodata signed dataa
 // ❌ ei trimmaa signed dataa
 //
@@ -670,9 +669,10 @@ function decodeAdMobSignature(
 // &signature=...
 // &key_id=...
 //
-// Kaikki ennen signature-parametria muodostaa
-// kryptografisesti allekirjoitetun datan.
+// AdMob dokumentoi, että signature ja key_id ovat aina
+// kaksi viimeistä query-parametria tässä järjestyksessä.
 //
+// Allekirjoitettavaa dataa ei saa muuttaa.
 // ============================================================
 
 function extractSignatureData(
@@ -1098,10 +1098,8 @@ async function verifyRawQueryString(
   // DECODE PARAMETERS ONLY AFTER VERIFICATION
   // ----------------------------------------------------------
   //
-  // Tämä on tärkeä turvallisuusperiaate.
-  //
-  // Signed data verifioidaan ensin.
-  // Vasta sen jälkeen parametrit puretaan.
+  // Signed data on varmennettu ennen kuin parametreja
+  // käytetään business-logiikkaan.
   //
   // ----------------------------------------------------------
 
@@ -1499,9 +1497,7 @@ function parseCustomData(
 // 🔐 TRANSACTION ID VALIDATION
 // ============================================================
 //
-// AdMob transaction_id on yksilöllinen identifier.
-//
-// Stelluriini hyväksyy tässä vain hex-muotoisen arvon.
+// AdMob transaction_id on yksilöllinen hex-identifier.
 //
 // ============================================================
 
@@ -1540,11 +1536,13 @@ function validateTransactionId(
 //
 // AdMob timestamp on Epoch milliseconds.
 //
-// Emme hyväksy tulevaisuuteen sijoittuvaa callbackia
-// yli 5 minuutin toleranssilla.
+// Tulevaisuuden callback hyväksytään vain 5 minuutin
+// kellopoikkeamalla.
 //
-// Duplicate protection tehdään transaction_id:n
-// avulla Firestoressa.
+// Vanhaa callbackia ei hylätä pelkän iän perusteella,
+// koska AdMob SSV callback voi viivästyä.
+//
+// Duplicate protection tehdään transaction_id:n avulla.
 //
 // ============================================================
 
@@ -1743,7 +1741,7 @@ async function verifyAdMobCallback(
     );
 
 
-  const userId =
+  const rawUserId =
     getParam(
       params,
       "user_id",
@@ -1999,6 +1997,15 @@ async function verifyAdMobCallback(
   // ----------------------------------------------------------
   // 13. USER ID
   // ----------------------------------------------------------
+  //
+  // Normalisoidaan user_id ennen vertailua.
+  // Tämä estää esimerkiksi " uid " vs "uid" -epäjohdonmukaisuuden.
+  //
+  // ----------------------------------------------------------
+
+  let userId =
+    rawUserId.trim();
+
 
   if (
     userId
@@ -2018,6 +2025,10 @@ async function verifyAdMobCallback(
 
       throw error;
     }
+
+
+    userId =
+      userId.trim();
 
 
     if (
