@@ -146,8 +146,10 @@ function validateUid(
     throw error;
   }
 
+
   const value =
     uid.trim();
+
 
   if (
     value.length === 0 ||
@@ -164,6 +166,7 @@ function validateUid(
     throw error;
   }
 
+
   if (
     !/^[A-Za-z0-9._-]+$/.test(
       value,
@@ -179,6 +182,7 @@ function validateUid(
 
     throw error;
   }
+
 
   return value;
 }
@@ -206,8 +210,10 @@ function validateTransactionId(
     throw error;
   }
 
+
   const value =
     transactionId.trim();
+
 
   if (
     value.length === 0 ||
@@ -224,6 +230,7 @@ function validateTransactionId(
     throw error;
   }
 
+
   if (
     !/^[A-Za-z0-9._:-]+$/.test(
       value,
@@ -239,6 +246,7 @@ function validateTransactionId(
 
     throw error;
   }
+
 
   return value;
 }
@@ -521,9 +529,15 @@ function calculatePowerBoostMining(
   }
 
 
-  return calculateMining(
-    safeHashRate,
-    safeElapsed,
+  return Math.max(
+    0,
+    getSafeNumber(
+      calculateMining(
+        safeHashRate,
+        safeElapsed,
+      ),
+      0,
+    ),
   );
 }
 
@@ -607,6 +621,7 @@ function calculateCompletedMining(
       now,
     ) || new Date();
 
+
   const nowMs =
     nowDate.getTime();
 
@@ -617,6 +632,9 @@ function calculateCompletedMining(
     ) ||
     !Number.isFinite(
       endMs,
+    ) ||
+    !Number.isFinite(
+      nowMs,
     ) ||
     endMs <= startMs
   ) {
@@ -663,9 +681,15 @@ function calculateCompletedMining(
 
 
   const baseAmount =
-    calculateMining(
-      baseHashRate,
-      elapsedMs,
+    Math.max(
+      0,
+      getSafeNumber(
+        calculateMining(
+          baseHashRate,
+          elapsedMs,
+        ),
+        0,
+      ),
     );
 
 
@@ -801,19 +825,6 @@ function getUserRef(
 
 // ============================================================
 // ⛏️ START MINING
-// ============================================================
-//
-// Käynnistää uuden mining-jakson.
-//
-// Mining-jakson kesto tulee miningConfig.js:stä.
-//
-// Hash Rate määräytyy Daily Streakistä.
-//
-// transactionId on AdMob SSV transaction_id.
-//
-// Jos sama transactionId saapuu uudelleen,
-// sama Mining Start käsitellään vain kerran.
-//
 // ============================================================
 
 async function startMining(
@@ -1071,17 +1082,12 @@ async function startMining(
       };
 
 
-      // ------------------------------------------------------
-      // 🆔 STORE TRANSACTION ID ONLY WHEN PROVIDED
-      // ------------------------------------------------------
-
       if (
         validTransactionId
       ) {
         miningData.miningStartTransactionId =
           validTransactionId;
       } else {
-        // Poistetaan mahdollinen vanha transaction ID.
         miningData.miningStartTransactionId =
           FieldValue.delete();
       }
@@ -1167,19 +1173,6 @@ async function startMining(
 
 // ============================================================
 // ⚡ APPLY POWER BOOST
-// ============================================================
-//
-// Aktivoi yhden Power Boostin.
-//
-// Boost:
-//
-// + AD_HASH_RATE_BONUS
-// AD_BOOST_DURATION_MS ajan.
-//
-// Boost rajataan mining-jakson loppuun.
-//
-// AD_COOLDOWN_MS määrittää seuraavan Boostin käyttörajoituksen.
-//
 // ============================================================
 
 async function applyPowerBoost(
@@ -1647,18 +1640,6 @@ async function applyPowerBoost(
 // ============================================================
 // 💰 COMPLETE MINING
 // ============================================================
-//
-// Päättää yhden valmistuneen mining-jakson.
-//
-// Laskee:
-//
-// Base mining
-// +
-// Power Boost mining
-//
-// ja lisää tuloksen miningBalanceen.
-//
-// ============================================================
 
 async function completeMining(
   uid,
@@ -1866,9 +1847,6 @@ async function completeMining(
             null,
 
           powerBoostEndsAt:
-            null,
-
-          powerBoostTransactionId:
             null,
 
           updatedAt:
@@ -2129,9 +2107,12 @@ async function getMiningStatus(
     miningFinished,
 
     hashRate:
-      getSafeNumber(
-        data.hashRate,
+      Math.max(
         0,
+        getSafeNumber(
+          data.hashRate,
+          0,
+        ),
       ),
 
     miningBalance:
