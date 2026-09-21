@@ -12,7 +12,7 @@
 // 🔐 Varmistaa callbackin admobService.js:n kautta
 // 🆔 Käyttää vain varmennettua UID:tä
 // 🎯 Tunnistaa reward purposen
-// 💾 Tallentaa varmennetun rewardin Firestoreen
+// 💾 Tallentaa varmennetun AdMob-tapahtuman
 // 🛡️ Estää transaction_id:n uudelleenkäytön
 //
 // TÄMÄ TIEDOSTO EI:
@@ -32,11 +32,7 @@
 //
 // AdMob SSV:n kryptografinen varmennus kuuluu:
 //
-// services/admobService.js
-//
-// History-referenceihin liittyvä logiikka kuuluu:
-//
-// services/historyService.js
+// functions/src/services/admobService.js
 //
 // ============================================================
 
@@ -171,6 +167,14 @@ function validateUid(
 // ============================================================
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
+//
+// AdMob SSV transaction_id:n tulee olla
+// yksilöllinen hex-muotoinen tunniste.
+//
+// Tämän validoinnin pitää olla yhdenmukainen
+// admobService.js:n kanssa.
+//
+// ============================================================
 
 function validateTransactionId(
   value,
@@ -193,7 +197,7 @@ function validateTransactionId(
   }
 
   if (
-    !/^[A-Za-z0-9._:-]+$/.test(
+    !/^[A-Fa-f0-9]+$/.test(
       transactionId,
     )
   ) {
@@ -866,6 +870,10 @@ async function saveVerifiedAdMobReward(
           );
 
 
+        // ----------------------------------------------------
+        // SAME TRANSACTION + DIFFERENT DATA
+        // ----------------------------------------------------
+
         if (
           existingUid !==
           uid ||
@@ -888,6 +896,10 @@ async function saveVerifiedAdMobReward(
           throw error;
         }
 
+
+        // ----------------------------------------------------
+        // SAME VERIFIED EVENT
+        // ----------------------------------------------------
 
         console.log(
           "🐱 AdMob transaction already processed.",
@@ -958,6 +970,7 @@ async function saveVerifiedAdMobReward(
 
           userId,
 
+
           // --------------------------------------------------
           // ⛏️ MINING START STATE
           // --------------------------------------------------
@@ -980,6 +993,7 @@ async function saveVerifiedAdMobReward(
           miningStartClaimedBy:
             null,
 
+
           // --------------------------------------------------
           // ⚡ POWER BOOST STATE
           // --------------------------------------------------
@@ -996,6 +1010,7 @@ async function saveVerifiedAdMobReward(
           powerBoostTransactionId:
             null,
 
+
           // --------------------------------------------------
           // 🕒 TIMESTAMPS
           // --------------------------------------------------
@@ -1011,6 +1026,14 @@ async function saveVerifiedAdMobReward(
 
       // ======================================================
       // 📜 HISTORY
+      // ======================================================
+      //
+      // Tämä on vain AUDIT-merkintä.
+      //
+      // amount = 0
+      //
+      // AdMob rewardAmount ei ole STL.
+      //
       // ======================================================
 
       const historyRef =
@@ -1029,7 +1052,6 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-          // AdMob rewardAmount ei ole STL-token.
           amount:
             0,
 
@@ -1085,8 +1107,8 @@ async function saveVerifiedAdMobReward(
         message:
           rewardPurpose ===
           "power_boost"
-            ? "🐱📺 Power Boost -mainos vahvistettu ja palkkio tallennettu."
-            : "🐱📺 Mining Start -mainos vahvistettu ja palkkio tallennettu.",
+            ? "🐱📺 Power Boost -mainos vahvistettu ja tapahtuma tallennettu."
+            : "🐱📺 Mining Start -mainos vahvistettu ja tapahtuma tallennettu.",
       };
     },
   );
@@ -1487,7 +1509,7 @@ const adMobReward =
         // Jos AdMob SSV oli kryptografisesti validi mutta
         // Firestore-tallennus epäonnistui, palautetaan 500.
         //
-        // Näin callback voidaan yrittää uudelleen.
+        // Näin AdMob voi yrittää callbackia uudelleen.
         //
         // ======================================================
 
