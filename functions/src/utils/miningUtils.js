@@ -288,6 +288,34 @@ function getSafeNow(
 
 
 // ============================================================
+// 💰 SAFE MINING RATE
+// ============================================================
+//
+// Muuntaa configista tulevan STL-tuottokertoimen
+// turvalliseksi positiiviseksi numeroksi.
+//
+// ============================================================
+
+function getSafeMiningRate() {
+  const number =
+    Number(
+      MINING_PER_HASH_PER_HOUR,
+    );
+
+  if (
+    Number.isFinite(
+      number,
+    ) &&
+    number > 0
+  ) {
+    return number;
+  }
+
+  return 0;
+}
+
+
+// ============================================================
 // ⛏️ CALCULATE MINING
 // ============================================================
 //
@@ -322,16 +350,11 @@ function calculateMining(
     );
 
   const safeMiningRate =
-    Number(
-      MINING_PER_HASH_PER_HOUR,
-    );
+    getSafeMiningRate();
 
   if (
     safeHashRate <= 0 ||
     safeElapsedMilliseconds <= 0 ||
-    !Number.isFinite(
-      safeMiningRate,
-    ) ||
     safeMiningRate <= 0
   ) {
     return 0;
@@ -344,6 +367,15 @@ function calculateMining(
       60 *
       60
     );
+
+  if (
+    !Number.isFinite(
+      hours,
+    ) ||
+    hours <= 0
+  ) {
+    return 0;
+  }
 
   const minedAmount =
     safeHashRate *
