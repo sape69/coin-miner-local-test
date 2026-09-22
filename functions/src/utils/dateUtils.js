@@ -15,6 +15,15 @@
 //
 // Kaikki päivämääräavaimet käsitellään UTC-ajassa.
 //
+// TÄRKEÄÄ:
+//
+// Virheellistä eksplisiittisesti annettua päivämäärää
+// ei muuteta hiljaa nykyhetkeksi.
+//
+// Tämä estää esimerkiksi Daily Streakin,
+// cooldownin tai reward-päivän muuttumisen vääräksi
+// päivämääräksi virheellisen timestampin vuoksi.
+//
 // ============================================================
 
 
@@ -30,16 +39,47 @@
 //
 // 2026-09-05
 //
+// Jos funktiolle ei anneta arvoa,
+// käytetään nykyhetkeä.
+//
+// Jos eksplisiittisesti annettu arvo on virheellinen,
+// palautetaan null.
+//
 // ============================================================
 
 function getDateKey(
-  date = new Date(),
+  date,
 ) {
+  const hasExplicitValue =
+    arguments.length > 0;
+
+
   const safeDate =
-    getDateFromValue(
-      date,
-    ) ||
-    new Date();
+    hasExplicitValue
+      ? getDateFromValue(
+          date,
+        )
+      : new Date();
+
+
+  if (
+    !safeDate
+  ) {
+    return null;
+  }
+
+
+  const timestamp =
+    safeDate.getTime();
+
+
+  if (
+    !Number.isFinite(
+      timestamp,
+    )
+  ) {
+    return null;
+  }
 
 
   const year =
@@ -143,12 +183,41 @@ function getDateFromValue(
 
 
   // ==========================================================
+  // 📅 JAVASCRIPT DATE
+  // ==========================================================
+
+  if (
+    value instanceof Date
+  ) {
+    const timestamp =
+      value.getTime();
+
+
+    if (
+      !Number.isFinite(
+        timestamp,
+      )
+    ) {
+      return null;
+    }
+
+
+    // Palautetaan kopio, jotta alkuperäistä Date-oliota
+    // ei voida muuttaa tämän utilin kautta.
+    return new Date(
+      timestamp,
+    );
+  }
+
+
+  // ==========================================================
   // 🔥 FIRESTORE TIMESTAMP
   // ==========================================================
 
   if (
+    value &&
     typeof value.toDate ===
-    "function"
+      "function"
   ) {
     try {
       const date =
@@ -156,12 +225,21 @@ function getDateFromValue(
 
 
       if (
-        date instanceof Date &&
-        !Number.isNaN(
-          date.getTime(),
-        )
+        date instanceof Date
       ) {
-        return date;
+        const timestamp =
+          date.getTime();
+
+
+        if (
+          Number.isFinite(
+            timestamp,
+          )
+        ) {
+          return new Date(
+            timestamp,
+          );
+        }
       }
     } catch (
       error
@@ -175,26 +253,12 @@ function getDateFromValue(
 
 
   // ==========================================================
-  // 📅 JAVASCRIPT DATE
-  // ==========================================================
-
-  if (
-    value instanceof Date
-  ) {
-    return Number.isNaN(
-      value.getTime(),
-    )
-      ? null
-      : value;
-  }
-
-
-  // ==========================================================
   // 🔢 NUMBER
   // ==========================================================
 
   if (
-    typeof value === "number"
+    typeof value ===
+    "number"
   ) {
     if (
       !Number.isFinite(
@@ -211,11 +275,16 @@ function getDateFromValue(
       );
 
 
-    return Number.isNaN(
-      date.getTime(),
-    )
-      ? null
-      : date;
+    if (
+      !Number.isFinite(
+        date.getTime(),
+      )
+    ) {
+      return null;
+    }
+
+
+    return date;
   }
 
 
@@ -224,14 +293,16 @@ function getDateFromValue(
   // ==========================================================
 
   if (
-    typeof value === "string"
+    typeof value ===
+    "string"
   ) {
     const trimmed =
       value.trim();
 
 
     if (
-      trimmed.length === 0
+      trimmed.length ===
+      0
     ) {
       return null;
     }
@@ -243,11 +314,16 @@ function getDateFromValue(
       );
 
 
-    return Number.isNaN(
-      date.getTime(),
-    )
-      ? null
-      : date;
+    if (
+      !Number.isFinite(
+        date.getTime(),
+      )
+    ) {
+      return null;
+    }
+
+
+    return date;
   }
 
 
@@ -295,10 +371,30 @@ function getElapsedMilliseconds(
   }
 
 
+  const startMs =
+    start.getTime();
+
+
+  const currentMs =
+    current.getTime();
+
+
+  if (
+    !Number.isFinite(
+      startMs,
+    ) ||
+    !Number.isFinite(
+      currentMs,
+    )
+  ) {
+    return 0;
+  }
+
+
   return Math.max(
     0,
-    current.getTime() -
-      start.getTime(),
+    currentMs -
+      startMs,
   );
 }
 
