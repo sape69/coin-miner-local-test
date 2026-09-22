@@ -59,11 +59,12 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// Google suosittelee public key -avainten välimuistia,
-// mutta cachea ei pidä pitää 24 tuntia pidempään.
+// Google suosittelee public key -avainten välimuistia.
 //
-// 23 tuntia antaa pienen turvamarginaalin key rotationia
-// varten.
+// Avaimia ei pidä pitää cachessa yli 24 tuntia,
+// koska AdMob voi vaihtaa allekirjoitusavaimia.
+//
+// 23 tuntia antaa pienen turvamarginaalin.
 //
 // ============================================================
 
@@ -227,6 +228,10 @@ async function getAdMobPublicKeys(
   const now =
     Date.now();
 
+  // ----------------------------------------------------------
+  // NORMAALI CACHE
+  // ----------------------------------------------------------
+
   if (
     !forceRefresh &&
     cachedPublicKeys &&
@@ -239,7 +244,7 @@ async function getAdMobPublicKeys(
   }
 
   // ----------------------------------------------------------
-  // ESTÄ USEAT SAMANAIKAISET KEY FETCHIT
+  // ESTÄ USEAT SAMANAIKAISET FETCHIT
   // ----------------------------------------------------------
 
   if (
@@ -729,7 +734,7 @@ function extractSignatureData(
     ];
 
   // ----------------------------------------------------------
-  // SIGNATURE ON AINA TOISEKSI VIIMEINEN
+  // SIGNATURE ON TOISEKSI VIIMEINEN
   // ----------------------------------------------------------
 
   if (
@@ -749,7 +754,7 @@ function extractSignatureData(
   }
 
   // ----------------------------------------------------------
-  // KEY_ID ON AINA VIIMEINEN
+  // KEY_ID ON VIIMEINEN
   // ----------------------------------------------------------
 
   if (
@@ -820,8 +825,6 @@ function extractSignatureData(
   //
   // Kaikki niitä edeltävät merkit säilyvät täsmälleen.
   //
-  // Tämä on tärkeää kryptografisen allekirjoituksen kannalta.
-  //
   // ----------------------------------------------------------
 
   const signedQueryString =
@@ -851,10 +854,6 @@ function extractSignatureData(
 
   // ----------------------------------------------------------
   // URL-DECODE VAIN SIGNATURE JA KEY_ID
-  // ----------------------------------------------------------
-  //
-  // Allekirjoitettavaa sisältöä EI dekoodata.
-  //
   // ----------------------------------------------------------
 
   let signature;
@@ -975,7 +974,7 @@ async function verifyRawQueryString(
   // ----------------------------------------------------------
   //
   // Jos key_id ei löydy cachesta, haetaan public keys
-  // uudelleen heti.
+  // uudelleen.
   //
   // ----------------------------------------------------------
 
@@ -1085,12 +1084,6 @@ async function verifyRawQueryString(
 
   // ----------------------------------------------------------
   // PARAMETRIT PURETAAN VASTA ALLEKIRJOITUKSEN JÄLKEEN
-  // ----------------------------------------------------------
-  //
-  // URLSearchParams tekee URL-dekoodauksen parametrien
-  // arvoille. Tätä käytetään vasta sen jälkeen kun raw query
-  // on kryptografisesti varmennettu.
-  //
   // ----------------------------------------------------------
 
   const params =
