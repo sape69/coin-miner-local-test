@@ -59,11 +59,11 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// AdMobin avaimet voivat vaihtua.
+// Google suosittelee public key -avainten välimuistia,
+// mutta cachea ei pidä pitää 24 tuntia pidempään.
 //
-// Cache pidetään alle 24 tunnin, jotta mahdolliset
-// key rotation -tilanteet eivät jätä backendia käyttämään
-// vanhoja avaimia liian pitkään.
+// 23 tuntia antaa pienen turvamarginaalin key rotationia
+// varten.
 //
 // ============================================================
 
@@ -237,6 +237,10 @@ async function getAdMobPublicKeys(
   ) {
     return cachedPublicKeys;
   }
+
+  // ----------------------------------------------------------
+  // ESTÄ USEAT SAMANAIKAISET KEY FETCHIT
+  // ----------------------------------------------------------
 
   if (
     publicKeyFetchPromise
@@ -436,7 +440,8 @@ function extractQueryStringFromUrl(
 // AdMob allekirjoittaa alkuperäisen query-stringin.
 //
 // Siksi raw queryä ei saa rakentaa uudelleen
-// URLSearchParamsin kautta ennen kryptografista tarkistusta.
+// URLSearchParamsin, objektin tai muun normalisoinnin kautta
+// ennen kryptografista tarkistusta.
 //
 // ============================================================
 
@@ -633,19 +638,25 @@ function decodeAdMobSignature(
 // 🔎 EXTRACT SIGNATURE DATA
 // ============================================================
 //
-// AdMob SSV:
+// Google määrittelee Rewarded SSV callbackin kaksi viimeistä
+// query-parametria:
+//
+//   signature
+//   key_id
+//
+// Tässä:
 //
 // <signed parameters>&signature=<signature>&key_id=<key_id>
 //
 // TÄRKEÄÄ:
 //
-// signedQueryString sisältää täsmälleen alkuperäisen query
-// stringin ennen "&signature="-osuutta.
+// signedQueryString sisältää alkuperäisen raw-queryn
+// täsmälleen siinä muodossa kuin Google lähetti sen.
 //
-// Sitä EI saa URL-dekoodata ennen kryptografista tarkistusta.
+// Sitä EI URL-dekoodata.
+// Sitä EI järjestetä uudelleen.
+// Sitä EI rakenneta URLSearchParamsin avulla.
 //
-// AdMobin dokumentaatio määrittelee signature- ja key_id-
-// parametrien olevan callbackin kaksi viimeistä parametria.
 // ============================================================
 
 function extractSignatureData(
@@ -683,29 +694,22 @@ function extractSignatureData(
     throw error;
   }
 
-  const signatureMarker =
-    "&signature=";
+  // ----------------------------------------------------------
+  // SPLIT RAW QUERY ILMAN NORMALISOINTIA
+  // ----------------------------------------------------------
 
-  const keyIdMarker =
-    "&key_id=";
-
-  const signatureIndex =
-    rawQueryString.lastIndexOf(
-      signatureMarker,
-    );
-
-  const keyIdIndex =
-    rawQueryString.lastIndexOf(
-      keyIdMarker,
+  const parts =
+    rawQueryString.split(
+      "&",
     );
 
   if (
-    signatureIndex <=
-      0
+    parts.length <
+    3
   ) {
     const error =
       new Error(
-        "AdMob SSV signature parameter was not found.",
+        "AdMob SSV callback does not contain enough query parameters.",
       );
 
     error.code =
@@ -714,13 +718,48 @@ function extractSignatureData(
     throw error;
   }
 
+  const keyIdPart =
+    parts[
+      parts.length - 1
+    ];
+
+  const signaturePart =
+    parts[
+      parts.length - 2
+    ];
+
+  // ----------------------------------------------------------
+  // SIGNATURE ON AINA TOISEKSI VIIMEINEN
+  // ----------------------------------------------------------
+
   if (
-    keyIdIndex <=
-      0
+    !signaturePart.startsWith(
+      "signature=",
+    )
   ) {
     const error =
       new Error(
-        "AdMob SSV key_id parameter was not found in the expected final position.",
+        "AdMob SSV signature is not the second-to-last query parameter.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_SIGNATURE";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
+  // KEY_ID ON AINA VIIMEINEN
+  // ----------------------------------------------------------
+
+  if (
+    !keyIdPart.startsWith(
+      "key_id=",
+    )
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV key_id is not the final query parameter.",
       );
 
     error.code =
@@ -729,13 +768,27 @@ function extractSignatureData(
     throw error;
   }
 
+  // ----------------------------------------------------------
+  // ESTÄ TYHJÄT ARVOT
+  // ----------------------------------------------------------
+
+  const rawSignature =
+    signaturePart.substring(
+      "signature=".length,
+    );
+
+  const rawKeyId =
+    keyIdPart.substring(
+      "key_id=".length,
+    );
+
   if (
-    signatureIndex >=
-      keyIdIndex
+    rawSignature.length ===
+      0
   ) {
     const error =
       new Error(
-        "AdMob SSV signature and key_id are not in the expected order.",
+        "AdMob SSV signature value is missing.",
       );
 
     error.code =
@@ -744,11 +797,42 @@ function extractSignatureData(
     throw error;
   }
 
+  if (
+    rawKeyId.length ===
+      0
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV key_id value is missing.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_KEY_ID";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
+  // ALLEKIRJOITETTAVA SISÄLTÖ
+  // ----------------------------------------------------------
+  //
+  // Poistetaan vain kaksi viimeistä parametria.
+  //
+  // Kaikki niitä edeltävät merkit säilyvät täsmälleen.
+  //
+  // Tämä on tärkeää kryptografisen allekirjoituksen kannalta.
+  //
+  // ----------------------------------------------------------
+
   const signedQueryString =
-    rawQueryString.substring(
-      0,
-      signatureIndex,
-    );
+    parts
+      .slice(
+        0,
+        -2,
+      )
+      .join(
+        "&",
+      );
 
   if (
     signedQueryString.length ===
@@ -765,90 +849,13 @@ function extractSignatureData(
     throw error;
   }
 
-  const signaturePart =
-    rawQueryString.substring(
-      signatureIndex + 1,
-      keyIdIndex,
-    );
-
-  const keyIdPart =
-    rawQueryString.substring(
-      keyIdIndex + 1,
-    );
-
-  if (
-    !signaturePart.startsWith(
-      "signature=",
-    )
-  ) {
-    const error =
-      new Error(
-        "AdMob SSV signature is not in the expected position.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_SIGNATURE";
-
-    throw error;
-  }
-
-  if (
-    !keyIdPart.startsWith(
-      "key_id=",
-    )
-  ) {
-    const error =
-      new Error(
-        "AdMob SSV key_id is not in the expected position.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_KEY_ID";
-
-    throw error;
-  }
-
-  if (
-    keyIdPart.includes(
-      "&",
-    )
-  ) {
-    const error =
-      new Error(
-        "AdMob SSV key_id must be the final query parameter.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_KEY_ID";
-
-    throw error;
-  }
-
-  if (
-    signaturePart.includes(
-      "&",
-    )
-  ) {
-    const error =
-      new Error(
-        "AdMob SSV signature must be immediately followed by key_id.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_SIGNATURE";
-
-    throw error;
-  }
-
-  const rawSignature =
-    signaturePart.substring(
-      "signature=".length,
-    );
-
-  const rawKeyId =
-    keyIdPart.substring(
-      "key_id=".length,
-    );
+  // ----------------------------------------------------------
+  // URL-DECODE VAIN SIGNATURE JA KEY_ID
+  // ----------------------------------------------------------
+  //
+  // Allekirjoitettavaa sisältöä EI dekoodata.
+  //
+  // ----------------------------------------------------------
 
   let signature;
 
@@ -963,6 +970,15 @@ async function verifyRawQueryString(
       keyId,
     );
 
+  // ----------------------------------------------------------
+  // KEY ROTATION
+  // ----------------------------------------------------------
+  //
+  // Jos key_id ei löydy cachesta, haetaan public keys
+  // uudelleen heti.
+  //
+  // ----------------------------------------------------------
+
   if (
     !publicKey
   ) {
@@ -1000,6 +1016,10 @@ async function verifyRawQueryString(
 
     throw error;
   }
+
+  // ----------------------------------------------------------
+  // ECDSA / SHA-256 / DER
+  // ----------------------------------------------------------
 
   let verified =
     false;
@@ -1062,6 +1082,16 @@ async function verifyRawQueryString(
       keyId,
     },
   );
+
+  // ----------------------------------------------------------
+  // PARAMETRIT PURETAAN VASTA ALLEKIRJOITUKSEN JÄLKEEN
+  // ----------------------------------------------------------
+  //
+  // URLSearchParams tekee URL-dekoodauksen parametrien
+  // arvoille. Tätä käytetään vasta sen jälkeen kun raw query
+  // on kryptografisesti varmennettu.
+  //
+  // ----------------------------------------------------------
 
   const params =
     new URLSearchParams(
@@ -1310,7 +1340,7 @@ function validateUid(
 // 🧩 CUSTOM DATA PARSER
 // ============================================================
 //
-// Expected format:
+// Expected:
 //
 // <firebase_uid>:<reward_purpose>
 //
@@ -1318,6 +1348,9 @@ function validateUid(
 //
 // abc123:mining_start
 // abc123:power_boost
+//
+// custom_data tulee Googlelta percent-escaped muodossa.
+// URLSearchParams purkaa sen ennen tämän funktion kutsua.
 //
 // ============================================================
 
@@ -1588,6 +1621,10 @@ function validateAdNetwork(
 async function verifyAdMobCallback(
   req,
 ) {
+  // ----------------------------------------------------------
+  // KRYPTOSOGRAFIA ENSIN
+  // ----------------------------------------------------------
+
   const verification =
     await verifyAdMobSignature(
       req,
@@ -1595,6 +1632,10 @@ async function verifyAdMobCallback(
 
   const params =
     verification.params;
+
+  // ----------------------------------------------------------
+  // REQUIRED PARAMETERS
+  // ----------------------------------------------------------
 
   const adNetwork =
     requireParam(
@@ -1638,6 +1679,7 @@ async function verifyAdMobCallback(
       "transaction_id",
     );
 
+  // user_id on AdMobissa valinnainen.
   const rawUserId =
     getParam(
       params,
@@ -1663,7 +1705,6 @@ async function verifyAdMobCallback(
 
     throw error;
   }
-
 
   // ----------------------------------------------------------
   // CUSTOM DATA
@@ -1713,7 +1754,6 @@ async function verifyAdMobCallback(
     throw error;
   }
 
-
   // ----------------------------------------------------------
   // AD UNIT
   // ----------------------------------------------------------
@@ -1743,7 +1783,7 @@ async function verifyAdMobCallback(
 
   if (
     adUnit !==
-      expectedAdUnit
+    expectedAdUnit
   ) {
     const error =
       new Error(
@@ -1755,7 +1795,6 @@ async function verifyAdMobCallback(
 
     throw error;
   }
-
 
   // ----------------------------------------------------------
   // REWARD CONFIGURATION
@@ -1780,7 +1819,6 @@ async function verifyAdMobCallback(
     throw error;
   }
 
-
   // ----------------------------------------------------------
   // REWARD AMOUNT
   // ----------------------------------------------------------
@@ -1800,7 +1838,8 @@ async function verifyAdMobCallback(
     !Number.isSafeInteger(
       expectedRewardAmount,
     ) ||
-    expectedRewardAmount < 0
+    expectedRewardAmount <
+      0
   ) {
     const error =
       new Error(
@@ -1827,7 +1866,6 @@ async function verifyAdMobCallback(
 
     throw error;
   }
-
 
   // ----------------------------------------------------------
   // REWARD ITEM
@@ -1856,7 +1894,7 @@ async function verifyAdMobCallback(
 
   if (
     rewardItem !==
-      expectedRewardItem
+    expectedRewardItem
   ) {
     const error =
       new Error(
@@ -1868,7 +1906,6 @@ async function verifyAdMobCallback(
 
     throw error;
   }
-
 
   // ----------------------------------------------------------
   // TRANSACTION ID
@@ -1889,7 +1926,6 @@ async function verifyAdMobCallback(
 
     throw error;
   }
-
 
   // ----------------------------------------------------------
   // TIMESTAMP
@@ -1913,7 +1949,6 @@ async function verifyAdMobCallback(
 
     throw error;
   }
-
 
   // ----------------------------------------------------------
   // OPTIONAL USER ID
@@ -1943,7 +1978,7 @@ async function verifyAdMobCallback(
 
     if (
       userId !==
-        uid
+      uid
     ) {
       const error =
         new Error(
@@ -1956,7 +1991,6 @@ async function verifyAdMobCallback(
       throw error;
     }
   }
-
 
   // ----------------------------------------------------------
   // VERIFIED SIGNATURE METADATA
@@ -2005,7 +2039,6 @@ async function verifyAdMobCallback(
     throw error;
   }
 
-
   // ----------------------------------------------------------
   // VERIFIED PARAMETERS
   // ----------------------------------------------------------
@@ -2041,7 +2074,6 @@ async function verifyAdMobCallback(
       keyId,
   };
 
-
   // ----------------------------------------------------------
   // LOGGING
   // ----------------------------------------------------------
@@ -2067,7 +2099,6 @@ async function verifyAdMobCallback(
         timestampResult.timestampMs,
     },
   );
-
 
   // ----------------------------------------------------------
   // RETURN VERIFIED RESULT
