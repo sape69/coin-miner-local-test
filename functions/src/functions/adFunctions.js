@@ -63,11 +63,29 @@ const {
 // ============================================================
 // ⚙️ ADMOB SERVICE
 // ============================================================
+//
+// Keskitetty AdMob-konfiguraatio ja SSV-validointi.
+//
+// ============================================================
 
 const {
   verifyAdMobCallback,
+
   ADMOB_AD_UNITS,
+
   REWARD_DEFINITIONS,
+
+  getExpectedAdMobConfig:
+    getServiceExpectedAdMobConfig,
+
+  validateTransactionId:
+    validateServiceTransactionId,
+
+  validateUid:
+    validateServiceUid,
+
+  validateAdNetwork:
+    validateServiceAdNetwork,
 } = require(
   "../services/admobService",
 );
@@ -128,11 +146,10 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_INVALID_REWARD_AMOUNT",
 
     // --------------------------------------------------------
-    // Sama transaction_id eri allekirjoitetulla datalla on
-    // pysyvä konfliktitilanne.
-    //
-    // Tätä EI retrytä.
+    // Sama transaction_id eri allekirjoitetulla datalla
+    // tarkoittaa pysyvää turvallisuuskonfliktia.
     // --------------------------------------------------------
+
     "ADMOB_TRANSACTION_CONFLICT",
   ]);
 
@@ -143,9 +160,9 @@ const CLIENT_VALIDATION_ERROR_CODES =
 //
 // Näissä tapauksissa callback voi olla kryptografisesti
 // validi, mutta palvelimessa, Firestoressa, public key
-// -haussa tai omassa konfiguraatiossa on ongelma.
+// -haussa tai konfiguraatiossa on ongelma.
 //
-// HTTP 500 mahdollistaa retry-käsittelyn.
+// HTTP 500 mahdollistaa AdMobin retry-käsittelyn.
 //
 // ============================================================
 
@@ -164,11 +181,6 @@ const SERVER_RETRY_ERROR_CODES =
 
     "ADMOB_INVALID_REWARD_CONFIGURATION",
 
-    // --------------------------------------------------------
-    // Firestore-tietokannan eheysongelmat.
-    //
-    // Näitä EI kuitata 200:lla.
-    // --------------------------------------------------------
     "ADMOB_AUDIT_CONSISTENCY_ERROR",
   ]);
 
@@ -194,50 +206,20 @@ function normalizeString(
 // ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
+//
+// Keskitetty varsinainen UID-validointi tulee admobService.js:stä.
+//
+// Tämä wrapper pitää adFunctions.js:n API:n vakaana ja tekee
+// defense-in-depth -validoinnin selkeäksi.
+//
+// ============================================================
 
 function validateUid(
   value,
 ) {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return "";
-  }
-
-  const uid =
-    value.trim();
-
-  if (
-    uid.length === 0 ||
-    uid.length > 128
-  ) {
-    return "";
-  }
-
-  // ----------------------------------------------------------
-  // UID:tä käytetään Firestore-polussa.
-  //
-  // Sallittu formaatti:
-  //
-  // A-Z
-  // a-z
-  // 0-9
-  // .
-  // _
-  // -
-  //
-  // ----------------------------------------------------------
-
-  if (
-    !/^[A-Za-z0-9._-]+$/.test(
-      uid,
-    )
-  ) {
-    return "";
-  }
-
-  return uid;
+  return validateServiceUid(
+    value,
+  );
 }
 
 
@@ -245,40 +227,16 @@ function validateUid(
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// AdMob määrittelee transaction_id:n yksilölliseksi
-// hex encoded identifier -arvoksi.
+// Varsinainen validointi tulee admobService.js:stä.
 //
 // ============================================================
 
 function validateTransactionId(
   value,
 ) {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return "";
-  }
-
-  const transactionId =
-    value.trim();
-
-  if (
-    transactionId.length === 0 ||
-    transactionId.length > 256
-  ) {
-    return "";
-  }
-
-  if (
-    !/^[A-Fa-f0-9]+$/.test(
-      transactionId,
-    )
-  ) {
-    return "";
-  }
-
-  return transactionId;
+  return validateServiceTransactionId(
+    value,
+  );
 }
 
 
@@ -317,97 +275,16 @@ function validateRewardPurpose(
 //
 // Käytetään admobService.js:n keskitettyä konfiguraatiota.
 //
-// adFunctions.js ei ylläpidä omia kopioita:
-//
-// ❌ Ad Unit ID
-// ❌ reward amount
-// ❌ reward item
+// adFunctions.js ei ylläpidä omia reward-arvojen kopioita.
 //
 // ============================================================
 
 function getExpectedAdMobConfig(
   rewardPurpose,
 ) {
-  if (
-    !VALID_REWARD_PURPOSES.has(
-      rewardPurpose,
-    )
-  ) {
-    const error =
-      new Error(
-        "Unknown AdMob reward purpose.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_REWARD_PURPOSE";
-
-    throw error;
-  }
-
-  const adUnit =
-    ADMOB_AD_UNITS[
-      rewardPurpose
-    ];
-
-  const rewardDefinition =
-    REWARD_DEFINITIONS[
-      rewardPurpose
-    ];
-
-  if (
-    typeof adUnit !==
-      "string" ||
-    adUnit.trim().length ===
-      0 ||
-    !rewardDefinition
-  ) {
-    const error =
-      new Error(
-        `No AdMob configuration exists for ${rewardPurpose}.`,
-      );
-
-    error.code =
-      "ADMOB_INVALID_REWARD_CONFIGURATION";
-
-    throw error;
-  }
-
-  const rewardAmount =
-    Number(
-      rewardDefinition.rewardAmount,
-    );
-
-  const rewardItem =
-    normalizeString(
-      rewardDefinition.rewardItem,
-    );
-
-  if (
-    !Number.isSafeInteger(
-      rewardAmount,
-    ) ||
-    rewardAmount < 0 ||
-    rewardItem.length === 0
-  ) {
-    const error =
-      new Error(
-        `Invalid AdMob reward configuration for ${rewardPurpose}.`,
-      );
-
-    error.code =
-      "ADMOB_INVALID_REWARD_CONFIGURATION";
-
-    throw error;
-  }
-
-  return {
-    adUnit:
-      adUnit.trim(),
-
-    rewardAmount,
-
-    rewardItem,
-  };
+  return getServiceExpectedAdMobConfig(
+    rewardPurpose,
+  );
 }
 
 
@@ -415,8 +292,8 @@ function getExpectedAdMobConfig(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// admobService.js:n pitää olla suorittanut
-// kryptografinen varmennus ennen tätä vaihetta.
+// admobService.js:n pitää olla suorittanut kryptografinen
+// varmennus ennen tätä vaihetta.
 //
 // Tämä on defense-in-depth -validointi.
 //
@@ -579,13 +456,11 @@ function validateVerifiedAdData(
       verifiedAd.rewardItem,
     );
 
-  const expectedRewardItem =
-    expectedAdMob.rewardItem;
-
   if (
-    rewardItem.length === 0 ||
+    rewardItem.length ===
+      0 ||
     rewardItem !==
-      expectedRewardItem
+      expectedAdMob.rewardItem
   ) {
     const error =
       new Error(
@@ -608,13 +483,11 @@ function validateVerifiedAdData(
       verifiedAd.adUnit,
     );
 
-  const expectedAdUnit =
-    expectedAdMob.adUnit;
-
   if (
-    adUnit.length === 0 ||
+    adUnit.length ===
+      0 ||
     adUnit !==
-      expectedAdUnit
+      expectedAdMob.adUnit
   ) {
     const error =
       new Error(
@@ -633,16 +506,12 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
 
   const adNetwork =
-    normalizeString(
+    validateServiceAdNetwork(
       verifiedAd.adNetwork,
     );
 
   if (
-    adNetwork.length === 0 ||
-    adNetwork.length > 32 ||
-    !/^\d+$/.test(
-      adNetwork,
-    )
+    !adNetwork
   ) {
     const error =
       new Error(
@@ -693,7 +562,8 @@ function validateVerifiedAdData(
     );
 
   if (
-    keyId.length === 0 ||
+    keyId.length ===
+      0 ||
     keyId.length > 32 ||
     !/^\d+$/.test(
       keyId,
@@ -721,7 +591,8 @@ function validateVerifiedAdData(
     );
 
   if (
-    signature.length === 0 ||
+    signature.length ===
+      0 ||
     signature.length > 8192 ||
     !/^[A-Za-z0-9_-]+$/.test(
       signature,
@@ -743,7 +614,10 @@ function validateVerifiedAdData(
   // CUSTOM DATA
   // ----------------------------------------------------------
   //
-  // Stelluriinin reward-flowssa custom_data on pakollinen.
+  // admobService.js palauttaa custom_data:n jo varmennettuna
+  // ja normalisoituna.
+  //
+  // Tässä vaiheessa EI tehdä uutta decodeURIComponent()-kutsua.
   //
   // Odotettu rakenne:
   //
@@ -757,7 +631,8 @@ function validateVerifiedAdData(
     );
 
   if (
-    customData.length === 0 ||
+    customData.length ===
+      0 ||
     customData.length > 256
   ) {
     const error =
@@ -774,12 +649,6 @@ function validateVerifiedAdData(
 
   // ----------------------------------------------------------
   // DEFENSE-IN-DEPTH CUSTOM DATA CHECK
-  // ----------------------------------------------------------
-  //
-  // TÄRKEÄ:
-  //
-  // Käytetään template literalia backtickeillä.
-  //
   // ----------------------------------------------------------
 
   const expectedCustomData =
@@ -888,13 +757,13 @@ function validateVerifiedAdData(
 // 🔎 COMPARE STORED REWARD DATA
 // ============================================================
 //
-// Transaction ID:n pitää olla idempotentti.
+// transaction_id:n pitää olla idempotentti.
 //
-// Jos sama transaction_id tulee uudelleen täysin samalla
-// varmennetulla datalla, tapahtuma käsitellään duplicaatiksi.
+// Sama transaction_id + sama varmennettu data:
+// → turvallinen duplicate
 //
-// Jos sama transaction_id liittyy eri dataan, kyseessä on
-// pysyvä turvallisuuskonflikti.
+// Sama transaction_id + eri data:
+// → pysyvä turvallisuuskonflikti
 //
 // ============================================================
 
@@ -908,6 +777,7 @@ function isSameVerifiedReward(
   ) {
     return false;
   }
+
 
   const existingUid =
     normalizeString(
@@ -968,6 +838,7 @@ function isSameVerifiedReward(
     normalizeString(
       existingData.userId,
     );
+
 
   return (
     existingUid ===
@@ -1140,7 +1011,7 @@ function isSameVerifiedHistory(
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
 //
-// Tämä EI suorita rewardia.
+// TÄMÄ EI SUORITA REWARDIA.
 //
 // Se tallentaa ainoastaan kryptografisesti varmennetun
 // AdMob-tapahtuman.
@@ -1159,6 +1030,7 @@ async function saveVerifiedAdMobReward(
     validateVerifiedAdData(
       verifiedAd,
     );
+
 
   const {
     uid,
@@ -1650,14 +1522,24 @@ const adMobReward =
         // 🔎 QUERY
         // ====================================================
 
+        const query =
+          req.query || {};
+
         const queryKeys =
           Object.keys(
-            req.query || {},
+            query,
           );
 
 
         // ====================================================
         // 🩺 HEALTH CHECK
+        // ====================================================
+        //
+        // Tyhjä GET ei ole varsinainen SSV callback.
+        //
+        // Tätä voidaan käyttää endpointin saavutettavuuden
+        // tarkistamiseen.
+        //
         // ====================================================
 
         if (
@@ -1721,7 +1603,7 @@ const adMobReward =
         if (
           !verifiedAd ||
           verifiedAd.verified !==
-          true
+            true
         ) {
           console.error(
             "❌ AdMob SSV verification failed.",
