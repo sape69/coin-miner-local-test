@@ -100,8 +100,8 @@ const VALID_REWARD_PURPOSES =
 // 🛡️ CLIENT VALIDATION ERROR CODES
 // ============================================================
 //
-// Näissä tapauksissa callback tai sen sisältö on pysyvästi
-// virheellinen.
+// Näissä tapauksissa callback tai sen allekirjoitettu sisältö
+// on pysyvästi virheellinen.
 //
 // HTTP 200 kuittaa callbackin eikä aiheuta turhaa retryä.
 //
@@ -127,19 +127,25 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_INVALID_REWARD_ITEM",
     "ADMOB_INVALID_REWARD_AMOUNT",
 
+    // --------------------------------------------------------
+    // Sama transaction_id eri allekirjoitetulla datalla on
+    // pysyvä konfliktitilanne.
+    //
+    // Tätä EI retrytä.
+    // --------------------------------------------------------
     "ADMOB_TRANSACTION_CONFLICT",
   ]);
 
 
 // ============================================================
-// ⚙️ SERVER / CONFIG / RETRY ERROR CODES
+// 🔄 SERVER / CONFIG / RETRY ERROR CODES
 // ============================================================
 //
 // Näissä tapauksissa callback voi olla kryptografisesti
 // validi, mutta palvelimessa, Firestoressa, public key
 // -haussa tai omassa konfiguraatiossa on ongelma.
 //
-// HTTP 500 mahdollistaa AdMobin retry-käsittelyn.
+// HTTP 500 mahdollistaa retry-käsittelyn.
 //
 // ============================================================
 
@@ -157,6 +163,13 @@ const SERVER_RETRY_ERROR_CODES =
     "ADMOB_HISTORY_REFERENCE_ERROR",
 
     "ADMOB_INVALID_REWARD_CONFIGURATION",
+
+    // --------------------------------------------------------
+    // Firestore-tietokannan eheysongelmat.
+    //
+    // Näitä EI kuitata 200:lla.
+    // --------------------------------------------------------
+    "ADMOB_AUDIT_CONSISTENCY_ERROR",
   ]);
 
 
@@ -202,6 +215,17 @@ function validateUid(
     return "";
   }
 
+  // ----------------------------------------------------------
+  // UID:tä käytetään Firestore-polussa.
+  //
+  // Estetään erityisesti:
+  //
+  // /
+  // \
+  //
+  // jotta UID ei voi rikkoa dokumenttipolkua.
+  // ----------------------------------------------------------
+
   if (
     !/^[A-Za-z0-9._-]+$/.test(
       uid,
@@ -218,11 +242,8 @@ function validateUid(
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// AdMob käyttää transaction_id:tä yksilöllisenä
-// reward grant -tunnisteena.
-//
-// Google määrittelee transaction_id:n unique hex encoded
-// identifier -arvoksi.
+// AdMob määrittelee transaction_id:n yksilölliseksi
+// hex encoded identifier -arvoksi.
 //
 // ============================================================
 
@@ -863,7 +884,7 @@ function validateVerifiedAdData(
 // varmennetulla datalla, tapahtuma käsitellään duplicaatiksi.
 //
 // Jos sama transaction_id liittyy eri dataan, kyseessä on
-// turvallisuussyistä konflikti.
+// pysyvä turvallisuuskonflikti.
 //
 // ============================================================
 
@@ -980,6 +1001,119 @@ function isSameVerifiedReward(
 
 
 // ============================================================
+// 📜 COMPARE STORED AUDIT HISTORY
+// ============================================================
+//
+// Reward-documentin lisäksi myös audit-history pitää vastata
+// varmennettua AdMob-tapahtumaa.
+//
+// Tämä estää tilanteen, jossa:
+//
+// reward = oikea
+// history = väärä
+//
+// jolloin tapahtumaa ei kuitata virheellisesti normaalina
+// duplicaatina.
+//
+// ============================================================
+
+function isSameVerifiedHistory(
+  existingHistoryData,
+  validatedAd,
+) {
+  if (
+    !existingHistoryData ||
+    !validatedAd
+  ) {
+    return false;
+  }
+
+  const existingType =
+    normalizeString(
+      existingHistoryData.type,
+    );
+
+  const existingRewardType =
+    normalizeString(
+      existingHistoryData.rewardType,
+    );
+
+  const existingRewardPurpose =
+    normalizeString(
+      existingHistoryData.rewardPurpose,
+    );
+
+  const existingAdMobTransactionId =
+    normalizeString(
+      existingHistoryData.adMobTransactionId,
+    );
+
+  const existingTransactionId =
+    normalizeString(
+      existingHistoryData.transactionId,
+    );
+
+  const existingAdNetwork =
+    normalizeString(
+      existingHistoryData.adNetwork,
+    );
+
+  const existingAdUnit =
+    normalizeString(
+      existingHistoryData.adUnit,
+    );
+
+  const existingRewardAmount =
+    Number(
+      existingHistoryData.rewardAmount,
+    );
+
+  const existingRewardItem =
+    normalizeString(
+      existingHistoryData.rewardItem,
+    );
+
+  const existingAmount =
+    Number(
+      existingHistoryData.amount,
+    );
+
+
+  return (
+    existingType ===
+      "admob_verified" &&
+
+    existingRewardType ===
+      "admob" &&
+
+    existingRewardPurpose ===
+      validatedAd.rewardPurpose &&
+
+    existingAdMobTransactionId ===
+      validatedAd.transactionId &&
+
+    existingTransactionId ===
+      validatedAd.transactionId &&
+
+    existingAdNetwork ===
+      validatedAd.adNetwork &&
+
+    existingAdUnit ===
+      validatedAd.adUnit &&
+
+    existingRewardAmount ===
+      validatedAd.rewardAmount &&
+
+    existingRewardItem ===
+      validatedAd.rewardItem &&
+
+    existingAmount ===
+      0
+  );
+}
+
+
+// ============================================================
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
 //
@@ -1082,8 +1216,7 @@ async function saveVerifiedAdMobReward(
   // FIRESTORE TRANSACTION
   // ----------------------------------------------------------
   //
-  // Kaikki transaction.get() -operaatiot suoritetaan ennen
-  // transaction.set()/create()-operaatioita.
+  // Kaikki read-operaatiot suoritetaan ennen write-operaatioita.
   //
   // ----------------------------------------------------------
 
@@ -1129,15 +1262,7 @@ async function saveVerifiedAdMobReward(
           )
         ) {
           // --------------------------------------------------
-          // HISTORY MUST ALSO EXIST
-          // --------------------------------------------------
-          //
-          // Jos reward löytyy mutta audit-history puuttuu,
-          // emme käsittele tapahtumaa normaalina duplicaatina.
-          //
-          // Tämä paljastaa tietokannan epäjohdonmukaisuuden
-          // eikä jätä sitä hiljaisesti huomiotta.
-          //
+          // HISTORY MUST EXIST
           // --------------------------------------------------
 
           if (
@@ -1149,11 +1274,41 @@ async function saveVerifiedAdMobReward(
               );
 
             error.code =
-              "ADMOB_TRANSACTION_CONFLICT";
+              "ADMOB_AUDIT_CONSISTENCY_ERROR";
 
             throw error;
           }
 
+
+          // --------------------------------------------------
+          // HISTORY MUST ALSO MATCH
+          // --------------------------------------------------
+
+          const existingHistoryData =
+            existingHistorySnapshot.data() ||
+            {};
+
+          if (
+            !isSameVerifiedHistory(
+              existingHistoryData,
+              validatedAd,
+            )
+          ) {
+            const error =
+              new Error(
+                "AdMob reward and audit history contain inconsistent data.",
+              );
+
+            error.code =
+              "ADMOB_AUDIT_CONSISTENCY_ERROR";
+
+            throw error;
+          }
+
+
+          // --------------------------------------------------
+          // SAFE DUPLICATE
+          // --------------------------------------------------
 
           console.log(
             "🐱 AdMob transaction already processed.",
@@ -1197,7 +1352,13 @@ async function saveVerifiedAdMobReward(
 
 
         // ----------------------------------------------------
-        // DIFFERENT DATA = CONFLICT
+        // DIFFERENT DATA = PERMANENT CONFLICT
+        // ----------------------------------------------------
+        //
+        // Sama transaction_id, mutta eri varmennettu sisältö.
+        //
+        // Tämä on pysyvä konflikti eikä sitä pidä retrytä.
+        //
         // ----------------------------------------------------
 
         const error =
@@ -1216,10 +1377,12 @@ async function saveVerifiedAdMobReward(
       // 🛡️ HISTORY CONFLICT
       // ======================================================
       //
-      // Reward-documenttia ei ole, mutta sama deterministinen
+      // Reward-documenttia ei ole, mutta deterministinen
       // audit-dokumentti löytyy.
       //
-      // Tätä ei saa hiljaisesti ylikirjoittaa.
+      // Tämä on tietokannan eheysongelma.
+      //
+      // HTTP 500 mahdollistaa retry-käsittelyn.
       //
       // ======================================================
 
@@ -1232,7 +1395,7 @@ async function saveVerifiedAdMobReward(
           );
 
         error.code =
-          "ADMOB_TRANSACTION_CONFLICT";
+          "ADMOB_AUDIT_CONSISTENCY_ERROR";
 
         throw error;
       }
@@ -1250,6 +1413,8 @@ async function saveVerifiedAdMobReward(
       // ❌ käynnistä louhintaa
       // ❌ aktivoi Power Boostia
       // ❌ muuta adsToday-arvoa
+      // ❌ muuta cooldownia
+      // ❌ muuta mining-tilaa
       //
       // ======================================================
 
@@ -1351,6 +1516,8 @@ async function saveVerifiedAdMobReward(
       transaction.create(
         historyRef,
         {
+          uid,
+
           type:
             "admob_verified",
 
@@ -1832,6 +1999,10 @@ module.exports = {
   validateVerifiedAdData,
 
   getExpectedAdMobConfig,
+
+  isSameVerifiedReward,
+
+  isSameVerifiedHistory,
 
   saveVerifiedAdMobReward,
 };
