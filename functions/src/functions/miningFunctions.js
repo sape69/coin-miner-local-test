@@ -279,15 +279,20 @@ function getRewardConfiguration(rewardPurpose) {
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
 //
-// IMPORTANT:
-//
-// The query is intentionally ordered by createdAt descending.
-//
-// This prevents the old situation where Firestore could return
-// an arbitrary first 100 documents and the JavaScript code would
-// only sort those 100 documents afterwards.
+// The query is ordered by createdAt descending.
 //
 // The final candidate validation is still performed locally.
+//
+// IMPORTANT:
+//
+// Do not limit this query to MAX_ADS_PER_DAY.
+//
+// A 24-hour mining cycle can cross a UTC date boundary.
+// Therefore one mining cycle can legitimately contain rewards
+// belonging to two different UTC calendar days.
+//
+// The query limit is therefore based on the maximum number of
+// possible boosts during one mining cycle, plus a safety margin.
 //
 // ============================================================
 
@@ -1113,8 +1118,6 @@ function getAdStatus(
 // ⛏️ CURRENT CYCLE HASH RATE
 // ============================================================
 //
-// IMPORTANT:
-//
 // Once a valid mining cycle exists, its Hash Rate belongs
 // exclusively to that cycle.
 //
@@ -1194,6 +1197,36 @@ function getHistoricalMiningHashRate(data) {
 // ============================================================
 // 📺 BOOST HISTORY
 // ============================================================
+//
+// A mining cycle can cross a UTC midnight.
+//
+// Therefore MAX_ADS_PER_DAY is NOT a safe query limit for a
+// complete mining cycle.
+//
+// We calculate a conservative maximum number of possible
+// Power Boost history entries for the entire cycle.
+//
+// ============================================================
+
+function getMaximumBoostHistoryEntries() {
+  const cycleDays =
+    Math.max(
+      1,
+      Math.ceil(
+        MINING_DURATION_MS /
+        (24 * 60 * 60 * 1000)
+      )
+    );
+
+  return Math.max(
+    MAX_ADS_PER_DAY,
+    (
+      (cycleDays + 1) *
+      MAX_ADS_PER_DAY
+    ) + 10
+  );
+}
+
 
 async function getAdBoostHistory(
   uid,
@@ -1226,7 +1259,7 @@ async function getAdBoostHistory(
         "asc"
       )
       .limit(
-        MAX_ADS_PER_DAY
+        getMaximumBoostHistoryEntries()
       );
 
   const snapshot =
@@ -1926,10 +1959,6 @@ const getMiningStatus =
             nowMs,
             today
           );
-
-        const estimatedTotal =
-          miningBalance +
-          currentMining.unclaimedMining;
 
         const effectiveHashRate =
           adStatus.adBoostActive
