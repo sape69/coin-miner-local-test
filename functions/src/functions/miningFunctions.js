@@ -278,6 +278,18 @@ function getRewardConfiguration(rewardPurpose) {
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
+//
+// IMPORTANT:
+//
+// Do not use orderBy("createdAt") here.
+//
+// SSV reward documents can arrive asynchronously and older
+// documents may not contain exactly the same timestamp fields.
+//
+// We therefore query only by the indexed equality fields and
+// validate every candidate locally.
+//
+// ============================================================
 
 const ADMOB_REWARD_QUERY_LIMIT = 100;
 
@@ -307,10 +319,6 @@ async function findVerifiedAdMobReward(
         "rewardPurpose",
         "==",
         rewardPurpose
-      )
-      .orderBy(
-        "createdAt",
-        "desc"
       )
       .limit(
         ADMOB_REWARD_QUERY_LIMIT
@@ -408,9 +416,8 @@ async function findVerifiedAdMobReward(
       rewardData.rewardItem.trim();
 
     if (
-      !rewardItem ||
       rewardItem !==
-        configuration.rewardItem
+      configuration.rewardItem
     ) {
       return;
     }
@@ -1136,6 +1143,16 @@ function getMiningHashRate(
 
 // ============================================================
 // ⛏️ HISTORICAL CYCLE HASH RATE
+// ============================================================
+//
+// IMPORTANT:
+//
+// Historical miningHashRate must NEVER fall back to the
+// current Daily Hash Rate.
+//
+// If the stored cycle Hash Rate is invalid, return 0 and
+// refuse to calculate that cycle.
+//
 // ============================================================
 
 function getHistoricalMiningHashRate(data) {
@@ -1914,13 +1931,6 @@ const getMiningStatus =
               AD_HASH_RATE_BONUS
             : miningHashRate;
 
-        // ------------------------------------------------------
-        // FIX:
-        // estimatedTotal must be calculated before it is
-        // returned. It represents the current stored mining
-        // balance plus currently unclaimed mining.
-        // ------------------------------------------------------
-
         const estimatedTotal =
           Math.max(
             0,
@@ -2524,7 +2534,10 @@ const claimMining =
             }
 
             // ------------------------------------------------
-            // ACHIEVEMENT READS
+            // ACHIEVEMENT READS + WRITES
+            //
+            // updateMiningAchievements performs ALL of its
+            // transaction reads before its writes.
             // ------------------------------------------------
 
             await updateMiningAchievements(
