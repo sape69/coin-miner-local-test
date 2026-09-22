@@ -41,7 +41,7 @@ const {
 // 📏 FIRESTORE DOCUMENT ID LIMIT
 // ============================================================
 //
-// Firestore-dokumentin ID:n enimmäiskoko:
+// Firestore-dokumentin ID-segmentin enimmäiskoko:
 //
 // 1 500 bytes
 //
@@ -65,13 +65,16 @@ const MAX_DOCUMENT_ID_BYTES =
 //
 // ✅ täytyy olla merkkijono
 // ✅ ei saa olla tyhjä
-// ✅ ympäröivät whitespace-merkit poistetaan
 // ❌ ei saa sisältää "/"
-// ❌ ei saa sisältää "\"
 // ❌ ei saa ylittää Firestoren ID-kokorajaa
 //
-// UID:t ja transactionId:t validoidaan lisäksi
-// niiden omissa business/service-kerroksissa.
+// ID:tä EI muuteta automaattisesti trimmaamalla.
+//
+// Tämä on tärkeää, koska UID:tä tai transaction ID:tä
+// ei pidä muuttaa hiljaisesti toiseksi tunnisteeksi.
+//
+// UID:t ja transactionId:t validoidaan lisäksi niiden
+// omissa business/service-kerroksissa.
 //
 // Tämä funktio estää yleiset ohjelmointivirheet,
 // kuten:
@@ -81,7 +84,6 @@ const MAX_DOCUMENT_ID_BYTES =
 // ""
 // "   "
 // "abc/def"
-// "abc\\def"
 // liian pitkä document ID
 //
 // ============================================================
@@ -90,27 +92,35 @@ function validateDocumentId(
   value,
   name,
 ) {
+  const parameterName =
+    typeof name ===
+    "string" &&
+    name.length > 0
+      ? name
+      : "documentId";
+
+
+  // ----------------------------------------------------------
+  // TYPE
+  // ----------------------------------------------------------
+
   if (
     typeof value !==
     "string"
   ) {
     const error =
       new Error(
-        `${name} must be a string.`,
+        `${parameterName} must be a string.`,
       );
 
     error.code =
       "FIRESTORE_INVALID_DOCUMENT_ID";
 
     error.parameter =
-      name;
+      parameterName;
 
     throw error;
   }
-
-
-  const id =
-    value.trim();
 
 
   // ----------------------------------------------------------
@@ -118,42 +128,78 @@ function validateDocumentId(
   // ----------------------------------------------------------
 
   if (
-    id.length ===
+    value.length ===
     0
   ) {
     const error =
       new Error(
-        `${name} cannot be empty.`,
+        `${parameterName} cannot be empty.`,
       );
 
     error.code =
       "FIRESTORE_INVALID_DOCUMENT_ID";
 
     error.parameter =
-      name;
+      parameterName;
 
     throw error;
   }
 
 
   // ----------------------------------------------------------
-  // INVALID PATH CHARACTERS
+  // WHITESPACE-ONLY ID
+  // ----------------------------------------------------------
+  //
+  // ID:tä ei trimmailla, koska tunnistetta ei pidä
+  // muuttaa hiljaisesti.
+  //
+  // Sen sijaan pelkästään whitespacea sisältävä ID
+  // hylätään.
+  //
   // ----------------------------------------------------------
 
   if (
-    id.includes("/") ||
-    id.includes("\\")
+    value.trim().length ===
+    0
   ) {
     const error =
       new Error(
-        `${name} cannot contain "/" or "\\".`,
+        `${parameterName} cannot contain only whitespace.`,
       );
 
     error.code =
       "FIRESTORE_INVALID_DOCUMENT_ID";
 
     error.parameter =
-      name;
+      parameterName;
+
+    throw error;
+  }
+
+
+  // ----------------------------------------------------------
+  // INVALID FIRESTORE PATH CHARACTER
+  // ----------------------------------------------------------
+  //
+  // "/" erottaa Firestoressa collection- ja document-polkuja.
+  //
+  // Siksi sitä ei saa esiintyä yhden document ID:n sisällä.
+  //
+  // ----------------------------------------------------------
+
+  if (
+    value.includes("/")
+  ) {
+    const error =
+      new Error(
+        `${parameterName} cannot contain "/".`,
+      );
+
+    error.code =
+      "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      parameterName;
 
     throw error;
   }
@@ -165,7 +211,7 @@ function validateDocumentId(
 
   const byteLength =
     Buffer.byteLength(
-      id,
+      value,
       "utf8",
     );
 
@@ -176,20 +222,20 @@ function validateDocumentId(
   ) {
     const error =
       new Error(
-        `${name} exceeds the Firestore document ID size limit.`,
+        `${parameterName} exceeds the Firestore document ID size limit.`,
       );
 
     error.code =
       "FIRESTORE_DOCUMENT_ID_TOO_LONG";
 
     error.parameter =
-      name;
+      parameterName;
 
     throw error;
   }
 
 
-  return id;
+  return value;
 }
 
 
