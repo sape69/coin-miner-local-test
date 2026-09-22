@@ -1,8 +1,8 @@
 "use strict";
 
-// ==========================================
+// ============================================================
 // 🐱 STELLURIINI MINING CONFIGURATION
-// ==========================================
+// ============================================================
 //
 // Keskitetty Stelluriini Mining -asetustiedosto.
 //
@@ -11,20 +11,22 @@
 // - Daily Hash Rate ei ole STL-palkkio.
 // - AdMob Rewarded Ad ei anna suoraan STL-tokenia.
 // - AdMob SSV vahvistaa rewarded-mainoksen.
-// - Power Boost kasvattaa louhintatehoa määräajaksi.
+// - Mining Start käyttää vahvistettua AdMob-palkintoa
+//   uuden mining-jakson käynnistämiseen.
+// - Power Boost käyttää vahvistettua AdMob-palkintoa
+//   aktiivisen mining-jakson tehostamiseen.
 // - Power Boost ei voi jatkua mining-jakson yli.
 // - Power Boost ei siirry seuraavaan mining-jaksoon.
 // - Varsinainen STL-tuotto lasketaan mining-logiikassa.
 //
-// ==========================================
+// ============================================================
 
 
-// ==========================================
+// ============================================================
 // 🎁 DAILY HASH RATE
-// ==========================================
+// ============================================================
 //
-// Päivän Hash Rate määräytyy Daily Streakin
-// perusteella.
+// Daily Hash Rate määräytyy Daily Streakin perusteella.
 //
 // Päivä 1:
 // 0.5 HR
@@ -47,7 +49,7 @@
 // Päivä 7+:
 // 3.5 HR
 //
-// ==========================================
+// ============================================================
 
 const DAILY_HASH_RATE_START = 0.5;
 
@@ -58,94 +60,135 @@ const DAILY_HASH_RATE_MAX_DAY = 7;
 const MAX_DAILY_HASH_RATE = 3.5;
 
 
-// ==========================================
+// ============================================================
 // 📺 ADMOB POWER BOOST
-// ==========================================
+// ============================================================
 //
-// Power Boost ei anna käyttäjälle STL:ää
-// suoraan.
+// Power Boost ei anna käyttäjälle STL:ää suoraan.
 //
-// Se lisää käyttäjän Hash Ratea
-// määräajaksi aktiivisen mining-jakson aikana.
+// Se lisää aktiivisen mining-jakson Hash Ratea
+// määräajaksi.
 //
-// ==========================================
+// AD_HASH_RATE_BONUS:
+//
+// +0.5833 HR
+//
+// Esimerkiksi:
+//
+// 3.5 HR + 0.5833 HR
+// = 4.0833 HR
+//
+// ============================================================
 
-// Power Boostin lisäämä Hash Rate.
 const AD_HASH_RATE_BONUS = 0.5833;
 
 
-// Power Boostin enimmäiskesto.
+// ============================================================
+// ⏱️ POWER BOOST DURATION
+// ============================================================
+//
+// Power Boostin enimmäiskesto:
 //
 // 4 tuntia.
+//
+// Mining Functions rajoittaa todellisen loppuajan
+// aina mining-jakson loppuun.
+//
+// ============================================================
+
 const AD_BOOST_DURATION_MS =
   4 * 60 * 60 * 1000;
 
 
-// Kuinka monta Power Boost -mainosta
-// käyttäjä voi käyttää yhden UTC-päivän aikana.
+// ============================================================
+// 📊 ADMOB DAILY LIMIT
+// ============================================================
+//
+// Kuinka monta Power Boost -mainosta käyttäjä voi
+// käyttää yhden UTC-päivän aikana.
+//
+// ============================================================
+
 const MAX_ADS_PER_DAY = 6;
 
 
-// Kahden Power Boost -mainoksen välinen
-// vähimmäisaika.
+// ============================================================
+// ⏳ ADMOB COOLDOWN
+// ============================================================
+//
+// Kahden Power Boost -mainoksen välinen vähimmäisaika.
 //
 // 4 tuntia.
+//
+// Koska Power Boost kestää myös enintään 4 tuntia,
+// seuraava boost voidaan normaalisti aloittaa,
+// kun edellinen boost on päättynyt.
+//
+// ============================================================
+
 const AD_COOLDOWN_MS =
   4 * 60 * 60 * 1000;
 
 
-// ==========================================
-// 🔐 ADMOB REWARDED AD UNITS
-// ==========================================
+// ============================================================
+// 🔐 ADMOB REWARDED AD UNIT IDS
+// ============================================================
 //
-// Stelluriinilla on kaksi erillistä
-// AdMob Rewarded -mainosyksikköä:
+// Stelluriinilla on kaksi erillistä Rewarded-mainosyksikköä:
 //
-// ⛏️ Mining
+// ⛏️ Mining Start
 // 🐱 Power Boost
 //
 // Näitä ei saa sekoittaa keskenään.
 //
-// ==========================================
+// ============================================================
 
 
-// ⛏️ Stelluriini Mining
+// ============================================================
+// ⛏️ STELLURIINI MINING START
+// ============================================================
+
 const ADMOB_MINING_AD_UNIT_ID =
   "ca-app-pub-1131012057145658/6674097787";
 
 
-// 🐱 Stelluriini Power Boost
+// ============================================================
+// 🐱 STELLURIINI POWER BOOST
+// ============================================================
+
 const ADMOB_POWER_BOOST_AD_UNIT_ID =
   "ca-app-pub-1131012057145658/7225738491";
 
 
-// ==========================================
+// ============================================================
 // 🔐 ADMOB SSV AD UNIT IDS
-// ==========================================
+// ============================================================
 //
-// AdMob SSV callbackin `ad_unit`
-// sisältää mainosyksikön numeerisen ID:n.
+// AdMob SSV callbackin `ad_unit` käyttää tässä
+// numeerista Ad Unit ID:tä.
 //
-// ⛏️ Mining:
+// Mining Start:
+//
+// Flutter / Rewarded Ad Unit:
+// ca-app-pub-1131012057145658/6674097787
+//
+// SSV:
 // 6674097787
 //
-// 🐱 Power Boost:
+// Power Boost:
+//
+// Flutter / Rewarded Ad Unit:
+// ca-app-pub-1131012057145658/7225738491
+//
+// SSV:
 // 7225738491
 //
 // HUOM:
 //
-// Tämä EI ole sama arvo kuin Flutterissa
-// käytettävä koko AdMob Ad Unit ID.
+// Nämä arvot ovat tarkoituksella eri muodossa kuin
+// Flutterissa käytettävät täydet Ad Unit ID:t.
 //
-// Flutter:
-//
-// ca-app-pub-1131012057145658/6674097787
-//
-// SSV:
-//
-// 6674097787
-//
-// ==========================================
+// ============================================================
 
 const ADMOB_MINING_SSV_AD_UNIT_ID =
   "6674097787";
@@ -154,67 +197,68 @@ const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
   "7225738491";
 
 
-// ==========================================
+// ============================================================
 // 🎁 ADMOB SSV REWARD METADATA
-// ==========================================
+// ============================================================
 //
-// AdMob reward metadata ei tarkoita,
-// että käyttäjälle siirretään STL-tokenia.
+// Nämä arvot ovat AdMob Rewarded / SSV -metatietoja.
 //
-// SSV vahvistaa rewarded-mainoksen
-// ja sen reward-metadata-arvot.
+// Ne EIVÄT tarkoita STL-tokenien siirtoa käyttäjälle.
 //
-// Varsinainen Stelluriini-toiminto
-// käsitellään erillisessä backend-logiikassa.
+// Backend käyttää niitä varmistamaan, että SSV-eventti
+// kuuluu oikeaan Stelluriini-toimintoon.
 //
-// ==========================================
+// ============================================================
 
 
-// ⛏️ Mining-mainoksen reward amount.
+// ============================================================
+// ⛏️ MINING START REWARD
+// ============================================================
+
 const ADMOB_MINING_SSV_REWARD_AMOUNT = 1;
 
-
-// ⛏️ Mining-mainoksen reward item.
 const ADMOB_MINING_SSV_REWARD_ITEM =
   "Mining";
 
 
-// 🐱 Power Boost -mainoksen reward amount.
+// ============================================================
+// 🐱 POWER BOOST REWARD
+// ============================================================
+
 const ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT = 1;
 
-
-// 🐱 Power Boost -mainoksen reward item.
 const ADMOB_POWER_BOOST_SSV_REWARD_ITEM =
   "Power Boost";
 
 
-// ==========================================
-// ⛏️ MINING
-// ==========================================
+// ============================================================
+// ⛏️ MINING CYCLE
+// ============================================================
 //
 // Yksi mining-jakso kestää 24 tuntia.
 //
-// Mining Start käynnistää uuden jakson.
+// Mining Start:
 //
-// Kun jakso päättyy:
+// 1. päättää vanhan jakson tarvittaessa
+// 2. laskee vanhan jakson STL-tuoton
+// 3. lisää tuoton miningBalanceen
+// 4. luo uuden mining-jakson
+// 5. käyttää uuden jakson Daily Hash Ratea
 //
-// 1. Base mining lasketaan
-// 2. Power Boost -ajat lasketaan
-// 3. STL lisätään miningBalanceen
-// 4. Seuraava mining voidaan aloittaa
+// Vanhan jakson Hash Rate ei saa koskaan siirtyä
+// uuden jakson Hash Rateksi.
 //
-// ==========================================
+// ============================================================
 
 const MINING_DURATION_MS =
   24 * 60 * 60 * 1000;
 
 
-// ==========================================
+// ============================================================
 // 💰 STL MINING RATE
-// ==========================================
+// ============================================================
 //
-// STL-tuotto yhtä Hash Rate -yksikköä
-// ja yhtä tuntia kohden.
+// STL-tuotto yhtä Hash Rate -yksikköä ja tuntia kohden.
 //
 // Kaava:
 //
@@ -222,37 +266,36 @@ const MINING_DURATION_MS =
 // × MINING_PER_HASH_PER_HOUR
 // × tunnit
 //
-// Esimerkiksi:
+// Esimerkki:
 //
 // 3.5 HR × 0.10 × 24 h
 // = 8.4 STL
 //
-// ==========================================
+// ============================================================
 
 const MINING_PER_HASH_PER_HOUR = 0.10;
 
 
-// ==========================================
+// ============================================================
 // 📜 TRANSACTION HISTORY
-// ==========================================
+// ============================================================
 //
-// Käyttäjän transaction history -kokoelman
-// enimmäismäärä.
+// Käyttäjän history-kokoelman enimmäismäärä.
 //
-// ==========================================
+// ============================================================
 
 const MAX_TRANSACTION_HISTORY = 50;
 
 
-// ==========================================
+// ============================================================
 // 📦 EXPORTS
-// ==========================================
+// ============================================================
 
 module.exports = {
 
-  // ----------------------------------------
+  // ----------------------------------------------------------
   // 🎁 Daily Hash Rate
-  // ----------------------------------------
+  // ----------------------------------------------------------
 
   DAILY_HASH_RATE_START,
 
@@ -263,9 +306,9 @@ module.exports = {
   MAX_DAILY_HASH_RATE,
 
 
-  // ----------------------------------------
+  // ----------------------------------------------------------
   // 📺 AdMob Power Boost
-  // ----------------------------------------
+  // ----------------------------------------------------------
 
   AD_HASH_RATE_BONUS,
 
@@ -276,27 +319,27 @@ module.exports = {
   AD_COOLDOWN_MS,
 
 
-  // ----------------------------------------
-  // 🔐 AdMob Rewarded Ad Units
-  // ----------------------------------------
+  // ----------------------------------------------------------
+  // 🔐 AdMob Rewarded Ad Unit IDs
+  // ----------------------------------------------------------
 
   ADMOB_MINING_AD_UNIT_ID,
 
   ADMOB_POWER_BOOST_AD_UNIT_ID,
 
 
-  // ----------------------------------------
+  // ----------------------------------------------------------
   // 🔐 AdMob SSV Ad Unit IDs
-  // ----------------------------------------
+  // ----------------------------------------------------------
 
   ADMOB_MINING_SSV_AD_UNIT_ID,
 
   ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
 
 
-  // ----------------------------------------
+  // ----------------------------------------------------------
   // 🎁 AdMob SSV Reward Metadata
-  // ----------------------------------------
+  // ----------------------------------------------------------
 
   ADMOB_MINING_SSV_REWARD_AMOUNT,
 
@@ -307,18 +350,18 @@ module.exports = {
   ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
 
 
-  // ----------------------------------------
+  // ----------------------------------------------------------
   // ⛏️ Mining
-  // ----------------------------------------
+  // ----------------------------------------------------------
 
   MINING_DURATION_MS,
 
   MINING_PER_HASH_PER_HOUR,
 
 
-  // ----------------------------------------
-  // 📜 History
-  // ----------------------------------------
+  // ----------------------------------------------------------
+  // 📜 Transaction History
+  // ----------------------------------------------------------
 
   MAX_TRANSACTION_HISTORY,
 };
