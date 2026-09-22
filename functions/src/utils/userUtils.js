@@ -41,7 +41,7 @@ const {
 // 📏 FIRESTORE DOCUMENT ID LIMIT
 // ============================================================
 //
-// Firestore-dokumentin ID-segmentin enimmäiskoko:
+// Firestore-dokumentin ID:n enimmäiskoko:
 //
 // 1 500 bytes
 //
@@ -66,7 +66,9 @@ const MAX_DOCUMENT_ID_BYTES =
 // ✅ täytyy olla merkkijono
 // ✅ ei saa olla tyhjä
 // ❌ ei saa sisältää "/"
-// ❌ ei saa ylittää Firestoren ID-kokorajaa
+// ❌ ei saa olla "." tai ".."
+// ❌ ei saa alkaa kahdella alaviivalla "__"
+// ❌ ei saa ylittää 1 500 tavun rajaa
 //
 // ID:tä EI muuteta automaattisesti trimmaamalla.
 //
@@ -84,6 +86,9 @@ const MAX_DOCUMENT_ID_BYTES =
 // ""
 // "   "
 // "abc/def"
+// "."
+// ".."
+// "__example__"
 // liian pitkä document ID
 //
 // ============================================================
@@ -193,6 +198,67 @@ function validateDocumentId(
     const error =
       new Error(
         `${parameterName} cannot contain "/".`,
+      );
+
+    error.code =
+      "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      parameterName;
+
+    throw error;
+  }
+
+
+  // ----------------------------------------------------------
+  // RESERVED DOT DOCUMENT IDS
+  // ----------------------------------------------------------
+  //
+  // Firestore ei salli dokumentin ID:ksi pelkkää:
+  //
+  // "."
+  // ".."
+  //
+  // ----------------------------------------------------------
+
+  if (
+    value === "." ||
+    value === ".."
+  ) {
+    const error =
+      new Error(
+        `${parameterName} cannot be "." or "..".`,
+      );
+
+    error.code =
+      "FIRESTORE_INVALID_DOCUMENT_ID";
+
+    error.parameter =
+      parameterName;
+
+    throw error;
+  }
+
+
+  // ----------------------------------------------------------
+  // RESERVED DOUBLE-UNDERSCORE IDS
+  // ----------------------------------------------------------
+  //
+  // Firestore ei salli dokumentin ID:tä, joka vastaa
+  // regular expressionia:
+  //
+  // __.*
+  //
+  // ----------------------------------------------------------
+
+  if (
+    /^__.*__$/.test(
+      value,
+    )
+  ) {
+    const error =
+      new Error(
+        `${parameterName} cannot match the Firestore reserved "__.*__" pattern.`,
       );
 
     error.code =
