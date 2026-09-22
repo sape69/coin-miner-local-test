@@ -134,7 +134,6 @@ const CLIENT_VALIDATION_ERROR_CODES =
 
     // --------------------------------------------------------
     // Sama transaction_id, mutta eri tapahtumatiedot.
-    // Tätä ei saa yrittää käsitellä uudelleen.
     // --------------------------------------------------------
 
     "ADMOB_TRANSACTION_CONFLICT",
@@ -231,7 +230,7 @@ function validateUid(
 // AdMob käyttää transaction_id:tä yksilöllisenä
 // reward grant -tunnisteena.
 //
-// Google määrittelee transaction_id:n hex-koodatuksi
+// AdMob määrittelee transaction_id:n hex-koodatuksi
 // yksilölliseksi tunnisteeksi.
 //
 // ============================================================
@@ -342,9 +341,9 @@ function getExpectedAdMobConfig(
 
   if (
     typeof adUnit !==
-      "string" ||
+    "string" ||
     adUnit.trim().length ===
-      0 ||
+    0 ||
     !rewardDefinition
   ) {
     const error =
@@ -372,7 +371,7 @@ function getExpectedAdMobConfig(
     !Number.isSafeInteger(
       rewardAmount,
     ) ||
-    rewardAmount <= 0 ||
+    rewardAmount < 0 ||
     rewardItem.length === 0
   ) {
     const error =
@@ -542,7 +541,7 @@ function validateVerifiedAdData(
       rewardAmount,
     ) ||
     rewardAmount !==
-      expectedAdMob.rewardAmount
+    expectedAdMob.rewardAmount
   ) {
     const error =
       new Error(
@@ -571,7 +570,7 @@ function validateVerifiedAdData(
   if (
     rewardItem.length === 0 ||
     rewardItem !==
-      expectedRewardItem
+    expectedRewardItem
   ) {
     const error =
       new Error(
@@ -600,7 +599,7 @@ function validateVerifiedAdData(
   if (
     adUnit.length === 0 ||
     adUnit !==
-      expectedAdUnit
+    expectedAdUnit
   ) {
     const error =
       new Error(
@@ -618,7 +617,7 @@ function validateVerifiedAdData(
   // AD NETWORK
   // ----------------------------------------------------------
   //
-  // AdMobin ad_network voidaan välittää numeerisena
+  // AdMobin ad_network välitetään numeerisena
   // identifier-arvona.
   //
   // Säilytetään merkkijonona, jotta precision ei katoa.
@@ -964,6 +963,12 @@ async function saveVerifiedAdMobReward(
   // ----------------------------------------------------------
   // FIRESTORE TRANSACTION
   // ----------------------------------------------------------
+  //
+  // Firestore transaction varmistaa, että kaksi samanaikaista
+  // saman transaction_id:n callbackia eivät voi molemmat
+  // luoda uutta reward-tapahtumaa.
+  //
+  // ----------------------------------------------------------
 
   return db.runTransaction(
     async (
@@ -1053,29 +1058,29 @@ async function saveVerifiedAdMobReward(
 
         if (
           existingUid !==
-            uid ||
+          uid ||
           existingPurpose !==
-            rewardPurpose ||
+          rewardPurpose ||
           existingTransactionId !==
-            transactionId ||
+          transactionId ||
           existingAdUnit !==
-            adUnit ||
+          adUnit ||
           existingAdNetwork !==
-            adNetwork ||
+          adNetwork ||
           existingRewardAmount !==
-            rewardAmount ||
+          rewardAmount ||
           existingRewardItem !==
-            rewardItem ||
+          rewardItem ||
           existingTimestamp !==
-            timestamp ||
+          timestamp ||
           existingKeyId !==
-            keyId ||
+          keyId ||
           existingSignature !==
-            signature ||
+          signature ||
           existingCustomData !==
-            customData ||
+          customData ||
           existingUserId !==
-            userId
+          userId
         ) {
           const error =
             new Error(
@@ -1229,10 +1234,16 @@ async function saveVerifiedAdMobReward(
       //
       // AdMob rewardAmount ei ole STL.
       //
+      // Käytetään transaction_id:tä history-dokumentin ID:n
+      // pohjana, jotta transactionin mahdollinen uudelleenajo
+      // ei tarvitse luoda satunnaista ID:tä.
+      //
       // ======================================================
 
       const historyRef =
-        historyCollection.doc();
+        historyCollection.doc(
+          `admob_${transactionId}`,
+        );
 
       transaction.set(
         historyRef,
@@ -1706,4 +1717,17 @@ const adMobReward =
 
 module.exports = {
   adMobReward,
+
+  // Exportataan myös testattavat puhtaat validointifunktiot.
+  validateUid,
+
+  validateTransactionId,
+
+  validateRewardPurpose,
+
+  validateVerifiedAdData,
+
+  getExpectedAdMobConfig,
+
+  saveVerifiedAdMobReward,
 };
