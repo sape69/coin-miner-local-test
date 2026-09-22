@@ -962,12 +962,25 @@ async function saveVerifiedAdMobReward(
 
 
   // ----------------------------------------------------------
+  // DETERMINISTIC HISTORY REFERENCE
+  // ----------------------------------------------------------
+
+  const historyRef =
+    historyCollection.doc(
+      `admob_${transactionId}`,
+    );
+
+
+  // ----------------------------------------------------------
   // FIRESTORE TRANSACTION
   // ----------------------------------------------------------
   //
-  // Firestore transaction varmistaa, että kaksi samanaikaista
-  // saman transaction_id:n callbackia eivät voi molemmat
-  // luoda uutta reward-tapahtumaa.
+  // IMPORTANT:
+  //
+  // Kaikki transaction.get() -operaatiot suoritetaan ennen
+  // transaction.set()/create()-operaatioita.
+  //
+  // Tämä koskee sekä reward-dokumenttia että audit-historyä.
   //
   // ----------------------------------------------------------
 
@@ -975,9 +988,18 @@ async function saveVerifiedAdMobReward(
     async (
       transaction,
     ) => {
+      // ======================================================
+      // 🔎 ALL READS FIRST
+      // ======================================================
+
       const existingSnapshot =
         await transaction.get(
           rewardRef,
+        );
+
+      const existingHistorySnapshot =
+        await transaction.get(
+          historyRef,
         );
 
 
@@ -1107,6 +1129,9 @@ async function saveVerifiedAdMobReward(
             uid,
 
             rewardPurpose,
+
+            historyExists:
+              existingHistorySnapshot.exists,
           },
         );
 
@@ -1137,7 +1162,44 @@ async function saveVerifiedAdMobReward(
 
 
       // ======================================================
+      // 🛡️ HISTORY CONFLICT
+      // ======================================================
+      //
+      // Reward-documenttia ei ole, mutta sama deterministinen
+      // audit-dokumentti löytyy.
+      //
+      // Tätä ei saa hiljaisesti ylikirjoittaa.
+      //
+      // ======================================================
+
+      if (
+        existingHistorySnapshot.exists
+      ) {
+        const error =
+          new Error(
+            "AdMob audit history exists without the corresponding reward document.",
+          );
+
+        error.code =
+          "ADMOB_TRANSACTION_CONFLICT";
+
+        throw error;
+      }
+
+
+      // ======================================================
       // 💾 SAVE VERIFIED REWARD EVENT
+      // ======================================================
+      //
+      // Tämä on ainoa paikka, jossa SSV-eventti tallennetaan.
+      //
+      // Tämä EI:
+      //
+      // ❌ lisää STL:ää
+      // ❌ käynnistä louhintaa
+      // ❌ aktivoi Power Boostia
+      // ❌ muuta adsToday-arvoa
+      //
       // ======================================================
 
       transaction.set(
@@ -1235,27 +1297,9 @@ async function saveVerifiedAdMobReward(
       //
       // AdMob rewardAmount ei ole STL.
       //
-      // Käytetään transaction_id:tä history-dokumentin ID:n
-      // pohjana, jotta transactionin mahdollinen uudelleenajo
-      // ei tarvitse luoda satunnaista ID:tä.
+      // transaction_id toimii deterministisenä history-ID:nä.
       //
       // ======================================================
-
-      const historyRef =
-        historyCollection.doc(
-          `admob_${transactionId}`,
-        );
-
-
-      // ------------------------------------------------------
-      // HISTORY DOCUMENT
-      // ------------------------------------------------------
-      //
-      // Käytetään create()-operaatiota vastaavassa Firestore-
-      // transactionissa. Näin jo olemassa oleva audit-dokumentti
-      // ei pääse huomaamatta ylikirjoittumaan.
-      //
-      // ------------------------------------------------------
 
       transaction.create(
         historyRef,
@@ -1730,7 +1774,6 @@ const adMobReward =
 module.exports = {
   adMobReward,
 
-  // Exportataan myös testattavat puhtaat validointifunktiot.
   validateUid,
 
   validateTransactionId,
