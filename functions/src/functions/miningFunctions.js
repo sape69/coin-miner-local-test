@@ -32,7 +32,8 @@
 // - Never continues after miningEndsAt.
 // - Never carries into a new mining cycle.
 // - Boost history is used for actual mining calculations.
-// - Overlapping boost intervals are merged.
+// - Only boosts started inside the current mining cycle
+//   are allowed to contribute to that cycle.
 //
 // ============================================================
 
@@ -287,9 +288,7 @@ function getRewardConfiguration(rewardPurpose) {
 // - exact expected reward amount
 // - valid transaction ID
 //
-// The query is intentionally limited so a user's complete
-// historical AdMob reward collection is never loaded without
-// bounds.
+// The query is bounded.
 //
 // ============================================================
 
@@ -503,9 +502,6 @@ async function findVerifiedAdMobReward(
 // ============================================================
 // 🔐 WAIT FOR ADMOB SSV
 // ============================================================
-//
-// Keep enough time available for the Firestore transaction
-// after SSV polling.
 //
 // Callable timeout:
 // - 120 seconds
@@ -1157,6 +1153,17 @@ function getAdStatus(
 // ============================================================
 // ⛏️ MINING HASH RATE
 // ============================================================
+//
+// Used for the CURRENT cycle/status.
+//
+// A missing or invalid current miningHashRate may safely use
+// the current Daily Hash Rate as fallback.
+//
+// This function must NOT be used as a fallback for an already
+// completed historical cycle, because that could make an old
+// cycle inherit a new day's Hash Rate.
+//
+// ============================================================
 
 function getMiningHashRate(
   data,
@@ -1194,13 +1201,62 @@ function getMiningHashRate(
 
 
 // ============================================================
+// ⛏️ HISTORICAL CYCLE HASH RATE
+// ============================================================
+//
+// Historical cycles must NEVER use the current Daily Hash
+// Rate as a fallback.
+//
+// If the stored cycle Hash Rate is invalid, return 0 instead
+// of accidentally applying a newer Hash Rate to an old cycle.
+//
+// ============================================================
+
+function getHistoricalMiningHashRate(
+  data
+) {
+  const stored =
+    getSafePositiveNumber(
+      data.miningHashRate,
+      0
+    );
+
+  if (
+    stored <
+      DAILY_HASH_RATE_START ||
+    stored >
+      MAX_DAILY_HASH_RATE
+  ) {
+    console.warn(
+      "🐱 Invalid historical miningHashRate; preventing cross-cycle Hash Rate inheritance.",
+      {
+        stored,
+      }
+    );
+
+    return 0;
+  }
+
+  return stored;
+}
+
+
+// ============================================================
 // 📺 BOOST HISTORY
 // ============================================================
 //
 // Only history belonging to the CURRENT mining cycle can
 // contribute to the current cycle.
 //
-// Old boosts can never leak into a new cycle.
+// We query boostStartedAt inside the exact mining window.
+//
+// This intentionally avoids a broad historical query.
+//
+// Because a Power Boost may only be activated while mining is
+// active, a valid boost for a cycle must have started inside
+// that cycle.
+//
+// Old boosts therefore cannot leak into a new cycle.
 //
 // ============================================================
 
@@ -1222,9 +1278,21 @@ async function getAdBoostHistory(
   const query =
     getHistoryCollection(uid)
       .where(
-        "rewardPurpose",
-        "==",
-        "power_boost"
+        "boostStartedAt",
+        ">=",
+        new Date(
+          miningStartMs
+        )
+      )
+      .where(
+        "boostStartedAt",
+        "<",
+        new Date(
+          miningEndMs
+        )
+      )
+      .limit(
+        MAX_ADS_PER_DAY
       );
 
   const snapshot =
@@ -1273,8 +1341,19 @@ async function getAdBoostHistory(
       }
 
       if (
-        end <= miningStartMs ||
-        start >= miningEndMs
+        start <
+          miningStartMs ||
+        start >=
+          miningEndMs
+      ) {
+        return;
+      }
+
+      if (
+        end <=
+          miningStartMs ||
+        start >=
+          miningEndMs
       ) {
         return;
       }
@@ -1438,7 +1517,7 @@ async function calculateMiningCycle(
   const safeHashRate =
     getSafePositiveNumber(
       miningHashRate,
-      DAILY_HASH_RATE_START
+      0
     );
 
   const durationMs =
@@ -1449,16 +1528,18 @@ async function calculateMiningCycle(
     );
 
   const baseMining =
-    Math.max(
-      0,
-      getSafeNumber(
-        calculateMining(
-          safeHashRate,
-          durationMs
-        ),
-        0
-      )
-    );
+    safeHashRate > 0
+      ? Math.max(
+          0,
+          getSafeNumber(
+            calculateMining(
+              safeHashRate,
+              durationMs
+            ),
+            0
+          )
+        )
+      : 0;
 
   const boosts =
     await getAdBoostHistory(
@@ -2371,9 +2452,6 @@ const claimMining =
                     )
                   ),
 
-                adRewardTransactionId:
-                  transactionId,
-
                 rewardConsumed:
                   false,
 
@@ -2425,9 +2503,8 @@ const claimMining =
               0;
 
             const previousHashRate =
-              getMiningHashRate(
-                data,
-                dailyHashRate
+              getHistoricalMiningHashRate(
+                data
               );
 
             const previousWindow =
