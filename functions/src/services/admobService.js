@@ -117,6 +117,27 @@ const MAX_KEY_ID_LENGTH =
 
 
 // ============================================================
+// 🔐 ECDSA SIGNATURE LIMITS
+// ============================================================
+//
+// AdMob käyttää ECDSA P-256 -allekirjoitusta DER-muodossa.
+//
+// DER-koodattu P-256 allekirjoitus on normaalisti noin
+// 70-72 tavua.
+//
+// Emme käytä liian tiukkaa yksittäistä pituutta,
+// jotta mahdolliset validit DER-esitykset eivät rikkoudu.
+//
+// ============================================================
+
+const MIN_ECDSA_P256_DER_SIGNATURE_BYTES =
+  64;
+
+const MAX_ECDSA_P256_DER_SIGNATURE_BYTES =
+  80;
+
+
+// ============================================================
 // ⏱️ TIMESTAMP
 // ============================================================
 //
@@ -443,6 +464,13 @@ async function fetchJson(
     // --------------------------------------------------------
     // FALLBACK
     // --------------------------------------------------------
+    //
+    // Response.text() voi joissain ympäristöissä olla
+    // ainoa käytettävissä oleva vaihtoehto.
+    //
+    // Tarkistamme koon myös tässä tapauksessa.
+    //
+    // --------------------------------------------------------
 
     try {
       text =
@@ -456,6 +484,19 @@ async function fetchJson(
             : "Unknown error."
         }`,
         "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+      );
+    }
+
+    if (
+      Buffer.byteLength(
+        text,
+        "utf8",
+      ) >
+      MAX_PUBLIC_KEY_RESPONSE_BYTES
+    ) {
+      throw createError(
+        "AdMob public key response is too large.",
+        "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
       );
     }
   }
@@ -816,6 +857,9 @@ function extractQueryStringFromUrl(
 // URLSearchParamsin, objektin tai muun normalisoinnin avulla
 // ennen kryptografista tarkistusta.
 //
+// Google edellyttää, ettei allekirjoitettavaa sisältöä
+// muuteta tai järjestetä uudelleen.
+//
 // ============================================================
 
 function getRawQueryString(
@@ -994,6 +1038,23 @@ function decodeAdMobSignature(
   ) {
     throw createError(
       "AdMob SSV signature could not be decoded.",
+      "ADMOB_INVALID_SIGNATURE",
+    );
+  }
+
+
+  // ----------------------------------------------------------
+  // P-256 DER SIGNATURE SIZE
+  // ----------------------------------------------------------
+
+  if (
+    signatureBuffer.length <
+      MIN_ECDSA_P256_DER_SIGNATURE_BYTES ||
+    signatureBuffer.length >
+      MAX_ECDSA_P256_DER_SIGNATURE_BYTES
+  ) {
+    throw createError(
+      "AdMob SSV signature has an invalid ECDSA P-256 DER length.",
       "ADMOB_INVALID_SIGNATURE",
     );
   }
