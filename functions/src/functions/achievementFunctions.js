@@ -13,725 +13,691 @@
 // Asiakas ei lue achievements-kokoelmaa suoraan.
 //
 // Firestore:
-//
 // users/{userId}/achievements/{achievementId}
 //
-// Tämä tiedosto:
-//
-// 🏆 palauttaa käyttäjän achievementit
-// 📊 palauttaa valmistuneiden achievementien määrän
-// 🔐 varmistaa käyttäjän autentikoinnin
-// 🛡️ normalisoi Firestore-datan turvallisesti
-//
-// Tämä tiedosto EI:
-//
-// ❌ anna achievement-palkkioita
-// ❌ muuta STL-saldoa
-// ❌ muuta mining-tilaa
-// ❌ käsittele AdMob SSV:tä
-//
 // ============================================================
-
-// ============================================================
-// 🔥 FIREBASE FUNCTIONS
+//
+// ACHIEVEMENT DEFINITIONS:
+//
+// first_paw
+//    Target: 1
+//    Reward: 2 STL
+//
+// little_miner
+//    Target: 10
+//    Reward: 5 STL
+//
+// stl_hunter
+//    Target: 100
+//    Reward: 10 STL
+//
+// hot_streak
+//    Target: 7
+//    Reward: 50 STL
+//
+// stellas_friend
+//    Target: 10
+//    Reward: 30 STL
+//
+// IMPORTANT:
+//
+// Achievement definitions are centralized here.
+//
+// miningFunctions.js will use these definitions instead
+// of maintaining a second copy of target/reward values.
+//
 // ============================================================
 
 const {
-onCall,
-HttpsError,
-} = require(
-"firebase-functions/v2/https",
-);
+  onCall,
+  HttpsError,
+} = require("firebase-functions/v2/https");
+
+const {
+  getFirestore,
+} = require("firebase-admin/firestore");
+
 
 // ============================================================
 // 🔥 FIRESTORE
 // ============================================================
 
-const {
-getFirestore,
-} = require(
-"firebase-admin/firestore",
-);
-
 const db =
-getFirestore();
+  getFirestore();
+
 
 // ============================================================
 // 🏆 ACHIEVEMENT DEFINITIONS
 // ============================================================
 //
-// Näiden arvojen täytyy vastata miningFunctions.js:n
-// achievement-logiikkaa.
+// Keep all achievement configuration in ONE place.
 //
-// first_paw
-// → target 1
-// → reward 2 STL
-//
-// little_miner
-// → target 10
-// → reward 5 STL
-//
-// stl_hunter
-// → target 100
-// → reward 10 STL
-//
-// hot_streak
-// → target 7
-// → reward 50 STL
-//
-// stellas_friend
-// → target 10
-// → reward 30 STL
+// Do not duplicate target/reward values in other functions.
 //
 // ============================================================
 
-const achievements = [
-{
-id:
-"first_paw",
+const achievements = Object.freeze([
+  Object.freeze({
+    id: "first_paw",
+    target: 1,
+    reward: 2,
+  }),
 
-target:
-  1,
+  Object.freeze({
+    id: "little_miner",
+    target: 10,
+    reward: 5,
+  }),
 
-reward:
-  2,
+  Object.freeze({
+    id: "stl_hunter",
+    target: 100,
+    reward: 10,
+  }),
 
-},
+  Object.freeze({
+    id: "hot_streak",
+    target: 7,
+    reward: 50,
+  }),
 
-{
-id:
-"little_miner",
+  Object.freeze({
+    id: "stellas_friend",
+    target: 10,
+    reward: 30,
+  }),
+]);
 
-target:
-  10,
-
-reward:
-  5,
-
-},
-
-{
-id:
-"stl_hunter",
-
-target:
-  100,
-
-reward:
-  10,
-
-},
-
-{
-id:
-"hot_streak",
-
-target:
-  7,
-
-reward:
-  50,
-
-},
-
-{
-id:
-"stellas_friend",
-
-target:
-  10,
-
-reward:
-  30,
-
-},
-];
 
 // ============================================================
-// 🔐 USER VALIDATION
+// 🔎 ACHIEVEMENT DEFINITION LOOKUP
 // ============================================================
 
-function requireUser(
-request,
+function getAchievementDefinition(
+  achievementId
 ) {
-const uid =
-request.auth?.uid;
+  if (
+    typeof achievementId !== "string"
+  ) {
+    return null;
+  }
 
-if (
-typeof uid !==
-"string" ||
-uid.trim().length ===
-0
-) {
-throw new HttpsError(
-"unauthenticated",
-"Kirjautuminen vaaditaan.",
-);
+  const normalizedId =
+    achievementId.trim();
+
+  if (!normalizedId) {
+    return null;
+  }
+
+  return (
+    achievements.find(
+      (achievement) =>
+        achievement.id ===
+        normalizedId
+    ) || null
+  );
 }
 
-return uid.trim();
+
+// ============================================================
+// 📋 GET ACHIEVEMENT DEFINITIONS
+// ============================================================
+//
+// Returns a safe copy so callers cannot modify the canonical
+// achievement configuration.
+//
+// This is exported for server-side functions such as
+// miningFunctions.js.
+//
+// ============================================================
+
+function getAchievementDefinitions() {
+  return achievements.map(
+    (achievement) => ({
+      ...achievement,
+    })
+  );
 }
+
+
+// ============================================================
+// 👤 USER VALIDATION
+// ============================================================
+
+function requireUser(request) {
+  const uid =
+    request.auth?.uid;
+
+  if (!uid) {
+    throw new HttpsError(
+      "unauthenticated",
+      "Kirjautuminen vaaditaan."
+    );
+  }
+
+  return uid;
+}
+
 
 // ============================================================
 // 📁 ACHIEVEMENT COLLECTION
 // ============================================================
 
 function getAchievementCollection(
-uid,
+  uid
 ) {
-return db
-.collection(
-"users",
-)
-.doc(
-uid,
-)
-.collection(
-"achievements",
-);
+  return db
+    .collection("users")
+    .doc(uid)
+    .collection("achievements");
 }
 
+
 // ============================================================
-// 🧮 SAFE INTEGER
+// 🔢 SAFE INTEGER
 // ============================================================
 
 function getSafeInteger(
-value,
-fallback = 0,
+  value,
+  fallback = 0
 ) {
-const number =
-Number(value);
+  const number =
+    Number(value);
 
-return Number.isFinite(
-number,
-)
-? Math.floor(number)
-: fallback;
+  if (
+    !Number.isFinite(number)
+  ) {
+    return fallback;
+  }
+
+  return Math.floor(number);
 }
 
-// ============================================================
-// 🧮 SAFE NON-NEGATIVE INTEGER
-// ============================================================
-
-function getSafeNonNegativeInteger(
-value,
-fallback = 0,
-) {
-const number =
-getSafeInteger(
-value,
-fallback,
-);
-
-return Math.max(
-0,
-number,
-);
-}
 
 // ============================================================
-// 🏆 NORMALIZE ACHIEVEMENT
+// 📊 NORMALIZE ACHIEVEMENT
 // ============================================================
 //
-// Firestore-datan täytyy aina kulkea tämän normalisoinnin
-// läpi ennen kuin se palautetaan Flutterille.
+// Firestore data is never trusted blindly.
 //
-// Tärkeää:
+// Target and reward come from the canonical server-side
+// definition whenever possible.
 //
-// Jos progress >= target,
-// achievement käsitellään avatuksi vaikka vanha Firestore
-// dokumentti ei vielä sisältäisi:
-//
-// unlocked: true
-//
-// Tämä pitää lukutilan yhdenmukaisena mining-logiikan kanssa.
+// This prevents a client-created or manually modified
+// Firestore document from changing the official achievement
+// target or reward.
 //
 // ============================================================
 
 function normalizeAchievement(
-definition,
-data,
+  definition,
+  data
 ) {
-const safeData =
-data &&
-typeof data ===
-"object"
-? data
-: {};
+  const source =
+    data || {};
 
-// ==========================================================
-// 📊 PROGRESS
-// ==========================================================
+  const progress =
+    Math.max(
+      0,
+      getSafeInteger(
+        source.progress,
+        0
+      )
+    );
 
-const progress =
-getSafeNonNegativeInteger(
-safeData.progress,
-0,
-);
+  const target =
+    Math.max(
+      1,
+      getSafeInteger(
+        definition.target,
+        1
+      )
+    );
 
-// ==========================================================
-// 🎯 TARGET
-// ==========================================================
+  const reward =
+    Math.max(
+      0,
+      getSafeInteger(
+        definition.reward,
+        0
+      )
+    );
 
-const storedTarget =
-getSafeNonNegativeInteger(
-safeData.target,
-0,
-);
+  const normalizedProgress =
+    Math.min(
+      progress,
+      target
+    );
 
-const target =
-storedTarget > 0
-? storedTarget
-: definition.target;
+  const unlocked =
+    source.unlocked === true ||
+    normalizedProgress >=
+      target;
 
-// ==========================================================
-// 🎁 REWARD
-// ==========================================================
+  const rewardClaimed =
+    source.rewardClaimed === true;
 
-const storedReward =
-getSafeNonNegativeInteger(
-safeData.reward,
-0,
-);
+  return {
+    achievementId:
+      definition.id,
 
-const reward =
-storedReward > 0
-? storedReward
-: definition.reward;
+    progress:
+      normalizedProgress,
 
-// ==========================================================
-// 🔓 UNLOCKED
-// ==========================================================
-//
-// Achievement on avattu joko:
-//
-// 1. Firestoressa olevan unlocked-arvon perusteella
-// 2. saavuttamalla targetin
-//
-// ==========================================================
-
-const unlocked =
-safeData.unlocked === true ||
-progress >= target;
-
-// ==========================================================
-// 🎁 REWARD CLAIMED
-// ==========================================================
-
-const rewardClaimed =
-safeData.rewardClaimed === true;
-
-// ==========================================================
-// 📦 NORMALIZED RESULT
-// ==========================================================
-
-return {
-achievementId:
-definition.id,
-
-progress:
-  Math.min(
-    progress,
     target,
-  ),
 
-target,
+    reward,
 
-reward,
+    unlocked,
 
-unlocked,
+    rewardClaimed,
 
-rewardClaimed,
+    unlockedAt:
+      source.unlockedAt ??
+      null,
 
-unlockedAt:
-  safeData.unlockedAt ??
-  null,
+    rewardClaimedAt:
+      source.rewardClaimedAt ??
+      null,
 
-rewardClaimedAt:
-  safeData.rewardClaimedAt ??
-  null,
-
-updatedAt:
-  safeData.updatedAt ??
-  null,
-
-};
+    updatedAt:
+      source.updatedAt ??
+      null,
+  };
 }
+
+
+// ============================================================
+// 📝 BUILD INITIAL ACHIEVEMENT
+// ============================================================
+
+function buildInitialAchievement(
+  definition,
+  now
+) {
+  return {
+    achievementId:
+      definition.id,
+
+    progress: 0,
+
+    target:
+      definition.target,
+
+    reward:
+      definition.reward,
+
+    unlocked: false,
+
+    rewardClaimed: false,
+
+    unlockedAt: null,
+
+    rewardClaimedAt: null,
+
+    updatedAt:
+      now,
+  };
+}
+
+
+// ============================================================
+// 🔧 BUILD SERVER NORMALIZED UPDATE
+// ============================================================
+//
+// Existing achievement documents are normalized against the
+// canonical server-side definition.
+//
+// Existing progress is preserved.
+//
+// Existing reward claim state is preserved.
+//
+// ============================================================
+
+function buildNormalizedUpdate(
+  definition,
+  data,
+  now
+) {
+  const normalized =
+    normalizeAchievement(
+      definition,
+      data
+    );
+
+  const update = {
+    achievementId:
+      definition.id,
+
+    progress:
+      normalized.progress,
+
+    target:
+      definition.target,
+
+    reward:
+      definition.reward,
+
+    unlocked:
+      normalized.unlocked,
+
+    rewardClaimed:
+      normalized.rewardClaimed,
+
+    updatedAt:
+      now,
+  };
+
+  if (
+    normalized.unlocked
+  ) {
+    update.unlockedAt =
+      normalized.unlockedAt ||
+      now;
+  } else {
+    update.unlockedAt =
+      normalized.unlockedAt ??
+      null;
+  }
+
+  update.rewardClaimedAt =
+    normalized.rewardClaimedAt ??
+    null;
+
+  return update;
+}
+
 
 // ============================================================
 // 📖 GET ACHIEVEMENTS
 // ============================================================
 //
-// Hakee kaikki käyttäjän achievementit.
+// Hakee kaikki käyttäjän achievements.
 //
-// Puuttuvat achievementit alustetaan palvelimella.
+// Puuttuvat achievements alustetaan palvelimella.
 //
-// Flutter ei kirjoita achievements-kokoelmaa suoraan.
+// Flutter ei kirjoita achievements-kokoelmaan suoraan.
 //
 // ============================================================
 
-const getAchievements =
-onCall(
-{
-region:
-"us-central1",
-},
+exports.getAchievements =
+  onCall(
+    {
+      region:
+        "us-central1",
+    },
 
-async (
-  request,
-) => {
-  const uid =
-    requireUser(
-      request,
-    );
-
-
-  try {
-    // ====================================================
-    // 📁 USER COLLECTION
-    // ====================================================
-
-    const collection =
-      getAchievementCollection(
-        uid,
-      );
-
-
-    // ====================================================
-    // 📥 READ EXISTING ACHIEVEMENTS
-    // ====================================================
-
-    const snapshot =
-      await collection.get();
-
-
-    const existing =
-      new Map();
-
-
-    for (
-      const document of
-        snapshot.docs
-    ) {
-      existing.set(
-        document.id,
-        document.data() ||
-          {},
-      );
-    }
-
-
-    // ====================================================
-    // 📝 BATCH FOR MISSING ACHIEVEMENTS
-    // ====================================================
-
-    const batch =
-      db.batch();
-
-
-    const result =
-      [];
-
-
-    let batchHasWrites =
-      false;
-
-
-    // ====================================================
-    // 🏆 PROCESS ALL DEFINITIONS
-    // ====================================================
-
-    for (
-      const definition of
-        achievements
-    ) {
-      const existingData =
-        existing.get(
-          definition.id,
-        );
-
-
-      // ==================================================
-      // 🆕 MISSING ACHIEVEMENT
-      // ==================================================
-
-      if (
-        !existingData
-      ) {
-        const document =
-          collection.doc(
-            definition.id,
+    async (request) => {
+      try {
+        const uid =
+          requireUser(
+            request
           );
 
+        const collection =
+          getAchievementCollection(
+            uid
+          );
 
-        const initialData =
-          {
-            achievementId:
-              definition.id,
+        const snapshot =
+          await collection.get();
 
-            progress:
-              0,
+        const existing =
+          new Map();
 
-            target:
-              definition.target,
+        for (
+          const document of snapshot.docs
+        ) {
+          existing.set(
+            document.id,
+            document.data() || {}
+          );
+        }
 
-            reward:
-              definition.reward,
+        const batch =
+          db.batch();
 
-            unlocked:
-              false,
+        const now =
+          new Date();
 
-            rewardClaimed:
-              false,
+        const result = [];
 
-            updatedAt:
-              new Date(),
-          };
+        let batchHasWrites =
+          false;
 
+        for (
+          const definition of achievements
+        ) {
+          const existingData =
+            existing.get(
+              definition.id
+            );
 
-        batch.set(
-          document,
-          initialData,
+          const document =
+            collection.doc(
+              definition.id
+            );
+
+          if (!existingData) {
+            const initialData =
+              buildInitialAchievement(
+                definition,
+                now
+              );
+
+            batch.set(
+              document,
+              initialData
+            );
+
+            batchHasWrites =
+              true;
+
+            result.push(
+              initialData
+            );
+
+            continue;
+          }
+
+          const normalized =
+            buildNormalizedUpdate(
+              definition,
+              existingData,
+              now
+            );
+
+          const current =
+            normalizeAchievement(
+              definition,
+              existingData
+            );
+
+          const needsUpdate =
+            current.progress !==
+              normalized.progress ||
+            current.target !==
+              normalized.target ||
+            current.reward !==
+              normalized.reward ||
+            current.unlocked !==
+              normalized.unlocked ||
+            current.rewardClaimed !==
+              normalized.rewardClaimed ||
+            (
+              normalized.unlockedAt &&
+              !current.unlockedAt
+            );
+
+          if (needsUpdate) {
+            batch.set(
+              document,
+              normalized,
+              {
+                merge: true,
+              }
+            );
+
+            batchHasWrites =
+              true;
+          }
+
+          result.push(
+            normalized
+          );
+        }
+
+        if (batchHasWrites) {
+          await batch.commit();
+        }
+
+        return {
+          success: true,
+
+          achievements:
+            result,
+
+          completed:
+            result.filter(
+              (achievement) =>
+                achievement.unlocked ===
+                true
+            ).length,
+
+          total:
+            achievements.length,
+        };
+      } catch (error) {
+        console.error(
+          "getAchievements error:",
+          error
         );
 
+        if (
+          error instanceof HttpsError
+        ) {
+          throw error;
+        }
 
-        batchHasWrites =
-          true;
-
-
-        result.push(
-          initialData,
+        throw new HttpsError(
+          "internal",
+          "🐱 Achievements-tietojen lataaminen epäonnistui."
         );
-
-        continue;
-      }
-
-
-      // ==================================================
-      // 📊 EXISTING ACHIEVEMENT
-      // ==================================================
-
-      result.push(
-        normalizeAchievement(
-          definition,
-          existingData,
-        ),
-      );
-    }
-
-
-    // ====================================================
-    // 💾 CREATE MISSING DOCUMENTS
-    // ====================================================
-
-    if (
-      batchHasWrites
-    ) {
-      await batch.commit();
-    }
-
-
-    // ====================================================
-    // 📤 RESPONSE
-    // ====================================================
-
-    return {
-      success:
-        true,
-
-      achievements:
-        result,
-    };
-  } catch (
-    error
-  ) {
-    // ====================================================
-    // ❌ ERROR
-    // ====================================================
-
-    console.error(
-      "getAchievements error:",
-      error,
-    );
-
-
-    if (
-      error instanceof
-      HttpsError
-    ) {
-      throw error;
-    }
-
-
-    throw new HttpsError(
-      "internal",
-      "Stelluriini-achievementien lataaminen epäonnistui.",
-    );
-  }
-},
-
-);
-
-// ============================================================
-// 📊 GET ACHIEVEMENTS COMPLETED
-// ============================================================
-//
-// Palauttaa:
-//
-// completed
-// total
-//
-// Käyttää samaa unlocked-logiikkaa kuin getAchievements():
-//
-// unlocked === true
-// TAI
-// progress >= target
-//
-// Näin completed-määrä ei jää virheellisesti nollaan,
-// jos Firestore-dokumentin unlocked-kenttä ei ole vielä
-// päivittynyt vaikka target on jo saavutettu.
-//
-// ============================================================
-
-const getAchievementsCompleted =
-onCall(
-{
-region:
-"us-central1",
-},
-
-async (
-  request,
-) => {
-  const uid =
-    requireUser(
-      request,
-    );
-
-
-  try {
-    // ====================================================
-    // 📁 USER COLLECTION
-    // ====================================================
-
-    const collection =
-      getAchievementCollection(
-        uid,
-      );
-
-
-    // ====================================================
-    // 📥 READ ACHIEVEMENTS
-    // ====================================================
-
-    const snapshot =
-      await collection.get();
-
-
-    const existing =
-      new Map();
-
-
-    for (
-      const document of
-        snapshot.docs
-    ) {
-      existing.set(
-        document.id,
-        document.data() ||
-          {},
-      );
-    }
-
-
-    // ====================================================
-    // 📊 COUNT COMPLETED
-    // ====================================================
-
-    let completed =
-      0;
-
-
-    for (
-      const definition of
-        achievements
-    ) {
-      const data =
-        existing.get(
-          definition.id,
-        );
-
-
-      if (
-        !data
-      ) {
-        continue;
-      }
-
-
-      const normalized =
-        normalizeAchievement(
-          definition,
-          data,
-        );
-
-
-      if (
-        normalized.unlocked
-      ) {
-        completed++;
       }
     }
+  );
 
 
-    // ====================================================
-    // 📤 RESPONSE
-    // ====================================================
+// ============================================================
+// 📊 GET ACHIEVEMENT COMPLETION COUNT
+// ============================================================
+//
+// Palauttaa käyttäjän avattujen achievementien määrän.
+//
+// ============================================================
 
-    return {
-      success:
-        true,
+exports.getAchievementsCompleted =
+  onCall(
+    {
+      region:
+        "us-central1",
+    },
 
-      completed,
+    async (request) => {
+      try {
+        const uid =
+          requireUser(
+            request
+          );
 
-      total:
-        achievements.length,
-    };
-  } catch (
-    error
-  ) {
-    // ====================================================
-    // ❌ ERROR
-    // ====================================================
+        const collection =
+          getAchievementCollection(
+            uid
+          );
 
-    console.error(
-      "getAchievementsCompleted error:",
-      error,
-    );
+        const snapshot =
+          await collection.get();
 
+        const unlockedIds =
+          new Set();
 
-    if (
-      error instanceof
-      HttpsError
-    ) {
-      throw error;
+        for (
+          const document of snapshot.docs
+        ) {
+          const definition =
+            getAchievementDefinition(
+              document.id
+            );
+
+          if (!definition) {
+            continue;
+          }
+
+          const normalized =
+            normalizeAchievement(
+              definition,
+              document.data() || {}
+            );
+
+          if (
+            normalized.unlocked
+          ) {
+            unlockedIds.add(
+              definition.id
+            );
+          }
+        }
+
+        return {
+          success: true,
+
+          completed:
+            unlockedIds.size,
+
+          total:
+            achievements.length,
+        };
+      } catch (error) {
+        console.error(
+          "getAchievementsCompleted error:",
+          error
+        );
+
+        if (
+          error instanceof HttpsError
+        ) {
+          throw error;
+        }
+
+        throw new HttpsError(
+          "internal",
+          "🐱 Achievementien valmistumistietojen lataaminen epäonnistui."
+        );
+      }
     }
+  );
 
-
-    throw new HttpsError(
-      "internal",
-      "Stelluriini-achievementien valmistuneiden määrän lataaminen epäonnistui.",
-    );
-  }
-},
-
-);
 
 // ============================================================
-// 📦 EXPORTS
+// 📦 SERVER-SIDE EXPORTS
+// ============================================================
+//
+// These exports are intentionally available for other
+// backend functions.
+//
+// miningFunctions.js can import:
+//
+// const {
+//   getAchievementDefinition,
+//   getAchievementDefinitions,
+// } = require("./achievementFunctions");
+//
+// This keeps achievement target/reward values centralized.
+//
 // ============================================================
 
-module.exports = {
-getAchievements,
-getAchievementsCompleted,
-};
+module.exports.getAchievementDefinition =
+  getAchievementDefinition;
+
+module.exports.getAchievementDefinitions =
+  getAchievementDefinitions;
