@@ -354,12 +354,13 @@ function getSafeMiningRate() {
 //
 // TÄRKEÄÄ:
 //
-// Tämä funktio ei rajoita aikaa MINING_DURATION_MS-arvoon.
+// Tämä funktio ei rajoita aikaa
+// MINING_DURATION_MS-arvoon.
 //
 // Kutsuvan toiminnon täytyy antaa oikea aikaväli.
 //
-// Tämä on tarkoituksellista, koska samaa funktiota käytetään
-// myös Power Boost -ajan laskemiseen.
+// Tämä on tarkoituksellista, koska samaa funktiota
+// voidaan käyttää myös Power Boost -ajan laskemiseen.
 //
 // ============================================================
 
@@ -479,7 +480,7 @@ function getMiningEndTime(
 // ⚡ GET MINING HASH RATE
 // ============================================================
 //
-// Mining-syklin Hash Rate.
+// Palauttaa Mining-syklille tallennetun Hash Raten.
 //
 // Ensisijainen kenttä:
 //
@@ -495,6 +496,15 @@ function getMiningEndTime(
 //
 // Se vain lukee olemassa olevan arvon.
 //
+// Jos miningHashRate-kenttä on olemassa ja sen arvo
+// on kelvollinen, sitä käytetään aina.
+//
+// Myös arvo 0 on kelvollinen arvo eikä sitä korvata
+// hashRate-fallbackilla.
+//
+// Tämä on tärkeää, jotta Mining-syklin oma Hash Rate
+// pysyy muuttumattomana koko syklin ajan.
+//
 // ============================================================
 
 function getMiningHashRate(
@@ -508,16 +518,50 @@ function getMiningHashRate(
     return 0;
   }
 
-  const miningHashRate =
-    getSafeHashRate(
-      data.miningHashRate,
-    );
+
+  // ==========================================================
+  // ⚡ MINING CYCLE HASH RATE
+  // ==========================================================
+  //
+  // Jos kenttä on olemassa, käytetään sitä.
+  //
+  // 0 on tässä tarkoituksellinen ja kelvollinen arvo.
+  //
+  // ==========================================================
 
   if (
-    miningHashRate > 0
+    Object.prototype.hasOwnProperty.call(
+      data,
+      "miningHashRate",
+    )
   ) {
-    return miningHashRate;
+    const rawMiningHashRate =
+      data.miningHashRate;
+
+    const number =
+      Number(
+        rawMiningHashRate,
+      );
+
+    if (
+      Number.isFinite(
+        number,
+      ) &&
+      number >= 0
+    ) {
+      return number;
+    }
   }
+
+
+  // ==========================================================
+  // 🔄 COMPATIBILITY FALLBACK
+  // ==========================================================
+  //
+  // Käytetään vanhaa hashRate-kenttää vain,
+  // jos miningHashRate ei ole käytettävissä.
+  //
+  // ==========================================================
 
   return getSafeHashRate(
     data.hashRate,
@@ -574,7 +618,7 @@ function calculateMiningStatus(
   //
   // Ensisijaisesti käytetään miningHashRate-kenttää.
   //
-  // hashRate toimii yhteensopivuus-fallbackina.
+  // hashRate toimii vain yhteensopivuus-fallbackina.
   //
   // Daily Streakiä ei käsitellä täällä.
   //
