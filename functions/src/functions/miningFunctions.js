@@ -278,23 +278,6 @@ function getRewardConfiguration(rewardPurpose) {
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
-//
-// The query is ordered by createdAt descending.
-//
-// The final candidate validation is still performed locally.
-//
-// IMPORTANT:
-//
-// Do not limit this query to MAX_ADS_PER_DAY.
-//
-// A 24-hour mining cycle can cross a UTC date boundary.
-// Therefore one mining cycle can legitimately contain rewards
-// belonging to two different UTC calendar days.
-//
-// The query limit is therefore based on the maximum number of
-// possible boosts during one mining cycle, plus a safety margin.
-//
-// ============================================================
 
 const ADMOB_REWARD_QUERY_LIMIT = 100;
 
@@ -1117,13 +1100,6 @@ function getAdStatus(
 // ============================================================
 // ⛏️ CURRENT CYCLE HASH RATE
 // ============================================================
-//
-// Once a valid mining cycle exists, its Hash Rate belongs
-// exclusively to that cycle.
-//
-// Daily Hash Rate is used only when a NEW cycle is started.
-//
-// ============================================================
 
 function getMiningHashRate(
   data,
@@ -1161,13 +1137,6 @@ function getMiningHashRate(
 // ============================================================
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
-//
-// Historical calculations NEVER invent a Hash Rate.
-//
-// If the historical cycle has no valid miningHashRate,
-// return 0 instead of inheriting today's Daily Hash Rate.
-//
-// ============================================================
 
 function getHistoricalMiningHashRate(data) {
   const stored =
@@ -1196,16 +1165,6 @@ function getHistoricalMiningHashRate(data) {
 
 // ============================================================
 // 📺 BOOST HISTORY
-// ============================================================
-//
-// A mining cycle can cross a UTC midnight.
-//
-// Therefore MAX_ADS_PER_DAY is NOT a safe query limit for a
-// complete mining cycle.
-//
-// We calculate a conservative maximum number of possible
-// Power Boost history entries for the entire cycle.
-//
 // ============================================================
 
 function getMaximumBoostHistoryEntries() {
@@ -1814,12 +1773,6 @@ async function calculateCurrentUnclaimedMining(
     };
   }
 
-  // ----------------------------------------------------------
-  // EXISTING CYCLE ONLY
-  //
-  // Never use today's Daily Hash Rate here.
-  // ----------------------------------------------------------
-
   const miningHashRate =
     getHistoricalMiningHashRate(
       data
@@ -1914,11 +1867,6 @@ const getMiningStatus =
         const miningWindow =
           getMiningWindow(data);
 
-        // ------------------------------------------------------
-        // Existing cycle uses its own Hash Rate.
-        // New/no cycle uses current Daily Hash Rate.
-        // ------------------------------------------------------
-
         const miningHashRate =
           miningWindow.valid
             ? getHistoricalMiningHashRate(
@@ -1965,6 +1913,20 @@ const getMiningStatus =
             ? miningHashRate +
               AD_HASH_RATE_BONUS
             : miningHashRate;
+
+        // ------------------------------------------------------
+        // FIX:
+        // estimatedTotal must be calculated before it is
+        // returned. It represents the current stored mining
+        // balance plus currently unclaimed mining.
+        // ------------------------------------------------------
+
+        const estimatedTotal =
+          Math.max(
+            0,
+            miningBalance +
+              currentMining.unclaimedMining
+          );
 
         const miningPerHour =
           effectiveHashRate *
@@ -2387,10 +2349,6 @@ const claimMining =
                 transactionNow
               );
 
-            // ------------------------------------------------
-            // Another request may have started mining.
-            // ------------------------------------------------
-
             if (
               existingStatus.miningActive
             ) {
@@ -2510,15 +2468,6 @@ const claimMining =
 
             // ------------------------------------------------
             // COMPLETE PREVIOUS CYCLE
-            //
-            // ONLY its own Hash Rate is used.
-            //
-            // IMPORTANT:
-            //
-            // If an expired cycle has an invalid Hash Rate,
-            // do NOT silently replace it with a new rate.
-            // Refuse the operation instead so the cycle cannot
-            // accidentally be calculated with the wrong rate.
             // ------------------------------------------------
 
             if (
