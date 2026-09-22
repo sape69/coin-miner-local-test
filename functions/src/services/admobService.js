@@ -59,10 +59,12 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// Google AdMob SSV public keys voivat vaihtua.
+// Google suosittelee public key -avainten välimuistia.
 //
-// Avaimia ei pidetä cachessa yli 24 tuntia.
-// Käytämme 23 tuntia.
+// Avaimia ei saa pitää cachessa yli 24 tuntia.
+//
+// Käytämme 23 tuntia, jolloin jää yhden tunnin
+// turvamarginaali ennen Googlen 24 tunnin rajaa.
 //
 // ============================================================
 
@@ -118,19 +120,31 @@ const MAX_KEY_ID_LENGTH =
 // ⏱️ TIMESTAMP
 // ============================================================
 //
-// AdMob SSV callback voi saapua viiveellä.
+// Emme aseta tähän lyhyttä callbackin vanhenemisrajaa.
 //
-// Emme käytä lyhyttä callback-expiration-rajaa.
-// Tarkistamme kuitenkin tulevaisuuteen sijoittuvan
-// timestampin.
+// AdMobin SSV callback voi saapua palvelimelle viiveellä.
 //
-// Replay-suojaus tehdään transaction_id:n avulla
-// adFunctions.js:n Firestore-transaktiossa.
+// Tarkistamme kuitenkin, ettei timestamp ole
+// tulevaisuudessa yli sallitun kellopoikkeaman.
+//
+// Replay-estäminen tehdään transaction_id:n avulla
+// adFunctions.js:ssä.
 //
 // ============================================================
 
 const TIMESTAMP_FUTURE_TOLERANCE_MS =
   5 * 60 * 1000;
+
+
+// ============================================================
+// 🎯 VALID REWARD PURPOSES
+// ============================================================
+
+const VALID_REWARD_PURPOSES =
+  new Set([
+    "mining_start",
+    "power_boost",
+  ]);
 
 
 // ============================================================
@@ -193,7 +207,9 @@ function createError(
 // 🌐 FETCH JSON
 // ============================================================
 //
-// Public key response luetaan rajatulla koolla.
+// Käytetään Node.js:n native fetchia.
+//
+// Public key -response rajataan kokonsa puolesta.
 //
 // ============================================================
 
@@ -269,9 +285,9 @@ async function fetchJson(
   }
 
 
-  // ==========================================================
-  // RESPONSE SIZE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // RESPONSE SIZE CHECK
+  // ----------------------------------------------------------
 
   const contentLength =
     response.headers &&
@@ -305,9 +321,9 @@ async function fetchJson(
   }
 
 
-  // ==========================================================
-  // RESPONSE BODY
-  // ==========================================================
+  // ----------------------------------------------------------
+  // READ RESPONSE
+  // ----------------------------------------------------------
 
   let text;
 
@@ -326,6 +342,11 @@ async function fetchJson(
     );
   }
 
+
+  // ----------------------------------------------------------
+  // RESPONSE VALIDATION
+  // ----------------------------------------------------------
+
   if (
     typeof text !==
       "string" ||
@@ -341,9 +362,9 @@ async function fetchJson(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // JSON
-  // ==========================================================
+  // ----------------------------------------------------------
 
   try {
     return JSON.parse(
@@ -366,19 +387,6 @@ async function fetchJson(
 // ============================================================
 // 🔑 LOAD ADMOB PUBLIC KEYS
 // ============================================================
-//
-// forceRefresh=true ohittaa olemassa olevan cachen.
-//
-// Samanaikaiset normaalit fetchit yhdistetään yhdeksi
-// promiseksi.
-//
-// Tärkeä ero:
-//
-// Jos forceRefresh pyydetään, emme palauta olemassa olevaa
-// fetch-promisea sokeasti, jos se syntyi ennen forced refreshiä.
-// Näin key rotation voidaan oikeasti käsitellä.
-//
-// ============================================================
 
 async function getAdMobPublicKeys(
   forceRefresh = false,
@@ -387,9 +395,9 @@ async function getAdMobPublicKeys(
     Date.now();
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // NORMAL CACHE
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (
     !forceRefresh &&
@@ -403,23 +411,22 @@ async function getAdMobPublicKeys(
   }
 
 
-  // ==========================================================
-  // FETCH LOCK
-  // ==========================================================
+  // ----------------------------------------------------------
+  // ESTÄ USEAT SAMANAIKAISET FETCHIT
+  // ----------------------------------------------------------
 
   if (
-    publicKeyFetchPromise &&
-    !forceRefresh
+    publicKeyFetchPromise
   ) {
     return publicKeyFetchPromise;
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // FETCH
-  // ==========================================================
+  // ----------------------------------------------------------
 
-  const fetchPromise =
+  publicKeyFetchPromise =
     (async () => {
       const data =
         await fetchJson(
@@ -427,9 +434,9 @@ async function getAdMobPublicKeys(
         );
 
 
-      // ======================================================
+      // ------------------------------------------------------
       // RESPONSE STRUCTURE
-      // ======================================================
+      // ------------------------------------------------------
 
       if (
         !data ||
@@ -444,12 +451,13 @@ async function getAdMobPublicKeys(
       }
 
 
-      // ======================================================
-      // BUILD KEY MAP
-      // ======================================================
-
       const keys =
         new Map();
+
+
+      // ------------------------------------------------------
+      // PARSE KEYS
+      // ------------------------------------------------------
 
       for (
         const key of data.keys
@@ -464,6 +472,7 @@ async function getAdMobPublicKeys(
           continue;
         }
 
+
         const keyId =
           String(
             key.keyId,
@@ -473,9 +482,9 @@ async function getAdMobPublicKeys(
           key.pem.trim();
 
 
-        // ====================================================
+        // ----------------------------------------------------
         // KEY ID
-        // ====================================================
+        // ----------------------------------------------------
 
         if (
           keyId.length ===
@@ -490,9 +499,9 @@ async function getAdMobPublicKeys(
         }
 
 
-        // ====================================================
+        // ----------------------------------------------------
         // PEM
-        // ====================================================
+        // ----------------------------------------------------
 
         if (
           pem.length ===
@@ -502,15 +511,16 @@ async function getAdMobPublicKeys(
         }
 
 
-        // ====================================================
+        // ----------------------------------------------------
         // VALIDATE PUBLIC KEY
-        // ====================================================
+        // ----------------------------------------------------
 
         try {
           const publicKey =
             crypto.createPublicKey(
               pem,
             );
+
 
           if (
             publicKey.asymmetricKeyType !==
@@ -530,49 +540,15 @@ async function getAdMobPublicKeys(
           }
 
 
-          // ==================================================
-          // VALID EC CURVE
-          // ==================================================
-          //
-          // AdMob SSV käyttää ECDSA-pohjaista allekirjoitusta.
-          //
-          // Emme hyväksy mielivaltaista EC-avainta.
-          //
-          // P-256 on AdMob SSV:n odotettu käyrä.
-          //
-          // ==================================================
-
-          const details =
-            publicKey.asymmetricKeyDetails;
-
-          if (
-            details &&
-            details.namedCurve &&
-            details.namedCurve !==
-              "prime256v1"
-          ) {
-            console.error(
-              "🐱 Unsupported AdMob EC curve skipped.",
-              {
-                keyId,
-
-                curve:
-                  details.namedCurve,
-              },
-            );
-
-            continue;
-          }
-
-
-          // ==================================================
-          // STORE
-          // ==================================================
+          // --------------------------------------------------
+          // STORE VALID PUBLIC KEY
+          // --------------------------------------------------
 
           keys.set(
             keyId,
             pem,
           );
+
         } catch (error) {
           console.error(
             "🐱 Invalid AdMob public key skipped.",
@@ -584,9 +560,9 @@ async function getAdMobPublicKeys(
       }
 
 
-      // ======================================================
-      // EMPTY
-      // ======================================================
+      // ------------------------------------------------------
+      // NO KEYS
+      // ------------------------------------------------------
 
       if (
         keys.size ===
@@ -599,15 +575,16 @@ async function getAdMobPublicKeys(
       }
 
 
-      // ======================================================
-      // CACHE
-      // ======================================================
+      // ------------------------------------------------------
+      // UPDATE CACHE
+      // ------------------------------------------------------
 
       cachedPublicKeys =
         keys;
 
       cachedPublicKeysAt =
         Date.now();
+
 
       console.log(
         "🐱 AdMob public keys loaded.",
@@ -622,45 +599,17 @@ async function getAdMobPublicKeys(
         },
       );
 
+
       return keys;
     })();
 
 
-  // ==========================================================
-  // SAVE / CLEAR FETCH PROMISE
-  // ==========================================================
-
-  if (
-    !publicKeyFetchPromise
-  ) {
+  try {
+    return await publicKeyFetchPromise;
+  } finally {
     publicKeyFetchPromise =
-      fetchPromise;
-
-    try {
-      return await fetchPromise;
-    } finally {
-      if (
-        publicKeyFetchPromise ===
-        fetchPromise
-      ) {
-        publicKeyFetchPromise =
-          null;
-      }
-    }
+      null;
   }
-
-
-  // ==========================================================
-  // FORCE REFRESH ALREADY RUNNING
-  // ==========================================================
-  //
-  // Jos toinen forced refresh on jo käynnissä, käytetään
-  // olemassa olevaa refreshia sen sijaan, että käynnistetään
-  // rajattomasti uusia requesteja.
-  //
-  // ==========================================================
-
-  return fetchPromise;
 }
 
 
@@ -680,16 +629,19 @@ function extractQueryStringFromUrl(
     return "";
   }
 
+
   const questionMark =
     value.indexOf(
       "?",
     );
+
 
   if (
     questionMark < 0
   ) {
     return "";
   }
+
 
   return value.substring(
     questionMark + 1,
@@ -723,11 +675,13 @@ function getRawQueryString(
     );
   }
 
+
   const candidates = [
     req.rawUrl,
     req.originalUrl,
     req.url,
   ];
+
 
   for (
     const value of candidates
@@ -743,6 +697,11 @@ function getRawQueryString(
       return query;
     }
   }
+
+
+  // ----------------------------------------------------------
+  // FALLBACK
+  // ----------------------------------------------------------
 
   if (
     req._parsedUrl &&
@@ -763,6 +722,7 @@ function getRawQueryString(
       );
     }
   }
+
 
   throw createError(
     "AdMob SSV query string is missing.",
@@ -790,6 +750,7 @@ function decodeAdMobSignature(
     );
   }
 
+
   if (
     signature.length >
     MAX_SIGNATURE_LENGTH
@@ -801,9 +762,9 @@ function decodeAdMobSignature(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // BASE64URL
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (
     !/^[A-Za-z0-9_-]+$/.test(
@@ -816,6 +777,7 @@ function decodeAdMobSignature(
     );
   }
 
+
   const normalized =
     signature
       .replace(
@@ -827,6 +789,7 @@ function decodeAdMobSignature(
         "/",
       );
 
+
   if (
     normalized.length % 4 ===
       1
@@ -837,8 +800,10 @@ function decodeAdMobSignature(
     );
   }
 
+
   const remainder =
     normalized.length % 4;
+
 
   const padded =
     remainder ===
@@ -851,11 +816,8 @@ function decodeAdMobSignature(
         );
 
 
-  // ==========================================================
-  // DECODE
-  // ==========================================================
-
   let signatureBuffer;
+
 
   try {
     signatureBuffer =
@@ -870,6 +832,7 @@ function decodeAdMobSignature(
     );
   }
 
+
   if (
     signatureBuffer.length ===
     0
@@ -879,6 +842,7 @@ function decodeAdMobSignature(
       "ADMOB_INVALID_SIGNATURE",
     );
   }
+
 
   return signatureBuffer;
 }
@@ -898,14 +862,8 @@ function decodeAdMobSignature(
 //
 // <signed parameters>&signature=<signature>&key_id=<key_id>
 //
-// TÄRKEÄÄ:
-//
 // signedQueryString sisältää alkuperäisen raw-queryn
 // täsmälleen siinä muodossa kuin Google lähetti sen.
-//
-// Sitä EI URL-dekoodata.
-// Sitä EI järjestetä uudelleen.
-// Sitä EI rakenneta URLSearchParamsin avulla.
 //
 // ============================================================
 
@@ -924,6 +882,7 @@ function extractSignatureData(
     );
   }
 
+
   if (
     rawQueryString.length >
     MAX_RAW_QUERY_STRING_LENGTH
@@ -935,14 +894,11 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
-  // SPLIT RAW QUERY
-  // ==========================================================
-
   const parts =
     rawQueryString.split(
       "&",
     );
+
 
   if (
     parts.length <
@@ -966,9 +922,9 @@ function extractSignatureData(
     ];
 
 
-  // ==========================================================
-  // SIGNATURE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // SIGNATURE TOISEKSI VIIMEINEN
+  // ----------------------------------------------------------
 
   if (
     !signaturePart.startsWith(
@@ -982,9 +938,9 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
-  // KEY ID
-  // ==========================================================
+  // ----------------------------------------------------------
+  // KEY_ID VIIMEINEN
+  // ----------------------------------------------------------
 
   if (
     !keyIdPart.startsWith(
@@ -998,10 +954,6 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
-  // RAW VALUES
-  // ==========================================================
-
   const rawSignature =
     signaturePart.substring(
       "signature=".length,
@@ -1012,6 +964,7 @@ function extractSignatureData(
       "key_id=".length,
     );
 
+
   if (
     rawSignature.length ===
       0
@@ -1021,6 +974,7 @@ function extractSignatureData(
       "ADMOB_INVALID_SIGNATURE",
     );
   }
+
 
   if (
     rawKeyId.length ===
@@ -1033,13 +987,14 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
-  // URL DECODE ONLY METADATA
-  // ==========================================================
+  // ----------------------------------------------------------
+  // URL-DECODE VAIN SIGNATURE JA KEY_ID
+  // ----------------------------------------------------------
 
   let signature;
 
   let keyId;
+
 
   try {
     signature =
@@ -1059,9 +1014,9 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
-  // KEY ID
-  // ==========================================================
+  // ----------------------------------------------------------
+  // KEY ID VALIDATION
+  // ----------------------------------------------------------
 
   if (
     keyId.length ===
@@ -1072,6 +1027,7 @@ function extractSignatureData(
       "ADMOB_INVALID_KEY_ID",
     );
   }
+
 
   if (
     keyId.length >
@@ -1087,9 +1043,9 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
-  // SIGNATURE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // SIGNATURE VALIDATION
+  // ----------------------------------------------------------
 
   if (
     signature.length ===
@@ -1107,15 +1063,15 @@ function extractSignatureData(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // SIGNED QUERY
-  // ==========================================================
+  // ----------------------------------------------------------
   //
-  // Poistetaan vain signature ja key_id.
+  // Poistetaan vain kaksi viimeistä parametria.
   //
-  // Kaikki niiden edeltävät merkit säilyvät täsmälleen.
+  // Kaikki niitä edeltävät merkit säilyvät täsmälleen.
   //
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const signedQueryString =
     parts
@@ -1127,6 +1083,7 @@ function extractSignatureData(
         "&",
       );
 
+
   if (
     signedQueryString.length ===
       0
@@ -1137,6 +1094,7 @@ function extractSignatureData(
     );
   }
 
+
   return {
     signedQueryString,
 
@@ -1144,6 +1102,166 @@ function extractSignatureData(
 
     keyId,
   };
+}
+
+
+// ============================================================
+// 🔎 ENSURE UNIQUE PARAMETER
+// ============================================================
+//
+// URLSearchParams.get() palauttaa vain ensimmäisen arvon.
+//
+// Jos sama parametri esiintyy useita kertoja, callbackin
+// metadata voisi muuten olla kryptografisesti validi mutta
+// sovelluksen lukema arvo olisi epäselvä.
+//
+// ============================================================
+
+function ensureUniqueParameter(
+  params,
+  name,
+) {
+  if (
+    !params ||
+    typeof params.getAll !==
+      "function"
+  ) {
+    throw createError(
+      "AdMob SSV parameters are invalid.",
+      "ADMOB_REQUIRED_PARAMETER_MISSING",
+    );
+  }
+
+
+  const values =
+    params.getAll(
+      name,
+    );
+
+
+  if (
+    values.length !==
+    1
+  ) {
+    const error =
+      createError(
+        `AdMob SSV parameter "${name}" must occur exactly once.`,
+        "ADMOB_REQUIRED_PARAMETER_MISSING",
+      );
+
+    error.parameter =
+      name;
+
+    throw error;
+  }
+
+
+  return values[0];
+}
+
+
+// ============================================================
+// 🛡️ VALIDATE PARAMETER STRUCTURE
+// ============================================================
+//
+// Tarkistetaan kaikki reward-flow'n käyttämät parametrit
+// yksiselitteisiksi kryptografisen tarkistuksen jälkeen.
+//
+// signature ja key_id on jo erotettu raw querystä.
+// Niiden pitää esiintyä vain callbackin kahdessa viimeisessä
+// kohdassa.
+//
+// ============================================================
+
+function validateParameterStructure(
+  params,
+) {
+  const requiredNames = [
+    "ad_network",
+    "ad_unit",
+    "custom_data",
+    "reward_amount",
+    "reward_item",
+    "timestamp",
+    "transaction_id",
+  ];
+
+
+  for (
+    const name of requiredNames
+  ) {
+    ensureUniqueParameter(
+      params,
+      name,
+    );
+  }
+
+
+  const userIdValues =
+    params.getAll(
+      "user_id",
+    );
+
+
+  if (
+    userIdValues.length >
+    1
+  ) {
+    const error =
+      createError(
+        'AdMob SSV parameter "user_id" must occur at most once.',
+        "ADMOB_REQUIRED_PARAMETER_MISSING",
+      );
+
+    error.parameter =
+      "user_id";
+
+    throw error;
+  }
+
+
+  // ----------------------------------------------------------
+  // SIGNATURE / KEY_ID
+  // ----------------------------------------------------------
+  //
+  // Niiden tulee esiintyä juuri kerran.
+  //
+  // ----------------------------------------------------------
+
+  const signatureValues =
+    params.getAll(
+      "signature",
+    );
+
+  const keyIdValues =
+    params.getAll(
+      "key_id",
+    );
+
+
+  if (
+    signatureValues.length !==
+    1
+  ) {
+    throw createError(
+      'AdMob SSV parameter "signature" must occur exactly once.',
+      "ADMOB_INVALID_SIGNATURE",
+    );
+  }
+
+
+  if (
+    keyIdValues.length !==
+    1
+  ) {
+    throw createError(
+      'AdMob SSV parameter "key_id" must occur exactly once.',
+      "ADMOB_INVALID_KEY_ID",
+    );
+  }
+
+
+  return true;
 }
 
 
@@ -1164,24 +1282,17 @@ async function verifyRawQueryString(
     );
 
 
-  // ==========================================================
-  // SIGNATURE BUFFER
-  // ==========================================================
-
   const signatureBuffer =
     decodeAdMobSignature(
       signature,
     );
 
 
-  // ==========================================================
-  // PUBLIC KEYS
-  // ==========================================================
-
   let publicKeys =
     await getAdMobPublicKeys(
       false,
     );
+
 
   let publicKey =
     publicKeys.get(
@@ -1189,9 +1300,9 @@ async function verifyRawQueryString(
     );
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // KEY ROTATION
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (
     !publicKey
@@ -1203,10 +1314,12 @@ async function verifyRawQueryString(
       },
     );
 
+
     publicKeys =
       await getAdMobPublicKeys(
         true,
       );
+
 
     publicKey =
       publicKeys.get(
@@ -1214,10 +1327,6 @@ async function verifyRawQueryString(
       );
   }
 
-
-  // ==========================================================
-  // KEY NOT FOUND
-  // ==========================================================
 
   if (
     !publicKey
@@ -1235,12 +1344,13 @@ async function verifyRawQueryString(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // ECDSA / SHA-256 / DER
-  // ==========================================================
+  // ----------------------------------------------------------
 
   let verified =
     false;
+
 
   try {
     verified =
@@ -1276,10 +1386,6 @@ async function verifyRawQueryString(
   }
 
 
-  // ==========================================================
-  // INVALID SIGNATURE
-  // ==========================================================
-
   if (
     !verified
   ) {
@@ -1304,11 +1410,12 @@ async function verifyRawQueryString(
   );
 
 
-  // ==========================================================
-  // PARSE PARAMETERS ONLY AFTER VERIFICATION
-  // ==========================================================
+  // ----------------------------------------------------------
+  // PARAMETRIT PURETAAN VASTA ALLEKIRJOITUKSEN JÄLKEEN
+  // ----------------------------------------------------------
 
   let params;
+
 
   try {
     params =
@@ -1321,6 +1428,15 @@ async function verifyRawQueryString(
       "ADMOB_REQUIRED_PARAMETER_MISSING",
     );
   }
+
+
+  // ----------------------------------------------------------
+  // DEFENSE-IN-DEPTH PARAMETER STRUCTURE
+  // ----------------------------------------------------------
+
+  validateParameterStructure(
+    params,
+  );
 
 
   return {
@@ -1352,6 +1468,7 @@ async function verifyAdMobSignature(
       req,
     );
 
+
   console.log(
     "🐱 AdMob SSV raw callback received.",
     {
@@ -1377,6 +1494,7 @@ async function verifyAdMobSignature(
         rawQueryString,
       );
 
+
     console.log(
       "🐱✅ AdMob SSV signature VERIFIED.",
       {
@@ -1385,7 +1503,9 @@ async function verifyAdMobSignature(
       },
     );
 
+
     return verification;
+
   } catch (error) {
     console.error(
       "🐱❌ AdMob SSV signature verification FAILED.",
@@ -1410,6 +1530,7 @@ async function verifyAdMobSignature(
       },
     );
 
+
     throw error;
   }
 }
@@ -1431,10 +1552,12 @@ function getParam(
     return "";
   }
 
+
   const value =
     params.get(
       name,
     );
+
 
   if (
     value ===
@@ -1444,6 +1567,7 @@ function getParam(
   ) {
     return "";
   }
+
 
   return String(
     value,
@@ -1460,10 +1584,11 @@ function requireParam(
   name,
 ) {
   const value =
-    getParam(
+    ensureUniqueParameter(
       params,
       name,
     );
+
 
   if (
     value.length ===
@@ -1471,7 +1596,7 @@ function requireParam(
   ) {
     const error =
       createError(
-        `AdMob SSV required parameter "${name}" is missing.`,
+        `AdMob SSV required parameter "${name}" is empty.`,
         "ADMOB_REQUIRED_PARAMETER_MISSING",
       );
 
@@ -1480,6 +1605,7 @@ function requireParam(
 
     throw error;
   }
+
 
   return value;
 }
@@ -1500,8 +1626,10 @@ function parseInteger(
     return fallback;
   }
 
+
   const trimmed =
     value.trim();
+
 
   if (
     !/^\d+$/.test(
@@ -1511,10 +1639,12 @@ function parseInteger(
     return fallback;
   }
 
+
   const number =
     Number(
       trimmed,
     );
+
 
   if (
     !Number.isSafeInteger(
@@ -1523,6 +1653,7 @@ function parseInteger(
   ) {
     return fallback;
   }
+
 
   return number;
 }
@@ -1542,8 +1673,10 @@ function validateUid(
     return false;
   }
 
+
   const trimmed =
     uid.trim();
+
 
   if (
     trimmed.length ===
@@ -1553,6 +1686,7 @@ function validateUid(
   ) {
     return false;
   }
+
 
   return /^[A-Za-z0-9._-]+$/.test(
     trimmed,
@@ -1573,8 +1707,8 @@ function validateUid(
 // abc123:mining_start
 // abc123:power_boost
 //
-// URLSearchParams purkaa percent-encodingin ennen tämän
-// funktion kutsua.
+// custom_data tulee Googlelta percent-escaped muodossa.
+// URLSearchParams purkaa sen ennen tämän funktion kutsua.
 //
 // ============================================================
 
@@ -1594,8 +1728,10 @@ function parseCustomData(
     };
   }
 
+
   const value =
     customData.trim();
+
 
   if (
     value.length ===
@@ -1613,14 +1749,11 @@ function parseCustomData(
   }
 
 
-  // ==========================================================
-  // LAST COLON
-  // ==========================================================
-
   const separatorIndex =
     value.lastIndexOf(
       ":",
     );
+
 
   if (
     separatorIndex <=
@@ -1646,6 +1779,7 @@ function parseCustomData(
       )
       .trim();
 
+
   const rewardPurpose =
     value
       .substring(
@@ -1653,10 +1787,6 @@ function parseCustomData(
       )
       .trim();
 
-
-  // ==========================================================
-  // UID
-  // ==========================================================
 
   if (
     !validateUid(
@@ -1673,15 +1803,10 @@ function parseCustomData(
   }
 
 
-  // ==========================================================
-  // PURPOSE
-  // ==========================================================
-
   if (
-    rewardPurpose !==
-      "mining_start" &&
-    rewardPurpose !==
-      "power_boost"
+    !VALID_REWARD_PURPOSES.has(
+      rewardPurpose,
+    )
   ) {
     return {
       uid:
@@ -1705,8 +1830,8 @@ function parseCustomData(
 // 🔐 TRANSACTION ID VALIDATION
 // ============================================================
 //
-// AdMob määrittelee transaction_id:n yksilölliseksi
-// hex-encoded identifieriksi.
+// AdMob määrittelee transaction_id:n unique hex encoded
+// identifier -muotoiseksi.
 //
 // ============================================================
 
@@ -1720,8 +1845,10 @@ function validateTransactionId(
     return false;
   }
 
+
   const value =
     transactionId.trim();
+
 
   if (
     value.length ===
@@ -1731,6 +1858,7 @@ function validateTransactionId(
   ) {
     return false;
   }
+
 
   return /^[A-Fa-f0-9]+$/.test(
     value,
@@ -1758,8 +1886,10 @@ function validateTimestamp(
     };
   }
 
+
   const value =
     timestamp.trim();
+
 
   if (
     !/^\d+$/.test(
@@ -1775,10 +1905,12 @@ function validateTimestamp(
     };
   }
 
+
   const timestampMs =
     Number(
       value,
     );
+
 
   if (
     !Number.isSafeInteger(
@@ -1795,8 +1927,10 @@ function validateTimestamp(
     };
   }
 
+
   const now =
     Date.now();
+
 
   if (
     timestampMs >
@@ -1810,6 +1944,7 @@ function validateTimestamp(
       timestampMs,
     };
   }
+
 
   return {
     valid:
@@ -1834,8 +1969,10 @@ function validateAdNetwork(
     return false;
   }
 
+
   const value =
     adNetwork.trim();
+
 
   if (
     value.length ===
@@ -1845,6 +1982,7 @@ function validateAdNetwork(
   ) {
     return false;
   }
+
 
   return /^\d+$/.test(
     value,
@@ -1859,22 +1997,23 @@ function validateAdNetwork(
 async function verifyAdMobCallback(
   req,
 ) {
-  // ==========================================================
+  // ----------------------------------------------------------
   // KRYPTOSOGRAFIA ENSIN
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const verification =
     await verifyAdMobSignature(
       req,
     );
 
+
   const params =
     verification.params;
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // REQUIRED PARAMETERS
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const adNetwork =
     requireParam(
@@ -1919,9 +2058,9 @@ async function verifyAdMobCallback(
     );
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // OPTIONAL USER ID
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const rawUserId =
     getParam(
@@ -1930,9 +2069,9 @@ async function verifyAdMobCallback(
     );
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // AD NETWORK
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (
     !validateAdNetwork(
@@ -1946,14 +2085,15 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // CUSTOM DATA
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const parsedCustomData =
     parseCustomData(
       customData,
     );
+
 
   const uid =
     parsedCustomData.uid;
@@ -1961,17 +2101,18 @@ async function verifyAdMobCallback(
   const rewardPurpose =
     parsedCustomData.rewardPurpose;
 
+
   if (
-    rewardPurpose !==
-      "mining_start" &&
-    rewardPurpose !==
-      "power_boost"
+    !VALID_REWARD_PURPOSES.has(
+      rewardPurpose,
+    )
   ) {
     throw createError(
       `Invalid AdMob reward purpose: ${rewardPurpose}`,
       "ADMOB_INVALID_REWARD_PURPOSE",
     );
   }
+
 
   if (
     !validateUid(
@@ -1985,14 +2126,15 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // AD UNIT
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const expectedAdUnit =
     ADMOB_AD_UNITS[
       rewardPurpose
     ];
+
 
   if (
     typeof expectedAdUnit !==
@@ -2009,6 +2151,7 @@ async function verifyAdMobCallback(
     );
   }
 
+
   if (
     adUnit !==
     expectedAdUnit
@@ -2020,14 +2163,15 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // REWARD CONFIGURATION
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const rewardDefinition =
     REWARD_DEFINITIONS[
       rewardPurpose
     ];
+
 
   if (
     !rewardDefinition
@@ -2039,9 +2183,9 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // REWARD AMOUNT
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const parsedRewardAmount =
     parseInteger(
@@ -2049,10 +2193,12 @@ async function verifyAdMobCallback(
       -1,
     );
 
+
   const expectedRewardAmount =
     Number(
       rewardDefinition.rewardAmount,
     );
+
 
   if (
     !Number.isSafeInteger(
@@ -2067,6 +2213,7 @@ async function verifyAdMobCallback(
     );
   }
 
+
   if (
     parsedRewardAmount !==
       expectedRewardAmount
@@ -2078,12 +2225,13 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // REWARD ITEM
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const expectedRewardItem =
     rewardDefinition.rewardItem;
+
 
   if (
     typeof expectedRewardItem !==
@@ -2100,6 +2248,7 @@ async function verifyAdMobCallback(
     );
   }
 
+
   if (
     rewardItem !==
     expectedRewardItem
@@ -2111,9 +2260,9 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // TRANSACTION ID
-  // ==========================================================
+  // ----------------------------------------------------------
 
   if (
     !validateTransactionId(
@@ -2127,14 +2276,15 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // TIMESTAMP
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const timestampResult =
     validateTimestamp(
       timestamp,
     );
+
 
   if (
     !timestampResult.valid
@@ -2146,12 +2296,13 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // OPTIONAL USER ID
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const userId =
     rawUserId.trim();
+
 
   if (
     userId
@@ -2167,6 +2318,7 @@ async function verifyAdMobCallback(
       );
     }
 
+
     if (
       userId !==
       uid
@@ -2179,15 +2331,16 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // VERIFIED SIGNATURE METADATA
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const signature =
     verification.signature;
 
   const keyId =
     verification.keyId;
+
 
   if (
     typeof signature !==
@@ -2198,10 +2351,11 @@ async function verifyAdMobCallback(
       MAX_SIGNATURE_LENGTH
   ) {
     throw createError(
-      "AdMob verified signature value is invalid.",
+      "AdMob verified signature value is missing or invalid.",
       "ADMOB_INVALID_SIGNATURE",
     );
   }
+
 
   if (
     typeof keyId !==
@@ -2221,9 +2375,9 @@ async function verifyAdMobCallback(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // VERIFIED PARAMETERS
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const parameters = {
     ad_network:
@@ -2257,9 +2411,9 @@ async function verifyAdMobCallback(
   };
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // LOGGING
-  // ==========================================================
+  // ----------------------------------------------------------
 
   console.log(
     "🐱✅ AdMob SSV callback fully verified.",
@@ -2284,9 +2438,9 @@ async function verifyAdMobCallback(
   );
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // RETURN VERIFIED RESULT
-  // ==========================================================
+  // ----------------------------------------------------------
 
   return {
     verified:
