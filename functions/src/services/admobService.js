@@ -26,6 +26,9 @@ const crypto = require("crypto");
 // ❌ muuta mining-tilaa
 // ❌ kirjoita Firestoreen
 //
+// Replay-suojaus transaction_id:n perusteella tehdään
+// myöhemmässä business-kerroksessa.
+//
 // ============================================================
 
 
@@ -63,9 +66,8 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// AdMob public keys voivat vaihtua.
-//
-// Cache pidetään alle 24 tuntia.
+// Google suosittelee public key -cachea, mutta avaimia ei
+// pidä cachettaa yli 24 tunniksi, koska niitä voidaan kierrättää.
 //
 // 23 tuntia antaa yhden tunnin marginaalin.
 //
@@ -123,14 +125,15 @@ const MAX_KEY_ID_LENGTH =
 // ⏱️ TIMESTAMP
 // ============================================================
 //
+// AdMob timestamp on Epoch milliseconds.
+//
+// Emme aseta callbackille lyhyttä expiry-aikaa, koska
 // AdMob voi toimittaa SSV-callbackin viiveellä.
 //
-// Emme aseta callbackille lyhyttä expiry-aikaa.
+// Tarkistamme kuitenkin, ettei timestamp ole tulevaisuudessa
+// yli sallitun toleranssin.
 //
-// Tarkistamme kuitenkin, ettei timestamp ole
-// tulevaisuudessa yli määritetyn toleranssin.
-//
-// Replay-suoja tehdään transaction_id:n avulla
+// Replay-suojaus tehdään transaction_id:n avulla
 // myöhemmässä business-kerroksessa.
 //
 // ============================================================
@@ -154,7 +157,8 @@ const VALID_REWARD_PURPOSES =
 // 📺 ADMOB AD UNITS
 // ============================================================
 //
-// AdMob SSV:n ad_unit-arvo vastaa Rewarded Ad Unit ID:tä.
+// AdMob SSV:n ad_unit-arvo tarkistetaan reward-purposen
+// mukaan miningConfig.js:n määrittämää arvoa vastaan.
 //
 // ============================================================
 
@@ -216,8 +220,8 @@ function createError(
 //
 // Lataa AdMob public-key datan.
 //
-// Response-koko rajoitetaan myös silloin,
-// kun Content-Length-header puuttuu.
+// Response-koko rajoitetaan myös silloin, kun
+// Content-Length-header puuttuu.
 //
 // ============================================================
 
@@ -602,6 +606,12 @@ async function getAdMobPublicKeys(
   // ==========================================================
   // PREVENT CONCURRENT FETCHES
   // ==========================================================
+  //
+  // Jos toinen request lataa jo avaimia, käytetään samaa
+  // Promisea. Tämä estää useita yhtäaikaisia key-server
+  // pyyntöjä Cloud Functions -instanssissa.
+  //
+  // ==========================================================
 
   if (
     publicKeyFetchPromise
@@ -823,9 +833,8 @@ function extractQueryStringFromUrl(
 // URLSearchParamsin, objektin tai muun normalisoinnin avulla
 // ennen kryptografista tarkistusta.
 //
-// Google dokumentoi, että alkuperäistä allekirjoitettavaa
-// sisältöä ei saa muuttaa eikä parametrien järjestystä
-// saa muuttaa. 
+// Google dokumentoi, että allekirjoitettavaa sisältöä
+// ei saa muuttaa eikä parametrien järjestystä saa muuttaa.
 //
 // ============================================================
 
@@ -841,6 +850,18 @@ function getRawQueryString(
     );
   }
 
+
+  // ==========================================================
+  // PREFER RAW URL
+  // ==========================================================
+  //
+  // rawUrl säilyttää mahdollisimman suoraan alkuperäisen
+  // callback URL:n.
+  //
+  // Muut vaihtoehdot toimivat fallbackina eri HTTP/Firebase
+  // ympäristöissä.
+  //
+  // ==========================================================
 
   const candidates = [
     req.rawUrl,
@@ -860,13 +881,23 @@ function getRawQueryString(
     if (
       query.length > 0
     ) {
+      if (
+        query.length >
+        MAX_RAW_QUERY_STRING_LENGTH
+      ) {
+        throw createError(
+          "AdMob SSV query string is too long.",
+          "ADMOB_INVALID_SIGNATURE",
+        );
+      }
+
       return query;
     }
   }
 
 
   // ==========================================================
-  // FALLBACK
+  // FALLBACK: PARSED URL
   // ==========================================================
 
   if (
@@ -883,9 +914,22 @@ function getRawQueryString(
       ) &&
       search.length > 1
     ) {
-      return search.substring(
-        1,
-      );
+      const query =
+        search.substring(
+          1,
+        );
+
+      if (
+        query.length >
+        MAX_RAW_QUERY_STRING_LENGTH
+      ) {
+        throw createError(
+          "AdMob SSV query string is too long.",
+          "ADMOB_INVALID_SIGNATURE",
+        );
+      }
+
+      return query;
     }
   }
 
@@ -1018,11 +1062,11 @@ function decodeAdMobSignature(
 //
 // ...&signature=...&key_id=...
 //
-// signature ja key_id ovat kaksi viimeistä
-// query-parametria.
+// Google dokumentoi, että signature ja key_id ovat kaksi
+// viimeistä query-parametria tässä järjestyksessä.
 //
-// Niitä edeltävä raw-query muodostaa
-// kryptografisesti allekirjoitetun sisällön.
+// Niitä edeltävä raw-query muodostaa kryptografisesti
+// allekirjoitetun sisällön.
 //
 // ============================================================
 
@@ -1306,16 +1350,21 @@ function ensureUniqueParameter(
 // 🛡️ VALIDATE PARAMETER STRUCTURE
 // ============================================================
 //
-// AdMob dokumentoi nämä SSV-parametrit.
+// AdMobin SSV-parametrit:
 //
-// custom_data ja user_id ovat AdMobin näkökulmasta
-// mahdollisesti puuttuvia parametreja.
+// ad_network
+// ad_unit
+// custom_data      optional AdMobin näkökulmasta
+// key_id
+// reward_amount
+// reward_item
+// signature
+// timestamp
+// transaction_id
+// user_id          optional
 //
-// Stelluriini kuitenkin vaatii custom_data:n,
-// koska sen kautta yhdistämme callbackin käyttäjään
-// ja reward-purposeen.
-//
-// user_id pysyy valinnaisena.
+// Stelluriini vaatii custom_data:n, koska sen avulla
+// callback yhdistetään käyttäjään ja reward-purposeen.
 //
 // ============================================================
 
@@ -1454,6 +1503,13 @@ async function verifyRawQueryString(
   // ==========================================================
   // KEY ROTATION
   // ==========================================================
+  //
+  // Jos key_id ei löydy nykyisestä cacheasta, haetaan
+  // public keys välittömästi uudelleen.
+  //
+  // Tämä auttaa key rotation -tilanteissa.
+  //
+  // ==========================================================
 
   if (
     !publicKey
@@ -1505,7 +1561,7 @@ async function verifyRawQueryString(
   //
   // AdMob SSV käyttää ECDSA-pohjaista allekirjoitusta.
   //
-  // Node.js:n crypto.verify:
+  // Node.js crypto.verify:
   //
   // SHA-256
   // + EC public key
@@ -1577,6 +1633,14 @@ async function verifyRawQueryString(
 
   // ==========================================================
   // PARSE PARAMETERS ONLY AFTER SIGNATURE VERIFICATION
+  // ==========================================================
+  //
+  // URLSearchParamsia käytetään vasta kryptografisen
+  // varmistuksen jälkeen.
+  //
+  // Allekirjoitusta varten käytettiin edelleen alkuperäistä
+  // raw-queryä.
+  //
   // ==========================================================
 
   let params;
@@ -1996,7 +2060,8 @@ function parseCustomData(
 // ============================================================
 //
 // AdMob dokumentoi transaction_id:n yksilölliseksi
-// hex-koodatuksi tunnisteeksi.
+// hex-koodatuksi tunnisteeksi jokaiselle reward grant
+// -tapahtumalle.
 //
 // ============================================================
 
@@ -2035,7 +2100,10 @@ function validateTransactionId(
 // ⏱️ TIMESTAMP VALIDATION
 // ============================================================
 //
-// AdMob timestamp on Epoch milliseconds.
+// AdMob timestamp on Epoch time in milliseconds.
+//
+// Emme käytä tässä vanhentumisaikaa, koska SSV callback
+// voi saapua viiveellä.
 //
 // ============================================================
 
@@ -2128,8 +2196,7 @@ function validateTimestamp(
 // 🌐 AD NETWORK VALIDATION
 // ============================================================
 //
-// AdMob ad_network on merkkijonona käsiteltävä
-// numeerinen identifier.
+// AdMob ad_network on numeerinen ad source identifier.
 //
 // ============================================================
 
@@ -2181,6 +2248,7 @@ function validateAdNetwork(
 // 7. tarkistaa UID:n
 // 8. tarkistaa transaction ID:n
 // 9. tarkistaa timestampin
+// 10. tarkistaa mahdollisen user_id:n
 //
 // Se EI vielä käsittele rewardia.
 //
