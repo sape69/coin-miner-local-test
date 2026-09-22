@@ -59,12 +59,11 @@ const ADMOB_SSV_KEYS_URL =
 // ⏱️ PUBLIC KEY CACHE
 // ============================================================
 //
-// Google suosittelee public key -avainten välimuistia.
+// Google edellyttää public key -avainten päivittämistä
+// vähintään 24 tunnin välein key rotationin vuoksi.
 //
-// Avaimia ei saa pitää cachessa yli 24 tuntia.
-//
-// Käytämme 23 tuntia, jolloin jää yhden tunnin
-// turvamarginaali ennen Googlen 24 tunnin rajaa.
+// Käytämme 23 tuntia.
+// Tämä jättää yhden tunnin marginaalin.
 //
 // ============================================================
 
@@ -117,38 +116,17 @@ const MAX_KEY_ID_LENGTH =
 
 
 // ============================================================
-// 🔐 ECDSA SIGNATURE LIMITS
-// ============================================================
-//
-// AdMob käyttää ECDSA P-256 -allekirjoitusta DER-muodossa.
-//
-// DER-koodattu P-256 allekirjoitus on normaalisti noin
-// 70-72 tavua.
-//
-// Emme käytä liian tiukkaa yksittäistä pituutta,
-// jotta mahdolliset validit DER-esitykset eivät rikkoudu.
-//
-// ============================================================
-
-const MIN_ECDSA_P256_DER_SIGNATURE_BYTES =
-  64;
-
-const MAX_ECDSA_P256_DER_SIGNATURE_BYTES =
-  80;
-
-
-// ============================================================
 // ⏱️ TIMESTAMP
 // ============================================================
 //
-// Emme aseta tähän lyhyttä callbackin vanhenemisrajaa.
+// Emme käytä callbackille lyhyttä expiry-rajaa.
 //
-// AdMobin SSV callback voi saapua palvelimelle viiveellä.
+// AdMob SSV callback voi saapua viiveellä.
 //
 // Tarkistamme kuitenkin, ettei timestamp ole
-// tulevaisuudessa yli sallitun kellopoikkeaman.
+// tulevaisuudessa liian pitkällä.
 //
-// Replay-estäminen tehdään transaction_id:n avulla
+// Replay-suoja tehdään transaction_id:n avulla
 // adFunctions.js:ssä.
 //
 // ============================================================
@@ -228,10 +206,11 @@ function createError(
 // 🌐 FETCH JSON
 // ============================================================
 //
-// Käytetään Node.js:n native fetchia.
+// Native fetch.
 //
-// Response luetaan streamina ja sen koko rajoitetaan
-// myös silloin, kun Content-Length puuttuu.
+// Response luetaan streamina silloin kun mahdollista,
+// jotta response-koko voidaan rajoittaa myös ilman
+// Content-Length-headeria.
 //
 // ============================================================
 
@@ -313,7 +292,7 @@ async function fetchJson(
 
 
   // ----------------------------------------------------------
-  // CONTENT-LENGTH CHECK
+  // CONTENT LENGTH
   // ----------------------------------------------------------
 
   const contentLength =
@@ -461,17 +440,6 @@ async function fetchJson(
           "utf8",
         );
   } else {
-    // --------------------------------------------------------
-    // FALLBACK
-    // --------------------------------------------------------
-    //
-    // Response.text() voi joissain ympäristöissä olla
-    // ainoa käytettävissä oleva vaihtoehto.
-    //
-    // Tarkistamme koon myös tässä tapauksessa.
-    //
-    // --------------------------------------------------------
-
     try {
       text =
         await response.text();
@@ -510,15 +478,10 @@ async function fetchJson(
     typeof text !==
       "string" ||
     text.length ===
-      0 ||
-    Buffer.byteLength(
-      text,
-      "utf8",
-    ) >
-      MAX_PUBLIC_KEY_RESPONSE_BYTES
+      0
   ) {
     throw createError(
-      "AdMob public key response is invalid or too large.",
+      "AdMob public key response is empty.",
       "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
     );
   }
@@ -745,10 +708,6 @@ async function getAdMobPublicKeys(
         }
 
 
-        // ----------------------------------------------------
-        // STORE VALID PUBLIC KEY
-        // ----------------------------------------------------
-
         keys.set(
           keyId,
           pem,
@@ -853,12 +812,9 @@ function extractQueryStringFromUrl(
 //
 // AdMob allekirjoittaa alkuperäisen query-stringin.
 //
-// Siksi raw queryä EI saa rakentaa uudelleen
+// Siksi raw-queryä EI saa rakentaa uudelleen
 // URLSearchParamsin, objektin tai muun normalisoinnin avulla
 // ennen kryptografista tarkistusta.
-//
-// Google edellyttää, ettei allekirjoitettavaa sisältöä
-// muuteta tai järjestetä uudelleen.
 //
 // ============================================================
 
@@ -961,10 +917,6 @@ function decodeAdMobSignature(
   }
 
 
-  // ----------------------------------------------------------
-  // BASE64URL
-  // ----------------------------------------------------------
-
   if (
     !/^[A-Za-z0-9_-]+$/.test(
       signature,
@@ -1043,23 +995,6 @@ function decodeAdMobSignature(
   }
 
 
-  // ----------------------------------------------------------
-  // P-256 DER SIGNATURE SIZE
-  // ----------------------------------------------------------
-
-  if (
-    signatureBuffer.length <
-      MIN_ECDSA_P256_DER_SIGNATURE_BYTES ||
-    signatureBuffer.length >
-      MAX_ECDSA_P256_DER_SIGNATURE_BYTES
-  ) {
-    throw createError(
-      "AdMob SSV signature has an invalid ECDSA P-256 DER length.",
-      "ADMOB_INVALID_SIGNATURE",
-    );
-  }
-
-
   return signatureBuffer;
 }
 
@@ -1068,18 +1003,14 @@ function decodeAdMobSignature(
 // 🔎 EXTRACT SIGNATURE DATA
 // ============================================================
 //
-// Google määrittelee Rewarded SSV callbackin kaksi viimeistä
-// query-parametria:
+// Google määrittelee kaksi viimeistä parametria:
 //
-//   signature
-//   key_id
+// signature
+// key_id
 //
-// Muoto:
+// Niiden edeltävä query-string on allekirjoitettava sisältö.
 //
-// <signed parameters>&signature=<signature>&key_id=<key_id>
-//
-// signedQueryString sisältää alkuperäisen raw-queryn
-// täsmälleen siinä muodossa kuin Google lähetti sen.
+// Tätä sisältöä EI normalisoida.
 //
 // ============================================================
 
@@ -1127,14 +1058,14 @@ function extractSignatureData(
   }
 
 
-  const keyIdPart =
-    parts[
-      parts.length - 1
-    ];
-
   const signaturePart =
     parts[
       parts.length - 2
+    ];
+
+  const keyIdPart =
+    parts[
+      parts.length - 1
     ];
 
 
@@ -1204,7 +1135,7 @@ function extractSignatureData(
 
 
   // ----------------------------------------------------------
-  // URL-DECODE VAIN SIGNATURE JA KEY_ID
+  // URL-DECODE SIGNATURE JA KEY ID
   // ----------------------------------------------------------
 
   let signature;
@@ -1236,18 +1167,9 @@ function extractSignatureData(
 
   if (
     keyId.length ===
-      0
-  ) {
-    throw createError(
-      "AdMob SSV key_id value is missing.",
-      "ADMOB_INVALID_KEY_ID",
-    );
-  }
-
-
-  if (
+      0 ||
     keyId.length >
-    MAX_KEY_ID_LENGTH ||
+      MAX_KEY_ID_LENGTH ||
     !/^\d+$/.test(
       keyId,
     )
@@ -1285,7 +1207,7 @@ function extractSignatureData(
   //
   // Poistetaan vain kaksi viimeistä parametria.
   //
-  // Kaikki niitä edeltävät merkit säilyvät täsmälleen.
+  // Kaikki niiden edeltävät merkit säilyvät.
   //
   // ----------------------------------------------------------
 
@@ -1420,17 +1342,12 @@ function validateParameterStructure(
 
 
   // ----------------------------------------------------------
-  // SIGNATURE / KEY_ID
+  // SIGNATURE
   // ----------------------------------------------------------
 
   const signatureValues =
     params.getAll(
       "signature",
-    );
-
-  const keyIdValues =
-    params.getAll(
-      "key_id",
     );
 
 
@@ -1443,6 +1360,16 @@ function validateParameterStructure(
       "ADMOB_INVALID_SIGNATURE",
     );
   }
+
+
+  // ----------------------------------------------------------
+  // KEY ID
+  // ----------------------------------------------------------
+
+  const keyIdValues =
+    params.getAll(
+      "key_id",
+    );
 
 
   if (
@@ -1786,6 +1713,8 @@ function requireParam(
 
 
   if (
+    typeof value !==
+      "string" ||
     value.length ===
       0
   ) {
@@ -1902,8 +1831,8 @@ function validateUid(
 // abc123:mining_start
 // abc123:power_boost
 //
-// custom_data tulee Googlelta percent-escaped muodossa.
-// URLSearchParams purkaa sen ennen tämän funktion kutsua.
+// URLSearchParams purkaa percent-encodingin ennen tämän
+// funktion kutsua.
 //
 // ============================================================
 
@@ -2023,11 +1952,6 @@ function parseCustomData(
 
 // ============================================================
 // 🔐 TRANSACTION ID VALIDATION
-// ============================================================
-//
-// AdMob määrittelee transaction_id:n unique hex encoded
-// identifier -muotoiseksi.
-//
 // ============================================================
 
 function validateTransactionId(
@@ -2152,6 +2076,12 @@ function validateTimestamp(
 
 // ============================================================
 // 🌐 AD NETWORK VALIDATION
+// ============================================================
+//
+// AdMobin ad_network voi olla suuri numeerinen identifier.
+// Siksi sitä käsitellään merkkijonona eikä muunnettuna
+// JavaScript Number -arvona.
+//
 // ============================================================
 
 function validateAdNetwork(
