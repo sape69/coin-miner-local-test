@@ -35,6 +35,14 @@
 // - Only boosts started inside the current mining cycle
 //   are allowed to contribute to that cycle.
 //
+// FIRESTORE TRANSACTION RULE:
+//
+// - ALL transaction.get() / transaction.get(query) reads
+//   must happen BEFORE transaction.set()/update() writes.
+//
+// This is especially important when completing an old mining
+// cycle and starting a new one.
+//
 // ============================================================
 
 const {
@@ -1153,17 +1161,6 @@ function getAdStatus(
 // ============================================================
 // ⛏️ MINING HASH RATE
 // ============================================================
-//
-// Used for the CURRENT cycle/status.
-//
-// A missing or invalid current miningHashRate may safely use
-// the current Daily Hash Rate as fallback.
-//
-// This function must NOT be used as a fallback for an already
-// completed historical cycle, because that could make an old
-// cycle inherit a new day's Hash Rate.
-//
-// ============================================================
 
 function getMiningHashRate(
   data,
@@ -1203,14 +1200,6 @@ function getMiningHashRate(
 // ============================================================
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
-//
-// Historical cycles must NEVER use the current Daily Hash
-// Rate as a fallback.
-//
-// If the stored cycle Hash Rate is invalid, return 0 instead
-// of accidentally applying a newer Hash Rate to an old cycle.
-//
-// ============================================================
 
 function getHistoricalMiningHashRate(
   data
@@ -1243,21 +1232,6 @@ function getHistoricalMiningHashRate(
 
 // ============================================================
 // 📺 BOOST HISTORY
-// ============================================================
-//
-// Only history belonging to the CURRENT mining cycle can
-// contribute to the current cycle.
-//
-// We query boostStartedAt inside the exact mining window.
-//
-// This intentionally avoids a broad historical query.
-//
-// Because a Power Boost may only be activated while mining is
-// active, a valid boost for a cycle must have started inside
-// that cycle.
-//
-// Old boosts therefore cannot leak into a new cycle.
-//
 // ============================================================
 
 async function getAdBoostHistory(
@@ -2353,6 +2327,13 @@ const claimMining =
                 transactionNow
               );
 
+            // ------------------------------------------------
+            // IMPORTANT:
+            //
+            // ALL TRANSACTION READS MUST HAPPEN BEFORE
+            // ANY TRANSACTION WRITES.
+            // ------------------------------------------------
+
             const userSnapshot =
               await transaction.get(
                 userRef
@@ -2510,6 +2491,17 @@ const claimMining =
             const previousWindow =
               getMiningWindow(data);
 
+            // ------------------------------------------------
+            // IMPORTANT:
+            //
+            // This calculation MUST happen before ANY
+            // transaction.set() call.
+            //
+            // calculateMiningCycle() may execute
+            // transaction.get(query) for Power Boost history.
+            //
+            // ------------------------------------------------
+
             if (
               previousWindow.valid &&
               previousWindow.miningEndMs <=
@@ -2550,6 +2542,13 @@ const claimMining =
                   true;
               }
             }
+
+            // ------------------------------------------------
+            // ALL READS ARE NOW COMPLETE.
+            //
+            // From this point onward the transaction may
+            // safely perform writes.
+            // ------------------------------------------------
 
             await updateMiningAchievements(
               transaction,
@@ -3054,6 +3053,10 @@ const powerBoost =
                 transactionNow
               );
 
+            // ------------------------------------------------
+            // ALL TRANSACTION READS FIRST.
+            // ------------------------------------------------
+
             const userSnapshot =
               await transaction.get(
                 userRef
@@ -3156,6 +3159,11 @@ const powerBoost =
                 "🐱 Power Boost ei ole vielä valmis käytettäväksi uudelleen."
               );
             }
+
+            // ------------------------------------------------
+            // ALL REQUIRED READS ARE COMPLETE.
+            // WRITES BEGIN HERE.
+            // ------------------------------------------------
 
             const boostStartedAt =
               transactionNow;
