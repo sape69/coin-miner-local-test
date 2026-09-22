@@ -123,18 +123,9 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_USER_ID_MISMATCH",
     "ADMOB_CUSTOM_DATA_MISSING",
 
-    // --------------------------------------------------------
-    // Verified callback, mutta AdMob metadata ei vastaa
-    // Stelluriinin sallittua reward-rakennetta.
-    // --------------------------------------------------------
-
     "ADMOB_INVALID_AD_UNIT",
     "ADMOB_INVALID_REWARD_ITEM",
     "ADMOB_INVALID_REWARD_AMOUNT",
-
-    // --------------------------------------------------------
-    // Sama transaction_id, mutta eri tapahtumatiedot.
-    // --------------------------------------------------------
 
     "ADMOB_TRANSACTION_CONFLICT",
   ]);
@@ -616,13 +607,6 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // AD NETWORK
   // ----------------------------------------------------------
-  //
-  // AdMobin ad_network välitetään numeerisena
-  // identifier-arvona.
-  //
-  // Säilytetään merkkijonona, jotta precision ei katoa.
-  //
-  // ----------------------------------------------------------
 
   const adNetwork =
     normalizeString(
@@ -714,7 +698,10 @@ function validateVerifiedAdData(
 
   if (
     signature.length === 0 ||
-    signature.length > 8192
+    signature.length > 8192 ||
+    !/^[A-Za-z0-9_-]+$/.test(
+      signature,
+    )
   ) {
     const error =
       new Error(
@@ -786,12 +773,6 @@ function validateVerifiedAdData(
 
   // ----------------------------------------------------------
   // USER ID
-  // ----------------------------------------------------------
-  //
-  // AdMob user_id on valinnainen.
-  //
-  // Jos se on mukana, sen pitää vastata varmennettua UID:tä.
-  //
   // ----------------------------------------------------------
 
   const rawUserId =
@@ -869,6 +850,132 @@ function validateVerifiedAdData(
 
     userId,
   };
+}
+
+
+// ============================================================
+// 🔎 COMPARE STORED REWARD DATA
+// ============================================================
+//
+// Transaction ID:n pitää olla idempotentti.
+//
+// Jos sama transaction_id tulee uudelleen täysin samalla
+// varmennetulla datalla, tapahtuma käsitellään duplicaatiksi.
+//
+// Jos sama transaction_id liittyy eri dataan, kyseessä on
+// turvallisuussyistä konflikti.
+//
+// ============================================================
+
+function isSameVerifiedReward(
+  existingData,
+  validatedAd,
+) {
+  if (
+    !existingData ||
+    !validatedAd
+  ) {
+    return false;
+  }
+
+  const existingUid =
+    normalizeString(
+      existingData.uid,
+    );
+
+  const existingPurpose =
+    normalizeString(
+      existingData.rewardPurpose,
+    );
+
+  const existingTransactionId =
+    normalizeString(
+      existingData.transactionId,
+    );
+
+  const existingAdUnit =
+    normalizeString(
+      existingData.adUnit,
+    );
+
+  const existingAdNetwork =
+    normalizeString(
+      existingData.adNetwork,
+    );
+
+  const existingRewardAmount =
+    Number(
+      existingData.rewardAmount,
+    );
+
+  const existingRewardItem =
+    normalizeString(
+      existingData.rewardItem,
+    );
+
+  const existingTimestamp =
+    Number(
+      existingData.timestamp,
+    );
+
+  const existingKeyId =
+    normalizeString(
+      existingData.keyId,
+    );
+
+  const existingSignature =
+    normalizeString(
+      existingData.signature,
+    );
+
+  const existingCustomData =
+    normalizeString(
+      existingData.customData,
+    );
+
+  const existingUserId =
+    normalizeString(
+      existingData.userId,
+    );
+
+
+  return (
+    existingUid ===
+      validatedAd.uid &&
+
+    existingPurpose ===
+      validatedAd.rewardPurpose &&
+
+    existingTransactionId ===
+      validatedAd.transactionId &&
+
+    existingAdUnit ===
+      validatedAd.adUnit &&
+
+    existingAdNetwork ===
+      validatedAd.adNetwork &&
+
+    existingRewardAmount ===
+      validatedAd.rewardAmount &&
+
+    existingRewardItem ===
+      validatedAd.rewardItem &&
+
+    existingTimestamp ===
+      validatedAd.timestamp &&
+
+    existingKeyId ===
+      validatedAd.keyId &&
+
+    existingSignature ===
+      validatedAd.signature &&
+
+    existingCustomData ===
+      validatedAd.customData &&
+
+    existingUserId ===
+      validatedAd.userId
+  );
 }
 
 
@@ -975,12 +1082,8 @@ async function saveVerifiedAdMobReward(
   // FIRESTORE TRANSACTION
   // ----------------------------------------------------------
   //
-  // IMPORTANT:
-  //
   // Kaikki transaction.get() -operaatiot suoritetaan ennen
   // transaction.set()/create()-operaatioita.
-  //
-  // Tämä koskee sekä reward-dokumenttia että audit-historyä.
   //
   // ----------------------------------------------------------
 
@@ -1004,7 +1107,7 @@ async function saveVerifiedAdMobReward(
 
 
       // ======================================================
-      // 🔐 DUPLICATE / CONFLICT
+      // 🔐 EXISTING REWARD
       // ======================================================
 
       if (
@@ -1014,150 +1117,98 @@ async function saveVerifiedAdMobReward(
           existingSnapshot.data() ||
           {};
 
-        const existingUid =
-          normalizeString(
-            existingData.uid,
-          );
-
-        const existingPurpose =
-          normalizeString(
-            existingData.rewardPurpose,
-          );
-
-        const existingTransactionId =
-          normalizeString(
-            existingData.transactionId,
-          );
-
-        const existingAdUnit =
-          normalizeString(
-            existingData.adUnit,
-          );
-
-        const existingAdNetwork =
-          normalizeString(
-            existingData.adNetwork,
-          );
-
-        const existingRewardAmount =
-          Number(
-            existingData.rewardAmount,
-          );
-
-        const existingRewardItem =
-          normalizeString(
-            existingData.rewardItem,
-          );
-
-        const existingTimestamp =
-          Number(
-            existingData.timestamp,
-          );
-
-        const existingKeyId =
-          normalizeString(
-            existingData.keyId,
-          );
-
-        const existingSignature =
-          normalizeString(
-            existingData.signature,
-          );
-
-        const existingCustomData =
-          normalizeString(
-            existingData.customData,
-          );
-
-        const existingUserId =
-          normalizeString(
-            existingData.userId,
-          );
-
-
-        // ----------------------------------------------------
-        // TRANSACTION ID CONFLICT
-        // ----------------------------------------------------
-
-        if (
-          existingUid !==
-          uid ||
-          existingPurpose !==
-          rewardPurpose ||
-          existingTransactionId !==
-          transactionId ||
-          existingAdUnit !==
-          adUnit ||
-          existingAdNetwork !==
-          adNetwork ||
-          existingRewardAmount !==
-          rewardAmount ||
-          existingRewardItem !==
-          rewardItem ||
-          existingTimestamp !==
-          timestamp ||
-          existingKeyId !==
-          keyId ||
-          existingSignature !==
-          signature ||
-          existingCustomData !==
-          customData ||
-          existingUserId !==
-          userId
-        ) {
-          const error =
-            new Error(
-              "AdMob transaction_id is already associated with different reward data.",
-            );
-
-          error.code =
-            "ADMOB_TRANSACTION_CONFLICT";
-
-          throw error;
-        }
-
 
         // ----------------------------------------------------
         // SAME VERIFIED EVENT
         // ----------------------------------------------------
 
-        console.log(
-          "🐱 AdMob transaction already processed.",
-          {
-            transactionId,
+        if (
+          isSameVerifiedReward(
+            existingData,
+            validatedAd,
+          )
+        ) {
+          // --------------------------------------------------
+          // HISTORY MUST ALSO EXIST
+          // --------------------------------------------------
+          //
+          // Jos reward löytyy mutta audit-history puuttuu,
+          // emme käsittele tapahtumaa normaalina duplicaatina.
+          //
+          // Tämä paljastaa tietokannan epäjohdonmukaisuuden
+          // eikä jätä sitä hiljaisesti huomiotta.
+          //
+          // --------------------------------------------------
 
-            uid,
+          if (
+            !existingHistorySnapshot.exists
+          ) {
+            const error =
+              new Error(
+                "AdMob reward exists without the corresponding audit history.",
+              );
+
+            error.code =
+              "ADMOB_TRANSACTION_CONFLICT";
+
+            throw error;
+          }
+
+
+          console.log(
+            "🐱 AdMob transaction already processed.",
+            {
+              transactionId,
+
+              uid,
+
+              rewardPurpose,
+
+              historyExists:
+                true,
+            },
+          );
+
+
+          return {
+            success:
+              true,
+
+            verified:
+              true,
+
+            recorded:
+              true,
+
+            rewarded:
+              false,
+
+            duplicate:
+              true,
+
+            transactionId,
 
             rewardPurpose,
 
-            historyExists:
-              existingHistorySnapshot.exists,
-          },
-        );
+            message:
+              "🐱📺 Tämä AdMob-tapahtuma on jo vastaanotettu.",
+          };
+        }
 
-        return {
-          success:
-            true,
 
-          verified:
-            true,
+        // ----------------------------------------------------
+        // DIFFERENT DATA = CONFLICT
+        // ----------------------------------------------------
 
-          recorded:
-            true,
+        const error =
+          new Error(
+            "AdMob transaction_id is already associated with different reward data.",
+          );
 
-          rewarded:
-            false,
+        error.code =
+          "ADMOB_TRANSACTION_CONFLICT";
 
-          duplicate:
-            true,
-
-          transactionId,
-
-          rewardPurpose,
-
-          message:
-            "🐱📺 Tämä AdMob-tapahtuma on jo vastaanotettu.",
-        };
+        throw error;
       }
 
 
@@ -1202,7 +1253,7 @@ async function saveVerifiedAdMobReward(
       //
       // ======================================================
 
-      transaction.set(
+      transaction.create(
         rewardRef,
         {
           uid,
@@ -1225,10 +1276,6 @@ async function saveVerifiedAdMobReward(
           timestamp,
 
           keyId,
-
-          // --------------------------------------------------
-          // 🔐 SSV SIGNATURE
-          // --------------------------------------------------
 
           signature,
 
@@ -1398,7 +1445,6 @@ const adMobReward =
         false;
 
       try {
-
         // ====================================================
         // 🔐 METHOD
         // ====================================================
@@ -1502,6 +1548,7 @@ const adMobReward =
           queryKeys,
         );
 
+
         const verifiedAd =
           await verifyAdMobCallback(
             req,
@@ -1560,6 +1607,7 @@ const adMobReward =
           validateVerifiedAdData(
             verifiedAd,
           );
+
 
         console.log(
           "🐱✅ Verified AdMob reward ready for Firestore.",
@@ -1625,6 +1673,7 @@ const adMobReward =
           },
         );
 
+
         res.status(
           200,
         ).json(
@@ -1634,7 +1683,6 @@ const adMobReward =
       } catch (
         error
       ) {
-
         // ====================================================
         // ❌ ERROR LOG
         // ====================================================
@@ -1650,6 +1698,7 @@ const adMobReward =
           error.message
             ? error.message
             : "Unknown AdMob error.";
+
 
         console.error(
           "❌ AdMob reward processing failed.",
