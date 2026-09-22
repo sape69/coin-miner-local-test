@@ -14,9 +14,7 @@
 // 📅 Firestore Timestamp / Date / ISO / milliseconds
 // 🐱 Mining-status
 //
-// TÄRKEÄÄ:
-//
-// Tämä tiedosto EI:
+// TÄMÄ TIEDOSTO EI:
 //
 // ❌ kirjoita Firestoreen
 // ❌ lisää STL-saldoa
@@ -137,7 +135,8 @@ function getSafeDate(
 ) {
   if (
     value === null ||
-    value === undefined
+    value === undefined ||
+    value === ""
   ) {
     return null;
   }
@@ -256,6 +255,10 @@ function getSafeDate(
   }
 
 
+  // ==========================================================
+  // ❌ UNSUPPORTED TYPE
+  // ==========================================================
+
   return null;
 }
 
@@ -277,13 +280,8 @@ function getSafeNow(
       value,
     );
 
-  if (
-    date
-  ) {
-    return date;
-  }
-
-  return new Date();
+  return date ||
+    new Date();
 }
 
 
@@ -488,6 +486,15 @@ function calculateMiningStatus(
 
   // ==========================================================
   // ⚡ HASH RATE
+  // ==========================================================
+  //
+  // miningFunctions.js välittää nykyisen mining-syklin
+  // Hash Raten tähän kenttään.
+  //
+  // Tämä arvo kuuluu siis aktiiviselle mining-jaksolle,
+  // eikä sitä pidä laskea uudelleen Daily Streakistä tässä
+  // util-tiedostossa.
+  //
   // ==========================================================
 
   const hashRate =
