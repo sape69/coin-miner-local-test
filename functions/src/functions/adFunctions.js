@@ -221,8 +221,10 @@ function validateUid(
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// AdMob dokumentoi transaction_id:n yksilöllisenä
-// hex-enkoodattuna reward grant -tunnisteena.
+// AdMob käyttää transaction_id:tä yksilöllisenä
+// reward grant -tunnisteena.
+//
+// Stelluriini hyväksyy tässä vain hex-merkkijonon.
 //
 // ============================================================
 
@@ -293,13 +295,11 @@ function validateRewardPurpose(
 //
 // Käytetään admobService.js:n keskitettyä konfiguraatiota.
 //
-// Näin adFunctions.js ei pidä omia kopioita:
+// adFunctions.js ei ylläpidä omia kopioita:
 //
-// ❌ ad unit ID
+// ❌ Ad Unit ID
 // ❌ reward amount
 // ❌ reward item
-//
-// Tämä vähentää config drift -riskiä.
 //
 // ============================================================
 
@@ -350,15 +350,41 @@ function getExpectedAdMobConfig(
     throw error;
   }
 
+  const rewardAmount =
+    Number(
+      rewardDefinition.rewardAmount,
+    );
+
+  const rewardItem =
+    normalizeString(
+      rewardDefinition.rewardItem,
+    );
+
+  if (
+    !Number.isSafeInteger(
+      rewardAmount,
+    ) ||
+    rewardAmount <= 0 ||
+    rewardItem.length === 0
+  ) {
+    const error =
+      new Error(
+        `Invalid AdMob reward configuration for ${rewardPurpose}.`,
+      );
+
+    error.code =
+      "ADMOB_INVALID_REWARD_CONFIGURATION";
+
+    throw error;
+  }
+
   return {
     adUnit:
       adUnit.trim(),
 
-    rewardAmount:
-      rewardDefinition.rewardAmount,
+    rewardAmount,
 
-    rewardItem:
-      rewardDefinition.rewardItem,
+    rewardItem,
   };
 }
 
@@ -503,20 +529,12 @@ function validateVerifiedAdData(
       verifiedAd.rewardAmount,
     );
 
-  const expectedRewardAmount =
-    Number(
-      expectedAdMob.rewardAmount,
-    );
-
   if (
     !Number.isSafeInteger(
       rewardAmount,
     ) ||
-    !Number.isSafeInteger(
-      expectedRewardAmount,
-    ) ||
     rewardAmount !==
-      expectedRewardAmount
+      expectedAdMob.rewardAmount
   ) {
     const error =
       new Error(
@@ -540,13 +558,10 @@ function validateVerifiedAdData(
     );
 
   const expectedRewardItem =
-    normalizeString(
-      expectedAdMob.rewardItem,
-    );
+    expectedAdMob.rewardItem;
 
   if (
     rewardItem.length === 0 ||
-    expectedRewardItem.length === 0 ||
     rewardItem !==
       expectedRewardItem
   ) {
@@ -572,13 +587,10 @@ function validateVerifiedAdData(
     );
 
   const expectedAdUnit =
-    normalizeString(
-      expectedAdMob.adUnit,
-    );
+    expectedAdMob.adUnit;
 
   if (
     adUnit.length === 0 ||
-    expectedAdUnit.length === 0 ||
     adUnit !==
       expectedAdUnit
   ) {
@@ -598,7 +610,8 @@ function validateVerifiedAdData(
   // AD NETWORK
   // ----------------------------------------------------------
   //
-  // AdMobin ad_network voi olla numeerinen identifier.
+  // AdMobin ad_network voidaan välittää numeerisena
+  // identifier-arvona.
   //
   // Säilytetään merkkijonona, jotta precision ei katoa.
   //
@@ -773,21 +786,23 @@ function validateVerifiedAdData(
   //
   // ----------------------------------------------------------
 
-  const userId =
+  const rawUserId =
     normalizeString(
       verifiedAd.userId,
     );
 
+  let userId = "";
+
   if (
-    userId
+    rawUserId
   ) {
-    const validatedUserId =
+    userId =
       validateUid(
-        userId,
+        rawUserId,
       );
 
     if (
-      !validatedUserId
+      !userId
     ) {
       const error =
         new Error(
@@ -801,7 +816,7 @@ function validateVerifiedAdData(
     }
 
     if (
-      validatedUserId !==
+      userId !==
       uid
     ) {
       const error =
@@ -983,6 +998,11 @@ async function saveVerifiedAdMobReward(
             existingData.adUnit,
           );
 
+        const existingAdNetwork =
+          normalizeString(
+            existingData.adNetwork,
+          );
+
         const existingRewardAmount =
           Number(
             existingData.rewardAmount,
@@ -993,9 +1013,40 @@ async function saveVerifiedAdMobReward(
             existingData.rewardItem,
           );
 
+        const existingTimestamp =
+          Number(
+            existingData.timestamp,
+          );
+
+        const existingKeyId =
+          normalizeString(
+            existingData.keyId,
+          );
+
+        const existingSignature =
+          normalizeString(
+            existingData.signature,
+          );
+
+        const existingCustomData =
+          normalizeString(
+            existingData.customData,
+          );
+
+        const existingUserId =
+          normalizeString(
+            existingData.userId,
+          );
+
 
         // ----------------------------------------------------
         // TRANSACTION ID CONFLICT
+        // ----------------------------------------------------
+        //
+        // Koska reward document on transaction_id:n perusteella
+        // yksilöity, saman ID:n pitää aina sisältää täsmälleen
+        // sama varmennettu reward-tapahtuma.
+        //
         // ----------------------------------------------------
 
         if (
@@ -1007,10 +1058,22 @@ async function saveVerifiedAdMobReward(
             transactionId ||
           existingAdUnit !==
             adUnit ||
+          existingAdNetwork !==
+            adNetwork ||
           existingRewardAmount !==
             rewardAmount ||
           existingRewardItem !==
-            rewardItem
+            rewardItem ||
+          existingTimestamp !==
+            timestamp ||
+          existingKeyId !==
+            keyId ||
+          existingSignature !==
+            signature ||
+          existingCustomData !==
+            customData ||
+          existingUserId !==
+            userId
         ) {
           const error =
             new Error(
