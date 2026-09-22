@@ -274,6 +274,26 @@ function getRewardConfiguration(rewardPurpose) {
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
+//
+// The SSV service is responsible for creating verified
+// documents inside admobRewards.
+//
+// This function only accepts:
+// - matching UID
+// - matching reward purpose
+// - unconsumed reward
+// - correct AdMob ad unit
+// - correct reward item
+// - exact expected reward amount
+// - valid transaction ID
+//
+// The query is intentionally limited so a user's complete
+// historical AdMob reward collection is never loaded without
+// bounds.
+//
+// ============================================================
+
+const ADMOB_REWARD_QUERY_LIMIT = 100;
 
 async function findVerifiedAdMobReward(
   uid,
@@ -301,6 +321,9 @@ async function findVerifiedAdMobReward(
         "rewardPurpose",
         "==",
         rewardPurpose
+      )
+      .limit(
+        ADMOB_REWARD_QUERY_LIMIT
       )
       .get();
 
@@ -480,9 +503,23 @@ async function findVerifiedAdMobReward(
 // ============================================================
 // 🔐 WAIT FOR ADMOB SSV
 // ============================================================
+//
+// Keep enough time available for the Firestore transaction
+// after SSV polling.
+//
+// Callable timeout:
+// - 120 seconds
+//
+// SSV wait:
+// - 90 seconds maximum
+//
+// Poll:
+// - every 2 seconds
+//
+// ============================================================
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
-  110 * 1000;
+  90 * 1000;
 
 const ADMOB_SSV_POLL_INTERVAL_MS =
   2 * 1000;
