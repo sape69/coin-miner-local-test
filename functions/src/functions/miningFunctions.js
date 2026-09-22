@@ -278,6 +278,18 @@ function getRewardConfiguration(rewardPurpose) {
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
+//
+// IMPORTANT:
+//
+// The query is intentionally ordered by createdAt descending.
+//
+// This prevents the old situation where Firestore could return
+// an arbitrary first 100 documents and the JavaScript code would
+// only sort those 100 documents afterwards.
+//
+// The final candidate validation is still performed locally.
+//
+// ============================================================
 
 const ADMOB_REWARD_QUERY_LIMIT = 100;
 
@@ -307,6 +319,10 @@ async function findVerifiedAdMobReward(
         "rewardPurpose",
         "==",
         rewardPurpose
+      )
+      .orderBy(
+        "createdAt",
+        "desc"
       )
       .limit(
         ADMOB_REWARD_QUERY_LIMIT
@@ -2467,6 +2483,13 @@ const claimMining =
             // COMPLETE PREVIOUS CYCLE
             //
             // ONLY its own Hash Rate is used.
+            //
+            // IMPORTANT:
+            //
+            // If an expired cycle has an invalid Hash Rate,
+            // do NOT silently replace it with a new rate.
+            // Refuse the operation instead so the cycle cannot
+            // accidentally be calculated with the wrong rate.
             // ------------------------------------------------
 
             if (
@@ -2478,6 +2501,15 @@ const claimMining =
                 getHistoricalMiningHashRate(
                   data
                 );
+
+              if (
+                previousHashRate <= 0
+              ) {
+                throw new HttpsError(
+                  "failed-precondition",
+                  "🐱 Edellisen mining-cyclen Hash Rate on virheellinen. Louhintaa ei korvattu uudella Hash Ratella."
+                );
+              }
 
               const previousCycle =
                 await calculateMiningCycle(
