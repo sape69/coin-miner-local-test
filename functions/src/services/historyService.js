@@ -28,7 +28,7 @@
 const {
   getHistoryCollection,
 } = require(
-  "../utils/userUtils"
+  "../utils/userUtils",
 );
 
 
@@ -57,23 +57,38 @@ function validateHistoryDate(
   if (
     typeof date !== "string"
   ) {
-    throw new Error(
-      "date must be a string.",
-    );
+    const error =
+      new Error(
+        "date must be a string.",
+      );
+
+    error.code =
+      "HISTORY_INVALID_DATE";
+
+    throw error;
   }
+
 
   const value =
     date.trim();
+
 
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(
       value,
     )
   ) {
-    throw new Error(
-      "date must use YYYY-MM-DD format.",
-    );
+    const error =
+      new Error(
+        "date must use YYYY-MM-DD format.",
+      );
+
+    error.code =
+      "HISTORY_INVALID_DATE";
+
+    throw error;
   }
+
 
   const [
     yearString,
@@ -82,20 +97,24 @@ function validateHistoryDate(
   ] =
     value.split("-");
 
+
   const year =
     Number(
       yearString,
     );
+
 
   const month =
     Number(
       monthString,
     );
 
+
   const day =
     Number(
       dayString,
     );
+
 
   const dateObject =
     new Date(
@@ -106,7 +125,11 @@ function validateHistoryDate(
       ),
     );
 
+
   if (
+    Number.isNaN(
+      dateObject.getTime(),
+    ) ||
     dateObject.getUTCFullYear() !==
       year ||
     dateObject.getUTCMonth() !==
@@ -114,10 +137,17 @@ function validateHistoryDate(
     dateObject.getUTCDate() !==
       day
   ) {
-    throw new Error(
-      "date is not a valid calendar date.",
-    );
+    const error =
+      new Error(
+        "date is not a valid calendar date.",
+      );
+
+    error.code =
+      "HISTORY_INVALID_DATE";
+
+    throw error;
   }
+
 
   return value;
 }
@@ -134,6 +164,11 @@ function validateHistoryDate(
 // users/{uid}/transactions/{transactionId}
 //
 // Firestore luo dokumentille automaattisen ID:n.
+//
+// HUOM:
+//
+// Tämä funktio EI kirjoita Firestoreen.
+// Se ainoastaan palauttaa uuden DocumentReference-olion.
 //
 // ============================================================
 
@@ -160,6 +195,11 @@ function createHistoryRef(
 // Tämä mahdollistaa saman Daily Rewardin
 // idempotentin käsittelyn.
 //
+// HUOM:
+//
+// Tämä funktio EI kirjoita Firestoreen.
+// Se ainoastaan palauttaa DocumentReference-olion.
+//
 // ============================================================
 
 function createDailyHistoryRef(
@@ -170,6 +210,7 @@ function createDailyHistoryRef(
     validateHistoryDate(
       date,
     );
+
 
   return getHistoryCollection(
     uid,
