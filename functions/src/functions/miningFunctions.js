@@ -19,24 +19,20 @@
 // - Mining Start
 // - Power Boost
 //
+// MINING CYCLE:
+//
+// - Every mining cycle lasts MINING_DURATION_MS.
+// - miningHashRate belongs ONLY to the current cycle.
+// - A new cycle receives the current Daily Hash Rate.
+// - An old cycle can never inherit a new cycle's Hash Rate.
+//
 // POWER BOOST:
 //
 // - Only active while mining is active.
 // - Never continues after miningEndsAt.
 // - Never carries into a new mining cycle.
-//
-// MINING HASH RATE:
-//
-// miningHashRate belongs to the CURRENT mining cycle.
-//
-// Daily Hash Rate is assigned when a NEW mining cycle starts.
-//
-// Therefore:
-//
-// - getMiningStatus() uses miningHashRate.
-// - Daily status may show the rate for the next cycle.
-// - Power Boost is calculated separately.
-// - Boost time is always limited to the current mining cycle.
+// - Boost history is used for actual mining calculations.
+// - Overlapping boost intervals are merged.
 //
 // ============================================================
 
@@ -210,6 +206,10 @@ function getTimestampMilliseconds(value) {
 // ============================================================
 
 function getRewardCreatedAtMs(rewardData) {
+  if (!rewardData) {
+    return 0;
+  }
+
   const candidates = [
     rewardData.createdAt,
     rewardData.receivedAt,
@@ -275,11 +275,11 @@ function getRewardConfiguration(rewardPurpose) {
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
 //
-// SSV reward documents are searched by:
-// - uid
-// - rewardPurpose
+// The server searches rewards belonging to the authenticated
+// user and the requested purpose.
 //
-// Additional validation is always performed locally.
+// A reward must pass ALL local validation rules before it can
+// be returned as usable.
 //
 // ============================================================
 
@@ -922,6 +922,15 @@ function getDailyStatus(
 // ============================================================
 // 📺 AD STATUS
 // ============================================================
+//
+// Active Boost is valid only if:
+//
+// 1. Mining is active.
+// 2. Boost started inside the current mining cycle.
+// 3. Boost end is after boost start.
+// 4. Effective end is capped to miningEndsAt.
+//
+// ============================================================
 
 function getAdStatus(
   data,
@@ -1070,13 +1079,11 @@ function getAdStatus(
 // ⛏️ MINING HASH RATE
 // ============================================================
 //
-// miningHashRate is the rate of the CURRENT cycle.
+// miningHashRate = current mining cycle's base Hash Rate.
 //
-// It is intentionally limited to the configured Daily
-// Hash Rate range.
+// It must NEVER contain AD_HASH_RATE_BONUS.
 //
-// Power Boost is NOT stored inside miningHashRate.
-// It is calculated separately.
+// Power Boost is always calculated separately.
 //
 // ============================================================
 
@@ -1119,11 +1126,10 @@ function getMiningHashRate(
 // 📺 BOOST HISTORY
 // ============================================================
 //
-// Only Power Boost history belonging to the CURRENT mining
-// cycle is accepted.
+// Only history belonging to the CURRENT mining cycle can
+// contribute to the current cycle.
 //
-// A boost from an older cycle can therefore never increase
-// the production of a newer cycle.
+// Old boosts therefore cannot leak into a new cycle.
 //
 // ============================================================
 
@@ -1211,8 +1217,10 @@ async function getAdBoostHistory(
 // ⚡ CALCULATE BOOST TIME
 // ============================================================
 //
-// Overlapping boosts are merged so the same time period can
-// never be counted twice.
+// Overlapping intervals are merged.
+//
+// This prevents the same second from being rewarded twice
+// if two Boost records overlap.
 //
 // ============================================================
 
@@ -1330,13 +1338,13 @@ function calculateAdBoostMilliseconds(
 //   × MINING_PER_HASH_PER_HOUR
 //   × elapsed hours
 //
-// Power Boost:
+// Boost mining:
 //
 //   AD_HASH_RATE_BONUS
 //   × MINING_PER_HASH_PER_HOUR
 //   × boost hours
 //
-// Boost duration is ALWAYS limited to the current cycle.
+// Both calculations are independent.
 //
 // ============================================================
 
@@ -1711,6 +1719,10 @@ const getMiningStatus =
             today
           );
 
+        // IMPORTANT:
+        // This is the current cycle's base Hash Rate.
+        // It is NOT the next Daily Hash Rate when a cycle
+        // is already active.
         const miningHashRate =
           getMiningHashRate(
             data,
@@ -1832,10 +1844,18 @@ const getMiningStatus =
                 ? "🐱✨ Louhinta on valmis kerättäväksi!"
                 : "🐱 Stella odottaa seuraavaa louhintaa.",
 
+          // --------------------------------------------------
+          // CURRENT CYCLE HASH RATE
+          // --------------------------------------------------
+
           hashRate:
             miningHashRate,
 
           miningHashRate,
+
+          // --------------------------------------------------
+          // BALANCE / MINING
+          // --------------------------------------------------
 
           miningBalance,
 
@@ -1848,6 +1868,10 @@ const getMiningStatus =
           boostMilliseconds,
 
           estimatedTotal,
+
+          // --------------------------------------------------
+          // MINING STATE
+          // --------------------------------------------------
 
           miningActive:
             miningStatus.miningActive ===
@@ -1888,6 +1912,10 @@ const getMiningStatus =
               ? miningEndsAt.toISOString()
               : null,
 
+          // --------------------------------------------------
+          // PRODUCTION
+          // --------------------------------------------------
+
           miningPerHour,
 
           miningPerMinute:
@@ -1897,6 +1925,10 @@ const getMiningStatus =
             miningPerHour / 3600,
 
           activeMiningPerHour,
+
+          // --------------------------------------------------
+          // DAILY HASH RATE
+          // --------------------------------------------------
 
           dailyClaimed:
             dailyStatus.claimedToday,
@@ -1918,6 +1950,10 @@ const getMiningStatus =
 
           nextDailyStreak:
             dailyStatus.streak,
+
+          // --------------------------------------------------
+          // ADS
+          // --------------------------------------------------
 
           adsToday:
             adStatus.adsToday,
@@ -2004,6 +2040,14 @@ const claimMining =
 
         const userRef =
           getUserRef(uid);
+
+        // ----------------------------------------------------
+        // EARLY STATE CHECK
+        // ----------------------------------------------------
+        //
+        // This avoids waiting for SSV if mining is already
+        // active.
+        //
 
         const earlyNow =
           new Date();
@@ -2162,6 +2206,10 @@ const claimMining =
           };
         }
 
+        // ----------------------------------------------------
+        // WAIT FOR VERIFIED SSV
+        // ----------------------------------------------------
+
         const verifiedReward =
           await getVerifiedMiningStartReward(
             uid
@@ -2191,6 +2239,10 @@ const claimMining =
           );
         }
 
+        // ----------------------------------------------------
+        // ATOMIC MINING START
+        // ----------------------------------------------------
+
         return await db.runTransaction(
           async (transaction) => {
             const transactionNow =
@@ -2218,6 +2270,10 @@ const claimMining =
               userSnapshot.exists
                 ? userSnapshot.data() || {}
                 : {};
+
+            // ------------------------------------------------
+            // CHECK CURRENT MINING CYCLE AGAIN
+            // ------------------------------------------------
 
             const currentStreak =
               getDailyStreak(data);
@@ -2368,12 +2424,20 @@ const claimMining =
               };
             }
 
+            // ------------------------------------------------
+            // VALIDATE SSV REWARD INSIDE TRANSACTION
+            // ------------------------------------------------
+
             validateVerifiedRewardDocument(
               rewardSnapshot,
               uid,
               "mining_start",
               "miningStartClaimed"
             );
+
+            // ------------------------------------------------
+            // DAILY HASH RATE
+            // ------------------------------------------------
 
             const dailyClaim =
               calculateNextDailyClaim(
@@ -2386,6 +2450,10 @@ const claimMining =
 
             const dailyStreak =
               dailyClaim.streak;
+
+            // ------------------------------------------------
+            // EXISTING BALANCE
+            // ------------------------------------------------
 
             const oldBalance =
               getSafeNonNegativeNumber(
@@ -2409,6 +2477,10 @@ const claimMining =
 
             let previousBoostMilliseconds =
               0;
+
+            // ------------------------------------------------
+            // COMPLETE PREVIOUS CYCLE
+            // ------------------------------------------------
 
             const previousHashRate =
               getMiningHashRate(
@@ -2474,6 +2546,10 @@ const claimMining =
               }
             }
 
+            // ------------------------------------------------
+            // ACHIEVEMENTS
+            // ------------------------------------------------
+
             await updateMiningAchievements(
               transaction,
               uid,
@@ -2481,6 +2557,10 @@ const claimMining =
               true,
               transactionNow
             );
+
+            // ------------------------------------------------
+            // NEW MINING CYCLE
+            // ------------------------------------------------
 
             const newMiningStartedAt =
               transactionNow;
@@ -2490,6 +2570,10 @@ const claimMining =
                 transactionNowMs +
                 MINING_DURATION_MS
               );
+
+            // ------------------------------------------------
+            // USER UPDATE
+            // ------------------------------------------------
 
             const userUpdate = {
               hashRate:
@@ -2524,6 +2608,7 @@ const claimMining =
               miningEndsAt:
                 newMiningEndsAt,
 
+              // Old Boost MUST NOT carry into the new cycle.
               adBoostStartedAt:
                 null,
 
@@ -2544,6 +2629,10 @@ const claimMining =
                 merge: true,
               }
             );
+
+            // ------------------------------------------------
+            // CONSUME MINING SSV REWARD
+            // ------------------------------------------------
 
             transaction.set(
               rewardRef,
@@ -2576,6 +2665,10 @@ const claimMining =
                 merge: true,
               }
             );
+
+            // ------------------------------------------------
+            // DAILY HISTORY
+            // ------------------------------------------------
 
             if (
               !dailyClaim.claimedToday
@@ -2622,6 +2715,10 @@ const claimMining =
               );
             }
 
+            // ------------------------------------------------
+            // PREVIOUS MINING HISTORY
+            // ------------------------------------------------
+
             if (
               completedPreviousCycle
             ) {
@@ -2648,6 +2745,9 @@ const claimMining =
                   hashRate:
                     previousHashRate,
 
+                  miningHashRate:
+                    previousHashRate,
+
                   baseMining:
                     previousBaseMining,
 
@@ -2657,11 +2757,21 @@ const claimMining =
                   boostMilliseconds:
                     previousBoostMilliseconds,
 
+                  miningStartedAt:
+                    previousStart,
+
+                  miningEndsAt:
+                    previousEnd,
+
                   createdAt:
                     FieldValue.serverTimestamp(),
                 }
               );
             }
+
+            // ------------------------------------------------
+            // NEW MINING HISTORY
+            // ------------------------------------------------
 
             const startHistoryRef =
               getHistoryCollection(
@@ -2677,9 +2787,13 @@ const claimMining =
                 title:
                   "Stella Mining Started 🐱⛏️",
 
-                amount: 0,
+                amount:
+                  0,
 
                 hashRate:
+                  dailyHashRate,
+
+                miningHashRate:
                   dailyHashRate,
 
                 dailyHashRate,
@@ -2688,6 +2802,12 @@ const claimMining =
 
                 miningDurationMs:
                   MINING_DURATION_MS,
+
+                miningStartedAt:
+                  newMiningStartedAt,
+
+                miningEndsAt:
+                  newMiningEndsAt,
 
                 adRewardTransactionId:
                   transactionId,
@@ -2699,6 +2819,10 @@ const claimMining =
                   FieldValue.serverTimestamp(),
               }
             );
+
+            // ------------------------------------------------
+            // RESPONSE
+            // ------------------------------------------------
 
             const dailyMessage =
               dailyClaim.claimedToday
@@ -2823,6 +2947,10 @@ const powerBoost =
         const userRef =
           getUserRef(uid);
 
+        // ----------------------------------------------------
+        // EARLY MINING CHECK
+        // ----------------------------------------------------
+
         const earlyNow =
           new Date();
 
@@ -2940,6 +3068,10 @@ const powerBoost =
           );
         }
 
+        // ----------------------------------------------------
+        // WAIT FOR SSV
+        // ----------------------------------------------------
+
         const verifiedReward =
           await getVerifiedPowerBoostReward(
             uid
@@ -2969,6 +3101,10 @@ const powerBoost =
           );
         }
 
+        // ----------------------------------------------------
+        // ATOMIC POWER BOOST
+        // ----------------------------------------------------
+
         return await db.runTransaction(
           async (transaction) => {
             const transactionNow =
@@ -2996,6 +3132,10 @@ const powerBoost =
               userSnapshot.exists
                 ? userSnapshot.data() || {}
                 : {};
+
+            // ------------------------------------------------
+            // CURRENT MINING CYCLE
+            // ------------------------------------------------
 
             const miningStartedAt =
               getMiningStartTime(
@@ -3061,6 +3201,10 @@ const powerBoost =
               );
             }
 
+            // ------------------------------------------------
+            // VALIDATE SSV INSIDE TRANSACTION
+            // ------------------------------------------------
+
             const validatedReward =
               validateVerifiedRewardDocument(
                 rewardSnapshot,
@@ -3068,6 +3212,10 @@ const powerBoost =
                 "power_boost",
                 "powerBoostClaimed"
               );
+
+            // ------------------------------------------------
+            // CURRENT AD STATUS
+            // ------------------------------------------------
 
             const adStatus =
               getAdStatus(
@@ -3105,6 +3253,10 @@ const powerBoost =
               );
             }
 
+            // ------------------------------------------------
+            // BOOST INTERVAL
+            // ------------------------------------------------
+
             const boostStartedAt =
               transactionNow;
 
@@ -3112,6 +3264,8 @@ const powerBoost =
               transactionNowMs +
               AD_BOOST_DURATION_MS;
 
+            // NEVER allow Boost to exceed the current
+            // mining cycle.
             const actualEndMs =
               Math.min(
                 requestedEndMs,
@@ -3139,6 +3293,10 @@ const powerBoost =
               );
             }
 
+            // ------------------------------------------------
+            // DAILY AD COUNTER
+            // ------------------------------------------------
+
             const storedAdDate =
               typeof data.lastAdDate ===
               "string"
@@ -3146,7 +3304,8 @@ const powerBoost =
                 : "";
 
             const currentAds =
-              storedAdDate === transactionToday
+              storedAdDate ===
+                transactionToday
                 ? Math.max(
                     0,
                     Math.floor(
@@ -3160,6 +3319,10 @@ const powerBoost =
 
             const newAdsToday =
               currentAds + 1;
+
+            // ------------------------------------------------
+            // USER UPDATE
+            // ------------------------------------------------
 
             transaction.set(
               userRef,
@@ -3190,6 +3353,10 @@ const powerBoost =
               }
             );
 
+            // ------------------------------------------------
+            // CONSUME SSV REWARD
+            // ------------------------------------------------
+
             transaction.set(
               rewardSnapshot.ref,
               {
@@ -3219,6 +3386,10 @@ const powerBoost =
               }
             );
 
+            // ------------------------------------------------
+            // BOOST HISTORY
+            // ------------------------------------------------
+
             const historyRef =
               getHistoryCollection(
                 uid
@@ -3233,7 +3404,8 @@ const powerBoost =
                 title:
                   "Stella Power Boost 🐱⚡",
 
-                amount: 0,
+                amount:
+                  0,
 
                 adRewardTransactionId:
                   validatedReward.transactionId ||
@@ -3260,6 +3432,9 @@ const powerBoost =
                 miningEndsAt:
                   miningEndsAt,
 
+                miningHashRate:
+                  miningHashRate,
+
                 adsToday:
                   newAdsToday,
 
@@ -3271,20 +3446,18 @@ const powerBoost =
               }
             );
 
+            // ------------------------------------------------
+            // RESPONSE
+            // ------------------------------------------------
+
             const dailyStatus =
               getDailyStatus(
                 data,
                 transactionToday
               );
 
-            const baseHashRate =
-              getMiningHashRate(
-                data,
-                dailyStatus.dailyHashRate
-              );
-
             const effectiveHashRate =
-              baseHashRate +
+              miningHashRate +
               AD_HASH_RATE_BONUS;
 
             return {
@@ -3332,7 +3505,15 @@ const powerBoost =
               miningEndsAt:
                 miningEndsAt.toISOString(),
 
+              miningHashRate,
+
               effectiveHashRate,
+
+              dailyHashRate:
+                dailyStatus.dailyHashRate,
+
+              dailyStreak:
+                dailyStatus.streak,
 
               transactionId,
 
