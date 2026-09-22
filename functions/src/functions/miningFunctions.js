@@ -1099,12 +1099,10 @@ function getAdStatus(
 //
 // IMPORTANT:
 //
-// This function is deliberately different from a Daily Hash
-// Rate fallback.
+// Once a valid mining cycle exists, its Hash Rate belongs
+// exclusively to that cycle.
 //
-// Once a mining cycle exists, its Hash Rate belongs to that
-// cycle. We must NEVER replace a missing/invalid historical
-// value with today's Daily Hash Rate.
+// Daily Hash Rate is used only when a NEW cycle is started.
 //
 // ============================================================
 
@@ -1145,10 +1143,10 @@ function getMiningHashRate(
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
 //
-// Historical calculation NEVER invents a Hash Rate.
+// Historical calculations NEVER invent a Hash Rate.
 //
-// If the old cycle has no valid miningHashRate,
-// return 0.
+// If the historical cycle has no valid miningHashRate,
+// return 0 instead of inheriting today's Daily Hash Rate.
 //
 // ============================================================
 
@@ -1768,10 +1766,9 @@ async function calculateCurrentUnclaimedMining(
   }
 
   // ----------------------------------------------------------
-  // IMPORTANT:
+  // EXISTING CYCLE ONLY
   //
-  // Existing cycle uses its own stored miningHashRate.
-  // Daily Hash Rate is NOT allowed to replace it.
+  // Never use today's Daily Hash Rate here.
   // ----------------------------------------------------------
 
   const miningHashRate =
@@ -1869,7 +1866,8 @@ const getMiningStatus =
           getMiningWindow(data);
 
         // ------------------------------------------------------
-        // Existing cycle must use its own Hash Rate.
+        // Existing cycle uses its own Hash Rate.
+        // New/no cycle uses current Daily Hash Rate.
         // ------------------------------------------------------
 
         const miningHashRate =
@@ -1954,7 +1952,8 @@ const getMiningStatus =
           hashRate:
             miningHashRate,
 
-          miningHashRate,
+          miningHashRate:
+            miningHashRate,
 
           miningBalance,
 
@@ -2135,11 +2134,6 @@ const claimMining =
 
         const earlyNowMs =
           earlyNow.getTime();
-
-        const earlyToday =
-          getUtcDateString(
-            earlyNow
-          );
 
         const earlySnapshot =
           await userRef.get();
@@ -2521,9 +2515,6 @@ const claimMining =
 
             // ------------------------------------------------
             // ACHIEVEMENT READS
-            //
-            // updateMiningAchievements performs its reads
-            // before its writes.
             // ------------------------------------------------
 
             await updateMiningAchievements(
@@ -2550,8 +2541,6 @@ const claimMining =
             const userUpdate = {
               hashRate:
                 dailyHashRate,
-
-              dailyHashRate,
 
               dailyStreak,
 
@@ -2693,6 +2682,11 @@ const claimMining =
                 getHistoryCollection(uid)
                   .doc();
 
+              const historicalHashRate =
+                getHistoricalMiningHashRate(
+                  data
+                );
+
               transaction.set(
                 historyRef,
                 {
@@ -2709,14 +2703,10 @@ const claimMining =
                     newBalance,
 
                   hashRate:
-                    getHistoricalMiningHashRate(
-                      data
-                    ),
+                    historicalHashRate,
 
                   miningHashRate:
-                    getHistoricalMiningHashRate(
-                      data
-                    ),
+                    historicalHashRate,
 
                   baseMining:
                     previousBaseMining,
