@@ -74,6 +74,8 @@ let cachedPublicKeys = null;
 
 let cachedPublicKeysAt = 0;
 
+let publicKeyFetchPromise = null;
+
 // ============================================================
 // 📺 ADMOB AD UNITS
 // ============================================================
@@ -246,172 +248,198 @@ async function getAdMobPublicKeys(
   }
 
   // ----------------------------------------------------------
+  // PREVENT SIMULTANEOUS KEY FETCHES
+  // ----------------------------------------------------------
+  //
+  // Jos useampi SSV callback saapuu yhtä aikaa tyhjän tai
+  // vanhentuneen cachen aikana, vain yksi HTTP-pyyntö
+  // haetaan AdMobilta.
+  //
+  // ----------------------------------------------------------
+
+  if (
+    publicKeyFetchPromise
+  ) {
+    return publicKeyFetchPromise;
+  }
+
+  // ----------------------------------------------------------
   // FETCH
   // ----------------------------------------------------------
 
-  const data =
-    await fetchJson(
-      ADMOB_SSV_KEYS_URL,
-    );
-
-  // ----------------------------------------------------------
-  // RESPONSE VALIDATION
-  // ----------------------------------------------------------
-
-  if (
-    !data ||
-    !Array.isArray(
-      data.keys,
-    )
-  ) {
-    const error =
-      new Error(
-        "AdMob public key response is invalid.",
-      );
-
-    error.code =
-      "ADMOB_PUBLIC_KEY_RESPONSE_INVALID";
-
-    throw error;
-  }
-
-  // ----------------------------------------------------------
-  // PARSE KEYS
-  // ----------------------------------------------------------
-
-  const keys =
-    new Map();
-
-  for (
-    const key of data.keys
-  ) {
-    if (
-      !key ||
-      key.keyId ===
-        undefined ||
-      typeof key.pem !==
-        "string"
-    ) {
-      continue;
-    }
-
-    const keyId =
-      String(
-        key.keyId,
-      ).trim();
-
-    const pem =
-      key.pem.trim();
-
-    if (
-      keyId.length ===
-        0 ||
-      pem.length ===
-        0
-    ) {
-      continue;
-    }
-
-    // --------------------------------------------------------
-    // KEY ID
-    // --------------------------------------------------------
-
-    if (
-      !/^\d+$/.test(
-        keyId,
-      )
-    ) {
-      continue;
-    }
-
-    // --------------------------------------------------------
-    // PUBLIC KEY
-    // --------------------------------------------------------
-
-    try {
-      const publicKey =
-        crypto.createPublicKey(
-          pem,
+  publicKeyFetchPromise =
+    (async () => {
+      const data =
+        await fetchJson(
+          ADMOB_SSV_KEYS_URL,
         );
 
-      // AdMob SSV käyttää ECDSA-public keytä.
+      // ------------------------------------------------------
+      // RESPONSE VALIDATION
+      // ------------------------------------------------------
 
       if (
-        publicKey.asymmetricKeyType !==
-        "ec"
+        !data ||
+        !Array.isArray(
+          data.keys,
+        )
       ) {
-        console.error(
-          "🐱 Invalid AdMob public key type skipped.",
-          {
-            keyId,
+        const error =
+          new Error(
+            "AdMob public key response is invalid.",
+          );
 
-            type:
-              publicKey.asymmetricKeyType,
-          },
-        );
+        error.code =
+          "ADMOB_PUBLIC_KEY_RESPONSE_INVALID";
 
-        continue;
+        throw error;
       }
-    } catch (error) {
-      console.error(
-        "🐱 Invalid AdMob public key skipped.",
-        {
+
+      // ------------------------------------------------------
+      // PARSE KEYS
+      // ------------------------------------------------------
+
+      const keys =
+        new Map();
+
+      for (
+        const key of data.keys
+      ) {
+        if (
+          !key ||
+          key.keyId ===
+            undefined ||
+          typeof key.pem !==
+            "string"
+        ) {
+          continue;
+        }
+
+        const keyId =
+          String(
+            key.keyId,
+          ).trim();
+
+        const pem =
+          key.pem.trim();
+
+        if (
+          keyId.length ===
+            0 ||
+          pem.length ===
+            0
+        ) {
+          continue;
+        }
+
+        // ----------------------------------------------------
+        // KEY ID
+        // ----------------------------------------------------
+
+        if (
+          !/^\d+$/.test(
+            keyId,
+          )
+        ) {
+          continue;
+        }
+
+        // ----------------------------------------------------
+        // PUBLIC KEY
+        // ----------------------------------------------------
+
+        try {
+          const publicKey =
+            crypto.createPublicKey(
+              pem,
+            );
+
+          // AdMob SSV käyttää ECDSA-public keytä.
+
+          if (
+            publicKey.asymmetricKeyType !==
+            "ec"
+          ) {
+            console.error(
+              "🐱 Invalid AdMob public key type skipped.",
+              {
+                keyId,
+
+                type:
+                  publicKey.asymmetricKeyType,
+              },
+            );
+
+            continue;
+          }
+        } catch (error) {
+          console.error(
+            "🐱 Invalid AdMob public key skipped.",
+            {
+              keyId,
+            },
+          );
+
+          continue;
+        }
+
+        keys.set(
           keyId,
+          pem,
+        );
+      }
+
+      // ------------------------------------------------------
+      // EMPTY KEY SET
+      // ------------------------------------------------------
+
+      if (
+        keys.size ===
+        0
+      ) {
+        const error =
+          new Error(
+            "No usable AdMob public keys were returned.",
+          );
+
+        error.code =
+          "ADMOB_PUBLIC_KEYS_EMPTY";
+
+        throw error;
+      }
+
+      // ------------------------------------------------------
+      // CACHE
+      // ------------------------------------------------------
+
+      cachedPublicKeys =
+        keys;
+
+      cachedPublicKeysAt =
+        Date.now();
+
+      console.log(
+        "🐱 AdMob public keys loaded.",
+        {
+          count:
+            keys.size,
+
+          keyIds:
+            Array.from(
+              keys.keys(),
+            ),
         },
       );
 
-      continue;
-    }
+      return keys;
+    })();
 
-    keys.set(
-      keyId,
-      pem,
-    );
+  try {
+    return await publicKeyFetchPromise;
+  } finally {
+    publicKeyFetchPromise =
+      null;
   }
-
-  // ----------------------------------------------------------
-  // EMPTY KEY SET
-  // ----------------------------------------------------------
-
-  if (
-    keys.size ===
-    0
-  ) {
-    const error =
-      new Error(
-        "No usable AdMob public keys were returned.",
-      );
-
-    error.code =
-      "ADMOB_PUBLIC_KEYS_EMPTY";
-
-    throw error;
-  }
-
-  // ----------------------------------------------------------
-  // CACHE
-  // ----------------------------------------------------------
-
-  cachedPublicKeys =
-    keys;
-
-  cachedPublicKeysAt =
-    now;
-
-  console.log(
-    "🐱 AdMob public keys loaded.",
-    {
-      count:
-        keys.size,
-
-      keyIds:
-        Array.from(
-          keys.keys(),
-        ),
-    },
-  );
-
-  return keys;
 }
 
 // ============================================================
