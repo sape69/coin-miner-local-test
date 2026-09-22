@@ -14,6 +14,7 @@
 // 🎯 Tunnistaa reward purposen
 // 💾 Tallentaa varmennetun AdMob-tapahtuman
 // 🛡️ Estää transaction_id:n uudelleenkäytön
+// 📜 Säilyttää audit-historian johdonmukaisena
 //
 // TÄMÄ TIEDOSTO EI:
 //
@@ -71,10 +72,6 @@ const {
 const {
   verifyAdMobCallback,
 
-  ADMOB_AD_UNITS,
-
-  REWARD_DEFINITIONS,
-
   getExpectedAdMobConfig:
     getServiceExpectedAdMobConfig,
 
@@ -86,6 +83,9 @@ const {
 
   validateAdNetwork:
     validateServiceAdNetwork,
+
+  validateTimestamp:
+    validateServiceTimestamp,
 } = require(
   "../services/admobService",
 );
@@ -140,16 +140,9 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_VERIFIED_DATA_MISSING",
     "ADMOB_USER_ID_MISMATCH",
     "ADMOB_CUSTOM_DATA_MISSING",
-
     "ADMOB_INVALID_AD_UNIT",
     "ADMOB_INVALID_REWARD_ITEM",
     "ADMOB_INVALID_REWARD_AMOUNT",
-
-    // --------------------------------------------------------
-    // Sama transaction_id eri allekirjoitetulla datalla
-    // tarkoittaa pysyvää turvallisuuskonfliktia.
-    // --------------------------------------------------------
-
     "ADMOB_TRANSACTION_CONFLICT",
   ]);
 
@@ -204,13 +197,32 @@ function normalizeString(
 
 
 // ============================================================
+// 🛡️ CREATE ERROR
+// ============================================================
+
+function createError(
+  code,
+  message,
+) {
+  const error =
+    new Error(
+      message,
+    );
+
+  error.code =
+    code;
+
+  return error;
+}
+
+
+// ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
 //
-// Keskitetty varsinainen UID-validointi tulee admobService.js:stä.
+// Keskitetty UID-validointi tulee admobService.js:stä.
 //
-// Tämä wrapper pitää adFunctions.js:n API:n vakaana ja tekee
-// defense-in-depth -validoinnin selkeäksi.
+// Tämä wrapper pitää adFunctions.js:n API:n vakaana.
 //
 // ============================================================
 
@@ -225,10 +237,6 @@ function validateUid(
 
 // ============================================================
 // 🆔 VALIDATE TRANSACTION ID
-// ============================================================
-//
-// Varsinainen validointi tulee admobService.js:stä.
-//
 // ============================================================
 
 function validateTransactionId(
@@ -273,9 +281,7 @@ function validateRewardPurpose(
 // 🔐 GET EXPECTED ADMOB CONFIG
 // ============================================================
 //
-// Käytetään admobService.js:n keskitettyä konfiguraatiota.
-//
-// adFunctions.js ei ylläpidä omia reward-arvojen kopioita.
+// AdMob-konfiguraatio tulee vain admobService.js:stä.
 //
 // ============================================================
 
@@ -305,15 +311,10 @@ function validateVerifiedAdData(
   if (
     !verifiedAd
   ) {
-    const error =
-      new Error(
-        "Verified AdMob data is missing.",
-      );
-
-    error.code =
-      "ADMOB_VERIFIED_DATA_MISSING";
-
-    throw error;
+    throw createError(
+      "ADMOB_VERIFIED_DATA_MISSING",
+      "Verified AdMob data is missing.",
+    );
   }
 
 
@@ -325,15 +326,10 @@ function validateVerifiedAdData(
     verifiedAd.verified !==
     true
   ) {
-    const error =
-      new Error(
-        "AdMob data is not cryptographically verified.",
-      );
-
-    error.code =
-      "ADMOB_VERIFIED_DATA_MISSING";
-
-    throw error;
+    throw createError(
+      "ADMOB_VERIFIED_DATA_MISSING",
+      "AdMob data is not cryptographically verified.",
+    );
   }
 
 
@@ -349,15 +345,10 @@ function validateVerifiedAdData(
   if (
     !uid
   ) {
-    const error =
-      new Error(
-        "Verified AdMob UID is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_UID";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_UID",
+      "Verified AdMob UID is invalid.",
+    );
   }
 
 
@@ -373,15 +364,10 @@ function validateVerifiedAdData(
   if (
     !rewardPurpose
   ) {
-    const error =
-      new Error(
-        "Verified AdMob reward purpose is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_REWARD_PURPOSE";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_REWARD_PURPOSE",
+      "Verified AdMob reward purpose is invalid.",
+    );
   }
 
 
@@ -407,15 +393,10 @@ function validateVerifiedAdData(
   if (
     !transactionId
   ) {
-    const error =
-      new Error(
-        "Verified AdMob transaction_id is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_TRANSACTION_ID";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      "Verified AdMob transaction_id is invalid.",
+    );
   }
 
 
@@ -435,15 +416,10 @@ function validateVerifiedAdData(
     rewardAmount !==
       expectedAdMob.rewardAmount
   ) {
-    const error =
-      new Error(
-        "Verified AdMob reward amount does not match server configuration.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_REWARD_AMOUNT";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_REWARD_AMOUNT",
+      "Verified AdMob reward amount does not match server configuration.",
+    );
   }
 
 
@@ -462,15 +438,10 @@ function validateVerifiedAdData(
     rewardItem !==
       expectedAdMob.rewardItem
   ) {
-    const error =
-      new Error(
-        "Verified AdMob reward item does not match server configuration.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_REWARD_ITEM";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_REWARD_ITEM",
+      "Verified AdMob reward item does not match server configuration.",
+    );
   }
 
 
@@ -489,15 +460,10 @@ function validateVerifiedAdData(
     adUnit !==
       expectedAdMob.adUnit
   ) {
-    const error =
-      new Error(
-        "Verified AdMob ad unit does not match server configuration.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_AD_UNIT";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_AD_UNIT",
+      "Verified AdMob ad unit does not match server configuration.",
+    );
   }
 
 
@@ -513,42 +479,34 @@ function validateVerifiedAdData(
   if (
     !adNetwork
   ) {
-    const error =
-      new Error(
-        "Verified AdMob ad network is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_AD_NETWORK";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_AD_NETWORK",
+      "Verified AdMob ad network is invalid.",
+    );
   }
 
 
   // ----------------------------------------------------------
   // TIMESTAMP
   // ----------------------------------------------------------
+  //
+  // Käytetään jälleen admobService.js:n keskitettyä
+  // timestamp-validointia defense-in-depth -tarkistuksena.
+  //
+  // ==========================================================
 
   const timestamp =
-    Number(
+    validateServiceTimestamp(
       verifiedAd.timestamp,
     );
 
   if (
-    !Number.isSafeInteger(
-      timestamp,
-    ) ||
-    timestamp <= 0
+    !timestamp
   ) {
-    const error =
-      new Error(
-        "Verified AdMob timestamp is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_TIMESTAMP";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_TIMESTAMP",
+      "Verified AdMob timestamp is invalid or outside the allowed time window.",
+    );
   }
 
 
@@ -569,15 +527,10 @@ function validateVerifiedAdData(
       keyId,
     )
   ) {
-    const error =
-      new Error(
-        "Verified AdMob key_id is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_KEY_ID";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_KEY_ID",
+      "Verified AdMob key_id is invalid.",
+    );
   }
 
 
@@ -598,15 +551,10 @@ function validateVerifiedAdData(
       signature,
     )
   ) {
-    const error =
-      new Error(
-        "Verified AdMob signature is invalid.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_SIGNATURE";
-
-    throw error;
+    throw createError(
+      "ADMOB_INVALID_SIGNATURE",
+      "Verified AdMob signature is invalid.",
+    );
   }
 
 
@@ -616,8 +564,6 @@ function validateVerifiedAdData(
   //
   // admobService.js palauttaa custom_data:n jo varmennettuna
   // ja normalisoituna.
-  //
-  // Tässä vaiheessa EI tehdä uutta decodeURIComponent()-kutsua.
   //
   // Odotettu rakenne:
   //
@@ -635,15 +581,10 @@ function validateVerifiedAdData(
       0 ||
     customData.length > 256
   ) {
-    const error =
-      new Error(
-        "Verified AdMob custom_data is missing or invalid.",
-      );
-
-    error.code =
-      "ADMOB_CUSTOM_DATA_MISSING";
-
-    throw error;
+    throw createError(
+      "ADMOB_CUSTOM_DATA_MISSING",
+      "Verified AdMob custom_data is missing or invalid.",
+    );
   }
 
 
@@ -658,15 +599,10 @@ function validateVerifiedAdData(
     customData !==
     expectedCustomData
   ) {
-    const error =
-      new Error(
-        "Verified AdMob custom_data does not match UID and reward purpose.",
-      );
-
-    error.code =
-      "ADMOB_CUSTOM_DATA_MISSING";
-
-    throw error;
+    throw createError(
+      "ADMOB_CUSTOM_DATA_MISSING",
+      "Verified AdMob custom_data does not match UID and reward purpose.",
+    );
   }
 
 
@@ -693,30 +629,20 @@ function validateVerifiedAdData(
     if (
       !userId
     ) {
-      const error =
-        new Error(
-          "Verified AdMob user_id is invalid.",
-        );
-
-      error.code =
-        "ADMOB_INVALID_UID";
-
-      throw error;
+      throw createError(
+        "ADMOB_INVALID_UID",
+        "Verified AdMob user_id is invalid.",
+      );
     }
 
     if (
       userId !==
       uid
     ) {
-      const error =
-        new Error(
-          "AdMob user_id does not match verified UID.",
-        );
-
-      error.code =
-        "ADMOB_USER_ID_MISMATCH";
-
-      throw error;
+      throw createError(
+        "ADMOB_USER_ID_MISMATCH",
+        "AdMob user_id does not match verified UID.",
+      );
     }
   }
 
@@ -965,6 +891,31 @@ function isSameVerifiedHistory(
       existingHistoryData.amount,
     );
 
+  const existingTimestamp =
+    Number(
+      existingHistoryData.timestamp,
+    );
+
+  const existingKeyId =
+    normalizeString(
+      existingHistoryData.keyId,
+    );
+
+  const existingSignature =
+    normalizeString(
+      existingHistoryData.signature,
+    );
+
+  const existingCustomData =
+    normalizeString(
+      existingHistoryData.customData,
+    );
+
+  const existingUserId =
+    normalizeString(
+      existingHistoryData.userId,
+    );
+
 
   // ----------------------------------------------------------
   // FULL AUDIT MATCH
@@ -1002,7 +953,22 @@ function isSameVerifiedHistory(
       validatedAd.rewardItem &&
 
     existingAmount ===
-      0
+      0 &&
+
+    existingTimestamp ===
+      validatedAd.timestamp &&
+
+    existingKeyId ===
+      validatedAd.keyId &&
+
+    existingSignature ===
+      validatedAd.signature &&
+
+    existingCustomData ===
+      validatedAd.customData &&
+
+    existingUserId ===
+      validatedAd.userId
   );
 }
 
@@ -1061,15 +1027,10 @@ async function saveVerifiedAdMobReward(
   if (
     !rewardRef
   ) {
-    const error =
-      new Error(
-        "Unable to create AdMob reward reference.",
-      );
-
-    error.code =
-      "ADMOB_REWARD_REFERENCE_ERROR";
-
-    throw error;
+    throw createError(
+      "ADMOB_REWARD_REFERENCE_ERROR",
+      "Unable to create AdMob reward reference.",
+    );
   }
 
 
@@ -1085,15 +1046,10 @@ async function saveVerifiedAdMobReward(
   if (
     !historyCollection
   ) {
-    const error =
-      new Error(
-        "Unable to create user history collection.",
-      );
-
-    error.code =
-      "ADMOB_HISTORY_REFERENCE_ERROR";
-
-    throw error;
+    throw createError(
+      "ADMOB_HISTORY_REFERENCE_ERROR",
+      "Unable to create user history collection.",
+    );
   }
 
 
@@ -1161,15 +1117,10 @@ async function saveVerifiedAdMobReward(
           if (
             !existingHistorySnapshot.exists
           ) {
-            const error =
-              new Error(
-                "AdMob reward exists without the corresponding audit history.",
-              );
-
-            error.code =
-              "ADMOB_AUDIT_CONSISTENCY_ERROR";
-
-            throw error;
+            throw createError(
+              "ADMOB_AUDIT_CONSISTENCY_ERROR",
+              "AdMob reward exists without the corresponding audit history.",
+            );
           }
 
 
@@ -1187,15 +1138,10 @@ async function saveVerifiedAdMobReward(
               validatedAd,
             )
           ) {
-            const error =
-              new Error(
-                "AdMob reward and audit history contain inconsistent data.",
-              );
-
-            error.code =
-              "ADMOB_AUDIT_CONSISTENCY_ERROR";
-
-            throw error;
+            throw createError(
+              "ADMOB_AUDIT_CONSISTENCY_ERROR",
+              "AdMob reward and audit history contain inconsistent data.",
+            );
           }
 
 
@@ -1248,15 +1194,10 @@ async function saveVerifiedAdMobReward(
         // DIFFERENT DATA = PERMANENT CONFLICT
         // ----------------------------------------------------
 
-        const error =
-          new Error(
-            "AdMob transaction_id is already associated with different reward data.",
-          );
-
-        error.code =
-          "ADMOB_TRANSACTION_CONFLICT";
-
-        throw error;
+        throw createError(
+          "ADMOB_TRANSACTION_CONFLICT",
+          "AdMob transaction_id is already associated with different reward data.",
+        );
       }
 
 
@@ -1267,15 +1208,10 @@ async function saveVerifiedAdMobReward(
       if (
         existingHistorySnapshot.exists
       ) {
-        const error =
-          new Error(
-            "AdMob audit history exists without the corresponding reward document.",
-          );
-
-        error.code =
-          "ADMOB_AUDIT_CONSISTENCY_ERROR";
-
-        throw error;
+        throw createError(
+          "ADMOB_AUDIT_CONSISTENCY_ERROR",
+          "AdMob audit history exists without the corresponding reward document.",
+        );
       }
 
 
@@ -1411,6 +1347,16 @@ async function saveVerifiedAdMobReward(
 
           rewardItem,
 
+          timestamp,
+
+          keyId,
+
+          signature,
+
+          customData,
+
+          userId,
+
           createdAt:
             FieldValue.serverTimestamp(),
         },
@@ -1491,6 +1437,7 @@ const adMobReward =
           return;
         }
 
+
         if (
           req.method !==
           "GET"
@@ -1536,9 +1483,6 @@ const adMobReward =
         // ====================================================
         //
         // Tyhjä GET ei ole varsinainen SSV callback.
-        //
-        // Tätä voidaan käyttää endpointin saavutettavuuden
-        // tarkistamiseen.
         //
         // ====================================================
 
