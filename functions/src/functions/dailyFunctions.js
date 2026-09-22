@@ -9,15 +9,16 @@
 // TÄRKEÄÄ:
 //
 // 🎁 Daily Check-In EI anna suoraa STL-tokenipalkkiota.
-// ⛏️ Daily Check-In määrittää käyttäjän Daily Hash Raten.
-// 🐱 Daily Hash Rate toimii mining-jakson peruslouhintatehona.
+// ⛏️ Daily Check-In määrittää käyttäjän seuraavan mining-jakson
+//    Daily Hash Raten.
+// 🐱 Daily Hash Rate toimii uuden mining-jakson peruslouhintatehona.
 //
 // Daily Check-In EI:
 //
 // ❌ lisää STL-saldoa
 // ❌ käynnistä Mining Startia
 // ❌ aktivoi Power Boostia
-// ❌ muuta Power Boostin tilaa
+// ❌ muuta aktiivisen mining-jakson Hash Ratea
 // ❌ käsittele AdMob SSV:tä
 //
 // Firestore:
@@ -114,25 +115,16 @@ function getSafeNumber(
 // ============================================================
 //
 // Päivä 1:
-// 0.5 HR
+// DAILY_HASH_RATE_START
 //
-// Päivä 2:
-// 1.0 HR
+// Jokainen seuraava päivä:
+// + DAILY_HASH_RATE_STEP
 //
-// Päivä 3:
-// 1.5 HR
+// Maksimipäivä:
+// DAILY_HASH_RATE_MAX_DAY
 //
-// Päivä 4:
-// 2.0 HR
-//
-// Päivä 5:
-// 2.5 HR
-//
-// Päivä 6:
-// 3.0 HR
-//
-// Päivä 7+:
-// 3.5 HR
+// Lopullinen maksimi:
+// MAX_DAILY_HASH_RATE
 //
 // ============================================================
 
@@ -180,6 +172,16 @@ function calculateDailyHashRate(
 function getPreviousUtcDate(
   dateString,
 ) {
+  if (
+    typeof dateString !==
+    "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(
+      dateString,
+    )
+  ) {
+    return "";
+  }
+
   const date =
     new Date(
       `${dateString}T00:00:00.000Z`,
@@ -207,6 +209,30 @@ function getPreviousUtcDate(
 
 
 // ============================================================
+// 🎁 GET STORED DAILY STREAK
+// ============================================================
+
+function getStoredDailyStreak(
+  data,
+) {
+  const stored =
+    data.dailyStreak ??
+    data.streak ??
+    0;
+
+  return Math.max(
+    0,
+    Math.floor(
+      getSafeNumber(
+        stored,
+        0,
+      ),
+    ),
+  );
+}
+
+
+// ============================================================
 // 🎁 CALCULATE DAILY CHECK-IN
 // ============================================================
 
@@ -221,15 +247,8 @@ function calculateDailyCheckIn(
       : "";
 
   const storedStreak =
-    Math.max(
-      0,
-      Math.floor(
-        getSafeNumber(
-          data.dailyStreak ??
-          data.streak,
-          0,
-        ),
-      ),
+    getStoredDailyStreak(
+      data,
     );
 
 
@@ -270,7 +289,6 @@ function calculateDailyCheckIn(
     );
 
   let streak = 1;
-
 
   if (
     lastDailyDate === yesterday &&
@@ -337,8 +355,36 @@ const dailyCheckIn =
           );
 
 
+        // ======================================================
+        // 📅 CURRENT UTC DATE
+        // ======================================================
+        //
+        // Käytetään samaa eksplisiittistä Date-arvoa kuin
+        // muualla mining-backendissä.
+        //
+        // ======================================================
+
+        const now =
+          new Date();
+
         const today =
-          getUtcDateString();
+          getUtcDateString(
+            now,
+          );
+
+
+        if (
+          typeof today !==
+            "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(
+            today,
+          )
+        ) {
+          throw new HttpsError(
+            "internal",
+            "🐱 Päivämäärän määrittäminen epäonnistui.",
+          );
+        }
 
 
         // ======================================================
@@ -404,9 +450,11 @@ const dailyCheckIn =
                 // ------------------------------------------------
                 // Compatibility field.
                 //
-                // Tämä EI tarkoita aktiivista mining HR:ää.
-                // Uusi backend-logiikka käyttää dailyHashRatea
-                // Daily Check-In -arvona.
+                // Tämä ei tarkoita aktiivisen mining-jakson
+                // Hash Ratea.
+                //
+                // Aktiivinen mining-jakso käyttää omaa
+                // miningHashRate-arvoaan.
                 // ------------------------------------------------
 
                 hashRate:
@@ -436,12 +484,20 @@ const dailyCheckIn =
             // 👤 USER UPDATE
             // ==================================================
             //
-            // Tärkeää:
+            // Daily Check-In muuttaa vain Daily Hash Rateen
+            // ja streakiin liittyviä kenttiä.
             //
-            // Daily Check-In päivittää vain Daily Hash Rateen
-            // liittyvät kentät.
+            // Se EI muuta:
             //
-            // Se EI kirjoita aktiivista mining-tilaa.
+            // - miningStartedAt
+            // - miningEndsAt
+            // - miningHashRate
+            // - miningBalance
+            // - adBoostStartedAt
+            // - adBoostEndsAt
+            //
+            // Näin aktiivinen mining-sykli säilyttää oman
+            // Hash Ratensa loppuun asti.
             //
             // ==================================================
 
@@ -550,6 +606,10 @@ const dailyCheckIn =
               dailyHashRate:
                 daily.dailyHashRate,
 
+              // Compatibility field.
+              //
+              // Tämä on Daily Hash Rate eikä aktiivisen
+              // mining-jakson Hash Rate.
               hashRate:
                 daily.dailyHashRate,
 
