@@ -1,39 +1,47 @@
 "use strict";
 
 // ============================================================
-// 🐱 STELLURIINI MINING FUNCTIONS
+// 🐱 STELLA MINING FUNCTIONS
 // ============================================================
 //
-// Canonical file:
-//
-// functions/src/functions/miningFunctions.js
-//
-// Exported from:
-//
-// functions/index.js
+// ⛏️ Stella Mining
+// 🎁 Daily Hash Rate
+// 📺 Stella Power Boost
+// 🔐 AdMob SSV verification
+// 🏆 Stella Achievements
+// 📜 Mining history
 //
 // IMPORTANT:
 //
 // AdMob reward is NOT an STL token reward.
 //
-// AdMob SSV only authorizes:
+// AdMob only authorizes:
 // - Mining Start
 // - Power Boost
 //
-// Mining cycle:
-// - MINING_DURATION_MS
-// - miningHashRate belongs to the current cycle
-// - a new cycle gets the current Daily Hash Rate
-// - old cycles never inherit a new Hash Rate
+// MINING CYCLE:
 //
-// Power Boost:
-// - only active during the current mining cycle
-// - never carries into a new cycle
-// - boost history is used for completed mining calculations
+// - Every mining cycle lasts MINING_DURATION_MS.
+// - miningHashRate belongs ONLY to the current cycle.
+// - A new cycle receives the current Daily Hash Rate.
+// - An old cycle can never inherit a new cycle's Hash Rate.
 //
-// Firestore transactions:
-// - ALL transaction.get() / transaction.get(query)
-//   calls happen before transaction writes.
+// POWER BOOST:
+//
+// - Only active while mining is active.
+// - Never continues after miningEndsAt.
+// - Never carries into a new mining cycle.
+// - Boost history is used for actual mining calculations.
+// - Only boosts started inside the current mining cycle
+//   are allowed to contribute to that cycle.
+//
+// FIRESTORE TRANSACTION RULE:
+//
+// - ALL transaction.get() / transaction.get(query) reads
+//   must happen BEFORE transaction.set()/update() writes.
+//
+// This is especially important when completing an old mining
+// cycle and starting a new one.
 //
 // ============================================================
 
@@ -93,7 +101,7 @@ const {
 
 
 // ============================================================
-// 🔢 SAFE NUMBER HELPERS
+// 🔢 SAFE NUMBERS
 // ============================================================
 
 function getSafeNumber(value, fallback = 0) {
@@ -203,7 +211,7 @@ function getTimestampMilliseconds(value) {
 
 
 // ============================================================
-// 🔐 REWARD CREATED TIME
+// 🔐 REWARD CREATION TIME
 // ============================================================
 
 function getRewardCreatedAtMs(rewardData) {
@@ -232,7 +240,7 @@ function getRewardCreatedAtMs(rewardData) {
 
 
 // ============================================================
-// 🎁 EXPECTED ADMOB REWARD CONFIGURATION
+// 🎁 EXPECTED REWARD CONFIGURATION
 // ============================================================
 
 function getRewardConfiguration(rewardPurpose) {
@@ -245,14 +253,10 @@ function getRewardConfiguration(rewardPurpose) {
         ADMOB_MINING_SSV_AD_UNIT_ID,
 
       rewardAmount:
-        Number(
-          ADMOB_MINING_SSV_REWARD_AMOUNT
-        ),
+        ADMOB_MINING_SSV_REWARD_AMOUNT,
 
       rewardItem:
-        String(
-          ADMOB_MINING_SSV_REWARD_ITEM ?? ""
-        ).trim(),
+        ADMOB_MINING_SSV_REWARD_ITEM,
     };
   }
 
@@ -265,14 +269,10 @@ function getRewardConfiguration(rewardPurpose) {
         ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
 
       rewardAmount:
-        Number(
-          ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT
-        ),
+        ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
 
       rewardItem:
-        String(
-          ADMOB_POWER_BOOST_SSV_REWARD_ITEM ?? ""
-        ).trim(),
+        ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
     };
   }
 
@@ -282,6 +282,29 @@ function getRewardConfiguration(rewardPurpose) {
 
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
+// ============================================================
+//
+// The SSV service creates verified documents inside
+// admobRewards.
+//
+// This function only accepts:
+//
+// - matching UID
+// - matching reward purpose
+// - unconsumed reward
+// - correct AdMob ad unit
+// - correct reward item
+// - exact expected reward amount
+// - valid transaction ID
+// - reward not previously claimed
+//
+// IMPORTANT:
+//
+// This function performs READS ONLY.
+//
+// The actual consumption happens later inside the
+// Firestore transaction.
+//
 // ============================================================
 
 const ADMOB_REWARD_QUERY_LIMIT = 100;
@@ -626,7 +649,15 @@ function validateVerifiedRewardDocument(
   }
 
   if (
-    rewardData.rewardConsumed === true ||
+    rewardData.rewardConsumed === true
+  ) {
+    throw new HttpsError(
+      "already-exists",
+      "🐱 Tämä AdMob-palkinto on jo käytetty."
+    );
+  }
+
+  if (
     rewardData[claimedField] === true
   ) {
     throw new HttpsError(
@@ -780,7 +811,9 @@ async function getVerifiedPowerBoostReward(
 // 🎁 DAILY HASH RATE
 // ============================================================
 
-function calculateDailyHashRate(streak) {
+function calculateDailyHashRate(
+  streak
+) {
   const safeStreak =
     Math.max(
       1,
@@ -877,7 +910,8 @@ function calculateNextDailyClaim(
     );
 
   yesterday.setUTCDate(
-    yesterday.getUTCDate() - 1
+    yesterday.getUTCDate() -
+      1
   );
 
   const yesterdayString =
@@ -918,7 +952,7 @@ function getDailyStatus(
 
 
 // ============================================================
-// ⛏️ MINING WINDOW
+// 📺 MINING WINDOW
 // ============================================================
 
 function getMiningWindow(data) {
@@ -1085,7 +1119,8 @@ function getAdStatus(
     miningActive &&
     adsToday <
       MAX_ADS_PER_DAY &&
-    cooldownRemainingMs === 0 &&
+    cooldownRemainingMs ===
+      0 &&
     !adBoostActive;
 
   return {
@@ -1120,7 +1155,7 @@ function getAdStatus(
 
 
 // ============================================================
-// ⛏️ CURRENT CYCLE HASH RATE
+// ⛏️ MINING HASH RATE
 // ============================================================
 
 function getMiningHashRate(
@@ -1162,11 +1197,16 @@ function getMiningHashRate(
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
 //
-// NEVER borrow the current Daily Hash Rate for an old cycle.
+// Historical calculation must NEVER invent a Hash Rate.
+//
+// If the old cycle does not contain a valid miningHashRate,
+// return 0 instead of borrowing the current Daily Hash Rate.
 //
 // ============================================================
 
-function getHistoricalMiningHashRate(data) {
+function getHistoricalMiningHashRate(
+  data
+) {
   const stored =
     getSafePositiveNumber(
       data.miningHashRate,
@@ -1180,7 +1220,7 @@ function getHistoricalMiningHashRate(data) {
       MAX_DAILY_HASH_RATE
   ) {
     console.warn(
-      "🐱 Invalid historical miningHashRate. Cross-cycle inheritance prevented.",
+      "🐱 Invalid historical miningHashRate; preventing cross-cycle Hash Rate inheritance.",
       {
         stored,
       }
@@ -1195,6 +1235,18 @@ function getHistoricalMiningHashRate(data) {
 
 // ============================================================
 // 📺 BOOST HISTORY
+// ============================================================
+//
+// Only history entries:
+//
+// - type === "ad_reward"
+// - rewardPurpose === "power_boost"
+// - boostStartedAt inside current cycle
+//
+// can contribute to mining.
+//
+// The query is read-only.
+//
 // ============================================================
 
 async function getAdBoostHistory(
@@ -1322,6 +1374,13 @@ async function getAdBoostHistory(
 // ============================================================
 // ⚡ CALCULATE BOOST TIME
 // ============================================================
+//
+// Overlapping boosts are merged.
+//
+// This prevents overlapping history records from multiplying
+// the same time period more than once.
+//
+// ============================================================
 
 function calculateAdBoostMilliseconds(
   boosts,
@@ -1446,8 +1505,11 @@ async function calculateMiningCycle(
   ) {
     return {
       baseMining: 0,
+
       adBoostMining: 0,
+
       boostMilliseconds: 0,
+
       totalMining: 0,
     };
   }
@@ -1495,18 +1557,16 @@ async function calculateMiningCycle(
     );
 
   const adBoostMining =
-    AD_HASH_RATE_BONUS > 0
-      ? Math.max(
-          0,
-          getSafeNumber(
-            calculateMining(
-              AD_HASH_RATE_BONUS,
-              boostMilliseconds
-            ),
-            0
-          )
-        )
-      : 0;
+    Math.max(
+      0,
+      getSafeNumber(
+        calculateMining(
+          AD_HASH_RATE_BONUS,
+          boostMilliseconds
+        ),
+        0
+      )
+    );
 
   const totalMining =
     Math.max(
@@ -1531,7 +1591,9 @@ async function calculateMiningCycle(
 // 🏆 ACHIEVEMENTS
 // ============================================================
 
-function getAchievementCollection(uid) {
+function getAchievementCollection(
+  uid
+) {
   return getUserRef(uid)
     .collection(
       "achievements"
@@ -1658,7 +1720,9 @@ async function updateMiningAchievements(
   startedMining,
   now
 ) {
-  // ALL achievement reads happen first.
+  // ----------------------------------------------------------
+  // ALL achievement reads happen before achievement writes.
+  // ----------------------------------------------------------
 
   const firstPaw =
     await getAchievementData(
@@ -1681,6 +1745,10 @@ async function updateMiningAchievements(
       "stl_hunter"
     );
 
+  // ----------------------------------------------------------
+  // Achievement: first mining start
+  // ----------------------------------------------------------
+
   if (startedMining) {
     transaction.set(
       firstPaw.ref,
@@ -1701,6 +1769,10 @@ async function updateMiningAchievements(
   if (collected <= 0) {
     return;
   }
+
+  // ----------------------------------------------------------
+  // Achievement: Little Miner
+  // ----------------------------------------------------------
 
   const littleProgress =
     Math.max(
@@ -1725,6 +1797,10 @@ async function updateMiningAchievements(
       merge: true,
     }
   );
+
+  // ----------------------------------------------------------
+  // Achievement: STL Hunter
+  // ----------------------------------------------------------
 
   const hunterProgress =
     Math.max(
@@ -1753,7 +1829,7 @@ async function updateMiningAchievements(
 
 
 // ============================================================
-// 📊 CURRENT UNCLAIMED MINING
+// 📊 CALCULATE CURRENT UNCLAIMED MINING
 // ============================================================
 
 async function calculateCurrentUnclaimedMining(
@@ -1768,8 +1844,11 @@ async function calculateCurrentUnclaimedMining(
   if (!miningWindow.valid) {
     return {
       unclaimedMining: 0,
+
       baseMining: 0,
+
       adBoostMining: 0,
+
       boostMilliseconds: 0,
     };
   }
@@ -1786,8 +1865,11 @@ async function calculateCurrentUnclaimedMining(
   ) {
     return {
       unclaimedMining: 0,
+
       baseMining: 0,
+
       adBoostMining: 0,
+
       boostMilliseconds: 0,
     };
   }
@@ -2200,7 +2282,8 @@ const claimMining =
 
             collected: 0,
 
-            miningActive: true,
+            miningActive:
+              true,
 
             hashRate:
               earlyMiningHashRate,
@@ -2238,7 +2321,8 @@ const claimMining =
                 )
               ),
 
-            rewardConsumed: false,
+            rewardConsumed:
+              false,
 
             message:
               "🐱⛏️ Stella louhii jo STL:ää.",
@@ -2338,7 +2422,8 @@ const claimMining =
               );
 
             // ------------------------------------------------
-            // RACE PROTECTION
+            // Another request may have started mining while
+            // the SSV reward was being waited for.
             // ------------------------------------------------
 
             if (
@@ -2359,7 +2444,8 @@ const claimMining =
 
                 collected: 0,
 
-                miningActive: true,
+                miningActive:
+                  true,
 
                 hashRate:
                   existingHashRate,
@@ -2397,7 +2483,8 @@ const claimMining =
                     )
                   ),
 
-                rewardConsumed: false,
+                rewardConsumed:
+                  false,
 
                 message:
                   "🐱⛏️ Stella louhii jo STL:ää. Mainospalkintoa ei kulutettu.",
@@ -2460,6 +2547,8 @@ const claimMining =
 
             // ------------------------------------------------
             // PREVIOUS CYCLE
+            //
+            // Only its own Hash Rate is allowed.
             // ------------------------------------------------
 
             const previousHashRate =
@@ -2469,6 +2558,11 @@ const claimMining =
 
             const previousWindow =
               getMiningWindow(data);
+
+            // ------------------------------------------------
+            // All reads/calculations that can perform
+            // transaction queries happen before writes.
+            // ------------------------------------------------
 
             if (
               previousWindow.valid &&
@@ -2499,25 +2593,24 @@ const claimMining =
                   previousCycle.totalMining
                 );
 
-              // The old cycle is complete even if its
-              // calculated amount happens to be zero.
-              completedPreviousCycle =
-                true;
-
               if (
                 collected > 0
               ) {
                 newBalance =
                   oldBalance +
                   collected;
+
+                completedPreviousCycle =
+                  true;
               }
             }
 
             // ------------------------------------------------
-            // ACHIEVEMENTS
+            // ACHIEVEMENT READS + WRITES
             //
-            // All reads happen inside this function before
-            // any writes are issued.
+            // updateMiningAchievements performs all of its
+            // transaction reads before its transaction writes.
+            // No further transaction.get() happens afterward.
             // ------------------------------------------------
 
             await updateMiningAchievements(
@@ -2553,7 +2646,14 @@ const claimMining =
                 dailyStreak,
 
               lastDailyDate:
-                transactionToday,
+                dailyClaim.claimedToday
+                  ? (
+                      typeof data.lastDailyDate ===
+                      "string"
+                        ? data.lastDailyDate
+                        : transactionToday
+                    )
+                  : transactionToday,
 
               miningHashRate:
                 dailyHashRate,
@@ -2589,7 +2689,7 @@ const claimMining =
             );
 
             // ------------------------------------------------
-            // CONSUME EXACT MINING START REWARD
+            // CONSUME EXACT MINING START SSV REWARD
             // ------------------------------------------------
 
             transaction.set(
@@ -3120,7 +3220,7 @@ const powerBoost =
             );
 
             // ------------------------------------------------
-            // RECHECK LIMITS FROM TRANSACTION SNAPSHOT
+            // RECHECK ALL LIMITS FROM TRANSACTION SNAPSHOT
             // ------------------------------------------------
 
             const adStatus =
@@ -3160,8 +3260,8 @@ const powerBoost =
             }
 
             // ------------------------------------------------
-            // ALL READS COMPLETE
-            // WRITES BEGIN
+            // ALL REQUIRED READS ARE COMPLETE.
+            // WRITES BEGIN HERE.
             // ------------------------------------------------
 
             const boostStartedAt =
@@ -3255,7 +3355,7 @@ const powerBoost =
             );
 
             // ------------------------------------------------
-            // CONSUME POWER BOOST SSV REWARD
+            // CONSUME EXACT POWER BOOST SSV REWARD
             // ------------------------------------------------
 
             transaction.set(
