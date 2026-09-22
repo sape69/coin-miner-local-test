@@ -354,7 +354,8 @@ async function getAdMobPublicKeys(
               pem,
             );
 
-          // AdMob SSV käyttää ECDSA-public keytä.
+          // AdMob SSV käyttää ECDSA/Elliptic Curve
+          // public keytä.
 
           if (
             publicKey.asymmetricKeyType !==
@@ -489,6 +490,9 @@ function extractQueryStringFromUrl(
 // ❌ ei URL-dekoodata signed dataa
 // ❌ ei trimmaa signed dataa
 //
+// Allekirjoitettava data välitetään ECDSA-tarkistukseen
+// täsmälleen siinä muodossa kuin callbackin URL:ssa.
+//
 // ============================================================
 
 function getRawQueryString(
@@ -514,8 +518,8 @@ function getRawQueryString(
 
   const candidates = [
     req.rawUrl,
-    req.url,
     req.originalUrl,
+    req.url,
   ];
 
   for (
@@ -691,7 +695,7 @@ function decodeAdMobSignature(
 // &signature=...
 // &key_id=...
 //
-// AdMob dokumentoi, että signature ja key_id ovat
+// AdMob dokumentoi, että signature ja key_id ovat aina
 // kaksi viimeistä query-parametria tässä järjestyksessä.
 //
 // Signed data säilytetään täysin muuttamattomana.
@@ -719,7 +723,61 @@ function extractSignatureData(
   }
 
   // ----------------------------------------------------------
-  // SIGNATURE
+  // SPLIT ONLY FOR STRUCTURAL VALIDATION
+  // ----------------------------------------------------------
+  //
+  // Emme rakenna tästä uutta signed stringiä.
+  //
+  // Alkuperäinen rawQueryString säilytetään myöhempää
+  // kryptografista tarkistusta varten.
+  //
+  // ----------------------------------------------------------
+
+  const separatorIndex =
+    rawQueryString.lastIndexOf(
+      "&",
+    );
+
+  if (
+    separatorIndex <=
+      0
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV callback does not contain the required signature and key_id parameters.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_SIGNATURE";
+
+    throw error;
+  }
+
+  const keyIdMarker =
+    "&key_id=";
+
+  const keyIdIndex =
+    rawQueryString.lastIndexOf(
+      keyIdMarker,
+    );
+
+  if (
+    keyIdIndex <=
+      0
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV key_id parameter was not found in the expected final position.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_KEY_ID";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
+  // SIGNATURE MARKER
   // ----------------------------------------------------------
 
   const signatureMarker =
@@ -731,7 +789,8 @@ function extractSignatureData(
     );
 
   if (
-    signatureIndex < 0
+    signatureIndex <=
+      0
   ) {
     const error =
       new Error(
@@ -745,7 +804,38 @@ function extractSignatureData(
   }
 
   // ----------------------------------------------------------
+  // SIGNATURE MUST BE BEFORE FINAL KEY_ID
+  // ----------------------------------------------------------
+
+  if (
+    signatureIndex >=
+      keyIdIndex
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV signature and key_id are not in the expected order.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_SIGNATURE";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
   // SIGNED DATA
+  // ----------------------------------------------------------
+  //
+  // Tämä substring on tarkoituksella alkuperäisestä
+  // rawQueryStringista.
+  //
+  // Sitä ei:
+  //
+  // - dekoodata
+  // - järjestetä
+  // - trimmata
+  // - rakenneta uudelleen
+  //
   // ----------------------------------------------------------
 
   const signedQueryString =
@@ -770,40 +860,24 @@ function extractSignatureData(
   }
 
   // ----------------------------------------------------------
-  // SIGNATURE + KEY ID
+  // VERIFY FINAL STRUCTURE
   // ----------------------------------------------------------
 
-  const signatureAndKeyId =
+  const signaturePart =
     rawQueryString.substring(
-      signatureIndex + 1,
+      signatureIndex +
+        1,
+      keyIdIndex,
     );
 
-  const parts =
-    signatureAndKeyId.split(
-      "&",
+  const keyIdPart =
+    rawQueryString.substring(
+      keyIdIndex +
+        1,
     );
 
   if (
-    parts.length !==
-      2
-  ) {
-    const error =
-      new Error(
-        "AdMob SSV signature and key_id must be the final two query parameters.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_SIGNATURE";
-
-    throw error;
-  }
-
-  // ----------------------------------------------------------
-  // SIGNATURE POSITION
-  // ----------------------------------------------------------
-
-  if (
-    !parts[0].startsWith(
+    !signaturePart.startsWith(
       "signature=",
     )
   ) {
@@ -818,12 +892,8 @@ function extractSignatureData(
     throw error;
   }
 
-  // ----------------------------------------------------------
-  // KEY ID POSITION
-  // ----------------------------------------------------------
-
   if (
-    !parts[1].startsWith(
+    !keyIdPart.startsWith(
       "key_id=",
     )
   ) {
@@ -833,23 +903,74 @@ function extractSignatureData(
       );
 
     error.code =
+      "ADMOB_INVALID_KEY_ID";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
+  // ENSURE NO EXTRA PARAMETERS AFTER KEY_ID
+  // ----------------------------------------------------------
+
+  if (
+    keyIdPart.includes(
+      "&",
+    )
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV key_id must be the final query parameter.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_KEY_ID";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
+  // ENSURE SIGNATURE SECTION CONTAINS ONLY SIGNATURE
+  // ----------------------------------------------------------
+
+  if (
+    signaturePart.includes(
+      "&",
+    )
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV signature must be immediately followed by key_id.",
+      );
+
+    error.code =
       "ADMOB_INVALID_SIGNATURE";
 
     throw error;
   }
 
+  // ----------------------------------------------------------
+  // RAW VALUES
+  // ----------------------------------------------------------
+
   const rawSignature =
-    parts[0].substring(
+    signaturePart.substring(
       "signature=".length,
     );
 
   const rawKeyId =
-    parts[1].substring(
+    keyIdPart.substring(
       "key_id=".length,
     );
 
   // ----------------------------------------------------------
   // URL DECODE ONLY SIGNATURE / KEY ID
+  // ----------------------------------------------------------
+  //
+  // Signed dataa EI dekoodata.
+  //
+  // Vain signature ja key_id puretaan niiden omiksi
+  // arvoikseen.
+  //
   // ----------------------------------------------------------
 
   let signature;
@@ -1837,7 +1958,7 @@ async function verifyAdMobCallback(
       );
 
     error.code =
-      "ADMOB_INVALID_REWARD_PURPOSE";
+      "ADMOB_INVALID_REWARD_CONFIGURATION";
 
     throw error;
   }
@@ -1899,7 +2020,8 @@ async function verifyAdMobCallback(
   if (
     typeof expectedRewardItem !==
       "string" ||
-    expectedRewardItem.length ===
+    expectedRewardItem.trim()
+      .length ===
       0
   ) {
     const error =
@@ -2201,3 +2323,7 @@ module.exports = {
 
   validateAdNetwork,
 };
+
+Tämä versio pitää AdMobin virallisen SSV-varmennusmallin mukaisena: alkuperäinen allekirjoitettava query-osuus säilytetään muuttamattomana, "signature" ja "key_id" käsitellään erillään, public key haetaan AdMobin key serveriltä ja ECDSA/SHA-256 tarkistetaan ennen kuin callbackin liiketoimintadataa käytetään.
+
+Seuraava tiedosto: "functions/src/functions/adFunctions.js" on nyt tämän service-muutoksen jälkeen tarkistettava uudelleen, koska sen virhekoodien ja HTTP-vastausten pitää vastata tämän servicen lopullisia virhekoodeja.
