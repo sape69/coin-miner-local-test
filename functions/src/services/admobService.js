@@ -209,7 +209,8 @@ function createError(
 //
 // Käytetään Node.js:n native fetchia.
 //
-// Public key -response rajataan kokonsa puolesta.
+// Response luetaan streamina ja sen koko rajoitetaan
+// myös silloin, kun Content-Length puuttuu.
 //
 // ============================================================
 
@@ -267,6 +268,11 @@ async function fetchJson(
     );
   }
 
+
+  // ----------------------------------------------------------
+  // HTTP STATUS
+  // ----------------------------------------------------------
+
   if (
     !response ||
     !response.ok
@@ -286,7 +292,7 @@ async function fetchJson(
 
 
   // ----------------------------------------------------------
-  // RESPONSE SIZE CHECK
+  // CONTENT-LENGTH CHECK
   // ----------------------------------------------------------
 
   const contentLength =
@@ -307,7 +313,7 @@ async function fetchJson(
       );
 
     if (
-      Number.isSafeInteger(
+      Number.isFinite(
         declaredLength,
       ) &&
       declaredLength >
@@ -325,21 +331,133 @@ async function fetchJson(
   // READ RESPONSE
   // ----------------------------------------------------------
 
-  let text;
+  let text = "";
 
-  try {
-    text =
-      await response.text();
-  } catch (error) {
-    throw createError(
-      `Unable to read AdMob public key response: ${
+
+  if (
+    response.body &&
+    typeof response.body.getReader ===
+      "function"
+  ) {
+    const reader =
+      response.body.getReader();
+
+    const chunks = [];
+
+    let totalBytes = 0;
+
+    try {
+      while (true) {
+        const result =
+          await reader.read();
+
+        if (
+          result.done
+        ) {
+          break;
+        }
+
+        const chunk =
+          result.value;
+
+        if (
+          !(chunk instanceof Uint8Array)
+        ) {
+          throw createError(
+            "AdMob public key response contains invalid data.",
+            "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+          );
+        }
+
+        totalBytes +=
+          chunk.byteLength;
+
+        if (
+          totalBytes >
+          MAX_PUBLIC_KEY_RESPONSE_BYTES
+        ) {
+          try {
+            await reader.cancel();
+          } catch (cancelError) {
+            // Ignore cancellation errors.
+          }
+
+          throw createError(
+            "AdMob public key response is too large.",
+            "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+          );
+        }
+
+        chunks.push(
+          chunk,
+        );
+      }
+    } catch (error) {
+      if (
         error &&
-        error.message
-          ? error.message
-          : "Unknown error."
-      }`,
-      "ADMOB_PUBLIC_KEY_FETCH_ERROR",
-    );
+        error.code
+      ) {
+        throw error;
+      }
+
+      throw createError(
+        `Unable to read AdMob public key response: ${
+          error &&
+          error.message
+            ? error.message
+            : "Unknown response error."
+        }`,
+        "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+      );
+    }
+
+
+    const combined =
+      new Uint8Array(
+        totalBytes,
+      );
+
+    let offset = 0;
+
+    for (
+      const chunk of chunks
+    ) {
+      combined.set(
+        chunk,
+        offset,
+      );
+
+      offset +=
+        chunk.byteLength;
+    }
+
+    text =
+      Buffer
+        .from(
+          combined,
+        )
+        .toString(
+          "utf8",
+        );
+  } else {
+    // --------------------------------------------------------
+    // FALLBACK
+    // --------------------------------------------------------
+
+    try {
+      text =
+        await response.text();
+    } catch (error) {
+      throw createError(
+        `Unable to read AdMob public key response: ${
+          error &&
+          error.message
+            ? error.message
+            : "Unknown error."
+        }`,
+        "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+      );
+    }
   }
 
 
@@ -352,7 +470,10 @@ async function fetchJson(
       "string" ||
     text.length ===
       0 ||
-    text.length >
+    Buffer.byteLength(
+      text,
+      "utf8",
+    ) >
       MAX_PUBLIC_KEY_RESPONSE_BYTES
   ) {
     throw createError(
@@ -380,6 +501,62 @@ async function fetchJson(
       }`,
       "ADMOB_PUBLIC_KEY_JSON_ERROR",
     );
+  }
+}
+
+
+// ============================================================
+// 🔑 VALIDATE ADMOB PUBLIC KEY
+// ============================================================
+
+function validateAdMobPublicKey(
+  pem,
+) {
+  if (
+    typeof pem !==
+      "string"
+  ) {
+    return false;
+  }
+
+  const value =
+    pem.trim();
+
+  if (
+    value.length ===
+    0
+  ) {
+    return false;
+  }
+
+  try {
+    const publicKey =
+      crypto.createPublicKey(
+        value,
+      );
+
+    if (
+      publicKey.asymmetricKeyType !==
+      "ec"
+    ) {
+      return false;
+    }
+
+    const details =
+      publicKey.asymmetricKeyDetails;
+
+    if (
+      details &&
+      details.namedCurve &&
+      details.namedCurve !==
+        "prime256v1"
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    return false;
   }
 }
 
@@ -511,52 +688,30 @@ async function getAdMobPublicKeys(
         }
 
 
-        // ----------------------------------------------------
-        // VALIDATE PUBLIC KEY
-        // ----------------------------------------------------
-
-        try {
-          const publicKey =
-            crypto.createPublicKey(
-              pem,
-            );
-
-
-          if (
-            publicKey.asymmetricKeyType !==
-            "ec"
-          ) {
-            console.error(
-              "🐱 Invalid AdMob public key type skipped.",
-              {
-                keyId,
-
-                type:
-                  publicKey.asymmetricKeyType,
-              },
-            );
-
-            continue;
-          }
-
-
-          // --------------------------------------------------
-          // STORE VALID PUBLIC KEY
-          // --------------------------------------------------
-
-          keys.set(
-            keyId,
+        if (
+          !validateAdMobPublicKey(
             pem,
-          );
-
-        } catch (error) {
+          )
+        ) {
           console.error(
             "🐱 Invalid AdMob public key skipped.",
             {
               keyId,
             },
           );
+
+          continue;
         }
+
+
+        // ----------------------------------------------------
+        // STORE VALID PUBLIC KEY
+        // ----------------------------------------------------
+
+        keys.set(
+          keyId,
+          pem,
+        );
       }
 
 
@@ -1108,14 +1263,6 @@ function extractSignatureData(
 // ============================================================
 // 🔎 ENSURE UNIQUE PARAMETER
 // ============================================================
-//
-// URLSearchParams.get() palauttaa vain ensimmäisen arvon.
-//
-// Jos sama parametri esiintyy useita kertoja, callbackin
-// metadata voisi muuten olla kryptografisesti validi mutta
-// sovelluksen lukema arvo olisi epäselvä.
-//
-// ============================================================
 
 function ensureUniqueParameter(
   params,
@@ -1162,15 +1309,6 @@ function ensureUniqueParameter(
 
 // ============================================================
 // 🛡️ VALIDATE PARAMETER STRUCTURE
-// ============================================================
-//
-// Tarkistetaan kaikki reward-flow'n käyttämät parametrit
-// yksiselitteisiksi kryptografisen tarkistuksen jälkeen.
-//
-// signature ja key_id on jo erotettu raw querystä.
-// Niiden pitää esiintyä vain callbackin kahdessa viimeisessä
-// kohdassa.
-//
 // ============================================================
 
 function validateParameterStructure(
@@ -1222,10 +1360,6 @@ function validateParameterStructure(
 
   // ----------------------------------------------------------
   // SIGNATURE / KEY_ID
-  // ----------------------------------------------------------
-  //
-  // Niiden tulee esiintyä juuri kerran.
-  //
   // ----------------------------------------------------------
 
   const signatureValues =
