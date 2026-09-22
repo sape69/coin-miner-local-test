@@ -32,13 +32,16 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //
 // IMPORTANT:
 //
-// AdMob reward callback ei itsessään tarkoita,
-// että Stelluriini on hyväksynyt rewardin.
+// AdMob SDK:n reward callback EI yksin hyväksy Stelluriinin
+// rewardia.
 //
-// Flutter lähettää rewardin jälkeen pyynnön Cloud Functionille.
-// Cloud Function tekee varsinaisen SSV-varmistuksen.
+// onUserEarnedReward kertoo vain, että Google Mobile Ads SDK
+// ilmoitti rewardin ansaituksi.
 //
-// Flutter EI yritä päätellä SSV:n onnistumista ajastimella.
+// Varsinainen hyväksyntä tapahtuu backendissä.
+//
+// Tämä tiedosto EI yritä päätellä SSV:n onnistumista
+// ajastimella.
 //
 // ============================================================
 //
@@ -140,11 +143,12 @@ class HomeAdManager extends ChangeNotifier {
   // 🎁 REWARD CALLBACK STATE
   // ============================================================
   //
-  // Estetään saman AdMob reward callbackin käsittely
+  // Estetään saman rewarded-mainoksen callbackin käsittely
   // useammin kuin kerran.
   //
   // Tämä EI ole SSV-varmistus.
-  // Varsinainen SSV-varmistus tehdään backendissä.
+  //
+  // SSV-varmistus tapahtuu backendissä.
   //
 
   bool _miningRewardCallbackStarted = false;
@@ -208,11 +212,14 @@ class HomeAdManager extends ChangeNotifier {
   String _getAdUnitId(
     String purpose,
   ) {
-    if (purpose == powerBoostPurpose) {
-      return powerBoostRewardedAdUnitId;
-    }
+    switch (purpose) {
+      case powerBoostPurpose:
+        return powerBoostRewardedAdUnitId;
 
-    return miningRewardedAdUnitId;
+      case miningStartPurpose:
+      default:
+        return miningRewardedAdUnitId;
+    }
   }
 
   // ============================================================
@@ -386,6 +393,7 @@ class HomeAdManager extends ChangeNotifier {
       _adLoading = false;
       _loadingPurpose = '';
       _adReady = false;
+      _rewardedAdPurpose = '';
 
       _adLoadError =
           'NO_AUTH_USER | '
@@ -526,6 +534,16 @@ class HomeAdManager extends ChangeNotifier {
                 'Error: $error';
 
             _notify();
+
+            if (notifyOnLoadError) {
+              // SSV setup failure ei ole LoadAdError,
+              // joten sitä ei lähetetä väärässä muodossa
+              // onAdLoadError-callbackiin.
+              debugPrint(
+                '🐱 SSV setup failure: '
+                'user notification handled by ad manager state.',
+              );
+            }
 
             return;
           }
@@ -847,12 +865,19 @@ class HomeAdManager extends ChangeNotifier {
   //
   // TÄRKEÄ:
   //
-  // Tässä ei enää ole 8 sekunnin SSV-grace-periodia.
+  // Tämä callback ei vahvista Stelluriinin rewardia.
   //
-  // onUserEarnedReward kertoo vain, että Google Mobile Ads
-  // SDK ilmoitti käyttäjän ansainneen rewarded-mainoksen rewardin.
+  // Se kertoo vain, että AdMob SDK ilmoitti rewardin
+  // ansaituksi.
   //
-  // Cloud Function tekee varsinaisen SSV-varmistuksen.
+  // Backend vastaa:
+  //
+  // 1. vastaanottaa Cloud Function -pyynnön
+  // 2. tarkistaa SSV-tiedon
+  // 3. tarkistaa rewardin tarkoituksen
+  // 4. tarkistaa käyttäjän
+  // 5. tarkistaa ettei rewardia ole käytetty aiemmin
+  // 6. hyväksyy tai hylkää toiminnon
   //
   // ============================================================
 
@@ -900,7 +925,11 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     debugPrint(
-      'Backend SSV verification will determine approval.',
+      'AdMob SDK reward received.',
+    );
+
+    debugPrint(
+      'Backend SSV verification is required.',
     );
 
     debugPrint(
@@ -1363,6 +1392,10 @@ class HomeAdManager extends ChangeNotifier {
     _loadingPurpose = '';
 
     _rewardedAdPurpose = '';
+
+    _miningAdFlowActive = false;
+
+    _powerBoostAdFlowActive = false;
 
     _miningRewardCallbackStarted = false;
 
