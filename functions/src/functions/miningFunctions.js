@@ -351,19 +351,11 @@ async function findVerifiedAdMobReward(
     const rewardData =
       doc.data() || {};
 
-    // --------------------------------------------------------
-    // UID
-    // --------------------------------------------------------
-
     if (
       rewardData.uid !== uid
     ) {
       return;
     }
-
-    // --------------------------------------------------------
-    // Reward type
-    // --------------------------------------------------------
 
     if (
       rewardData.rewardType !==
@@ -372,10 +364,6 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    // --------------------------------------------------------
-    // Reward purpose
-    // --------------------------------------------------------
-
     if (
       rewardData.rewardPurpose !==
       rewardPurpose
@@ -383,29 +371,17 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    // --------------------------------------------------------
-    // Generic consumed flag
-    // --------------------------------------------------------
-
     if (
       rewardData.rewardConsumed === true
     ) {
       return;
     }
 
-    // --------------------------------------------------------
-    // Purpose-specific consumed flag
-    // --------------------------------------------------------
-
     if (
       rewardData[claimedField] === true
     ) {
       return;
     }
-
-    // --------------------------------------------------------
-    // Mining Start legacy/current flags
-    // --------------------------------------------------------
 
     if (
       rewardPurpose === "mining_start" &&
@@ -418,10 +394,6 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    // --------------------------------------------------------
-    // Power Boost legacy/current flags
-    // --------------------------------------------------------
-
     if (
       rewardPurpose === "power_boost" &&
       (
@@ -431,10 +403,6 @@ async function findVerifiedAdMobReward(
     ) {
       return;
     }
-
-    // --------------------------------------------------------
-    // Ad Unit
-    // --------------------------------------------------------
 
     if (
       typeof rewardData.adUnit !==
@@ -455,10 +423,6 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    // --------------------------------------------------------
-    // Reward item
-    // --------------------------------------------------------
-
     if (
       typeof rewardData.rewardItem !==
       "string"
@@ -477,10 +441,6 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    // --------------------------------------------------------
-    // Reward amount
-    // --------------------------------------------------------
-
     const rewardAmount =
       Number(
         rewardData.rewardAmount
@@ -496,13 +456,6 @@ async function findVerifiedAdMobReward(
       return;
     }
 
-    // --------------------------------------------------------
-    // Transaction ID
-    //
-    // SSV document ID is expected to be the AdMob
-    // transaction ID.
-    // --------------------------------------------------------
-
     const transactionId =
       validateAdMobTransactionId(
         doc.id
@@ -511,10 +464,6 @@ async function findVerifiedAdMobReward(
     if (!transactionId) {
       return;
     }
-
-    // --------------------------------------------------------
-    // Optional stored transactionId must match document ID.
-    // --------------------------------------------------------
 
     if (
       rewardData.transactionId &&
@@ -545,7 +494,6 @@ async function findVerifiedAdMobReward(
     return null;
   }
 
-  // Newest verified reward first.
   candidates.sort((a, b) => {
     if (
       b.createdAtMs !==
@@ -568,17 +516,6 @@ async function findVerifiedAdMobReward(
 
 // ============================================================
 // 🔐 WAIT FOR ADMOB SSV
-// ============================================================
-//
-// Callable timeout:
-// - 120 seconds
-//
-// SSV wait:
-// - 90 seconds maximum
-//
-// Poll:
-// - every 2 seconds
-//
 // ============================================================
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
@@ -682,10 +619,6 @@ function validateVerifiedRewardDocument(
   const rewardData =
     rewardSnapshot.data() || {};
 
-  // ----------------------------------------------------------
-  // UID
-  // ----------------------------------------------------------
-
   if (
     rewardData.uid !== uid
   ) {
@@ -694,10 +627,6 @@ function validateVerifiedRewardDocument(
       "🐱 AdMob-palkinnon käyttäjä ei täsmää."
     );
   }
-
-  // ----------------------------------------------------------
-  // Reward type
-  // ----------------------------------------------------------
 
   if (
     rewardData.rewardType !==
@@ -709,10 +638,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  // ----------------------------------------------------------
-  // Reward purpose
-  // ----------------------------------------------------------
-
   if (
     rewardData.rewardPurpose !==
     rewardPurpose
@@ -723,10 +648,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  // ----------------------------------------------------------
-  // Generic consumed flag
-  // ----------------------------------------------------------
-
   if (
     rewardData.rewardConsumed === true
   ) {
@@ -736,10 +657,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  // ----------------------------------------------------------
-  // Purpose-specific claimed flag
-  // ----------------------------------------------------------
-
   if (
     rewardData[claimedField] === true
   ) {
@@ -748,10 +665,6 @@ function validateVerifiedRewardDocument(
       "🐱 Tämä AdMob-palkinto on jo käytetty."
     );
   }
-
-  // ----------------------------------------------------------
-  // Mining Start specific flags
-  // ----------------------------------------------------------
 
   if (
     rewardPurpose === "mining_start" &&
@@ -767,10 +680,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  // ----------------------------------------------------------
-  // Power Boost specific flags
-  // ----------------------------------------------------------
-
   if (
     rewardPurpose === "power_boost" &&
     (
@@ -783,10 +692,6 @@ function validateVerifiedRewardDocument(
       "🐱 Tämä Power Boost -palkinto on jo käytetty."
     );
   }
-
-  // ----------------------------------------------------------
-  // Ad Unit
-  // ----------------------------------------------------------
 
   if (
     typeof rewardData.adUnit !==
@@ -813,10 +718,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  // ----------------------------------------------------------
-  // Reward item
-  // ----------------------------------------------------------
-
   if (
     typeof rewardData.rewardItem !==
       "string" ||
@@ -838,10 +739,6 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  // ----------------------------------------------------------
-  // Reward amount
-  // ----------------------------------------------------------
-
   const rewardAmount =
     Number(
       rewardData.rewardAmount
@@ -859,10 +756,6 @@ function validateVerifiedRewardDocument(
       "🐱 AdMob-palkinnon määrä ei ole kelvollinen."
     );
   }
-
-  // ----------------------------------------------------------
-  // Transaction ID
-  // ----------------------------------------------------------
 
   const transactionId =
     validateAdMobTransactionId(
@@ -1190,11 +1083,6 @@ function getAdStatus(
     nowMs <
       miningWindow.miningEndMs;
 
-  // ----------------------------------------------------------
-  // A boost is valid only when it started inside the current
-  // mining cycle.
-  // ----------------------------------------------------------
-
   const boostStartedInsideMining =
     miningActive &&
     boostStartedMs >=
@@ -1309,15 +1197,10 @@ function getMiningHashRate(
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
 //
-// IMPORTANT:
-//
 // Historical calculation must NEVER invent a Hash Rate.
 //
 // If the old cycle does not contain a valid miningHashRate,
 // return 0 instead of borrowing the current Daily Hash Rate.
-//
-// This prevents a completed old cycle from inheriting the
-// Hash Rate of the new cycle.
 //
 // ============================================================
 
@@ -1397,6 +1280,10 @@ async function getAdBoostHistory(
           miningEndMs
         )
       )
+      .orderBy(
+        "boostStartedAt",
+        "asc"
+      )
       .limit(
         MAX_ADS_PER_DAY
       );
@@ -1446,7 +1333,6 @@ async function getAdBoostHistory(
         return;
       }
 
-      // The boost must START inside this mining cycle.
       if (
         start <
           miningStartMs ||
@@ -1456,7 +1342,6 @@ async function getAdBoostHistory(
         return;
       }
 
-      // The interval must overlap the mining window.
       if (
         end <=
           miningStartMs ||
@@ -1836,10 +1721,7 @@ async function updateMiningAchievements(
   now
 ) {
   // ----------------------------------------------------------
-  // IMPORTANT:
-  //
-  // All achievement reads are completed before any achievement
-  // write.
+  // ALL achievement reads happen before achievement writes.
   // ----------------------------------------------------------
 
   const firstPaw =
@@ -1991,16 +1873,6 @@ async function calculateCurrentUnclaimedMining(
       boostMilliseconds: 0,
     };
   }
-
-  // ----------------------------------------------------------
-  // IMPORTANT:
-  //
-  // The current mining cycle must use the Hash Rate stored
-  // for that cycle.
-  //
-  // Do NOT replace an existing valid miningHashRate with
-  // today's Daily Hash Rate.
-  // ----------------------------------------------------------
 
   const dailyStatus =
     getDailyStatus(
@@ -2349,10 +2221,6 @@ const claimMining =
 
         // ------------------------------------------------------
         // EARLY CHECK
-        //
-        // This is only an optimization.
-        //
-        // The transaction performs the authoritative check.
         // ------------------------------------------------------
 
         const earlyNow =
@@ -2462,7 +2330,7 @@ const claimMining =
         }
 
         // ------------------------------------------------------
-        // Wait for the verified SSV reward.
+        // WAIT FOR VERIFIED SSV REWARD
         // ------------------------------------------------------
 
         const verifiedReward =
@@ -2508,10 +2376,7 @@ const claimMining =
               );
 
             // ------------------------------------------------
-            // ALL TRANSACTION READS FIRST.
-            //
-            // No transaction.set/update may happen before
-            // these reads are complete.
+            // ALL TRANSACTION READS FIRST
             // ------------------------------------------------
 
             const userSnapshot =
@@ -2559,8 +2424,6 @@ const claimMining =
             // ------------------------------------------------
             // Another request may have started mining while
             // the SSV reward was being waited for.
-            //
-            // In that case DO NOT consume the reward.
             // ------------------------------------------------
 
             if (
@@ -2629,7 +2492,7 @@ const claimMining =
             }
 
             // ------------------------------------------------
-            // Authoritative reward validation.
+            // AUTHORITATIVE SSV VALIDATION
             // ------------------------------------------------
 
             validateVerifiedRewardDocument(
@@ -2640,7 +2503,7 @@ const claimMining =
             );
 
             // ------------------------------------------------
-            // Calculate today's Daily Hash Rate.
+            // DAILY HASH RATE
             // ------------------------------------------------
 
             const dailyClaim =
@@ -2656,7 +2519,7 @@ const claimMining =
               dailyClaim.streak;
 
             // ------------------------------------------------
-            // Current balance.
+            // CURRENT BALANCE
             // ------------------------------------------------
 
             const oldBalance =
@@ -2683,12 +2546,9 @@ const claimMining =
               0;
 
             // ------------------------------------------------
-            // IMPORTANT:
+            // PREVIOUS CYCLE
             //
-            // The previous cycle uses ONLY its own stored
-            // miningHashRate.
-            //
-            // Never use today's Daily Hash Rate here.
+            // Only its own Hash Rate is allowed.
             // ------------------------------------------------
 
             const previousHashRate =
@@ -2700,13 +2560,8 @@ const claimMining =
               getMiningWindow(data);
 
             // ------------------------------------------------
-            // IMPORTANT:
-            //
-            // calculateMiningCycle() may perform a transaction
-            // query for Power Boost history.
-            //
-            // Therefore this calculation MUST happen before
-            // ANY transaction write.
+            // All reads/calculations that can perform
+            // transaction queries happen before writes.
             // ------------------------------------------------
 
             if (
@@ -2751,9 +2606,11 @@ const claimMining =
             }
 
             // ------------------------------------------------
-            // ALL TRANSACTION READS ARE NOW COMPLETE.
+            // ACHIEVEMENT READS + WRITES
             //
-            // From this point onward writes are allowed.
+            // updateMiningAchievements performs all of its
+            // transaction reads before its transaction writes.
+            // No further transaction.get() happens afterward.
             // ------------------------------------------------
 
             await updateMiningAchievements(
@@ -2764,6 +2621,10 @@ const claimMining =
               transactionNow
             );
 
+            // ------------------------------------------------
+            // NEW MINING CYCLE
+            // ------------------------------------------------
+
             const newMiningStartedAt =
               transactionNow;
 
@@ -2772,10 +2633,6 @@ const claimMining =
                 transactionNowMs +
                 MINING_DURATION_MS
               );
-
-            // ------------------------------------------------
-            // New cycle receives ONLY today's Daily Hash Rate.
-            // ------------------------------------------------
 
             const userUpdate = {
               hashRate:
@@ -2810,8 +2667,6 @@ const claimMining =
               miningEndsAt:
                 newMiningEndsAt,
 
-              // Old Power Boost must never continue into
-              // the new mining cycle.
               adBoostStartedAt:
                 null,
 
@@ -2834,8 +2689,7 @@ const claimMining =
             );
 
             // ------------------------------------------------
-            // Consume the exact SSV reward used for this
-            // Mining Start.
+            // CONSUME EXACT MINING START SSV REWARD
             // ------------------------------------------------
 
             transaction.set(
@@ -2871,7 +2725,7 @@ const claimMining =
             );
 
             // ------------------------------------------------
-            // Daily Hash Rate history.
+            // DAILY HASH RATE HISTORY
             // ------------------------------------------------
 
             if (
@@ -2920,7 +2774,7 @@ const claimMining =
             }
 
             // ------------------------------------------------
-            // Completed previous cycle history.
+            // COMPLETED PREVIOUS CYCLE HISTORY
             // ------------------------------------------------
 
             if (
@@ -2974,7 +2828,7 @@ const claimMining =
             }
 
             // ------------------------------------------------
-            // New mining cycle history.
+            // NEW MINING CYCLE HISTORY
             // ------------------------------------------------
 
             const startHistoryRef =
@@ -3149,9 +3003,6 @@ const powerBoost =
 
         // ------------------------------------------------------
         // EARLY CHECK
-        //
-        // This is only a fast rejection.
-        // The transaction performs the authoritative checks.
         // ------------------------------------------------------
 
         const earlyNow =
@@ -3248,7 +3099,7 @@ const powerBoost =
         }
 
         // ------------------------------------------------------
-        // Wait for verified SSV reward.
+        // WAIT FOR VERIFIED SSV REWARD
         // ------------------------------------------------------
 
         const verifiedReward =
@@ -3294,7 +3145,7 @@ const powerBoost =
               );
 
             // ------------------------------------------------
-            // ALL TRANSACTION READS FIRST.
+            // ALL TRANSACTION READS FIRST
             // ------------------------------------------------
 
             const userSnapshot =
@@ -3358,7 +3209,7 @@ const powerBoost =
             }
 
             // ------------------------------------------------
-            // Validate exact SSV reward inside transaction.
+            // AUTHORITATIVE SSV VALIDATION
             // ------------------------------------------------
 
             validateVerifiedRewardDocument(
@@ -3369,7 +3220,7 @@ const powerBoost =
             );
 
             // ------------------------------------------------
-            // Recalculate all limits from transaction snapshot.
+            // RECHECK ALL LIMITS FROM TRANSACTION SNAPSHOT
             // ------------------------------------------------
 
             const adStatus =
@@ -3410,7 +3261,6 @@ const powerBoost =
 
             // ------------------------------------------------
             // ALL REQUIRED READS ARE COMPLETE.
-            //
             // WRITES BEGIN HERE.
             // ------------------------------------------------
 
@@ -3472,7 +3322,7 @@ const powerBoost =
               currentAds + 1;
 
             // ------------------------------------------------
-            // User state
+            // USER STATE
             // ------------------------------------------------
 
             transaction.set(
@@ -3505,7 +3355,7 @@ const powerBoost =
             );
 
             // ------------------------------------------------
-            // Consume exact Power Boost SSV reward.
+            // CONSUME EXACT POWER BOOST SSV REWARD
             // ------------------------------------------------
 
             transaction.set(
@@ -3538,7 +3388,7 @@ const powerBoost =
             );
 
             // ------------------------------------------------
-            // Power Boost history.
+            // POWER BOOST HISTORY
             // ------------------------------------------------
 
             const historyRef =
