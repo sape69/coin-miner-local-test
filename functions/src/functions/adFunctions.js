@@ -230,8 +230,8 @@ function validateUid(
 // AdMob käyttää transaction_id:tä yksilöllisenä
 // reward grant -tunnisteena.
 //
-// AdMob määrittelee transaction_id:n hex-koodatuksi
-// yksilölliseksi tunnisteeksi.
+// Google määrittelee transaction_id:n unique hex encoded
+// identifier -arvoksi.
 //
 // ============================================================
 
@@ -686,6 +686,7 @@ function validateVerifiedAdData(
 
   if (
     keyId.length === 0 ||
+    keyId.length > 32 ||
     !/^\d+$/.test(
       keyId,
     )
@@ -713,7 +714,7 @@ function validateVerifiedAdData(
 
   if (
     signature.length === 0 ||
-    signature.length > 4096
+    signature.length > 8192
   ) {
     const error =
       new Error(
@@ -1245,7 +1246,18 @@ async function saveVerifiedAdMobReward(
           `admob_${transactionId}`,
         );
 
-      transaction.set(
+
+      // ------------------------------------------------------
+      // HISTORY DOCUMENT
+      // ------------------------------------------------------
+      //
+      // Käytetään create()-operaatiota vastaavassa Firestore-
+      // transactionissa. Näin jo olemassa oleva audit-dokumentti
+      // ei pääse huomaamatta ylikirjoittumaan.
+      //
+      // ------------------------------------------------------
+
+      transaction.create(
         historyRef,
         {
           type:
