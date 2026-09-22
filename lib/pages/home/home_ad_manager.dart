@@ -26,6 +26,16 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 //    ↓
 // powerBoost / claimMining
 //
+// IMPORTANT:
+//
+// AdMob reward itself is NOT an STL token reward.
+//
+// AdMob authorizes:
+// - Mining Start
+// - Power Boost
+//
+// Backend SSV verification remains authoritative.
+//
 // ============================================================
 //
 // 📺 ADMOB-MAINOSYKSIKÖT
@@ -71,7 +81,22 @@ class HomeAdManager extends ChangeNotifier {
   static const String miningStartPurpose = 'mining_start';
 
   // ============================================================
-  // ⏳ SSV WAIT
+  // ⏳ SSV BACKEND PROPAGATION WAIT
+  // ============================================================
+  //
+  // IMPORTANT:
+  //
+  // This is NOT SSV verification itself.
+  //
+  // The client cannot cryptographically verify Google's SSV
+  // callback here.
+  //
+  // The delay simply gives the backend some time to receive
+  // and process the verified AdMob SSV callback before the
+  // HomePage callback calls claimMining/powerBoost.
+  //
+  // Backend verification remains authoritative.
+  //
   // ============================================================
 
   static const Duration ssvGracePeriod = Duration(seconds: 8);
@@ -119,6 +144,19 @@ class HomeAdManager extends ChangeNotifier {
   String _loadingPurpose = '';
 
   String _adLoadError = '';
+
+  // ============================================================
+  // 👤 USER WHO OWNS THE LOADED AD
+  // ============================================================
+  //
+  // This prevents a loaded ad belonging to User A from being
+  // used after Firebase Auth has switched to User B.
+  //
+  // ============================================================
+
+  String _rewardedAdUid = '';
+
+  String _loadingUid = '';
 
   // ============================================================
   // 🔒 FLOW STATE
@@ -179,6 +217,15 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
+  // PURPOSE VALIDATION
+  // ============================================================
+
+  bool _isSupportedPurpose(String purpose) {
+    return purpose == miningStartPurpose ||
+        purpose == powerBoostPurpose;
+  }
+
+  // ============================================================
   // GET AD UNIT ID
   // ============================================================
 
@@ -188,6 +235,14 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     return miningRewardedAdUnitId;
+  }
+
+  // ============================================================
+  // GET CURRENT UID
+  // ============================================================
+
+  String? _currentUid() {
+    return _auth.currentUser?.uid;
   }
 
   // ============================================================
@@ -201,15 +256,58 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    if (!_isSupportedPurpose(purpose)) {
+      debugPrint(
+        '🐱 Unsupported Rewarded Ad purpose: $purpose',
+      );
+
+      return false;
+    }
+
+    final String? currentUid = _currentUid();
+
+    if (currentUid == null) {
+      debugPrint(
+        '🐱 Cannot wait for Rewarded Ad: '
+        'no authenticated Firebase user.',
+      );
+
+      return false;
+    }
+
+    // ----------------------------------------------------------
+    // Already ready
+    // ----------------------------------------------------------
+
     if (_rewardedAd != null &&
         _adReady &&
-        _rewardedAdPurpose == purpose) {
+        _rewardedAdPurpose == purpose &&
+        _rewardedAdUid == currentUid) {
       debugPrint(
         '🐱 Stelluriini Rewarded ad already ready: $purpose',
       );
 
       return true;
     }
+
+    // ----------------------------------------------------------
+    // Loaded ad belongs to another user
+    // ----------------------------------------------------------
+
+    if (_rewardedAd != null &&
+        _rewardedAdUid.isNotEmpty &&
+        _rewardedAdUid != currentUid) {
+      debugPrint(
+        '🐱 Loaded Rewarded ad belongs to another Firebase user. '
+        'Discarding it.',
+      );
+
+      _disposeCurrentAd();
+    }
+
+    // ----------------------------------------------------------
+    // Different purpose already loaded
+    // ----------------------------------------------------------
 
     if (_rewardedAd != null &&
         _rewardedAdPurpose != purpose) {
@@ -221,6 +319,10 @@ class HomeAdManager extends ChangeNotifier {
       _disposeCurrentAd();
     }
 
+    // ----------------------------------------------------------
+    // Different purpose currently loading
+    // ----------------------------------------------------------
+
     if (_adLoading && _loadingPurpose != purpose) {
       debugPrint(
         '🐱 Different Rewarded ad is currently loading. '
@@ -231,13 +333,19 @@ class HomeAdManager extends ChangeNotifier {
 
       _adLoading = false;
       _loadingPurpose = '';
+      _loadingUid = '';
 
       _rewardedAd = null;
       _adReady = false;
       _rewardedAdPurpose = '';
+      _rewardedAdUid = '';
 
       _notify();
     }
+
+    // ----------------------------------------------------------
+    // Load if necessary
+    // ----------------------------------------------------------
 
     if (!_adLoading) {
       await loadRewardedAd(
@@ -246,9 +354,15 @@ class HomeAdManager extends ChangeNotifier {
       );
     }
 
+    // ----------------------------------------------------------
+    // Wait for load/configuration
+    // ----------------------------------------------------------
+
     const int maxWaitChecks = 150;
 
-    const Duration checkInterval = Duration(milliseconds: 200);
+    const Duration checkInterval = Duration(
+      milliseconds: 200,
+    );
 
     for (
       int check = 0;
@@ -259,9 +373,23 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
+      final String? latestUid = _currentUid();
+
+      if (latestUid == null ||
+          latestUid != currentUid) {
+        debugPrint(
+          '🐱 Firebase user changed while waiting for Rewarded Ad.',
+        );
+
+        _disposeCurrentAd();
+
+        return false;
+      }
+
       if (_rewardedAd != null &&
           _adReady &&
-          _rewardedAdPurpose == purpose) {
+          _rewardedAdPurpose == purpose &&
+          _rewardedAdUid == currentUid) {
         debugPrint(
           '🐱 Stelluriini Rewarded ad became ready: $purpose',
         );
@@ -283,17 +411,20 @@ class HomeAdManager extends ChangeNotifier {
         break;
       }
 
-      await Future<void>.delayed(checkInterval);
+      await Future<void>.delayed(
+        checkInterval,
+      );
     }
 
     final bool ready =
         !_disposed &&
         _rewardedAd != null &&
         _adReady &&
-        _rewardedAdPurpose == purpose;
+        _rewardedAdPurpose == purpose &&
+        _rewardedAdUid == currentUid;
 
     debugPrint(
-      '🐱 Rewarded ad wait finished. '
+      '🐱 Stelluriini Rewarded ad wait finished. '
       'Purpose: $purpose '
       'Ready: $ready '
       'Last error: $_adLoadError',
@@ -314,49 +445,33 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    if (_rewardedAd != null &&
-        _adReady &&
-        _rewardedAdPurpose == purpose) {
+    if (!_isSupportedPurpose(purpose)) {
+      _adLoadError =
+          'INVALID_PURPOSE | '
+          'Purpose: $purpose';
+
       debugPrint(
-        '🐱 Stelluriini Rewarded ad already ready: $purpose',
+        '🐱 Cannot load Rewarded Ad: unsupported purpose $purpose',
       );
+
+      _notify();
 
       return;
-    }
-
-    if (_adLoading) {
-      if (_loadingPurpose == purpose) {
-        debugPrint(
-          '🐱 Rewarded ad loading already in progress: $purpose',
-        );
-
-        return;
-      }
-
-      debugPrint(
-        '🐱 Replacing stale Rewarded ad load. '
-        'Old: $_loadingPurpose '
-        'New: $purpose',
-      );
-
-      _loadRequestId++;
-
-      _adLoading = false;
-      _loadingPurpose = '';
     }
 
     final User? user = _auth.currentUser;
 
     if (user == null) {
       debugPrint(
-        '🐱 Cannot load rewarded ad: '
+        '🐱 Cannot load Rewarded Ad: '
         'no authenticated Firebase user.',
       );
 
       _adLoading = false;
       _loadingPurpose = '';
-      _adReady = false;
+      _loadingUid = '';
 
+      _adReady = false;
       _adLoadError =
           'NO_AUTH_USER | '
           'Purpose: $purpose';
@@ -366,6 +481,67 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    // ----------------------------------------------------------
+    // Already ready for same user and purpose
+    // ----------------------------------------------------------
+
+    if (_rewardedAd != null &&
+        _adReady &&
+        _rewardedAdPurpose == purpose &&
+        _rewardedAdUid == user.uid) {
+      debugPrint(
+        '🐱 Stelluriini Rewarded ad already ready: $purpose',
+      );
+
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // Existing ad belongs to another user
+    // ----------------------------------------------------------
+
+    if (_rewardedAd != null &&
+        _rewardedAdUid.isNotEmpty &&
+        _rewardedAdUid != user.uid) {
+      debugPrint(
+        '🐱 Discarding Rewarded ad belonging to another user.',
+      );
+
+      _disposeCurrentAd();
+    }
+
+    // ----------------------------------------------------------
+    // Existing load
+    // ----------------------------------------------------------
+
+    if (_adLoading) {
+      if (_loadingPurpose == purpose &&
+          _loadingUid == user.uid) {
+        debugPrint(
+          '🐱 Rewarded ad loading already in progress: $purpose',
+        );
+
+        return;
+      }
+
+      debugPrint(
+        '🐱 Replacing stale Rewarded ad load. '
+        'Old purpose: $_loadingPurpose '
+        'Old UID length: ${_loadingUid.length} '
+        'New purpose: $purpose',
+      );
+
+      _loadRequestId++;
+
+      _adLoading = false;
+      _loadingPurpose = '';
+      _loadingUid = '';
+    }
+
+    // ----------------------------------------------------------
+    // Remove old ad
+    // ----------------------------------------------------------
+
     if (_rewardedAd != null) {
       _disposeCurrentAd();
     }
@@ -374,9 +550,13 @@ class HomeAdManager extends ChangeNotifier {
 
     _adLoading = true;
     _loadingPurpose = purpose;
+    _loadingUid = user.uid;
+
     _adReady = false;
     _adLoadError = '';
-    _rewardedAdPurpose = purpose;
+
+    _rewardedAdPurpose = '';
+    _rewardedAdUid = '';
 
     _notify();
 
@@ -415,267 +595,16 @@ class HomeAdManager extends ChangeNotifier {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
-          if (_disposed) {
-            ad.dispose();
-            return;
-          }
-
-          if (requestId != _loadRequestId) {
-            debugPrint(
-              '🐱 Ignoring stale rewarded ad callback.',
-            );
-
-            ad.dispose();
-            return;
-          }
-
-          debugPrint(
-            '==================================================',
+          unawaited(
+            _prepareLoadedAd(
+              ad: ad,
+              purpose: purpose,
+              adUnitId: adUnitId,
+              userUid: user.uid,
+              requestId: requestId,
+              notifyOnLoadError: notifyOnLoadError,
+            ),
           );
-
-          debugPrint(
-            '🐱 STELLURIINI ADMOB LOAD SUCCESS',
-          );
-
-          debugPrint(
-            'Purpose: $purpose',
-          );
-
-          debugPrint(
-            'Ad Unit ID: $adUnitId',
-          );
-
-          debugPrint(
-            '==================================================',
-          );
-
-          try {
-            final ServerSideVerificationOptions
-                serverSideOptions =
-                ServerSideVerificationOptions(
-              customData: '${user.uid}:$purpose',
-            );
-
-            ad.setServerSideOptions(
-              serverSideOptions,
-            );
-
-            debugPrint(
-              '🐱 STELLURIINI SSV CUSTOM DATA SET',
-            );
-
-            debugPrint(
-              'Purpose: $purpose',
-            );
-
-            debugPrint(
-              'Custom data format: UID:$purpose',
-            );
-          } catch (error) {
-            debugPrint(
-              '🐱 AdMob SSV setup failed: $error',
-            );
-
-            ad.dispose();
-
-            _rewardedAd = null;
-            _adReady = false;
-            _adLoading = false;
-            _loadingPurpose = '';
-            _rewardedAdPurpose = '';
-
-            _adLoadError =
-                'SSV_SETUP_FAILED | '
-                'Purpose: $purpose | '
-                'Ad Unit ID: $adUnitId | '
-                'Error: $error';
-
-            _notify();
-
-            return;
-          }
-
-          _rewardedAd = ad;
-          _rewardedAdPurpose = purpose;
-          _adReady = true;
-          _adLoading = false;
-          _loadingPurpose = '';
-          _adLoadError = '';
-
-          ad.fullScreenContentCallback =
-              FullScreenContentCallback<RewardedAd>(
-            onAdShowedFullScreenContent: (
-              RewardedAd showedAd,
-            ) {
-              debugPrint(
-                '==================================================',
-              );
-
-              debugPrint(
-                '🐱 STELLURIINI ADMOB SHOWN',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                'Ad Unit ID: $adUnitId',
-              );
-
-              debugPrint(
-                '==================================================',
-              );
-            },
-            onAdImpression: (
-              RewardedAd impressionAd,
-            ) {
-              debugPrint(
-                '🐱 STELLURIINI ADMOB IMPRESSION',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                'Ad Unit ID: $adUnitId',
-              );
-            },
-            onAdClicked: (
-              RewardedAd clickedAd,
-            ) {
-              debugPrint(
-                '🐱 STELLURIINI ADMOB CLICKED',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                'Ad Unit ID: $adUnitId',
-              );
-            },
-            onAdDismissedFullScreenContent: (
-              RewardedAd dismissedAd,
-            ) {
-              debugPrint(
-                '==================================================',
-              );
-
-              debugPrint(
-                '🐱 STELLURIINI ADMOB DISMISSED',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                'Ad Unit ID: $adUnitId',
-              );
-
-              debugPrint(
-                '==================================================',
-              );
-
-              dismissedAd.dispose();
-
-              if (identical(
-                _rewardedAd,
-                dismissedAd,
-              )) {
-                _rewardedAd = null;
-                _adReady = false;
-                _rewardedAdPurpose = '';
-              }
-
-              _finishFlow(purpose);
-
-              _notify();
-
-              onAdDismissed?.call(purpose);
-
-              if (!_disposed) {
-                unawaited(
-                  _reloadAfterDismiss(purpose),
-                );
-              }
-            },
-            onAdFailedToShowFullScreenContent: (
-              RewardedAd failedAd,
-              AdError error,
-            ) {
-              debugPrint(
-                '==================================================',
-              );
-
-              debugPrint(
-                '🐱 STELLURIINI ADMOB SHOW FAILED',
-              );
-
-              debugPrint(
-                'Purpose: $purpose',
-              );
-
-              debugPrint(
-                'Ad Unit ID: $adUnitId',
-              );
-
-              debugPrint(
-                'Code: ${error.code}',
-              );
-
-              debugPrint(
-                'Domain: ${error.domain}',
-              );
-
-              debugPrint(
-                'Message: ${error.message}',
-              );
-
-              debugPrint(
-                '==================================================',
-              );
-
-              failedAd.dispose();
-
-              if (identical(
-                _rewardedAd,
-                failedAd,
-              )) {
-                _rewardedAd = null;
-                _adReady = false;
-                _rewardedAdPurpose = '';
-              }
-
-              _finishFlow(purpose);
-
-              _adLoadError =
-                  'SHOW_FAILED | '
-                  'Purpose: $purpose | '
-                  'Ad Unit ID: $adUnitId | '
-                  'Code: ${error.code} | '
-                  'Domain: ${error.domain} | '
-                  'Message: ${error.message}';
-
-              _notify();
-
-              onAdShowError?.call(
-                purpose,
-                error,
-              );
-
-              if (!_disposed) {
-                unawaited(
-                  _reloadAfterDismiss(purpose),
-                );
-              }
-            },
-          );
-
-          _notify();
         },
         onAdFailedToLoad: (LoadAdError error) {
           if (_disposed) {
@@ -737,8 +666,12 @@ class HomeAdManager extends ChangeNotifier {
           _rewardedAd = null;
           _adReady = false;
           _adLoading = false;
+
           _loadingPurpose = '';
+          _loadingUid = '';
+
           _rewardedAdPurpose = '';
+          _rewardedAdUid = '';
 
           _adLoadError = detailedError;
 
@@ -761,6 +694,420 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
+  // 🔐 PREPARE LOADED AD
+  // ============================================================
+  //
+  // IMPORTANT:
+  //
+  // setServerSideOptions() is asynchronous.
+  //
+  // We wait for it to complete before the ad becomes ready.
+  //
+  // This guarantees that the SSV custom data is configured
+  // before HomeAdManager allows the ad to be shown.
+  //
+  // ============================================================
+
+  Future<void> _prepareLoadedAd({
+    required RewardedAd ad,
+    required String purpose,
+    required String adUnitId,
+    required String userUid,
+    required int requestId,
+    required bool notifyOnLoadError,
+  }) async {
+    if (_disposed) {
+      unawaited(ad.dispose());
+      return;
+    }
+
+    if (requestId != _loadRequestId) {
+      debugPrint(
+        '🐱 Ignoring stale rewarded ad callback.',
+      );
+
+      unawaited(ad.dispose());
+
+      return;
+    }
+
+    final User? currentUser = _auth.currentUser;
+
+    if (currentUser == null ||
+        currentUser.uid != userUid) {
+      debugPrint(
+        '🐱 Firebase user changed before SSV configuration.',
+      );
+
+      unawaited(ad.dispose());
+
+      if (requestId == _loadRequestId) {
+        _adLoading = false;
+        _loadingPurpose = '';
+        _loadingUid = '';
+
+        _rewardedAd = null;
+        _adReady = false;
+        _rewardedAdPurpose = '';
+        _rewardedAdUid = '';
+
+        _adLoadError =
+            'AUTH_CHANGED_BEFORE_SSV_SETUP | '
+            'Purpose: $purpose';
+
+        _notify();
+      }
+
+      return;
+    }
+
+    debugPrint(
+      '==================================================',
+    );
+
+    debugPrint(
+      '🐱 STELLURIINI ADMOB LOAD SUCCESS',
+    );
+
+    debugPrint(
+      'Purpose: $purpose',
+    );
+
+    debugPrint(
+      'Ad Unit ID: $adUnitId',
+    );
+
+    debugPrint(
+      '==================================================',
+    );
+
+    try {
+      final ServerSideVerificationOptions
+          serverSideOptions =
+          ServerSideVerificationOptions(
+        customData: '$userUid:$purpose',
+      );
+
+      await ad.setServerSideOptions(
+        serverSideOptions,
+      );
+
+      debugPrint(
+        '🐱 STELLURIINI SSV CUSTOM DATA SET',
+      );
+
+      debugPrint(
+        'Purpose: $purpose',
+      );
+
+      debugPrint(
+        'Custom data format: UID:$purpose',
+      );
+    } catch (error) {
+      debugPrint(
+        '🐱 AdMob SSV setup failed: $error',
+      );
+
+      unawaited(ad.dispose());
+
+      if (requestId != _loadRequestId ||
+          _disposed) {
+        return;
+      }
+
+      _rewardedAd = null;
+      _adReady = false;
+
+      _adLoading = false;
+
+      _loadingPurpose = '';
+      _loadingUid = '';
+
+      _rewardedAdPurpose = '';
+      _rewardedAdUid = '';
+
+      _adLoadError =
+          'SSV_SETUP_FAILED | '
+          'Purpose: $purpose | '
+          'Ad Unit ID: $adUnitId | '
+          'Error: $error';
+
+      _notify();
+
+      if (notifyOnLoadError) {
+        debugPrint(
+          '🐱 SSV setup failure is reported to HomePage.',
+        );
+      }
+
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // Verify request is still current after async SSV setup
+    // ----------------------------------------------------------
+
+    if (_disposed ||
+        requestId != _loadRequestId) {
+      debugPrint(
+        '🐱 Rewarded ad became stale while configuring SSV.',
+      );
+
+      unawaited(ad.dispose());
+
+      return;
+    }
+
+    final User? latestUser = _auth.currentUser;
+
+    if (latestUser == null ||
+        latestUser.uid != userUid) {
+      debugPrint(
+        '🐱 Firebase user changed during SSV configuration.',
+      );
+
+      unawaited(ad.dispose());
+
+      _adLoading = false;
+      _loadingPurpose = '';
+      _loadingUid = '';
+
+      _rewardedAd = null;
+      _adReady = false;
+
+      _rewardedAdPurpose = '';
+      _rewardedAdUid = '';
+
+      _adLoadError =
+          'AUTH_CHANGED_DURING_SSV_SETUP | '
+          'Purpose: $purpose';
+
+      _notify();
+
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // Store the fully prepared ad
+    // ----------------------------------------------------------
+
+    _rewardedAd = ad;
+
+    _rewardedAdPurpose = purpose;
+
+    _rewardedAdUid = userUid;
+
+    _adReady = true;
+
+    _adLoading = false;
+
+    _loadingPurpose = '';
+
+    _loadingUid = '';
+
+    _adLoadError = '';
+
+    // ----------------------------------------------------------
+    // Fullscreen callbacks
+    // ----------------------------------------------------------
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback<RewardedAd>(
+      onAdShowedFullScreenContent: (
+        RewardedAd showedAd,
+      ) {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          '🐱 STELLURIINI ADMOB SHOWN',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Ad Unit ID: $adUnitId',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+      },
+      onAdImpression: (
+        RewardedAd impressionAd,
+      ) {
+        debugPrint(
+          '🐱 STELLURIINI ADMOB IMPRESSION',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Ad Unit ID: $adUnitId',
+        );
+      },
+      onAdClicked: (
+        RewardedAd clickedAd,
+      ) {
+        debugPrint(
+          '🐱 STELLURIINI ADMOB CLICKED',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Ad Unit ID: $adUnitId',
+        );
+      },
+      onAdDismissedFullScreenContent: (
+        RewardedAd dismissedAd,
+      ) {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          '🐱 STELLURIINI ADMOB DISMISSED',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Ad Unit ID: $adUnitId',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        unawaited(
+          dismissedAd.dispose(),
+        );
+
+        if (identical(
+          _rewardedAd,
+          dismissedAd,
+        )) {
+          _rewardedAd = null;
+          _adReady = false;
+
+          _rewardedAdPurpose = '';
+          _rewardedAdUid = '';
+        }
+
+        _finishFlow(purpose);
+
+        _notify();
+
+        onAdDismissed?.call(purpose);
+
+        if (!_disposed) {
+          unawaited(
+            _reloadAfterDismiss(purpose),
+          );
+        }
+      },
+      onAdFailedToShowFullScreenContent: (
+        RewardedAd failedAd,
+        AdError error,
+      ) {
+        debugPrint(
+          '==================================================',
+        );
+
+        debugPrint(
+          '🐱 STELLURIINI ADMOB SHOW FAILED',
+        );
+
+        debugPrint(
+          'Purpose: $purpose',
+        );
+
+        debugPrint(
+          'Ad Unit ID: $adUnitId',
+        );
+
+        debugPrint(
+          'Code: ${error.code}',
+        );
+
+        debugPrint(
+          'Domain: ${error.domain}',
+        );
+
+        debugPrint(
+          'Message: ${error.message}',
+        );
+
+        debugPrint(
+          '==================================================',
+        );
+
+        unawaited(
+          failedAd.dispose(),
+        );
+
+        if (identical(
+          _rewardedAd,
+          failedAd,
+        )) {
+          _rewardedAd = null;
+          _adReady = false;
+
+          _rewardedAdPurpose = '';
+          _rewardedAdUid = '';
+        }
+
+        _finishFlow(purpose);
+
+        _adLoadError =
+            'SHOW_FAILED | '
+            'Purpose: $purpose | '
+            'Ad Unit ID: $adUnitId | '
+            'Code: ${error.code} | '
+            'Domain: ${error.domain} | '
+            'Message: ${error.message}';
+
+        _notify();
+
+        onAdShowError?.call(
+          purpose,
+          error,
+        );
+
+        if (!_disposed) {
+          unawaited(
+            _reloadAfterDismiss(purpose),
+          );
+        }
+      },
+    );
+
+    debugPrint(
+      '🐱 Stelluriini Rewarded ad is READY.',
+    );
+
+    debugPrint(
+      'Purpose: $purpose',
+    );
+
+    debugPrint(
+      'User UID length: ${userUid.length}',
+    );
+
+    _notify();
+  }
+
+  // ============================================================
   // 🔄 RELOAD AFTER DISMISS
   // ============================================================
 
@@ -779,11 +1126,16 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    if (_rewardedAd != null && _adReady) {
+    if (_rewardedAd != null &&
+        _adReady) {
       return;
     }
 
     if (_adLoading) {
+      return;
+    }
+
+    if (_auth.currentUser == null) {
       return;
     }
 
@@ -798,11 +1150,24 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🛡️ DELAYED REWARD CALLBACK
+  // 🛡️ SCHEDULE BACKEND REWARD CALLBACK
+  // ============================================================
+  //
+  // IMPORTANT:
+  //
+  // This does NOT verify SSV on the device.
+  //
+  // It waits briefly for Google's verified SSV callback to reach
+  // the backend.
+  //
+  // The callback passed from HomePage must still call the backend
+  // function that validates/consumes the verified reward.
+  //
   // ============================================================
 
-  void _scheduleVerifiedRewardCallback({
+  void _scheduleBackendRewardCallback({
     required String purpose,
+    required String expectedUid,
   }) {
     unawaited(
       () async {
@@ -811,7 +1176,7 @@ class HomeAdManager extends ChangeNotifier {
         );
 
         debugPrint(
-          '🐱 STELLURIINI SSV GRACE PERIOD START',
+          '🐱 STELLURIINI SSV BACKEND WAIT START',
         );
 
         debugPrint(
@@ -820,6 +1185,10 @@ class HomeAdManager extends ChangeNotifier {
 
         debugPrint(
           'Waiting: ${ssvGracePeriod.inSeconds} seconds',
+        );
+
+        debugPrint(
+          'Expected UID length: ${expectedUid.length}',
         );
 
         debugPrint(
@@ -832,7 +1201,28 @@ class HomeAdManager extends ChangeNotifier {
 
         if (_disposed) {
           debugPrint(
-            '🐱 SSV reward callback cancelled: manager disposed.',
+            '🐱 Backend reward callback cancelled: '
+            'manager disposed.',
+          );
+
+          return;
+        }
+
+        final User? currentUser = _auth.currentUser;
+
+        if (currentUser == null) {
+          debugPrint(
+            '🐱 Backend reward callback cancelled: '
+            'no authenticated user.',
+          );
+
+          return;
+        }
+
+        if (currentUser.uid != expectedUid) {
+          debugPrint(
+            '🐱 Backend reward callback cancelled: '
+            'Firebase user changed.',
           );
 
           return;
@@ -843,7 +1233,7 @@ class HomeAdManager extends ChangeNotifier {
         );
 
         debugPrint(
-          '🐱 STELLURIINI SSV GRACE PERIOD COMPLETE',
+          '🐱 STELLURIINI SSV BACKEND WAIT COMPLETE',
         );
 
         debugPrint(
@@ -863,6 +1253,12 @@ class HomeAdManager extends ChangeNotifier {
             await onMiningStartReward?.call();
           } else if (purpose == powerBoostPurpose) {
             await onPowerBoostReward?.call();
+          } else {
+            debugPrint(
+              '🐱 Unknown reward callback purpose: $purpose',
+            );
+
+            return;
           }
 
           debugPrint(
@@ -906,6 +1302,17 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    final User? user = _auth.currentUser;
+
+    if (user == null) {
+      debugPrint(
+        '🐱 Cannot show Mining Start ad: '
+        'no authenticated Firebase user.',
+      );
+
+      return false;
+    }
+
     _miningAdFlowActive = true;
     _adLoadError = '';
 
@@ -921,10 +1328,28 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
+      final User? currentUser = _auth.currentUser;
+
+      if (currentUser == null ||
+          currentUser.uid != user.uid) {
+        debugPrint(
+          '🐱 Mining Start ad cancelled: Firebase user changed.',
+        );
+
+        _miningAdFlowActive = false;
+
+        _disposeCurrentAd();
+
+        _notify();
+
+        return false;
+      }
+
       if (!ready ||
           _rewardedAd == null ||
           !_adReady ||
-          _rewardedAdPurpose != miningStartPurpose) {
+          _rewardedAdPurpose != miningStartPurpose ||
+          _rewardedAdUid != user.uid) {
         _miningAdFlowActive = false;
 
         debugPrint(
@@ -942,9 +1367,33 @@ class HomeAdManager extends ChangeNotifier {
 
       final RewardedAd ad = _rewardedAd!;
 
+      final String adUid = _rewardedAdUid;
+
+      if (ad.adUnitId != miningRewardedAdUnitId) {
+        debugPrint(
+          '🐱 Mining Start ad unit mismatch. '
+          'Expected: $miningRewardedAdUnitId '
+          'Actual: ${ad.adUnitId}',
+        );
+
+        _miningAdFlowActive = false;
+
+        _disposeCurrentAd();
+
+        _adLoadError =
+            'AD_UNIT_MISMATCH | '
+            'Purpose: $miningStartPurpose';
+
+        _notify();
+
+        return false;
+      }
+
       _rewardedAd = null;
       _adReady = false;
+
       _rewardedAdPurpose = '';
+      _rewardedAdUid = '';
 
       _notify();
 
@@ -967,8 +1416,7 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'SSV Custom Data: '
-        '${_auth.currentUser?.uid}:$miningStartPurpose',
+        'SSV Custom Data: $adUid:$miningStartPurpose',
       );
 
       debugPrint(
@@ -1008,15 +1456,16 @@ class HomeAdManager extends ChangeNotifier {
 
           debugPrint(
             'IMPORTANT: Firebase callback is delayed '
-            'for SSV verification.',
+            'for backend SSV propagation.',
           );
 
           debugPrint(
             '==================================================',
           );
 
-          _scheduleVerifiedRewardCallback(
+          _scheduleBackendRewardCallback(
             purpose: miningStartPurpose,
+            expectedUid: adUid,
           );
         },
       );
@@ -1060,6 +1509,17 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    final User? user = _auth.currentUser;
+
+    if (user == null) {
+      debugPrint(
+        '🐱 Cannot show Power Boost ad: '
+        'no authenticated Firebase user.',
+      );
+
+      return false;
+    }
+
     _powerBoostAdFlowActive = true;
     _adLoadError = '';
 
@@ -1081,6 +1541,7 @@ class HomeAdManager extends ChangeNotifier {
 
         _adLoading = false;
         _loadingPurpose = '';
+        _loadingUid = '';
       }
 
       final bool ready = await waitForRewardedAd(
@@ -1092,10 +1553,28 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
+      final User? currentUser = _auth.currentUser;
+
+      if (currentUser == null ||
+          currentUser.uid != user.uid) {
+        debugPrint(
+          '🐱 Power Boost ad cancelled: Firebase user changed.',
+        );
+
+        _powerBoostAdFlowActive = false;
+
+        _disposeCurrentAd();
+
+        _notify();
+
+        return false;
+      }
+
       if (!ready ||
           _rewardedAd == null ||
           !_adReady ||
-          _rewardedAdPurpose != powerBoostPurpose) {
+          _rewardedAdPurpose != powerBoostPurpose ||
+          _rewardedAdUid != user.uid) {
         _powerBoostAdFlowActive = false;
 
         debugPrint(
@@ -1113,9 +1592,33 @@ class HomeAdManager extends ChangeNotifier {
 
       final RewardedAd ad = _rewardedAd!;
 
+      final String adUid = _rewardedAdUid;
+
+      if (ad.adUnitId != powerBoostRewardedAdUnitId) {
+        debugPrint(
+          '🐱 Power Boost ad unit mismatch. '
+          'Expected: $powerBoostRewardedAdUnitId '
+          'Actual: ${ad.adUnitId}',
+        );
+
+        _powerBoostAdFlowActive = false;
+
+        _disposeCurrentAd();
+
+        _adLoadError =
+            'AD_UNIT_MISMATCH | '
+            'Purpose: $powerBoostPurpose';
+
+        _notify();
+
+        return false;
+      }
+
       _rewardedAd = null;
       _adReady = false;
+
       _rewardedAdPurpose = '';
+      _rewardedAdUid = '';
 
       _notify();
 
@@ -1138,8 +1641,7 @@ class HomeAdManager extends ChangeNotifier {
       );
 
       debugPrint(
-        'SSV Custom Data: '
-        '${_auth.currentUser?.uid}:$powerBoostPurpose',
+        'SSV Custom Data: $adUid:$powerBoostPurpose',
       );
 
       debugPrint(
@@ -1179,15 +1681,16 @@ class HomeAdManager extends ChangeNotifier {
 
           debugPrint(
             'IMPORTANT: Firebase callback is delayed '
-            'for SSV verification.',
+            'for backend SSV propagation.',
           );
 
           debugPrint(
             '==================================================',
           );
 
-          _scheduleVerifiedRewardCallback(
+          _scheduleBackendRewardCallback(
             purpose: powerBoostPurpose,
+            expectedUid: adUid,
           );
         },
       );
@@ -1228,10 +1731,18 @@ class HomeAdManager extends ChangeNotifier {
     final RewardedAd? ad = _rewardedAd;
 
     _rewardedAd = null;
+
     _adReady = false;
+
     _rewardedAdPurpose = '';
 
-    ad?.dispose();
+    _rewardedAdUid = '';
+
+    if (ad != null) {
+      unawaited(
+        ad.dispose(),
+      );
+    }
   }
 
   // ============================================================
@@ -1244,9 +1755,16 @@ class HomeAdManager extends ChangeNotifier {
     _disposeCurrentAd();
 
     _adLoading = false;
+
     _loadingPurpose = '';
+
+    _loadingUid = '';
+
     _adLoadError = '';
+
     _rewardedAdPurpose = '';
+
+    _rewardedAdUid = '';
 
     _notify();
   }
@@ -1261,11 +1779,27 @@ class HomeAdManager extends ChangeNotifier {
 
     _loadRequestId++;
 
-    _rewardedAd?.dispose();
+    final RewardedAd? ad = _rewardedAd;
 
     _rewardedAd = null;
 
+    _adReady = false;
+
+    _adLoading = false;
+
     _loadingPurpose = '';
+
+    _loadingUid = '';
+
+    _rewardedAdPurpose = '';
+
+    _rewardedAdUid = '';
+
+    if (ad != null) {
+      unawaited(
+        ad.dispose(),
+      );
+    }
 
     super.dispose();
   }
