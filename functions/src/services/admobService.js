@@ -504,6 +504,21 @@ function decodeAdMobSignature(
   }
 
   if (
+    signature.length >
+    8192
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV signature is too long.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_SIGNATURE";
+
+    throw error;
+  }
+
+  if (
     !/^[A-Za-z0-9_-]+$/.test(
       signature,
     )
@@ -585,6 +600,19 @@ function decodeAdMobSignature(
 // ============================================================
 // 🔎 EXTRACT SIGNATURE DATA
 // ============================================================
+//
+// AdMob SSV:
+//
+// <signed parameters>&signature=<signature>&key_id=<key_id>
+//
+// TÄRKEÄÄ:
+//
+// signedQueryString sisältää täsmälleen alkuperäisen query
+// stringin ennen "&signature="-osuutta.
+//
+// Sitä EI saa URL-dekoodata ennen kryptografista tarkistusta.
+//
+// ============================================================
 
 function extractSignatureData(
   rawQueryString,
@@ -606,18 +634,13 @@ function extractSignatureData(
     throw error;
   }
 
-  const separatorIndex =
-    rawQueryString.lastIndexOf(
-      "&",
-    );
-
   if (
-    separatorIndex <=
-      0
+    rawQueryString.length >
+    16384
   ) {
     const error =
       new Error(
-        "AdMob SSV callback does not contain the required signature and key_id parameters.",
+        "AdMob SSV query string is too long.",
       );
 
     error.code =
@@ -626,35 +649,20 @@ function extractSignatureData(
     throw error;
   }
 
-  const keyIdMarker =
-    "&key_id=";
-
-  const keyIdIndex =
-    rawQueryString.lastIndexOf(
-      keyIdMarker,
-    );
-
-  if (
-    keyIdIndex <=
-      0
-  ) {
-    const error =
-      new Error(
-        "AdMob SSV key_id parameter was not found in the expected final position.",
-      );
-
-    error.code =
-      "ADMOB_INVALID_KEY_ID";
-
-    throw error;
-  }
-
   const signatureMarker =
     "&signature=";
+
+  const keyIdMarker =
+    "&key_id=";
 
   const signatureIndex =
     rawQueryString.lastIndexOf(
       signatureMarker,
+    );
+
+  const keyIdIndex =
+    rawQueryString.lastIndexOf(
+      keyIdMarker,
     );
 
   if (
@@ -668,6 +676,21 @@ function extractSignatureData(
 
     error.code =
       "ADMOB_INVALID_SIGNATURE";
+
+    throw error;
+  }
+
+  if (
+    keyIdIndex <=
+      0
+  ) {
+    const error =
+      new Error(
+        "AdMob SSV key_id parameter was not found in the expected final position.",
+      );
+
+    error.code =
+      "ADMOB_INVALID_KEY_ID";
 
     throw error;
   }
@@ -710,15 +733,13 @@ function extractSignatureData(
 
   const signaturePart =
     rawQueryString.substring(
-      signatureIndex +
-        1,
+      signatureIndex + 1,
       keyIdIndex,
     );
 
   const keyIdPart =
     rawQueryString.substring(
-      keyIdIndex +
-        1,
+      keyIdIndex + 1,
     );
 
   if (
@@ -1246,6 +1267,17 @@ function validateUid(
 
 // ============================================================
 // 🧩 CUSTOM DATA PARSER
+// ============================================================
+//
+// Expected format:
+//
+// <firebase_uid>:<reward_purpose>
+//
+// Example:
+//
+// abc123:mining_start
+// abc123:power_boost
+//
 // ============================================================
 
 function parseCustomData(
