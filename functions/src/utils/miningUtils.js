@@ -57,7 +57,7 @@ const {
 // 0
 // positiivinen numero
 //
-// Virheellinen tai negatiivinen arvo
+// Negatiivinen, NaN tai Infinity
 // palautetaan arvona 0.
 //
 // ============================================================
