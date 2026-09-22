@@ -281,13 +281,21 @@ function getRewardConfiguration(rewardPurpose) {
 //
 // IMPORTANT:
 //
-// Do not use orderBy("createdAt") here.
+// We intentionally query only by uid.
 //
-// SSV reward documents can arrive asynchronously and older
-// documents may not contain exactly the same timestamp fields.
+// Querying:
 //
-// We therefore query only by the indexed equality fields and
-// validate every candidate locally.
+//   where("uid", "==", uid)
+//   where("rewardPurpose", "==", rewardPurpose)
+//
+// can require a Firestore composite index.
+//
+// Instead we fetch the user's AdMob reward documents and
+// validate rewardPurpose, reward type, ad unit, amount,
+// reward item and transaction ID locally.
+//
+// This keeps SSV verification independent of a composite
+// Firestore index.
 //
 // ============================================================
 
@@ -314,11 +322,6 @@ async function findVerifiedAdMobReward(
         "uid",
         "==",
         uid
-      )
-      .where(
-        "rewardPurpose",
-        "==",
-        rewardPurpose
       )
       .limit(
         ADMOB_REWARD_QUERY_LIMIT
@@ -1144,8 +1147,6 @@ function getMiningHashRate(
 // ============================================================
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
-//
-// IMPORTANT:
 //
 // Historical miningHashRate must NEVER fall back to the
 // current Daily Hash Rate.
@@ -2535,9 +2536,6 @@ const claimMining =
 
             // ------------------------------------------------
             // ACHIEVEMENT READS + WRITES
-            //
-            // updateMiningAchievements performs ALL of its
-            // transaction reads before its writes.
             // ------------------------------------------------
 
             await updateMiningAchievements(
