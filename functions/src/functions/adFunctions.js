@@ -131,6 +131,13 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_INVALID_AD_UNIT",
     "ADMOB_INVALID_REWARD_ITEM",
     "ADMOB_INVALID_REWARD_AMOUNT",
+
+    // --------------------------------------------------------
+    // Sama transaction_id, mutta eri tapahtumatiedot.
+    // Tätä ei saa yrittää käsitellä uudelleen.
+    // --------------------------------------------------------
+
+    "ADMOB_TRANSACTION_CONFLICT",
   ]);
 
 
@@ -224,7 +231,8 @@ function validateUid(
 // AdMob käyttää transaction_id:tä yksilöllisenä
 // reward grant -tunnisteena.
 //
-// Stelluriini hyväksyy tässä vain hex-merkkijonon.
+// Google määrittelee transaction_id:n hex-koodatuksi
+// yksilölliseksi tunnisteeksi.
 //
 // ============================================================
 
@@ -1042,12 +1050,6 @@ async function saveVerifiedAdMobReward(
         // ----------------------------------------------------
         // TRANSACTION ID CONFLICT
         // ----------------------------------------------------
-        //
-        // Koska reward document on transaction_id:n perusteella
-        // yksilöity, saman ID:n pitää aina sisältää täsmälleen
-        // sama varmennettu reward-tapahtuma.
-        //
-        // ----------------------------------------------------
 
         if (
           existingUid !==
@@ -1159,11 +1161,7 @@ async function saveVerifiedAdMobReward(
           // --------------------------------------------------
           // 🔐 SSV SIGNATURE
           // --------------------------------------------------
-          //
-          // Tallennetaan auditointia varten.
-          //
-          // Tätä ei käytetä client-side rewardina.
-          //
+
           signature,
 
           customData,
@@ -1599,44 +1597,6 @@ const adMobReward =
 
 
         // ====================================================
-        // 🔐 TRANSACTION CONFLICT
-        // ====================================================
-        //
-        // Pysyvä tietoristiriita.
-        //
-        // HTTP 200 kuittaa callbackin.
-        //
-        // ====================================================
-
-        if (
-          error &&
-          error.code ===
-          "ADMOB_TRANSACTION_CONFLICT"
-        ) {
-          res.status(
-            200,
-          ).json({
-            success:
-              false,
-
-            verified:
-              ssvVerified,
-
-            recorded:
-              false,
-
-            rewarded:
-              false,
-
-            error:
-              "AdMob transaction conflict.",
-          });
-
-          return;
-        }
-
-
-        // ====================================================
         // 🛡️ CLIENT VALIDATION ERROR
         // ====================================================
 
@@ -1661,9 +1621,12 @@ const adMobReward =
               false,
 
             error:
-              ssvVerified
-                ? "Verified AdMob callback failed final validation."
-                : "Invalid AdMob SSV callback.",
+              errorCode ===
+              "ADMOB_TRANSACTION_CONFLICT"
+                ? "AdMob transaction conflict."
+                : ssvVerified
+                  ? "Verified AdMob callback failed final validation."
+                  : "Invalid AdMob SSV callback.",
           });
 
           return;
