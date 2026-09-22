@@ -429,10 +429,6 @@ function calculateMining(
 // ============================================================
 // ⏱️ GET MINING START TIME
 // ============================================================
-//
-// Hakee mining-jakson aloitusajan.
-//
-// ============================================================
 
 function getMiningStartTime(
   data,
@@ -453,10 +449,6 @@ function getMiningStartTime(
 
 // ============================================================
 // ⏱️ GET MINING END TIME
-// ============================================================
-//
-// Hakee mining-jakson päättymisajan.
-//
 // ============================================================
 
 function getMiningEndTime(
@@ -480,7 +472,7 @@ function getMiningEndTime(
 // ⚡ GET MINING HASH RATE
 // ============================================================
 //
-// Palauttaa Mining-syklille tallennetun Hash Raten.
+// Palauttaa olemassa olevan mining-cyclen Hash Raten.
 //
 // Ensisijainen kenttä:
 //
@@ -496,14 +488,14 @@ function getMiningEndTime(
 //
 // Se vain lukee olemassa olevan arvon.
 //
-// Jos miningHashRate-kenttä on olemassa ja sen arvo
-// on kelvollinen, sitä käytetään aina.
+// Jos miningHashRate-kenttä on olemassa ja kelvollinen,
+// sitä käytetään.
 //
-// Myös arvo 0 on kelvollinen arvo eikä sitä korvata
-// hashRate-fallbackilla.
+// Myös arvo 0 on teknisesti kelvollinen tässä
+// matalan tason utilityssä.
 //
-// Tämä on tärkeää, jotta Mining-syklin oma Hash Rate
-// pysyy muuttumattomana koko syklin ajan.
+// Business-kerros päättää erikseen, onko 0 hyväksyttävä
+// aktiiviselle tai historialliselle mining-cyclelle.
 //
 // ============================================================
 
@@ -522,12 +514,6 @@ function getMiningHashRate(
   // ==========================================================
   // ⚡ MINING CYCLE HASH RATE
   // ==========================================================
-  //
-  // Jos kenttä on olemassa, käytetään sitä.
-  //
-  // 0 on tässä tarkoituksellinen ja kelvollinen arvo.
-  //
-  // ==========================================================
 
   if (
     Object.prototype.hasOwnProperty.call(
@@ -535,12 +521,9 @@ function getMiningHashRate(
       "miningHashRate",
     )
   ) {
-    const rawMiningHashRate =
-      data.miningHashRate;
-
     const number =
       Number(
-        rawMiningHashRate,
+        data.miningHashRate,
       );
 
     if (
@@ -551,6 +534,19 @@ function getMiningHashRate(
     ) {
       return number;
     }
+
+    // --------------------------------------------------------
+    // IMPORTANT:
+    //
+    // miningHashRate-kenttä on olemassa mutta virheellinen.
+    //
+    // Älä vaihda hiljaa toiseen Hash Rateen.
+    //
+    // Business-kerros voi tämän jälkeen päättää,
+    // miten virheellinen mining cycle käsitellään.
+    // --------------------------------------------------------
+
+    return 0;
   }
 
 
@@ -558,8 +554,8 @@ function getMiningHashRate(
   // 🔄 COMPATIBILITY FALLBACK
   // ==========================================================
   //
-  // Käytetään vanhaa hashRate-kenttää vain,
-  // jos miningHashRate ei ole käytettävissä.
+  // Vanhaa hashRate-kenttää käytetään vain silloin,
+  // kun miningHashRate-kenttää ei ole lainkaan.
   //
   // ==========================================================
 
@@ -611,17 +607,6 @@ function calculateMiningStatus(
 
   // ==========================================================
   // ⚡ MINING HASH RATE
-  // ==========================================================
-  //
-  // miningFunctions.js välittää nykyisen mining-syklin
-  // Hash Raten tähän.
-  //
-  // Ensisijaisesti käytetään miningHashRate-kenttää.
-  //
-  // hashRate toimii vain yhteensopivuus-fallbackina.
-  //
-  // Daily Streakiä ei käsitellä täällä.
-  //
   // ==========================================================
 
   const miningHashRate =
