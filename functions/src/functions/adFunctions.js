@@ -122,10 +122,12 @@ const VALID_REWARD_PURPOSES =
 // 🛡️ CLIENT VALIDATION ERROR CODES
 // ============================================================
 //
-// Näissä tapauksissa callback itsessään on virheellinen
+// Näissä tapauksissa callback on pysyvästi virheellinen
 // tai sen sisältämä data ei ole hyväksyttävä.
 //
-// HTTP 400 estää turhan retry-kierroksen.
+// AdMob odottaa SSV-callbackilta HTTP 200 OK -vastauksen.
+// Siksi pysyvästi hylätty callback kuitataan HTTP 200:lla,
+// jotta sitä ei turhaan lähetetä uudelleen.
 //
 // ============================================================
 
@@ -176,6 +178,7 @@ const SERVER_RETRY_ERROR_CODES =
     //
     // Callback voi silti olla täysin oikea Googlen callback.
     // Tämä on meidän palvelimen/configin korjausta vaativa tila.
+    //
     // --------------------------------------------------------
 
     "ADMOB_INVALID_REWARD_AMOUNT",
@@ -1297,8 +1300,15 @@ const adMobReward =
             "❌ AdMob SSV verification failed.",
           );
 
+          // --------------------------------------------------
+          // Pysyvästi hylätty callback kuitataan HTTP 200:lla.
+          //
+          // AdMob voi yrittää uudelleen, jos vastaus ei ole
+          // odotettu HTTP 200 OK.
+          // --------------------------------------------------
+
           res.status(
-            400,
+            200,
           ).json({
             success:
               false,
@@ -1436,12 +1446,10 @@ const adMobReward =
         // 🔐 TRANSACTION CONFLICT
         // ====================================================
         //
-        // Tämä on pysyvä tietoristiriita.
+        // Pysyvä tietoristiriita.
         //
-        // 409 johtaisi turhaan AdMob-retryyn.
-        //
-        // HTTP 400 kertoo, ettei callbackia pidä yrittää
-        // uudelleen tällä datalla.
+        // HTTP 200 kuittaa callbackin eikä aiheuta turhaa
+        // AdMob-retryä.
         //
         // ====================================================
 
@@ -1451,7 +1459,7 @@ const adMobReward =
           "ADMOB_TRANSACTION_CONFLICT"
         ) {
           res.status(
-            400,
+            200,
           ).json({
             success:
               false,
@@ -1482,7 +1490,7 @@ const adMobReward =
           )
         ) {
           res.status(
-            400,
+            200,
           ).json({
             success:
               false,
