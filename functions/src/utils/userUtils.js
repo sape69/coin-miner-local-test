@@ -6,11 +6,12 @@
 //
 // Keskitetyt käyttäjä- ja Firestore-apufunktiot.
 //
-// Vastaa:
+// Vastuu:
 //
 // 👤 Käyttäjän Firestore-referenssistä
 // 📜 Käyttäjän tapahtumahistoriasta
 // 🎁 AdMob Reward -referenssistä
+// 🔐 Firestore Document ID -validoinnista
 //
 // Firestore-polut pidetään tässä tiedostossa keskitetysti,
 // jotta backend käyttää aina samoja polkuja.
@@ -22,6 +23,7 @@
 // ❌ käynnistä Mining Startia
 // ❌ käsittele AdMob SSV:tä
 // ❌ muuta mining-tilaa
+// ❌ muuta Daily Streakia
 //
 // ============================================================
 
@@ -48,48 +50,44 @@ const {
 // Käytetään byte-pituutta eikä JavaScript-stringin
 // character length -arvoa.
 //
-// Tämä on tärkeää erityisesti Unicode-merkkien kanssa,
-// koska yksi merkki voi käyttää useamman tavun.
+// Tämä on tärkeää Unicode-merkkien kanssa, koska yksi
+// merkki voi käyttää useamman tavun.
 //
 // ============================================================
 
-const MAX_DOCUMENT_ID_BYTES =
-  1500;
+const MAX_DOCUMENT_ID_BYTES = 1500;
 
 
 // ============================================================
 // 🔐 VALIDATE FIRESTORE DOCUMENT ID
 // ============================================================
 //
-// Firestore-dokumentin ID:
+// Validointi tehdään ennen Firestore-referenssin luomista.
 //
-// ✅ täytyy olla merkkijono
-// ✅ ei saa olla tyhjä
-// ❌ ei saa sisältää "/"
-// ❌ ei saa olla "." tai ".."
-// ❌ ei saa alkaa kahdella alaviivalla "__"
-// ❌ ei saa ylittää 1 500 tavun rajaa
+// Sallittu:
 //
-// ID:tä EI muuteta automaattisesti trimmaamalla.
+// ✅ merkkijono
+// ✅ vähintään yksi merkki
+// ✅ Unicode-merkit
+// ✅ välilyönnit osana ID:tä
+//
+// Hylätään:
+//
+// ❌ undefined
+// ❌ null
+// ❌ muu kuin string
+// ❌ tyhjä string
+// ❌ pelkkää whitespacea sisältävä string
+// ❌ "/" sisältävä ID
+// ❌ "."
+// ❌ ".."
+// ❌ Firestoren reserved "__.*__" -muoto
+// ❌ yli 1 500 tavun ID
+//
+// ID:tä EI trimmailla automaattisesti.
 //
 // Tämä on tärkeää, koska UID:tä tai transaction ID:tä
-// ei pidä muuttaa hiljaisesti toiseksi tunnisteeksi.
-//
-// UID:t ja transactionId:t validoidaan lisäksi niiden
-// omissa business/service-kerroksissa.
-//
-// Tämä funktio estää yleiset ohjelmointivirheet,
-// kuten:
-//
-// undefined
-// null
-// ""
-// "   "
-// "abc/def"
-// "."
-// ".."
-// "__example__"
-// liian pitkä document ID
+// ei saa muuttaa hiljaisesti toiseksi arvoksi.
 //
 // ============================================================
 
@@ -98,20 +96,18 @@ function validateDocumentId(
   name,
 ) {
   const parameterName =
-    typeof name ===
-    "string" &&
+    typeof name === "string" &&
     name.length > 0
       ? name
       : "documentId";
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // TYPE
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (
-    typeof value !==
-    "string"
+    typeof value !== "string"
   ) {
     const error =
       new Error(
@@ -128,13 +124,12 @@ function validateDocumentId(
   }
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // EMPTY ID
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (
-    value.length ===
-    0
+    value.length === 0
   ) {
     const error =
       new Error(
@@ -151,21 +146,20 @@ function validateDocumentId(
   }
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // WHITESPACE-ONLY ID
-  // ----------------------------------------------------------
+  // ==========================================================
   //
-  // ID:tä ei trimmailla, koska tunnistetta ei pidä
-  // muuttaa hiljaisesti.
+  // ID:tä ei trimmailla.
   //
-  // Sen sijaan pelkästään whitespacea sisältävä ID
-  // hylätään.
+  // Pelkästään whitespacea sisältävä ID kuitenkin
+  // hylätään, koska se on käytännössä aina virheellinen
+  // ohjelmointitilanne.
   //
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (
-    value.trim().length ===
-    0
+    value.trim().length === 0
   ) {
     const error =
       new Error(
@@ -182,15 +176,15 @@ function validateDocumentId(
   }
 
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // INVALID FIRESTORE PATH CHARACTER
-  // ----------------------------------------------------------
+  // ==========================================================
   //
-  // "/" erottaa Firestoressa collection- ja document-polkuja.
+  // "/" erottaa Firestoressa collection- ja document-polut.
   //
   // Siksi sitä ei saa esiintyä yhden document ID:n sisällä.
   //
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (
     value.includes("/")
@@ -210,16 +204,13 @@ function validateDocumentId(
   }
 
 
-  // ----------------------------------------------------------
-  // RESERVED DOT DOCUMENT IDS
-  // ----------------------------------------------------------
+  // ==========================================================
+  // RESERVED DOT IDS
+  // ==========================================================
   //
-  // Firestore ei salli dokumentin ID:ksi pelkkää:
+  // "." ja ".." eivät ole sallittuja document ID -arvoja.
   //
-  // "."
-  // ".."
-  //
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (
     value === "." ||
@@ -240,16 +231,20 @@ function validateDocumentId(
   }
 
 
-  // ----------------------------------------------------------
-  // RESERVED DOUBLE-UNDERSCORE IDS
-  // ----------------------------------------------------------
+  // ==========================================================
+  // FIRESTORE RESERVED ID PATTERN
+  // ==========================================================
   //
-  // Firestore ei salli dokumentin ID:tä, joka vastaa
-  // regular expressionia:
+  // Firestore varaa ID:t, jotka vastaavat muotoa:
   //
-  // __.*
+  // __.*__
   //
-  // ----------------------------------------------------------
+  // Esimerkiksi:
+  //
+  // __name__
+  // __example__
+  //
+  // ==========================================================
 
   if (
     /^__.*__$/.test(
@@ -271,9 +266,16 @@ function validateDocumentId(
   }
 
 
-  // ----------------------------------------------------------
-  // FIRESTORE SIZE LIMIT
-  // ----------------------------------------------------------
+  // ==========================================================
+  // FIRESTORE DOCUMENT ID SIZE
+  // ==========================================================
+  //
+  // Firestore käyttää tavukokoa.
+  //
+  // Buffer.byteLength(..., "utf8") huomioi tämän oikein
+  // myös Unicode-merkkien kanssa.
+  //
+  // ==========================================================
 
   const byteLength =
     Buffer.byteLength(
@@ -297,6 +299,12 @@ function validateDocumentId(
     error.parameter =
       parameterName;
 
+    error.byteLength =
+      byteLength;
+
+    error.maxBytes =
+      MAX_DOCUMENT_ID_BYTES;
+
     throw error;
   }
 
@@ -306,7 +314,7 @@ function validateDocumentId(
 
 
 // ============================================================
-// 👤 USER DOCUMENT
+// 👤 GET USER REFERENCE
 // ============================================================
 //
 // Firestore:
@@ -324,7 +332,6 @@ function getUserRef(
       "uid",
     );
 
-
   return db
     .collection(
       "users",
@@ -336,7 +343,7 @@ function getUserRef(
 
 
 // ============================================================
-// 📜 TRANSACTION HISTORY COLLECTION
+// 📜 GET HISTORY COLLECTION
 // ============================================================
 //
 // Firestore:
@@ -360,7 +367,7 @@ function getHistoryCollection(
 
 
 // ============================================================
-// 🎁 ADMOB REWARD DOCUMENT
+// 🎁 GET ADMOB REWARD REFERENCE
 // ============================================================
 //
 // Firestore:
@@ -369,14 +376,17 @@ function getHistoryCollection(
 //
 // AdMob transaction_id toimii dokumentin ID:nä.
 //
-// Tämä mahdollistaa atomisen duplicate-tarkistuksen:
+// Tämä mahdollistaa duplicate-tarkistuksen:
 //
 // transactionId
 //      ↓
 // admobRewards/{transactionId}
 //
-// Jos sama transaction_id vastaanotetaan uudelleen,
-// backend voi tunnistaa sen jo käsitellyksi.
+// Sama transaction_id voidaan tunnistaa jo käsitellyksi
+// ilman, että transaction ID:n sisältöä tarvitsee muuttaa.
+//
+// Varsinainen atominen käsittely kuuluu kuitenkin
+// AdMob/SSV business- tai service-kerrokseen.
 //
 // ============================================================
 
@@ -388,7 +398,6 @@ function getAdMobRewardRef(
       transactionId,
       "transactionId",
     );
-
 
   return db
     .collection(
