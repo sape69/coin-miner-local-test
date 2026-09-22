@@ -12,25 +12,32 @@
 // 📜 Mining history
 //
 // IMPORTANT:
+//
 // AdMob reward is NOT an STL token reward.
-// AdMob only authorizes Mining Start / Power Boost.
+//
+// AdMob only authorizes:
+// - Mining Start
+// - Power Boost
 //
 // POWER BOOST:
+//
 // - Only active while mining is active.
 // - Never continues after miningEndsAt.
 // - Never carries into a new mining cycle.
 //
-// IMPORTANT CALCULATION RULE:
-// The hash rate stored in miningHashRate belongs to the
-// currently active mining cycle.
-// Daily Hash Rate is the rate assigned when a NEW mining
-// cycle starts.
+// MINING HASH RATE:
+//
+// miningHashRate belongs to the CURRENT mining cycle.
+//
+// Daily Hash Rate is assigned when a NEW mining cycle starts.
 //
 // Therefore:
-// - getMiningStatus() uses miningHashRate for the active cycle.
-// - Daily status may show the NEXT Daily Hash Rate.
-// - Power Boost is calculated separately and only inside
-//   the current mining cycle.
+//
+// - getMiningStatus() uses miningHashRate.
+// - Daily status may show the rate for the next cycle.
+// - Power Boost is calculated separately.
+// - Boost time is always limited to the current mining cycle.
+//
 // ============================================================
 
 const {
@@ -267,6 +274,14 @@ function getRewardConfiguration(rewardPurpose) {
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
+//
+// SSV reward documents are searched by:
+// - uid
+// - rewardPurpose
+//
+// Additional validation is always performed locally.
+//
+// ============================================================
 
 async function findVerifiedAdMobReward(
   uid,
@@ -282,15 +297,20 @@ async function findVerifiedAdMobReward(
     return null;
   }
 
-  const snapshot = await db
-    .collection("admobRewards")
-    .where("uid", "==", uid)
-    .where(
-      "rewardPurpose",
-      "==",
-      rewardPurpose
-    )
-    .get();
+  const snapshot =
+    await db
+      .collection("admobRewards")
+      .where(
+        "uid",
+        "==",
+        uid
+      )
+      .where(
+        "rewardPurpose",
+        "==",
+        rewardPurpose
+      )
+      .get();
 
   if (snapshot.empty) {
     return null;
@@ -302,7 +322,9 @@ async function findVerifiedAdMobReward(
     const rewardData =
       doc.data() || {};
 
-    if (rewardData.uid !== uid) {
+    if (
+      rewardData.uid !== uid
+    ) {
       return;
     }
 
@@ -561,7 +583,9 @@ function validateVerifiedRewardDocument(
   const rewardData =
     rewardSnapshot.data() || {};
 
-  if (rewardData.uid !== uid) {
+  if (
+    rewardData.uid !== uid
+  ) {
     throw new HttpsError(
       "permission-denied",
       "🐱 AdMob-palkinnon käyttäjä ei täsmää."
@@ -1045,6 +1069,16 @@ function getAdStatus(
 // ============================================================
 // ⛏️ MINING HASH RATE
 // ============================================================
+//
+// miningHashRate is the rate of the CURRENT cycle.
+//
+// It is intentionally limited to the configured Daily
+// Hash Rate range.
+//
+// Power Boost is NOT stored inside miningHashRate.
+// It is calculated separately.
+//
+// ============================================================
 
 function getMiningHashRate(
   data,
@@ -1083,6 +1117,14 @@ function getMiningHashRate(
 
 // ============================================================
 // 📺 BOOST HISTORY
+// ============================================================
+//
+// Only Power Boost history belonging to the CURRENT mining
+// cycle is accepted.
+//
+// A boost from an older cycle can therefore never increase
+// the production of a newer cycle.
+//
 // ============================================================
 
 async function getAdBoostHistory(
@@ -1167,6 +1209,11 @@ async function getAdBoostHistory(
 
 // ============================================================
 // ⚡ CALCULATE BOOST TIME
+// ============================================================
+//
+// Overlapping boosts are merged so the same time period can
+// never be counted twice.
+//
 // ============================================================
 
 function calculateAdBoostMilliseconds(
@@ -1278,12 +1325,19 @@ function calculateAdBoostMilliseconds(
 // ============================================================
 //
 // Base mining:
-//   miningHashRate × elapsed time
+//
+//   miningHashRate
+//   × MINING_PER_HASH_PER_HOUR
+//   × elapsed hours
 //
 // Power Boost:
-//   AD_HASH_RATE_BONUS × boost duration
 //
-// Boost duration is always limited to the mining cycle.
+//   AD_HASH_RATE_BONUS
+//   × MINING_PER_HASH_PER_HOUR
+//   × boost hours
+//
+// Boost duration is ALWAYS limited to the current cycle.
+//
 // ============================================================
 
 async function calculateMiningCycle(
@@ -1647,7 +1701,9 @@ const getMiningStatus =
           now.getTime();
 
         const today =
-          getUtcDateString();
+          getUtcDateString(
+            now
+          );
 
         const dailyStatus =
           getDailyStatus(
@@ -1963,22 +2019,18 @@ const claimMining =
             ? earlySnapshot.data() || {}
             : {};
 
-        const earlyStreak =
-          getDailyStreak(
-            earlyData
-          );
-
-        const earlyDailyHashRate =
-          calculateDailyHashRate(
-            earlyStreak > 0
-              ? earlyStreak
-              : 1
+        const earlyDailyStatus =
+          getDailyStatus(
+            earlyData,
+            getUtcDateString(
+              earlyNow
+            )
           );
 
         const earlyMiningHashRate =
           getMiningHashRate(
             earlyData,
-            earlyDailyHashRate
+            earlyDailyStatus.dailyHashRate
           );
 
         const earlyStatus =
@@ -2073,25 +2125,13 @@ const claimMining =
               earlyMiningHashRate,
 
             dailyHashRate:
-              calculateDailyHashRate(
-                getDailyStreak(
-                  earlyData
-                ) > 0
-                  ? getDailyStreak(
-                      earlyData
-                    )
-                  : 1
-              ),
+              earlyDailyStatus.dailyHashRate,
 
             dailyStreak:
-              getDailyStreak(
-                earlyData
-              ),
+              earlyDailyStatus.streak,
 
             streak:
-              getDailyStreak(
-                earlyData
-              ),
+              earlyDailyStatus.streak,
 
             unclaimedMining:
               earlyUnclaimedMining,
