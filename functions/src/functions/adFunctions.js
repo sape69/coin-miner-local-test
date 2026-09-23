@@ -138,10 +138,14 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_VERIFIED_DATA_MISSING",
     "ADMOB_USER_ID_MISMATCH",
     "ADMOB_CUSTOM_DATA_MISSING",
+    "ADMOB_CUSTOM_DATA_INVALID",
+    "ADMOB_CUSTOM_DATA_INVALID_ENCODING",
+    "ADMOB_CUSTOM_DATA_MISMATCH",
     "ADMOB_INVALID_AD_UNIT",
     "ADMOB_INVALID_REWARD_ITEM",
     "ADMOB_INVALID_REWARD_AMOUNT",
     "ADMOB_TRANSACTION_CONFLICT",
+    "ADMOB_INVALID_REWARD_CONFIGURATION",
   ]);
 
 
@@ -160,8 +164,6 @@ const SERVER_RETRY_ERROR_CODES =
 
     "ADMOB_REWARD_REFERENCE_ERROR",
     "ADMOB_HISTORY_REFERENCE_ERROR",
-
-    "ADMOB_INVALID_REWARD_CONFIGURATION",
 
     "ADMOB_AUDIT_CONSISTENCY_ERROR",
   ]);
@@ -222,7 +224,7 @@ function validateUid(
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// AdMob määrittelee transaction_id:n yksilölliseksi
+// Google AdMob määrittelee transaction_id:n yksilölliseksi
 // hex-enkoodatuksi reward grant -tunnisteeksi.
 //
 // Lisäksi varmistetaan Firestore-document-ID:n turvallisuus.
@@ -634,7 +636,7 @@ function validateVerifiedAdData(
     expectedCustomData
   ) {
     throw createError(
-      "ADMOB_CUSTOM_DATA_MISSING",
+      "ADMOB_CUSTOM_DATA_MISMATCH",
       "Verified AdMob custom_data does not match UID and reward purpose.",
     );
   }
@@ -1414,14 +1416,6 @@ const adMobReward =
     {
       region:
         "us-central1",
-
-      // ======================================================
-      // REQUEST BODY EI TARVITA
-      // ======================================================
-      //
-      // AdMob SSV käyttää GET-queryä.
-      //
-      // ======================================================
     },
 
     async (
@@ -1480,7 +1474,8 @@ const adMobReward =
         // ====================================================
 
         const query =
-          req.query || {};
+          req.query ||
+          {};
 
         const queryKeys =
           Object.keys(
@@ -1593,7 +1588,7 @@ const adMobReward =
         // UID ja transaction_id voidaan logata audit-debugia
         // varten, mutta itse allekirjoitusta ei.
         //
-        // ====================================================
+        // ============================================================
 
         console.log(
           "🐱✅ Verified AdMob reward ready for Firestore.",
