@@ -42,18 +42,13 @@
 
 const {
 createVerify,
-} = require(
-"crypto",
-);
+} = require("crypto");
 
 // ============================================================
 // 🌐 NODE HTTPS
 // ============================================================
 
-const https =
-require(
-"https",
-);
+const https = require("https");
 
 // ============================================================
 // 🔑 ADMOB PUBLIC KEY URL
@@ -66,12 +61,10 @@ const ADMOB_SSV_KEYS_URL =
 // 🕒 PUBLIC KEY CACHE
 // ============================================================
 //
-// Public keyt cachetetaan enintään 23 tunniksi.
+// Google kierrättää SSV public key -avaimia.
 //
-// Google edellyttää public key -avainten päivittämistä
-// viimeistään 24 tunnin sisällä, koska avaimet voivat vaihtua.
-//
-// 23 tuntia jättää tarkoituksellisen turvamarginaalin.
+// Cachea ei pidetä yli 24 tuntia.
+// 23 tuntia antaa tarkoituksellisen turvamarginaalin.
 //
 // ============================================================
 
@@ -100,28 +93,39 @@ const ADMOB_PUBLIC_KEY_MAX_RESPONSE_BYTES =
 // ============================================================
 // 📏 MAX SSV QUERY STRING SIZE
 // ============================================================
-//
-// AdMob SSV callback on pieni query-string.
-//
-// Raja suojaa endpointia tarpeettoman suuren requestin
-// aiheuttamalta muistinkulutukselta.
-//
-// ============================================================
 
 const ADMOB_MAX_QUERY_STRING_LENGTH =
 16 *
 1024;
 
 // ============================================================
+// 📏 MAX CUSTOM DATA SIZE
+// ============================================================
+
+const ADMOB_MAX_CUSTOM_DATA_LENGTH =
+256;
+
+// ============================================================
+// 📏 MAX PARAMETER LENGTHS
+// ============================================================
+
+const ADMOB_MAX_AD_UNIT_LENGTH =
+256;
+
+const ADMOB_MAX_REWARD_ITEM_LENGTH =
+256;
+
+// ============================================================
 // 🕒 TIMESTAMP LIMITS
 // ============================================================
 //
-// AdMob timestamp on Epoch time millisekunteina.
+// AdMob SSV timestamp ilmoitetaan Epoch-aikana
+// millisekunteina.
 //
-// Stelluriinin oma hyväksyntäikkuna:
+// Stelluriinin hyväksyntäikkuna:
 //
-// - enintään 24 tuntia vanha callback
-// - enintään 5 minuuttia tulevaisuudessa oleva callback
+// - enintään 24 tuntia vanha
+// - enintään 5 minuuttia tulevaisuudessa
 //
 // ============================================================
 
@@ -144,8 +148,8 @@ const ADMOB_TIMESTAMP_FUTURE_TOLERANCE_MS =
 //
 // HUOM:
 //
-// Nämä ovat AdMob Ad Unit ID:t,
-// eivät Android package ID:t.
+// Näiden arvojen täytyy vastata täsmälleen AdMobissa
+// käytettyjä rewarded ad unit -tunnuksia.
 //
 // ============================================================
 
@@ -167,9 +171,10 @@ power_boost:
 //
 // rewardAmount EI tarkoita STL-määrää.
 //
-// AdMob rewardAmount on rewarded-ad-konfiguraation arvo.
+// Se on AdMob Rewarded Ad -konfiguraation reward_amount.
 //
-// adMobFunctions.js käyttää tätä audit-validointiin.
+// Varsinainen Stelluriini-business-logiikka päättää,
+// mitä verified reward -tapahtumalla tehdään.
 //
 // ============================================================
 
@@ -216,9 +221,7 @@ null;
 // 🔄 PUBLIC KEY FETCH IN FLIGHT
 // ============================================================
 //
-// Estää useita samanaikaisia public-key HTTP-pyyntöjä,
-// jos Cloud Functions -instanssi vastaanottaa useita SSV
-// callbackeja juuri cache-expiration hetkellä.
+// Estää useita samanaikaisia public-key HTTP-pyyntöjä.
 //
 // ============================================================
 
@@ -269,8 +272,7 @@ return error;
 //
 // UID:rewardPurpose
 //
-// Tämän vuoksi UID:ssä sallitaan vain turvalliset
-// yksittäisen segmentin merkit.
+// UID saa sisältää vain turvallisia yhden segmentin merkkejä.
 //
 // ============================================================
 
@@ -288,8 +290,10 @@ const uid =
 value.trim();
 
 if (
-uid.length === 0 ||
-uid.length > 128
+uid.length ===
+0 ||
+uid.length >
+128
 ) {
 return "";
 }
@@ -328,8 +332,10 @@ const transactionId =
 value.trim();
 
 if (
-transactionId.length === 0 ||
-transactionId.length > 256
+transactionId.length ===
+0 ||
+transactionId.length >
+256
 ) {
 return "";
 }
@@ -377,8 +383,7 @@ return rewardPurpose;
 // 📺 VALIDATE AD NETWORK
 // ============================================================
 //
-// AdMob SSV käyttää ad_network-parametrina
-// ad source identifieria.
+// AdMob SSV:n ad_network on ad source identifier.
 //
 // ============================================================
 
@@ -396,8 +401,10 @@ const adNetwork =
 value.trim();
 
 if (
-adNetwork.length === 0 ||
-adNetwork.length > 32
+adNetwork.length ===
+0 ||
+adNetwork.length >
+32
 ) {
 return "";
 }
@@ -420,16 +427,46 @@ return adNetwork;
 function validateTimestamp(
 value,
 ) {
+if (
+typeof value !==
+"string" &&
+typeof value !==
+"number"
+) {
+return 0;
+}
+
+const normalized =
+String(
+value,
+).trim();
+
+if (
+normalized.length ===
+0
+) {
+return 0;
+}
+
+if (
+!/^\d+$/.test(
+normalized,
+)
+) {
+return 0;
+}
+
 const timestamp =
 Number(
-value,
+normalized,
 );
 
 if (
 !Number.isSafeInteger(
 timestamp,
 ) ||
-timestamp <= 0
+timestamp <=
+0
 ) {
 return 0;
 }
@@ -470,8 +507,10 @@ value,
 );
 
 if (
-keyId.length === 0 ||
-keyId.length > 32
+keyId.length ===
+0 ||
+keyId.length >
+32
 ) {
 return "";
 }
@@ -491,7 +530,7 @@ return keyId;
 // 🔐 VALIDATE SIGNATURE
 // ============================================================
 //
-// AdMob käyttää URL-safe Base64 -muotoista signaturea.
+// AdMob käyttää URL-safe Base64 -muotoista ECDSA-signaturea.
 //
 // ============================================================
 
@@ -504,8 +543,10 @@ value,
 );
 
 if (
-signature.length === 0 ||
-signature.length > 8192
+signature.length ===
+0 ||
+signature.length >
+8192
 ) {
 return "";
 }
@@ -567,7 +608,8 @@ normalized.length %
 4;
 
 const padded =
-padding === 0
+padding ===
+0
 ? normalized
 : normalized +
 "=".repeat(
@@ -583,7 +625,8 @@ padded,
 
 if (
 !buffer ||
-buffer.length === 0
+buffer.length ===
+0
 ) {
 throw createError(
 "ADMOB_INVALID_SIGNATURE",
@@ -655,272 +698,303 @@ false;
   // 🌐 HTTPS REQUEST
   // ======================================================
 
-  const request =
-    https.get(
-      ADMOB_SSV_KEYS_URL,
-      {
-        headers: {
-          Accept:
-            "application/json",
+  let request;
+
+  try {
+    request =
+      https.get(
+        ADMOB_SSV_KEYS_URL,
+        {
+          headers: {
+            Accept:
+              "application/json",
+          },
+
+          timeout:
+            ADMOB_PUBLIC_KEY_FETCH_TIMEOUT_MS,
         },
+        (
+          response,
+        ) => {
+          let body =
+            "";
 
-        timeout:
-          ADMOB_PUBLIC_KEY_FETCH_TIMEOUT_MS,
-      },
-      (
-        response,
-      ) => {
-        let body =
-          "";
+          let bodyBytes =
+            0;
 
-        let bodyBytes =
-          0;
+          response.setEncoding(
+            "utf8",
+          );
 
-        response.setEncoding(
-          "utf8",
-        );
+          // ==================================================
+          // HTTP STATUS
+          // ==================================================
 
-        // ==================================================
-        // 📥 DATA
-        // ==================================================
+          const statusCode =
+            response.statusCode ||
+            0;
 
-        response.on(
-          "data",
-          (
-            chunk,
-          ) => {
-            if (
-              settled
-            ) {
-              return;
-            }
+          if (
+            statusCode <
+              200 ||
+            statusCode >=
+              300
+          ) {
+            response.resume();
 
-            bodyBytes +=
-              Buffer.byteLength(
-                chunk,
-                "utf8",
-              );
-
-            if (
-              bodyBytes >
-              ADMOB_PUBLIC_KEY_MAX_RESPONSE_BYTES
-            ) {
-              fail(
-                createError(
-                  "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
-                  "AdMob public key response is too large.",
-                ),
-              );
-
-              request.destroy();
-
-              return;
-            }
-
-            body +=
-              chunk;
-          },
-        );
-
-        // ==================================================
-        // 📦 END
-        // ==================================================
-
-        response.on(
-          "end",
-          () => {
-            if (
-              settled
-            ) {
-              return;
-            }
-
-            const statusCode =
-              response.statusCode ||
-              0;
-
-            // ==============================================
-            // HTTP STATUS
-            // ==============================================
-
-            if (
-              statusCode <
-                200 ||
-              statusCode >=
-                300
-            ) {
-              fail(
-                createError(
-                  "ADMOB_PUBLIC_KEY_HTTP_ERROR",
-                  `AdMob public key server returned HTTP ${statusCode}.`,
-                ),
-              );
-
-              return;
-            }
-
-            // ==============================================
-            // JSON
-            // ==============================================
-
-            let parsed;
-
-            try {
-              parsed =
-                JSON.parse(
-                  body,
-                );
-            } catch (
-              error
-            ) {
-              fail(
-                createError(
-                  "ADMOB_PUBLIC_KEY_JSON_ERROR",
-                  "Unable to parse AdMob public key response.",
-                ),
-              );
-
-              return;
-            }
-
-            // ==============================================
-            // STRUCTURE
-            // ==============================================
-
-            if (
-              !parsed ||
-              !Array.isArray(
-                parsed.keys,
-              )
-            ) {
-              fail(
-                createError(
-                  "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
-                  "AdMob public key response has an invalid structure.",
-                ),
-              );
-
-              return;
-            }
-
-            if (
-              parsed.keys.length ===
-              0
-            ) {
-              fail(
-                createError(
-                  "ADMOB_PUBLIC_KEYS_EMPTY",
-                  "AdMob public key response contains no keys.",
-                ),
-              );
-
-              return;
-            }
-
-            // ==============================================
-            // BUILD KEY MAP
-            // ==============================================
-
-            const keyMap =
-              new Map();
-
-            for (
-              const key
-              of parsed.keys
-            ) {
-              if (
-                !key ||
-                typeof key !==
-                  "object"
-              ) {
-                continue;
-              }
-
-              const rawKeyId =
-                key.keyId;
-
-              const keyId =
-                validateKeyId(
-                  rawKeyId ===
-                    undefined ||
-                  rawKeyId ===
-                    null
-                    ? ""
-                    : String(
-                        rawKeyId,
-                      ),
-                );
-
-              const pem =
-                normalizeString(
-                  key.pem,
-                );
-
-              if (
-                !keyId ||
-                !pem
-              ) {
-                continue;
-              }
-
-              if (
-                !pem.includes(
-                  "-----BEGIN PUBLIC KEY-----",
-                ) ||
-                !pem.includes(
-                  "-----END PUBLIC KEY-----",
-                )
-              ) {
-                continue;
-              }
-
-              keyMap.set(
-                keyId,
-                pem,
-              );
-            }
-
-            // ==============================================
-            // VALID KEY MAP REQUIRED
-            // ==============================================
-
-            if (
-              keyMap.size ===
-              0
-            ) {
-              fail(
-                createError(
-                  "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
-                  "AdMob public key response contains no valid public keys.",
-                ),
-              );
-
-              return;
-            }
-
-            succeed(
-              keyMap,
-            );
-          },
-        );
-
-        // ==================================================
-        // RESPONSE ERROR
-        // ==================================================
-
-        response.on(
-          "error",
-          () => {
             fail(
               createError(
-                "ADMOB_PUBLIC_KEY_FETCH_ERROR",
-                "Unable to read AdMob public key response.",
+                "ADMOB_PUBLIC_KEY_HTTP_ERROR",
+                `AdMob public key server returned HTTP ${statusCode}.`,
               ),
             );
-          },
-        );
-      },
+
+            return;
+          }
+
+          // ==================================================
+          // DATA
+          // ==================================================
+
+          response.on(
+            "data",
+            (
+              chunk,
+            ) => {
+              if (
+                settled
+              ) {
+                return;
+              }
+
+              bodyBytes +=
+                Buffer.byteLength(
+                  chunk,
+                  "utf8",
+                );
+
+              if (
+                bodyBytes >
+                ADMOB_PUBLIC_KEY_MAX_RESPONSE_BYTES
+              ) {
+                fail(
+                  createError(
+                    "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+                    "AdMob public key response is too large.",
+                  ),
+                );
+
+                request.destroy();
+
+                return;
+              }
+
+              body +=
+                chunk;
+            },
+          );
+
+          // ==================================================
+          // END
+          // ==================================================
+
+          response.on(
+            "end",
+            () => {
+              if (
+                settled
+              ) {
+                return;
+              }
+
+              if (
+                body.length ===
+                0
+              ) {
+                fail(
+                  createError(
+                    "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+                    "AdMob public key response is empty.",
+                  ),
+                );
+
+                return;
+              }
+
+              // ==============================================
+              // JSON
+              // ==============================================
+
+              let parsed;
+
+              try {
+                parsed =
+                  JSON.parse(
+                    body,
+                  );
+              } catch (
+                error
+              ) {
+                fail(
+                  createError(
+                    "ADMOB_PUBLIC_KEY_JSON_ERROR",
+                    "Unable to parse AdMob public key response.",
+                  ),
+                );
+
+                return;
+              }
+
+              // ==============================================
+              // STRUCTURE
+              // ==============================================
+
+              if (
+                !parsed ||
+                !Array.isArray(
+                  parsed.keys,
+                )
+              ) {
+                fail(
+                  createError(
+                    "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+                    "AdMob public key response has an invalid structure.",
+                  ),
+                );
+
+                return;
+              }
+
+              if (
+                parsed.keys.length ===
+                0
+              ) {
+                fail(
+                  createError(
+                    "ADMOB_PUBLIC_KEYS_EMPTY",
+                    "AdMob public key response contains no keys.",
+                  ),
+                );
+
+                return;
+              }
+
+              // ==============================================
+              // BUILD KEY MAP
+              // ==============================================
+
+              const keyMap =
+                new Map();
+
+              for (
+                const key of
+                  parsed.keys
+              ) {
+                if (
+                  !key ||
+                  typeof key !==
+                    "object"
+                ) {
+                  continue;
+                }
+
+                const rawKeyId =
+                  key.keyId;
+
+                const keyId =
+                  validateKeyId(
+                    rawKeyId ===
+                      undefined ||
+                    rawKeyId ===
+                      null
+                      ? ""
+                      : String(
+                          rawKeyId,
+                        ),
+                  );
+
+                const pem =
+                  normalizeString(
+                    key.pem,
+                  );
+
+                if (
+                  !keyId ||
+                  !pem
+                ) {
+                  continue;
+                }
+
+                if (
+                  !pem.includes(
+                    "-----BEGIN PUBLIC KEY-----",
+                  ) ||
+                  !pem.includes(
+                    "-----END PUBLIC KEY-----",
+                  )
+                ) {
+                  continue;
+                }
+
+                keyMap.set(
+                  keyId,
+                  pem,
+                );
+              }
+
+              // ==============================================
+              // VALID KEY MAP REQUIRED
+              // ==============================================
+
+              if (
+                keyMap.size ===
+                0
+              ) {
+                fail(
+                  createError(
+                    "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
+                    "AdMob public key response contains no valid public keys.",
+                  ),
+                );
+
+                return;
+              }
+
+              succeed(
+                keyMap,
+              );
+            },
+          );
+
+          // ==================================================
+          // RESPONSE ERROR
+          // ==================================================
+
+          response.on(
+            "error",
+            () => {
+              fail(
+                createError(
+                  "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+                  "Unable to read AdMob public key response.",
+                ),
+              );
+            },
+          );
+        },
+      );
+  } catch (
+    error
+  ) {
+    fail(
+      createError(
+        "ADMOB_PUBLIC_KEY_FETCH_ERROR",
+        "Unable to fetch AdMob public keys.",
+      ),
     );
+
+    return;
+  }
 
   // ========================================================
   // REQUEST TIMEOUT
@@ -1005,11 +1079,6 @@ return publicKeyCache.keys;
 // ==========================================================
 // EXISTING FETCH
 // ==========================================================
-//
-// Jos public-key-pyyntö on jo käynnissä, käytetään samaa
-// Promisea. Tämä estää samanaikaiset duplicate-fetchit.
-//
-// ==========================================================
 
 if (
 publicKeyFetchPromise
@@ -1057,8 +1126,7 @@ return publicKeyFetchPromise;
 // ...&signature=...&key_id=...
 //
 // Signature on toiseksi viimeinen parametri.
-//
-// key_id on viimeinen parametri.
+// key_id on viimeinen.
 //
 // Allekirjoitettu data on kaikki sitä edeltävä
 // query-string-data.
@@ -1196,12 +1264,51 @@ throw createError(
 }
 
 // ==========================================================
+// DEFENSE AGAINST DUPLICATE SIGNATURE / KEY ID
+// ==========================================================
+
+for (
+let index = 0;
+index <
+parameters.length -
+2;
+index +=
+1
+) {
+const parameter =
+parameters[index];
+
+if (
+  parameter.startsWith(
+    "signature=",
+  )
+) {
+  throw createError(
+    "ADMOB_INVALID_SIGNATURE",
+    "AdMob query contains a duplicate signature parameter.",
+  );
+}
+
+if (
+  parameter.startsWith(
+    "key_id=",
+  )
+) {
+  throw createError(
+    "ADMOB_INVALID_KEY_ID",
+    "AdMob query contains a duplicate key_id parameter.",
+  );
+}
+
+}
+
+// ==========================================================
 // SIGNED QUERY STRING
 // ==========================================================
 //
 // Poistetaan vain signature ja key_id.
 //
-// Kaikki muu säilytetään alkuperäisessä muodossa.
+// Kaikki muu säilytetään täysin alkuperäisessä muodossa.
 //
 // ==========================================================
 
@@ -1362,8 +1469,8 @@ rawQueryString,
 // abc123:mining_start
 // abc123:power_boost
 //
-// AdMob voi percent-encodeta custom_data-arvon.
-// Se dekoodataan tässä vaiheessa.
+// Google dokumentoi, että custom_data voidaan percent-encodata
+// SSV callbackiin.
 //
 // ============================================================
 
@@ -1376,8 +1483,10 @@ value,
 );
 
 if (
-raw.length === 0 ||
-raw.length > 256
+raw.length ===
+0 ||
+raw.length >
+ADMOB_MAX_CUSTOM_DATA_LENGTH
 ) {
 throw createError(
 "ADMOB_CUSTOM_DATA_MISSING",
@@ -1396,14 +1505,16 @@ raw,
 error
 ) {
 throw createError(
-"ADMOB_CUSTOM_DATA_MISSING",
+"ADMOB_CUSTOM_DATA_INVALID_ENCODING",
 "AdMob custom_data could not be decoded.",
 );
 }
 
 if (
-decoded.length === 0 ||
-decoded.length > 256
+decoded.length ===
+0 ||
+decoded.length >
+ADMOB_MAX_CUSTOM_DATA_LENGTH
 ) {
 throw createError(
 "ADMOB_CUSTOM_DATA_MISSING",
@@ -1411,16 +1522,42 @@ throw createError(
 );
 }
 
+// ==========================================================
+// CUSTOM DATA MUST NOT CONTAIN CONTROL CHARACTERS
+// ==========================================================
+
+if (
+/[\u0000-\u001F\u007F]/.test(
+decoded,
+)
+) {
+throw createError(
+"ADMOB_CUSTOM_DATA_INVALID",
+"AdMob custom_data contains invalid control characters.",
+);
+}
+
+// ==========================================================
+// UID:REWARD PURPOSE
+// ==========================================================
+
 const separatorIndex =
 decoded.indexOf(
 ":",
 );
 
 if (
-separatorIndex <= 0 ||
+separatorIndex <=
+0 ||
 separatorIndex ===
 decoded.length -
-1
+1 ||
+decoded.indexOf(
+":",
+separatorIndex +
+1,
+) !==
+-1
 ) {
 throw createError(
 "ADMOB_CUSTOM_DATA_MISSING",
@@ -1476,7 +1613,7 @@ rewardPurpose:
   validatedPurpose,
 
 customData:
-  decoded,
+  `${validatedUid}:${validatedPurpose}`,
 
 };
 }
@@ -1536,7 +1673,8 @@ if (
 !Number.isSafeInteger(
 rewardAmount,
 ) ||
-rewardAmount < 0 ||
+rewardAmount <
+0 ||
 rewardItem.length ===
 0
 ) {
@@ -1565,7 +1703,9 @@ function validateVerifiedParameters(
 parameters,
 ) {
 if (
-!parameters
+!parameters ||
+typeof parameters !==
+"object"
 ) {
 throw createError(
 "ADMOB_REQUIRED_PARAMETER_MISSING",
@@ -1601,8 +1741,10 @@ parameters.adUnit,
 );
 
 if (
-adUnit.length === 0 ||
-adUnit.length > 256
+adUnit.length ===
+0 ||
+adUnit.length >
+ADMOB_MAX_AD_UNIT_LENGTH
 ) {
 throw createError(
 "ADMOB_INVALID_AD_UNIT",
@@ -1614,16 +1756,38 @@ throw createError(
 // REWARD AMOUNT
 // ==========================================================
 
+const rewardAmountString =
+normalizeString(
+String(
+parameters.rewardAmount ??
+"",
+),
+);
+
+if (
+rewardAmountString.length ===
+0 ||
+!/^\d+$/.test(
+rewardAmountString,
+)
+) {
+throw createError(
+"ADMOB_INVALID_REWARD_AMOUNT",
+"AdMob reward_amount is invalid.",
+);
+}
+
 const rewardAmount =
 Number(
-parameters.rewardAmount,
+rewardAmountString,
 );
 
 if (
 !Number.isSafeInteger(
 rewardAmount,
 ) ||
-rewardAmount < 0
+rewardAmount <
+0
 ) {
 throw createError(
 "ADMOB_INVALID_REWARD_AMOUNT",
@@ -1641,8 +1805,10 @@ parameters.rewardItem,
 );
 
 if (
-rewardItem.length === 0 ||
-rewardItem.length > 256
+rewardItem.length ===
+0 ||
+rewardItem.length >
+ADMOB_MAX_REWARD_ITEM_LENGTH
 ) {
 throw createError(
 "ADMOB_INVALID_REWARD_ITEM",
@@ -1743,6 +1909,47 @@ signature,
 }
 
 // ============================================================
+// 🔎 GET QUERY VALUE
+// ============================================================
+//
+// Express req.query on jo dekoodannut query-parametrit.
+//
+// Array-arvo hyväksytään vain silloin, kun sama parametri
+// esiintyy täsmälleen kerran.
+//
+// ============================================================
+
+function getQueryValue(
+query,
+key,
+) {
+const value =
+query[key];
+
+if (
+Array.isArray(
+value,
+)
+) {
+if (
+value.length !==
+1
+) {
+return "";
+}
+
+return normalizeString(
+  value[0],
+);
+
+}
+
+return normalizeString(
+value,
+);
+}
+
+// ============================================================
 // 🔐 VERIFY COMPLETE ADMOB CALLBACK
 // ============================================================
 
@@ -1765,7 +1972,8 @@ throw createError(
 // Allekirjoituksen tarkistuksessa käytetään alkuperäistä
 // query-stringiä.
 //
-// ÄLÄ rakenna query-stringiä uudelleen req.query:sta.
+// ÄLÄ rakenna allekirjoitettavaa query-stringiä uudelleen
+// req.query:sta.
 //
 // ==========================================================
 
@@ -1776,7 +1984,9 @@ req.originalUrl.length >
 0
 ? req.originalUrl
 : typeof req.url ===
-"string"
+"string" &&
+req.url.length >
+0
 ? req.url
 : "";
 
@@ -1825,8 +2035,8 @@ throw createError(
 // 🔐 CRYPTOGRAPHIC VERIFICATION
 // ==========================================================
 //
-// Tämä tehdään ennen kuin luotetaan callbackin
-// allekirjoitettuihin arvoihin.
+// Tämä tehdään ennen kuin callbackin allekirjoitettuihin
+// arvoihin luotetaan.
 //
 // ==========================================================
 
@@ -1840,7 +2050,7 @@ rawQueryString,
 // ==========================================================
 //
 // Vasta allekirjoituksen tarkistamisen jälkeen query
-// voidaan lukea ja validoida.
+// luetaan ja validoidaan.
 //
 // ==========================================================
 
@@ -1848,76 +2058,55 @@ const query =
 req.query ||
 {};
 
-const getQueryValue =
-(
-key,
-) => {
-const value =
-query[key];
-
-  if (
-    Array.isArray(
-      value,
-    )
-  ) {
-    if (
-      value.length !==
-      1
-    ) {
-      return "";
-    }
-
-    return normalizeString(
-      value[0],
-    );
-  }
-
-  return normalizeString(
-    value,
-  );
-};
-
 // ==========================================================
 // REQUIRED PARAMETERS
 // ==========================================================
 
 const adNetwork =
 getQueryValue(
+query,
 "ad_network",
 );
 
 const adUnit =
 getQueryValue(
+query,
 "ad_unit",
 );
 
 const rewardAmount =
 getQueryValue(
+query,
 "reward_amount",
 );
 
 const rewardItem =
 getQueryValue(
+query,
 "reward_item",
 );
 
 const transactionId =
 getQueryValue(
+query,
 "transaction_id",
 );
 
 const timestamp =
 getQueryValue(
+query,
 "timestamp",
 );
 
 const userId =
 getQueryValue(
+query,
 "user_id",
 );
 
 const customData =
 getQueryValue(
+query,
 "custom_data",
 );
 
@@ -2092,11 +2281,6 @@ if (
 // ==========================================================
 // 🔐 CUSTOM DATA DEFENSE-IN-DEPTH
 // ==========================================================
-//
-// Varmistetaan vielä, että juuri normalisoitu custom_data
-// vastaa UID:tä ja reward purposea.
-//
-// ==========================================================
 
 const expectedCustomData =
 "${uid}:${rewardPurpose}";
@@ -2106,7 +2290,7 @@ normalizedCustomData !==
 expectedCustomData
 ) {
 throw createError(
-"ADMOB_CUSTOM_DATA_MISSING",
+"ADMOB_CUSTOM_DATA_MISMATCH",
 "AdMob custom_data does not match the verified UID and reward purpose.",
 );
 }
