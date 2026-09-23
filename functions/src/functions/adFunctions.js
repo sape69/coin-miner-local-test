@@ -64,11 +64,6 @@ const {
 // ============================================================
 // ⚙️ ADMOB SERVICE
 // ============================================================
-//
-// Kaikki varsinainen SSV-validointi keskitetään
-// admobService.js-tiedostoon.
-//
-// ============================================================
 
 const {
   verifyAdMobCallback,
@@ -119,11 +114,11 @@ const VALID_REWARD_PURPOSES =
 // 🛡️ CLIENT VALIDATION ERROR CODES
 // ============================================================
 //
-// Nämä virheet tarkoittavat, että callbackia ei pidä
-// yrittää uudelleen.
+// Näissä tapauksissa callback on vastaanotettu, mutta
+// tapahtumaa ei voida hyväksyä reward-eventiksi.
 //
-// HTTP 200 kertoo AdMobille, että callback vastaanotettiin.
-// Tapahtumaa ei kuitenkaan hyväksytty rewardiksi.
+// HTTP 200 estää AdMobia lähettämästä samaa virheellistä
+// callbackia jatkuvasti uudelleen.
 //
 // ============================================================
 
@@ -133,6 +128,7 @@ const CLIENT_VALIDATION_ERROR_CODES =
     "ADMOB_INVALID_KEY_ID",
     "ADMOB_REQUEST_MISSING",
     "ADMOB_QUERY_STRING_MISSING",
+    "ADMOB_QUERY_STRING_TOO_LARGE",
     "ADMOB_INVALID_UID",
     "ADMOB_INVALID_REWARD_PURPOSE",
     "ADMOB_INVALID_TRANSACTION_ID",
@@ -153,8 +149,9 @@ const CLIENT_VALIDATION_ERROR_CODES =
 // 🔄 SERVER / CONFIG / RETRY ERROR CODES
 // ============================================================
 //
-// Näissä tilanteissa HTTP 500 on tarkoituksellinen,
-// jotta AdMob voi yrittää callbackia uudelleen.
+// Näissä tilanteissa HTTP 500 on tarkoituksellinen.
+//
+// AdMob voi tällöin yrittää callbackia uudelleen.
 //
 // ============================================================
 
@@ -165,7 +162,6 @@ const SERVER_RETRY_ERROR_CODES =
     "ADMOB_PUBLIC_KEY_JSON_ERROR",
     "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
     "ADMOB_PUBLIC_KEYS_EMPTY",
-    "ADMOB_PUBLIC_KEY_NOT_FOUND",
     "ADMOB_CRYPTO_VERIFICATION_ERROR",
 
     "ADMOB_REWARD_REFERENCE_ERROR",
@@ -216,13 +212,12 @@ function createError(
 
 
 // ============================================================
-// 🛡️ VALIDATE UID
+// 👤 VALIDATE UID
 // ============================================================
 //
 // Varsinainen UID-validointi tapahtuu admobService.js:ssä.
 //
-// Tämä wrapper säilyttää tämän moduulin API:n ja testattavuuden,
-// mutta ei ylläpidä toista erillistä validointisääntöä.
+// Tämä wrapper pitää tämän moduulin API:n selkeänä.
 //
 // ============================================================
 
@@ -286,7 +281,7 @@ function validateRewardPurpose(
 // 🔐 GET EXPECTED ADMOB CONFIG
 // ============================================================
 //
-// Varsinainen AdMob reward-konfiguraatio sijaitsee
+// Varsinainen AdMob-konfiguraatio sijaitsee
 // admobService.js:ssä.
 //
 // ============================================================
@@ -304,11 +299,10 @@ function getExpectedAdMobConfig(
 // 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// admobService.js:n pitää olla suorittanut kryptografinen
-// varmennus ennen tätä vaihetta.
+// admobService.js on jo tehnyt kryptografisen varmennuksen.
 //
-// Tämä funktio tekee defense-in-depth -validoinnin ennen
-// Firestore-kirjoitusta.
+// Tämä toinen validointikerros on tarkoituksellinen
+// defense-in-depth ennen Firestore-kirjoitusta.
 //
 // ============================================================
 
@@ -750,7 +744,6 @@ function isSameVerifiedReward(
     return false;
   }
 
-
   const existingUid =
     normalizeString(
       existingData.uid,
@@ -811,7 +804,6 @@ function isSameVerifiedReward(
       existingData.userId,
     );
 
-
   return (
     existingUid ===
       validatedAd.uid &&
@@ -866,7 +858,6 @@ function isSameVerifiedHistory(
   ) {
     return false;
   }
-
 
   const existingUid =
     normalizeString(
@@ -948,7 +939,6 @@ function isSameVerifiedHistory(
       existingHistoryData.userId,
     );
 
-
   return (
     existingUid ===
       validatedAd.uid &&
@@ -1024,7 +1014,6 @@ async function saveVerifiedAdMobReward(
     validateVerifiedAdData(
       verifiedAd,
     );
-
 
   const {
     uid,
@@ -1190,7 +1179,6 @@ async function saveVerifiedAdMobReward(
                 true,
             },
           );
-
 
           return {
             success:
