@@ -66,7 +66,7 @@ const MAX_DAILY_HASH_RATE = 3.5;
 // ============================================================
 
 const MINING_DURATION_MS =
-24 * 60 * 60 * 1000;
+  24 * 60 * 60 * 1000;
 
 // ============================================================
 // 💰 MINING RATE
@@ -120,7 +120,7 @@ const MINING_PER_HASH_PER_HOUR = 0.10;
 const AD_HASH_RATE_BONUS = 0.5833;
 
 const AD_BOOST_DURATION_MS =
-4 * 60 * 60 * 1000;
+  4 * 60 * 60 * 1000;
 
 // ============================================================
 // 📺 ADMOB DAILY LIMIT
@@ -152,7 +152,7 @@ const MAX_ADS_PER_DAY = 6;
 // ============================================================
 
 const AD_COOLDOWN_MS =
-4 * 60 * 60 * 1000;
+  4 * 60 * 60 * 1000;
 
 // ============================================================
 // 📺 ADMOB REWARDED AD UNIT IDS
@@ -170,34 +170,41 @@ const AD_COOLDOWN_MS =
 // ============================================================
 
 const ADMOB_MINING_AD_UNIT_ID =
-"ca-app-pub-1131012057145658/6674097787";
+  "ca-app-pub-1131012057145658/6674097787";
 
 const ADMOB_POWER_BOOST_AD_UNIT_ID =
-"ca-app-pub-1131012057145658/7225738491";
+  "ca-app-pub-1131012057145658/7225738491";
 
 // ============================================================
 // 🔐 ADMOB SSV AD UNIT IDS
 // ============================================================
 //
-// These values identify the AdMob ad unit used for the
-// corresponding SSV reward.
+// These values identify the AdMob ad unit received through
+// the server-side verification callback.
 //
 // IMPORTANT:
+//
+// AdMob SSV sends the numeric ad unit ID:
+//
+//   6674097787
+//
+// NOT the Flutter rewarded-ad format:
+//
+//   ca-app-pub-1131012057145658/6674097787
 //
 // Keep these values separate from the Flutter rewarded
 // advertisement IDs above.
 //
-// The miningFunctions.js validation layer accepts the
-// configured rewarded-ad ID and the configured SSV ID
-// when validating the stored reward document.
+// admobRewardService.js uses these SSV IDs when validating
+// the stored and cryptographically verified reward document.
 //
 // ============================================================
 
 const ADMOB_MINING_SSV_AD_UNIT_ID =
-"6674097787";
+  "6674097787";
 
 const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
-"7225738491";
+  "7225738491";
 
 // ============================================================
 // 🎁 ADMOB MINING SSV REWARD
@@ -215,7 +222,7 @@ const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
 const ADMOB_MINING_SSV_REWARD_AMOUNT = 1;
 
 const ADMOB_MINING_SSV_REWARD_ITEM =
-"Mining";
+  "Mining";
 
 // ============================================================
 // ⚡ ADMOB POWER BOOST SSV REWARD
@@ -234,7 +241,7 @@ const ADMOB_MINING_SSV_REWARD_ITEM =
 const ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT = 1;
 
 const ADMOB_POWER_BOOST_SSV_REWARD_ITEM =
-"Power Boost";
+  "Power Boost";
 
 // ============================================================
 // 📜 TRANSACTION HISTORY
@@ -252,40 +259,40 @@ const MAX_TRANSACTION_HISTORY = 50;
 // ============================================================
 
 module.exports = {
-// Daily Hash Rate
-DAILY_HASH_RATE_START,
-DAILY_HASH_RATE_STEP,
-DAILY_HASH_RATE_MAX_DAY,
-MAX_DAILY_HASH_RATE,
+  // Daily Hash Rate
+  DAILY_HASH_RATE_START,
+  DAILY_HASH_RATE_STEP,
+  DAILY_HASH_RATE_MAX_DAY,
+  MAX_DAILY_HASH_RATE,
 
-// Mining
-MINING_DURATION_MS,
-MINING_PER_HASH_PER_HOUR,
+  // Mining
+  MINING_DURATION_MS,
+  MINING_PER_HASH_PER_HOUR,
 
-// Power Boost
-AD_HASH_RATE_BONUS,
-AD_BOOST_DURATION_MS,
+  // Power Boost
+  AD_HASH_RATE_BONUS,
+  AD_BOOST_DURATION_MS,
 
-// AdMob limits
-MAX_ADS_PER_DAY,
-AD_COOLDOWN_MS,
+  // AdMob limits
+  MAX_ADS_PER_DAY,
+  AD_COOLDOWN_MS,
 
-// AdMob rewarded ad units
-ADMOB_MINING_AD_UNIT_ID,
-ADMOB_POWER_BOOST_AD_UNIT_ID,
+  // AdMob rewarded ad units
+  ADMOB_MINING_AD_UNIT_ID,
+  ADMOB_POWER_BOOST_AD_UNIT_ID,
 
-// AdMob SSV ad units
-ADMOB_MINING_SSV_AD_UNIT_ID,
-ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
+  // AdMob SSV ad units
+  ADMOB_MINING_SSV_AD_UNIT_ID,
+  ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
 
-// Mining SSV reward
-ADMOB_MINING_SSV_REWARD_AMOUNT,
-ADMOB_MINING_SSV_REWARD_ITEM,
+  // Mining SSV reward
+  ADMOB_MINING_SSV_REWARD_AMOUNT,
+  ADMOB_MINING_SSV_REWARD_ITEM,
 
-// Power Boost SSV reward
-ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
-ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
+  // Power Boost SSV reward
+  ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
+  ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
 
-// History
-MAX_TRANSACTION_HISTORY,
+  // History
+  MAX_TRANSACTION_HISTORY,
 };
