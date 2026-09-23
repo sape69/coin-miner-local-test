@@ -7,8 +7,8 @@
 // Vastuu:
 //
 // 📺 Vastaanottaa AdMob Rewarded SSV callbackin
-// 🔐 Varmistaa callbackin admobService.js:n kautta
-// 🆔 Käyttää vain kryptografisesti varmennettua UID:tä
+// 🔐 Käyttää admobService.js:n kryptografista varmennusta
+// 🆔 Käyttää vain varmennettua UID:tä
 // 🎯 Tunnistaa reward purposen
 // 💾 Tallentaa varmennetun AdMob-tapahtuman
 // 🛡️ Estää transaction_id:n uudelleenkäytön
@@ -23,14 +23,6 @@
 // ❌ muuta adsToday-arvoa
 // ❌ muuta cooldownia
 // ❌ muuta mining-tilaa
-//
-// Varsinainen Mining / Power Boost -business-logiikka kuuluu:
-//
-// functions/src/functions/miningFunctions.js
-//
-// AdMob SSV:n kryptografinen varmennus kuuluu:
-//
-// functions/src/services/admobService.js
 //
 // ============================================================
 
@@ -65,26 +57,14 @@ const {
 const {
   verifyAdMobCallback,
 
-  getExpectedAdMobConfig:
-    getServiceExpectedAdMobConfig,
+  getExpectedAdMobConfig,
 
-  validateTransactionId:
-    validateServiceTransactionId,
+  validateTransactionId,
 
-  validateUid:
-    validateServiceUid,
+  validateUid,
 
-  validateAdNetwork:
-    validateServiceAdNetwork,
+  validateRewardPurpose,
 
-  validateTimestamp:
-    validateServiceTimestamp,
-
-  validateSignature:
-    validateServiceSignature,
-
-  validateKeyId:
-    validateServiceKeyId,
 } = require(
   "../services/admobService",
 );
@@ -103,22 +83,49 @@ const {
 
 
 // ============================================================
-// 🎯 VALID REWARD PURPOSES
+// 🛡️ ERROR HELPERS
 // ============================================================
 
-const VALID_REWARD_PURPOSES =
-  new Set([
-    "mining_start",
-    "power_boost",
-  ]);
+function createError(
+  code,
+  message,
+) {
+  const error =
+    new Error(
+      message,
+    );
+
+  error.code =
+    code;
+
+  return error;
+}
 
 
 // ============================================================
-// 🛡️ CLIENT VALIDATION ERROR CODES
+// 🔐 NORMALIZE STRING
+// ============================================================
+
+function normalizeString(
+  value,
+) {
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return "";
+  }
+
+  return value.trim();
+}
+
+
+// ============================================================
+// 🛡️ CLIENT VALIDATION ERRORS
 // ============================================================
 //
 // Näissä tapauksissa callback on vastaanotettu,
-// mutta tapahtumaa ei pidä yrittää uudelleen serverivirheenä.
+// mutta sitä ei pidä yrittää uudelleen serverivirheenä.
 //
 // ============================================================
 
@@ -150,7 +157,7 @@ const CLIENT_VALIDATION_ERROR_CODES =
 
 
 // ============================================================
-// 🔄 SERVER / CONFIG / RETRY ERROR CODES
+// 🔄 SERVER / RETRY ERRORS
 // ============================================================
 
 const SERVER_RETRY_ERROR_CODES =
@@ -161,149 +168,21 @@ const SERVER_RETRY_ERROR_CODES =
     "ADMOB_PUBLIC_KEY_RESPONSE_INVALID",
     "ADMOB_PUBLIC_KEYS_EMPTY",
     "ADMOB_CRYPTO_VERIFICATION_ERROR",
-
     "ADMOB_REWARD_REFERENCE_ERROR",
     "ADMOB_HISTORY_REFERENCE_ERROR",
-
     "ADMOB_AUDIT_CONSISTENCY_ERROR",
   ]);
 
 
 // ============================================================
-// 🔐 NORMALIZE STRING
-// ============================================================
-
-function normalizeString(
-  value,
-) {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return "";
-  }
-
-  return value.trim();
-}
-
-
-// ============================================================
-// 🛡️ CREATE ERROR
-// ============================================================
-
-function createError(
-  code,
-  message,
-) {
-  const error =
-    new Error(
-      message,
-    );
-
-  error.code =
-    code;
-
-  return error;
-}
-
-
-// ============================================================
-// 👤 VALIDATE UID
-// ============================================================
-
-function validateUid(
-  value,
-) {
-  return validateServiceUid(
-    value,
-  );
-}
-
-
-// ============================================================
-// 🆔 VALIDATE TRANSACTION ID
+// 🎯 VALIDATE VERIFIED AD DATA
 // ============================================================
 //
-// Google AdMob määrittelee transaction_id:n yksilölliseksi
-// hex-enkoodatuksi reward grant -tunnisteeksi.
+// admobService.js tekee varsinaisen SSV-validoinnin.
 //
-// Lisäksi varmistetaan Firestore-document-ID:n turvallisuus.
+// Tämä funktio toimii kevyenä defense-in-depth -kerroksena
+// ennen Firestore-kirjoitusta.
 //
-// ============================================================
-
-function validateTransactionId(
-  value,
-) {
-  const transactionId =
-    validateServiceTransactionId(
-      value,
-    );
-
-  if (
-    !transactionId
-  ) {
-    return "";
-  }
-
-  if (
-    transactionId.includes(
-      "/",
-    ) ||
-    transactionId.includes(
-      "\\",
-    )
-  ) {
-    return "";
-  }
-
-  return transactionId;
-}
-
-
-// ============================================================
-// 🎯 VALIDATE REWARD PURPOSE
-// ============================================================
-
-function validateRewardPurpose(
-  value,
-) {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return "";
-  }
-
-  const rewardPurpose =
-    value.trim();
-
-  if (
-    !VALID_REWARD_PURPOSES.has(
-      rewardPurpose,
-    )
-  ) {
-    return "";
-  }
-
-  return rewardPurpose;
-}
-
-
-// ============================================================
-// 🔐 GET EXPECTED ADMOB CONFIG
-// ============================================================
-
-function getExpectedAdMobConfig(
-  rewardPurpose,
-) {
-  return getServiceExpectedAdMobConfig(
-    rewardPurpose,
-  );
-}
-
-
-// ============================================================
-// 🔐 VALIDATE VERIFIED AD DATA
 // ============================================================
 
 function validateVerifiedAdData(
@@ -312,22 +191,9 @@ function validateVerifiedAdData(
   if (
     !verifiedAd ||
     typeof verifiedAd !==
-      "object"
-  ) {
-    throw createError(
-      "ADMOB_VERIFIED_DATA_MISSING",
-      "Verified AdMob data is missing.",
-    );
-  }
-
-
-  // ==========================================================
-  // VERIFIED FLAG
-  // ==========================================================
-
-  if (
+      "object" ||
     verifiedAd.verified !==
-    true
+      true
   ) {
     throw createError(
       "ADMOB_VERIFIED_DATA_MISSING",
@@ -335,10 +201,6 @@ function validateVerifiedAdData(
     );
   }
 
-
-  // ==========================================================
-  // UID
-  // ==========================================================
 
   const uid =
     validateUid(
@@ -355,10 +217,6 @@ function validateVerifiedAdData(
   }
 
 
-  // ==========================================================
-  // REWARD PURPOSE
-  // ==========================================================
-
   const rewardPurpose =
     validateRewardPurpose(
       verifiedAd.rewardPurpose,
@@ -373,42 +231,6 @@ function validateVerifiedAdData(
     );
   }
 
-
-  // ==========================================================
-  // EXPECTED CONFIG
-  // ==========================================================
-
-  let expectedAdMob;
-
-  try {
-    expectedAdMob =
-      getExpectedAdMobConfig(
-        rewardPurpose,
-      );
-  } catch (
-    error
-  ) {
-    throw createError(
-      "ADMOB_INVALID_REWARD_CONFIGURATION",
-      "Unable to resolve AdMob reward configuration.",
-    );
-  }
-
-  if (
-    !expectedAdMob ||
-    typeof expectedAdMob !==
-      "object"
-  ) {
-    throw createError(
-      "ADMOB_INVALID_REWARD_CONFIGURATION",
-      "AdMob reward configuration is invalid.",
-    );
-  }
-
-
-  // ==========================================================
-  // TRANSACTION ID
-  // ==========================================================
 
   const transactionId =
     validateTransactionId(
@@ -425,113 +247,71 @@ function validateVerifiedAdData(
   }
 
 
-  // ==========================================================
-  // REWARD AMOUNT
-  // ==========================================================
+  const expectedConfig =
+    getExpectedAdMobConfig(
+      rewardPurpose,
+    );
+
 
   const rewardAmount =
     Number(
       verifiedAd.rewardAmount,
     );
 
-  const expectedRewardAmount =
-    Number(
-      expectedAdMob.rewardAmount,
-    );
-
   if (
     !Number.isSafeInteger(
       rewardAmount,
     ) ||
-    rewardAmount <
-      0 ||
-    !Number.isSafeInteger(
-      expectedRewardAmount,
-    ) ||
-    expectedRewardAmount <
-      0 ||
     rewardAmount !==
-      expectedRewardAmount
+      Number(
+        expectedConfig.rewardAmount,
+      )
   ) {
     throw createError(
       "ADMOB_INVALID_REWARD_AMOUNT",
-      "Verified AdMob reward amount does not match server configuration.",
+      "Verified reward amount does not match server configuration.",
     );
   }
 
-
-  // ==========================================================
-  // REWARD ITEM
-  // ==========================================================
 
   const rewardItem =
     normalizeString(
       verifiedAd.rewardItem,
     );
 
-  const expectedRewardItem =
-    normalizeString(
-      expectedAdMob.rewardItem,
-    );
-
   if (
-    rewardItem.length ===
-      0 ||
-    rewardItem.length >
-      256 ||
-    expectedRewardItem.length ===
-      0 ||
-    expectedRewardItem.length >
-      256 ||
     rewardItem !==
-      expectedRewardItem
+    normalizeString(
+      expectedConfig.rewardItem,
+    )
   ) {
     throw createError(
       "ADMOB_INVALID_REWARD_ITEM",
-      "Verified AdMob reward item does not match server configuration.",
+      "Verified reward item does not match server configuration.",
     );
   }
 
-
-  // ==========================================================
-  // AD UNIT
-  // ==========================================================
 
   const adUnit =
     normalizeString(
       verifiedAd.adUnit,
     );
 
-  const expectedAdUnit =
-    normalizeString(
-      expectedAdMob.adUnit,
-    );
-
   if (
-    adUnit.length ===
-      0 ||
-    adUnit.length >
-      256 ||
-    expectedAdUnit.length ===
-      0 ||
-    expectedAdUnit.length >
-      256 ||
     adUnit !==
-      expectedAdUnit
+    normalizeString(
+      expectedConfig.adUnit,
+    )
   ) {
     throw createError(
       "ADMOB_INVALID_AD_UNIT",
-      "Verified AdMob ad unit does not match server configuration.",
+      "Verified ad unit does not match server configuration.",
     );
   }
 
 
-  // ==========================================================
-  // AD NETWORK
-  // ==========================================================
-
   const adNetwork =
-    validateServiceAdNetwork(
+    normalizeString(
       verifiedAd.adNetwork,
     );
 
@@ -540,37 +320,38 @@ function validateVerifiedAdData(
   ) {
     throw createError(
       "ADMOB_INVALID_AD_NETWORK",
-      "Verified AdMob ad network is invalid.",
+      "Verified ad network is missing.",
     );
   }
 
 
-  // ==========================================================
-  // TIMESTAMP
-  // ==========================================================
-
   const timestamp =
-    validateServiceTimestamp(
+    Number(
       verifiedAd.timestamp,
     );
 
   if (
-    !timestamp
+    !Number.isSafeInteger(
+      timestamp,
+    ) ||
+    timestamp <=
+      0
   ) {
     throw createError(
       "ADMOB_INVALID_TIMESTAMP",
-      "Verified AdMob timestamp is invalid or outside the allowed time window.",
+      "Verified timestamp is invalid.",
     );
   }
 
 
-  // ==========================================================
-  // KEY ID
-  // ==========================================================
-
   const keyId =
-    validateServiceKeyId(
+    normalizeString(
       verifiedAd.keyId,
+    );
+
+  const signature =
+    normalizeString(
+      verifiedAd.signature,
     );
 
   if (
@@ -578,55 +359,24 @@ function validateVerifiedAdData(
   ) {
     throw createError(
       "ADMOB_INVALID_KEY_ID",
-      "Verified AdMob key_id is invalid.",
+      "Verified key_id is missing.",
     );
   }
-
-
-  // ==========================================================
-  // SIGNATURE
-  // ==========================================================
-
-  const signature =
-    validateServiceSignature(
-      verifiedAd.signature,
-    );
 
   if (
     !signature
   ) {
     throw createError(
       "ADMOB_INVALID_SIGNATURE",
-      "Verified AdMob signature is invalid.",
+      "Verified signature is missing.",
     );
   }
 
-
-  // ==========================================================
-  // CUSTOM DATA
-  // ==========================================================
 
   const customData =
     normalizeString(
       verifiedAd.customData,
     );
-
-  if (
-    customData.length ===
-      0 ||
-    customData.length >
-      256
-  ) {
-    throw createError(
-      "ADMOB_CUSTOM_DATA_MISSING",
-      "Verified AdMob custom_data is missing or invalid.",
-    );
-  }
-
-
-  // ==========================================================
-  // DEFENSE-IN-DEPTH CUSTOM DATA CHECK
-  // ==========================================================
 
   const expectedCustomData =
     `${uid}:${rewardPurpose}`;
@@ -637,55 +387,27 @@ function validateVerifiedAdData(
   ) {
     throw createError(
       "ADMOB_CUSTOM_DATA_MISMATCH",
-      "Verified AdMob custom_data does not match UID and reward purpose.",
+      "Verified custom_data does not match UID and reward purpose.",
     );
   }
 
 
-  // ==========================================================
-  // USER ID
-  // ==========================================================
-
-  const rawUserId =
+  const userId =
     normalizeString(
       verifiedAd.userId,
     );
 
-  let userId =
-    "";
-
   if (
-    rawUserId
-  ) {
-    userId =
-      validateUid(
-        rawUserId,
-      );
-
-    if (
-      !userId
-    ) {
-      throw createError(
-        "ADMOB_INVALID_UID",
-        "Verified AdMob user_id is invalid.",
-      );
-    }
-
-    if (
-      userId !==
+    userId &&
+    userId !==
       uid
-    ) {
-      throw createError(
-        "ADMOB_USER_ID_MISMATCH",
-        "AdMob user_id does not match verified UID.",
-      );
-    }
+  ) {
+    throw createError(
+      "ADMOB_USER_ID_MISMATCH",
+      "AdMob user_id does not match verified UID.",
+    );
   }
 
-
-  // ==========================================================
-  // RETURN NORMALIZED DATA
-  // ==========================================================
 
   return {
     uid,
@@ -716,7 +438,7 @@ function validateVerifiedAdData(
 
 
 // ============================================================
-// 📜 COMPARE STORED REWARD DATA
+// 📜 COMPARE STORED REWARD
 // ============================================================
 
 function isSameVerifiedReward(
@@ -730,101 +452,65 @@ function isSameVerifiedReward(
     return false;
   }
 
-  const existingUid =
+  return (
     normalizeString(
       existingData.uid,
-    );
-
-  const existingPurpose =
-    normalizeString(
-      existingData.rewardPurpose,
-    );
-
-  const existingTransactionId =
-    normalizeString(
-      existingData.transactionId,
-    );
-
-  const existingAdUnit =
-    normalizeString(
-      existingData.adUnit,
-    );
-
-  const existingAdNetwork =
-    normalizeString(
-      existingData.adNetwork,
-    );
-
-  const existingRewardAmount =
-    Number(
-      existingData.rewardAmount,
-    );
-
-  const existingRewardItem =
-    normalizeString(
-      existingData.rewardItem,
-    );
-
-  const existingTimestamp =
-    Number(
-      existingData.timestamp,
-    );
-
-  const existingKeyId =
-    normalizeString(
-      existingData.keyId,
-    );
-
-  const existingSignature =
-    normalizeString(
-      existingData.signature,
-    );
-
-  const existingCustomData =
-    normalizeString(
-      existingData.customData,
-    );
-
-  const existingUserId =
-    normalizeString(
-      existingData.userId,
-    );
-
-  return (
-    existingUid ===
+    ) ===
       validatedAd.uid &&
 
-    existingPurpose ===
+    normalizeString(
+      existingData.rewardPurpose,
+    ) ===
       validatedAd.rewardPurpose &&
 
-    existingTransactionId ===
+    normalizeString(
+      existingData.transactionId,
+    ) ===
       validatedAd.transactionId &&
 
-    existingAdUnit ===
+    normalizeString(
+      existingData.adUnit,
+    ) ===
       validatedAd.adUnit &&
 
-    existingAdNetwork ===
+    normalizeString(
+      existingData.adNetwork,
+    ) ===
       validatedAd.adNetwork &&
 
-    existingRewardAmount ===
+    Number(
+      existingData.rewardAmount,
+    ) ===
       validatedAd.rewardAmount &&
 
-    existingRewardItem ===
+    normalizeString(
+      existingData.rewardItem,
+    ) ===
       validatedAd.rewardItem &&
 
-    existingTimestamp ===
+    Number(
+      existingData.timestamp,
+    ) ===
       validatedAd.timestamp &&
 
-    existingKeyId ===
+    normalizeString(
+      existingData.keyId,
+    ) ===
       validatedAd.keyId &&
 
-    existingSignature ===
+    normalizeString(
+      existingData.signature,
+    ) ===
       validatedAd.signature &&
 
-    existingCustomData ===
+    normalizeString(
+      existingData.customData,
+    ) ===
       validatedAd.customData &&
 
-    existingUserId ===
+    normalizeString(
+      existingData.userId,
+    ) ===
       validatedAd.userId
   );
 }
@@ -835,143 +521,95 @@ function isSameVerifiedReward(
 // ============================================================
 
 function isSameVerifiedHistory(
-  existingHistoryData,
+  existingData,
   validatedAd,
 ) {
   if (
-    !existingHistoryData ||
+    !existingData ||
     !validatedAd
   ) {
     return false;
   }
 
-  const existingUid =
-    normalizeString(
-      existingHistoryData.uid,
-    );
-
-  const existingType =
-    normalizeString(
-      existingHistoryData.type,
-    );
-
-  const existingRewardType =
-    normalizeString(
-      existingHistoryData.rewardType,
-    );
-
-  const existingRewardPurpose =
-    normalizeString(
-      existingHistoryData.rewardPurpose,
-    );
-
-  const existingAdMobTransactionId =
-    normalizeString(
-      existingHistoryData.adMobTransactionId,
-    );
-
-  const existingTransactionId =
-    normalizeString(
-      existingHistoryData.transactionId,
-    );
-
-  const existingAdNetwork =
-    normalizeString(
-      existingHistoryData.adNetwork,
-    );
-
-  const existingAdUnit =
-    normalizeString(
-      existingHistoryData.adUnit,
-    );
-
-  const existingRewardAmount =
-    Number(
-      existingHistoryData.rewardAmount,
-    );
-
-  const existingRewardItem =
-    normalizeString(
-      existingHistoryData.rewardItem,
-    );
-
-  const existingAmount =
-    Number(
-      existingHistoryData.amount,
-    );
-
-  const existingTimestamp =
-    Number(
-      existingHistoryData.timestamp,
-    );
-
-  const existingKeyId =
-    normalizeString(
-      existingHistoryData.keyId,
-    );
-
-  const existingSignature =
-    normalizeString(
-      existingHistoryData.signature,
-    );
-
-  const existingCustomData =
-    normalizeString(
-      existingHistoryData.customData,
-    );
-
-  const existingUserId =
-    normalizeString(
-      existingHistoryData.userId,
-    );
-
   return (
-    existingUid ===
+    normalizeString(
+      existingData.uid,
+    ) ===
       validatedAd.uid &&
 
-    existingType ===
+    normalizeString(
+      existingData.type,
+    ) ===
       "admob_verified" &&
 
-    existingRewardType ===
+    normalizeString(
+      existingData.rewardType,
+    ) ===
       "admob" &&
 
-    existingRewardPurpose ===
+    normalizeString(
+      existingData.rewardPurpose,
+    ) ===
       validatedAd.rewardPurpose &&
 
-    existingAdMobTransactionId ===
+    normalizeString(
+      existingData.adMobTransactionId,
+    ) ===
       validatedAd.transactionId &&
 
-    existingTransactionId ===
+    normalizeString(
+      existingData.transactionId,
+    ) ===
       validatedAd.transactionId &&
 
-    existingAdNetwork ===
+    normalizeString(
+      existingData.adNetwork,
+    ) ===
       validatedAd.adNetwork &&
 
-    existingAdUnit ===
+    normalizeString(
+      existingData.adUnit,
+    ) ===
       validatedAd.adUnit &&
 
-    existingRewardAmount ===
+    Number(
+      existingData.rewardAmount,
+    ) ===
       validatedAd.rewardAmount &&
 
-    existingRewardItem ===
+    normalizeString(
+      existingData.rewardItem,
+    ) ===
       validatedAd.rewardItem &&
 
-    existingAmount ===
+    Number(
+      existingData.amount,
+    ) ===
       0 &&
 
-    existingTimestamp ===
+    Number(
+      existingData.timestamp,
+    ) ===
       validatedAd.timestamp &&
 
-    existingKeyId ===
+    normalizeString(
+      existingData.keyId,
+    ) ===
       validatedAd.keyId &&
 
-    existingSignature ===
+    normalizeString(
+      existingData.signature,
+    ) ===
       validatedAd.signature &&
 
-    existingCustomData ===
+    normalizeString(
+      existingData.customData,
+    ) ===
       validatedAd.customData &&
 
-    existingUserId ===
+    normalizeString(
+      existingData.userId,
+    ) ===
       validatedAd.userId
   );
 }
@@ -988,6 +626,7 @@ async function saveVerifiedAdMobReward(
     validateVerifiedAdData(
       verifiedAd,
     );
+
 
   const {
     uid,
@@ -1007,7 +646,7 @@ async function saveVerifiedAdMobReward(
 
 
   // ==========================================================
-  // REWARD REFERENCE
+  // 🔗 FIRESTORE REFERENCES
   // ==========================================================
 
   const rewardRef =
@@ -1016,9 +655,7 @@ async function saveVerifiedAdMobReward(
     );
 
   if (
-    !rewardRef ||
-    typeof rewardRef !==
-      "object"
+    !rewardRef
   ) {
     throw createError(
       "ADMOB_REWARD_REFERENCE_ERROR",
@@ -1026,10 +663,6 @@ async function saveVerifiedAdMobReward(
     );
   }
 
-
-  // ==========================================================
-  // HISTORY COLLECTION
-  // ==========================================================
 
   const historyCollection =
     getHistoryCollection(
@@ -1048,37 +681,14 @@ async function saveVerifiedAdMobReward(
   }
 
 
-  // ==========================================================
-  // DETERMINISTIC HISTORY REFERENCE
-  // ==========================================================
-
-  const historyDocumentId =
-    `admob_${transactionId}`;
-
-  if (
-    historyDocumentId.length >
-      1500 ||
-    historyDocumentId.includes(
-      "/",
-    ) ||
-    historyDocumentId.includes(
-      "\\",
-    )
-  ) {
-    throw createError(
-      "ADMOB_INVALID_TRANSACTION_ID",
-      "AdMob transaction_id cannot be used as a Firestore document ID.",
-    );
-  }
-
   const historyRef =
     historyCollection.doc(
-      historyDocumentId,
+      `admob_${transactionId}`,
     );
 
 
   // ==========================================================
-  // FIRESTORE TRANSACTION
+  // 🔐 FIRESTORE TRANSACTION
   // ==========================================================
 
   return db.runTransaction(
@@ -1087,139 +697,111 @@ async function saveVerifiedAdMobReward(
     ) => {
 
       // ======================================================
-      // 🔎 ALL READS FIRST
+      // ALL READS FIRST
       // ======================================================
 
-      const existingSnapshot =
+      const rewardSnapshot =
         await transaction.get(
           rewardRef,
         );
 
-      const existingHistorySnapshot =
+      const historySnapshot =
         await transaction.get(
           historyRef,
         );
 
 
       // ======================================================
-      // 🔐 EXISTING REWARD
+      // EXISTING REWARD
       // ======================================================
 
       if (
-        existingSnapshot.exists
+        rewardSnapshot.exists
       ) {
         const existingData =
-          existingSnapshot.data() ||
+          rewardSnapshot.data() ||
           {};
 
 
-        // ====================================================
-        // SAME VERIFIED EVENT
-        // ====================================================
-
         if (
-          isSameVerifiedReward(
+          !isSameVerifiedReward(
             existingData,
             validatedAd,
           )
         ) {
-
-          // ==================================================
-          // HISTORY MUST EXIST
-          // ==================================================
-
-          if (
-            !existingHistorySnapshot.exists
-          ) {
-            throw createError(
-              "ADMOB_AUDIT_CONSISTENCY_ERROR",
-              "AdMob reward exists without the corresponding audit history.",
-            );
-          }
-
-
-          // ==================================================
-          // HISTORY MUST ALSO MATCH
-          // ==================================================
-
-          const existingHistoryData =
-            existingHistorySnapshot.data() ||
-            {};
-
-          if (
-            !isSameVerifiedHistory(
-              existingHistoryData,
-              validatedAd,
-            )
-          ) {
-            throw createError(
-              "ADMOB_AUDIT_CONSISTENCY_ERROR",
-              "AdMob reward and audit history contain inconsistent data.",
-            );
-          }
-
-
-          // ==================================================
-          // SAFE DUPLICATE
-          // ==================================================
-
-          console.log(
-            "🐱 AdMob transaction already processed.",
-            {
-              transactionId,
-
-              uid,
-
-              rewardPurpose,
-
-              duplicate:
-                true,
-            },
+          throw createError(
+            "ADMOB_TRANSACTION_CONFLICT",
+            "AdMob transaction_id is already associated with different reward data.",
           );
+        }
 
-          return {
-            success:
-              true,
 
-            verified:
-              true,
+        // ====================================================
+        // AUDIT MUST MATCH
+        // ====================================================
 
-            recorded:
-              true,
+        if (
+          !historySnapshot.exists ||
+          !isSameVerifiedHistory(
+            historySnapshot.data() ||
+            {},
+            validatedAd,
+          )
+        ) {
+          throw createError(
+            "ADMOB_AUDIT_CONSISTENCY_ERROR",
+            "AdMob reward and audit history are inconsistent.",
+          );
+        }
 
-            rewarded:
-              false,
 
-            duplicate:
-              true,
+        console.log(
+          "🐱 AdMob transaction already processed.",
+          {
+            uid,
 
             transactionId,
 
             rewardPurpose,
 
-            message:
-              "🐱📺 Tämä AdMob-tapahtuma on jo vastaanotettu.",
-          };
-        }
-
-
-        // ====================================================
-        // DIFFERENT DATA = PERMANENT CONFLICT
-        // ====================================================
-
-        throw createError(
-          "ADMOB_TRANSACTION_CONFLICT",
-          "AdMob transaction_id is already associated with different reward data.",
+            duplicate:
+              true,
+          },
         );
+
+
+        return {
+          success:
+            true,
+
+          verified:
+            true,
+
+          recorded:
+            true,
+
+          rewarded:
+            false,
+
+          duplicate:
+            true,
+
+          transactionId,
+
+          rewardPurpose,
+
+          message:
+            "🐱📺 Tämä AdMob-tapahtuma on jo vastaanotettu.",
+        };
       }
 
 
       // ======================================================
-      // 🛡️ HISTORY CONFLICT
+      // HISTORY WITHOUT REWARD
       // ======================================================
 
       if (
-        existingHistorySnapshot.exists
+        historySnapshot.exists
       ) {
         throw createError(
           "ADMOB_AUDIT_CONSISTENCY_ERROR",
@@ -1229,7 +811,7 @@ async function saveVerifiedAdMobReward(
 
 
       // ======================================================
-      // 💾 SAVE VERIFIED REWARD EVENT
+      // 💾 VERIFIED REWARD
       // ======================================================
 
       transaction.create(
@@ -1262,10 +844,6 @@ async function saveVerifiedAdMobReward(
 
           userId,
 
-          // ==================================================
-          // ⛏️ MINING START STATE
-          // ==================================================
-
           miningClaimed:
             false,
 
@@ -1284,10 +862,6 @@ async function saveVerifiedAdMobReward(
           miningStartClaimedBy:
             null,
 
-          // ==================================================
-          // ⚡ POWER BOOST STATE
-          // ==================================================
-
           powerBoostClaimed:
             false,
 
@@ -1299,10 +873,6 @@ async function saveVerifiedAdMobReward(
 
           powerBoostTransactionId:
             null,
-
-          // ==================================================
-          // 🕒 TIMESTAMPS
-          // ==================================================
 
           createdAt:
             FieldValue.serverTimestamp(),
@@ -1442,6 +1012,7 @@ const adMobReward =
           return;
         }
 
+
         if (
           req.method !==
           "GET"
@@ -1522,16 +1093,11 @@ const adMobReward =
 
 
         // ====================================================
-        // 🔐 VERIFY CALLBACK
+        // 🔐 VERIFY SSV
         // ====================================================
 
         console.log(
           "🐱 AdMob SSV callback received.",
-        );
-
-        console.log(
-          "🐱 AdMob SSV query keys:",
-          queryKeys,
         );
 
 
@@ -1540,10 +1106,6 @@ const adMobReward =
             req,
           );
 
-
-        // ====================================================
-        // 🛡️ VERIFY RESULT
-        // ====================================================
 
         if (
           !verifiedAd ||
@@ -1557,16 +1119,12 @@ const adMobReward =
         }
 
 
-        // ====================================================
-        // 🔐 CRYPTOGRAPHICALLY VERIFIED
-        // ====================================================
-
         ssvVerified =
           true;
 
 
         // ====================================================
-        // 🛡️ FINAL VALIDATION
+        // 🛡️ FINAL DEFENSE-IN-DEPTH VALIDATION
         // ====================================================
 
         const validatedAd =
@@ -1578,17 +1136,6 @@ const adMobReward =
         // ====================================================
         // 📋 SAFE LOGGING
         // ====================================================
-        //
-        // Älä koskaan loggaa:
-        //
-        // ❌ signature
-        // ❌ custom_data
-        // ❌ raw query string
-        //
-        // UID ja transaction_id voidaan logata audit-debugia
-        // varten, mutta itse allekirjoitusta ei.
-        //
-        // ============================================================
 
         console.log(
           "🐱✅ Verified AdMob reward ready for Firestore.",
@@ -1665,10 +1212,6 @@ const adMobReward =
         error
       ) {
 
-        // ====================================================
-        // ❌ ERROR INFORMATION
-        // ====================================================
-
         const errorCode =
           error &&
           error.code
@@ -1676,6 +1219,7 @@ const adMobReward =
                 error.code,
               )
             : "UNKNOWN";
+
 
         const errorMessage =
           error &&
@@ -1685,14 +1229,6 @@ const adMobReward =
               )
             : "Unknown AdMob error.";
 
-
-        // ====================================================
-        // 🔐 SAFE ERROR LOG
-        // ====================================================
-        //
-        // Signaturea tai raw query-stringiä ei logata.
-        //
-        // ====================================================
 
         console.error(
           "❌ AdMob reward processing failed.",
@@ -1707,7 +1243,7 @@ const adMobReward =
 
 
         // ====================================================
-        // 🛡️ CLIENT VALIDATION ERROR
+        // 🛡️ PERMANENT / VALIDATION ERROR
         // ====================================================
 
         if (
@@ -1744,7 +1280,7 @@ const adMobReward =
 
 
         // ====================================================
-        // 🔄 SERVER / CONFIG / RETRY ERROR
+        // 🔄 RETRYABLE SERVER ERROR
         // ====================================================
 
         if (
