@@ -113,14 +113,6 @@ const VALID_REWARD_PURPOSES =
 // ============================================================
 // 🛡️ CLIENT VALIDATION ERROR CODES
 // ============================================================
-//
-// Näissä tapauksissa callback on vastaanotettu, mutta
-// tapahtumaa ei voida hyväksyä reward-eventiksi.
-//
-// HTTP 200 estää AdMobia lähettämästä samaa virheellistä
-// callbackia jatkuvasti uudelleen.
-//
-// ============================================================
 
 const CLIENT_VALIDATION_ERROR_CODES =
   new Set([
@@ -147,12 +139,6 @@ const CLIENT_VALIDATION_ERROR_CODES =
 
 // ============================================================
 // 🔄 SERVER / CONFIG / RETRY ERROR CODES
-// ============================================================
-//
-// Näissä tilanteissa HTTP 500 on tarkoituksellinen.
-//
-// AdMob voi tällöin yrittää callbackia uudelleen.
-//
 // ============================================================
 
 const SERVER_RETRY_ERROR_CODES =
@@ -214,12 +200,6 @@ function createError(
 // ============================================================
 // 👤 VALIDATE UID
 // ============================================================
-//
-// Varsinainen UID-validointi tapahtuu admobService.js:ssä.
-//
-// Tämä wrapper pitää tämän moduulin API:n selkeänä.
-//
-// ============================================================
 
 function validateUid(
   value,
@@ -234,7 +214,16 @@ function validateUid(
 // 🆔 VALIDATE TRANSACTION ID
 // ============================================================
 //
-// Varsinainen transaction_id-validointi tapahtuu
+// AdMob transaction_id toimii myös Firestore-document ID:n
+// osana.
+//
+// Siksi transaction_id ei saa sisältää:
+//   /
+//   \
+//
+// Näin vältetään rikkinäiset Firestore-document-polut.
+//
+// Varsinainen AdMob transaction_id -validointi tehdään
 // admobService.js:ssä.
 //
 // ============================================================
@@ -242,9 +231,29 @@ function validateUid(
 function validateTransactionId(
   value,
 ) {
-  return validateServiceTransactionId(
-    value,
-  );
+  const transactionId =
+    validateServiceTransactionId(
+      value,
+    );
+
+  if (
+    !transactionId
+  ) {
+    return "";
+  }
+
+  if (
+    transactionId.includes(
+      "/",
+    ) ||
+    transactionId.includes(
+      "\\",
+    )
+  ) {
+    return "";
+  }
+
+  return transactionId;
 }
 
 
@@ -280,11 +289,6 @@ function validateRewardPurpose(
 // ============================================================
 // 🔐 GET EXPECTED ADMOB CONFIG
 // ============================================================
-//
-// Varsinainen AdMob-konfiguraatio sijaitsee
-// admobService.js:ssä.
-//
-// ============================================================
 
 function getExpectedAdMobConfig(
   rewardPurpose,
@@ -297,13 +301,6 @@ function getExpectedAdMobConfig(
 
 // ============================================================
 // 🔐 VALIDATE VERIFIED AD DATA
-// ============================================================
-//
-// admobService.js on jo tehnyt kryptografisen varmennuksen.
-//
-// Tämä toinen validointikerros on tarkoituksellinen
-// defense-in-depth ennen Firestore-kirjoitusta.
-//
 // ============================================================
 
 function validateVerifiedAdData(
@@ -722,16 +719,6 @@ function validateVerifiedAdData(
 // ============================================================
 // 🔎 COMPARE STORED REWARD DATA
 // ============================================================
-//
-// transaction_id:n pitää olla idempotentti.
-//
-// Sama transaction_id + sama varmennettu data:
-// → turvallinen duplicate
-//
-// Sama transaction_id + eri data:
-// → pysyvä turvallisuuskonflikti
-//
-// ============================================================
 
 function isSameVerifiedReward(
   existingData,
@@ -994,18 +981,6 @@ function isSameVerifiedHistory(
 // ============================================================
 // 💾 SAVE VERIFIED ADMOB REWARD
 // ============================================================
-//
-// TÄMÄ EI SUORITA REWARDIA.
-//
-// Se tallentaa ainoastaan kryptografisesti varmennetun
-// AdMob-tapahtuman.
-//
-// Varsinainen Mining Start / Power Boost -business-logiikka
-// kuuluu:
-//
-// functions/src/functions/miningFunctions.js
-//
-// ============================================================
 
 async function saveVerifiedAdMobReward(
   verifiedAd,
@@ -1074,9 +1049,26 @@ async function saveVerifiedAdMobReward(
   // DETERMINISTIC HISTORY REFERENCE
   // ==========================================================
 
+  const historyDocumentId =
+    `admob_${transactionId}`;
+
+  if (
+    historyDocumentId.includes(
+      "/",
+    ) ||
+    historyDocumentId.includes(
+      "\\",
+    )
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      "AdMob transaction_id cannot be used as a Firestore document ID.",
+    );
+  }
+
   const historyRef =
     historyCollection.doc(
-      `admob_${transactionId}`,
+      historyDocumentId,
     );
 
 
@@ -1234,13 +1226,6 @@ async function saveVerifiedAdMobReward(
       // ======================================================
       // 💾 SAVE VERIFIED REWARD EVENT
       // ======================================================
-      //
-      // Tämä dokumentti ei vielä anna käyttäjälle mitään.
-      //
-      // miningFunctions.js käyttää myöhemmin tätä varmennettua
-      // tapahtumaa Mining Start / Power Boost -toimintoon.
-      //
-      // ======================================================
 
       transaction.create(
         rewardRef,
@@ -1325,14 +1310,6 @@ async function saveVerifiedAdMobReward(
 
       // ======================================================
       // 📜 HISTORY
-      // ======================================================
-      //
-      // Tämä on vain AUDIT-merkintä.
-      //
-      // amount = 0
-      //
-      // AdMob rewardAmount ei ole STL.
-      //
       // ======================================================
 
       transaction.create(
