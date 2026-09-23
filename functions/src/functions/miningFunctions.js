@@ -736,9 +736,7 @@ async function calculateMiningCycle(
 
   return {
     baseMining,
-
     adBoostMining,
-
     boostMilliseconds:
       boostMs,
 
