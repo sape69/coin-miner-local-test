@@ -1419,7 +1419,8 @@ decoded.indexOf(
 if (
 separatorIndex <= 0 ||
 separatorIndex ===
-decoded.length - 1
+decoded.length -
+1
 ) {
 throw createError(
 "ADMOB_CUSTOM_DATA_MISSING",
