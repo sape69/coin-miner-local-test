@@ -283,19 +283,20 @@ function getRewardConfiguration(rewardPurpose) {
 //
 // We intentionally query only by uid.
 //
-// Querying:
+// The remaining SSV properties are validated locally.
 //
+// We do NOT use:
 //   where("uid", "==", uid)
 //   where("rewardPurpose", "==", rewardPurpose)
 //
-// can require a Firestore composite index.
+// because that can require a Firestore composite index.
 //
-// Instead we fetch the user's AdMob reward documents and
-// validate rewardPurpose, reward type, ad unit, amount,
-// reward item and transaction ID locally.
+// IMPORTANT SECURITY RULE:
 //
-// This keeps SSV verification independent of a composite
-// Firestore index.
+// The reward is never trusted merely because it exists.
+// rewardPurpose, rewardType, adUnit, rewardItem,
+// rewardAmount, transactionId and consumed state are
+// all validated before use.
 //
 // ============================================================
 
@@ -312,6 +313,13 @@ async function findVerifiedAdMobReward(
     );
 
   if (!configuration) {
+    return null;
+  }
+
+  if (
+    typeof uid !== "string" ||
+    !uid.trim()
+  ) {
     return null;
   }
 
@@ -435,7 +443,9 @@ async function findVerifiedAdMobReward(
         rewardAmount
       ) ||
       rewardAmount !==
-        configuration.rewardAmount
+        Number(
+          configuration.rewardAmount
+        )
     ) {
       return;
     }
@@ -723,7 +733,9 @@ function validateVerifiedRewardDocument(
       rewardAmount
     ) ||
     rewardAmount !==
-      configuration.rewardAmount
+      Number(
+        configuration.rewardAmount
+      )
   ) {
     throw new HttpsError(
       "failed-precondition",
