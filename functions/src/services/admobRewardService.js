@@ -23,21 +23,21 @@
 // ============================================================
 
 const {
-  db,
+db,
 } = require("../firebase/firebase");
 
 const {
-  ADMOB_MINING_AD_UNIT_ID,
-  ADMOB_POWER_BOOST_AD_UNIT_ID,
+ADMOB_MINING_AD_UNIT_ID,
+ADMOB_POWER_BOOST_AD_UNIT_ID,
 
-  ADMOB_MINING_SSV_AD_UNIT_ID,
-  ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
+ADMOB_MINING_SSV_AD_UNIT_ID,
+ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
 
-  ADMOB_MINING_SSV_REWARD_AMOUNT,
-  ADMOB_MINING_SSV_REWARD_ITEM,
+ADMOB_MINING_SSV_REWARD_AMOUNT,
+ADMOB_MINING_SSV_REWARD_ITEM,
 
-  ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
-  ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
+ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
+ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
 } = require("../config/miningConfig");
 
 // ============================================================
@@ -45,60 +45,60 @@ const {
 // ============================================================
 
 const ADMOB_REWARD_REQUEST_GRACE_MS =
-  5 * 60 * 1000;
+5 * 60 * 1000;
 
 const ADMOB_REWARD_MAX_AGE_MS =
-  15 * 60 * 1000;
+15 * 60 * 1000;
 
 const ADMOB_REWARD_FUTURE_TOLERANCE_MS =
-  2 * 60 * 1000;
+2 * 60 * 1000;
 
 const ADMOB_REWARD_QUERY_LIMIT =
-  100;
+100;
 
 const ADMOB_SSV_WAIT_TIMEOUT_MS =
-  90 * 1000;
+90 * 1000;
 
 const ADMOB_SSV_POLL_INTERVAL_MS =
-  2 * 1000;
+2 * 1000;
 
 // ============================================================
 // 🔢 SAFE NUMBERS
 // ============================================================
 
 function getSafeNumber(
-  value,
-  fallback = 0
+value,
+fallback = 0
 ) {
-  const number = Number(value);
+const number = Number(value);
 
-  return Number.isFinite(number)
-    ? number
-    : fallback;
+return Number.isFinite(number)
+? number
+: fallback;
 }
 
 function getSafeNonNegativeNumber(
-  value,
-  fallback = 0
+value,
+fallback = 0
 ) {
-  const number = Number(value);
+const number = Number(value);
 
-  return Number.isFinite(number) &&
-    number >= 0
-    ? number
-    : fallback;
+return Number.isFinite(number) &&
+number >= 0
+? number
+: fallback;
 }
 
 function getSafePositiveNumber(
-  value,
-  fallback = 0
+value,
+fallback = 0
 ) {
-  const number = Number(value);
+const number = Number(value);
 
-  return Number.isFinite(number) &&
-    number > 0
-    ? number
-    : fallback;
+return Number.isFinite(number) &&
+number > 0
+? number
+: fallback;
 }
 
 // ============================================================
@@ -106,64 +106,66 @@ function getSafePositiveNumber(
 // ============================================================
 
 function getTimestampMilliseconds(
-  value
+value
 ) {
-  if (!value) {
-    return 0;
-  }
+if (!value) {
+return 0;
+}
 
-  if (
-    typeof value.toDate ===
-    "function"
-  ) {
-    try {
-      const date =
-        value.toDate();
+if (
+typeof value.toDate ===
+"function"
+) {
+try {
+const date =
+value.toDate();
 
-      return date instanceof Date &&
-        Number.isFinite(
-          date.getTime()
-        )
-        ? date.getTime()
-        : 0;
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  if (
-    value instanceof Date
-  ) {
-    return Number.isFinite(
-      value.getTime()
-    )
-      ? value.getTime()
-      : 0;
-  }
-
-  if (
-    typeof value ===
-    "string"
-  ) {
-    const date =
-      new Date(value);
-
-    return Number.isFinite(
+  return date instanceof Date &&
+    Number.isFinite(
       date.getTime()
     )
-      ? date.getTime()
-      : 0;
-  }
-
-  if (
-    typeof value ===
-      "number" &&
-    Number.isFinite(value)
-  ) {
-    return value;
-  }
-
+    ? date.getTime()
+    : 0;
+} catch (_) {
   return 0;
+}
+
+}
+
+if (
+value instanceof Date
+) {
+return Number.isFinite(
+value.getTime()
+)
+? value.getTime()
+: 0;
+}
+
+if (
+typeof value ===
+"string"
+) {
+const date =
+new Date(value);
+
+return Number.isFinite(
+  date.getTime()
+)
+  ? date.getTime()
+  : 0;
+
+}
+
+if (
+typeof value ===
+"number" &&
+Number.isFinite(value)
+) {
+return value;
+}
+
+return 0;
 }
 
 // ============================================================
@@ -171,36 +173,36 @@ function getTimestampMilliseconds(
 // ============================================================
 
 function validateAdMobTransactionId(
-  value
+value
 ) {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return "";
-  }
+if (
+typeof value !==
+"string"
+) {
+return "";
+}
 
-  const transactionId =
-    value.trim();
+const transactionId =
+value.trim();
 
-  if (
-    !transactionId ||
-    transactionId.length > 256
-  ) {
-    return "";
-  }
+if (
+!transactionId ||
+transactionId.length > 256
+) {
+return "";
+}
 
-  // AdMob SSV transaction_id is
-  // a unique hex encoded identifier.
-  if (
-    !/^[a-fA-F0-9]+$/.test(
-      transactionId
-    )
-  ) {
-    return "";
-  }
+// AdMob SSV transaction_id:
+// unique hex encoded identifier.
+if (
+!/^[a-fA-F0-9]+$/.test(
+transactionId
+)
+) {
+return "";
+}
 
-  return transactionId;
+return transactionId;
 }
 
 // ============================================================
@@ -208,33 +210,34 @@ function validateAdMobTransactionId(
 // ============================================================
 
 function getRewardTimestampMs(
-  rewardData
+rewardData
 ) {
-  if (!rewardData) {
-    return 0;
-  }
+if (!rewardData) {
+return 0;
+}
 
-  const candidates = [
-    rewardData.timestamp,
-    rewardData.rewardedAt,
-    rewardData.receivedAt,
-    rewardData.createdAt,
-  ];
+const candidates = [
+rewardData.timestamp,
+rewardData.rewardedAt,
+rewardData.receivedAt,
+rewardData.createdAt,
+];
 
-  for (
-    const value of candidates
-  ) {
-    const timestamp =
-      getTimestampMilliseconds(
-        value
-      );
+for (
+const value of candidates
+) {
+const timestamp =
+getTimestampMilliseconds(
+value
+);
 
-    if (timestamp > 0) {
-      return timestamp;
-    }
-  }
+if (timestamp > 0) {
+  return timestamp;
+}
 
-  return 0;
+}
+
+return 0;
 }
 
 // ============================================================
@@ -242,33 +245,34 @@ function getRewardTimestampMs(
 // ============================================================
 
 function getRewardCreatedAtMs(
-  rewardData
+rewardData
 ) {
-  if (!rewardData) {
-    return 0;
-  }
+if (!rewardData) {
+return 0;
+}
 
-  const candidates = [
-    rewardData.createdAt,
-    rewardData.receivedAt,
-    rewardData.timestamp,
-    rewardData.rewardedAt,
-  ];
+const candidates = [
+rewardData.createdAt,
+rewardData.receivedAt,
+rewardData.timestamp,
+rewardData.rewardedAt,
+];
 
-  for (
-    const value of candidates
-  ) {
-    const timestamp =
-      getTimestampMilliseconds(
-        value
-      );
+for (
+const value of candidates
+) {
+const timestamp =
+getTimestampMilliseconds(
+value
+);
 
-    if (timestamp > 0) {
-      return timestamp;
-    }
-  }
+if (timestamp > 0) {
+  return timestamp;
+}
 
-  return 0;
+}
+
+return 0;
 }
 
 // ============================================================
@@ -276,44 +280,53 @@ function getRewardCreatedAtMs(
 // ============================================================
 
 function getRewardConfiguration(
-  rewardPurpose
+rewardPurpose
 ) {
-  switch (
-    rewardPurpose
-  ) {
-    case "mining_start":
-      return {
-        rewardedAdUnitId:
-          ADMOB_MINING_AD_UNIT_ID,
+switch (
+rewardPurpose
+) {
+case "mining_start":
+return {
+rewardedAdUnitId:
+ADMOB_MINING_AD_UNIT_ID,
 
-        ssvAdUnitId:
-          ADMOB_MINING_SSV_AD_UNIT_ID,
+    // IMPORTANT:
+    // AdMob SSV sends the numeric
+    // ad unit ID, not the full
+    // ca-app-pub-.../... value.
+    ssvAdUnitId:
+      ADMOB_MINING_SSV_AD_UNIT_ID,
 
-        rewardAmount:
-          ADMOB_MINING_SSV_REWARD_AMOUNT,
+    rewardAmount:
+      ADMOB_MINING_SSV_REWARD_AMOUNT,
 
-        rewardItem:
-          ADMOB_MINING_SSV_REWARD_ITEM,
-      };
+    rewardItem:
+      ADMOB_MINING_SSV_REWARD_ITEM,
+  };
 
-    case "power_boost":
-      return {
-        rewardedAdUnitId:
-          ADMOB_POWER_BOOST_AD_UNIT_ID,
+case "power_boost":
+  return {
+    rewardedAdUnitId:
+      ADMOB_POWER_BOOST_AD_UNIT_ID,
 
-        ssvAdUnitId:
-          ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
+    // IMPORTANT:
+    // AdMob SSV sends the numeric
+    // ad unit ID, not the full
+    // ca-app-pub-.../... value.
+    ssvAdUnitId:
+      ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
 
-        rewardAmount:
-          ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
+    rewardAmount:
+      ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
 
-        rewardItem:
-          ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
-      };
+    rewardItem:
+      ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
+  };
 
-    default:
-      return null;
-  }
+default:
+  return null;
+
+}
 }
 
 // ============================================================
@@ -321,49 +334,50 @@ function getRewardConfiguration(
 // ============================================================
 
 function validateRewardTransactionId(
-  rewardSnapshot
+rewardSnapshot
 ) {
-  if (
-    !rewardSnapshot ||
-    !rewardSnapshot.exists
-  ) {
-    return "";
-  }
+if (
+!rewardSnapshot ||
+!rewardSnapshot.exists
+) {
+return "";
+}
 
-  const transactionId =
-    validateAdMobTransactionId(
-      rewardSnapshot.id
-    );
+const transactionId =
+validateAdMobTransactionId(
+rewardSnapshot.id
+);
 
-  if (!transactionId) {
-    return "";
-  }
+if (!transactionId) {
+return "";
+}
 
-  const data =
-    rewardSnapshot.data() ||
-    {};
+const data =
+rewardSnapshot.data() ||
+{};
 
-  if (
-    data.transactionId !==
-      undefined &&
-    data.transactionId !==
-      null
-  ) {
-    const stored =
-      validateAdMobTransactionId(
-        data.transactionId
-      );
+if (
+data.transactionId !==
+undefined &&
+data.transactionId !==
+null
+) {
+const stored =
+validateAdMobTransactionId(
+data.transactionId
+);
 
-    if (
-      !stored ||
-      stored.toLowerCase() !==
-        transactionId.toLowerCase()
-    ) {
-      return "";
-    }
-  }
+if (
+  !stored ||
+  stored.toLowerCase() !==
+    transactionId.toLowerCase()
+) {
+  return "";
+}
 
-  return transactionId;
+}
+
+return transactionId;
 }
 
 // ============================================================
@@ -371,47 +385,47 @@ function validateRewardTransactionId(
 // ============================================================
 
 function isRewardTimestampAcceptable(
-  rewardData,
-  referenceNowMs,
-  requestStartedAtMs
+rewardData,
+referenceNowMs,
+requestStartedAtMs
 ) {
-  const rewardTimestampMs =
-    getRewardTimestampMs(
-      rewardData
-    );
+const rewardTimestampMs =
+getRewardTimestampMs(
+rewardData
+);
 
-  if (
-    rewardTimestampMs <= 0
-  ) {
-    return false;
-  }
+if (
+rewardTimestampMs <= 0
+) {
+return false;
+}
 
-  if (
-    rewardTimestampMs >
-    referenceNowMs +
-      ADMOB_REWARD_FUTURE_TOLERANCE_MS
-  ) {
-    return false;
-  }
+if (
+rewardTimestampMs >
+referenceNowMs +
+ADMOB_REWARD_FUTURE_TOLERANCE_MS
+) {
+return false;
+}
 
-  if (
-    referenceNowMs -
-      rewardTimestampMs >
-    ADMOB_REWARD_MAX_AGE_MS
-  ) {
-    return false;
-  }
+if (
+referenceNowMs -
+rewardTimestampMs >
+ADMOB_REWARD_MAX_AGE_MS
+) {
+return false;
+}
 
-  if (
-    requestStartedAtMs > 0 &&
-    rewardTimestampMs <
-      requestStartedAtMs -
-        ADMOB_REWARD_REQUEST_GRACE_MS
-  ) {
-    return false;
-  }
+if (
+requestStartedAtMs > 0 &&
+rewardTimestampMs <
+requestStartedAtMs -
+ADMOB_REWARD_REQUEST_GRACE_MS
+) {
+return false;
+}
 
-  return true;
+return true;
 }
 
 // ============================================================
@@ -419,253 +433,269 @@ function isRewardTimestampAcceptable(
 // ============================================================
 
 function validateReward(
-  rewardSnapshot,
-  uid,
-  rewardPurpose,
-  claimedField,
-  options = {}
+rewardSnapshot,
+uid,
+rewardPurpose,
+claimedField,
+options = {}
 ) {
-  const configuration =
-    getRewardConfiguration(
-      rewardPurpose
-    );
+const configuration =
+getRewardConfiguration(
+rewardPurpose
+);
 
-  if (
-    !configuration ||
-    !rewardSnapshot ||
-    !rewardSnapshot.exists
-  ) {
-    return null;
-  }
+if (
+!configuration ||
+!rewardSnapshot ||
+!rewardSnapshot.exists
+) {
+return null;
+}
 
-  if (
-    typeof uid !==
-      "string" ||
-    !uid.trim()
-  ) {
-    return null;
-  }
+if (
+typeof uid !==
+"string" ||
+!uid.trim()
+) {
+return null;
+}
 
-  const data =
-    rewardSnapshot.data() ||
-    {};
+const data =
+rewardSnapshot.data() ||
+{};
 
-  // ----------------------------------------------------------
-  // USER
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// USER
+// ----------------------------------------------------------
 
-  if (
-    data.uid !== uid
-  ) {
-    return null;
-  }
+if (
+data.uid !== uid
+) {
+return null;
+}
 
-  if (
-    data.userId !==
-      undefined &&
-    data.userId !==
-      null &&
-    String(data.userId) !==
-      uid
-  ) {
-    return null;
-  }
+if (
+data.userId !==
+undefined &&
+data.userId !==
+null &&
+String(data.userId) !==
+uid
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // TYPE
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// TYPE
+// ----------------------------------------------------------
 
-  if (
-    data.rewardType !==
-    "admob"
-  ) {
-    return null;
-  }
+if (
+data.rewardType !==
+"admob"
+) {
+return null;
+}
 
-  if (
-    data.rewardPurpose !==
-    rewardPurpose
-  ) {
-    return null;
-  }
+if (
+data.rewardPurpose !==
+rewardPurpose
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // CONSUMPTION
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// CONSUMPTION
+// ----------------------------------------------------------
 
-  if (
-    data.rewardConsumed ===
-      true ||
-    data[claimedField] ===
-      true
-  ) {
-    return null;
-  }
+if (
+data.rewardConsumed ===
+true ||
+data[claimedField] ===
+true
+) {
+return null;
+}
 
-  if (
-    rewardPurpose ===
-      "mining_start" &&
-    (
-      data.miningClaimed ===
-        true ||
-      data.miningStartClaimed ===
-        true ||
-      data.miningStartClaimedAt
-    )
-  ) {
-    return null;
-  }
+if (
+rewardPurpose ===
+"mining_start" &&
+(
+data.miningClaimed ===
+true ||
+data.miningStartClaimed ===
+true ||
+data.miningStartClaimedAt
+)
+) {
+return null;
+}
 
-  if (
-    rewardPurpose ===
-      "power_boost" &&
-    (
-      data.powerBoostClaimed ===
-        true ||
-      data.powerBoostClaimedAt
-    )
-  ) {
-    return null;
-  }
+if (
+rewardPurpose ===
+"power_boost" &&
+(
+data.powerBoostClaimed ===
+true ||
+data.powerBoostClaimedAt
+)
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // AD UNIT
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// AD UNIT
+// ----------------------------------------------------------
+//
+// IMPORTANT:
+//
+// AdMob SSV callback:
+//
+// ad_unit=6674097787
+//
+// NOT:
+//
+// ad_unit=ca-app-pub-1131012057145658/6674097787
+//
+// Therefore the authoritative SSV value must match
+// configuration.ssvAdUnitId exactly.
+//
+// ----------------------------------------------------------
 
-  if (
-    typeof data.adUnit !==
-    "string"
-  ) {
-    return null;
-  }
+if (
+typeof data.adUnit !==
+"string"
+) {
+return null;
+}
 
-  const adUnit =
-    data.adUnit.trim();
+const adUnit =
+data.adUnit.trim();
 
-  if (
-    adUnit !==
-      configuration.rewardedAdUnitId &&
-    adUnit !==
-      configuration.ssvAdUnitId
-  ) {
-    return null;
-  }
+if (
+adUnit !==
+String(
+configuration.ssvAdUnitId
+)
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // REWARD ITEM
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// REWARD ITEM
+// ----------------------------------------------------------
 
-  if (
-    typeof data.rewardItem !==
-    "string"
-  ) {
-    return null;
-  }
+if (
+typeof data.rewardItem !==
+"string"
+) {
+return null;
+}
 
-  if (
-    data.rewardItem.trim() !==
-    String(
-      configuration.rewardItem
-    )
-  ) {
-    return null;
-  }
+if (
+data.rewardItem.trim() !==
+String(
+configuration.rewardItem
+)
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // REWARD AMOUNT
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// REWARD AMOUNT
+// ----------------------------------------------------------
 
-  const rewardAmount =
-    Number(
-      data.rewardAmount
-    );
+const rewardAmount =
+Number(
+data.rewardAmount
+);
 
-  if (
-    !Number.isFinite(
-      rewardAmount
-    ) ||
-    rewardAmount !==
-      Number(
-        configuration.rewardAmount
-      )
-  ) {
-    return null;
-  }
+if (
+!Number.isFinite(
+rewardAmount
+) ||
+rewardAmount !==
+Number(
+configuration.rewardAmount
+)
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // TRANSACTION
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// TRANSACTION
+// ----------------------------------------------------------
 
-  const transactionId =
-    validateRewardTransactionId(
-      rewardSnapshot
-    );
+const transactionId =
+validateRewardTransactionId(
+rewardSnapshot
+);
 
-  if (!transactionId) {
-    return null;
-  }
+if (!transactionId) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // TIMESTAMP
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// TIMESTAMP
+// ----------------------------------------------------------
 
-  const referenceNowMs =
-    getSafePositiveNumber(
-      options.referenceNowMs,
-      Date.now()
-    );
+const referenceNowMs =
+getSafePositiveNumber(
+options.referenceNowMs,
+Date.now()
+);
 
-  const requestStartedAtMs =
-    getSafeNonNegativeNumber(
-      options.requestStartedAtMs,
-      0
-    );
+const requestStartedAtMs =
+getSafeNonNegativeNumber(
+options.requestStartedAtMs,
+0
+);
 
-  if (
-    !isRewardTimestampAcceptable(
-      data,
-      referenceNowMs,
-      requestStartedAtMs
-    )
-  ) {
-    return null;
-  }
+if (
+!isRewardTimestampAcceptable(
+data,
+referenceNowMs,
+requestStartedAtMs
+)
+) {
+return null;
+}
 
-  // ----------------------------------------------------------
-  // REQUESTED TRANSACTION
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// REQUESTED TRANSACTION
+// ----------------------------------------------------------
 
-  const requestedTransactionId =
-    validateAdMobTransactionId(
-      options.transactionId
-    );
+const requestedTransactionId =
+validateAdMobTransactionId(
+options.transactionId
+);
 
-  if (
-    requestedTransactionId &&
-    requestedTransactionId.toLowerCase() !==
-      transactionId.toLowerCase()
-  ) {
-    return null;
-  }
+if (
+requestedTransactionId &&
+requestedTransactionId.toLowerCase() !==
+transactionId.toLowerCase()
+) {
+return null;
+}
 
-  return {
-    ref:
-      rewardSnapshot.ref,
+return {
+ref:
+rewardSnapshot.ref,
 
-    data,
+data,
 
-    transactionId,
+transactionId,
 
-    rewardTimestampMs:
-      getRewardTimestampMs(
-        data
-      ),
+rewardTimestampMs:
+  getRewardTimestampMs(
+    data
+  ),
 
-    createdAtMs:
-      getRewardCreatedAtMs(
-        data
-      ),
-  };
+createdAtMs:
+  getRewardCreatedAtMs(
+    data
+  ),
+
+};
 }
 
 // ============================================================
@@ -673,170 +703,173 @@ function validateReward(
 // ============================================================
 
 async function findVerifiedAdMobReward(
+uid,
+rewardPurpose,
+claimedField,
+options = {}
+) {
+const configuration =
+getRewardConfiguration(
+rewardPurpose
+);
+
+if (!configuration) {
+return null;
+}
+
+if (
+typeof uid !==
+"string" ||
+!uid.trim()
+) {
+return null;
+}
+
+const referenceNowMs =
+getSafePositiveNumber(
+options.referenceNowMs,
+Date.now()
+);
+
+const requestStartedAtMs =
+getSafeNonNegativeNumber(
+options.requestStartedAtMs,
+0
+);
+
+const requestedTransactionId =
+validateAdMobTransactionId(
+options.transactionId
+);
+
+// ----------------------------------------------------------
+// 🎯 EXACT TRANSACTION
+// ----------------------------------------------------------
+
+if (
+requestedTransactionId
+) {
+const ref =
+db
+.collection(
+"admobRewards"
+)
+.doc(
+requestedTransactionId
+);
+
+const snapshot =
+  await ref.get();
+
+return validateReward(
+  snapshot,
   uid,
   rewardPurpose,
   claimedField,
-  options = {}
+  {
+    referenceNowMs,
+    requestStartedAtMs,
+    transactionId:
+      requestedTransactionId,
+  }
+);
+
+}
+
+// ----------------------------------------------------------
+// 🔎 DISCOVERY
+// ----------------------------------------------------------
+
+const snapshot =
+await db
+.collection(
+"admobRewards"
+)
+.where(
+"uid",
+"==",
+uid
+)
+.where(
+"rewardPurpose",
+"==",
+rewardPurpose
+)
+.limit(
+ADMOB_REWARD_QUERY_LIMIT
+)
+.get();
+
+if (
+snapshot.empty
 ) {
-  const configuration =
-    getRewardConfiguration(
-      rewardPurpose
-    );
+return null;
+}
 
-  if (!configuration) {
-    return null;
+const candidates = [];
+
+snapshot.forEach(
+(document) => {
+const reward =
+validateReward(
+document,
+uid,
+rewardPurpose,
+claimedField,
+{
+referenceNowMs,
+requestStartedAtMs,
+}
+);
+
+  if (reward) {
+    candidates.push(
+      reward
+    );
   }
+}
+
+);
+
+if (
+candidates.length ===
+0
+) {
+return null;
+}
+
+candidates.sort(
+(a, b) => {
+if (
+b.rewardTimestampMs !==
+a.rewardTimestampMs
+) {
+return (
+b.rewardTimestampMs -
+a.rewardTimestampMs
+);
+}
 
   if (
-    typeof uid !==
-      "string" ||
-    !uid.trim()
+    b.createdAtMs !==
+    a.createdAtMs
   ) {
-    return null;
-  }
-
-  const referenceNowMs =
-    getSafePositiveNumber(
-      options.referenceNowMs,
-      Date.now()
-    );
-
-  const requestStartedAtMs =
-    getSafeNonNegativeNumber(
-      options.requestStartedAtMs,
-      0
-    );
-
-  const requestedTransactionId =
-    validateAdMobTransactionId(
-      options.transactionId
-    );
-
-  // ----------------------------------------------------------
-  // 🎯 EXACT TRANSACTION
-  // ----------------------------------------------------------
-
-  if (
-    requestedTransactionId
-  ) {
-    const ref =
-      db
-        .collection(
-          "admobRewards"
-        )
-        .doc(
-          requestedTransactionId
-        );
-
-    const snapshot =
-      await ref.get();
-
-    return validateReward(
-      snapshot,
-      uid,
-      rewardPurpose,
-      claimedField,
-      {
-        referenceNowMs,
-        requestStartedAtMs,
-        transactionId:
-          requestedTransactionId,
-      }
+    return (
+      b.createdAtMs -
+      a.createdAtMs
     );
   }
 
-  // ----------------------------------------------------------
-  // 🔎 DISCOVERY
-  // ----------------------------------------------------------
-
-  const snapshot =
-    await db
-      .collection(
-        "admobRewards"
-      )
-      .where(
-        "uid",
-        "==",
-        uid
-      )
-      .where(
-        "rewardPurpose",
-        "==",
-        rewardPurpose
-      )
-      .limit(
-        ADMOB_REWARD_QUERY_LIMIT
-      )
-      .get();
-
-  if (
-    snapshot.empty
-  ) {
-    return null;
-  }
-
-  const candidates = [];
-
-  snapshot.forEach(
-    (document) => {
-      const reward =
-        validateReward(
-          document,
-          uid,
-          rewardPurpose,
-          claimedField,
-          {
-            referenceNowMs,
-            requestStartedAtMs,
-          }
-        );
-
-      if (reward) {
-        candidates.push(
-          reward
-        );
-      }
-    }
+  return (
+    b.transactionId.localeCompare(
+      a.transactionId
+    )
   );
+}
 
-  if (
-    candidates.length ===
-    0
-  ) {
-    return null;
-  }
+);
 
-  candidates.sort(
-    (a, b) => {
-      if (
-        b.rewardTimestampMs !==
-        a.rewardTimestampMs
-      ) {
-        return (
-          b.rewardTimestampMs -
-          a.rewardTimestampMs
-        );
-      }
-
-      if (
-        b.createdAtMs !==
-        a.createdAtMs
-      ) {
-        return (
-          b.createdAtMs -
-          a.createdAtMs
-        );
-      }
-
-      return (
-        b.transactionId.localeCompare(
-          a.transactionId
-        )
-      );
-    }
-  );
-
-  return candidates[0];
+return candidates[0];
 }
 
 // ============================================================
@@ -844,86 +877,87 @@ async function findVerifiedAdMobReward(
 // ============================================================
 
 function sleep(
-  milliseconds
+milliseconds
 ) {
-  return new Promise(
-    (resolve) => {
-      setTimeout(
-        resolve,
-        milliseconds
-      );
-    }
-  );
+return new Promise(
+(resolve) => {
+setTimeout(
+resolve,
+milliseconds
+);
+}
+);
 }
 
 async function waitForVerifiedAdMobReward(
-  uid,
-  rewardPurpose,
-  claimedField,
-  options = {}
+uid,
+rewardPurpose,
+claimedField,
+options = {}
 ) {
-  const startedAt =
-    Date.now();
+const startedAt =
+Date.now();
 
-  const requestStartedAtMs =
-    getSafePositiveNumber(
-      options.requestStartedAtMs,
-      startedAt
-    );
+const requestStartedAtMs =
+getSafePositiveNumber(
+options.requestStartedAtMs,
+startedAt
+);
 
-  const transactionId =
-    validateAdMobTransactionId(
-      options.transactionId
-    );
+const transactionId =
+validateAdMobTransactionId(
+options.transactionId
+);
 
-  while (
-    Date.now() -
-      startedAt <
-    ADMOB_SSV_WAIT_TIMEOUT_MS
-  ) {
-    const nowMs =
-      Date.now();
+while (
+Date.now() -
+startedAt <
+ADMOB_SSV_WAIT_TIMEOUT_MS
+) {
+const nowMs =
+Date.now();
 
-    const reward =
-      await findVerifiedAdMobReward(
-        uid,
-        rewardPurpose,
-        claimedField,
-        {
-          referenceNowMs:
-            nowMs,
+const reward =
+  await findVerifiedAdMobReward(
+    uid,
+    rewardPurpose,
+    claimedField,
+    {
+      referenceNowMs:
+        nowMs,
 
-          requestStartedAtMs,
+      requestStartedAtMs,
 
-          transactionId,
-        }
-      );
-
-    if (reward) {
-      console.log(
-        "🐱 AdMob SSV reward verified",
-        {
-          uid,
-          rewardPurpose,
-          transactionId:
-            reward.transactionId,
-        }
-      );
-
-      return reward;
+      transactionId,
     }
-
-    await sleep(
-      ADMOB_SSV_POLL_INTERVAL_MS
-    );
-  }
-
-  throw new Error(
-    rewardPurpose ===
-      "mining_start"
-      ? "🐱 AdMob-mainoksen SSV-vahvistusta ei löytynyt ajoissa."
-      : "🐱 Power Boost -mainoksen SSV-vahvistusta ei löytynyt ajoissa."
   );
+
+if (reward) {
+  console.log(
+    "🐱 AdMob SSV reward verified",
+    {
+      uid,
+      rewardPurpose,
+      transactionId:
+        reward.transactionId,
+    }
+  );
+
+  return reward;
+}
+
+await sleep(
+  ADMOB_SSV_POLL_INTERVAL_MS
+);
+
+}
+
+throw new Error(
+rewardPurpose ===
+"mining_start"
+? "🐱 AdMob-mainoksen SSV-vahvistusta ei löytynyt ajoissa."
+: "🐱 Power Boost -mainoksen SSV-vahvistusta ei löytynyt ajoissa."
+);
 }
 
 // ============================================================
@@ -931,37 +965,38 @@ async function waitForVerifiedAdMobReward(
 // ============================================================
 
 function validateVerifiedRewardDocument(
-  rewardSnapshot,
-  uid,
-  rewardPurpose,
-  claimedField,
-  options = {}
+rewardSnapshot,
+uid,
+rewardPurpose,
+claimedField,
+options = {}
 ) {
-  const reward =
-    validateReward(
-      rewardSnapshot,
-      uid,
-      rewardPurpose,
-      claimedField,
-      options
-    );
+const reward =
+validateReward(
+rewardSnapshot,
+uid,
+rewardPurpose,
+claimedField,
+options
+);
 
-  if (!reward) {
-    throw new Error(
-      "🐱 AdMob-palkinnon validointi epäonnistui."
-    );
-  }
+if (!reward) {
+throw new Error(
+"🐱 AdMob-palkinnon validointi epäonnistui."
+);
+}
 
-  return {
-    rewardData:
-      reward.data,
+return {
+rewardData:
+reward.data,
 
-    transactionId:
-      reward.transactionId,
+transactionId:
+  reward.transactionId,
 
-    rewardTimestampMs:
-      reward.rewardTimestampMs,
-  };
+rewardTimestampMs:
+  reward.rewardTimestampMs,
+
+};
 }
 
 // ============================================================
@@ -969,15 +1004,15 @@ function validateVerifiedRewardDocument(
 // ============================================================
 
 async function getVerifiedMiningStartReward(
-  uid,
-  options = {}
+uid,
+options = {}
 ) {
-  return waitForVerifiedAdMobReward(
-    uid,
-    "mining_start",
-    "miningStartClaimed",
-    options
-  );
+return waitForVerifiedAdMobReward(
+uid,
+"mining_start",
+"miningStartClaimed",
+options
+);
 }
 
 // ============================================================
@@ -985,15 +1020,15 @@ async function getVerifiedMiningStartReward(
 // ============================================================
 
 async function getVerifiedPowerBoostReward(
-  uid,
-  options = {}
+uid,
+options = {}
 ) {
-  return waitForVerifiedAdMobReward(
-    uid,
-    "power_boost",
-    "powerBoostClaimed",
-    options
-  );
+return waitForVerifiedAdMobReward(
+uid,
+"power_boost",
+"powerBoostClaimed",
+options
+);
 }
 
 // ============================================================
@@ -1001,42 +1036,43 @@ async function getVerifiedPowerBoostReward(
 // ============================================================
 
 module.exports = {
-  getSafeNumber,
-  getSafeNonNegativeNumber,
-  getSafePositiveNumber,
+getSafeNumber,
+getSafeNonNegativeNumber,
+getSafePositiveNumber,
 
-  validateAdMobTransactionId,
+validateAdMobTransactionId,
 
-  getTimestampMilliseconds,
-  getRewardTimestampMs,
-  getRewardCreatedAtMs,
+getTimestampMilliseconds,
+getRewardTimestampMs,
+getRewardCreatedAtMs,
 
-  getRewardConfiguration,
+getRewardConfiguration,
 
-  validateRewardTransactionId,
-  isRewardTimestampAcceptable,
-  isValidRewardData: (
-    rewardSnapshot,
-    uid,
-    rewardPurpose,
-    claimedField,
-    options = {}
-  ) =>
-    Boolean(
-      validateReward(
-        rewardSnapshot,
-        uid,
-        rewardPurpose,
-        claimedField,
-        options
-      )
-    ),
+validateRewardTransactionId,
+isRewardTimestampAcceptable,
 
-  findVerifiedAdMobReward,
-  waitForVerifiedAdMobReward,
+isValidRewardData: (
+rewardSnapshot,
+uid,
+rewardPurpose,
+claimedField,
+options = {}
+) =>
+Boolean(
+validateReward(
+rewardSnapshot,
+uid,
+rewardPurpose,
+claimedField,
+options
+)
+),
 
-  validateVerifiedRewardDocument,
+findVerifiedAdMobReward,
+waitForVerifiedAdMobReward,
 
-  getVerifiedMiningStartReward,
-  getVerifiedPowerBoostReward,
+validateVerifiedRewardDocument,
+
+getVerifiedMiningStartReward,
+getVerifiedPowerBoostReward,
 };
