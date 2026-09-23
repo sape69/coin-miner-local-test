@@ -64,10 +64,6 @@ const {
 // ============================================================
 // ⚙️ ADMOB SERVICE
 // ============================================================
-//
-// Keskitetty AdMob-konfiguraatio ja SSV-validointi.
-//
-// ============================================================
 
 const {
   verifyAdMobCallback,
@@ -117,13 +113,6 @@ const VALID_REWARD_PURPOSES =
 // ============================================================
 // 🛡️ CLIENT VALIDATION ERROR CODES
 // ============================================================
-//
-// Näissä tapauksissa callback tai sen allekirjoitettu sisältö
-// on pysyvästi virheellinen.
-//
-// HTTP 200 kuittaa callbackin eikä aiheuta turhaa retryä.
-//
-// ============================================================
 
 const CLIENT_VALIDATION_ERROR_CODES =
   new Set([
@@ -149,14 +138,6 @@ const CLIENT_VALIDATION_ERROR_CODES =
 
 // ============================================================
 // 🔄 SERVER / CONFIG / RETRY ERROR CODES
-// ============================================================
-//
-// Näissä tapauksissa callback voi olla kryptografisesti
-// validi, mutta palvelimessa, Firestoressa, public key
-// -haussa tai konfiguraatiossa on ongelma.
-//
-// HTTP 500 mahdollistaa AdMobin retry-käsittelyn.
-//
 // ============================================================
 
 const SERVER_RETRY_ERROR_CODES =
@@ -219,12 +200,6 @@ function createError(
 // ============================================================
 // 🛡️ VALIDATE UID
 // ============================================================
-//
-// Keskitetty UID-validointi tulee admobService.js:stä.
-//
-// Tämä wrapper pitää adFunctions.js:n API:n vakaana.
-//
-// ============================================================
 
 function validateUid(
   value,
@@ -280,10 +255,6 @@ function validateRewardPurpose(
 // ============================================================
 // 🔐 GET EXPECTED ADMOB CONFIG
 // ============================================================
-//
-// AdMob-konfiguraatio tulee vain admobService.js:stä.
-//
-// ============================================================
 
 function getExpectedAdMobConfig(
   rewardPurpose,
@@ -309,7 +280,9 @@ function validateVerifiedAdData(
   verifiedAd,
 ) {
   if (
-    !verifiedAd
+    !verifiedAd ||
+    typeof verifiedAd !==
+      "object"
   ) {
     throw createError(
       "ADMOB_VERIFIED_DATA_MISSING",
@@ -375,10 +348,32 @@ function validateVerifiedAdData(
   // EXPECTED CONFIG
   // ----------------------------------------------------------
 
-  const expectedAdMob =
-    getExpectedAdMobConfig(
-      rewardPurpose,
+  let expectedAdMob;
+
+  try {
+    expectedAdMob =
+      getExpectedAdMobConfig(
+        rewardPurpose,
+      );
+  } catch (
+    error
+  ) {
+    throw createError(
+      "ADMOB_INVALID_REWARD_CONFIGURATION",
+      "Unable to resolve AdMob reward configuration.",
     );
+  }
+
+  if (
+    !expectedAdMob ||
+    typeof expectedAdMob !==
+      "object"
+  ) {
+    throw createError(
+      "ADMOB_INVALID_REWARD_CONFIGURATION",
+      "AdMob reward configuration is invalid.",
+    );
+  }
 
 
   // ----------------------------------------------------------
@@ -413,8 +408,12 @@ function validateVerifiedAdData(
     !Number.isSafeInteger(
       rewardAmount,
     ) ||
+    rewardAmount <
+      0 ||
     rewardAmount !==
-      expectedAdMob.rewardAmount
+      Number(
+        expectedAdMob.rewardAmount,
+      )
   ) {
     throw createError(
       "ADMOB_INVALID_REWARD_AMOUNT",
@@ -432,11 +431,18 @@ function validateVerifiedAdData(
       verifiedAd.rewardItem,
     );
 
+  const expectedRewardItem =
+    normalizeString(
+      expectedAdMob.rewardItem,
+    );
+
   if (
     rewardItem.length ===
       0 ||
+    expectedRewardItem.length ===
+      0 ||
     rewardItem !==
-      expectedAdMob.rewardItem
+      expectedRewardItem
   ) {
     throw createError(
       "ADMOB_INVALID_REWARD_ITEM",
@@ -454,11 +460,18 @@ function validateVerifiedAdData(
       verifiedAd.adUnit,
     );
 
+  const expectedAdUnit =
+    normalizeString(
+      expectedAdMob.adUnit,
+    );
+
   if (
     adUnit.length ===
       0 ||
+    expectedAdUnit.length ===
+      0 ||
     adUnit !==
-      expectedAdMob.adUnit
+      expectedAdUnit
   ) {
     throw createError(
       "ADMOB_INVALID_AD_UNIT",
@@ -489,11 +502,6 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // TIMESTAMP
   // ----------------------------------------------------------
-  //
-  // Käytetään jälleen admobService.js:n keskitettyä
-  // timestamp-validointia defense-in-depth -tarkistuksena.
-  //
-  // ==========================================================
 
   const timestamp =
     validateServiceTimestamp(
@@ -560,15 +568,6 @@ function validateVerifiedAdData(
 
   // ----------------------------------------------------------
   // CUSTOM DATA
-  // ----------------------------------------------------------
-  //
-  // admobService.js palauttaa custom_data:n jo varmennettuna
-  // ja normalisoituna.
-  //
-  // Odotettu rakenne:
-  //
-  // UID:rewardPurpose
-  //
   // ----------------------------------------------------------
 
   const customData =
@@ -809,11 +808,6 @@ function isSameVerifiedReward(
 // ============================================================
 // 📜 COMPARE STORED AUDIT HISTORY
 // ============================================================
-//
-// Reward-documentin lisäksi myös audit-history pitää vastata
-// varmennettua AdMob-tapahtumaa.
-//
-// ============================================================
 
 function isSameVerifiedHistory(
   existingHistoryData,
@@ -827,19 +821,10 @@ function isSameVerifiedHistory(
   }
 
 
-  // ----------------------------------------------------------
-  // UID
-  // ----------------------------------------------------------
-
   const existingUid =
     normalizeString(
       existingHistoryData.uid,
     );
-
-
-  // ----------------------------------------------------------
-  // BASIC TYPES
-  // ----------------------------------------------------------
 
   const existingType =
     normalizeString(
@@ -916,10 +901,6 @@ function isSameVerifiedHistory(
       existingHistoryData.userId,
     );
 
-
-  // ----------------------------------------------------------
-  // FULL AUDIT MATCH
-  // ----------------------------------------------------------
 
   return (
     existingUid ===
@@ -1480,10 +1461,6 @@ const adMobReward =
 
         // ====================================================
         // 🩺 HEALTH CHECK
-        // ====================================================
-        //
-        // Tyhjä GET ei ole varsinainen SSV callback.
-        //
         // ====================================================
 
         if (
