@@ -936,11 +936,6 @@ function calculateNextDailyClaim(
     };
   }
 
-  // FIX:
-  // The previous version used a quoted template string:
-  // new Date("${today}T00:00:00.000Z")
-  //
-  // That creates a literal string instead of using `today`.
   const yesterday =
     new Date(
       `${today}T00:00:00.000Z`
@@ -1218,11 +1213,6 @@ function getMiningHashRate(
 
 // ============================================================
 // ⛏️ HISTORICAL CYCLE HASH RATE
-// ============================================================
-//
-// NEVER fall back to the current Daily Hash Rate.
-//
-// A historical cycle with an invalid Hash Rate is rejected.
 // ============================================================
 
 function getHistoricalMiningHashRate(data) {
