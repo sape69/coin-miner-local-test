@@ -158,14 +158,19 @@ const AD_COOLDOWN_MS =
 // 📺 ADMOB REWARDED AD UNIT IDS
 // ============================================================
 //
-// These IDs identify the rewarded advertisements shown by
-// the Flutter application.
+// These are the complete AdMob ad unit IDs used by the
+// Flutter application when loading Rewarded Ads.
 //
 // Mining Start:
 // ca-app-pub-1131012057145658/6674097787
 //
 // Power Boost:
 // ca-app-pub-1131012057145658/7225738491
+//
+// IMPORTANT:
+//
+// These values are NOT the same format as the `ad_unit`
+// parameter received in an AdMob SSV callback.
 //
 // ============================================================
 
@@ -179,25 +184,22 @@ const ADMOB_POWER_BOOST_AD_UNIT_ID =
 // 🔐 ADMOB SSV AD UNIT IDS
 // ============================================================
 //
-// These values identify the AdMob ad unit received through
-// the server-side verification callback.
+// AdMob SSV sends the numeric ad unit ID in the `ad_unit`
+// callback parameter.
 //
-// IMPORTANT:
+// Example:
 //
-// AdMob SSV sends the numeric ad unit ID:
+//   ad_unit=6674097787
 //
-//   6674097787
+// NOT:
 //
-// NOT the Flutter rewarded-ad format:
+//   ad_unit=ca-app-pub-1131012057145658/6674097787
 //
-//   ca-app-pub-1131012057145658/6674097787
+// Keep these values separate from the Flutter Rewarded Ad
+// unit IDs above.
 //
-// Keep these values separate from the Flutter rewarded
-// advertisement IDs above.
-//
-// admobRewardService.js uses these SSV IDs when validating
-// the stored and cryptographically verified reward document.
-//
+// Google AdMob SSV documentation specifies that `ad_unit`
+// identifies the AdMob ad unit used for the rewarded ad.
 // ============================================================
 
 const ADMOB_MINING_SSV_AD_UNIT_ID =
