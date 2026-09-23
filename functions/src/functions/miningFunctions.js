@@ -471,27 +471,6 @@ function isValidRewardData(
 // ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
-//
-// IMPORTANT:
-//
-// We query only by uid.
-//
-// We deliberately do not use:
-//
-//   where("rewardPurpose", "==", rewardPurpose)
-//
-// or:
-//
-//   where("rewardPurpose", "==", rewardPurpose)
-//   + where("uid", "==", uid)
-//
-// because rewardPurpose is validated locally after retrieval.
-//
-// This keeps the query simple and avoids introducing a composite
-// index dependency.
-//
-// The returned candidate is always fully validated before use.
-// ============================================================
 
 const ADMOB_REWARD_QUERY_LIMIT = 100;
 
@@ -579,10 +558,6 @@ async function findVerifiedAdMobReward(
     return null;
   }
 
-  // Newest verified reward first.
-  //
-  // When createdAt is unavailable, transactionId provides a
-  // deterministic secondary ordering.
   candidates.sort((a, b) => {
     if (
       b.createdAtMs !==
@@ -2065,9 +2040,6 @@ const getMiningStatus =
                 : "🐱 Stella odottaa seuraavaa louhintaa.",
 
           hashRate:
-            miningHashRate,
-
-          miningHashRate:
             miningHashRate,
 
           miningBalance,
