@@ -306,12 +306,51 @@ function validateTimestamp(
 // ============================================================
 // KEY ID
 // ============================================================
+//
+// IMPORTANT:
+//
+// AdMobin SSV-queryssa key_id tulee yleensä merkkijonona:
+//
+//   key_id=1234567890
+//
+// AdMobin public-key JSON:ssa keyId voi kuitenkin tulla
+// numerona:
+//
+//   "keyId": 1234567890
+//
+// Molemmat muodot pitää hyväksyä.
+//
+// ============================================================
 
 function validateKeyId(
   value,
 ) {
-  const keyId =
-    normalizeString(value);
+  let keyId = "";
+
+  if (
+    typeof value ===
+    "number"
+  ) {
+    if (
+      !Number.isSafeInteger(
+        value,
+      ) ||
+      value < 0
+    ) {
+      return "";
+    }
+
+    keyId =
+      String(value);
+  } else if (
+    typeof value ===
+    "string"
+  ) {
+    keyId =
+      value.trim();
+  } else {
+    return "";
+  }
 
   if (
     !keyId ||
