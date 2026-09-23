@@ -84,14 +84,6 @@ return typeof value ===
 // ============================================================
 // VALIDATE VERIFIED DATA
 // ============================================================
-//
-// This is a second defensive validation layer.
-//
-// admobService.js performs the cryptographic verification.
-// This function verifies that the resulting trusted object
-// still contains exactly the data expected by this function.
-//
-// ============================================================
 
 function validateVerifiedAdData(
 verifiedAd
@@ -108,10 +100,6 @@ throw createError(
 );
 }
 
-// ----------------------------------------------------------
-// UID
-// ----------------------------------------------------------
-
 const uid =
 validateUid(
 verifiedAd.uid
@@ -123,10 +111,6 @@ throw createError(
 "Verified AdMob UID is invalid."
 );
 }
-
-// ----------------------------------------------------------
-// REWARD PURPOSE
-// ----------------------------------------------------------
 
 const rewardPurpose =
 validateRewardPurpose(
@@ -140,10 +124,6 @@ throw createError(
 );
 }
 
-// ----------------------------------------------------------
-// TRANSACTION ID
-// ----------------------------------------------------------
-
 const transactionId =
 validateTransactionId(
 verifiedAd.transactionId
@@ -155,10 +135,6 @@ throw createError(
 "Verified AdMob transaction_id is invalid."
 );
 }
-
-// ----------------------------------------------------------
-// EXPECTED SERVER CONFIGURATION
-// ----------------------------------------------------------
 
 const config =
 getExpectedAdMobConfig(
@@ -175,10 +151,6 @@ throw createError(
 "AdMob reward configuration is invalid."
 );
 }
-
-// ----------------------------------------------------------
-// REWARD AMOUNT
-// ----------------------------------------------------------
 
 const rewardAmount =
 Number(
@@ -206,10 +178,6 @@ throw createError(
 );
 }
 
-// ----------------------------------------------------------
-// REWARD ITEM
-// ----------------------------------------------------------
-
 const rewardItem =
 normalizeString(
 verifiedAd.rewardItem
@@ -231,10 +199,6 @@ throw createError(
 "Verified reward item is invalid."
 );
 }
-
-// ----------------------------------------------------------
-// AD UNIT
-// ----------------------------------------------------------
 
 const adUnit =
 normalizeString(
@@ -258,10 +222,6 @@ throw createError(
 );
 }
 
-// ----------------------------------------------------------
-// AD NETWORK
-// ----------------------------------------------------------
-
 const adNetwork =
 validateAdNetwork(
 verifiedAd.adNetwork
@@ -273,10 +233,6 @@ throw createError(
 "Verified AdMob ad network is invalid."
 );
 }
-
-// ----------------------------------------------------------
-// TIMESTAMP
-// ----------------------------------------------------------
 
 const timestamp =
 validateTimestamp(
@@ -290,10 +246,6 @@ throw createError(
 );
 }
 
-// ----------------------------------------------------------
-// KEY ID
-// ----------------------------------------------------------
-
 const keyId =
 validateKeyId(
 verifiedAd.keyId
@@ -305,10 +257,6 @@ throw createError(
 "Verified AdMob key_id is invalid."
 );
 }
-
-// ----------------------------------------------------------
-// SIGNATURE
-// ----------------------------------------------------------
 
 const signature =
 validateSignature(
@@ -322,15 +270,13 @@ throw createError(
 );
 }
 
-// ----------------------------------------------------------
-// CUSTOM DATA
-// ----------------------------------------------------------
-
 const customData =
 normalizeString(
 verifiedAd.customData
 );
 
+// IMPORTANT:
+// Template literal is required here.
 const expectedCustomData =
 "${uid}:${rewardPurpose}";
 
@@ -343,10 +289,6 @@ throw createError(
 "Verified custom_data does not match."
 );
 }
-
-// ----------------------------------------------------------
-// USER ID
-// ----------------------------------------------------------
 
 let userId = "";
 
@@ -383,51 +325,24 @@ if (
 
 }
 
-// ----------------------------------------------------------
-// NORMALIZED VERIFIED DATA
-// ----------------------------------------------------------
-
 return {
 uid,
-
 rewardPurpose,
-
 transactionId,
-
 rewardAmount,
-
 rewardItem,
-
 adUnit,
-
 adNetwork,
-
 timestamp,
-
 keyId,
-
 signature,
-
 customData,
-
 userId,
-
 };
 }
 
 // ============================================================
 // DUPLICATE CHECK
-// ============================================================
-//
-// A transaction_id may only represent one immutable
-// cryptographically verified AdMob reward.
-//
-// Same transaction_id + identical data:
-// -> safe duplicate
-//
-// Same transaction_id + different data:
-// -> transaction conflict
-//
 // ============================================================
 
 function isSameVerifiedReward(
@@ -516,11 +431,6 @@ normalizeString(
 // ============================================================
 // AUDIT CHECK
 // ============================================================
-//
-// Audit document must describe exactly the same verified
-// AdMob transaction as the authoritative reward document.
-//
-// ============================================================
 
 function isSameVerifiedHistory(
 existing,
@@ -594,8 +504,7 @@ normalizeString(
 
 Number(
   existing.amount
-) ===
-  0 &&
+) === 0 &&
 
 Number(
   existing.timestamp
@@ -627,13 +536,6 @@ normalizeString(
 
 // ============================================================
 // SAVE VERIFIED REWARD
-// ============================================================
-//
-// Authoritative persistence layer.
-//
-// Reward document and audit document are created inside the
-// same Firestore transaction.
-//
 // ============================================================
 
 async function saveVerifiedAdMobReward(
@@ -672,6 +574,8 @@ throw createError(
 );
 }
 
+// IMPORTANT:
+// Template literal is required here.
 const historyRef =
 historyCollection.doc(
 "admob_${data.transactionId}"
@@ -681,9 +585,9 @@ return db.runTransaction(
 async (
 transaction
 ) => {
-// ------------------------------------------------------
+// ----------------------------------------------------
 // ALL READS FIRST
-// ------------------------------------------------------
+// ----------------------------------------------------
 
   const rewardSnapshot =
     await transaction.get(
@@ -695,9 +599,9 @@ transaction
       historyRef
     );
 
-  // ------------------------------------------------------
+  // ----------------------------------------------------
   // EXISTING REWARD
-  // ------------------------------------------------------
+  // ----------------------------------------------------
 
   if (
     rewardSnapshot.exists
@@ -705,10 +609,6 @@ transaction
     const existing =
       rewardSnapshot.data() ||
       {};
-
-    // ----------------------------------------------------
-    // TRANSACTION CONFLICT
-    // ----------------------------------------------------
 
     if (
       !isSameVerifiedReward(
@@ -721,10 +621,6 @@ transaction
         "AdMob transaction_id conflict."
       );
     }
-
-    // ----------------------------------------------------
-    // AUDIT CONSISTENCY
-    // ----------------------------------------------------
 
     if (
       !historySnapshot.exists ||
@@ -739,10 +635,6 @@ transaction
         "AdMob reward and audit history are inconsistent."
       );
     }
-
-    // ----------------------------------------------------
-    // SAFE DUPLICATE
-    // ----------------------------------------------------
 
     console.log(
       "🐱 AdMob duplicate SSV ignored.",
@@ -777,9 +669,9 @@ transaction
     };
   }
 
-  // ------------------------------------------------------
+  // ----------------------------------------------------
   // ORPHAN AUDIT DOCUMENT
-  // ------------------------------------------------------
+  // ----------------------------------------------------
 
   if (
     historySnapshot.exists
@@ -790,9 +682,9 @@ transaction
     );
   }
 
-  // ------------------------------------------------------
+  // ----------------------------------------------------
   // AUTHORITATIVE REWARD DOCUMENT
-  // ------------------------------------------------------
+  // ----------------------------------------------------
 
   transaction.create(
     rewardRef,
@@ -836,10 +728,6 @@ transaction
       userId:
         data.userId,
 
-      // --------------------------------------------------
-      // MINING START CONSUMPTION
-      // --------------------------------------------------
-
       miningClaimed:
         false,
 
@@ -858,10 +746,6 @@ transaction
       miningStartClaimedBy:
         null,
 
-      // --------------------------------------------------
-      // POWER BOOST CONSUMPTION
-      // --------------------------------------------------
-
       powerBoostClaimed:
         false,
 
@@ -874,10 +758,6 @@ transaction
       powerBoostTransactionId:
         null,
 
-      // --------------------------------------------------
-      // GLOBAL CONSUMPTION STATE
-      // --------------------------------------------------
-
       rewardConsumed:
         false,
 
@@ -887,10 +767,6 @@ transaction
       consumedBy:
         null,
 
-      // --------------------------------------------------
-      // SERVER TIMESTAMPS
-      // --------------------------------------------------
-
       createdAt:
         FieldValue.serverTimestamp(),
 
@@ -899,9 +775,9 @@ transaction
     }
   );
 
-  // ------------------------------------------------------
+  // ----------------------------------------------------
   // AUDIT HISTORY
-  // ------------------------------------------------------
+  // ----------------------------------------------------
 
   transaction.create(
     historyRef,
@@ -918,7 +794,6 @@ transaction
           ? "Stella Power Boost Ad Verified 🐱📺⚡"
           : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-      // AdMob reward is NOT an STL balance reward.
       amount:
         0,
 
@@ -966,9 +841,9 @@ transaction
     }
   );
 
-  // ------------------------------------------------------
+  // ----------------------------------------------------
   // NEW VERIFIED REWARD
-  // ------------------------------------------------------
+  // ----------------------------------------------------
 
   return {
     success: true,
@@ -1000,19 +875,6 @@ transaction
 
 // ============================================================
 // ADMOB SSV ENDPOINT
-// ============================================================
-//
-// AdMob Rewarded SSV callback uses GET.
-//
-// Successful processing:
-// HTTP 200
-//
-// Permanent invalid callback:
-// HTTP 200
-//
-// Temporary/internal failure:
-// HTTP 500
-//
 // ============================================================
 
 const adMobReward =
@@ -1108,10 +970,6 @@ false;
 
       return;
     }
-
-    // ----------------------------------------------------
-    // SSV CALLBACK
-    // ----------------------------------------------------
 
     console.log(
       "🐱 AdMob SSV callback received."
