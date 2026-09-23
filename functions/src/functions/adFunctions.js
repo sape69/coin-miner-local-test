@@ -5,23 +5,16 @@
 // ============================================================
 //
 // Vastuu:
-//
-// 📺 Vastaanottaa AdMob Rewarded SSV callbackin
-// 🔐 Varmistaa callbackin admobService.js:n kautta
-// 🆔 Käyttää vain varmennettua UID:tä
-// 🎯 Tunnistaa mining_start / power_boost
-// 💾 Tallentaa varmennetun rewardin admobRewards-kokoelmaan
-// 🛡️ Estää transaction_id:n uudelleenkäytön
+// - Vastaanottaa AdMob Rewarded SSV callbackin
+// - Käyttää admobService.js:n kryptografista varmennusta
+// - Tallentaa varmennetun rewardin admobRewards-kokoelmaan
+// - Estää transaction_id:n uudelleenkäytön
 //
 // EI:
-//
-// ❌ käynnistä louhintaa
-// ❌ aktivoi Power Boostia
-// ❌ lisää STL-saldoa
-// ❌ muuta mining-tilaa
-//
-// Louhinta käyttää myöhemmin tämän tiedoston
-// tallentamaa varmennettua reward-dokumenttia.
+// - käynnistä louhintaa
+// - aktivoi Power Boostia
+// - muuta mining-tilaa
+// - lisää STL-saldoa
 //
 // ============================================================
 
@@ -64,7 +57,7 @@ function normalizeString(value) {
 }
 
 // ============================================================
-// VALIDATE VERIFIED ADMOB DATA
+// VALIDATE VERIFIED DATA
 // ============================================================
 
 function validateVerifiedAdData(verifiedAd) {
@@ -140,7 +133,7 @@ function validateVerifiedAdData(verifiedAd) {
   ) {
     throw createError(
       "ADMOB_INVALID_REWARD_AMOUNT",
-      "Verified reward amount does not match server configuration.",
+      "Verified reward amount is invalid.",
     );
   }
 
@@ -158,7 +151,7 @@ function validateVerifiedAdData(verifiedAd) {
   ) {
     throw createError(
       "ADMOB_INVALID_REWARD_ITEM",
-      "Verified reward item does not match server configuration.",
+      "Verified reward item is invalid.",
     );
   }
 
@@ -176,7 +169,7 @@ function validateVerifiedAdData(verifiedAd) {
   ) {
     throw createError(
       "ADMOB_INVALID_AD_UNIT",
-      "Verified ad unit does not match server configuration.",
+      "Verified ad unit is invalid.",
     );
   }
 
@@ -222,7 +215,7 @@ function validateVerifiedAdData(verifiedAd) {
   if (!keyId || !signature) {
     throw createError(
       "ADMOB_INVALID_SIGNATURE",
-      "Verified AdMob signature data is missing.",
+      "Verified signature data is missing.",
     );
   }
 
@@ -231,19 +224,13 @@ function validateVerifiedAdData(verifiedAd) {
       verifiedAd.customData,
     );
 
-  // IMPORTANT:
-  // custom_data must contain the actual verified UID
-  // and reward purpose, not the literal "${uid}:...".
-  const expectedCustomData =
-    `${uid}:${rewardPurpose}`;
-
   if (
     customData !==
-    expectedCustomData
+    `${uid}:${rewardPurpose}`
   ) {
     throw createError(
       "ADMOB_CUSTOM_DATA_MISMATCH",
-      "Verified custom_data does not match UID and reward purpose.",
+      "Verified custom_data does not match.",
     );
   }
 
@@ -279,7 +266,7 @@ function validateVerifiedAdData(verifiedAd) {
 }
 
 // ============================================================
-// DUPLICATE REWARD CHECK
+// DUPLICATE CHECK
 // ============================================================
 
 function isSameVerifiedReward(
@@ -297,9 +284,7 @@ function isSameVerifiedReward(
       existing.transactionId,
     ) ===
       current.transactionId &&
-    normalizeString(
-      existing.adUnit,
-    ) ===
+    normalizeString(existing.adUnit) ===
       current.adUnit &&
     normalizeString(
       existing.adNetwork,
@@ -329,7 +314,7 @@ function isSameVerifiedReward(
 }
 
 // ============================================================
-// AUDIT HISTORY CHECK
+// AUDIT CHECK
 // ============================================================
 
 function isSameVerifiedHistory(
@@ -367,8 +352,7 @@ function isSameVerifiedHistory(
       existing.rewardItem,
     ) ===
       current.rewardItem &&
-    Number(existing.amount) ===
-      0 &&
+    Number(existing.amount) === 0 &&
     Number(existing.timestamp) ===
       current.timestamp &&
     normalizeString(existing.keyId) ===
@@ -422,26 +406,18 @@ async function saveVerifiedAdMobReward(
   ) {
     throw createError(
       "ADMOB_HISTORY_REFERENCE_ERROR",
-      "Unable to create user history collection.",
+      "Unable to create history collection.",
     );
   }
 
-  // IMPORTANT:
-  // Use the actual transaction ID.
-  const historyDocumentId =
-    `admob_${data.transactionId}`;
-
   const historyRef =
     historyCollection.doc(
-      historyDocumentId,
+      `admob_${data.transactionId}`,
     );
 
   return db.runTransaction(
     async (transaction) => {
-      // ------------------------------------------------------
-      // READS FIRST
-      // ------------------------------------------------------
-
+      // Firestore transaction: all reads first.
       const rewardSnapshot =
         await transaction.get(
           rewardRef,
@@ -453,7 +429,7 @@ async function saveVerifiedAdMobReward(
         );
 
       // ------------------------------------------------------
-      // DUPLICATE SSV
+      // EXISTING REWARD
       // ------------------------------------------------------
 
       if (rewardSnapshot.exists) {
@@ -468,7 +444,7 @@ async function saveVerifiedAdMobReward(
         ) {
           throw createError(
             "ADMOB_TRANSACTION_CONFLICT",
-            "AdMob transaction_id is already associated with different reward data.",
+            "AdMob transaction_id conflict.",
           );
         }
 
@@ -516,7 +492,7 @@ async function saveVerifiedAdMobReward(
       if (historySnapshot.exists) {
         throw createError(
           "ADMOB_AUDIT_CONSISTENCY_ERROR",
-          "AdMob audit history exists without reward document.",
+          "Audit history exists without reward document.",
         );
       }
 
@@ -532,8 +508,7 @@ async function saveVerifiedAdMobReward(
           transactionId:
             data.transactionId,
 
-          rewardType:
-            "admob",
+          rewardType: "admob",
 
           rewardPurpose:
             data.rewardPurpose,
@@ -564,10 +539,6 @@ async function saveVerifiedAdMobReward(
 
           userId:
             data.userId,
-
-          // --------------------------------------------------
-          // CLAIM STATE
-          // --------------------------------------------------
 
           miningClaimed: false,
           miningClaimedAt: null,
@@ -738,7 +709,7 @@ const adMobReward =
         }
 
         // ----------------------------------------------------
-        // VERIFY SSV
+        // SSV VERIFICATION
         // ----------------------------------------------------
 
         console.log(
@@ -763,7 +734,7 @@ const adMobReward =
         ssvVerified = true;
 
         // ----------------------------------------------------
-        // VALIDATE
+        // VALIDATION
         // ----------------------------------------------------
 
         const validatedAd =
@@ -782,9 +753,6 @@ const adMobReward =
 
             rewardPurpose:
               validatedAd.rewardPurpose,
-
-            adUnit:
-              validatedAd.adUnit,
           },
         );
 
@@ -814,8 +782,6 @@ const adMobReward =
           },
         );
 
-        // AdMob tarvitsee onnistuneeseen callbackiin
-        // HTTP 200 -vastauksen.
         res.status(200).json(
           result,
         );
@@ -825,22 +791,15 @@ const adMobReward =
             ? String(error.code)
             : "UNKNOWN";
 
-        const message =
-          error?.message
-            ? String(error.message)
-            : "Unknown AdMob error.";
-
         console.error(
           "❌ AdMob SSV processing failed.",
           {
             code,
-            message,
+            message:
+              error?.message ||
+              "Unknown AdMob error.",
           },
         );
-
-        // ----------------------------------------------------
-        // PERMANENT VALIDATION ERRORS
-        // ----------------------------------------------------
 
         const permanentErrors =
           new Set([
@@ -890,10 +849,6 @@ const adMobReward =
 
           return;
         }
-
-        // ----------------------------------------------------
-        // RETRYABLE SERVER ERROR
-        // ----------------------------------------------------
 
         res.status(500).json({
           success: false,
