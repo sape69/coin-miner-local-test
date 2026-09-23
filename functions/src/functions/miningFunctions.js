@@ -276,28 +276,221 @@ function getRewardConfiguration(rewardPurpose) {
 
 
 // ============================================================
+// 🔐 REWARD TRANSACTION ID CONSISTENCY
+// ============================================================
+
+function validateRewardTransactionId(
+  rewardSnapshot
+) {
+  if (!rewardSnapshot || !rewardSnapshot.exists) {
+    return "";
+  }
+
+  const transactionId =
+    validateAdMobTransactionId(
+      rewardSnapshot.id
+    );
+
+  if (!transactionId) {
+    return "";
+  }
+
+  const rewardData =
+    rewardSnapshot.data() || {};
+
+  if (
+    rewardData.transactionId &&
+    String(
+      rewardData.transactionId
+    ) !== transactionId
+  ) {
+    return "";
+  }
+
+  return transactionId;
+}
+
+
+// ============================================================
+// 🔐 VALIDATE REWARD DATA
+// ============================================================
+
+function isValidRewardData(
+  rewardSnapshot,
+  uid,
+  rewardPurpose,
+  claimedField
+) {
+  const configuration =
+    getRewardConfiguration(
+      rewardPurpose
+    );
+
+  if (!configuration) {
+    return false;
+  }
+
+  if (
+    !rewardSnapshot ||
+    !rewardSnapshot.exists
+  ) {
+    return false;
+  }
+
+  const rewardData =
+    rewardSnapshot.data() || {};
+
+  if (
+    typeof uid !== "string" ||
+    !uid
+  ) {
+    return false;
+  }
+
+  if (
+    rewardData.uid !== uid
+  ) {
+    return false;
+  }
+
+  if (
+    rewardData.rewardType !==
+    "admob"
+  ) {
+    return false;
+  }
+
+  if (
+    rewardData.rewardPurpose !==
+    rewardPurpose
+  ) {
+    return false;
+  }
+
+  if (
+    rewardData.rewardConsumed === true
+  ) {
+    return false;
+  }
+
+  if (
+    rewardData[claimedField] === true
+  ) {
+    return false;
+  }
+
+  if (
+    rewardPurpose === "mining_start" &&
+    (
+      rewardData.miningClaimed === true ||
+      rewardData.miningStartClaimed === true ||
+      rewardData.miningStartClaimedAt
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    rewardPurpose === "power_boost" &&
+    (
+      rewardData.powerBoostClaimed === true ||
+      rewardData.powerBoostClaimedAt
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    typeof rewardData.adUnit !==
+    "string"
+  ) {
+    return false;
+  }
+
+  const adUnit =
+    rewardData.adUnit.trim();
+
+  if (
+    adUnit !==
+      configuration.rewardedAdUnitId &&
+    adUnit !==
+      configuration.ssvAdUnitId
+  ) {
+    return false;
+  }
+
+  if (
+    typeof rewardData.rewardItem !==
+    "string"
+  ) {
+    return false;
+  }
+
+  if (
+    rewardData.rewardItem.trim() !==
+    configuration.rewardItem
+  ) {
+    return false;
+  }
+
+  const rewardAmount =
+    Number(
+      rewardData.rewardAmount
+    );
+
+  if (
+    !Number.isFinite(
+      rewardAmount
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    rewardAmount !==
+    Number(
+      configuration.rewardAmount
+    )
+  ) {
+    return false;
+  }
+
+  const transactionId =
+    validateRewardTransactionId(
+      rewardSnapshot
+    );
+
+  if (!transactionId) {
+    return false;
+  }
+
+  return true;
+}
+
+
+// ============================================================
 // 🔐 FIND VERIFIED ADMOB REWARD
 // ============================================================
 //
 // IMPORTANT:
 //
-// We intentionally query only by uid.
+// We query only by uid.
 //
-// The remaining SSV properties are validated locally.
+// We deliberately do not use:
 //
-// We do NOT use:
-//   where("uid", "==", uid)
 //   where("rewardPurpose", "==", rewardPurpose)
 //
-// because that can require a Firestore composite index.
+// or:
 //
-// IMPORTANT SECURITY RULE:
+//   where("rewardPurpose", "==", rewardPurpose)
+//   + where("uid", "==", uid)
 //
-// The reward is never trusted merely because it exists.
-// rewardPurpose, rewardType, adUnit, rewardItem,
-// rewardAmount, transactionId and consumed state are
-// all validated before use.
+// because rewardPurpose is validated locally after retrieval.
 //
+// This keeps the query simple and avoids introducing a composite
+// index dependency.
+//
+// The returned candidate is always fully validated before use.
 // ============================================================
 
 const ADMOB_REWARD_QUERY_LIMIT = 100;
@@ -346,125 +539,23 @@ async function findVerifiedAdMobReward(
     const rewardData =
       doc.data() || {};
 
-    if (rewardData.uid !== uid) {
-      return;
-    }
-
     if (
-      rewardData.rewardType !==
-      "admob"
-    ) {
-      return;
-    }
-
-    if (
-      rewardData.rewardPurpose !==
-      rewardPurpose
-    ) {
-      return;
-    }
-
-    if (
-      rewardData.rewardConsumed === true
-    ) {
-      return;
-    }
-
-    if (
-      rewardData[claimedField] === true
-    ) {
-      return;
-    }
-
-    if (
-      rewardPurpose === "mining_start" &&
-      (
-        rewardData.miningClaimed === true ||
-        rewardData.miningStartClaimed === true ||
-        rewardData.miningStartClaimedAt
+      !isValidRewardData(
+        doc,
+        uid,
+        rewardPurpose,
+        claimedField
       )
-    ) {
-      return;
-    }
-
-    if (
-      rewardPurpose === "power_boost" &&
-      (
-        rewardData.powerBoostClaimed === true ||
-        rewardData.powerBoostClaimedAt
-      )
-    ) {
-      return;
-    }
-
-    if (
-      typeof rewardData.adUnit !==
-      "string"
-    ) {
-      return;
-    }
-
-    const adUnit =
-      rewardData.adUnit.trim();
-
-    if (
-      adUnit !==
-        configuration.rewardedAdUnitId &&
-      adUnit !==
-        configuration.ssvAdUnitId
-    ) {
-      return;
-    }
-
-    if (
-      typeof rewardData.rewardItem !==
-      "string"
-    ) {
-      return;
-    }
-
-    const rewardItem =
-      rewardData.rewardItem.trim();
-
-    if (
-      rewardItem !==
-      configuration.rewardItem
-    ) {
-      return;
-    }
-
-    const rewardAmount =
-      Number(
-        rewardData.rewardAmount
-      );
-
-    if (
-      !Number.isFinite(
-        rewardAmount
-      ) ||
-      rewardAmount !==
-        Number(
-          configuration.rewardAmount
-        )
     ) {
       return;
     }
 
     const transactionId =
-      validateAdMobTransactionId(
-        doc.id
+      validateRewardTransactionId(
+        doc
       );
 
     if (!transactionId) {
-      return;
-    }
-
-    if (
-      rewardData.transactionId &&
-      String(
-        rewardData.transactionId
-      ) !== transactionId
-    ) {
       return;
     }
 
@@ -488,6 +579,10 @@ async function findVerifiedAdMobReward(
     return null;
   }
 
+  // Newest verified reward first.
+  //
+  // When createdAt is unavailable, transactionId provides a
+  // deterministic secondary ordering.
   candidates.sort((a, b) => {
     if (
       b.createdAtMs !==
@@ -582,7 +677,7 @@ async function waitForVerifiedAdMobReward(
 
 
 // ============================================================
-// 🔐 VALIDATE VERIFIED REWARD
+// 🔐 AUTHORITATIVE REWARD VALIDATION
 // ============================================================
 
 function validateVerifiedRewardDocument(
@@ -613,7 +708,9 @@ function validateVerifiedRewardDocument(
   const rewardData =
     rewardSnapshot.data() || {};
 
-  if (rewardData.uid !== uid) {
+  if (
+    rewardData.uid !== uid
+  ) {
     throw new HttpsError(
       "permission-denied",
       "🐱 AdMob-palkinnon käyttäjä ei täsmää."
@@ -744,8 +841,8 @@ function validateVerifiedRewardDocument(
   }
 
   const transactionId =
-    validateAdMobTransactionId(
-      rewardSnapshot.id
+    validateRewardTransactionId(
+      rewardSnapshot
     );
 
   if (!transactionId) {
@@ -755,19 +852,10 @@ function validateVerifiedRewardDocument(
     );
   }
 
-  if (
-    rewardData.transactionId &&
-    String(
-      rewardData.transactionId
-    ) !== transactionId
-  ) {
-    throw new HttpsError(
-      "failed-precondition",
-      "🐱 AdMob transaction_id ei täsmää."
-    );
-  }
-
-  return rewardData;
+  return {
+    rewardData,
+    transactionId,
+  };
 }
 
 
@@ -1160,12 +1248,9 @@ function getMiningHashRate(
 // ⛏️ HISTORICAL CYCLE HASH RATE
 // ============================================================
 //
-// Historical miningHashRate must NEVER fall back to the
-// current Daily Hash Rate.
+// NEVER fall back to the current Daily Hash Rate.
 //
-// If the stored cycle Hash Rate is invalid, return 0 and
-// refuse to calculate that cycle.
-//
+// A historical cycle with an invalid Hash Rate is rejected.
 // ============================================================
 
 function getHistoricalMiningHashRate(data) {
@@ -2372,6 +2457,14 @@ const claimMining =
                 transactionNow
               );
 
+            // ------------------------------------------------
+            // IMPORTANT:
+            //
+            // If another request already started mining while
+            // this request was waiting for SSV, do NOT consume
+            // the reward.
+            // ------------------------------------------------
+
             if (
               existingStatus.miningActive
             ) {
@@ -2439,12 +2532,16 @@ const claimMining =
             // AUTHORITATIVE SSV VALIDATION
             // ------------------------------------------------
 
-            validateVerifiedRewardDocument(
-              rewardSnapshot,
-              uid,
-              "mining_start",
-              "miningStartClaimed"
-            );
+            const validatedReward =
+              validateVerifiedRewardDocument(
+                rewardSnapshot,
+                uid,
+                "mining_start",
+                "miningStartClaimed"
+              );
+
+            const authoritativeTransactionId =
+              validatedReward.transactionId;
 
             // ------------------------------------------------
             // DAILY HASH RATE
@@ -2624,7 +2721,7 @@ const claimMining =
             );
 
             // ------------------------------------------------
-            // CONSUME MINING START SSV REWARD
+            // CONSUME EXACT MINING START SSV REWARD
             // ------------------------------------------------
 
             transaction.set(
@@ -2801,7 +2898,7 @@ const claimMining =
                   newMiningEndsAt,
 
                 adRewardTransactionId:
-                  transactionId,
+                  authoritativeTransactionId,
 
                 rewardPurpose:
                   "mining_start",
@@ -2869,7 +2966,7 @@ const claimMining =
                 dailyHashRate,
 
               adRewardTransactionId:
-                transactionId,
+                authoritativeTransactionId,
 
               rewardConsumed: true,
 
@@ -3167,12 +3264,16 @@ const powerBoost =
             // AUTHORITATIVE SSV VALIDATION
             // ------------------------------------------------
 
-            validateVerifiedRewardDocument(
-              rewardSnapshot,
-              uid,
-              "power_boost",
-              "powerBoostClaimed"
-            );
+            const validatedReward =
+              validateVerifiedRewardDocument(
+                rewardSnapshot,
+                uid,
+                "power_boost",
+                "powerBoostClaimed"
+              );
+
+            const authoritativeTransactionId =
+              validatedReward.transactionId;
 
             // ------------------------------------------------
             // RECHECK LIMITS
@@ -3299,7 +3400,7 @@ const powerBoost =
                   boostEndsAt,
 
                 powerBoostTransactionId:
-                  transactionId,
+                  authoritativeTransactionId,
 
                 updatedAt:
                   FieldValue.serverTimestamp(),
@@ -3326,7 +3427,7 @@ const powerBoost =
                   uid,
 
                 powerBoostTransactionId:
-                  transactionId,
+                  authoritativeTransactionId,
 
                 consumedAt:
                   FieldValue.serverTimestamp(),
@@ -3362,7 +3463,7 @@ const powerBoost =
                 amount: 0,
 
                 adRewardTransactionId:
-                  transactionId,
+                  authoritativeTransactionId,
 
                 rewardPurpose:
                   "power_boost",
@@ -3461,7 +3562,8 @@ const powerBoost =
               dailyStreak:
                 dailyStatus.streak,
 
-              transactionId,
+              transactionId:
+                authoritativeTransactionId,
 
               rewardConsumed: true,
 
