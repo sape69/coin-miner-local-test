@@ -24,6 +24,7 @@ const {
   DAILY_HASH_RATE_STEP,
   DAILY_HASH_RATE_MAX_DAY,
   MAX_DAILY_HASH_RATE,
+  MINING_DURATION_MS,
   AD_HASH_RATE_BONUS,
   AD_BOOST_DURATION_MS,
   MAX_ADS_PER_DAY,
@@ -627,7 +628,16 @@ function getMaxBoostHistoryEntries() {
     Math.max(
       1,
       Math.ceil(
-        24
+        getSafeNumber(
+          MINING_DURATION_MS,
+          24 * 60 * 60 * 1000
+        ) /
+          (
+            24 *
+            60 *
+            60 *
+            1000
+          )
       )
     );
 
@@ -643,6 +653,16 @@ function getMaxBoostHistoryEntries() {
 
 // ============================================================
 // 📜 GET BOOST HISTORY
+// ============================================================
+//
+// Haetaan vain Power Boost -historiat nykyisen mining-cyclen
+// ajalta.
+//
+// AdMob SSV:tä ei validoida täällä.
+//
+// Tämä funktio luottaa siihen, että ad_reward-historia syntyy
+// vasta onnistuneen serveripuolen AdMob-validoinnin jälkeen.
+//
 // ============================================================
 
 async function getAdBoostHistory(
