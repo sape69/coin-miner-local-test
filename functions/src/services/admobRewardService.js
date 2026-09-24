@@ -50,6 +50,7 @@ const REWARD_MAX_AGE_MS =
 const REWARD_FUTURE_TOLERANCE_MS =
   5 * 60 * 1000;
 
+
 // Flutter voi saada rewarded-ad callbackin ennen
 // kuin AdMob SSV on ehtinyt kirjoittaa reward-dokumentin.
 //
@@ -63,6 +64,7 @@ const REWARD_FUTURE_TOLERANCE_MS =
 
 const SSV_WAIT_TIMEOUT_MS =
   5000;
+
 
 // Exponential backoff:
 //
@@ -210,12 +212,15 @@ function validateUid(
 // TRANSACTION ID VALIDATION
 // ============================================================
 //
-// transaction_id:
+// AdMob transaction_id:
 //
 // - pitää olla string
 // - ei saa olla tyhjä
 // - enintään 256 merkkiä
-// - ei kontrollimerkkejä
+// - vain heksamerkkejä
+//
+// Tämä pidetään yhdenmukaisena
+// admobService.js:n transaction_id-validoinnin kanssa.
 //
 // ============================================================
 
@@ -234,7 +239,7 @@ function validateTransactionId(
   }
 
   if (
-    /[\x00-\x1F\x7F]/.test(
+    !/^[A-Fa-f0-9]+$/.test(
       transactionId,
     )
   ) {
@@ -257,7 +262,7 @@ function validateTransactionId(
 //
 // Tyhjä transaction ID tarkoittaa tässä projektissa,
 // että suoraa reward-dokumenttia ei voida hakea ja
-// palvelun pitää käyttää turvallista fallback-hakua.
+// palvelun pitää käyttää fallback-hakua.
 //
 // Virheellinen EI-TYHJÄ transaction ID hylätään.
 //
@@ -703,8 +708,6 @@ function isRewardAlreadyClaimed(
 // VERIFIED REWARD DOCUMENT VALIDATION
 // ============================================================
 //
-// Tämä on authority-check.
-//
 // Reward hyväksytään vasta kun:
 //
 // 1. dokumentti löytyy
@@ -912,18 +915,10 @@ function validateVerifiedRewardDocument(
   // REQUESTED TRANSACTION ID
   // ----------------------------------------------------------
   //
-  // IMPORTANT:
-  //
   // Empty / null / undefined transaction ID is treated as
   // "not supplied".
   //
   // A real, non-empty transaction ID is always checked.
-  //
-  // This allows miningFunctions.js to safely pass:
-  //
-  // transactionId: ""
-  //
-  // when the Flutter client has not received the ID.
   //
   // ==========================================================
 
@@ -1048,18 +1043,6 @@ async function getVerifiedReward(
   // ----------------------------------------------------------
   // OPTIONAL TRANSACTION ID
   // ----------------------------------------------------------
-  //
-  // IMPORTANT:
-  //
-  // Empty string is NOT treated as an invalid transaction ID.
-  //
-  // This is necessary because Flutter/client code may send:
-  //
-  // transactionId: ""
-  //
-  // before the SSV transaction ID is available.
-  //
-  // ----------------------------------------------------------
 
   const rawTransactionId =
     options.transactionId;
@@ -1137,6 +1120,24 @@ async function getVerifiedReward(
     );
   }
 
+  const referenceNowMs =
+    number(
+      options.referenceNowMs,
+      Date.now(),
+    );
+
+  if (
+    !Number.isFinite(
+      referenceNowMs,
+    ) ||
+    referenceNowMs <= 0
+  ) {
+    throw createError(
+      "ADMOB_REWARD_REFERENCE_TIME_INVALID",
+      "Reward reference time is invalid.",
+    );
+  }
+
   const snapshot =
     await db
       .collection(
@@ -1151,6 +1152,21 @@ async function getVerifiedReward(
         MAX_FALLBACK_REWARD_DOCS,
       )
       .get();
+
+  // ==========================================================
+  // FALLBACK CANDIDATES
+  // ==========================================================
+  //
+  // Tärkeää:
+  //
+  // Vanhentunutta rewardia ei saa käyttää.
+  //
+  // Myös tulevaisuudessa oleva reward hylätään.
+  //
+  // Näin fallback ei voi vahingossa valita vanhaa rewardia
+  // uuden mainosnäytön claimiksi.
+  //
+  // ==========================================================
 
   const candidates =
     snapshot.docs
@@ -1173,19 +1189,76 @@ async function getVerifiedReward(
             data,
           );
 
-        return (
-          data.verified === true &&
-          documentUid ===
-            validatedUid &&
-          documentPurpose ===
-            purpose &&
-          documentTransactionId ===
-            doc.id &&
-          !isRewardAlreadyClaimed(
+        if (
+          data.verified !== true
+        ) {
+          return false;
+        }
+
+        if (
+          documentUid !==
+          validatedUid
+        ) {
+          return false;
+        }
+
+        if (
+          documentPurpose !==
+          purpose
+        ) {
+          return false;
+        }
+
+        if (
+          !documentTransactionId
+        ) {
+          return false;
+        }
+
+        if (
+          documentTransactionId !==
+          doc.id
+        ) {
+          return false;
+        }
+
+        if (
+          isRewardAlreadyClaimed(
             data,
             purpose,
           )
-        );
+        ) {
+          return false;
+        }
+
+        const rewardCreatedAtMs =
+          getRewardCreatedAtMs(
+            data,
+          );
+
+        if (
+          rewardCreatedAtMs <= 0
+        ) {
+          return false;
+        }
+
+        if (
+          rewardCreatedAtMs >
+          referenceNowMs +
+            REWARD_FUTURE_TOLERANCE_MS
+        ) {
+          return false;
+        }
+
+        if (
+          referenceNowMs -
+            rewardCreatedAtMs >
+          REWARD_MAX_AGE_MS
+        ) {
+          return false;
+        }
+
+        return true;
       })
       .sort((a, b) => {
         const aTime =
@@ -1250,11 +1323,7 @@ async function getVerifiedReward(
           purpose,
         ),
         {
-          referenceNowMs:
-            number(
-              options.referenceNowMs,
-              Date.now(),
-            ),
+          referenceNowMs,
 
           transactionId:
             candidateTransactionId,
