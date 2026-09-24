@@ -57,18 +57,16 @@ const REWARD_FUTURE_TOLERANCE_MS =
 // ============================================================
 //
 // SSV-callback voi saapua clientin rewarded callbackin jälkeen.
-// Liian lyhyt odotus aiheuttaa tilanteen, jossa:
 //
-// Ad näkyy onnistuneena
-//        ↓
-// claimMining()
-//        ↓
-// reward-documentia ei vielä ole
-//        ↓
-// claim epäonnistuu
+// Mahdolliset tilanteet:
 //
-// Odotetaan siis riittävän pitkään, mutta EI hyväksytä
-// rewardia ilman verified === true.
+// 1. Dokumenttia ei vielä ole
+// 2. Dokumentti on olemassa, mutta verified !== true
+// 3. Dokumentti on olemassa ja verified === true
+//
+// Vain tapauksessa 3 reward hyväksytään.
+//
+// Tapauksissa 1 ja 2 retry jatkaa odottamista.
 //
 // ============================================================
 
@@ -1010,6 +1008,18 @@ function validateVerifiedRewardDocument(
 //
 // on aina ensisijainen.
 //
+// TÄRKEÄÄ:
+//
+// Dokumentin löytyminen ei vielä tarkoita, että SSV on
+// valmis.
+//
+// Jos:
+//
+// verified !== true
+//
+// palautetaan ADMOB_REWARD_NOT_FOUND, jotta
+// getVerifiedRewardWithRetry() jatkaa odottamista.
+//
 // Fallbackia käytetään vain ilman transaction_id:tä.
 //
 // ============================================================
@@ -1078,12 +1088,41 @@ async function getVerifiedReward(
     const rewardSnapshot =
       await rewardRef.get();
 
+    // --------------------------------------------------------
+    // DOCUMENT DOES NOT EXIST YET
+    // --------------------------------------------------------
+
     if (
       !rewardSnapshot.exists
     ) {
       throw createError(
         "ADMOB_REWARD_NOT_FOUND",
         "Verified AdMob reward was not found yet.",
+      );
+    }
+
+    // --------------------------------------------------------
+    // DOCUMENT EXISTS BUT SSV IS NOT VERIFIED YET
+    // --------------------------------------------------------
+    //
+    // Tämä on tärkeä korjaus.
+    //
+    // AdMob SSV voi olla vielä kesken vaikka dokumentti
+    // olisi jo luotu.
+    //
+    // ÄLÄ lopeta retryä tähän.
+    //
+    // --------------------------------------------------------
+
+    const rewardData =
+      rewardSnapshot.data() || {};
+
+    if (
+      rewardData.verified !== true
+    ) {
+      throw createError(
+        "ADMOB_REWARD_NOT_FOUND",
+        "AdMob reward exists but SSV verification is not ready yet.",
       );
     }
 
@@ -1350,9 +1389,14 @@ async function getVerifiedReward(
 //
 // ADMOB_REWARD_NOT_FOUND
 //
-// Jos reward löytyy mutta:
+// Tämä tarkoittaa nyt kahta normaalia odotustilannetta:
 //
-// - verified puuttuu
+// 1. reward-documentia ei vielä ole
+// 2. reward-document on olemassa, mutta
+//    verified !== true
+//
+// Jos reward löytyy ja sen tiedot ovat virheellisiä:
+//
 // - UID ei täsmää
 // - purpose ei täsmää
 // - transaction ID ei täsmää
