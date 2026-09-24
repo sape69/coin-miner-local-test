@@ -85,8 +85,8 @@ const SSV_MAX_RETRY_DELAY_MS =
 // FALLBACK LIMIT
 // ============================================================
 //
-// Fallbackia käytetään vain silloin, kun client ei toimita
-// transaction_id:tä.
+// Fallbackia käytetään silloin, kun client ei toimita
+// käyttökelpoista transaction_id:tä.
 //
 // Direct transaction_id -haku on aina ensisijainen.
 //
@@ -178,9 +178,6 @@ function sleep(
 //
 // Firebase Auth UID:n tulee olla autentikoidun käyttäjän UID.
 //
-// Tässä projektissa UID:n sallittu muoto on sama kuin
-// admobService.js:n custom_data-validoinnissa.
-//
 // ============================================================
 
 function validateUid(
@@ -245,6 +242,53 @@ function validateTransactionId(
   }
 
   return transactionId;
+}
+
+
+// ============================================================
+// OPTIONAL TRANSACTION ID
+// ============================================================
+//
+// Client voi lähettää:
+//
+// transactionId: ""
+//
+// Tämä EI ole virhe.
+//
+// Tyhjä transaction ID tarkoittaa tässä projektissa,
+// että suoraa reward-dokumenttia ei voida hakea ja
+// palvelun pitää käyttää turvallista fallback-hakua.
+//
+// Virheellinen EI-TYHJÄ transaction ID hylätään.
+//
+// ============================================================
+
+function getOptionalTransactionId(
+  value,
+) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return "";
+  }
+
+  if (
+    typeof value !== "string"
+  ) {
+    return "";
+  }
+
+  const normalized =
+    normalizeString(value);
+
+  if (!normalized) {
+    return "";
+  }
+
+  return validateTransactionId(
+    normalized,
+  );
 }
 
 
@@ -867,17 +911,37 @@ function validateVerifiedRewardDocument(
   // ----------------------------------------------------------
   // REQUESTED TRANSACTION ID
   // ----------------------------------------------------------
+  //
+  // IMPORTANT:
+  //
+  // Empty / null / undefined transaction ID is treated as
+  // "not supplied".
+  //
+  // A real, non-empty transaction ID is always checked.
+  //
+  // This allows miningFunctions.js to safely pass:
+  //
+  // transactionId: ""
+  //
+  // when the Flutter client has not received the ID.
+  //
+  // ==========================================================
 
   const hasRequestedTransactionId =
     options.transactionId !==
       undefined &&
     options.transactionId !==
-      null;
+      null &&
+    normalizeString(
+      options.transactionId,
+    ) !== "";
 
   const requestedTransactionId =
-    validateTransactionId(
-      options.transactionId,
-    );
+    hasRequestedTransactionId
+      ? validateTransactionId(
+          options.transactionId,
+        )
+      : "";
 
   if (
     hasRequestedTransactionId &&
@@ -963,8 +1027,7 @@ function validateVerifiedRewardDocument(
 //
 // on aina ensisijainen.
 //
-// Fallbackia käytetään vain, jos transaction_id:tä
-// ei toimiteta.
+// Fallbackia käytetään, jos transaction_id:tä ei toimiteta.
 //
 // ============================================================
 
@@ -982,19 +1045,43 @@ async function getVerifiedReward(
     );
   }
 
-  const hasTransactionId =
-    options.transactionId !==
+  // ----------------------------------------------------------
+  // OPTIONAL TRANSACTION ID
+  // ----------------------------------------------------------
+  //
+  // IMPORTANT:
+  //
+  // Empty string is NOT treated as an invalid transaction ID.
+  //
+  // This is necessary because Flutter/client code may send:
+  //
+  // transactionId: ""
+  //
+  // before the SSV transaction ID is available.
+  //
+  // ----------------------------------------------------------
+
+  const rawTransactionId =
+    options.transactionId;
+
+  const hasTransactionIdValue =
+    rawTransactionId !==
       undefined &&
-    options.transactionId !==
-      null;
+    rawTransactionId !==
+      null &&
+    normalizeString(
+      rawTransactionId,
+    ) !== "";
 
   const transactionId =
-    validateTransactionId(
-      options.transactionId,
-    );
+    hasTransactionIdValue
+      ? getOptionalTransactionId(
+          rawTransactionId,
+        )
+      : "";
 
   if (
-    hasTransactionId &&
+    hasTransactionIdValue &&
     !transactionId
   ) {
     throw createError(
@@ -1216,8 +1303,6 @@ async function getVerifiedReward(
 // Jos reward löytyy mutta sen sisältö on virheellinen,
 // sitä EI yritetä uudelleen.
 //
-// Retry-väli kasvaa asteittain.
-//
 // ============================================================
 
 async function getVerifiedRewardWithRetry(
@@ -1412,6 +1497,8 @@ module.exports = {
   validateUid,
 
   validateTransactionId,
+
+  getOptionalTransactionId,
 
   validateRewardPurpose,
 
