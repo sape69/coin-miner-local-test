@@ -109,8 +109,7 @@ class HomeAdManager extends ChangeNotifier {
 
   bool get miningAdFlowActive => _miningAdFlowActive;
 
-  bool get powerBoostAdFlowActive =>
-      _powerBoostAdFlowActive;
+  bool get powerBoostAdFlowActive => _powerBoostAdFlowActive;
 
   // ============================================================
   // 🔔 NOTIFY
@@ -126,9 +125,7 @@ class HomeAdManager extends ChangeNotifier {
   // 📺 AD UNIT
   // ============================================================
 
-  String _getAdUnitId(
-    String purpose,
-  ) {
+  String _getAdUnitId(String purpose) {
     if (purpose == powerBoostPurpose) {
       return powerBoostRewardedAdUnitId;
     }
@@ -247,9 +244,7 @@ class HomeAdManager extends ChangeNotifier {
         break;
       }
 
-      await Future<void>.delayed(
-        interval,
-      );
+      await Future<void>.delayed(interval);
     }
 
     final User? finalUser =
@@ -471,6 +466,7 @@ class HomeAdManager extends ChangeNotifier {
               ad.dispose();
 
               _finishFlow(purpose);
+
               _notify();
 
               onAdDismissed?.call(
@@ -642,6 +638,10 @@ class HomeAdManager extends ChangeNotifier {
     required String purpose,
   }) async {
     try {
+      if (_disposed) {
+        return;
+      }
+
       if (purpose == miningStartPurpose) {
         await onMiningStartReward?.call();
       } else if (purpose == powerBoostPurpose) {
@@ -734,6 +734,8 @@ class HomeAdManager extends ChangeNotifier {
 
     _notify();
 
+    RewardedAd? ad;
+
     try {
       final bool ready =
           await waitForRewardedAd(
@@ -768,8 +770,25 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
-      final RewardedAd ad =
-          _rewardedAd!;
+      ad = _rewardedAd;
+
+      if (ad == null) {
+        _setFlowActive(
+          purpose,
+          false,
+        );
+
+        _notify();
+
+        return false;
+      }
+
+      // ========================================================
+      // Tärkeää:
+      // Mainos poistetaan managerin tilasta ennen show()-kutsua.
+      // Näin samaa RewardedAd-instanssia ei voida näyttää
+      // vahingossa toisen kerran.
+      // ========================================================
 
       _clearAdState();
 
@@ -811,10 +830,21 @@ class HomeAdManager extends ChangeNotifier {
         '$purpose | $error',
       );
 
+      ad?.dispose();
+
       _setFlowActive(
         purpose,
         false,
       );
+
+      _resetRewardCallbackState(
+        purpose,
+      );
+
+      _adLoadError =
+          'SHOW_EXCEPTION | '
+          'Purpose: $purpose | '
+          'Error: $error';
 
       _notify();
 
@@ -839,9 +869,7 @@ class HomeAdManager extends ChangeNotifier {
     }
   }
 
-  void _finishFlow(
-    String purpose,
-  ) {
+  void _finishFlow(String purpose) {
     _setFlowActive(
       purpose,
       false,
@@ -879,6 +907,9 @@ class HomeAdManager extends ChangeNotifier {
 
     _miningRewardCallbackStarted = false;
     _powerBoostRewardCallbackStarted = false;
+
+    _miningAdFlowActive = false;
+    _powerBoostAdFlowActive = false;
 
     _notify();
   }
