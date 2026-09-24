@@ -509,7 +509,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLanguageSelector() {
     final String currentLanguage =
         AppLocalizations.supportedLanguages[
-              widget.languageCode,
+              widget.languageCode
             ] ??
             'English';
 
