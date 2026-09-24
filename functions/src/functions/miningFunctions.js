@@ -3,6 +3,25 @@
 // ============================================================
 // 🐱 STELLURIINI - MINING FUNCTIONS
 // ============================================================
+//
+// Stella Mining.
+//
+// IMPORTANT:
+//
+// AdMob reward is NOT an STL token reward.
+//
+// AdMob only authorizes:
+// - Mining Start
+// - Power Boost
+//
+// Mining is calculated from:
+//
+// Hash Rate × STL / Hash / Hour × elapsed time.
+//
+// Power Boost adds temporary Hash Rate to the mining
+// calculation while the boost is active.
+//
+// ============================================================
 
 const {
   onCall,
@@ -263,14 +282,16 @@ function miningHashRate(
     return stored;
   }
 
+  const safeFallback = positive(
+    fallback,
+    DAILY_HASH_RATE_START
+  );
+
   return Math.min(
     MAX_DAILY_HASH_RATE,
     Math.max(
       DAILY_HASH_RATE_START,
-      positive(
-        fallback,
-        DAILY_HASH_RATE_START
-      )
+      safeFallback
     )
   );
 }
@@ -983,6 +1004,10 @@ const getMiningStatus = onCall(
         );
 
       const miningPerHour =
+        rate *
+        MINING_PER_HASH_PER_HOUR;
+
+      const activeMiningPerHour =
         effectiveRate *
         MINING_PER_HASH_PER_HOUR;
 
@@ -1059,9 +1084,9 @@ const getMiningStatus = onCall(
         miningPerSecond:
           miningPerHour / 3600,
 
-        activeMiningPerHour:
-          rate *
-          MINING_PER_HASH_PER_HOUR,
+        // Current effective rate including
+        // active Power Boost.
+        activeMiningPerHour,
 
         dailyClaimed:
           daily.claimedToday,
