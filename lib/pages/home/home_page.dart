@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -698,33 +697,20 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    debugPrint(
-      '🐱 [STELLURIINI] Ad reward callback received.',
-    );
-
     try {
       final HttpsCallable callable =
           _functions.httpsCallable(
         'claimMining',
       );
 
-      debugPrint(
-        '🐱 [STELLURIINI] Calling claimMining...',
-      );
-
       final HttpsCallableResult<dynamic> result =
           await callable.call();
-
-      debugPrint(
-        '🐱 [STELLURIINI] claimMining response: '
-        '${result.data}',
-      );
 
       final dynamic raw = result.data;
 
       if (raw is! Map) {
         throw Exception(
-          'Invalid mining response from claimMining.',
+          'Invalid mining response.',
         );
       }
 
@@ -737,23 +723,8 @@ class _HomePageState extends State<HomePage>
               false;
 
       if (!started) {
-        final String serverMessage =
-            data['message']?.toString().trim() ?? '';
-
-        final String serverCode =
-            data['code']?.toString().trim() ?? '';
-
-        if (serverMessage.isNotEmpty) {
-          throw Exception(
-            serverCode.isNotEmpty
-                ? '$serverCode: $serverMessage'
-                : serverMessage,
-          );
-        }
-
         throw Exception(
-          'claimMining completed without '
-          'confirming that mining started.',
+          'Mining could not be started.',
         );
       }
 
@@ -775,19 +746,7 @@ class _HomePageState extends State<HomePage>
           '🐱 ${_t('miningStarted')}',
         );
       }
-    } catch (e, stackTrace) {
-      debugPrint(
-        '❌ [STELLURIINI] claimMining failed:',
-      );
-
-      debugPrint(
-        _errorText(e),
-      );
-
-      debugPrint(
-        stackTrace.toString(),
-      );
-
+    } catch (e) {
       if (mounted) {
         _showMessage(
           '⚠️ ${_errorText(e)}',
@@ -1716,73 +1675,18 @@ class _HomePageState extends State<HomePage>
 
   String _errorText(Object error) {
     if (error is FirebaseFunctionsException) {
-      final String code =
-          error.code.trim();
+      final String? message =
+          error.message?.trim();
 
-      final String message =
-          error.message?.trim() ?? '';
-
-      final dynamic details =
-          error.details;
-
-      final String detailsText =
-          details == null
-              ? ''
-              : details.toString().trim();
-
-      debugPrint(
-        '❌ [STELLURIINI] FirebaseFunctionsException',
-      );
-
-      debugPrint(
-        'Code: $code',
-      );
-
-      debugPrint(
-        'Message: $message',
-      );
-
-      if (detailsText.isNotEmpty) {
-        debugPrint(
-          'Details: $detailsText',
-        );
+      if (message != null &&
+          message.isNotEmpty) {
+        return message;
       }
 
-      final StringBuffer result =
-          StringBuffer();
-
-      if (code.isNotEmpty) {
-        result.write(code);
-      }
-
-      if (message.isNotEmpty) {
-        if (result.isNotEmpty) {
-          result.write(': ');
-        }
-
-        result.write(message);
-      }
-
-      if (detailsText.isNotEmpty &&
-          detailsText != message) {
-        if (result.isNotEmpty) {
-          result.write(' | ');
-        }
-
-        result.write(
-          'Details: $detailsText',
-        );
-      }
-
-      if (result.isNotEmpty) {
-        return result.toString();
-      }
-
-      return 'Cloud Function failed.';
+      return error.code;
     }
 
-    final String text =
-        error.toString().trim();
+    final String text = error.toString();
 
     if (text.startsWith('Exception: ')) {
       return text.substring(
@@ -1790,11 +1694,7 @@ class _HomePageState extends State<HomePage>
       );
     }
 
-    if (text.isNotEmpty) {
-      return text;
-    }
-
-    return 'Tuntematon virhe.';
+    return text;
   }
 
   // ============================================================
@@ -1861,9 +1761,6 @@ class _HomePageState extends State<HomePage>
           backgroundColor: cardColor,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
-          duration: const Duration(
-            seconds: 8,
-          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
