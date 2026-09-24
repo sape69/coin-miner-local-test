@@ -64,9 +64,15 @@ const REWARD_FUTURE_TOLERANCE_MS =
 const SSV_WAIT_TIMEOUT_MS =
   5000;
 
-// Ensimmäinen retry tehdään nopeasti.
-// Seuraavat retryt kasvavat asteittain,
-// jotta Firestorea ei kysellä turhaan liian usein.
+// Exponential backoff:
+//
+// 250 ms
+// 500 ms
+// 1000 ms
+// 1000 ms
+// ...
+//
+// ============================================================
 
 const SSV_INITIAL_RETRY_DELAY_MS =
   250;
@@ -116,7 +122,9 @@ const VALID_REWARD_PURPOSES =
 // HELPERS
 // ============================================================
 
-function normalizeString(value) {
+function normalizeString(
+  value,
+) {
   return typeof value === "string"
     ? value.trim()
     : "";
@@ -150,7 +158,9 @@ function createError(
 }
 
 
-function sleep(milliseconds) {
+function sleep(
+  milliseconds,
+) {
   return new Promise(
     (resolve) => {
       setTimeout(
@@ -166,15 +176,16 @@ function sleep(milliseconds) {
 // UID VALIDATION
 // ============================================================
 //
-// Firebase Auth UID:n tulee olla autentikoidun käyttäjän
-// UID.
+// Firebase Auth UID:n tulee olla autentikoidun käyttäjän UID.
 //
 // Tässä projektissa UID:n sallittu muoto on sama kuin
 // admobService.js:n custom_data-validoinnissa.
 //
 // ============================================================
 
-function validateUid(value) {
+function validateUid(
+  value,
+) {
   const uid =
     normalizeString(value);
 
@@ -208,10 +219,6 @@ function validateUid(value) {
 // - ei saa olla tyhjä
 // - enintään 256 merkkiä
 // - ei kontrollimerkkejä
-//
-// Transaction ID:tä ei muuteta muotoon toiseksi arvoksi.
-// Trimmaus tehdään vain ulkoisen syötearvon normalisointia
-// varten.
 //
 // ============================================================
 
@@ -273,7 +280,9 @@ function validateRewardPurpose(
 //
 // ============================================================
 
-function timestampMs(value) {
+function timestampMs(
+  value,
+) {
   if (!value) {
     return 0;
   }
@@ -859,13 +868,19 @@ function validateVerifiedRewardDocument(
   // REQUESTED TRANSACTION ID
   // ----------------------------------------------------------
 
+  const hasRequestedTransactionId =
+    options.transactionId !==
+      undefined &&
+    options.transactionId !==
+      null;
+
   const requestedTransactionId =
     validateTransactionId(
       options.transactionId,
     );
 
   if (
-    options.transactionId &&
+    hasRequestedTransactionId &&
     !requestedTransactionId
   ) {
     throw createError(
@@ -915,7 +930,8 @@ function validateVerifiedRewardDocument(
   // ----------------------------------------------------------
 
   return {
-    verified: true,
+    verified:
+      true,
 
     rewardRef:
       rewardSnapshot.ref,
@@ -966,13 +982,19 @@ async function getVerifiedReward(
     );
   }
 
+  const hasTransactionId =
+    options.transactionId !==
+      undefined &&
+    options.transactionId !==
+      null;
+
   const transactionId =
     validateTransactionId(
       options.transactionId,
     );
 
   if (
-    options.transactionId &&
+    hasTransactionId &&
     !transactionId
   ) {
     throw createError(
@@ -1049,11 +1071,29 @@ async function getVerifiedReward(
         const data =
           doc.data() || {};
 
-        return (
-          data.verified === true &&
+        const documentUid =
+          getDocumentUid(
+            data,
+          );
+
+        const documentPurpose =
           getDocumentRewardPurpose(
             data,
-          ) === purpose &&
+          );
+
+        const documentTransactionId =
+          getDocumentTransactionId(
+            data,
+          );
+
+        return (
+          data.verified === true &&
+          documentUid ===
+            validatedUid &&
+          documentPurpose ===
+            purpose &&
+          documentTransactionId ===
+            doc.id &&
           !isRewardAlreadyClaimed(
             data,
             purpose,
@@ -1176,8 +1216,7 @@ async function getVerifiedReward(
 // Jos reward löytyy mutta sen sisältö on virheellinen,
 // sitä EI yritetä uudelleen.
 //
-// Retry-väli kasvaa asteittain, jotta Firestore-kuormitus
-// pysyy pienenä.
+// Retry-väli kasvaa asteittain.
 //
 // ============================================================
 
