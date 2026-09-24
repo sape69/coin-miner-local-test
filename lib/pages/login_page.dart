@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../localization.dart';
 import 'register_page.dart';
@@ -16,9 +17,12 @@ import 'register_page.dart';
 //     ↓
 // HomePage
 //
-// Kielivalinta toimii jo kirjautumissivulla.
-// Ensimmäisellä asennuksella main.dart antaa oletuskieleksi
-// englannin.
+// 🌍 Ensimmäisellä asennuksella oletuskieli = ENGLISH.
+//
+// Käyttäjä voi vaihtaa kielen suoraan kirjautumissivulta.
+// Ensimmäinen asennus tallennetaan SharedPreferencesiin,
+// joten englanti asetetaan automaattisesti vain ensimmäisellä
+// käyttökerralla.
 // ============================================================
 
 class LoginPage extends StatefulWidget {
@@ -36,6 +40,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // ==========================================================
+  // CONSTANTS
+  // ==========================================================
+
+  static const String _firstInstallLanguageKey =
+      'stelluriini_first_install_language_initialized';
+
   // ==========================================================
   // FIREBASE
   // ==========================================================
@@ -66,6 +77,57 @@ class _LoginPageState extends State<LoginPage> {
 
   AppLocalizations get _t =>
       AppLocalizations(widget.languageCode);
+
+  // ==========================================================
+  // INIT
+  // ==========================================================
+
+  @override
+  void initState() {
+    super.initState();
+
+    _initializeFirstInstallLanguage();
+  }
+
+  // ==========================================================
+  // FIRST INSTALL LANGUAGE
+  // ==========================================================
+
+  Future<void> _initializeFirstInstallLanguage() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      final bool initialized =
+          preferences.getBool(
+                _firstInstallLanguageKey,
+              ) ??
+              false;
+
+      if (initialized) {
+        return;
+      }
+
+      // Ensimmäinen asennus:
+      // kirjautumissivu avataan englanniksi.
+      await preferences.setBool(
+        _firstInstallLanguageKey,
+        true,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (widget.languageCode != 'en') {
+        await widget.changeLanguage('en');
+      }
+    } catch (error) {
+      debugPrint(
+        'First install language initialization error: $error',
+      );
+    }
+  }
 
   // ==========================================================
   // DISPOSE
@@ -264,6 +326,10 @@ class _LoginPageState extends State<LoginPage> {
     String languageCode,
   ) async {
     if (_loginLoading || _resetPasswordLoading) {
+      return;
+    }
+
+    if (languageCode == widget.languageCode) {
       return;
     }
 
