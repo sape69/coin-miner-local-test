@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../localization.dart';
 import 'register_page.dart';
@@ -17,12 +16,17 @@ import 'register_page.dart';
 //     ↓
 // HomePage
 //
-// 🌍 Ensimmäisellä asennuksella oletuskieli = ENGLISH.
+// 🌍 KIELI
 //
-// Käyttäjä voi vaihtaa kielen suoraan kirjautumissivulta.
-// Ensimmäinen asennus tallennetaan SharedPreferencesiin,
-// joten englanti asetetaan automaattisesti vain ensimmäisellä
-// käyttökerralla.
+// Ensimmäisen asennuksen oletuskieli määritellään main.dart:ssa.
+// main.dart käyttää oletuksena englantia ('en').
+//
+// LoginPage ei enää hallitse ensimmäisen asennuksen kieltä
+// erikseen. Näin kielijärjestelmässä on vain yksi paikka,
+// joka vastaa tallennetun kielen lataamisesta ja vaihtamisesta.
+//
+// Käyttäjä voi kuitenkin vaihtaa kielen suoraan kirjautumis-
+// sivulta.
 // ============================================================
 
 class LoginPage extends StatefulWidget {
@@ -40,13 +44,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // ==========================================================
-  // CONSTANTS
-  // ==========================================================
-
-  static const String _firstInstallLanguageKey =
-      'stelluriini_first_install_language_initialized';
-
   // ==========================================================
   // FIREBASE
   // ==========================================================
@@ -79,57 +76,6 @@ class _LoginPageState extends State<LoginPage> {
       AppLocalizations(widget.languageCode);
 
   // ==========================================================
-  // INIT
-  // ==========================================================
-
-  @override
-  void initState() {
-    super.initState();
-
-    _initializeFirstInstallLanguage();
-  }
-
-  // ==========================================================
-  // FIRST INSTALL LANGUAGE
-  // ==========================================================
-
-  Future<void> _initializeFirstInstallLanguage() async {
-    try {
-      final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
-
-      final bool initialized =
-          preferences.getBool(
-                _firstInstallLanguageKey,
-              ) ??
-              false;
-
-      if (initialized) {
-        return;
-      }
-
-      // Ensimmäinen asennus:
-      // kirjautumissivu avataan englanniksi.
-      await preferences.setBool(
-        _firstInstallLanguageKey,
-        true,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      if (widget.languageCode != 'en') {
-        await widget.changeLanguage('en');
-      }
-    } catch (error) {
-      debugPrint(
-        'First install language initialization error: $error',
-      );
-    }
-  }
-
-  // ==========================================================
   // DISPOSE
   // ==========================================================
 
@@ -149,11 +95,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final String email =
-        _emailController.text.trim();
-
-    final String password =
-        _passwordController.text;
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       _showMessage(
@@ -216,8 +159,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final String email =
-        _emailController.text.trim();
+    final String email = _emailController.text.trim();
 
     if (email.isEmpty) {
       _showMessage(
