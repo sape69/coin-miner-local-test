@@ -1,27 +1,28 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../localization.dart';
 import '../widgets/cat_avatar.dart';
 
 // ============================================================
-// 🐱 STELLURIINI / REGISTER PAGE
+// 🐱 STELLURIINI REGISTER PAGE
 // ============================================================
 //
-// Firebase Authentication - uuden käyttäjätilin luonti.
+// Firebase Email/Password -tilin luonti.
 //
-// Tämä sivu:
-// - käyttää Stelluriinin Stella-teemaa
-// - käyttää keskitettyä localization.dart-järjestelmää
-// - tukee Firebase Email/Password -rekisteröintiä
-// - pyytää käyttäjänimen
-// - tallentaa käyttäjänimen Firebase Auth displayName -kenttään
-// - tarkistaa salasanan vahvistuksen
-// - käsittelee yleisimmät Firebase Auth -virheet
-// - tukee sovelluksen kielijärjestelmää
-// - tallentaa laitteen muistiin, että tili on luotu
+// Ominaisuudet:
+// - Stella-teema
+// - keskitetty localization
+// - käyttäjänimi
+// - sähköposti
+// - salasana
+// - salasanan vahvistus
+// - Firebase Auth
+// - kielenvaihto
+// - Firebase-virheiden käsittely
 //
+// Ensimmäisen asennuksen oletuskieli on englanti.
+// LoginPage välittää nykyisen kielivalinnan tänne.
 // ============================================================
 
 class RegisterPage extends StatefulWidget {
@@ -31,7 +32,7 @@ class RegisterPage extends StatefulWidget {
 
   const RegisterPage({
     super.key,
-    this.languageCode = 'fi',
+    this.languageCode = 'en',
     this.changeLanguage,
   });
 
@@ -39,11 +40,11 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-// ============================================================
-// STATE
-// ============================================================
-
 class _RegisterPageState extends State<RegisterPage> {
+  // ==========================================================
+  // CONTROLLERS
+  // ==========================================================
+
   final TextEditingController usernameController =
       TextEditingController();
 
@@ -56,10 +57,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController confirmController =
       TextEditingController();
 
+  // ==========================================================
+  // STATE
+  // ==========================================================
+
   bool loading = false;
-
   bool showPassword = false;
-
   bool showConfirmPassword = false;
 
   // ==========================================================
@@ -87,6 +90,9 @@ class _RegisterPageState extends State<RegisterPage> {
   static const Color secondaryTextColor =
       Color(0xFFBDB4D1);
 
+  static const Color inputColor =
+      Color(0xFF18102D);
+
   // ==========================================================
   // 🌍 LOCALIZATION
   // ==========================================================
@@ -97,19 +103,6 @@ class _RegisterPageState extends State<RegisterPage> {
   String _t(String key) {
     return localization.get(key);
   }
-
-  // ==========================================================
-  // 📱 ACCOUNT STATUS
-  // ==========================================================
-  //
-  // Sama avain jota LoginPage käyttää.
-  //
-  // true = laitteella on jo luotu Stelluriini-tili.
-  //
-  // ==========================================================
-
-  static const String _accountCreatedKey =
-      'stelluriini_account_created';
 
   // ==========================================================
   // DISPOSE
@@ -127,16 +120,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ==========================================================
   // 💬 MESSAGE
-  // ==========================================================
-  //
-  // Näyttää näkyvän Stella-tyylisen ilmoituskortin.
-  //
-  // isError = true:
-  //   Virheilmoitus
-  //
-  // isError = false:
-  //   Onnistumisilmoitus
-  //
   // ==========================================================
 
   void _message(
@@ -167,9 +150,6 @@ class _RegisterPageState extends State<RegisterPage> {
           padding: EdgeInsets.zero,
           elevation: 12,
           backgroundColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
           content: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
@@ -222,39 +202,16 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isError
-                            ? 'Stelluriini'
-                            : 'Stelluriini',
-                        style: TextStyle(
-                          color: isError
-                              ? const Color(0xFFFFB0C9)
-                              : goldColor,
-                          fontSize: 15,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        text,
-                        style: const TextStyle(
-                          color: primaryTextColor,
-                          fontSize: 14,
-                          height: 1.35,
-                          fontWeight:
-                              FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      color: primaryTextColor,
+                      fontSize: 14,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
                 IconButton(
                   visualDensity:
                       VisualDensity.compact,
@@ -264,7 +221,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     minWidth: 32,
                     minHeight: 32,
                   ),
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.close_rounded,
                     color: secondaryTextColor,
                     size: 20,
@@ -278,30 +235,6 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       );
-  }
-
-  // ==========================================================
-  // 📱 SAVE ACCOUNT STATUS
-  // ==========================================================
-
-  Future<void> _saveAccountCreatedStatus() async {
-    try {
-      final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
-
-      await preferences.setBool(
-        _accountCreatedKey,
-        true,
-      );
-
-      debugPrint(
-        'Stelluriini account status saved: created',
-      );
-    } catch (error) {
-      debugPrint(
-        'Account status save error: $error',
-      );
-    }
   }
 
   // ==========================================================
@@ -336,19 +269,28 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('loginFillFields'),
       );
-
       return;
     }
 
     // --------------------------------------------------------
-    // USERNAME LENGTH
+    // USERNAME
     // --------------------------------------------------------
 
     if (username.length < 3) {
       _message(
-        'Käyttäjänimen täytyy sisältää vähintään 3 merkkiä.',
+        'Username must contain at least 3 characters.',
       );
+      return;
+    }
 
+    // --------------------------------------------------------
+    // EMAIL
+    // --------------------------------------------------------
+
+    if (!_isValidEmail(email)) {
+      _message(
+        _t('loginInvalidEmail'),
+      );
       return;
     }
 
@@ -360,7 +302,6 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('passwordsDoNotMatch'),
       );
-
       return;
     }
 
@@ -372,7 +313,6 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('passwordTooShort'),
       );
-
       return;
     }
 
@@ -393,30 +333,15 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       // ------------------------------------------------------
-      // SAVE USERNAME TO FIREBASE AUTH PROFILE
+      // SAVE USERNAME
       // ------------------------------------------------------
 
       final User? user = credential.user;
 
       if (user != null) {
         await user.updateDisplayName(username);
-
         await user.reload();
       }
-
-      // ------------------------------------------------------
-      // SAVE ACCOUNT CREATED STATUS
-      // ------------------------------------------------------
-      //
-      // Firebase-tili on luotu onnistuneesti.
-      //
-      // Tallennetaan tieto laitteen SharedPreferences-muistiin,
-      // jotta LoginPage tietää jatkossa, ettei uuden tilin
-      // luomispainiketta tarvitse enää näyttää.
-      //
-      // ------------------------------------------------------
-
-      await _saveAccountCreatedStatus();
 
       if (!mounted) {
         return;
@@ -437,6 +362,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (error) {
+      debugPrint(
+        'Firebase registration error: '
+        '${error.code} - ${error.message}',
+      );
+
       String message;
 
       switch (error.code) {
@@ -483,7 +413,11 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       _message(message);
-    } catch (_) {
+    } catch (error) {
+      debugPrint(
+        'Registration error: $error',
+      );
+
       _message(
         _t('registrationFailed'),
       );
@@ -497,20 +431,32 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
+  // 📧 EMAIL VALIDATION
+  // ==========================================================
+
+  bool _isValidEmail(String email) {
+    final RegExp emailRegex = RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    );
+
+    return emailRegex.hasMatch(email);
+  }
+
+  // ==========================================================
   // 🌍 LANGUAGE
   // ==========================================================
 
   Future<void> _openLanguageDialog() async {
-    final changeLanguage =
+    final Future<void> Function(String)? changeLanguage =
         widget.changeLanguage;
 
-    if (changeLanguage == null) {
+    if (changeLanguage == null || loading) {
       return;
     }
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: cardColor,
           shape: RoundedRectangleBorder(
@@ -530,7 +476,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   .supportedLanguages
                   .entries
                   .map(
-                (entry) {
+                (
+                  MapEntry<String, String> entry,
+                ) {
                   final bool selected =
                       widget.languageCode ==
                           entry.key;
@@ -552,9 +500,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
                                 if (dialogContext
                                     .mounted) {
-                                  Navigator.pop(
+                                  Navigator.of(
                                     dialogContext,
-                                  );
+                                  ).pop();
                                 }
                               },
                         style:
@@ -590,10 +538,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 style: TextStyle(
                                   fontWeight:
                                       selected
-                                          ? FontWeight
-                                              .bold
-                                          : FontWeight
-                                              .normal,
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -619,6 +565,43 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
+  // 🧱 INPUT DECORATION
+  // ==========================================================
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: inputColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: accentColor.withValues(
+            alpha: 0.25,
+          ),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: accentColor,
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
   // 🏠 BUILD
   // ==========================================================
 
@@ -626,10 +609,6 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-
-      // ======================================================
-      // APP BAR
-      // ======================================================
 
       appBar: AppBar(
         backgroundColor: backgroundColor,
@@ -656,15 +635,10 @@ class _RegisterPageState extends State<RegisterPage> {
         ],
       ),
 
-      // ======================================================
-      // BODY
-      // ======================================================
-
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Card(
               color: cardColor,
               elevation: 0,
@@ -673,11 +647,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     BorderRadius.circular(24),
               ),
               child: Padding(
-                padding:
-                    const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(28),
                 child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // ==================================================
                     // 🐱 STELLA
@@ -687,61 +659,43 @@ class _RegisterPageState extends State<RegisterPage> {
                       size: 110,
                     ),
 
-                    const SizedBox(
-                      height: 18,
-                    ),
-
-                    // ==================================================
-                    // APP NAME
-                    // ==================================================
+                    const SizedBox(height: 18),
 
                     const Text(
                       'STELLURIINI',
-                      textAlign:
-                          TextAlign.center,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color:
-                            primaryTextColor,
+                        color: primaryTextColor,
                         fontSize: 28,
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         letterSpacing: 2,
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 6,
-                    ),
+                    const SizedBox(height: 6),
 
                     const Text(
                       'STL',
                       style: TextStyle(
                         color: pinkColor,
                         fontSize: 14,
-                        fontWeight:
-                            FontWeight.w600,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 4,
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 10,
-                    ),
+                    const SizedBox(height: 10),
 
                     Text(
                       _t('createAccount'),
-                      textAlign:
-                          TextAlign.center,
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color:
-                            secondaryTextColor,
+                        color: secondaryTextColor,
                         fontSize: 15,
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 28,
-                    ),
+                    const SizedBox(height: 28),
 
                     // ==================================================
                     // 👤 USERNAME
@@ -750,8 +704,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller:
                           usernameController,
-                      enabled:
-                          !loading,
+                      enabled: !loading,
                       keyboardType:
                           TextInputType.text,
                       textInputAction:
@@ -759,261 +712,96 @@ class _RegisterPageState extends State<RegisterPage> {
                       textCapitalization:
                           TextCapitalization.words,
                       maxLength: 30,
-                      style:
-                          const TextStyle(
-                        color:
-                            primaryTextColor,
+                      style: const TextStyle(
+                        color: primaryTextColor,
                       ),
                       decoration:
-                          InputDecoration(
-                        labelText:
-                            'Käyttäjänimi',
-                        hintText:
-                            'Esimerkiksi Stella',
-                        prefixIcon:
-                            const Icon(
-                          Icons
-                              .person_outline_rounded,
-                        ),
+                          _inputDecoration(
+                        label: 'Username',
+                        icon: Icons
+                            .person_outline_rounded,
+                      ).copyWith(
+                        hintText: 'For example Stella',
                         counterText: '',
-                        filled: true,
-                        fillColor:
-                            const Color(
-                          0xFF18102D,
-                        ),
-                        border:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide.none,
-                        ),
-                        enabledBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide(
-                            color:
-                                accentColor
-                                    .withValues(
-                              alpha: 0.25,
-                            ),
-                          ),
-                        ),
-                        focusedBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              const BorderSide(
-                            color:
-                                accentColor,
-                            width: 1.5,
-                          ),
-                        ),
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
 
                     // ==================================================
-                    // EMAIL
+                    // 📧 EMAIL
                     // ==================================================
 
                     TextField(
                       controller:
                           emailController,
-                      enabled:
-                          !loading,
+                      enabled: !loading,
                       keyboardType:
                           TextInputType.emailAddress,
                       textInputAction:
                           TextInputAction.next,
-                      style:
-                          const TextStyle(
-                        color:
-                            primaryTextColor,
+                      style: const TextStyle(
+                        color: primaryTextColor,
                       ),
                       decoration:
-                          InputDecoration(
-                        labelText:
-                            _t('email'),
-                        prefixIcon:
-                            const Icon(
-                          Icons
-                              .email_outlined,
-                        ),
-                        filled: true,
-                        fillColor:
-                            const Color(
-                          0xFF18102D,
-                        ),
-                        border:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide.none,
-                        ),
-                        enabledBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide(
-                            color:
-                                accentColor
-                                    .withValues(
-                              alpha: 0.25,
-                            ),
-                          ),
-                        ),
-                        focusedBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              const BorderSide(
-                            color:
-                                accentColor,
-                            width: 1.5,
-                          ),
-                        ),
+                          _inputDecoration(
+                        label: _t('email'),
+                        icon: Icons
+                            .email_outlined,
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
 
                     // ==================================================
-                    // PASSWORD
+                    // 🔐 PASSWORD
                     // ==================================================
 
                     TextField(
                       controller:
                           passwordController,
-                      enabled:
-                          !loading,
+                      enabled: !loading,
                       obscureText:
                           !showPassword,
                       textInputAction:
                           TextInputAction.next,
-                      style:
-                          const TextStyle(
-                        color:
-                            primaryTextColor,
+                      style: const TextStyle(
+                        color: primaryTextColor,
                       ),
                       decoration:
-                          InputDecoration(
-                        labelText:
-                            _t('password'),
-                        prefixIcon:
-                            const Icon(
-                          Icons
-                              .lock_outline,
-                        ),
-                        filled: true,
-                        fillColor:
-                            const Color(
-                          0xFF18102D,
-                        ),
-                        border:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide.none,
-                        ),
-                        enabledBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide(
-                            color:
-                                accentColor
-                                    .withValues(
-                              alpha: 0.25,
-                            ),
-                          ),
-                        ),
-                        focusedBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              const BorderSide(
-                            color:
-                                accentColor,
-                            width: 1.5,
-                          ),
-                        ),
-                        suffixIcon:
-                            IconButton(
+                          _inputDecoration(
+                        label: _t('password'),
+                        icon: Icons
+                            .lock_outline,
+                        suffixIcon: IconButton(
                           icon: Icon(
                             showPassword
-                                ? Icons
-                                    .visibility
+                                ? Icons.visibility
                                 : Icons
                                     .visibility_off,
                           ),
-                          onPressed:
-                              loading
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        showPassword =
-                                            !showPassword;
-                                      });
-                                    },
+                          onPressed: loading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    showPassword =
+                                        !showPassword;
+                                  });
+                                },
                         ),
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
 
                     // ==================================================
-                    // CONFIRM PASSWORD
+                    // 🔐 CONFIRM PASSWORD
                     // ==================================================
 
                     TextField(
                       controller:
                           confirmController,
-                      enabled:
-                          !loading,
+                      enabled: !loading,
                       obscureText:
                           !showConfirmPassword,
                       textInputAction:
@@ -1023,100 +811,43 @@ class _RegisterPageState extends State<RegisterPage> {
                           _register();
                         }
                       },
-                      style:
-                          const TextStyle(
-                        color:
-                            primaryTextColor,
+                      style: const TextStyle(
+                        color: primaryTextColor,
                       ),
                       decoration:
-                          InputDecoration(
-                        labelText:
-                            _t(
+                          _inputDecoration(
+                        label: _t(
                           'confirmPassword',
                         ),
-                        prefixIcon:
-                            const Icon(
-                          Icons
-                              .lock_reset_rounded,
-                        ),
-                        filled: true,
-                        fillColor:
-                            const Color(
-                          0xFF18102D,
-                        ),
-                        border:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide.none,
-                        ),
-                        enabledBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide(
-                            color:
-                                accentColor
-                                    .withValues(
-                              alpha: 0.25,
-                            ),
-                          ),
-                        ),
-                        focusedBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              const BorderSide(
-                            color:
-                                accentColor,
-                            width: 1.5,
-                          ),
-                        ),
-                        suffixIcon:
-                            IconButton(
+                        icon: Icons
+                            .lock_reset_rounded,
+                        suffixIcon: IconButton(
                           icon: Icon(
                             showConfirmPassword
-                                ? Icons
-                                    .visibility
+                                ? Icons.visibility
                                 : Icons
                                     .visibility_off,
                           ),
-                          onPressed:
-                              loading
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        showConfirmPassword =
-                                            !showConfirmPassword;
-                                      });
-                                    },
+                          onPressed: loading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    showConfirmPassword =
+                                        !showConfirmPassword;
+                                  });
+                                },
                         ),
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 24,
-                    ),
+                    const SizedBox(height: 24),
 
                     // ==================================================
-                    // CREATE ACCOUNT BUTTON
+                    // CREATE ACCOUNT
                     // ==================================================
 
                     SizedBox(
-                      width:
-                          double.infinity,
+                      width: double.infinity,
                       height: 56,
                       child:
                           ElevatedButton.icon(
@@ -1131,8 +862,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 child:
                                     CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color:
-                                      Colors.white,
+                                  color: Colors.white,
                                 ),
                               )
                             : const Icon(
@@ -1147,8 +877,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               : _t(
                                   'createAccount',
                                 ),
-                          style:
-                              const TextStyle(
+                          style: const TextStyle(
                             fontWeight:
                                 FontWeight.bold,
                             fontSize: 16,
@@ -1157,46 +886,33 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 12,
-                    ),
+                    const SizedBox(height: 12),
 
                     // ==================================================
                     // BACK TO LOGIN
                     // ==================================================
 
                     TextButton.icon(
-                      onPressed:
-                          loading
-                              ? null
-                              : () {
-                                  Navigator.of(
-                                    context,
-                                  ).pop();
-                                },
-                      icon:
-                          const Icon(
-                        Icons
-                            .arrow_back_rounded,
+                      onPressed: loading
+                          ? null
+                          : () {
+                              Navigator.of(
+                                context,
+                              ).pop();
+                            },
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
                       ),
-                      label:
-                          Text(
+                      label: Text(
                         _t('login'),
                       ),
                     ),
 
-                    const SizedBox(
-                      height: 8,
-                    ),
-
-                    // ==================================================
-                    // STELLA FOOTER
-                    // ==================================================
+                    const SizedBox(height: 8),
 
                     const Text(
                       '🐱💜',
-                      style:
-                          TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                       ),
                     ),
