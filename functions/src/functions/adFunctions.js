@@ -57,6 +57,18 @@ const {
 } = require("../utils/userUtils");
 
 // ============================================================
+// CONSTANTS
+// ============================================================
+
+const MAX_QUERY_PARAMETERS = 20;
+
+const MAX_TRANSACTION_ID_BYTES = 1500;
+
+const MAX_USER_ID_BYTES = 1500;
+
+const MAX_CUSTOM_DATA_BYTES = 1500;
+
+// ============================================================
 // HELPERS
 // ============================================================
 
@@ -81,6 +93,180 @@ function normalizeString(
     : "";
 }
 
+function getUtf8ByteLength(
+  value,
+) {
+  return Buffer.byteLength(
+    value,
+    "utf8",
+  );
+}
+
+function isValidFirestoreDocumentId(
+  value,
+  name,
+  maxBytes = MAX_TRANSACTION_ID_BYTES,
+) {
+  const parameterName =
+    normalizeString(name) ||
+    "documentId";
+
+  if (
+    typeof value !==
+    "string"
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} must be a string.`,
+    );
+  }
+
+  if (
+    value.length ===
+    0
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} cannot be empty.`,
+    );
+  }
+
+  if (
+    value.trim().length ===
+    0
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} cannot contain only whitespace.`,
+    );
+  }
+
+  if (
+    value.includes("/")
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} cannot contain "/".`,
+    );
+  }
+
+  if (
+    value === "." ||
+    value === ".."
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} cannot be "." or "..".`,
+    );
+  }
+
+  if (
+    /^__.*__$/.test(value)
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} uses a reserved Firestore document ID.`,
+    );
+  }
+
+  const byteLength =
+    getUtf8ByteLength(
+      value,
+    );
+
+  if (
+    byteLength >
+    maxBytes
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      `${parameterName} exceeds the Firestore document ID size limit.`,
+    );
+  }
+
+  return value;
+}
+
+function validateOptionalUserId(
+  value,
+) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return "";
+  }
+
+  const userId =
+    normalizeString(value);
+
+  if (!userId) {
+    return "";
+  }
+
+  if (
+    getUtf8ByteLength(
+      userId,
+    ) >
+    MAX_USER_ID_BYTES
+  ) {
+    throw createError(
+      "ADMOB_INVALID_UID",
+      "Verified AdMob user_id is too large.",
+    );
+  }
+
+  if (
+    !validateUid(userId)
+  ) {
+    throw createError(
+      "ADMOB_INVALID_UID",
+      "Verified AdMob user_id is invalid.",
+    );
+  }
+
+  return userId;
+}
+
+function validateCustomData(
+  value,
+  expected,
+) {
+  const customData =
+    normalizeString(value);
+
+  if (!customData) {
+    throw createError(
+      "ADMOB_CUSTOM_DATA_MISSING",
+      "Verified AdMob custom_data is missing.",
+    );
+  }
+
+  if (
+    getUtf8ByteLength(
+      customData,
+    ) >
+    MAX_CUSTOM_DATA_BYTES
+  ) {
+    throw createError(
+      "ADMOB_CUSTOM_DATA_INVALID",
+      "Verified AdMob custom_data is too large.",
+    );
+  }
+
+  if (
+    customData !==
+    expected
+  ) {
+    throw createError(
+      "ADMOB_CUSTOM_DATA_MISMATCH",
+      "Verified custom_data does not match.",
+    );
+  }
+
+  return customData;
+}
+
 // ============================================================
 // VALIDATE VERIFIED DATA
 // ============================================================
@@ -92,13 +278,18 @@ function validateVerifiedAdData(
     !verifiedAd ||
     typeof verifiedAd !==
       "object" ||
-    verifiedAd.verified !== true
+    verifiedAd.verified !==
+      true
   ) {
     throw createError(
       "ADMOB_VERIFIED_DATA_MISSING",
       "AdMob data is not cryptographically verified.",
     );
   }
+
+  // ----------------------------------------------------------
+  // UID
+  // ----------------------------------------------------------
 
   const uid =
     validateUid(
@@ -112,6 +303,10 @@ function validateVerifiedAdData(
     );
   }
 
+  // ----------------------------------------------------------
+  // REWARD PURPOSE
+  // ----------------------------------------------------------
+
   const rewardPurpose =
     validateRewardPurpose(
       verifiedAd.rewardPurpose,
@@ -124,17 +319,35 @@ function validateVerifiedAdData(
     );
   }
 
-  const transactionId =
+  // ----------------------------------------------------------
+  // TRANSACTION ID
+  // ----------------------------------------------------------
+
+  const rawTransactionId =
     validateTransactionId(
       verifiedAd.transactionId,
     );
 
-  if (!transactionId) {
+  if (!rawTransactionId) {
     throw createError(
       "ADMOB_INVALID_TRANSACTION_ID",
       "Verified AdMob transaction_id is invalid.",
     );
   }
+
+  // AdMob transaction_id becomes the Firestore document ID.
+  //
+  // Therefore it must satisfy Firestore document ID rules.
+  const transactionId =
+    isValidFirestoreDocumentId(
+      rawTransactionId,
+      "transactionId",
+      MAX_TRANSACTION_ID_BYTES,
+    );
+
+  // ----------------------------------------------------------
+  // EXPECTED CONFIGURATION
+  // ----------------------------------------------------------
 
   const config =
     getExpectedAdMobConfig(
@@ -303,68 +516,46 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // CUSTOM DATA
   // ----------------------------------------------------------
+  //
+  // Flutter sends:
+  //
+  // UID:mining_start
+  //
+  // or:
+  //
+  // UID:power_boost
+  //
+  // The SSV verification service must have already verified
+  // the signed callback before this point.
+  //
+  // ----------------------------------------------------------
 
-  const customData =
-    normalizeString(
-      verifiedAd.customData,
-    );
-
-  // IMPORTANT:
-  // Template literal is required here.
-  //
-  // This must become for example:
-  //
-  // abc123:mining_start
-  //
   const expectedCustomData =
     `${uid}:${rewardPurpose}`;
 
-  if (
-    customData !==
-    expectedCustomData
-  ) {
-    throw createError(
-      "ADMOB_CUSTOM_DATA_MISMATCH",
-      "Verified custom_data does not match.",
+  const customData =
+    validateCustomData(
+      verifiedAd.customData,
+      expectedCustomData,
     );
-  }
 
   // ----------------------------------------------------------
   // USER ID
   // ----------------------------------------------------------
 
-  let userId = "";
+  const userId =
+    validateOptionalUserId(
+      verifiedAd.userId,
+    );
 
   if (
-    verifiedAd.userId !==
-      undefined &&
-    verifiedAd.userId !==
-      null
+    userId &&
+    userId !== uid
   ) {
-    userId =
-      normalizeString(
-        verifiedAd.userId,
-      );
-
-    if (
-      userId &&
-      !validateUid(userId)
-    ) {
-      throw createError(
-        "ADMOB_INVALID_UID",
-        "Verified AdMob user_id is invalid.",
-      );
-    }
-
-    if (
-      userId &&
-      userId !== uid
-    ) {
-      throw createError(
-        "ADMOB_USER_ID_MISMATCH",
-        "AdMob user_id does not match verified UID.",
-      );
-    }
+    throw createError(
+      "ADMOB_USER_ID_MISMATCH",
+      "AdMob user_id does not match verified UID.",
+    );
   }
 
   // ----------------------------------------------------------
@@ -599,13 +790,6 @@ async function saveVerifiedAdMobReward(
       data.transactionId,
     );
 
-  if (!rewardRef) {
-    throw createError(
-      "ADMOB_REWARD_REFERENCE_ERROR",
-      "Unable to create AdMob reward reference.",
-    );
-  }
-
   const historyCollection =
     getHistoryCollection(
       data.uid,
@@ -622,12 +806,47 @@ async function saveVerifiedAdMobReward(
     );
   }
 
-  // transaction_id is the unique
-  // idempotency key.
+  // ----------------------------------------------------------
+  // AUDIT DOCUMENT ID
+  // ----------------------------------------------------------
+  //
+  // transactionId has already been validated as a Firestore
+  // document ID.
+  //
+  // The fixed "admob_" prefix therefore remains safe.
+  //
+  // ----------------------------------------------------------
+
+  const historyDocumentId =
+    `admob_${data.transactionId}`;
+
+  if (
+    getUtf8ByteLength(
+      historyDocumentId,
+    ) >
+    MAX_TRANSACTION_ID_BYTES
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      "AdMob audit document ID is too large.",
+    );
+  }
+
   const historyRef =
     historyCollection.doc(
-      `admob_${data.transactionId}`,
+      historyDocumentId,
     );
+
+  // ----------------------------------------------------------
+  // ATOMIC TRANSACTION
+  // ----------------------------------------------------------
+  //
+  // Both the authoritative reward document and the audit
+  // document are created atomically.
+  //
+  // transaction_id is the idempotency key.
+  //
+  // ----------------------------------------------------------
 
   return db.runTransaction(
     async (
@@ -658,6 +877,7 @@ async function saveVerifiedAdMobReward(
           rewardSnapshot.data() ||
           {};
 
+        // A transaction_id may NEVER represent another reward.
         if (
           !isSameVerifiedReward(
             existing,
@@ -671,25 +891,12 @@ async function saveVerifiedAdMobReward(
         }
 
         // ----------------------------------------------------
-        // REPAIR LEGACY REWARD
-        // ----------------------------------------------------
-        //
-        // Vanhemmassa reward-dokumentissa verified-kenttä
-        // saattoi puuttua tai olla false.
-        //
-        // Tämä SSV on kuitenkin juuri nyt:
-        //
-        // 1. kryptografisesti varmennettu
-        // 2. validoitu
-        // 3. yhdistetty samaan transaction_id:hen
-        //
-        // Siksi vanha dokumentti voidaan turvallisesti
-        // päivittää verified-tilaan.
-        //
+        // EXISTING VERIFIED REWARD
         // ----------------------------------------------------
 
         if (
-          existing.verified !== true
+          existing.verified !==
+          true
         ) {
           transaction.set(
             rewardRef,
@@ -713,11 +920,27 @@ async function saveVerifiedAdMobReward(
         }
 
         // ----------------------------------------------------
-        // AUDIT CONSISTENCY
+        // AUDIT MUST EXIST
+        // ----------------------------------------------------
+        //
+        // If the reward already exists but its audit document
+        // is missing, silently recreating only the audit record
+        // would hide a consistency problem in the database.
+        //
+        // Therefore we fail safely.
+        //
         // ----------------------------------------------------
 
         if (
-          !historySnapshot.exists ||
+          !historySnapshot.exists
+        ) {
+          throw createError(
+            "ADMOB_AUDIT_CONSISTENCY_ERROR",
+            "AdMob reward exists without its audit history.",
+          );
+        }
+
+        if (
           !isSameVerifiedHistory(
             historySnapshot.data() ||
               {},
@@ -743,7 +966,8 @@ async function saveVerifiedAdMobReward(
               data.rewardPurpose,
 
             repairedVerified:
-              existing.verified !== true,
+              existing.verified !==
+              true,
           },
         );
 
@@ -793,17 +1017,6 @@ async function saveVerifiedAdMobReward(
         {
           // --------------------------------------------------
           // VERIFICATION STATE
-          // --------------------------------------------------
-          //
-          // TÄRKEÄ:
-          //
-          // Tämä dokumentti syntyy vain sen jälkeen kun
-          // verifyAdMobCallback() on onnistunut.
-          //
-          // admobRewardService.js vaatii:
-          //
-          // data.verified === true
-          //
           // --------------------------------------------------
 
           verified:
@@ -948,7 +1161,7 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-          // Tämä dokumentti ei anna STL:ää.
+          // AdMob SSV does NOT directly award STL.
           amount:
             0,
 
@@ -991,8 +1204,6 @@ async function saveVerifiedAdMobReward(
           userId:
             data.userId,
 
-          // Audit kertoo myös eksplisiittisesti,
-          // että SSV on varmennettu.
           verified:
             true,
 
@@ -1039,6 +1250,11 @@ async function saveVerifiedAdMobReward(
 
 // ============================================================
 // PERMANENT ERROR CODES
+// ============================================================
+//
+// Näissä tapauksissa AdMob SSV:tä ei pidä käsitellä uudelleen.
+// HTTP 200 estää tarpeettoman uudelleenyrityksen.
+//
 // ============================================================
 
 const PERMANENT_ERROR_CODES =
@@ -1160,14 +1376,27 @@ const adMobReward =
         const query =
           req.query || {};
 
+        const queryKeys =
+          Object.keys(
+            query,
+          );
+
+        if (
+          queryKeys.length >
+          MAX_QUERY_PARAMETERS
+        ) {
+          throw createError(
+            "ADMOB_QUERY_STRING_TOO_LARGE",
+            "AdMob query contains too many parameters.",
+          );
+        }
+
         // ====================================================
         // HEALTH CHECK
         // ====================================================
 
         if (
-          Object.keys(
-            query,
-          ).length ===
+          queryKeys.length ===
           0
         ) {
           res
@@ -1302,14 +1531,6 @@ const adMobReward =
         // ====================================================
         // PERMANENT ERROR
         // ====================================================
-        //
-        // AdMob callbacks should not be retried for
-        // invalid signatures, invalid data or transaction
-        // conflicts.
-        //
-        // We therefore return HTTP 200 for these cases.
-        //
-        // ====================================================
 
         if (
           PERMANENT_ERROR_CODES.has(
@@ -1342,8 +1563,8 @@ const adMobReward =
         // TEMPORARY / INTERNAL ERROR
         // ====================================================
         //
-        // HTTP 500 allows the external caller to retry when
-        // the problem is infrastructure-related.
+        // HTTP 500 antaa ulkoisen palvelun yrittää uudelleen
+        // infrastruktuuri- tai Firestore-ongelman jälkeen.
         //
         // ====================================================
 
