@@ -1381,11 +1381,11 @@ const claimMining =
           typeof request.data
             ?.adMobTransactionId ===
           "string"
-            ? request.data.adMobTransactionId
+            ? request.data.adMobTransactionId.trim()
             : "";
 
         // ------------------------------------------------------
-        // FAST PATH
+        // READ CURRENT USER STATE
         // ------------------------------------------------------
 
         const earlyNow =
@@ -1430,6 +1430,10 @@ const claimMining =
             },
             earlyNow
           );
+
+        // ------------------------------------------------------
+        // ALREADY MINING
+        // ------------------------------------------------------
 
         if (
           earlyStatus.miningActive
@@ -1533,7 +1537,7 @@ const claimMining =
         const transactionId =
           typeof verified?.transactionId ===
           "string"
-            ? verified.transactionId
+            ? verified.transactionId.trim()
             : "";
 
         if (!transactionId) {
@@ -1571,7 +1575,7 @@ const claimMining =
               getUtcDateString(now);
 
             // --------------------------------------------------
-            // INITIAL READS
+            // ALL INITIAL READS FIRST
             // --------------------------------------------------
 
             const userSnapshot =
@@ -1855,14 +1859,7 @@ const claimMining =
                   daily.streak,
 
                 lastDailyDate:
-                  daily.claimedToday
-                    ? (
-                        typeof data.lastDailyDate ===
-                        "string"
-                          ? data.lastDailyDate
-                          : today
-                      )
-                    : today,
+                  today,
 
                 miningHashRate:
                   rate,
@@ -2077,11 +2074,6 @@ const claimMining =
               }
             );
 
-            const dailyMessage =
-              daily.claimedToday
-                ? "🐱⛏️ Stella jatkaa tämän päivän louhintaa!"
-                : `🐱✨ Stella sai päivän ${daily.streak} Daily Hash Raten: ${rate.toFixed(4)} HR!`;
-
             return {
               success: true,
 
@@ -2147,8 +2139,8 @@ const claimMining =
 
               message:
                 completedPrevious
-                  ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! ${dailyMessage}`
-                  : dailyMessage,
+                  ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivän Hash Rate: ${rate.toFixed(4)} HR.`
+                  : `🐱✨ Stella aloitti louhinnan! Päivän Hash Rate: ${rate.toFixed(4)} HR.`,
             };
           }
         );
@@ -2201,7 +2193,7 @@ const powerBoost =
           typeof request.data
             ?.adMobTransactionId ===
           "string"
-            ? request.data.adMobTransactionId
+            ? request.data.adMobTransactionId.trim()
             : "";
 
         // ------------------------------------------------------
@@ -2314,7 +2306,7 @@ const powerBoost =
         const transactionId =
           typeof verified?.transactionId ===
           "string"
-            ? verified.transactionId
+            ? verified.transactionId.trim()
             : "";
 
         if (!transactionId) {
@@ -2352,7 +2344,7 @@ const powerBoost =
               getUtcDateString(now);
 
             // --------------------------------------------------
-            // INITIAL READS
+            // ALL INITIAL READS FIRST
             // --------------------------------------------------
 
             const userSnapshot =
