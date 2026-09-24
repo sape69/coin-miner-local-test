@@ -53,9 +53,27 @@ const REWARD_FUTURE_TOLERANCE_MS =
 // verified === true
 //
 // ============================================================
+// SSV WAIT
+// ============================================================
+//
+// SSV-callback voi saapua clientin rewarded callbackin jälkeen.
+// Liian lyhyt odotus aiheuttaa tilanteen, jossa:
+//
+// Ad näkyy onnistuneena
+//        ↓
+// claimMining()
+//        ↓
+// reward-documentia ei vielä ole
+//        ↓
+// claim epäonnistuu
+//
+// Odotetaan siis riittävän pitkään, mutta EI hyväksytä
+// rewardia ilman verified === true.
+//
+// ============================================================
 
 const SSV_WAIT_TIMEOUT_MS =
-  5000;
+  15000;
 
 // Exponential backoff:
 //
@@ -119,7 +137,10 @@ function number(value, fallback = 0) {
     : fallback;
 }
 
-function createError(code, message) {
+function createError(
+  code,
+  message,
+) {
   const error =
     new Error(message);
 
@@ -168,10 +189,10 @@ function validateUid(value) {
 // TRANSACTION ID VALIDATION
 // ============================================================
 //
-// AdMob transaction_id:
+// AdMob dokumentoi transaction_id:n:
 //
-// - yksilöllinen reward-tunniste
-// - käytetään myös Firestore reward-dokumentin ID:nä
+// - yksilölliseksi reward-tunnisteeksi
+// - hex-koodatuksi arvoksi
 //
 // ============================================================
 
@@ -202,7 +223,9 @@ function validateTransactionId(value) {
 // OPTIONAL TRANSACTION ID
 // ============================================================
 
-function getOptionalTransactionId(value) {
+function getOptionalTransactionId(
+  value,
+) {
   if (
     value === undefined ||
     value === null
@@ -232,7 +255,9 @@ function getOptionalTransactionId(value) {
 // REWARD PURPOSE
 // ============================================================
 
-function validateRewardPurpose(value) {
+function validateRewardPurpose(
+  value,
+) {
   const purpose =
     normalizeString(value);
 
@@ -398,7 +423,9 @@ function timestampMs(value) {
 //
 // ============================================================
 
-function getRewardCreatedAtMs(data) {
+function getRewardCreatedAtMs(
+  data,
+) {
   if (
     !data ||
     typeof data !== "object"
@@ -513,7 +540,9 @@ function validateRewardTiming(
 // DOCUMENT TRANSACTION ID
 // ============================================================
 
-function getDocumentTransactionId(data) {
+function getDocumentTransactionId(
+  data,
+) {
   if (
     !data ||
     typeof data !== "object"
@@ -550,7 +579,9 @@ function getDocumentTransactionId(data) {
 // DOCUMENT REWARD PURPOSE
 // ============================================================
 
-function getDocumentRewardPurpose(data) {
+function getDocumentRewardPurpose(
+  data,
+) {
   if (
     !data ||
     typeof data !== "object"
@@ -1315,11 +1346,19 @@ async function getVerifiedReward(
 //
 // Flutter voi saada rewarded-ad callbackin ennen SSV:tä.
 //
-// Retry tehdään vain:
+// Retry tehdään VAIN:
 //
 // ADMOB_REWARD_NOT_FOUND
 //
-// Jos reward löytyy mutta sen sisältö on virheellinen,
+// Jos reward löytyy mutta:
+//
+// - verified puuttuu
+// - UID ei täsmää
+// - purpose ei täsmää
+// - transaction ID ei täsmää
+// - reward on vanhentunut
+// - reward on jo käytetty
+//
 // sitä EI yritetä uudelleen.
 //
 // ============================================================
