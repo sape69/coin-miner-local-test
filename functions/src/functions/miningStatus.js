@@ -117,8 +117,8 @@ const getMiningStatus = onCall(
       // ⛏️ MINING HASH RATE
       // ------------------------------------------------------
       //
-      // Nykyinen cycle käyttää aina oman cyclensa
-      // Hash Ratea.
+      // Käynnissä oleva mining cycle käyttää aina
+      // oman cyclensa Hash Ratea.
       //
       // Uusi Daily Hash Rate ei saa muuttaa
       // jo käynnissä olevaa cycleä.
@@ -199,13 +199,21 @@ const getMiningStatus = onCall(
       // ------------------------------------------------------
       // 📈 MINING RATE
       // ------------------------------------------------------
+      //
+      // miningPerHour:
+      // Normaali aktiivisen mining cyclen tuotantonopeus.
+      //
+      // activeMiningPerHour:
+      // Todellinen tuotantonopeus Power Boost huomioiden.
+      //
+      // ------------------------------------------------------
 
       const miningPerHour =
-        effectiveHashRate *
+        miningHashRate *
         MINING_PER_HASH_PER_HOUR;
 
       const activeMiningPerHour =
-        miningHashRate *
+        effectiveHashRate *
         MINING_PER_HASH_PER_HOUR;
 
       // ------------------------------------------------------
@@ -241,7 +249,9 @@ const getMiningStatus = onCall(
         // ----------------------------------------------------
 
         hashRate: miningHashRate,
+
         miningHashRate,
+
         effectiveHashRate,
 
         dailyHashRate:
