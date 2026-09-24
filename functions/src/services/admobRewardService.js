@@ -41,35 +41,28 @@ const {
 // CONFIG
 // ============================================================
 
-// Kuinka kauan ennen requestia luotu reward voidaan
-// käyttää.
+// Kuinka vanha varmennettu AdMob reward saa enintään olla.
 //
-// AdMob SSV voi tulla ennen kuin client ehtii kutsua
-// Cloud Functionia, joten emme vaadi rewardia syntymään
-// vasta requestin jälkeen.
+// Tärkeää:
 //
-// Tämä arvo sallii pienen kellovaihtelun sekä normaalin
-// viiveen.
+// AdMob SSV -callback voi saapua viiveellä.
+//
+// Siksi emme sido rewardia Cloud Functionin
+// requestStartedAt-aikaan.
+//
+// Vanheneminen perustuu ensisijaisesti AdMobin
+// omaan timestamp-arvoon.
 // ============================================================
 
 const REWARD_MAX_AGE_MS =
   24 * 60 * 60 * 1000;
 
-// Kuinka paljon tulevaisuuteen timestamp voi olla.
+// Kuinka paljon tulevaisuuteen AdMob timestamp
+// saa poiketa palvelimen nykyajasta.
 //
-// Firestore-palvelimen timestampia käytettäessä tämä on
-// lähinnä suoja virheellisiä dokumentteja vastaan.
 // ============================================================
 
 const REWARD_FUTURE_TOLERANCE_MS =
-  5 * 60 * 1000;
-
-// Requestin ja rewardin väliselle aikaleimalle sallittu
-// enimmäispoikkeama.
-//
-// ============================================================
-
-const REQUEST_TIME_TOLERANCE_MS =
   5 * 60 * 1000;
 
 // ============================================================
@@ -92,7 +85,10 @@ function normalizeString(value) {
     : "";
 }
 
-function number(value, fallback = 0) {
+function number(
+  value,
+  fallback = 0,
+) {
   const result =
     Number(value);
 
@@ -212,8 +208,8 @@ function validateUid(value) {
 // TRANSACTION ID
 // ============================================================
 //
-// AdMob transaction_id on oltava sama kuin SSV:n
-// varmennetussa reward-dokumentissa.
+// AdMob käyttää transaction_id-arvossa
+// yksilöllistä heksadesimaalista tunnistetta.
 //
 // ============================================================
 
@@ -255,26 +251,65 @@ function validateRewardPurpose(
 }
 
 // ============================================================
-// REWARD CREATED TIME
+// REWARD TIMESTAMP
+// ============================================================
+//
+// TÄRKEÄÄ:
+//
+// AdMob SSV:n timestamp kertoo milloin käyttäjä
+// ansaitsi rewardin.
+//
+// Tätä käytetään rewardin varsinaisena aikaleimana.
+//
+// Firestore:
+//
+// verifiedAt
+// ssvVerifiedAt
+// createdAt
+//
+// ovat palvelimen omia aikaleimoja eivätkä korvaa
+// AdMobin timestampia.
+//
 // ============================================================
 
-function getRewardCreatedAtMs(
+function getAdMobTimestampMs(
   data,
 ) {
-  const candidates = [
-    data.verifiedAt,
-    data.ssvVerifiedAt,
-    data.createdAt,
-    data.timestamp,
+  if (!data) {
+    return 0;
+  }
+
+  const timestamp =
+    timestampMs(
+      data.timestamp,
+    );
+
+  if (
+    timestamp > 0
+  ) {
+    return timestamp;
+  }
+
+  // Joissakin vanhoissa dokumenteissa timestamp
+  // voi olla tallennettu vaihtoehtoisella nimellä.
+  //
+  // Näitä käytetään vain fallbackina.
+
+  const fallbackCandidates = [
+    data.adMobTimestamp,
+    data.ssvTimestamp,
   ];
 
   for (
-    const value of candidates
+    const value of
+    fallbackCandidates
   ) {
     const milliseconds =
       timestampMs(value);
 
-    if (milliseconds > 0) {
+    if (
+      milliseconds > 0
+    ) {
       return milliseconds;
     }
   }
@@ -283,62 +318,23 @@ function getRewardCreatedAtMs(
 }
 
 // ============================================================
-// REQUEST TIME VALIDATION
-// ============================================================
-
-function validateRequestTiming(
-  data,
-  options,
-) {
-  const referenceNowMs =
-    number(
-      options?.referenceNowMs,
-      Date.now(),
-    );
-
-  const requestStartedAtMs =
-    number(
-      options?.requestStartedAtMs,
-      0,
-    );
-
-  if (
-    requestStartedAtMs <= 0
-  ) {
-    return;
-  }
-
-  const futureLimit =
-    referenceNowMs +
-    REQUEST_TIME_TOLERANCE_MS;
-
-  if (
-    requestStartedAtMs >
-    futureLimit
-  ) {
-    throw createError(
-      "ADMOB_REWARD_REQUEST_TIME_INVALID",
-      "AdMob reward request timestamp is invalid.",
-    );
-  }
-
-  const age =
-    referenceNowMs -
-    requestStartedAtMs;
-
-  if (
-    age >
-    REWARD_MAX_AGE_MS
-  ) {
-    throw createError(
-      "ADMOB_REWARD_REQUEST_EXPIRED",
-      "AdMob reward request has expired.",
-    );
-  }
-}
-
-// ============================================================
 // REWARD TIMING VALIDATION
+// ============================================================
+//
+// Emme vertaa rewardin saapumisaikaa Cloud Functionin
+// requestStartedAt-aikaan.
+//
+// Syy:
+//
+// AdMob SSV callback voi saapua:
+//
+// 1. ennen claim-requestia
+// 2. claim-requestin jälkeen
+// 3. huomattavalla viiveellä
+//
+// Siksi requestStartedAt ei saa tehdä aidosta SSV:
+//stä invalidia.
+//
 // ============================================================
 
 function validateRewardTiming(
@@ -351,13 +347,22 @@ function validateRewardTiming(
       Date.now(),
     );
 
-  const rewardCreatedAtMs =
-    getRewardCreatedAtMs(
+  if (
+    referenceNowMs <= 0
+  ) {
+    throw createError(
+      "ADMOB_REWARD_REFERENCE_TIME_INVALID",
+      "AdMob reward reference time is invalid.",
+    );
+  }
+
+  const rewardTimestampMs =
+    getAdMobTimestampMs(
       data,
     );
 
   if (
-    rewardCreatedAtMs <= 0
+    rewardTimestampMs <= 0
   ) {
     throw createError(
       "ADMOB_REWARD_TIMESTAMP_MISSING",
@@ -365,8 +370,12 @@ function validateRewardTiming(
     );
   }
 
+  // ----------------------------------------------------------
+  // FUTURE PROTECTION
+  // ----------------------------------------------------------
+
   if (
-    rewardCreatedAtMs >
+    rewardTimestampMs >
     referenceNowMs +
       REWARD_FUTURE_TOLERANCE_MS
   ) {
@@ -376,9 +385,13 @@ function validateRewardTiming(
     );
   }
 
+  // ----------------------------------------------------------
+  // AGE PROTECTION
+  // ----------------------------------------------------------
+
   const age =
     referenceNowMs -
-    rewardCreatedAtMs;
+    rewardTimestampMs;
 
   if (
     age >
@@ -387,24 +400,6 @@ function validateRewardTiming(
     throw createError(
       "ADMOB_REWARD_EXPIRED",
       "AdMob reward has expired.",
-    );
-  }
-
-  const requestStartedAtMs =
-    number(
-      options?.requestStartedAtMs,
-      0,
-    );
-
-  if (
-    requestStartedAtMs > 0 &&
-    rewardCreatedAtMs >
-      requestStartedAtMs +
-        REQUEST_TIME_TOLERANCE_MS
-  ) {
-    throw createError(
-      "ADMOB_REWARD_TIMING_INVALID",
-      "AdMob reward was created after the reward request.",
     );
   }
 }
@@ -424,7 +419,8 @@ function getDocumentTransactionId(
   ];
 
   for (
-    const value of candidates
+    const value of
+    candidates
   ) {
     const transactionId =
       validateTransactionId(
@@ -452,7 +448,8 @@ function getDocumentRewardPurpose(
   ];
 
   for (
-    const value of candidates
+    const value of
+    candidates
   ) {
     const purpose =
       validateRewardPurpose(
@@ -481,7 +478,8 @@ function getDocumentUid(
   ];
 
   for (
-    const value of candidates
+    const value of
+    candidates
   ) {
     const uid =
       validateUid(value);
@@ -572,6 +570,10 @@ function validateVerifiedRewardDocument(
   const data =
     rewardSnapshot.data() || {};
 
+  // ----------------------------------------------------------
+  // AUTHENTICATED UID
+  // ----------------------------------------------------------
+
   const validatedUid =
     validateUid(uid);
 
@@ -581,6 +583,10 @@ function validateVerifiedRewardDocument(
       "UID is invalid.",
     );
   }
+
+  // ----------------------------------------------------------
+  // REWARD PURPOSE
+  // ----------------------------------------------------------
 
   const purpose =
     validateRewardPurpose(
@@ -719,11 +725,6 @@ function validateVerifiedRewardDocument(
   // TIMING
   // ----------------------------------------------------------
 
-  validateRequestTiming(
-    data,
-    options,
-  );
-
   validateRewardTiming(
     data,
     options,
@@ -813,10 +814,16 @@ async function getVerifiedReward(
     );
   }
 
-  // get() ei muuta mitään Firestoressa.
+  // ----------------------------------------------------------
+  // READ ONLY
+  // ----------------------------------------------------------
   //
-  // Varsinainen claim tapahtuu miningFunctions.js:n
-  // Firestore transactionissa.
+  // Tämä service ei muuta Firestorea.
+  //
+  // Varsinainen claim tehdään myöhemmin Firestore
+  // transactionissa miningFunctions.js:n / muun
+  // claim-logiikan kautta.
+  //
   const rewardSnapshot =
     await rewardRef.get();
 
@@ -852,12 +859,6 @@ async function getVerifiedMiningStartReward(
           number(
             options.referenceNowMs,
             Date.now(),
-          ),
-
-        requestStartedAtMs:
-          number(
-            options.requestStartedAtMs,
-            0,
           ),
 
         transactionId:
@@ -901,12 +902,6 @@ async function getVerifiedPowerBoostReward(
           number(
             options.referenceNowMs,
             Date.now(),
-          ),
-
-        requestStartedAtMs:
-          number(
-            options.requestStartedAtMs,
-            0,
           ),
 
         transactionId:
