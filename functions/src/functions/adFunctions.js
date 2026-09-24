@@ -675,10 +675,16 @@ async function saveVerifiedAdMobReward(
         // ----------------------------------------------------
         //
         // Vanhemmassa reward-dokumentissa verified-kenttä
-        // saattoi puuttua. Tässä tapauksessa tämä SSV on jo
-        // kryptografisesti varmennettu tässä requestissä.
+        // saattoi puuttua tai olla false.
         //
-        // Korjataan dokumentti verified-tilaan.
+        // Tämä SSV on kuitenkin juuri nyt:
+        //
+        // 1. kryptografisesti varmennettu
+        // 2. validoitu
+        // 3. yhdistetty samaan transaction_id:hen
+        //
+        // Siksi vanha dokumentti voidaan turvallisesti
+        // päivittää verified-tilaan.
         //
         // ----------------------------------------------------
 
@@ -789,7 +795,10 @@ async function saveVerifiedAdMobReward(
           // VERIFICATION STATE
           // --------------------------------------------------
           //
-          // TÄMÄ ON TÄRKEÄ KORJAUS.
+          // TÄRKEÄ:
+          //
+          // Tämä dokumentti syntyy vain sen jälkeen kun
+          // verifyAdMobCallback() on onnistunut.
           //
           // admobRewardService.js vaatii:
           //
@@ -939,8 +948,7 @@ async function saveVerifiedAdMobReward(
               ? "Stella Power Boost Ad Verified 🐱📺⚡"
               : "Stella Mining Start Ad Verified 🐱📺⛏️",
 
-          // This document does NOT
-          // award STL directly.
+          // Tämä dokumentti ei anna STL:ää.
           amount:
             0,
 
@@ -983,6 +991,8 @@ async function saveVerifiedAdMobReward(
           userId:
             data.userId,
 
+          // Audit kertoo myös eksplisiittisesti,
+          // että SSV on varmennettu.
           verified:
             true,
 
