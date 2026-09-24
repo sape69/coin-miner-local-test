@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../localization.dart';
 import 'register_page.dart';
 
 // ============================================================
@@ -9,14 +10,15 @@ import 'register_page.dart';
 //
 // LoginPage
 //     ↓
-// FirebaseAuth.signInWithEmailAndPassword()
+// FirebaseAuth
 //     ↓
-// onnistunut kirjautuminen
-//     ↓
-// AuthGate huomaa kirjautumisen
+// AuthGate
 //     ↓
 // HomePage
 //
+// Kielivalinta toimii jo kirjautumissivulla.
+// Ensimmäisellä asennuksella main.dart antaa oletuskieleksi
+// englannin.
 // ============================================================
 
 class LoginPage extends StatefulWidget {
@@ -35,7 +37,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   // ==========================================================
-  // FIREBASE AUTH
+  // FIREBASE
   // ==========================================================
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -55,10 +57,15 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   bool _obscurePassword = true;
-
   bool _loginLoading = false;
-
   bool _resetPasswordLoading = false;
+
+  // ==========================================================
+  // LOCALIZATION
+  // ==========================================================
+
+  AppLocalizations get _t =>
+      AppLocalizations(widget.languageCode);
 
   // ==========================================================
   // DISPOSE
@@ -68,17 +75,15 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-
     super.dispose();
   }
 
   // ==========================================================
-  // FIREBASE LOGIN
+  // LOGIN
   // ==========================================================
 
   Future<void> _login() async {
-    if (_loginLoading ||
-        _resetPasswordLoading) {
+    if (_loginLoading || _resetPasswordLoading) {
       return;
     }
 
@@ -88,53 +93,22 @@ class _LoginPageState extends State<LoginPage> {
     final String password =
         _passwordController.text;
 
-    // ========================================================
-    // EMAIL CHECK
-    // ========================================================
-
-    if (email.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       _showMessage(
-        'Kirjoita sähköpostiosoite.',
+        _t.get('loginFillFields'),
       );
-
       return;
     }
-
-    // ========================================================
-    // PASSWORD CHECK
-    // ========================================================
-
-    if (password.isEmpty) {
-      _showMessage(
-        'Kirjoita salasana.',
-      );
-
-      return;
-    }
-
-    // ========================================================
-    // START LOGIN
-    // ========================================================
 
     setState(() {
       _loginLoading = true;
     });
 
     try {
-      // ======================================================
-      // FIREBASE EMAIL/PASSWORD LOGIN
-      // ======================================================
-
       await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      if (mounted) {
-        _showMessage(
-          'Kirjautuminen onnistui!',
-        );
-      }
     } on FirebaseAuthException catch (error) {
       debugPrint(
         'Firebase login error: '
@@ -160,8 +134,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        'Kirjautuminen epäonnistui. '
-        'Yritä uudelleen.',
+        _t.get('loginFailed'),
       );
     } finally {
       if (mounted) {
@@ -173,55 +146,36 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // 🔐 RESET PASSWORD
+  // RESET PASSWORD
   // ==========================================================
 
   Future<void> _resetPassword() async {
-    if (_loginLoading ||
-        _resetPasswordLoading) {
+    if (_loginLoading || _resetPasswordLoading) {
       return;
     }
 
     final String email =
         _emailController.text.trim();
 
-    // ========================================================
-    // EMAIL REQUIRED
-    // ========================================================
-
     if (email.isEmpty) {
       _showMessage(
-        'Kirjoita sähköpostiosoitteesi ensin.',
+        _t.get('passwordResetDescription'),
       );
-
       return;
     }
-
-    // ========================================================
-    // EMAIL FORMAT CHECK
-    // ========================================================
 
     if (!_isValidEmail(email)) {
       _showMessage(
-        'Kirjoita kelvollinen sähköpostiosoite.',
+        _t.get('loginInvalidEmail'),
       );
-
       return;
     }
-
-    // ========================================================
-    // START RESET
-    // ========================================================
 
     setState(() {
       _resetPasswordLoading = true;
     });
 
     try {
-      // ======================================================
-      // FIREBASE PASSWORD RESET EMAIL
-      // ======================================================
-
       await _auth.sendPasswordResetEmail(
         email: email,
       );
@@ -231,8 +185,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        'Salasanan palautuslinkki lähetettiin '
-        'sähköpostiisi.',
+        _t.get('passwordResetSent'),
       );
     } on FirebaseAuthException catch (error) {
       debugPrint(
@@ -259,8 +212,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        'Salasanan palautus epäonnistui. '
-        'Yritä uudelleen.',
+        _t.get('passwordResetFailed'),
       );
     } finally {
       if (mounted) {
@@ -272,42 +224,32 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // 📧 EMAIL VALIDATION
+  // EMAIL VALIDATION
   // ==========================================================
 
-  bool _isValidEmail(
-    String email,
-  ) {
-    final RegExp emailRegex =
-        RegExp(
+  bool _isValidEmail(String email) {
+    final RegExp emailRegex = RegExp(
       r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
     );
 
-    return emailRegex.hasMatch(
-      email,
-    );
+    return emailRegex.hasMatch(email);
   }
 
   // ==========================================================
-  // OPEN REGISTER PAGE
+  // REGISTER
   // ==========================================================
 
   Future<void> _openRegisterPage() async {
-    if (_loginLoading ||
-        _resetPasswordLoading) {
+    if (_loginLoading || _resetPasswordLoading) {
       return;
     }
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (
-          BuildContext context,
-        ) {
+        builder: (BuildContext context) {
           return RegisterPage(
-            languageCode:
-                widget.languageCode,
-            changeLanguage:
-                widget.changeLanguage,
+            languageCode: widget.languageCode,
+            changeLanguage: widget.changeLanguage,
           );
         },
       ),
@@ -315,7 +257,136 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // FIREBASE LOGIN ERROR MESSAGES
+  // LANGUAGE
+  // ==========================================================
+
+  Future<void> _changeLanguage(
+    String languageCode,
+  ) async {
+    if (_loginLoading || _resetPasswordLoading) {
+      return;
+    }
+
+    await widget.changeLanguage(languageCode);
+  }
+
+  // ==========================================================
+  // LANGUAGE MENU
+  // ==========================================================
+
+  Widget _buildLanguageSelector() {
+    final String currentLanguage =
+        AppLocalizations.supportedLanguages[
+              widget.languageCode,
+            ] ??
+            'English';
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: PopupMenuButton<String>(
+        enabled:
+            !_loginLoading &&
+            !_resetPasswordLoading,
+        onSelected: _changeLanguage,
+        color: const Color(0xFF21113B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        itemBuilder: (BuildContext context) {
+          return AppLocalizations
+              .supportedLanguages
+              .entries
+              .map(
+                (
+                  MapEntry<String, String> entry,
+                ) {
+                  final bool selected =
+                      entry.key ==
+                      widget.languageCode;
+
+                  return PopupMenuItem<String>(
+                    value: entry.key,
+                    child: Row(
+                      children: [
+                        Icon(
+                          selected
+                              ? Icons.check_circle
+                              : Icons.language,
+                          size: 20,
+                          color: selected
+                              ? const Color(
+                                  0xFFFFB7E8,
+                                )
+                              : const Color(
+                                  0xFFB58CFF,
+                                ),
+                        ),
+                        const SizedBox(
+                          width: 12,
+                        ),
+                        Text(
+                          entry.value,
+                          style: TextStyle(
+                            color: const Color(
+                              0xFFF8F4FF,
+                            ),
+                            fontWeight: selected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              )
+              .toList();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFF21113B),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFFB58CFF),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.language,
+                color: Color(0xFFB58CFF),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                currentLanguage,
+                style: const TextStyle(
+                  color: Color(0xFFF8F4FF),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.keyboard_arrow_down,
+                color: Color(0xFFFFB7E8),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // LOGIN ERRORS
   // ==========================================================
 
   String _firebaseLoginErrorMessage(
@@ -323,38 +394,34 @@ class _LoginPageState extends State<LoginPage> {
   ) {
     switch (code) {
       case 'invalid-email':
-        return 'Sähköpostiosoite ei ole kelvollinen.';
+        return _t.get('loginInvalidEmail');
 
       case 'user-disabled':
-        return 'Tämä käyttäjätili on poistettu käytöstä.';
+        return _t.get('loginUserDisabled');
 
       case 'user-not-found':
-        return 'Käyttäjää ei löytynyt.';
+        return _t.get('loginUserNotFound');
 
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Sähköposti tai salasana on väärin.';
+        return _t.get('loginInvalidCredentials');
 
       case 'too-many-requests':
-        return 'Liian monta kirjautumisyritystä. '
-            'Yritä myöhemmin uudelleen.';
+        return _t.get('loginTooManyRequests');
 
       case 'network-request-failed':
-        return 'Verkkoyhteys epäonnistui. '
-            'Tarkista internetyhteys.';
+        return _t.get('loginNetworkError');
 
       case 'operation-not-allowed':
-        return 'Sähköposti- ja salasanakirjautuminen '
-            'ei ole käytössä.';
+        return _t.get('loginFailed');
 
       default:
-        return 'Kirjautuminen epäonnistui. '
-            'Yritä uudelleen.';
+        return _t.get('loginFailed');
     }
   }
 
   // ==========================================================
-  // FIREBASE PASSWORD RESET ERROR MESSAGES
+  // RESET PASSWORD ERRORS
   // ==========================================================
 
   String _firebaseResetErrorMessage(
@@ -362,28 +429,29 @@ class _LoginPageState extends State<LoginPage> {
   ) {
     switch (code) {
       case 'invalid-email':
-        return 'Sähköpostiosoite ei ole kelvollinen.';
+        return _t.get('loginInvalidEmail');
 
       case 'user-not-found':
-        return 'Tälle sähköpostiosoitteelle ei löytynyt tiliä.';
+        return _t.get(
+          'passwordResetUserNotFound',
+        );
 
       case 'user-disabled':
-        return 'Tämä käyttäjätili on poistettu käytöstä.';
+        return _t.get('loginUserDisabled');
 
       case 'too-many-requests':
-        return 'Liian monta yritystä. '
-            'Yritä myöhemmin uudelleen.';
+        return _t.get('loginTooManyRequests');
 
       case 'network-request-failed':
-        return 'Verkkoyhteys epäonnistui. '
-            'Tarkista internetyhteys.';
+        return _t.get('loginNetworkError');
 
       case 'operation-not-allowed':
-        return 'Salasanan palautus ei ole käytössä.';
+        return _t.get(
+          'passwordResetNotAllowed',
+        );
 
       default:
-        return 'Salasanan palautus epäonnistui. '
-            'Yritä uudelleen.';
+        return _t.get('passwordResetFailed');
     }
   }
 
@@ -391,9 +459,7 @@ class _LoginPageState extends State<LoginPage> {
   // MESSAGE
   // ==========================================================
 
-  void _showMessage(
-    String message,
-  ) {
+  void _showMessage(String message) {
     if (!mounted) {
       return;
     }
@@ -402,19 +468,13 @@ class _LoginPageState extends State<LoginPage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            message,
-          ),
-          behavior:
-              SnackBarBehavior.floating,
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
           backgroundColor:
               const Color(0xFF21113B),
-          shape:
-              RoundedRectangleBorder(
+          shape: RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(
-              14,
-            ),
+                BorderRadius.circular(14),
           ),
         ),
       );
@@ -425,9 +485,7 @@ class _LoginPageState extends State<LoginPage> {
   // ==========================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     final bool interactionLocked =
         _loginLoading ||
         _resetPasswordLoading;
@@ -435,45 +493,42 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor:
           const Color(0xFF120B24),
-
-      resizeToAvoidBottomInset:
-          true,
-
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
           keyboardDismissBehavior:
-              ScrollViewKeyboardDismissBehavior.onDrag,
-
+              ScrollViewKeyboardDismissBehavior
+                  .onDrag,
           physics:
               const AlwaysScrollableScrollPhysics(),
-
-          padding:
-              const EdgeInsets.fromLTRB(
+          padding: const EdgeInsets.fromLTRB(
             24,
-            35,
+            20,
             24,
-            60,
+            50,
           ),
-
           child: Column(
             children: [
               // ==================================================
-              // 🐱 STELLURIINI LOGO
+              // LANGUAGE SELECTOR
+              // ==================================================
+
+              _buildLanguageSelector(),
+
+              const SizedBox(height: 10),
+
+              // ==================================================
+              // LOGO
               // ==================================================
 
               Container(
                 width: 190,
                 height: 190,
-
-                decoration:
-                    BoxDecoration(
-                  shape:
-                      BoxShape.circle,
-
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color:
-                          const Color(
+                      color: const Color(
                         0xFFB58CFF,
                       ).withValues(
                         alpha: 0.25,
@@ -483,29 +538,20 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-
-                child:
-                    ClipOval(
-                  child:
-                      Image.asset(
+                child: ClipOval(
+                  child: Image.asset(
                     'assets/images/stelluriini_logo.png',
-
                     width: 190,
                     height: 190,
-
-                    fit:
-                        BoxFit.cover,
-
-                    errorBuilder:
-                        (
+                    fit: BoxFit.cover,
+                    errorBuilder: (
                       BuildContext context,
                       Object error,
                       StackTrace? stackTrace,
                     ) {
                       return const Icon(
                         Icons.pets,
-                        color:
-                            Color(
+                        color: Color(
                           0xFFB58CFF,
                         ),
                         size: 80,
@@ -515,9 +561,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
 
               // ==================================================
               // TITLE
@@ -525,172 +569,101 @@ class _LoginPageState extends State<LoginPage> {
 
               const Text(
                 'Stelluriini',
-
-                style:
-                    TextStyle(
-                  color:
-                      Color(
-                    0xFFF8F4FF,
-                  ),
+                style: TextStyle(
+                  color: Color(0xFFF8F4FF),
                   fontSize: 36,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(
-                height: 6,
-              ),
+              const SizedBox(height: 6),
 
               const Text(
                 'STL',
-
-                style:
-                    TextStyle(
-                  color:
-                      Color(
-                    0xFFB58CFF,
-                  ),
+                style: TextStyle(
+                  color: Color(0xFFB58CFF),
                   fontSize: 21,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                   letterSpacing: 4,
                 ),
               ),
 
-              const SizedBox(
-                height: 35,
-              ),
+              const SizedBox(height: 35),
 
               // ==================================================
               // LOGIN TITLE
               // ==================================================
 
-              const Text(
-                'KIRJAUDU SISÄÄN',
-
-                textAlign:
-                    TextAlign.center,
-
-                style:
-                    TextStyle(
-                  color:
-                      Color(
-                    0xFFF8F4FF,
-                  ),
+              Text(
+                _t.get('login'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFF8F4FF),
                   fontSize: 25,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(
-                height: 28,
-              ),
+              const SizedBox(height: 28),
 
               // ==================================================
               // EMAIL
               // ==================================================
 
               TextField(
-                controller:
-                    _emailController,
-
-                enabled:
-                    !interactionLocked,
-
+                controller: _emailController,
+                enabled: !interactionLocked,
                 keyboardType:
                     TextInputType.emailAddress,
-
                 textInputAction:
                     TextInputAction.next,
-
-                onSubmitted:
-                    (_) {
+                onSubmitted: (_) {
                   if (!interactionLocked) {
-                    FocusScope.of(
-                      context,
-                    ).nextFocus();
+                    FocusScope.of(context)
+                        .nextFocus();
                   }
                 },
-
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 18,
                 ),
-
-                decoration:
-                    InputDecoration(
-                  hintText:
-                      'Sähköposti',
-
-                  hintStyle:
-                      const TextStyle(
-                    color:
-                        Color(
-                      0xFFBDB4D1,
-                    ),
+                decoration: InputDecoration(
+                  hintText: _t.get('email'),
+                  hintStyle: const TextStyle(
+                    color: Color(0xFFBDB4D1),
                     fontSize: 18,
                   ),
-
-                  prefixIcon:
-                      const Icon(
+                  prefixIcon: const Icon(
                     Icons.email_outlined,
-                    color:
-                        Color(
-                      0xFFB58CFF,
-                    ),
+                    color: Color(0xFFB58CFF),
                   ),
-
-                  filled:
-                      true,
-
+                  filled: true,
                   fillColor:
-                      const Color(
-                    0xFF21113B,
-                  ),
-
+                      const Color(0xFF21113B),
                   enabledBorder:
                       OutlineInputBorder(
                     borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-
+                        BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color:
-                          Color(
-                        0xFFB58CFF,
-                      ),
+                      color: Color(0xFFB58CFF),
                       width: 2,
                     ),
                   ),
-
                   focusedBorder:
                       OutlineInputBorder(
                     borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-
+                        BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color:
-                          Color(
-                        0xFFFFB7E8,
-                      ),
+                      color: Color(0xFFFFB7E8),
                       width: 3,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
 
               // ==================================================
               // PASSWORD
@@ -699,58 +672,33 @@ class _LoginPageState extends State<LoginPage> {
               TextField(
                 controller:
                     _passwordController,
-
-                enabled:
-                    !interactionLocked,
-
+                enabled: !interactionLocked,
                 obscureText:
                     _obscurePassword,
-
                 keyboardType:
                     TextInputType.visiblePassword,
-
                 textInputAction:
                     TextInputAction.done,
-
-                onSubmitted:
-                    (_) {
+                onSubmitted: (_) {
                   if (!interactionLocked) {
                     _login();
                   }
                 },
-
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 18,
                 ),
-
-                decoration:
-                    InputDecoration(
-                  hintText:
-                      'Salasana',
-
-                  hintStyle:
-                      const TextStyle(
-                    color:
-                        Color(
-                      0xFFBDB4D1,
-                    ),
+                decoration: InputDecoration(
+                  hintText: _t.get('password'),
+                  hintStyle: const TextStyle(
+                    color: Color(0xFFBDB4D1),
                     fontSize: 18,
                   ),
-
-                  prefixIcon:
-                      const Icon(
+                  prefixIcon: const Icon(
                     Icons.lock_outline,
-                    color:
-                        Color(
-                      0xFFB58CFF,
-                    ),
+                    color: Color(0xFFB58CFF),
                   ),
-
-                  suffixIcon:
-                      IconButton(
+                  suffixIcon: IconButton(
                     onPressed:
                         interactionLocked
                             ? null
@@ -760,99 +708,65 @@ class _LoginPageState extends State<LoginPage> {
                                       !_obscurePassword;
                                 });
                               },
-
-                    icon:
-                        Icon(
+                    icon: Icon(
                       _obscurePassword
-                          ? Icons
-                              .visibility_outlined
+                          ? Icons.visibility_outlined
                           : Icons
                               .visibility_off_outlined,
-
-                      color:
-                          const Color(
+                      color: const Color(
                         0xFFB58CFF,
                       ),
                     ),
                   ),
-
-                  filled:
-                      true,
-
+                  filled: true,
                   fillColor:
-                      const Color(
-                    0xFF21113B,
-                  ),
-
+                      const Color(0xFF21113B),
                   enabledBorder:
                       OutlineInputBorder(
                     borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-
+                        BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color:
-                          Color(
-                        0xFFB58CFF,
-                      ),
+                      color: Color(0xFFB58CFF),
                       width: 2,
                     ),
                   ),
-
                   focusedBorder:
                       OutlineInputBorder(
                     borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-
+                        BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color:
-                          Color(
-                        0xFFFFB7E8,
-                      ),
+                      color: Color(0xFFFFB7E8),
                       width: 3,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(
-                height: 10,
-              ),
+              const SizedBox(height: 10),
 
               // ==================================================
-              // 🔐 FORGOT PASSWORD
+              // FORGOT PASSWORD
               // ==================================================
 
               Align(
                 alignment:
                     Alignment.centerRight,
-
-                child:
-                    TextButton(
+                child: TextButton(
                   onPressed:
                       interactionLocked
                           ? null
                           : _resetPassword,
-
-                  style:
-                      TextButton.styleFrom(
+                  style: TextButton.styleFrom(
                     foregroundColor:
-                        const Color(
-                      0xFFFFB7E8,
-                    ),
-
+                        const Color(0xFFFFB7E8),
                     padding:
                         const EdgeInsets.symmetric(
                       horizontal: 4,
                       vertical: 8,
                     ),
                   ),
-
                   child:
                       _resetPasswordLoading
                           ? const SizedBox(
@@ -860,21 +774,19 @@ class _LoginPageState extends State<LoginPage> {
                               height: 20,
                               child:
                                   CircularProgressIndicator(
-                                strokeWidth:
-                                    2,
-                                color:
-                                    Color(
+                                strokeWidth: 2,
+                                color: Color(
                                   0xFFFFB7E8,
                                 ),
                               ),
                             )
-                          : const Text(
-                              'Unohtuiko salasana?',
-
+                          : Text(
+                              _t.get(
+                                'forgotPassword',
+                              ),
                               style:
-                                  TextStyle(
-                                fontSize:
-                                    15,
+                                  const TextStyle(
+                                fontSize: 15,
                                 fontWeight:
                                     FontWeight.w600,
                               ),
@@ -882,61 +794,37 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              const SizedBox(
-                height: 18,
-              ),
+              const SizedBox(height: 18),
 
               // ==================================================
               // LOGIN BUTTON
               // ==================================================
 
               SizedBox(
-                width:
-                    double.infinity,
-
+                width: double.infinity,
                 height: 55,
-
-                child:
-                    ElevatedButton(
+                child: ElevatedButton(
                   onPressed:
                       interactionLocked
                           ? null
                           : _login,
-
                   style:
                       ElevatedButton.styleFrom(
                     backgroundColor:
-                        const Color(
-                      0xFFB58CFF,
-                    ),
-
+                        const Color(0xFFB58CFF),
                     foregroundColor:
-                        const Color(
-                      0xFF120B24,
-                    ),
-
+                        const Color(0xFF120B24),
                     disabledBackgroundColor:
-                        const Color(
-                      0xFF5E5274,
-                    ),
-
+                        const Color(0xFF5E5274),
                     disabledForegroundColor:
-                        const Color(
-                      0xFFD9D0E5,
-                    ),
-
-                    elevation:
-                        0,
-
+                        const Color(0xFFD9D0E5),
+                    elevation: 0,
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
+                          BorderRadius.circular(16),
                     ),
                   ),
-
                   child:
                       _loginLoading
                           ? const SizedBox(
@@ -944,21 +832,17 @@ class _LoginPageState extends State<LoginPage> {
                               height: 24,
                               child:
                                   CircularProgressIndicator(
-                                strokeWidth:
-                                    2.5,
-                                color:
-                                    Color(
+                                strokeWidth: 2.5,
+                                color: Color(
                                   0xFF120B24,
                                 ),
                               ),
                             )
-                          : const Text(
-                              'KIRJAUDU SISÄÄN',
-
+                          : Text(
+                              _t.get('login'),
                               style:
-                                  TextStyle(
-                                fontSize:
-                                    17,
+                                  const TextStyle(
+                                fontSize: 17,
                                 fontWeight:
                                     FontWeight.bold,
                               ),
@@ -966,62 +850,38 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
 
               // ==================================================
-              // 🐱 REGISTER BUTTON
-              // ==================================================
-              //
-              // AINA NÄKYVISSÄ
-              //
+              // REGISTER
               // ==================================================
 
               SizedBox(
-                width:
-                    double.infinity,
-
+                width: double.infinity,
                 height: 50,
-
-                child:
-                    OutlinedButton(
+                child: OutlinedButton(
                   onPressed:
                       interactionLocked
                           ? null
                           : _openRegisterPage,
-
                   style:
                       OutlinedButton.styleFrom(
                     foregroundColor:
-                        const Color(
-                      0xFFFFB7E8,
-                    ),
-
-                    side:
-                        const BorderSide(
-                      color:
-                          Color(
-                        0xFFFFB7E8,
-                      ),
+                        const Color(0xFFFFB7E8),
+                    side: const BorderSide(
+                      color: Color(0xFFFFB7E8),
                       width: 2,
                     ),
-
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(
-                        16,
-                      ),
+                          BorderRadius.circular(16),
                     ),
                   ),
-
-                  child:
-                      const Text(
-                    'LUO UUSI TILI',
-
-                    style:
-                        TextStyle(
+                  child: Text(
+                    _t.get('createAccount'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight:
                           FontWeight.bold,
@@ -1030,13 +890,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // ==================================================
-              // EXTRA VERTICAL SPACE
-              // ==================================================
-
-              const SizedBox(
-                height: 70,
-              ),
+              const SizedBox(height: 70),
 
               // ==================================================
               // FOOTER
@@ -1044,24 +898,15 @@ class _LoginPageState extends State<LoginPage> {
 
               const Text(
                 'STELLA • STELLURIINI • STL',
-
-                textAlign:
-                    TextAlign.center,
-
-                style:
-                    TextStyle(
-                  color:
-                      Color(
-                    0xFFBDB4D1,
-                  ),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFFBDB4D1),
                   fontSize: 12,
                   letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
