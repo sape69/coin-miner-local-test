@@ -51,7 +51,7 @@ const ADMOB_SSV_KEYS_URL =
   "https://www.gstatic.com/admob/reward/verifier-keys.json";
 
 // AdMob rotates public keys.
-// Cache must not be longer than 24 hours.
+// Cache is kept below the documented 24-hour limit.
 const PUBLIC_KEY_CACHE_MS =
   23 * 60 * 60 * 1000;
 
@@ -109,11 +109,10 @@ const VALID_REWARD_PURPOSES =
 // 🎁 SERVER REWARD CONFIGURATION
 // ============================================================
 //
-// Näitä arvoja verrataan SSV-callbackissa saatuun dataan.
-//
 // AdMob reward amount EI ole STL-määrä.
 //
-// Se toimii vain AdMob reward -asetuksen varmennuksena.
+// Sitä käytetään vain AdMob reward -asetuksen
+// varmennukseen.
 //
 // ============================================================
 
@@ -182,11 +181,6 @@ function createError(
 // ============================================================
 // 👤 UID
 // ============================================================
-//
-// Firebase Auth UID:t ovat Stelluriinissa käytettävä
-// käyttäjäidentiteetti.
-//
-// ============================================================
 
 function validateUid(value) {
   const uid =
@@ -210,6 +204,14 @@ function validateUid(value) {
 // ============================================================
 // 🧾 TRANSACTION ID
 // ============================================================
+//
+// AdMob dokumentoi transaction_id:n hex-muotoisena
+// yksilöllisenä reward-tunnisteena.
+//
+// Hyväksymme vain turvallisen hex-merkkijonon.
+// Tämä estää myös kontrollimerkit ja epäselvät arvot.
+//
+// ============================================================
 
 function validateTransactionId(value) {
   const transactionId =
@@ -223,9 +225,8 @@ function validateTransactionId(value) {
     return "";
   }
 
-  // Estetään kontrollimerkit.
   if (
-    /[\x00-\x1F\x7F]/.test(
+    !/^[A-Fa-f0-9]+$/.test(
       transactionId,
     )
   ) {
@@ -253,10 +254,6 @@ function validateRewardPurpose(value) {
 // ============================================================
 // 📡 AD NETWORK
 // ============================================================
-//
-// AdMob SSV:n ad_network on numeerinen source identifier.
-//
-// ============================================================
 
 function validateAdNetwork(value) {
   const network =
@@ -281,17 +278,17 @@ function validateAdNetwork(value) {
 // 🕒 TIMESTAMP
 // ============================================================
 //
-// AdMob timestamp on Epoch milliseconds.
-//
-// Varsinainen rewardin ikärajan tarkistus tehdään
-// admobRewardService.js:ssä.
+// AdMob timestamp = Epoch milliseconds.
 //
 // Tässä tarkistetaan:
 //
 // - numero
-// - turvallinen integer
+// - safe integer
 // - > 0
 // - ei merkittävästi tulevaisuudessa
+//
+// Rewardin varsinainen ikäraja tarkistetaan
+// admobRewardService.js:ssä.
 //
 // ============================================================
 
@@ -379,7 +376,8 @@ function validateKeyId(value) {
 // ✍️ SIGNATURE
 // ============================================================
 //
-// AdMob käyttää URL-safe Base64 -muotoista ECDSA-signaturea.
+// AdMob käyttää URL-safe Base64 -muotoista
+// ECDSA-signaturea.
 //
 // ============================================================
 
@@ -755,7 +753,7 @@ async function getAdMobPublicKeys(
     return publicKeyCache.keys;
   }
 
-  // Vain yksi samanaikainen key-fetch.
+  // Estetään useampi samanaikainen key-fetch.
   if (
     publicKeyFetchPromise
   ) {
@@ -793,8 +791,9 @@ function createAdMobPublicKey(
   keyData,
 ) {
   try {
-    // AdMob dokumentoi base64-muodon trusted public keyn
-    // lähteenä. Käytetään sitä ensisijaisesti.
+    // AdMob tarjoaa base64-muodon trusted public keylle.
+    // Käytetään sitä ensisijaisesti.
+
     if (
       keyData?.base64
     ) {
@@ -875,41 +874,25 @@ function verifyWithPublicKey(
 }
 
 // ============================================================
-// 🔓 DECODE SIGNED QUERY
-// ============================================================
-//
-// AdMob SSV callbackin varmennettava sisältö on query-string
-// ennen signature- ja key_id-parametreja.
-//
-// Googlen verifier käyttää URL:n query-sisältöä
-// dekoodattuna UTF-8-muotoon.
-//
-// Tärkeää:
-//
-// - parametrien järjestystä EI muuteta
-// - parametreja EI järjestetä
-// - parametreja EI lisätä
-// - signature/key_id eivät kuulu allekirjoitettuun dataan
-//
-// ============================================================
-
-function decodeSignedQueryString(
-  value,
-) {
-  try {
-    return decodeURIComponent(
-      value,
-    );
-  } catch (_) {
-    throw createError(
-      "ADMOB_INVALID_SIGNATURE",
-      "AdMob signed query contains invalid URL encoding.",
-    );
-  }
-}
-
-// ============================================================
 // 🔐 VERIFY SIGNED QUERY
+// ============================================================
+//
+// TÄRKEÄ:
+//
+// AdMob edellyttää, että allekirjoitettava query-sisältöä
+// EI muuteta.
+//
+// Siksi:
+//
+// - ei decodeURIComponent()
+// - ei encodeURIComponent()
+// - ei parametrien uudelleenjärjestämistä
+// - ei parametrien uudelleenrakentamista
+// - ei URLSearchParams-muunnosta
+//
+// Allekirjoitetaan täsmälleen alkuperäinen query-string
+// ennen signature-parametria.
+//
 // ============================================================
 
 function verifySignedQuery(
@@ -928,15 +911,10 @@ function verifySignedQuery(
     );
   }
 
-  const decodedQuery =
-    decodeSignedQueryString(
-      rawSignedQueryString,
-    );
-
   const valid =
     verifyWithPublicKey(
       publicKeyData,
-      decodedQuery,
+      rawSignedQueryString,
       signatureBuffer,
     );
 
@@ -944,10 +922,10 @@ function verifySignedQuery(
     valid,
 
     signedQueryString:
-      decodedQuery,
+      rawSignedQueryString,
 
     mode:
-      "decoded",
+      "raw",
   };
 }
 
@@ -1001,8 +979,7 @@ async function verifyAdMobSignature(
   // LAST TWO PARAMETERS
   // ==========================================================
   //
-  // AdMob dokumentoi, että kaksi viimeistä parametria ovat
-  // aina:
+  // AdMob dokumentoi, että kaksi viimeistä parametria ovat:
   //
   // signature
   // key_id
@@ -1133,12 +1110,11 @@ async function verifyAdMobSignature(
   // SIGNED QUERY
   // ==========================================================
   //
-  // TÄRKEÄ:
+  // Kaikki signature-parametria edeltävä sisältö
+  // allekirjoitetaan sellaisenaan.
   //
-  // Vain kaikki signature-parametria edeltävä sisältö
-  // allekirjoitetaan.
-  //
-  // Parametrien järjestys säilytetään täsmälleen.
+  // Parametrien järjestys ja alkuperäinen encoding
+  // säilytetään.
   //
   // ==========================================================
 
@@ -1176,11 +1152,6 @@ async function verifyAdMobSignature(
   // ==========================================================
   // KEY ROTATION
   // ==========================================================
-  //
-  // Jos key_id ei löydy nykyisestä cachesta, haetaan uudet
-  // avaimet välittömästi.
-  //
-  // ==========================================================
 
   if (!publicKeyData) {
     publicKeys =
@@ -1213,14 +1184,9 @@ async function verifyAdMobSignature(
         signatureBuffer,
       );
 
-    // --------------------------------------------------------
-    // KEY REFRESH IF SIGNATURE FAILS
-    // --------------------------------------------------------
-    //
-    // Tämä käsittelee tilanteen, jossa AdMob on vaihtanut
-    // avainta mutta vanha cache on vielä voimassa.
-    //
-    // --------------------------------------------------------
+    // Jos vanhentunut cache sisältää väärän avaimen,
+    // haetaan AdMobilta uudet avaimet ja yritetään kerran
+    // uudelleen.
 
     if (!result.valid) {
       publicKeys =
@@ -1299,10 +1265,10 @@ function getQueryValue(
   const value =
     query?.[key];
 
-  // Express/Firebase voi antaa arrayn, jos sama query-parametri
-  // esiintyy useamman kerran.
+  // Express/Firebase voi antaa arrayn, jos sama
+  // query-parametri esiintyy useamman kerran.
   //
-  // Tässä tapauksessa emme hyväksy epäselvää arvoa.
+  // Epäselvää array-arvoa ei hyväksytä.
 
   if (
     Array.isArray(value)
@@ -1331,42 +1297,20 @@ function getQueryValue(
 //
 // uid:power_boost
 //
-// AdMob voi percent-encodata custom_data-arvon SSV callbackiin.
+// AdMob välittää custom_data:n SSV callbackissa.
+//
+// Koska req.query on jo frameworkin parserin käsittelemä,
+// tässä EI tehdä toista decodeURIComponent()-kierrosta.
 //
 // ============================================================
 
 function parseCustomData(
   value,
 ) {
-  const raw =
+  const decoded =
     normalizeString(
       value,
     );
-
-  if (
-    !raw ||
-    raw.length >
-      MAX_CUSTOM_DATA_LENGTH
-  ) {
-    throw createError(
-      "ADMOB_CUSTOM_DATA_MISSING",
-      "AdMob custom_data is missing or invalid.",
-    );
-  }
-
-  let decoded;
-
-  try {
-    decoded =
-      decodeURIComponent(
-        raw,
-      );
-  } catch (_) {
-    throw createError(
-      "ADMOB_CUSTOM_DATA_INVALID_ENCODING",
-      "AdMob custom_data could not be decoded.",
-    );
-  }
 
   if (
     !decoded ||
@@ -1378,7 +1322,7 @@ function parseCustomData(
   ) {
     throw createError(
       "ADMOB_CUSTOM_DATA_INVALID",
-      "AdMob custom_data is invalid.",
+      "AdMob custom_data is missing or invalid.",
     );
   }
 
@@ -1504,9 +1448,10 @@ function getExpectedAdMobConfig(
 // 🌐 RAW QUERY CANDIDATES
 // ============================================================
 //
-// Firebase Functions / Express voi tarjota URL:n eri kentissä.
+// Firebase Functions / Express voi tarjota URL:n eri
+// kentissä.
 //
-// Tärkeää on saada mahdollisimman alkuperäinen query-string.
+// Tavoite on löytää mahdollisimman alkuperäinen query-string.
 //
 // ============================================================
 
@@ -1522,7 +1467,8 @@ function getRawQueryCandidates(
   ];
 
   for (
-    const url of urls
+    const url of
+    urls
   ) {
     if (
       typeof url !==
@@ -1596,11 +1542,8 @@ async function verifyFromRequest(
       lastError =
         error;
 
-      // Vain signature-virheen tapauksessa kokeillaan
-      // seuraavaa saatavilla olevaa URL-representaatiota.
-      //
-      // Kaikki muut virheet ovat oikeita validointivirheitä
-      // eikä niitä saa ohittaa.
+      // Vain kryptografisen allekirjoituksen virheessä
+      // kokeillaan seuraavaa URL-representaatiota.
 
       if (
         error?.code !==
@@ -1638,8 +1581,8 @@ async function verifyAdMobCallback(
   // CRYPTOGRAPHIC VERIFICATION FIRST
   // ==========================================================
   //
-  // Mitään reward-dataa ei luoteta ennen allekirjoituksen
-  // onnistunutta varmennusta.
+  // Reward-dataan ei luoteta ennen kuin AdMob-signature
+  // on onnistuneesti varmennettu.
   //
   // ==========================================================
 
