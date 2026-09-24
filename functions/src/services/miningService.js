@@ -199,10 +199,17 @@ function validateUid(
 //
 // AdMob transaction_id tulee AdMob SSV:stä.
 //
-// admobRewardService.js tekee lopullisen reward-dokumentin
-// transaction ID -validoinnin.
-// Tässä tehdään kuitenkin ensin perustason syötevalidointi,
-// jotta virheellistä ID:tä ei käytetä Firestore document ID:nä.
+// TÄRKEÄ:
+// admobRewardService.js käyttää samaa validointisääntöä.
+//
+// Transaction ID:n pitää olla:
+//
+// - merkkijono
+// - 1–256 merkkiä
+// - heksadesimaalinen
+//
+// Näin MiningService ja admobRewardService eivät
+// hylkää samaa rewardia eri sääntöjen vuoksi.
 //
 // ============================================================
 
@@ -242,8 +249,13 @@ function validateTransactionId(
     throw error;
   }
 
+  // ----------------------------------------------------------
+  // IMPORTANT:
+  // Tämä vastaa admobRewardService.js:n sääntöä.
+  // ----------------------------------------------------------
+
   if (
-    !/^[A-Za-z0-9._:-]+$/.test(
+    !/^[A-Fa-f0-9]+$/.test(
       value,
     )
   ) {
@@ -405,8 +417,6 @@ function getAdMobRewardRef(
 // 🎁 CLAIM ADMOB REWARD
 // ============================================================
 //
-// HUOM:
-//
 // Tämä funktio EI päätä, onko reward turvallinen.
 //
 // Reward on ensin validoitu
@@ -530,14 +540,6 @@ async function verifyAndClaimAdMobReward(
 
   // ----------------------------------------------------------
   // 🔐 FULL VALIDATION
-  // ----------------------------------------------------------
-  //
-  // Tämä kutsuu admobRewardService.js:n keskitettyä
-  // validointia.
-  //
-  // referenceNowMs sidotaan tähän transaktion aikana
-  // luotuun now-arvoon.
-  //
   // ----------------------------------------------------------
 
   const validated =
