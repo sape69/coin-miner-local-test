@@ -44,8 +44,6 @@ class _HomePageState extends State<HomePage>
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
-  static const Color pinkColor = Color(0xFFFFB7E8);
-  static const Color goldColor = Color(0xFFFFD166);
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
