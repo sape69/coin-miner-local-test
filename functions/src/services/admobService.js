@@ -23,7 +23,7 @@ const {
 // Vastuu:
 //
 // 🔐 AdMob Rewarded SSV -allekirjoituksen varmennus
-// 🔑 Public key -haku ja cache
+// 🔑 AdMob public key -haku ja cache
 // 🛡️ SSV-parametrien validointi
 // 🆔 UID / transaction_id -validointi
 // 🎯 reward purpose -validointi
@@ -420,26 +420,20 @@ function decodeBase64Url(
       ) % 4,
     );
 
-  try {
-    const buffer =
-      Buffer.from(
-        padded,
-        'base64',
-      );
+  const buffer =
+    Buffer.from(
+      padded,
+      'base64',
+    );
 
-    if (!buffer.length) {
-      throw new Error(
-        'empty',
-      );
-    }
-
-    return buffer;
-  } catch (_) {
+  if (!buffer.length) {
     throw createError(
       'ADMOB_INVALID_SIGNATURE',
       'AdMob signature could not be decoded.',
     );
   }
+
+  return buffer;
 }
 
 // ============================================================
@@ -773,13 +767,6 @@ function createAdMobPublicKey(
   keyData,
 ) {
   try {
-    // AdMob tarjoaa public keyn myös
-    // base64 DER/SPKI -muodossa.
-    //
-    // Käytetään sitä ensisijaisesti,
-    // koska se on yksiselitteinen
-    // kryptografinen formaatti.
-
     if (
       keyData?.base64
     ) {
@@ -842,13 +829,43 @@ function verifyWithPublicKey(
       key:
         publicKey,
 
-      // AdMob SSV käyttää ECDSA DER
-      // -allekirjoitusformaattia.
       dsaEncoding:
         'der',
     },
     signatureBuffer,
   );
+}
+
+// ============================================================
+// DECODE SIGNED QUERY
+// ============================================================
+//
+// AdMob's official verifier parses the URI query component
+// before verifying the signature.
+//
+// IMPORTANT:
+//
+// - Query parameter order is preserved.
+// - Query parameter names are preserved.
+// - `+` is NOT converted to space.
+// - Percent encoded values are decoded.
+// - Signature and key_id are NOT included in signed data.
+//
+// ============================================================
+
+function decodeSignedQueryString(
+  value,
+) {
+  try {
+    return decodeURIComponent(
+      value,
+    );
+  } catch (_) {
+    throw createError(
+      'ADMOB_INVALID_SIGNATURE',
+      'AdMob signed query contains invalid URL encoding.',
+    );
+  }
 }
 
 // ============================================================
@@ -896,16 +913,7 @@ async function verifyAdMobSignature(
   }
 
   // ==========================================================
-  // ADMOB SSV:
-  //
-  // kaksi viimeistä parametria ovat:
-  //
-  // signature
-  // key_id
-  //
-  // Kaikki niitä edeltävä data
-  // allekirjoitetaan täsmälleen
-  // alkuperäisessä muodossa.
+  // LAST TWO PARAMETERS
   // ==========================================================
 
   const signatureParameter =
@@ -941,7 +949,7 @@ async function verifyAdMobSignature(
   }
 
   // ==========================================================
-  // DUPLICATE PARAMETER CHECK
+  // DUPLICATE SIGNATURE / KEY
   // ==========================================================
 
   for (
@@ -983,37 +991,35 @@ async function verifyAdMobSignature(
       'key_id='.length,
     );
 
-  let decodedSignature =
-    rawSignature;
+  let signatureValue;
 
-  let decodedKeyId =
-    rawKeyId;
+  let keyIdValue;
 
   try {
-    decodedSignature =
+    signatureValue =
       decodeURIComponent(
         rawSignature,
       );
 
-    decodedKeyId =
+    keyIdValue =
       decodeURIComponent(
         rawKeyId,
       );
   } catch (_) {
     throw createError(
       'ADMOB_INVALID_SIGNATURE',
-      'AdMob SSV signature parameters contain invalid URL encoding.',
+      'AdMob signature parameters contain invalid URL encoding.',
     );
   }
 
   const signature =
     validateSignature(
-      decodedSignature,
+      signatureValue,
     );
 
   const keyId =
     validateKeyId(
-      decodedKeyId,
+      keyIdValue,
     );
 
   if (!signature) {
@@ -1030,22 +1036,46 @@ async function verifyAdMobSignature(
     );
   }
 
-  const signedQueryString =
+  // ==========================================================
+  // SIGNED QUERY
+  // ==========================================================
+  //
+  // This is the important fix.
+  //
+  // The signed content is the query before:
+  //
+  // &signature=
+  //
+  // The query component is decoded before verification,
+  // matching Google's official RewardedAdsVerifier behaviour.
+  //
+  // ==========================================================
+
+  const rawSignedQueryString =
     parameters
       .slice(0, -2)
       .join('&');
 
-  if (!signedQueryString) {
+  if (!rawSignedQueryString) {
     throw createError(
       'ADMOB_QUERY_STRING_MISSING',
       'AdMob signed query string is empty.',
     );
   }
 
+  const signedQueryString =
+    decodeSignedQueryString(
+      rawSignedQueryString,
+    );
+
   const signatureBuffer =
     decodeBase64Url(
       signature,
     );
+
+  // ==========================================================
+  // PUBLIC KEY
+  // ==========================================================
 
   let publicKeys =
     await getAdMobPublicKeys();
@@ -1091,15 +1121,7 @@ async function verifyAdMobSignature(
       );
 
     // --------------------------------------------------------
-    // KEY CACHE REFRESH
-    // --------------------------------------------------------
-    //
-    // Jos key_id löytyy mutta allekirjoitus ei täsmää,
-    // päivitetään AdMobin public key -lista kerran
-    // ja yritetään uudelleen.
-    //
-    // Tämä ei ohita kryptografista varmennusta.
-    //
+    // PUBLIC KEY REFRESH
     // --------------------------------------------------------
 
     if (!valid) {
@@ -1353,11 +1375,11 @@ function getQueryValue(
 // RAW QUERY CANDIDATES
 // ============================================================
 //
-// Firebase/Express voi tarjota URL:n
-// req.url- ja req.originalUrl-kentissä.
+// Firebase/Express voi tarjota alkuperäisen URL:n
+// req.originalUrl- ja req.url-kentissä.
 //
-// SSV:n allekirjoitus tarkistetaan
-// kummastakin raakaversiosta tarvittaessa.
+// originalUrl tarkistetaan ensin, koska se kuvaa
+// alkuperäistä Express-requestia.
 //
 // ============================================================
 
@@ -1367,8 +1389,9 @@ function getRawQueryCandidates(
   const candidates = [];
 
   const urls = [
-    req?.url,
     req?.originalUrl,
+    req?.url,
+    req?.rawUrl,
   ];
 
   for (
