@@ -209,6 +209,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     const int maxChecks = 150;
+
     const Duration interval =
         Duration(milliseconds: 200);
 
@@ -244,7 +245,9 @@ class HomeAdManager extends ChangeNotifier {
         break;
       }
 
-      await Future<void>.delayed(interval);
+      await Future<void>.delayed(
+        interval,
+      );
     }
 
     final User? finalUser =
@@ -284,17 +287,20 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    final User? user = _auth.currentUser;
+    final User? user =
+        _auth.currentUser;
 
     if (user == null) {
       _adLoading = false;
       _loadingPurpose = '';
+
       _clearAdState();
 
       _adLoadError =
           'NO_AUTH_USER | Purpose: $purpose';
 
       _notify();
+
       return;
     }
 
@@ -376,8 +382,13 @@ class HomeAdManager extends ChangeNotifier {
                 'Purpose: $purpose';
 
             _notify();
+
             return;
           }
+
+          // ======================================================
+          // 🔐 SERVER-SIDE VERIFICATION
+          // ======================================================
 
           try {
             await ad.setServerSideOptions(
@@ -400,6 +411,7 @@ class HomeAdManager extends ChangeNotifier {
                 'Error: $error';
 
             _notify();
+
             return;
           }
 
@@ -426,16 +438,26 @@ class HomeAdManager extends ChangeNotifier {
                 'Purpose: $purpose';
 
             _notify();
+
             return;
           }
+
+          // ======================================================
+          // 📺 STORE READY AD
+          // ======================================================
 
           _rewardedAd = ad;
           _rewardedAdPurpose = purpose;
           _rewardedAdUserUid = loadingUid;
+
           _adReady = true;
           _adLoading = false;
           _loadingPurpose = '';
           _adLoadError = '';
+
+          // ======================================================
+          // 📺 FULL SCREEN CALLBACK
+          // ======================================================
 
           ad.fullScreenContentCallback =
               FullScreenContentCallback<RewardedAd>(
@@ -465,7 +487,11 @@ class HomeAdManager extends ChangeNotifier {
             ) {
               ad.dispose();
 
-              _finishFlow(purpose);
+              _clearAdState();
+
+              _finishFlow(
+                purpose,
+              );
 
               _notify();
 
@@ -487,7 +513,11 @@ class HomeAdManager extends ChangeNotifier {
             ) {
               ad.dispose();
 
-              _finishFlow(purpose);
+              _clearAdState();
+
+              _finishFlow(
+                purpose,
+              );
 
               _adLoadError =
                   'SHOW_FAILED | '
@@ -701,6 +731,10 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    // ==========================================================
+    // 🔒 PREVENT DUPLICATE FLOWS
+    // ==========================================================
+
     if (purpose == miningStartPurpose &&
         _miningAdFlowActive) {
       return false;
@@ -784,10 +818,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // ========================================================
-      // Tärkeää:
-      // Mainos poistetaan managerin tilasta ennen show()-kutsua.
-      // Näin samaa RewardedAd-instanssia ei voida näyttää
-      // vahingossa toisen kerran.
+      // 🧹 REMOVE AD FROM MANAGER BEFORE SHOW
       // ========================================================
 
       _clearAdState();
@@ -832,6 +863,8 @@ class HomeAdManager extends ChangeNotifier {
 
       ad?.dispose();
 
+      _clearAdState();
+
       _setFlowActive(
         purpose,
         false,
@@ -869,7 +902,9 @@ class HomeAdManager extends ChangeNotifier {
     }
   }
 
-  void _finishFlow(String purpose) {
+  void _finishFlow(
+    String purpose,
+  ) {
     _setFlowActive(
       purpose,
       false,
@@ -893,7 +928,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🧹 CLEAR
+  // 🧹 CLEAR CURRENT AD
   // ============================================================
 
   void clearCurrentAd() {
@@ -930,6 +965,7 @@ class HomeAdManager extends ChangeNotifier {
 
     _adLoading = false;
     _loadingPurpose = '';
+
     _rewardedAdPurpose = '';
     _rewardedAdUserUid = '';
 
