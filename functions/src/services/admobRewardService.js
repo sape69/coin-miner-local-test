@@ -64,8 +64,15 @@ const REWARD_FUTURE_TOLERANCE_MS =
 const SSV_WAIT_TIMEOUT_MS =
   5000;
 
-const SSV_RETRY_DELAY_MS =
+// Ensimmäinen retry tehdään nopeasti.
+// Seuraavat retryt kasvavat asteittain,
+// jotta Firestorea ei kysellä turhaan liian usein.
+
+const SSV_INITIAL_RETRY_DELAY_MS =
   250;
+
+const SSV_MAX_RETRY_DELAY_MS =
+  1000;
 
 
 // ============================================================
@@ -160,9 +167,10 @@ function sleep(milliseconds) {
 // ============================================================
 //
 // Firebase Auth UID:n tulee olla autentikoidun käyttäjän
-// antama arvo.
+// UID.
 //
-// UID:tä ei koskaan muuteta hiljaisesti toiseksi arvoksi.
+// Tässä projektissa UID:n sallittu muoto on sama kuin
+// admobService.js:n custom_data-validoinnissa.
 //
 // ============================================================
 
@@ -201,13 +209,9 @@ function validateUid(value) {
 // - enintään 256 merkkiä
 // - ei kontrollimerkkejä
 //
-// Huom:
-//
-// Clientin antama transaction ID normalisoidaan tässä
-// vain vertailua varten.
-//
-// Dokumentista luettua transaction ID:tä ei saa käyttää
-// Firestore-document-ID:nä ennen userUtils-validointia.
+// Transaction ID:tä ei muuteta muotoon toiseksi arvoksi.
+// Trimmaus tehdään vain ulkoisen syötearvon normalisointia
+// varten.
 //
 // ============================================================
 
@@ -257,6 +261,16 @@ function validateRewardPurpose(
 
 // ============================================================
 // TIMESTAMP
+// ============================================================
+//
+// Tukee:
+//
+// - Firestore Timestamp
+// - Date-like object
+// - Date
+// - ISO string
+// - epoch milliseconds
+//
 // ============================================================
 
 function timestampMs(value) {
@@ -361,15 +375,12 @@ function timestampMs(value) {
 // REWARD CREATED TIME
 // ============================================================
 //
-// SSV-service voi käyttää eri kenttää riippuen siitä,
-// missä vaiheessa reward tallennetaan.
-//
 // Prioriteetti:
 //
-// verifiedAt
-// ssvVerifiedAt
-// createdAt
-// timestamp
+// 1. verifiedAt
+// 2. ssvVerifiedAt
+// 3. createdAt
+// 4. timestamp
 //
 // ============================================================
 
@@ -392,7 +403,7 @@ function getRewardCreatedAtMs(
 
   for (
     const value of candidates
-    ) {
+  ) {
     const milliseconds =
       timestampMs(value);
 
@@ -420,6 +431,18 @@ function validateRewardTiming(
       options.referenceNowMs,
       Date.now(),
     );
+
+  if (
+    !Number.isFinite(
+      referenceNowMs,
+    ) ||
+    referenceNowMs <= 0
+  ) {
+    throw createError(
+      "ADMOB_REWARD_REFERENCE_TIME_INVALID",
+      "Reward reference time is invalid.",
+    );
+  }
 
   const rewardCreatedAtMs =
     getRewardCreatedAtMs(
@@ -482,7 +505,7 @@ function getDocumentTransactionId(
 
   for (
     const value of candidates
-    ) {
+  ) {
     const transactionId =
       validateTransactionId(
         value,
@@ -518,7 +541,7 @@ function getDocumentRewardPurpose(
 
   for (
     const value of candidates
-    ) {
+  ) {
     const purpose =
       validateRewardPurpose(
         value,
@@ -555,7 +578,7 @@ function getDocumentUid(
 
   for (
     const value of candidates
-    ) {
+  ) {
     const uid =
       validateUid(value);
 
@@ -629,7 +652,7 @@ function isRewardAlreadyClaimed(
 //
 // Tämä on authority-check.
 //
-// Kaikki seuraavat tarkistetaan:
+// Reward hyväksytään vasta kun:
 //
 // 1. dokumentti löytyy
 // 2. UID on validi
@@ -637,11 +660,12 @@ function isRewardAlreadyClaimed(
 // 4. claim field vastaa purposea
 // 5. SSV on verified
 // 6. dokumentin UID vastaa authenticated UID:tä
-// 7. reward purpose vastaa pyydettyä operationia
+// 7. reward purpose vastaa operationia
 // 8. transaction ID löytyy
-// 9. client transaction ID täsmää dokumenttiin
-// 10. timestamp on validi
-// 11. rewardia ei ole jo käytetty
+// 9. transaction ID täsmää pyydettyyn ID:hen
+// 10. dokumentin ID täsmää transaction ID:hen
+// 11. timestamp on validi
+// 12. rewardia ei ole jo käytetty
 //
 // ============================================================
 
@@ -805,27 +829,25 @@ function validateVerifiedRewardDocument(
   }
 
   // ----------------------------------------------------------
-  // DOCUMENT ID / TRANSACTION ID CONSISTENCY
-  // ----------------------------------------------------------
-  //
-  // admobRewards/{transactionId}
-  //
-  // Jos dokumentin ID ja dokumentin transaction ID
-  // eivät vastaa toisiaan, rewardia ei hyväksytä.
-  //
-  // Tämä estää tilanteen, jossa reward-dokumentin data
-  // olisi kirjoitettu väärän dokumentti-ID:n alle.
-  //
+  // DOCUMENT ID / TRANSACTION ID
   // ----------------------------------------------------------
 
   const documentId =
     rewardSnapshot.id;
 
   if (
-    typeof documentId === "string" &&
-    documentId.length > 0 &&
+    typeof documentId !== "string" ||
+    !documentId
+  ) {
+    throw createError(
+      "ADMOB_REWARD_DOCUMENT_ID_MISSING",
+      "AdMob reward document ID is missing.",
+    );
+  }
+
+  if (
     documentId !==
-      documentTransactionId
+    documentTransactionId
   ) {
     throw createError(
       "ADMOB_TRANSACTION_ID_MISMATCH",
@@ -841,6 +863,16 @@ function validateVerifiedRewardDocument(
     validateTransactionId(
       options.transactionId,
     );
+
+  if (
+    options.transactionId &&
+    !requestedTransactionId
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      "Requested AdMob transaction_id is invalid.",
+    );
+  }
 
   if (
     requestedTransactionId &&
@@ -938,6 +970,16 @@ async function getVerifiedReward(
     validateTransactionId(
       options.transactionId,
     );
+
+  if (
+    options.transactionId &&
+    !transactionId
+  ) {
+    throw createError(
+      "ADMOB_INVALID_TRANSACTION_ID",
+      "AdMob transaction_id is invalid.",
+    );
+  }
 
   // ==========================================================
   // DIRECT TRANSACTION LOOKUP
@@ -1134,6 +1176,9 @@ async function getVerifiedReward(
 // Jos reward löytyy mutta sen sisältö on virheellinen,
 // sitä EI yritetä uudelleen.
 //
+// Retry-väli kasvaa asteittain, jotta Firestore-kuormitus
+// pysyy pienenä.
+//
 // ============================================================
 
 async function getVerifiedRewardWithRetry(
@@ -1145,6 +1190,9 @@ async function getVerifiedRewardWithRetry(
 
   let lastError =
     null;
+
+  let retryDelay =
+    SSV_INITIAL_RETRY_DELAY_MS;
 
   while (
     Date.now() -
@@ -1185,10 +1233,16 @@ async function getVerifiedRewardWithRetry(
 
     await sleep(
       Math.min(
-        SSV_RETRY_DELAY_MS,
+        retryDelay,
         remaining,
       ),
     );
+
+    retryDelay =
+      Math.min(
+        retryDelay * 2,
+        SSV_MAX_RETRY_DELAY_MS,
+      );
   }
 
   throw (
@@ -1310,7 +1364,9 @@ module.exports = {
 
   SSV_WAIT_TIMEOUT_MS,
 
-  SSV_RETRY_DELAY_MS,
+  SSV_INITIAL_RETRY_DELAY_MS,
+
+  SSV_MAX_RETRY_DELAY_MS,
 
   MAX_FALLBACK_REWARD_DOCS,
 
