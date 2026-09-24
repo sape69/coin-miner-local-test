@@ -309,13 +309,6 @@ function validateVerifiedAdData(
       verifiedAd.customData,
     );
 
-  // IMPORTANT:
-  // Template literal is required here.
-  //
-  // This must become for example:
-  //
-  // abc123:mining_start
-  //
   const expectedCustomData =
     `${uid}:${rewardPurpose}`;
 
@@ -395,6 +388,9 @@ function validateVerifiedAdData(
     customData,
 
     userId,
+
+    // Cryptographic verification completed.
+    verified: true,
   };
 }
 
@@ -418,6 +414,9 @@ function isSameVerifiedReward(
   }
 
   return (
+    existing.verified ===
+      true &&
+
     normalizeString(
       existing.uid,
     ) ===
@@ -624,10 +623,7 @@ async function saveVerifiedAdMobReward(
 
   // transaction_id is the unique
   // idempotency key.
-  //
-  // IMPORTANT:
-  // This MUST be a template literal so every
-  // transaction receives its own document ID.
+
   const historyRef =
     historyCollection.doc(
       `admob_${data.transactionId}`,
@@ -674,8 +670,6 @@ async function saveVerifiedAdMobReward(
           );
         }
 
-        // A valid duplicate must also
-        // have its corresponding audit record.
         if (
           !historySnapshot.exists ||
           !isSameVerifiedHistory(
@@ -748,6 +742,25 @@ async function saveVerifiedAdMobReward(
       transaction.create(
         rewardRef,
         {
+          // --------------------------------------------------
+          // VERIFICATION
+          // --------------------------------------------------
+          //
+          // IMPORTANT:
+          //
+          // admobRewardService.js requires this exact field
+          // before the reward can be consumed by mining.
+          //
+          verified:
+            true,
+
+          verifiedAt:
+            FieldValue.serverTimestamp(),
+
+          // --------------------------------------------------
+          // IDENTITY
+          // --------------------------------------------------
+
           uid:
             data.uid,
 
@@ -759,6 +772,10 @@ async function saveVerifiedAdMobReward(
 
           rewardPurpose:
             data.rewardPurpose,
+
+          // --------------------------------------------------
+          // ADMOB DATA
+          // --------------------------------------------------
 
           rewardAmount:
             data.rewardAmount,
@@ -912,6 +929,9 @@ async function saveVerifiedAdMobReward(
 
           userId:
             data.userId,
+
+          verified:
+            true,
 
           createdAt:
             FieldValue.serverTimestamp(),
@@ -1219,14 +1239,6 @@ const adMobReward =
         // ====================================================
         // PERMANENT ERROR
         // ====================================================
-        //
-        // AdMob callbacks should not be retried for
-        // invalid signatures, invalid data or transaction
-        // conflicts.
-        //
-        // We therefore return HTTP 200 for these cases.
-        //
-        // ====================================================
 
         if (
           PERMANENT_ERROR_CODES.has(
@@ -1257,11 +1269,6 @@ const adMobReward =
 
         // ====================================================
         // TEMPORARY / INTERNAL ERROR
-        // ====================================================
-        //
-        // HTTP 500 allows the external caller to retry when
-        // the problem is infrastructure-related.
-        //
         // ====================================================
 
         res
