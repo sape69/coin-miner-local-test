@@ -309,6 +309,13 @@ function validateVerifiedAdData(
       verifiedAd.customData,
     );
 
+  // IMPORTANT:
+  // Template literal is required here.
+  //
+  // This must become for example:
+  //
+  // abc123:mining_start
+  //
   const expectedCustomData =
     `${uid}:${rewardPurpose}`;
 
@@ -388,9 +395,6 @@ function validateVerifiedAdData(
     customData,
 
     userId,
-
-    // Cryptographic verification completed.
-    verified: true,
   };
 }
 
@@ -414,9 +418,6 @@ function isSameVerifiedReward(
   }
 
   return (
-    existing.verified ===
-      true &&
-
     normalizeString(
       existing.uid,
     ) ===
@@ -623,7 +624,6 @@ async function saveVerifiedAdMobReward(
 
   // transaction_id is the unique
   // idempotency key.
-
   const historyRef =
     historyCollection.doc(
       `admob_${data.transactionId}`,
@@ -670,6 +670,46 @@ async function saveVerifiedAdMobReward(
           );
         }
 
+        // ----------------------------------------------------
+        // REPAIR LEGACY REWARD
+        // ----------------------------------------------------
+        //
+        // Vanhemmassa reward-dokumentissa verified-kenttä
+        // saattoi puuttua. Tässä tapauksessa tämä SSV on jo
+        // kryptografisesti varmennettu tässä requestissä.
+        //
+        // Korjataan dokumentti verified-tilaan.
+        //
+        // ----------------------------------------------------
+
+        if (
+          existing.verified !== true
+        ) {
+          transaction.set(
+            rewardRef,
+            {
+              verified:
+                true,
+
+              verifiedAt:
+                FieldValue.serverTimestamp(),
+
+              ssvVerifiedAt:
+                FieldValue.serverTimestamp(),
+
+              updatedAt:
+                FieldValue.serverTimestamp(),
+            },
+            {
+              merge: true,
+            },
+          );
+        }
+
+        // ----------------------------------------------------
+        // AUDIT CONSISTENCY
+        // ----------------------------------------------------
+
         if (
           !historySnapshot.exists ||
           !isSameVerifiedHistory(
@@ -695,6 +735,9 @@ async function saveVerifiedAdMobReward(
 
             rewardPurpose:
               data.rewardPurpose,
+
+            repairedVerified:
+              existing.verified !== true,
           },
         );
 
@@ -743,18 +786,24 @@ async function saveVerifiedAdMobReward(
         rewardRef,
         {
           // --------------------------------------------------
-          // VERIFICATION
+          // VERIFICATION STATE
           // --------------------------------------------------
           //
-          // IMPORTANT:
+          // TÄMÄ ON TÄRKEÄ KORJAUS.
           //
-          // admobRewardService.js requires this exact field
-          // before the reward can be consumed by mining.
+          // admobRewardService.js vaatii:
           //
+          // data.verified === true
+          //
+          // --------------------------------------------------
+
           verified:
             true,
 
           verifiedAt:
+            FieldValue.serverTimestamp(),
+
+          ssvVerifiedAt:
             FieldValue.serverTimestamp(),
 
           // --------------------------------------------------
@@ -774,7 +823,7 @@ async function saveVerifiedAdMobReward(
             data.rewardPurpose,
 
           // --------------------------------------------------
-          // ADMOB DATA
+          // REWARD DATA
           // --------------------------------------------------
 
           rewardAmount:
@@ -782,6 +831,10 @@ async function saveVerifiedAdMobReward(
 
           rewardItem:
             data.rewardItem,
+
+          // --------------------------------------------------
+          // ADMOB DATA
+          // --------------------------------------------------
 
           adNetwork:
             data.adNetwork,
@@ -1239,6 +1292,14 @@ const adMobReward =
         // ====================================================
         // PERMANENT ERROR
         // ====================================================
+        //
+        // AdMob callbacks should not be retried for
+        // invalid signatures, invalid data or transaction
+        // conflicts.
+        //
+        // We therefore return HTTP 200 for these cases.
+        //
+        // ====================================================
 
         if (
           PERMANENT_ERROR_CODES.has(
@@ -1269,6 +1330,11 @@ const adMobReward =
 
         // ====================================================
         // TEMPORARY / INTERNAL ERROR
+        // ====================================================
+        //
+        // HTTP 500 allows the external caller to retry when
+        // the problem is infrastructure-related.
+        //
         // ====================================================
 
         res
