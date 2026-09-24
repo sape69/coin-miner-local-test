@@ -6,6 +6,7 @@
 //
 // Stella Mining.
 //
+// IMPORTANT:
 // AdMob reward is NOT an STL token reward.
 //
 // AdMob only authorizes:
@@ -71,7 +72,7 @@ const {
 } = require("../services/admobRewardService");
 
 // ============================================================
-// HELPERS
+// VALUE HELPERS
 // ============================================================
 
 function number(value, fallback = 0) {
@@ -98,12 +99,16 @@ function positive(value, fallback = 0) {
     : fallback;
 }
 
+// ============================================================
+// ADMOB ERROR MAPPING
+// ============================================================
+
 /**
  * Convert internal AdMob reward-service errors into
  * callable-function errors that Flutter can handle.
  *
- * Security-sensitive reward errors are intentionally mapped
- * to failed-precondition instead of exposing internal details.
+ * Security-sensitive reward errors intentionally hide
+ * internal implementation details.
  */
 function toRewardHttpsError(error, fallbackMessage) {
   if (error instanceof HttpsError) {
@@ -175,6 +180,65 @@ function toRewardHttpsError(error, fallbackMessage) {
 }
 
 // ============================================================
+// TIMESTAMP
+// ============================================================
+
+function timestampMs(value) {
+  if (!value) {
+    return 0;
+  }
+
+  if (typeof value.toMillis === "function") {
+    try {
+      const milliseconds = value.toMillis();
+
+      return Number.isFinite(milliseconds)
+        ? milliseconds
+        : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  if (typeof value.toDate === "function") {
+    try {
+      const date = value.toDate();
+
+      return date instanceof Date &&
+        Number.isFinite(date.getTime())
+        ? date.getTime()
+        : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  if (value instanceof Date) {
+    return Number.isFinite(value.getTime())
+      ? value.getTime()
+      : 0;
+  }
+
+  if (typeof value === "string") {
+    const milliseconds =
+      new Date(value).getTime();
+
+    return Number.isFinite(milliseconds)
+      ? milliseconds
+      : 0;
+  }
+
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
+    return value;
+  }
+
+  return 0;
+}
+
+// ============================================================
 // DAILY HASH RATE
 // ============================================================
 
@@ -218,21 +282,25 @@ function nextDailyClaim(data, today) {
       ? data.lastDailyDate
       : "";
 
-  const current = dailyStreak(data);
+  const current =
+    dailyStreak(data);
 
   if (last === today) {
-    const streak = Math.max(1, current);
+    const streak =
+      Math.max(1, current);
 
     return {
       claimedToday: true,
       streak,
-      dailyHashRate: dailyHashRate(streak),
+      dailyHashRate:
+        dailyHashRate(streak),
     };
   }
 
-  const yesterday = new Date(
-    `${today}T00:00:00.000Z`
-  );
+  const yesterday =
+    new Date(
+      `${today}T00:00:00.000Z`
+    );
 
   yesterday.setUTCDate(
     yesterday.getUTCDate() - 1
@@ -242,14 +310,16 @@ function nextDailyClaim(data, today) {
     yesterday.toISOString().slice(0, 10);
 
   const streak =
-    last === yesterdayString && current > 0
+    last === yesterdayString &&
+    current > 0
       ? current + 1
       : 1;
 
   return {
     claimedToday: false,
     streak,
-    dailyHashRate: dailyHashRate(streak),
+    dailyHashRate:
+      dailyHashRate(streak),
   };
 }
 
@@ -258,27 +328,42 @@ function nextDailyClaim(data, today) {
 // ============================================================
 
 function miningWindow(data) {
-  const start = getMiningStartTime(data);
-  const end = getMiningEndTime(data);
+  const start =
+    getMiningStartTime(data);
 
-  const startMs = start?.getTime() || 0;
-  const endMs = end?.getTime() || 0;
+  const end =
+    getMiningEndTime(data);
+
+  const startMs =
+    start?.getTime() || 0;
+
+  const endMs =
+    end?.getTime() || 0;
 
   const valid =
     startMs > 0 &&
     endMs > startMs;
 
   return {
-    miningStartedAt: valid ? start : null,
-    miningEndsAt: valid ? end : null,
-    miningStartMs: valid ? startMs : 0,
-    miningEndMs: valid ? endMs : 0,
+    miningStartedAt:
+      valid ? start : null,
+
+    miningEndsAt:
+      valid ? end : null,
+
+    miningStartMs:
+      valid ? startMs : 0,
+
+    miningEndMs:
+      valid ? endMs : 0,
+
     valid,
   };
 }
 
 function miningActive(data, nowMs) {
-  const window = miningWindow(data);
+  const window =
+    miningWindow(data);
 
   return (
     window.valid &&
@@ -291,9 +376,8 @@ function miningHashRate(
   data,
   fallback = DAILY_HASH_RATE_START
 ) {
-  const stored = positive(
-    data.miningHashRate
-  );
+  const stored =
+    positive(data.miningHashRate);
 
   if (
     stored >= DAILY_HASH_RATE_START &&
@@ -302,10 +386,11 @@ function miningHashRate(
     return stored;
   }
 
-  const safeFallback = positive(
-    fallback,
-    DAILY_HASH_RATE_START
-  );
+  const safeFallback =
+    positive(
+      fallback,
+      DAILY_HASH_RATE_START
+    );
 
   return Math.min(
     MAX_DAILY_HASH_RATE,
@@ -317,9 +402,8 @@ function miningHashRate(
 }
 
 function historicalHashRate(data) {
-  const rate = positive(
-    data.miningHashRate
-  );
+  const rate =
+    positive(data.miningHashRate);
 
   return (
     rate >= DAILY_HASH_RATE_START &&
@@ -333,7 +417,11 @@ function historicalHashRate(data) {
 // AD STATUS
 // ============================================================
 
-function adStatus(data, nowMs, today) {
+function adStatus(
+  data,
+  nowMs,
+  today
+) {
   const lastDate =
     typeof data.lastAdDate === "string"
       ? data.lastAdDate
@@ -350,7 +438,9 @@ function adStatus(data, nowMs, today) {
       : 0;
 
   const lastRewardMs =
-    timestampMs(data.lastAdRewardAt);
+    timestampMs(
+      data.lastAdRewardAt
+    );
 
   const cooldownRemainingMs =
     lastRewardMs > 0
@@ -363,12 +453,17 @@ function adStatus(data, nowMs, today) {
       : 0;
 
   const boostStartMs =
-    timestampMs(data.adBoostStartedAt);
+    timestampMs(
+      data.adBoostStartedAt
+    );
 
   const boostEndMs =
-    timestampMs(data.adBoostEndsAt);
+    timestampMs(
+      data.adBoostEndsAt
+    );
 
-  const window = miningWindow(data);
+  const window =
+    miningWindow(data);
 
   const active =
     window.valid &&
@@ -377,8 +472,10 @@ function adStatus(data, nowMs, today) {
 
   const boostInsideMining =
     active &&
-    boostStartMs >= window.miningStartMs &&
-    boostStartMs < window.miningEndMs;
+    boostStartMs >=
+      window.miningStartMs &&
+    boostStartMs <
+      window.miningEndMs;
 
   const effectiveEnd =
     boostInsideMining &&
@@ -428,70 +525,6 @@ function adStatus(data, nowMs, today) {
 }
 
 // ============================================================
-// TIMESTAMP
-// ============================================================
-
-function timestampMs(value) {
-  if (!value) {
-    return 0;
-  }
-
-  if (
-    typeof value.toMillis === "function"
-  ) {
-    try {
-      const milliseconds =
-        value.toMillis();
-
-      return Number.isFinite(milliseconds)
-        ? milliseconds
-        : 0;
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  if (
-    typeof value.toDate === "function"
-  ) {
-    try {
-      const date = value.toDate();
-
-      return date instanceof Date &&
-        Number.isFinite(date.getTime())
-        ? date.getTime()
-        : 0;
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  if (value instanceof Date) {
-    return Number.isFinite(value.getTime())
-      ? value.getTime()
-      : 0;
-  }
-
-  if (typeof value === "string") {
-    const milliseconds =
-      new Date(value).getTime();
-
-    return Number.isFinite(milliseconds)
-      ? milliseconds
-      : 0;
-  }
-
-  if (
-    typeof value === "number" &&
-    Number.isFinite(value)
-  ) {
-    return value;
-  }
-
-  return 0;
-}
-
-// ============================================================
 // BOOST HISTORY
 // ============================================================
 
@@ -499,12 +532,13 @@ function maxBoostHistoryEntries() {
   const dayMs =
     24 * 60 * 60 * 1000;
 
-  const days = Math.max(
-    1,
-    Math.ceil(
-      MINING_DURATION_MS / dayMs
-    )
-  );
+  const days =
+    Math.max(
+      1,
+      Math.ceil(
+        MINING_DURATION_MS / dayMs
+      )
+    );
 
   return Math.max(
     MAX_ADS_PER_DAY,
@@ -548,9 +582,10 @@ async function getAdBoostHistory(
         maxBoostHistoryEntries()
       );
 
-  const snapshot = transaction
-    ? await transaction.get(query)
-    : await query.get();
+  const snapshot =
+    transaction
+      ? await transaction.get(query)
+      : await query.get();
 
   const boosts = [];
 
@@ -637,7 +672,10 @@ function boostMilliseconds(
           );
 
         return end > start
-          ? { start, end }
+          ? {
+              start,
+              end,
+            }
           : null;
       })
       .filter(Boolean)
@@ -1228,6 +1266,9 @@ const getMiningStatus = onCall(
         dailyHashRate:
           daily.dailyHashRate,
 
+        // Kept for Flutter compatibility.
+        // This field historically contains the current
+        // daily hash rate rather than a delta bonus.
         dailyHashRateBonus:
           daily.dailyHashRate,
 
@@ -1326,11 +1367,11 @@ const claimMining = onCall(
       // FAST PATH
       // --------------------------------------------------------
       //
-      // Jos mining on jo aktiivinen, uutta mining_start rewardia
-      // ei kuluteta.
+      // Jos mining on jo aktiivinen, uutta Mining Start
+      // -palkintoa ei kuluteta.
       //
-      // Tämä tarkistus tehdään vain käyttäjäkokemuksen
-      // nopeuttamiseksi. Lopullinen päätös tehdään transactionissa.
+      // Tämä on vain nopea käyttäjäkokemuksen tarkistus.
+      // Lopullinen päätös tehdään transactionissa.
       // --------------------------------------------------------
 
       const earlyNow =
@@ -1503,8 +1544,10 @@ const claimMining = onCall(
           const today =
             getUtcDateString(now);
 
-          // Kaikki tarvittavat read-operaatiot
-          // ennen transaction-write-operaatioita.
+          // ----------------------------------------------------
+          // ALL READS BEFORE WRITES
+          // ----------------------------------------------------
+
           const userSnapshot =
             await transaction.get(
               userRef
@@ -1549,10 +1592,14 @@ const claimMining = onCall(
               now
             );
 
-          // Toinen tarkistus transactionin sisällä.
+          // ----------------------------------------------------
+          // SECOND MINING-ACTIVE CHECK
+          // ----------------------------------------------------
           //
-          // Tämä suojaa kilpailutilanteelta, jossa toinen
-          // claim ehtii aloittaa louhinnan FAST PATHin jälkeen.
+          // Protects against a concurrent request that started
+          // mining after the FAST PATH but before this transaction.
+          // ----------------------------------------------------
+
           if (
             status.miningActive
           ) {
@@ -1620,13 +1667,9 @@ const claimMining = onCall(
             };
           }
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // AUTHORITATIVE REWARD VALIDATION
-          // ------------------------------------------------------
-          //
-          // Tämä on lopullinen server-side tarkistus.
-          // FAST PATH tai aiempi lookup eivät riitä.
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           let validated;
 
@@ -1654,9 +1697,9 @@ const claimMining = onCall(
           const authoritativeId =
             validated.transactionId;
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // DAILY HASH RATE
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           const daily =
             nextDailyClaim(
@@ -1667,9 +1710,9 @@ const claimMining = onCall(
           const rate =
             daily.dailyHashRate;
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // EXISTING BALANCE
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           const oldBalance =
             nonNegative(
@@ -1690,9 +1733,9 @@ const claimMining = onCall(
           let completedPrevious =
             false;
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // COLLECT COMPLETED PREVIOUS CYCLE
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           if (
             previous.valid &&
@@ -1746,9 +1789,9 @@ const claimMining = onCall(
             }
           }
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // ACHIEVEMENTS
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           await updateMiningAchievements(
             transaction,
@@ -1758,9 +1801,9 @@ const claimMining = onCall(
             now
           );
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // NEW MINING WINDOW
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           const startedAt =
             now;
@@ -1771,9 +1814,9 @@ const claimMining = onCall(
                 MINING_DURATION_MS
             );
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // USER UPDATE
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           transaction.set(
             userRef,
@@ -1827,9 +1870,9 @@ const claimMining = onCall(
             }
           );
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // CONSUME ADMOB REWARD
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           transaction.set(
             rewardRef,
@@ -1863,9 +1906,9 @@ const claimMining = onCall(
             }
           );
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // DAILY HISTORY
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           if (
             !daily.claimedToday
@@ -1909,9 +1952,9 @@ const claimMining = onCall(
             );
           }
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // COMPLETED MINING HISTORY
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           if (
             completedPrevious
@@ -1963,9 +2006,9 @@ const claimMining = onCall(
             );
           }
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // NEW MINING HISTORY
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           transaction.set(
             getHistoryCollection(uid)
@@ -2037,6 +2080,7 @@ const claimMining = onCall(
             dailyHashRate:
               rate,
 
+            // Kept for Flutter compatibility.
             dailyHashRateBonus:
               rate,
 
@@ -2271,7 +2315,10 @@ const powerBoost = onCall(
           const today =
             getUtcDateString(now);
 
-          // Kaikki read-operaatiot ennen write-operaatioita.
+          // ----------------------------------------------------
+          // ALL READS BEFORE WRITES
+          // ----------------------------------------------------
+
           const userSnapshot =
             await transaction.get(
               userRef
@@ -2331,9 +2378,9 @@ const powerBoost = onCall(
             );
           }
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // AUTHORITATIVE REWARD VALIDATION
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           let validated;
 
@@ -2361,9 +2408,9 @@ const powerBoost = onCall(
           const authoritativeId =
             validated.transactionId;
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // CURRENT AD STATE
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           const currentAds =
             adStatus(
@@ -2401,9 +2448,9 @@ const powerBoost = onCall(
             );
           }
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // BOOST WINDOW
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           const boostStartedAt =
             now;
@@ -2455,9 +2502,9 @@ const powerBoost = onCall(
           const newAdsToday =
             oldAds + 1;
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // USER UPDATE
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           transaction.set(
             userRef,
@@ -2488,9 +2535,9 @@ const powerBoost = onCall(
             }
           );
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // CONSUME ADMOB REWARD
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           transaction.set(
             rewardSnapshot.ref,
@@ -2521,9 +2568,9 @@ const powerBoost = onCall(
             }
           );
 
-          // ------------------------------------------------------
+          // ----------------------------------------------------
           // HISTORY
-          // ------------------------------------------------------
+          // ----------------------------------------------------
 
           transaction.set(
             getHistoryCollection(uid)
