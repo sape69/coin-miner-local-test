@@ -50,12 +50,44 @@ const {
 // Käytetään byte-pituutta eikä JavaScript-stringin
 // character length -arvoa.
 //
-// Tämä on tärkeää Unicode-merkkien kanssa, koska yksi
-// merkki voi käyttää useamman tavun.
-//
 // ============================================================
 
 const MAX_DOCUMENT_ID_BYTES = 1500;
+
+
+// ============================================================
+// 🔐 CREATE FIRESTORE ID ERROR
+// ============================================================
+//
+// Keskitetty virheen luonti pitää validoinnin siistinä
+// ja varmistaa yhdenmukaiset error-koodit.
+//
+// ============================================================
+
+function createDocumentIdError(
+  code,
+  message,
+  parameterName,
+  extra = {},
+) {
+  const error =
+    new Error(
+      message,
+    );
+
+  error.code =
+    code;
+
+  error.parameter =
+    parameterName;
+
+  Object.assign(
+    error,
+    extra,
+  );
+
+  return error;
+}
 
 
 // ============================================================
@@ -109,18 +141,11 @@ function validateDocumentId(
   if (
     typeof value !== "string"
   ) {
-    const error =
-      new Error(
-        `${parameterName} must be a string.`,
-      );
-
-    error.code =
-      "FIRESTORE_INVALID_DOCUMENT_ID";
-
-    error.parameter =
-      parameterName;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_INVALID_DOCUMENT_ID",
+      `${parameterName} must be a string.`,
+      parameterName,
+    );
   }
 
 
@@ -131,18 +156,11 @@ function validateDocumentId(
   if (
     value.length === 0
   ) {
-    const error =
-      new Error(
-        `${parameterName} cannot be empty.`,
-      );
-
-    error.code =
-      "FIRESTORE_INVALID_DOCUMENT_ID";
-
-    error.parameter =
-      parameterName;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_INVALID_DOCUMENT_ID",
+      `${parameterName} cannot be empty.`,
+      parameterName,
+    );
   }
 
 
@@ -161,18 +179,11 @@ function validateDocumentId(
   if (
     value.trim().length === 0
   ) {
-    const error =
-      new Error(
-        `${parameterName} cannot contain only whitespace.`,
-      );
-
-    error.code =
-      "FIRESTORE_INVALID_DOCUMENT_ID";
-
-    error.parameter =
-      parameterName;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_INVALID_DOCUMENT_ID",
+      `${parameterName} cannot contain only whitespace.`,
+      parameterName,
+    );
   }
 
 
@@ -189,18 +200,11 @@ function validateDocumentId(
   if (
     value.includes("/")
   ) {
-    const error =
-      new Error(
-        `${parameterName} cannot contain "/".`,
-      );
-
-    error.code =
-      "FIRESTORE_INVALID_DOCUMENT_ID";
-
-    error.parameter =
-      parameterName;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_INVALID_DOCUMENT_ID",
+      `${parameterName} cannot contain "/".`,
+      parameterName,
+    );
   }
 
 
@@ -216,18 +220,11 @@ function validateDocumentId(
     value === "." ||
     value === ".."
   ) {
-    const error =
-      new Error(
-        `${parameterName} cannot be "." or "..".`,
-      );
-
-    error.code =
-      "FIRESTORE_INVALID_DOCUMENT_ID";
-
-    error.parameter =
-      parameterName;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_INVALID_DOCUMENT_ID",
+      `${parameterName} cannot be "." or "..".`,
+      parameterName,
+    );
   }
 
 
@@ -251,18 +248,11 @@ function validateDocumentId(
       value,
     )
   ) {
-    const error =
-      new Error(
-        `${parameterName} cannot match the Firestore reserved "__.*__" pattern.`,
-      );
-
-    error.code =
-      "FIRESTORE_INVALID_DOCUMENT_ID";
-
-    error.parameter =
-      parameterName;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_INVALID_DOCUMENT_ID",
+      `${parameterName} cannot match the Firestore reserved "__.*__" pattern.`,
+      parameterName,
+    );
   }
 
 
@@ -283,31 +273,26 @@ function validateDocumentId(
       "utf8",
     );
 
-
   if (
     byteLength >
     MAX_DOCUMENT_ID_BYTES
   ) {
-    const error =
-      new Error(
-        `${parameterName} exceeds the Firestore document ID size limit.`,
-      );
-
-    error.code =
-      "FIRESTORE_DOCUMENT_ID_TOO_LONG";
-
-    error.parameter =
-      parameterName;
-
-    error.byteLength =
-      byteLength;
-
-    error.maxBytes =
-      MAX_DOCUMENT_ID_BYTES;
-
-    throw error;
+    throw createDocumentIdError(
+      "FIRESTORE_DOCUMENT_ID_TOO_LONG",
+      `${parameterName} exceeds the Firestore document ID size limit.`,
+      parameterName,
+      {
+        byteLength,
+        maxBytes:
+          MAX_DOCUMENT_ID_BYTES,
+      },
+    );
   }
 
+
+  // ==========================================================
+  // VALID
+  // ==========================================================
 
   return value;
 }
@@ -385,8 +370,8 @@ function getHistoryCollection(
 // Sama transaction_id voidaan tunnistaa jo käsitellyksi
 // ilman, että transaction ID:n sisältöä tarvitsee muuttaa.
 //
-// Varsinainen atominen käsittely kuuluu kuitenkin
-// AdMob/SSV business- tai service-kerrokseen.
+// Varsinainen atominen käsittely kuuluu AdMob/SSV
+// business/service-kerrokseen.
 //
 // ============================================================
 
@@ -421,4 +406,6 @@ module.exports = {
   getAdMobRewardRef,
 
   validateDocumentId,
+
+  MAX_DOCUMENT_ID_BYTES,
 };
