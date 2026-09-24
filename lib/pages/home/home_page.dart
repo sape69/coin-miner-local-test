@@ -44,8 +44,6 @@ class _HomePageState extends State<HomePage>
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
-  static const Color pinkColor = Color(0xFFFFB7E8);
-  static const Color goldColor = Color(0xFFFFD166);
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
@@ -116,7 +114,6 @@ class _HomePageState extends State<HomePage>
 
   double _adHashRateBonus = defaultAdHashRateBonus;
 
-  int _adCooldownMs = defaultAdCooldownMs;
   int _cooldownRemainingMs = 0;
 
   bool _serverCanWatchAd = true;
@@ -524,8 +521,6 @@ class _HomePageState extends State<HomePage>
             .toInt();
 
         _adHashRateBonus = safeAdBonus;
-
-        _adCooldownMs = safeCooldown;
 
         _cooldownRemainingMs = cooldownRemaining
             .clamp(
@@ -1472,8 +1467,10 @@ class _HomePageState extends State<HomePage>
         onAboutPressed: _openAbout,
         onWhitePaperPressed: _openWhitePaper,
         onRoadmapPressed: _openRoadmap,
+        onAchievementsPressed: _openAchievements,
         onTransactionHistoryPressed:
             _openTransactionHistory,
+        onLogoutPressed: _logout,
       ),
       body: SafeArea(
         child: _loading
