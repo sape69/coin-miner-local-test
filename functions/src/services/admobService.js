@@ -51,9 +51,6 @@ const {
 const ADMOB_SSV_KEYS_URL =
   "https://www.gstatic.com/admob/reward/verifier-keys.json";
 
-// Public keys voidaan cachettaa enintään 24 tunniksi.
-// Käytetään hieman lyhyempää aikaa, jotta avainten kierto
-// voidaan havaita ennen varsinaista 24 h rajaa.
 const PUBLIC_KEY_CACHE_MS =
   23 * 60 * 60 * 1000;
 
@@ -829,7 +826,6 @@ async function getAdMobPublicKeys(
     return publicKeyCache.keys;
   }
 
-  // Estetään samanaikaiset lataukset.
   if (
     publicKeyFetchPromise
   ) {
@@ -877,9 +873,6 @@ function createAdMobPublicKey(
       "AdMob public key is missing.",
     );
   }
-
-  // AdMob tarjoaa base64-SPKI-esityksen.
-  // Käytetään sitä ensisijaisesti.
 
   if (
     keyData.base64
@@ -968,9 +961,8 @@ function verifyWithPublicKey(
 // 🔐 VERIFY SIGNED QUERY
 // ============================================================
 //
-// Tärkeää:
-//
 // signedQueryStringia EI:
+//
 // - decodeURIComponent()
 // - encodeURIComponent()
 // - URLSearchParams()
@@ -1256,7 +1248,7 @@ async function verifyAdMobSignature(
     );
 
 
-  // Jos key_id:tä ei löydy cachesta,
+  // Jos key_id:tä ei löydy,
   // pakotetaan uusi haku.
 
   if (
@@ -1395,8 +1387,6 @@ function getQueryValue(
   const value =
     query?.[key];
 
-  // Epäselvä duplicate-parametri hylätään.
-
   if (
     Array.isArray(value)
   ) {
@@ -1424,12 +1414,6 @@ function getQueryValue(
 // tai:
 //
 // uid:power_boost
-//
-// AdMob voi percent-escapata custom_data-arvon.
-//
-// Tärkeää:
-// Tätä EI käytetä allekirjoitettavan query-stringin
-// muodostamiseen.
 //
 // ============================================================
 
@@ -1534,9 +1518,7 @@ function parseCustomData(
     );
 
 
-  if (
-    !uid
-  ) {
+  if (!uid) {
     throw createError(
       "ADMOB_INVALID_UID",
       "AdMob custom_data contains an invalid UID.",
@@ -1544,9 +1526,7 @@ function parseCustomData(
   }
 
 
-  if (
-    !rewardPurpose
-  ) {
+  if (!rewardPurpose) {
     throw createError(
       "ADMOB_INVALID_REWARD_PURPOSE",
       "AdMob custom_data contains an invalid reward purpose.",
@@ -1578,9 +1558,7 @@ function getExpectedAdMobConfig(
     ];
 
 
-  if (
-    !config
-  ) {
+  if (!config) {
     throw createError(
       "ADMOB_INVALID_REWARD_PURPOSE",
       "Unknown AdMob reward purpose.",
@@ -1637,19 +1615,21 @@ function getExpectedAdMobConfig(
 // 🌐 RAW QUERY
 // ============================================================
 //
-// TÄRKEÄ:
+// Kryptografista varmennusta varten käytetään requestin
+// alkuperäistä query-stringiä.
 //
-// Kryptografista varmennusta varten käytetään ensisijaisesti
-// requestin raakaa query-stringiä.
-//
-// Emme yritä rakentaa allekirjoitettavaa dataa uudelleen
-// req.query-objektista.
+// Emme rakenna allekirjoitettavaa merkkijonoa req.querystä.
 //
 // ============================================================
 
 function getRawQueryString(
   req,
 ) {
+  // ----------------------------------------------------------
+  // Ensisijainen vaihtoehto:
+  // frameworkin tarjoama rawQuery
+  // ----------------------------------------------------------
+
   if (
     typeof req?.rawQuery ===
       "string" &&
@@ -1665,11 +1645,9 @@ function getRawQueryString(
   }
 
 
-  // originalUrl on seuraava vaihtoehto.
-  //
-  // Emme käy läpi useita erilaisia URL-esityksiä
-  // ja hyväksy niistä sattumanvaraisesti ensimmäistä
-  // kryptografisesti validoituvaa versiota.
+  // ----------------------------------------------------------
+  // originalUrl
+  // ----------------------------------------------------------
 
   if (
     typeof req?.originalUrl ===
@@ -1684,12 +1662,21 @@ function getRawQueryString(
     if (
       questionMark !== -1
     ) {
-      return req.originalUrl.substring(
-        questionMark + 1,
-      );
+      const query =
+        req.originalUrl.substring(
+          questionMark + 1,
+        );
+
+      if (query) {
+        return query;
+      }
     }
   }
 
+
+  // ----------------------------------------------------------
+  // url
+  // ----------------------------------------------------------
 
   if (
     typeof req?.url ===
@@ -1704,9 +1691,14 @@ function getRawQueryString(
     if (
       questionMark !== -1
     ) {
-      return req.url.substring(
-        questionMark + 1,
-      );
+      const query =
+        req.url.substring(
+          questionMark + 1,
+        );
+
+      if (query) {
+        return query;
+      }
     }
   }
 
@@ -1728,9 +1720,7 @@ async function verifyFromRequest(
     );
 
 
-  if (
-    !rawQueryString
-  ) {
+  if (!rawQueryString) {
     throw createError(
       "ADMOB_QUERY_STRING_MISSING",
       "AdMob query string is missing.",
@@ -1751,9 +1741,7 @@ async function verifyFromRequest(
 async function verifyAdMobCallback(
   req,
 ) {
-  if (
-    !req
-  ) {
+  if (!req) {
     throw createError(
       "ADMOB_REQUEST_MISSING",
       "AdMob request is missing.",
@@ -1893,9 +1881,7 @@ async function verifyAdMobCallback(
     );
 
 
-  if (
-    !validatedAdNetwork
-  ) {
+  if (!validatedAdNetwork) {
     throw createError(
       "ADMOB_INVALID_AD_NETWORK",
       "AdMob ad_network is invalid.",
@@ -1940,9 +1926,7 @@ async function verifyAdMobCallback(
   }
 
 
-  if (
-    !validatedTransactionId
-  ) {
+  if (!validatedTransactionId) {
     throw createError(
       "ADMOB_INVALID_TRANSACTION_ID",
       "AdMob transaction_id is invalid.",
@@ -1950,9 +1934,7 @@ async function verifyAdMobCallback(
   }
 
 
-  if (
-    !validatedTimestamp
-  ) {
+  if (!validatedTimestamp) {
     throw createError(
       "ADMOB_INVALID_TIMESTAMP",
       "AdMob timestamp is invalid.",
@@ -2026,18 +2008,14 @@ async function verifyAdMobCallback(
     "";
 
 
-  if (
-    userId
-  ) {
+  if (userId) {
     normalizedUserId =
       validateUid(
         userId,
       );
 
 
-    if (
-      !normalizedUserId
-    ) {
+    if (!normalizedUserId) {
       throw createError(
         "ADMOB_INVALID_UID",
         "AdMob user_id is invalid.",
