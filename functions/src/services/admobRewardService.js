@@ -17,16 +17,14 @@
 // - muuta STL-saldoa
 // - käynnistä louhintaa
 // - aktivoi Power Boostia
-// - tee AdMob SSV:n allekirjoituksen varmennusta
+// - varmista AdMob SSV:n allekirjoitusta
 //
 // AdMob SSV:n varsinainen varmennus kuuluu:
 // functions/src/services/admobService.js
 //
 // ============================================================
 
-const {
-  db,
-} = require("../firebase/firebase");
+const { db } = require("../firebase/firebase");
 
 const {
   getAdMobRewardRef,
@@ -42,19 +40,27 @@ const REWARD_MAX_AGE_MS =
 const REWARD_FUTURE_TOLERANCE_MS =
   5 * 60 * 1000;
 
-// AdMob SSV and the Flutter reward callback
-// are independent events.
+// AdMob SSV ja Flutterin rewarded-ad callback
+// ovat kaksi erillistä tapahtumaa.
 //
-// claimMining / powerBoost can therefore arrive
-// slightly before the SSV document exists.
+// Flutter voi siis kutsua claimMining / powerBoost
+// ennen kuin SSV on ehtinyt kirjoittaa reward-dokumentin.
 //
-// We wait only for a short bounded period.
+// Odotetaan vain lyhyesti.
+// Rewardia EI koskaan hyväksytä ilman verified === true.
 //
-// The reward is NEVER accepted unless
-// the SSV document is verified.
-const SSV_WAIT_TIMEOUT_MS = 5000;
+// ============================================================
 
+const SSV_WAIT_TIMEOUT_MS = 5000;
 const SSV_RETRY_DELAY_MS = 250;
+
+// Fallback-haussa ei ole tarkoituksenmukaista lukea
+// rajattomasti koko käyttäjän reward-historiaa.
+//
+// Direct transaction_id -haku on aina ensisijainen.
+// Tätä rajaa käytetään vain tilanteessa, jossa client
+// ei toimita transaction_id:tä.
+const MAX_FALLBACK_REWARD_DOCS = 50;
 
 const VALID_REWARD_PURPOSES = new Set([
   "mining_start",
@@ -156,12 +162,12 @@ function timestampMs(value) {
       const result =
         value.toMillis();
 
-      if (
-        Number.isFinite(result)
-      ) {
-        return result;
-      }
-    } catch (_) {}
+      return Number.isFinite(result)
+        ? result
+        : 0;
+    } catch (_) {
+      return 0;
+    }
   }
 
   if (
@@ -171,15 +177,15 @@ function timestampMs(value) {
       const date =
         value.toDate();
 
-      if (
-        date instanceof Date &&
+      return date instanceof Date &&
         Number.isFinite(
           date.getTime()
         )
-      ) {
-        return date.getTime();
-      }
-    } catch (_) {}
+        ? date.getTime()
+        : 0;
+    } catch (_) {
+      return 0;
+    }
   }
 
   if (value instanceof Date) {
@@ -214,6 +220,10 @@ function timestampMs(value) {
 // ============================================================
 
 function getRewardCreatedAtMs(data) {
+  if (!data || typeof data !== "object") {
+    return 0;
+  }
+
   const candidates = [
     data.verifiedAt,
     data.ssvVerifiedAt,
@@ -285,6 +295,10 @@ function validateRewardTiming(
 // ============================================================
 
 function getDocumentTransactionId(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+
   const candidates = [
     data.transactionId,
     data.adMobTransactionId,
@@ -305,6 +319,10 @@ function getDocumentTransactionId(data) {
 }
 
 function getDocumentRewardPurpose(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+
   const candidates = [
     data.rewardPurpose,
     data.reward_purpose,
@@ -323,6 +341,10 @@ function getDocumentRewardPurpose(data) {
 }
 
 function getDocumentUid(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+
   const candidates = [
     data.uid,
     data.userId,
@@ -346,24 +368,24 @@ function getDocumentUid(data) {
 // ============================================================
 
 function getClaimField(rewardPurpose) {
-  if (
-    rewardPurpose ===
-    "mining_start"
-  ) {
-    return "miningStartClaimed";
-  }
+  const purpose =
+    validateRewardPurpose(
+      rewardPurpose,
+    );
 
-  if (
-    rewardPurpose ===
-    "power_boost"
-  ) {
-    return "powerBoostClaimed";
-  }
+  switch (purpose) {
+    case "mining_start":
+      return "miningStartClaimed";
 
-  throw createError(
-    "ADMOB_INVALID_REWARD_PURPOSE",
-    "Unknown AdMob reward purpose.",
-  );
+    case "power_boost":
+      return "powerBoostClaimed";
+
+    default:
+      throw createError(
+        "ADMOB_INVALID_REWARD_PURPOSE",
+        "Unknown AdMob reward purpose.",
+      );
+  }
 }
 
 function isRewardAlreadyClaimed(
@@ -394,8 +416,7 @@ function validateVerifiedRewardDocument(
 ) {
   if (
     !rewardSnapshot ||
-    typeof rewardSnapshot.exists !==
-      "boolean"
+    typeof rewardSnapshot.exists !== "boolean"
   ) {
     throw createError(
       "ADMOB_REWARD_DOCUMENT_MISSING",
@@ -436,12 +457,13 @@ function validateVerifiedRewardDocument(
   }
 
   const expectedClaimField =
-    getClaimField(purpose);
+    getClaimField(
+      purpose,
+    );
 
   if (
     claimField &&
-    claimField !==
-      expectedClaimField
+    claimField !== expectedClaimField
   ) {
     throw createError(
       "ADMOB_INVALID_CLAIM_FIELD",
@@ -449,12 +471,20 @@ function validateVerifiedRewardDocument(
     );
   }
 
+  // ----------------------------------------------------------
+  // SSV VERIFICATION
+  // ----------------------------------------------------------
+
   if (data.verified !== true) {
     throw createError(
       "ADMOB_REWARD_NOT_VERIFIED",
       "AdMob reward has not been verified.",
     );
   }
+
+  // ----------------------------------------------------------
+  // UID
+  // ----------------------------------------------------------
 
   const documentUid =
     getDocumentUid(data);
@@ -467,14 +497,17 @@ function validateVerifiedRewardDocument(
   }
 
   if (
-    documentUid !==
-    validatedUid
+    documentUid !== validatedUid
   ) {
     throw createError(
       "ADMOB_REWARD_UID_MISMATCH",
       "Verified AdMob reward UID does not match the authenticated user.",
     );
   }
+
+  // ----------------------------------------------------------
+  // PURPOSE
+  // ----------------------------------------------------------
 
   const documentPurpose =
     getDocumentRewardPurpose(
@@ -489,14 +522,17 @@ function validateVerifiedRewardDocument(
   }
 
   if (
-    documentPurpose !==
-    purpose
+    documentPurpose !== purpose
   ) {
     throw createError(
       "ADMOB_REWARD_PURPOSE_MISMATCH",
       "Verified AdMob reward purpose does not match the requested operation.",
     );
   }
+
+  // ----------------------------------------------------------
+  // TRANSACTION ID
+  // ----------------------------------------------------------
 
   const documentTransactionId =
     getDocumentTransactionId(
@@ -526,10 +562,18 @@ function validateVerifiedRewardDocument(
     );
   }
 
+  // ----------------------------------------------------------
+  // TIMING
+  // ----------------------------------------------------------
+
   validateRewardTiming(
     data,
     options,
   );
+
+  // ----------------------------------------------------------
+  // REPLAY / CLAIM PROTECTION
+  // ----------------------------------------------------------
 
   if (
     isRewardAlreadyClaimed(
@@ -549,7 +593,8 @@ function validateVerifiedRewardDocument(
     rewardRef:
       rewardSnapshot.ref,
 
-    uid: validatedUid,
+    uid:
+      validatedUid,
 
     rewardPurpose:
       purpose,
@@ -588,15 +633,15 @@ async function getVerifiedReward(
     );
 
   // ----------------------------------------------------------
-  // Direct transaction lookup
+  // DIRECT TRANSACTION LOOKUP
   // ----------------------------------------------------------
   //
-  // IMPORTANT:
-  // A missing transaction document must throw
-  // ADMOB_REWARD_NOT_FOUND here.
+  // Tämä on ensisijainen tapa.
   //
-  // getVerifiedRewardWithRetry() depends on
-  // this error to wait for the SSV document.
+  // Jos transaction_id tunnetaan, haetaan täsmälleen
+  // yksi dokumentti.
+  //
+  // Puuttuva dokumentti -> retry SSV_WAIT-logiikkaan.
   // ----------------------------------------------------------
 
   if (transactionId) {
@@ -604,6 +649,13 @@ async function getVerifiedReward(
       getAdMobRewardRef(
         transactionId,
       );
+
+    if (!rewardRef) {
+      throw createError(
+        "ADMOB_REWARD_NOT_FOUND",
+        "Verified AdMob reward reference was not found.",
+      );
+    }
 
     const rewardSnapshot =
       await rewardRef.get();
@@ -625,7 +677,14 @@ async function getVerifiedReward(
   }
 
   // ----------------------------------------------------------
-  // Latest verified reward lookup
+  // FALLBACK: LATEST VERIFIED REWARD
+  // ----------------------------------------------------------
+  //
+  // Tämä on tarkoitettu vain tilanteeseen, jossa client
+  // ei toimita transaction_id:tä.
+  //
+  // Transaction ID:n käyttö on silti suositeltu ja
+  // turvallisempi reitti.
   // ----------------------------------------------------------
 
   const purpose =
@@ -647,6 +706,9 @@ async function getVerifiedReward(
         "uid",
         "==",
         validatedUid,
+      )
+      .limit(
+        MAX_FALLBACK_REWARD_DOCS,
       )
       .get();
 
@@ -681,56 +743,113 @@ async function getVerifiedReward(
         return bTime - aTime;
       });
 
-  if (
-    candidates.length === 0
-  ) {
+  if (!candidates.length) {
     throw createError(
       "ADMOB_REWARD_NOT_FOUND",
       "No verified unconsumed AdMob reward is available yet.",
     );
   }
 
-  const rewardSnapshot =
-    candidates[0];
+  // ----------------------------------------------------------
+  // VALIDATE CANDIDATES
+  // ----------------------------------------------------------
+  //
+  // Älä valitse automaattisesti ensimmäistä dokumenttia,
+  // koska uusin dokumentti voi olla esimerkiksi vanhentunut.
+  //
+  // Etsitään ensimmäinen oikeasti käyttökelpoinen reward.
+  // ----------------------------------------------------------
 
-  const selectedTransactionId =
-    getDocumentTransactionId(
-      rewardSnapshot.data() || {},
-    );
+  let lastValidationError = null;
 
-  if (!selectedTransactionId) {
-    throw createError(
-      "ADMOB_REWARD_TRANSACTION_ID_MISSING",
-      "Verified AdMob reward does not contain a valid transaction_id.",
-    );
+  for (const candidate of candidates) {
+    try {
+      const candidateData =
+        candidate.data() || {};
+
+      const candidateTransactionId =
+        getDocumentTransactionId(
+          candidateData,
+        );
+
+      if (!candidateTransactionId) {
+        lastValidationError =
+          createError(
+            "ADMOB_REWARD_TRANSACTION_ID_MISSING",
+            "Verified AdMob reward does not contain a valid transaction_id.",
+          );
+
+        continue;
+      }
+
+      validateVerifiedRewardDocument(
+        candidate,
+        validatedUid,
+        purpose,
+        getClaimField(purpose),
+        {
+          referenceNowMs:
+            number(
+              options.referenceNowMs,
+              Date.now(),
+            ),
+
+          transactionId:
+            candidateTransactionId,
+        },
+      );
+
+      return {
+        rewardRef:
+          candidate.ref,
+
+        rewardSnapshot:
+          candidate,
+
+        transactionId:
+          candidateTransactionId,
+      };
+    } catch (error) {
+      lastValidationError =
+        error;
+    }
   }
 
-  return {
-    rewardRef:
-      rewardSnapshot.ref,
+  // Jos reward-dokumentteja löytyi mutta yksikään ei ollut
+  // käyttökelpoinen, palautetaan viimeisin tarkka virhe.
+  if (lastValidationError) {
+    throw lastValidationError;
+  }
 
-    rewardSnapshot,
-
-    transactionId:
-      selectedTransactionId,
-  };
+  throw createError(
+    "ADMOB_REWARD_NOT_FOUND",
+    "No verified unconsumed AdMob reward is available yet.",
+  );
 }
 
 // ============================================================
 // WAIT FOR SSV
 // ============================================================
 //
-// AdMob SSV and Flutter RewardedAd callback
-// are independent events.
+// AdMob SSV ja Flutter RewardedAd callback
+// ovat erillisiä tapahtumia.
 //
-// Flutter can call claimMining/powerBoost
-// before the SSV function has written
+// Flutter voi kutsua claimMining/powerBoost
+// ennen kuin SSV-funktio on kirjoittanut
 // admobRewards/{transactionId}.
 //
-// We retry ONLY while the reward document
-// has not arrived.
+// Retry tapahtuu VAIN jos reward-dokumenttia
+// ei vielä ole.
 //
-// We NEVER accept an unverified reward.
+// Jos dokumentti löytyy mutta:
+// - verified puuttuu
+// - UID ei täsmää
+// - purpose ei täsmää
+// - transaction ID ei täsmää
+// - reward on vanhentunut
+// - reward on jo käytetty
+//
+// => virhe palautetaan heti.
 //
 // ============================================================
 
@@ -755,16 +874,8 @@ async function getVerifiedRewardWithRetry(
     } catch (error) {
       lastError = error;
 
-      // Only retry when the SSV reward
-      // has not arrived yet.
-      //
-      // Authentication errors,
-      // UID mismatches,
-      // expired rewards,
-      // already claimed rewards,
-      // invalid purposes, etc.
-      // must immediately fail.
-
+      // Retry vain, jos SSV-dokumentti ei ole
+      // vielä saapunut.
       if (
         !error ||
         error.code !==
@@ -815,6 +926,7 @@ async function getVerifiedMiningStartReward(
       uid,
       {
         ...options,
+
         rewardPurpose:
           "mining_start",
       },
@@ -862,6 +974,7 @@ async function getVerifiedPowerBoostReward(
       uid,
       {
         ...options,
+
         rewardPurpose:
           "power_boost",
       },
