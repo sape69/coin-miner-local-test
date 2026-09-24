@@ -44,6 +44,8 @@ class _HomePageState extends State<HomePage>
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
+  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color goldColor = Color(0xFFFFD166);
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
@@ -407,10 +409,6 @@ class _HomePageState extends State<HomePage>
           _asDouble(data['adHashRateBonus']) ??
               defaultAdHashRateBonus;
 
-      final int cooldown =
-          _asInt(data['adCooldownMs']) ??
-              defaultAdCooldownMs;
-
       final int cooldownRemaining =
           _asInt(data['cooldownRemainingMs']) ??
               0;
@@ -483,16 +481,21 @@ class _HomePageState extends State<HomePage>
               ? adBonus
               : defaultAdHashRateBonus;
 
-      final int safeCooldown =
-          cooldown > 0
-              ? cooldown
-              : defaultAdCooldownMs;
-
       final int safeRemaining =
-          remaining.clamp(
-        0,
-        safeDuration,
-      ).toInt();
+          remaining
+              .clamp(
+                0,
+                safeDuration,
+              )
+              .toInt();
+
+      final int safeCooldownRemaining =
+          cooldownRemaining
+              .clamp(
+                0,
+                defaultAdCooldownMs,
+              )
+              .toInt();
 
       if (!mounted) {
         return;
@@ -522,14 +525,11 @@ class _HomePageState extends State<HomePage>
 
         _adHashRateBonus = safeAdBonus;
 
-        _cooldownRemainingMs = cooldownRemaining
-            .clamp(
-              0,
-              safeCooldown,
-            )
-            .toInt();
+        _cooldownRemainingMs =
+            safeCooldownRemaining;
 
-        _serverCanWatchAd = serverCanWatchAd;
+        _serverCanWatchAd =
+            serverCanWatchAd;
 
         _boostActive = boostActive;
 
