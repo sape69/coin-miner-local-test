@@ -88,18 +88,6 @@ class HomeAdManager extends ChangeNotifier {
     this.onAdShowError,
     this.onAdDismissed,
   }) {
-    // ==========================================================
-    // 🚀 PRELOAD MINING AD
-    // ==========================================================
-    //
-    // HomePage luodaan vasta kirjautuneelle käyttäjälle.
-    //
-    // Aloitetaan Mining Start -mainoksen lataus heti,
-    // jotta käyttäjän ei tarvitse odottaa mainoksen lataamista
-    // vasta nappia painettaessa.
-    //
-    // ==========================================================
-
     unawaited(
       _preloadMiningAd(),
     );
@@ -119,11 +107,9 @@ class HomeAdManager extends ChangeNotifier {
 
   String get adLoadError => _adLoadError;
 
-  bool get miningAdFlowActive =>
-      _miningAdFlowActive;
+  bool get miningAdFlowActive => _miningAdFlowActive;
 
-  bool get powerBoostAdFlowActive =>
-      _powerBoostAdFlowActive;
+  bool get powerBoostAdFlowActive => _powerBoostAdFlowActive;
 
   // ============================================================
   // 🔔 NOTIFY
@@ -168,8 +154,7 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
 
   void _disposeCurrentAd() {
-    final RewardedAd? ad =
-        _rewardedAd;
+    final RewardedAd? ad = _rewardedAd;
 
     _clearAdState();
 
@@ -199,8 +184,7 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    final User? user =
-        _auth.currentUser;
+    final User? user = _auth.currentUser;
 
     if (user == null) {
       debugPrint(
@@ -227,8 +211,7 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    final User? user =
-        _auth.currentUser;
+    final User? user = _auth.currentUser;
 
     if (user == null) {
       debugPrint(
@@ -262,6 +245,10 @@ class HomeAdManager extends ChangeNotifier {
           purpose,
           user.uid,
         )) {
+      debugPrint(
+        '🐱 [ADMOB] Disposing ad for another purpose.',
+      );
+
       _disposeCurrentAd();
     }
 
@@ -271,11 +258,18 @@ class HomeAdManager extends ChangeNotifier {
 
     if (_adLoading &&
         _loadingPurpose != purpose) {
+      debugPrint(
+        '🐱 [ADMOB] Cancelling previous load: '
+        '$_loadingPurpose',
+      );
+
       _loadRequestId++;
 
       _adLoading = false;
 
       _loadingPurpose = '';
+
+      _notify();
     }
 
     // ----------------------------------------------------------
@@ -293,22 +287,17 @@ class HomeAdManager extends ChangeNotifier {
     // Wait up to 20 seconds
     // ----------------------------------------------------------
 
-    const int maxChecks = 100;
-
     const Duration interval =
         Duration(milliseconds: 200);
 
-    for (
-      int i = 0;
-      i < maxChecks;
-      i++
-    ) {
+    const int maxChecks = 100;
+
+    for (int i = 0; i < maxChecks; i++) {
       if (_disposed) {
         return false;
       }
 
-      final User? activeUser =
-          _auth.currentUser;
+      final User? activeUser = _auth.currentUser;
 
       if (activeUser == null) {
         return false;
@@ -335,8 +324,7 @@ class HomeAdManager extends ChangeNotifier {
       );
     }
 
-    final User? finalUser =
-        _auth.currentUser;
+    final User? finalUser = _auth.currentUser;
 
     final bool ready =
         !_disposed &&
@@ -348,12 +336,18 @@ class HomeAdManager extends ChangeNotifier {
 
     if (!ready) {
       debugPrint(
-        '❌ [ADMOB] Ad was not ready after waiting: $purpose',
+        '❌ [ADMOB] Ad was not ready after 20 seconds: '
+        '$purpose',
       );
 
       if (_adLoadError.isNotEmpty) {
         debugPrint(
-          '❌ [ADMOB] Last error: $_adLoadError',
+          '❌ [ADMOB] Last load error: $_adLoadError',
+        );
+      } else if (_adLoading) {
+        debugPrint(
+          '⚠️ [ADMOB] Ad is still loading after 20 seconds: '
+          '$purpose',
         );
       }
     }
@@ -373,8 +367,7 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    final User? user =
-        _auth.currentUser;
+    final User? user = _auth.currentUser;
 
     if (user == null) {
       _adLoading = false;
@@ -395,17 +388,30 @@ class HomeAdManager extends ChangeNotifier {
       purpose,
       user.uid,
     )) {
+      debugPrint(
+        '🐱 [ADMOB] Existing ready ad used: $purpose',
+      );
+
       return;
     }
 
     // ----------------------------------------------------------
-    // Cancel different loading request
+    // Existing load
     // ----------------------------------------------------------
 
     if (_adLoading) {
       if (_loadingPurpose == purpose) {
+        debugPrint(
+          '🐱 [ADMOB] Load already running: $purpose',
+        );
+
         return;
       }
+
+      debugPrint(
+        '🐱 [ADMOB] Cancelling different load: '
+        '$_loadingPurpose',
+      );
 
       _loadRequestId++;
 
@@ -426,14 +432,11 @@ class HomeAdManager extends ChangeNotifier {
     // Request information
     // ----------------------------------------------------------
 
-    final int requestId =
-        ++_loadRequestId;
+    final int requestId = ++_loadRequestId;
 
-    final String loadingUid =
-        user.uid;
+    final String loadingUid = user.uid;
 
-    final String adUnitId =
-        _getAdUnitId(
+    final String adUnitId = _getAdUnitId(
       purpose,
     );
 
@@ -492,8 +495,7 @@ class HomeAdManager extends ChangeNotifier {
           LoadAdError error,
         ) {
           if (_disposed ||
-              requestId !=
-                  _loadRequestId) {
+              requestId != _loadRequestId) {
             return;
           }
 
@@ -538,19 +540,16 @@ class HomeAdManager extends ChangeNotifier {
     required int requestId,
   }) async {
     if (_disposed ||
-        requestId !=
-            _loadRequestId) {
+        requestId != _loadRequestId) {
       ad.dispose();
 
       return;
     }
 
-    final User? activeUser =
-        _auth.currentUser;
+    final User? activeUser = _auth.currentUser;
 
     if (activeUser == null ||
-        activeUser.uid !=
-            loadingUid) {
+        activeUser.uid != loadingUid) {
       ad.dispose();
 
       _adLoading = false;
@@ -568,6 +567,10 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    debugPrint(
+      '🐱 [ADMOB] Ad loaded successfully: $purpose',
+    );
+
     // ==========================================================
     // 🔐 SERVER-SIDE VERIFICATION
     // ==========================================================
@@ -583,8 +586,7 @@ class HomeAdManager extends ChangeNotifier {
       ad.dispose();
 
       if (_disposed ||
-          requestId !=
-              _loadRequestId) {
+          requestId != _loadRequestId) {
         return;
       }
 
@@ -609,19 +611,16 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     if (_disposed ||
-        requestId !=
-            _loadRequestId) {
+        requestId != _loadRequestId) {
       ad.dispose();
 
       return;
     }
 
-    final User? verifiedUser =
-        _auth.currentUser;
+    final User? verifiedUser = _auth.currentUser;
 
     if (verifiedUser == null ||
-        verifiedUser.uid !=
-            loadingUid) {
+        verifiedUser.uid != loadingUid) {
       ad.dispose();
 
       _adLoading = false;
@@ -645,11 +644,9 @@ class HomeAdManager extends ChangeNotifier {
 
     _rewardedAd = ad;
 
-    _rewardedAdPurpose =
-        purpose;
+    _rewardedAdPurpose = purpose;
 
-    _rewardedAdUserUid =
-        loadingUid;
+    _rewardedAdUserUid = loadingUid;
 
     _adReady = true;
 
@@ -664,36 +661,35 @@ class HomeAdManager extends ChangeNotifier {
     // ==========================================================
 
     ad.fullScreenContentCallback =
-        FullScreenContentCallback<
-            RewardedAd>(
-      onAdShowedFullScreenContent:
-          (
+        FullScreenContentCallback<RewardedAd>(
+      onAdShowedFullScreenContent: (
         RewardedAd ad,
       ) {
         debugPrint(
           '🐱 [ADMOB] Shown: $purpose',
         );
       },
-      onAdImpression:
-          (
+      onAdImpression: (
         RewardedAd ad,
       ) {
         debugPrint(
           '🐱 [ADMOB] Impression: $purpose',
         );
       },
-      onAdClicked:
-          (
+      onAdClicked: (
         RewardedAd ad,
       ) {
         debugPrint(
           '🐱 [ADMOB] Clicked: $purpose',
         );
       },
-      onAdDismissedFullScreenContent:
-          (
+      onAdDismissedFullScreenContent: (
         RewardedAd ad,
       ) {
+        debugPrint(
+          '🐱 [ADMOB] Dismissed: $purpose',
+        );
+
         ad.dispose();
 
         _clearAdState();
@@ -717,11 +713,17 @@ class HomeAdManager extends ChangeNotifier {
           );
         }
       },
-      onAdFailedToShowFullScreenContent:
-          (
+      onAdFailedToShowFullScreenContent: (
         RewardedAd ad,
         AdError error,
       ) {
+        debugPrint(
+          '❌ [ADMOB] Failed to show: '
+          '$purpose | '
+          'Code: ${error.code} | '
+          'Message: ${error.message}',
+        );
+
         ad.dispose();
 
         _clearAdState();
@@ -736,10 +738,6 @@ class HomeAdManager extends ChangeNotifier {
             'Purpose: $purpose | '
             'Code: ${error.code} | '
             'Message: ${error.message}';
-
-        debugPrint(
-          '❌ [ADMOB] $_adLoadError',
-        );
 
         _notify();
 
@@ -782,8 +780,7 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    final User? user =
-        _auth.currentUser;
+    final User? user = _auth.currentUser;
 
     if (user == null) {
       return;
@@ -817,24 +814,28 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    if (purpose ==
-        miningStartPurpose) {
+    if (purpose == miningStartPurpose) {
       if (_miningRewardCallbackStarted) {
+        debugPrint(
+          '⚠️ [ADMOB] Mining reward callback already running.',
+        );
+
         return;
       }
 
-      _miningRewardCallbackStarted =
-          true;
+      _miningRewardCallbackStarted = true;
     }
 
-    if (purpose ==
-        powerBoostPurpose) {
+    if (purpose == powerBoostPurpose) {
       if (_powerBoostRewardCallbackStarted) {
+        debugPrint(
+          '⚠️ [ADMOB] Power boost reward callback already running.',
+        );
+
         return;
       }
 
-      _powerBoostRewardCallbackStarted =
-          true;
+      _powerBoostRewardCallbackStarted = true;
     }
 
     debugPrint(
@@ -860,14 +861,10 @@ class HomeAdManager extends ChangeNotifier {
         return;
       }
 
-      if (purpose ==
-          miningStartPurpose) {
-        await onMiningStartReward
-            ?.call();
-      } else if (purpose ==
-          powerBoostPurpose) {
-        await onPowerBoostReward
-            ?.call();
+      if (purpose == miningStartPurpose) {
+        await onMiningStartReward?.call();
+      } else if (purpose == powerBoostPurpose) {
+        await onPowerBoostReward?.call();
       }
     } catch (error) {
       debugPrint(
@@ -875,16 +872,12 @@ class HomeAdManager extends ChangeNotifier {
         '$purpose | $error',
       );
     } finally {
-      if (purpose ==
-          miningStartPurpose) {
-        _miningRewardCallbackStarted =
-            false;
+      if (purpose == miningStartPurpose) {
+        _miningRewardCallbackStarted = false;
       }
 
-      if (purpose ==
-          powerBoostPurpose) {
-        _powerBoostRewardCallbackStarted =
-            false;
+      if (purpose == powerBoostPurpose) {
+        _powerBoostRewardCallbackStarted = false;
       }
     }
   }
@@ -895,8 +888,7 @@ class HomeAdManager extends ChangeNotifier {
 
   Future<bool> showMiningStartAd() async {
     return _showRewardedAd(
-      purpose:
-          miningStartPurpose,
+      purpose: miningStartPurpose,
     );
   }
 
@@ -906,8 +898,7 @@ class HomeAdManager extends ChangeNotifier {
 
   Future<bool> showPowerBoostAd() async {
     return _showRewardedAd(
-      purpose:
-          powerBoostPurpose,
+      purpose: powerBoostPurpose,
     );
   }
 
@@ -922,10 +913,13 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    final User? user =
-        _auth.currentUser;
+    final User? user = _auth.currentUser;
 
     if (user == null) {
+      debugPrint(
+        '❌ [ADMOB] Cannot show ad: no authenticated user.',
+      );
+
       return false;
     }
 
@@ -933,43 +927,36 @@ class HomeAdManager extends ChangeNotifier {
     // Prevent duplicate flows
     // ----------------------------------------------------------
 
-    if (purpose ==
-            miningStartPurpose &&
+    if (purpose == miningStartPurpose &&
         _miningAdFlowActive) {
       return false;
     }
 
-    if (purpose ==
-            powerBoostPurpose &&
+    if (purpose == powerBoostPurpose &&
         _powerBoostAdFlowActive) {
       return false;
     }
 
-    if (purpose ==
-            miningStartPurpose &&
+    if (purpose == miningStartPurpose &&
         _powerBoostAdFlowActive) {
       return false;
     }
 
-    if (purpose ==
-            powerBoostPurpose &&
+    if (purpose == powerBoostPurpose &&
         _miningAdFlowActive) {
       return false;
     }
 
     // ----------------------------------------------------------
-    // Prevent a second backend callback while the first one
-    // is still waiting for SSV verification.
+    // Prevent duplicate backend callback
     // ----------------------------------------------------------
 
-    if (purpose ==
-            miningStartPurpose &&
+    if (purpose == miningStartPurpose &&
         _miningRewardCallbackStarted) {
       return false;
     }
 
-    if (purpose ==
-            powerBoostPurpose &&
+    if (purpose == powerBoostPurpose &&
         _powerBoostRewardCallbackStarted) {
       return false;
     }
@@ -986,6 +973,10 @@ class HomeAdManager extends ChangeNotifier {
     RewardedAd? ad;
 
     try {
+      debugPrint(
+        '🐱 [ADMOB] Preparing rewarded ad: $purpose',
+      );
+
       final bool ready =
           await waitForRewardedAd(
         purpose: purpose,
@@ -1009,6 +1000,11 @@ class HomeAdManager extends ChangeNotifier {
             purpose,
             activeUser.uid,
           )) {
+        debugPrint(
+          '❌ [ADMOB] Cannot show ad because it is not ready: '
+          '$purpose',
+        );
+
         _setFlowActive(
           purpose,
           false,
@@ -1022,6 +1018,11 @@ class HomeAdManager extends ChangeNotifier {
       ad = _rewardedAd;
 
       if (ad == null) {
+        debugPrint(
+          '❌ [ADMOB] RewardedAd became null before show: '
+          '$purpose',
+        );
+
         _setFlowActive(
           purpose,
           false,
@@ -1033,7 +1034,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // --------------------------------------------------------
-      // The local variable now owns the ad until dismissal.
+      // Local variable now owns the ad until dismissal.
       // --------------------------------------------------------
 
       _clearAdState();
@@ -1109,32 +1110,24 @@ class HomeAdManager extends ChangeNotifier {
     String purpose,
     bool active,
   ) {
-    if (purpose ==
-        miningStartPurpose) {
-      _miningAdFlowActive =
-          active;
+    if (purpose == miningStartPurpose) {
+      _miningAdFlowActive = active;
     }
 
-    if (purpose ==
-        powerBoostPurpose) {
-      _powerBoostAdFlowActive =
-          active;
+    if (purpose == powerBoostPurpose) {
+      _powerBoostAdFlowActive = active;
     }
   }
 
   void _resetRewardCallbackState(
     String purpose,
   ) {
-    if (purpose ==
-        miningStartPurpose) {
-      _miningRewardCallbackStarted =
-          false;
+    if (purpose == miningStartPurpose) {
+      _miningRewardCallbackStarted = false;
     }
 
-    if (purpose ==
-        powerBoostPurpose) {
-      _powerBoostRewardCallbackStarted =
-          false;
+    if (purpose == powerBoostPurpose) {
+      _powerBoostRewardCallbackStarted = false;
     }
   }
 
@@ -1148,8 +1141,7 @@ class HomeAdManager extends ChangeNotifier {
 
     _loadRequestId++;
 
-    final RewardedAd? ad =
-        _rewardedAd;
+    final RewardedAd? ad = _rewardedAd;
 
     _rewardedAd = null;
 
