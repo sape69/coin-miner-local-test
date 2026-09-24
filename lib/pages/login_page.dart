@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../localization.dart';
 import 'register_page.dart';
@@ -16,17 +17,12 @@ import 'register_page.dart';
 //     ↓
 // HomePage
 //
-// 🌍 KIELI
+// 🌍 Ensimmäisellä asennuksella oletuskieli = ENGLISH.
 //
-// Ensimmäisen asennuksen oletuskieli määritellään main.dart:ssa.
-// main.dart käyttää oletuksena englantia ('en').
-//
-// LoginPage ei enää hallitse ensimmäisen asennuksen kieltä
-// erikseen. Näin kielijärjestelmässä on vain yksi paikka,
-// joka vastaa tallennetun kielen lataamisesta ja vaihtamisesta.
-//
-// Käyttäjä voi kuitenkin vaihtaa kielen suoraan kirjautumis-
-// sivulta.
+// Käyttäjä voi vaihtaa kielen suoraan kirjautumissivulta.
+// Ensimmäinen asennus tallennetaan SharedPreferencesiin,
+// joten englanti asetetaan automaattisesti vain ensimmäisellä
+// käyttökerralla.
 // ============================================================
 
 class LoginPage extends StatefulWidget {
@@ -44,6 +40,38 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // ==========================================================
+  // CONSTANTS
+  // ==========================================================
+
+  static const String _firstInstallLanguageKey =
+      'stelluriini_first_install_language_initialized';
+
+  // ==========================================================
+  // 🎨 STELLA COLORS
+  // ==========================================================
+
+  static const Color backgroundColor =
+      Color(0xFF120B24);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color accentColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color goldColor =
+      Color(0xFFFFD166);
+
+  static const Color primaryTextColor =
+      Color(0xFFF8F4FF);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBDB4D1);
+
   // ==========================================================
   // FIREBASE
   // ==========================================================
@@ -76,6 +104,55 @@ class _LoginPageState extends State<LoginPage> {
       AppLocalizations(widget.languageCode);
 
   // ==========================================================
+  // INIT
+  // ==========================================================
+
+  @override
+  void initState() {
+    super.initState();
+
+    _initializeFirstInstallLanguage();
+  }
+
+  // ==========================================================
+  // FIRST INSTALL LANGUAGE
+  // ==========================================================
+
+  Future<void> _initializeFirstInstallLanguage() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      final bool initialized =
+          preferences.getBool(
+                _firstInstallLanguageKey,
+              ) ??
+              false;
+
+      if (initialized) {
+        return;
+      }
+
+      await preferences.setBool(
+        _firstInstallLanguageKey,
+        true,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (widget.languageCode != 'en') {
+        await widget.changeLanguage('en');
+      }
+    } catch (error) {
+      debugPrint(
+        'First install language initialization error: $error',
+      );
+    }
+  }
+
+  // ==========================================================
   // DISPOSE
   // ==========================================================
 
@@ -83,7 +160,149 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
     super.dispose();
+  }
+
+  // ==========================================================
+  // 💬 MESSAGE
+  // ==========================================================
+  //
+  // Selkeä Stella-tyylinen ilmoituskortti.
+  //
+  // Tarkoitus:
+  // - ei huku tummaan taustaan
+  // - onnistuminen näkyy kultaisena
+  // - virhe näkyy pinkkinä
+  // - teksti on helposti luettava
+  // ==========================================================
+
+  void _showMessage(
+    String message, {
+    bool isError = true,
+  }) {
+    if (!mounted) {
+      return;
+    }
+
+    final ScaffoldMessengerState messenger =
+        ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: Duration(
+            seconds: isError ? 4 : 3,
+          ),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            24,
+          ),
+          padding: EdgeInsets.zero,
+          elevation: 16,
+          backgroundColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              14,
+              10,
+              14,
+            ),
+            decoration: BoxDecoration(
+              color: isError
+                  ? const Color(0xFF35152D)
+                  : const Color(0xFF30251A),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isError
+                    ? const Color(0xFFFF7FAF)
+                    : goldColor,
+                width: 1.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isError
+                      ? const Color(0x99FF7FAF)
+                      : const Color(0x99FFD166),
+                  blurRadius: 22,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment:
+                  CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: isError
+                        ? const Color(0x44FF7FAF)
+                        : const Color(0x44FFD166),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isError
+                          ? const Color(0xFFFF7FAF)
+                          : goldColor,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Icon(
+                    isError
+                        ? Icons.error_outline_rounded
+                        : Icons.check_circle_rounded,
+                    color: isError
+                        ? const Color(0xFFFFB8D0)
+                        : goldColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: primaryTextColor,
+                      fontSize: 15,
+                      height: 1.35,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  visualDensity:
+                      VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(
+                    minWidth: 34,
+                    minHeight: 34,
+                  ),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: secondaryTextColor,
+                    size: 21,
+                  ),
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
   }
 
   // ==========================================================
@@ -95,8 +314,11 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final String email = _emailController.text.trim();
-    final String password = _passwordController.text;
+    final String email =
+        _emailController.text.trim();
+
+    final String password =
+        _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       _showMessage(
@@ -159,7 +381,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final String email = _emailController.text.trim();
+    final String email =
+        _emailController.text.trim();
 
     if (email.isEmpty) {
       _showMessage(
@@ -190,6 +413,7 @@ class _LoginPageState extends State<LoginPage> {
 
       _showMessage(
         _t.get('passwordResetSent'),
+        isError: false,
       );
     } on FirebaseAuthException catch (error) {
       debugPrint(
@@ -296,7 +520,7 @@ class _LoginPageState extends State<LoginPage> {
             !_loginLoading &&
             !_resetPasswordLoading,
         onSelected: _changeLanguage,
-        color: const Color(0xFF21113B),
+        color: cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -305,50 +529,41 @@ class _LoginPageState extends State<LoginPage> {
               .supportedLanguages
               .entries
               .map(
-                (
-                  MapEntry<String, String> entry,
-                ) {
-                  final bool selected =
-                      entry.key ==
-                      widget.languageCode;
+            (
+              MapEntry<String, String> entry,
+            ) {
+              final bool selected =
+                  entry.key ==
+                  widget.languageCode;
 
-                  return PopupMenuItem<String>(
-                    value: entry.key,
-                    child: Row(
-                      children: [
-                        Icon(
-                          selected
-                              ? Icons.check_circle
-                              : Icons.language,
-                          size: 20,
-                          color: selected
-                              ? const Color(
-                                  0xFFFFB7E8,
-                                )
-                              : const Color(
-                                  0xFFB58CFF,
-                                ),
-                        ),
-                        const SizedBox(
-                          width: 12,
-                        ),
-                        Text(
-                          entry.value,
-                          style: TextStyle(
-                            color: const Color(
-                              0xFFF8F4FF,
-                            ),
-                            fontWeight: selected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
+              return PopupMenuItem<String>(
+                value: entry.key,
+                child: Row(
+                  children: [
+                    Icon(
+                      selected
+                          ? Icons.check_circle
+                          : Icons.language,
+                      size: 20,
+                      color: selected
+                          ? pinkColor
+                          : accentColor,
                     ),
-                  );
-                },
-              )
-              .toList();
+                    const SizedBox(width: 12),
+                    Text(
+                      entry.value,
+                      style: TextStyle(
+                        color: primaryTextColor,
+                        fontWeight: selected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ).toList();
         },
         child: Container(
           padding: const EdgeInsets.symmetric(
@@ -356,10 +571,10 @@ class _LoginPageState extends State<LoginPage> {
             vertical: 8,
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFF21113B),
+            color: cardColor,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: const Color(0xFFB58CFF),
+              color: accentColor,
               width: 1.5,
             ),
           ),
@@ -368,14 +583,14 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const Icon(
                 Icons.language,
-                color: Color(0xFFB58CFF),
+                color: accentColor,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 currentLanguage,
                 style: const TextStyle(
-                  color: Color(0xFFF8F4FF),
+                  color: primaryTextColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -383,7 +598,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(width: 4),
               const Icon(
                 Icons.keyboard_arrow_down,
-                color: Color(0xFFFFB7E8),
+                color: pinkColor,
                 size: 20,
               ),
             ],
@@ -464,31 +679,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // MESSAGE
-  // ==========================================================
-
-  void _showMessage(String message) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor:
-              const Color(0xFF21113B),
-          shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(14),
-          ),
-        ),
-      );
-  }
-
-  // ==========================================================
   // BUILD
   // ==========================================================
 
@@ -499,8 +689,7 @@ class _LoginPageState extends State<LoginPage> {
         _resetPasswordLoading;
 
     return Scaffold(
-      backgroundColor:
-          const Color(0xFF120B24),
+      backgroundColor: backgroundColor,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -536,9 +725,7 @@ class _LoginPageState extends State<LoginPage> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(
-                        0xFFB58CFF,
-                      ).withValues(
+                      color: accentColor.withValues(
                         alpha: 0.25,
                       ),
                       blurRadius: 25,
@@ -559,9 +746,7 @@ class _LoginPageState extends State<LoginPage> {
                     ) {
                       return const Icon(
                         Icons.pets,
-                        color: Color(
-                          0xFFB58CFF,
-                        ),
+                        color: accentColor,
                         size: 80,
                       );
                     },
@@ -578,7 +763,7 @@ class _LoginPageState extends State<LoginPage> {
               const Text(
                 'Stelluriini',
                 style: TextStyle(
-                  color: Color(0xFFF8F4FF),
+                  color: primaryTextColor,
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
                 ),
@@ -589,7 +774,7 @@ class _LoginPageState extends State<LoginPage> {
               const Text(
                 'STL',
                 style: TextStyle(
-                  color: Color(0xFFB58CFF),
+                  color: accentColor,
                   fontSize: 21,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 4,
@@ -606,7 +791,7 @@ class _LoginPageState extends State<LoginPage> {
                 _t.get('login'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Color(0xFFF8F4FF),
+                  color: primaryTextColor,
                   fontSize: 25,
                   fontWeight: FontWeight.bold,
                 ),
@@ -638,23 +823,22 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   hintText: _t.get('email'),
                   hintStyle: const TextStyle(
-                    color: Color(0xFFBDB4D1),
+                    color: secondaryTextColor,
                     fontSize: 18,
                   ),
                   prefixIcon: const Icon(
                     Icons.email_outlined,
-                    color: Color(0xFFB58CFF),
+                    color: accentColor,
                   ),
                   filled: true,
-                  fillColor:
-                      const Color(0xFF21113B),
+                  fillColor: cardColor,
                   enabledBorder:
                       OutlineInputBorder(
                     borderRadius:
                         BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color: Color(0xFFB58CFF),
+                      color: accentColor,
                       width: 2,
                     ),
                   ),
@@ -664,7 +848,7 @@ class _LoginPageState extends State<LoginPage> {
                         BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color: Color(0xFFFFB7E8),
+                      color: pinkColor,
                       width: 3,
                     ),
                   ),
@@ -699,12 +883,12 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   hintText: _t.get('password'),
                   hintStyle: const TextStyle(
-                    color: Color(0xFFBDB4D1),
+                    color: secondaryTextColor,
                     fontSize: 18,
                   ),
                   prefixIcon: const Icon(
                     Icons.lock_outline,
-                    color: Color(0xFFB58CFF),
+                    color: accentColor,
                   ),
                   suffixIcon: IconButton(
                     onPressed:
@@ -718,24 +902,22 @@ class _LoginPageState extends State<LoginPage> {
                               },
                     icon: Icon(
                       _obscurePassword
-                          ? Icons.visibility_outlined
+                          ? Icons
+                              .visibility_outlined
                           : Icons
                               .visibility_off_outlined,
-                      color: const Color(
-                        0xFFB58CFF,
-                      ),
+                      color: accentColor,
                     ),
                   ),
                   filled: true,
-                  fillColor:
-                      const Color(0xFF21113B),
+                  fillColor: cardColor,
                   enabledBorder:
                       OutlineInputBorder(
                     borderRadius:
                         BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color: Color(0xFFB58CFF),
+                      color: accentColor,
                       width: 2,
                     ),
                   ),
@@ -745,7 +927,7 @@ class _LoginPageState extends State<LoginPage> {
                         BorderRadius.circular(16),
                     borderSide:
                         const BorderSide(
-                      color: Color(0xFFFFB7E8),
+                      color: pinkColor,
                       width: 3,
                     ),
                   ),
@@ -767,8 +949,7 @@ class _LoginPageState extends State<LoginPage> {
                           ? null
                           : _resetPassword,
                   style: TextButton.styleFrom(
-                    foregroundColor:
-                        const Color(0xFFFFB7E8),
+                    foregroundColor: pinkColor,
                     padding:
                         const EdgeInsets.symmetric(
                       horizontal: 4,
@@ -783,9 +964,7 @@ class _LoginPageState extends State<LoginPage> {
                               child:
                                   CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Color(
-                                  0xFFFFB7E8,
-                                ),
+                                color: pinkColor,
                               ),
                             )
                           : Text(
@@ -818,10 +997,9 @@ class _LoginPageState extends State<LoginPage> {
                           : _login,
                   style:
                       ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFFB58CFF),
+                    backgroundColor: accentColor,
                     foregroundColor:
-                        const Color(0xFF120B24),
+                        backgroundColor,
                     disabledBackgroundColor:
                         const Color(0xFF5E5274),
                     disabledForegroundColor:
@@ -841,9 +1019,8 @@ class _LoginPageState extends State<LoginPage> {
                               child:
                                   CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                color: Color(
-                                  0xFF120B24,
-                                ),
+                                color:
+                                    backgroundColor,
                               ),
                             )
                           : Text(
@@ -874,10 +1051,9 @@ class _LoginPageState extends State<LoginPage> {
                           : _openRegisterPage,
                   style:
                       OutlinedButton.styleFrom(
-                    foregroundColor:
-                        const Color(0xFFFFB7E8),
+                    foregroundColor: pinkColor,
                     side: const BorderSide(
-                      color: Color(0xFFFFB7E8),
+                      color: pinkColor,
                       width: 2,
                     ),
                     shape:
@@ -908,7 +1084,7 @@ class _LoginPageState extends State<LoginPage> {
                 'STELLA • STELLURIINI • STL',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFFBDB4D1),
+                  color: secondaryTextColor,
                   fontSize: 12,
                   letterSpacing: 1,
                 ),
