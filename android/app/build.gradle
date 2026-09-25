@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.stelluriini"
+    namespace = "com.stelluriini.app"
 
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.stelluriini"
+        applicationId = "com.stelluriini.app"
 
         minSdk = 23
 
