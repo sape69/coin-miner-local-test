@@ -294,10 +294,6 @@ function validateAdNetwork(
 // ============================================================
 // 🕒 TIMESTAMP
 // ============================================================
-//
-// AdMob timestamp = epoch milliseconds.
-//
-// ============================================================
 
 function validateTimestamp(
   value,
@@ -843,11 +839,6 @@ async function getAdMobPublicKeys(
 // ============================================================
 // 🔑 CREATE PUBLIC KEY
 // ============================================================
-//
-// AdMobin public key on EC/prime256v1-tyyppinen SPKI-avain.
-// Google dokumentoi base64-kentän DER/SPKI-muodossa.
-//
-// ============================================================
 
 function createAdMobPublicKey(
   keyData,
@@ -920,18 +911,6 @@ function createAdMobPublicKey(
 
 // ============================================================
 // 🔐 CRYPTOGRAPHIC VERIFICATION
-// ============================================================
-//
-// AdMob:
-//
-// ECDSA
-// SHA-256
-// DER encoding
-//
-// Node.js:
-//
-// verify("sha256", ..., { dsaEncoding: "der" }, signature)
-//
 // ============================================================
 
 function verifyWithPublicKey(
@@ -1029,16 +1008,13 @@ function verifySignedQuery(
 // 🔐 VERIFY ADMOB SIGNATURE
 // ============================================================
 //
-// AdMob SSV:n viimeiset kaksi parametria ovat:
+// AdMob SSV:n kaksi viimeistä parametria ovat:
 //
 // signature=...
 // key_id=...
 //
 // Kaikki niitä edeltävä sisältö kuuluu
 // allekirjoitettuun dataan.
-//
-// Google edellyttää alkuperäisen parametrien
-// järjestyksen säilyttämistä.
 //
 // ============================================================
 
@@ -1066,51 +1042,61 @@ async function verifyAdMobSignature(
     );
   }
 
-  const parameters =
-    rawQueryString.split(
+  // ----------------------------------------------------------
+  // ÄLÄ käytä URLSearchParamsia tähän.
+  // ÄLÄ decodeURIComponentia signed-dataan.
+  // Säilytä alkuperäinen merkkijono.
+  // ----------------------------------------------------------
+
+  const signatureMarker =
+    "&signature=";
+
+  const signatureIndex =
+    rawQueryString.indexOf(
+      signatureMarker,
+    );
+
+  if (
+    signatureIndex <= 0
+  ) {
+    throw createError(
+      "ADMOB_INVALID_SIGNATURE",
+      "AdMob signature parameter was not found.",
+    );
+  }
+
+  const signedQueryString =
+    rawQueryString.substring(
+      0,
+      signatureIndex,
+    );
+
+  const signatureAndKeyId =
+    rawQueryString.substring(
+      signatureIndex +
+        1,
+    );
+
+  const signatureParts =
+    signatureAndKeyId.split(
       "&",
     );
 
   if (
-    parameters.length < 3
+    signatureParts.length !==
+    2
   ) {
     throw createError(
       "ADMOB_INVALID_SIGNATURE",
-      "AdMob SSV query is invalid.",
+      "AdMob signature and key_id must be the final two parameters.",
     );
   }
-
-  if (
-    parameters.some(
-      (parameter) =>
-        parameter === "",
-    )
-  ) {
-    throw createError(
-      "ADMOB_INVALID_SIGNATURE",
-      "AdMob SSV query contains an empty parameter.",
-    );
-  }
-
-  // ==========================================================
-  // SIGNATURE / KEY_ID
-  // ==========================================================
-
-  const signatureIndex =
-    parameters.length - 2;
-
-  const keyIdIndex =
-    parameters.length - 1;
 
   const signatureParameter =
-    parameters[
-      signatureIndex
-    ];
+    signatureParts[0];
 
   const keyIdParameter =
-    parameters[
-      keyIdIndex
-    ];
+    signatureParts[1];
 
   // ==========================================================
   // LAST TWO PARAMETERS MUST BE:
@@ -1145,13 +1131,17 @@ async function verifyAdMobSignature(
   // DUPLICATE SIGNATURE / KEY_ID
   // ==========================================================
 
+  const signedParameters =
+    signedQueryString.split(
+      "&",
+    );
+
   for (
-    let i = 0;
-    i < parameters.length - 2;
-    i += 1
+    const parameter of
+    signedParameters
   ) {
     if (
-      parameters[i].startsWith(
+      parameter.startsWith(
         "signature=",
       )
     ) {
@@ -1162,7 +1152,7 @@ async function verifyAdMobSignature(
     }
 
     if (
-      parameters[i].startsWith(
+      parameter.startsWith(
         "key_id=",
       )
     ) {
@@ -1177,23 +1167,28 @@ async function verifyAdMobSignature(
   // SIGNATURE / KEY ID VALUES
   // ==========================================================
 
-  let signatureValue;
+  const rawSignatureValue =
+    signatureParameter.substring(
+      "signature=".length,
+    );
 
+  const rawKeyIdValue =
+    keyIdParameter.substring(
+      "key_id=".length,
+    );
+
+  let signatureValue;
   let keyIdValue;
 
   try {
     signatureValue =
       decodeURIComponent(
-        signatureParameter.substring(
-          "signature=".length,
-        ),
+        rawSignatureValue,
       );
 
     keyIdValue =
       decodeURIComponent(
-        keyIdParameter.substring(
-          "key_id=".length,
-        ),
+        rawKeyIdValue,
       );
   } catch (_) {
     throw createError(
@@ -1227,33 +1222,6 @@ async function verifyAdMobSignature(
   }
 
   // ==========================================================
-  // SIGNED QUERY
-  // ==========================================================
-  //
-  // Otetaan KAIKKI ennen signature-parametria.
-  //
-  // Alkuperäinen merkkijono säilytetään.
-  //
-  // ==========================================================
-
-  const rawSignedQueryString =
-    parameters
-      .slice(
-        0,
-        signatureIndex,
-      )
-      .join("&");
-
-  if (
-    !rawSignedQueryString
-  ) {
-    throw createError(
-      "ADMOB_QUERY_STRING_MISSING",
-      "AdMob signed query string is empty.",
-    );
-  }
-
-  // ==========================================================
   // SIGNATURE BUFFER
   // ==========================================================
 
@@ -1276,11 +1244,6 @@ async function verifyAdMobSignature(
 
   // ==========================================================
   // UNKNOWN KEY ID
-  // ==========================================================
-  //
-  // AdMob voi vaihtaa signing keyn.
-  // Haetaan kerran uusi key-lista.
-  //
   // ==========================================================
 
   if (
@@ -1314,12 +1277,12 @@ async function verifyAdMobSignature(
     let result =
       verifySignedQuery(
         publicKeyData,
-        rawSignedQueryString,
+        signedQueryString,
         signatureBuffer,
       );
 
     // --------------------------------------------------------
-    // KEY ROTATION
+    // KEY ROTATION / RETRY
     // --------------------------------------------------------
 
     if (
@@ -1341,7 +1304,7 @@ async function verifyAdMobSignature(
         result =
           verifySignedQuery(
             publicKeyData,
-            rawSignedQueryString,
+            signedQueryString,
             signatureBuffer,
           );
       }
@@ -1435,16 +1398,6 @@ function getQueryValue(
 // ============================================================
 // 🧩 CUSTOM DATA
 // ============================================================
-//
-// Odotettu:
-//
-// uid:mining_start
-//
-// tai:
-//
-// uid:power_boost
-//
-// ============================================================
 
 function decodeCustomDataValue(
   value,
@@ -1484,6 +1437,16 @@ function decodeCustomDataValue(
 
 // ============================================================
 // 🧩 PARSE CUSTOM DATA
+// ============================================================
+//
+// Odotettu:
+//
+// uid:mining_start
+//
+// tai:
+//
+// uid:power_boost
+//
 // ============================================================
 
 function parseCustomData(
@@ -1629,98 +1592,78 @@ function getExpectedAdMobConfig(
 }
 
 // ============================================================
-// 🌐 RAW QUERY
+// 🌐 RAW QUERY STRING
 // ============================================================
 //
-// Kryptografista varmennusta varten tarvitaan
-// alkuperäinen query-string.
+// TÄMÄ ON TÄRKEIN KORJAUS.
 //
-// Emme rakenna allekirjoitettavaa dataa
-// req.query-objektista.
+// Firebase/Expressin req.query on jo parsittu objekti.
+// Sitä EI käytetä allekirjoitettavan merkkijonon
+// rakentamiseen.
+//
+// Käytetään alkuperäistä URL-merkkijonoa:
+//
+// req.originalUrl
+// req.url
+//
+// signedQueryString säilytetään täysin muuttamattomana.
 //
 // ============================================================
 
 function getRawQueryString(
   req,
 ) {
-  // ==========================================================
-  // 1. rawQuery
-  // ==========================================================
+  const candidates = [
+    req?.originalUrl,
+    req?.url,
+  ];
 
-  if (
-    typeof req?.rawQuery ===
-      "string" &&
-    req.rawQuery
+  for (
+    const candidate of
+    candidates
   ) {
-    return req.rawQuery.startsWith(
-      "?",
-    )
-      ? req.rawQuery.substring(
-          1,
-        )
-      : req.rawQuery;
-  }
+    if (
+      typeof candidate !==
+        "string" ||
+      !candidate
+    ) {
+      continue;
+    }
 
-  // ==========================================================
-  // 2. originalUrl
-  // ==========================================================
-
-  if (
-    typeof req?.originalUrl ===
-      "string" &&
-    req.originalUrl
-  ) {
     const questionMark =
-      req.originalUrl.indexOf(
+      candidate.indexOf(
         "?",
       );
 
     if (
-      questionMark !== -1
+      questionMark === -1
     ) {
-      const query =
-        req.originalUrl.substring(
-          questionMark + 1,
-        );
-
-      if (
-        query &&
-        !query.includes("#")
-      ) {
-        return query;
-      }
+      continue;
     }
-  }
 
-  // ==========================================================
-  // 3. url
-  // ==========================================================
-
-  if (
-    typeof req?.url ===
-      "string" &&
-    req.url
-  ) {
-    const questionMark =
-      req.url.indexOf(
-        "?",
+    const query =
+      candidate.substring(
+        questionMark + 1,
       );
 
     if (
-      questionMark !== -1
+      !query ||
+      query.includes("#")
     ) {
-      const query =
-        req.url.substring(
-          questionMark + 1,
-        );
-
-      if (
-        query &&
-        !query.includes("#")
-      ) {
-        return query;
-      }
+      continue;
     }
+
+    if (
+      query.length >
+      MAX_QUERY_STRING_LENGTH
+    ) {
+      throw createError(
+        "ADMOB_QUERY_STRING_TOO_LARGE",
+        "AdMob query string is too large.",
+      );
+    }
+
+    return query;
   }
 
   return "";
@@ -1766,11 +1709,6 @@ async function verifyAdMobCallback(
 
   // ==========================================================
   // CRYPTOGRAPHIC VERIFICATION FIRST
-  // ==========================================================
-  //
-  // Mihinkään reward-dataan ei luoteta ennen kuin
-  // AdMob-signature on varmennettu.
-  //
   // ==========================================================
 
   const cryptographicResult =
