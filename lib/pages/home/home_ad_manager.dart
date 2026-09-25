@@ -861,11 +861,21 @@ class HomeAdManager extends ChangeNotifier {
         return;
       }
 
+      debugPrint(
+        '🐱 [ADMOB] Starting backend reward callback: '
+        '$purpose',
+      );
+
       if (purpose == miningStartPurpose) {
         await onMiningStartReward?.call();
       } else if (purpose == powerBoostPurpose) {
         await onPowerBoostReward?.call();
       }
+
+      debugPrint(
+        '🐱 [ADMOB] Backend reward callback completed: '
+        '$purpose',
+      );
     } catch (error) {
       debugPrint(
         '❌ [ADMOB] Backend reward callback failed: '
@@ -1034,7 +1044,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // --------------------------------------------------------
-      // Local variable now owns the ad until dismissal.
+      // The local variable now owns the ad until dismissal.
       // --------------------------------------------------------
 
       _clearAdState();
