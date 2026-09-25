@@ -1,5 +1,5 @@
-package com.example.stelluriini
+package com.stelluriini.app
 
 import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity: FlutterActivity()
+class MainActivity : FlutterActivity()
