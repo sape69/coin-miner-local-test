@@ -55,33 +55,9 @@ const REWARD_FUTURE_TOLERANCE_MS =
 // ============================================================
 // SSV WAIT
 // ============================================================
-//
-// SSV-callback voi saapua clientin rewarded callbackin jälkeen.
-//
-// Mahdolliset tilanteet:
-//
-// 1. Dokumenttia ei vielä ole
-// 2. Dokumentti on olemassa, mutta verified !== true
-// 3. Dokumentti on olemassa ja verified === true
-//
-// Vain tapauksessa 3 reward hyväksytään.
-//
-// Tapauksissa 1 ja 2 retry jatkaa odottamista.
-//
-// ============================================================
 
 const SSV_WAIT_TIMEOUT_MS =
   15000;
-
-// Exponential backoff:
-//
-// 250 ms
-// 500 ms
-// 1000 ms
-// 1000 ms
-// ...
-//
-// ============================================================
 
 const SSV_INITIAL_RETRY_DELAY_MS =
   250;
@@ -187,10 +163,10 @@ function validateUid(value) {
 // TRANSACTION ID VALIDATION
 // ============================================================
 //
-// AdMob dokumentoi transaction_id:n:
+// AdMob transaction_id toimii rewardin yksilöllisenä
+// tunnisteena.
 //
-// - yksilölliseksi reward-tunnisteeksi
-// - hex-koodatuksi arvoksi
+// Stelluriini tallentaa sen Firestore-dokumentin ID:nä.
 //
 // ============================================================
 
@@ -410,14 +386,22 @@ function timestampMs(value) {
 // REWARD CREATED TIME
 // ============================================================
 //
-// AdMob SSV:n timestamp on ensisijainen tapahtuma-aika.
+// TÄRKEÄÄ:
 //
-// Prioriteetti:
+// AdMob SSV:n timestamp on ensisijainen ja käytännössä
+// pakollinen reward-tapahtuman aika.
 //
-// 1. timestamp
-// 2. verifiedAt
-// 3. ssvVerifiedAt
-// 4. createdAt
+// Emme enää käytä:
+//
+// - verifiedAt
+// - ssvVerifiedAt
+// - createdAt
+//
+// timestampin puuttuessa.
+//
+// Tämä estää tilanteen, jossa puuttuva tai virheellinen
+// AdMob timestamp korvattaisiin myöhemmin luodulla
+// Firestore-ajalla ja vanha reward näyttäisi uudelta.
 //
 // ============================================================
 
@@ -431,27 +415,9 @@ function getRewardCreatedAtMs(
     return 0;
   }
 
-  const candidates = [
+  return timestampMs(
     data.timestamp,
-    data.verifiedAt,
-    data.ssvVerifiedAt,
-    data.createdAt,
-  ];
-
-  for (
-    const value of candidates
-  ) {
-    const milliseconds =
-      timestampMs(value);
-
-    if (
-      milliseconds > 0
-    ) {
-      return milliseconds;
-    }
-  }
-
-  return 0;
+  );
 }
 
 // ============================================================
@@ -1008,10 +974,7 @@ function validateVerifiedRewardDocument(
 //
 // on aina ensisijainen.
 //
-// TÄRKEÄÄ:
-//
-// Dokumentin löytyminen ei vielä tarkoita, että SSV on
-// valmis.
+// Dokumentin löytyminen ei vielä tarkoita, että SSV on valmis.
 //
 // Jos:
 //
@@ -1103,15 +1066,6 @@ async function getVerifiedReward(
 
     // --------------------------------------------------------
     // DOCUMENT EXISTS BUT SSV IS NOT VERIFIED YET
-    // --------------------------------------------------------
-    //
-    // Tämä on tärkeä korjaus.
-    //
-    // AdMob SSV voi olla vielä kesken vaikka dokumentti
-    // olisi jo luotu.
-    //
-    // ÄLÄ lopeta retryä tähän.
-    //
     // --------------------------------------------------------
 
     const rewardData =
@@ -1389,7 +1343,7 @@ async function getVerifiedReward(
 //
 // ADMOB_REWARD_NOT_FOUND
 //
-// Tämä tarkoittaa nyt kahta normaalia odotustilannetta:
+// Normaali odotustilanne:
 //
 // 1. reward-documentia ei vielä ole
 // 2. reward-document on olemassa, mutta
@@ -1402,6 +1356,7 @@ async function getVerifiedReward(
 // - transaction ID ei täsmää
 // - reward on vanhentunut
 // - reward on jo käytetty
+// - timestamp puuttuu
 //
 // sitä EI yritetä uudelleen.
 //
