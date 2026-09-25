@@ -28,8 +28,8 @@ dependencies:
   # GOOGLE ADMOB
   # ==========================================================
   #
-  # Includes Google Mobile Ads SDK and UMP consent support.
-  # UMP is handled through google_mobile_ads.
+  # Google Mobile Ads SDK.
+  # UMP consent support is handled through google_mobile_ads.
   #
 
   google_mobile_ads: ^6.0.0
@@ -78,80 +78,4 @@ flutter_launcher_icons:
 
   # Android adaptive icon
   adaptive_icon_background: "#120B24"
-  adaptive_icon_foreground: "assets/images/stelluriini_logo.png"name: stelluriini
-description: STELLURIINI Android app
-
-publish_to: "none"
-
-version: 1.0.0+1
-
-environment:
-  sdk: ">=3.6.0 <4.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-  # ==========================================================
-  # LOCAL STORAGE
-  # ==========================================================
-
-  shared_preferences: ^2.5.3
-
-  # ==========================================================
-  # URL LAUNCHER
-  # ==========================================================
-
-  url_launcher: ^6.3.1
-
-  # ==========================================================
-  # GOOGLE ADMOB
-  # ==========================================================
-
-  google_mobile_ads: ^6.0.0
-
-  # ==========================================================
-  # FIREBASE
-  # ==========================================================
-
-  firebase_core: ^4.1.0
-  firebase_auth: ^6.5.3
-  cloud_firestore: ^6.8.0
-  cloud_functions: ^6.3.6
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-  flutter_lints: ^5.0.0
-
-  # ==========================================================
-  # APP ICON GENERATOR
-  # ==========================================================
-
-  flutter_launcher_icons: ^0.14.4
-
-# ============================================================
-# FLUTTER
-# ============================================================
-
-flutter:
-  uses-material-design: true
-
-  assets:
-    - assets/images/
-
-# ============================================================
-# APP ICON SETTINGS
-# ============================================================
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-
-  # Main app icon
-  image_path: "assets/images/stelluriini_logo.png"
-
-  # Android adaptive icon
-  adaptive_icon_background: "#0B1112"
   adaptive_icon_foreground: "assets/images/stelluriini_logo.png"
