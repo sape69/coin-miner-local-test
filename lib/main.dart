@@ -33,13 +33,56 @@ Future<void> main() async {
   await Firebase.initializeApp();
 
   // ==========================================================
-  // GOOGLE MOBILE ADS
+  // GOOGLE MOBILE ADS + UMP
   // ==========================================================
   //
-  // Alustetaan Google Mobile Ads SDK ennen ensimmäistä
-  // RewardedAd.load() -kutsua.
+  // Päivitetään käyttäjän suostumustila ensin.
   //
-  // Tämä on tärkeää erityisesti Rewarded-mainoksia varten.
+  // AdMob-mainoksia ei ladata ennen kuin UMP kertoo,
+  // että mainosten pyytäminen on sallittua.
+  //
+  // ==========================================================
+
+  try {
+    final ConsentRequestParameters requestParameters =
+        ConsentRequestParameters();
+
+    await ConsentInformation.instance
+        .requestConsentInfoUpdate(
+      requestParameters,
+    );
+
+    if (ConsentInformation.instance
+        .isConsentFormAvailable) {
+      await ConsentForm.loadAndShowConsentFormIfRequired(
+        (FormError? error) {
+          if (error != null) {
+            debugPrint(
+              '🐱 Stelluriini: UMP consent form error: '
+              '${error.errorCode} - ${error.message}',
+            );
+          }
+        },
+      );
+    }
+
+    debugPrint(
+      '🐱 Stelluriini: UMP consent information updated.',
+    );
+  } catch (error) {
+    debugPrint(
+      '🐱 Stelluriini: UMP initialization error: $error',
+    );
+  }
+
+  // ==========================================================
+  // GOOGLE MOBILE ADS SDK
+  // ==========================================================
+  //
+  // SDK alustetaan vasta UMP-käsittelyn jälkeen.
+  //
+  // Varsinaiset RewardedAd.load()-kutsut tehdään myöhemmin
+  // HomeAdManagerissa.
   //
   // ==========================================================
 
