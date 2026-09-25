@@ -79,6 +79,14 @@ class HomeAdManager extends ChangeNotifier {
   String _rewardedAdUserUid = '';
 
   // ============================================================
+  // 🔐 CONSENT STATE
+  // ============================================================
+
+  bool _canRequestAds = false;
+
+  bool _consentCheckCompleted = false;
+
+  // ============================================================
   // 🔒 FLOW STATE
   // ============================================================
 
@@ -146,6 +154,12 @@ class HomeAdManager extends ChangeNotifier {
   bool get powerBoostAdFlowActive =>
       _powerBoostAdFlowActive;
 
+  bool get canRequestAds =>
+      _canRequestAds;
+
+  bool get consentCheckCompleted =>
+      _consentCheckCompleted;
+
   // ============================================================
   // 🔔 NOTIFY
   // ============================================================
@@ -153,6 +167,67 @@ class HomeAdManager extends ChangeNotifier {
   void _notify() {
     if (!_disposed) {
       notifyListeners();
+    }
+  }
+
+  // ============================================================
+  // 🔐 CHECK UMP CONSENT
+  // ============================================================
+
+  Future<bool> _checkAdConsent() async {
+    if (_disposed) {
+      return false;
+    }
+
+    try {
+      debugPrint(
+        '🐱 [ADMOB] Checking UMP canRequestAds()...',
+      );
+
+      final bool canRequest =
+          await ConsentInformation.instance
+              .canRequestAds();
+
+      if (_disposed) {
+        return false;
+      }
+
+      _canRequestAds = canRequest;
+
+      _consentCheckCompleted = true;
+
+      if (canRequest) {
+        debugPrint(
+          '✅ [ADMOB] UMP allows ad requests.',
+        );
+      } else {
+        debugPrint(
+          '⚠️ [ADMOB] UMP does not currently allow ad requests.',
+        );
+      }
+
+      _notify();
+
+      return canRequest;
+    } catch (error) {
+      debugPrint(
+        '❌ [ADMOB] UMP canRequestAds() failed: '
+        '$error',
+      );
+
+      if (!_disposed) {
+        _canRequestAds = false;
+
+        _consentCheckCompleted = true;
+
+        _adLoadError =
+            'CONSENT_CHECK_FAILED | '
+            '$error';
+
+        _notify();
+      }
+
+      return false;
     }
   }
 
@@ -215,6 +290,18 @@ class HomeAdManager extends ChangeNotifier {
       await _initializeAdMob();
 
       if (_disposed) {
+        return;
+      }
+
+      final bool consentAllowed =
+          await _checkAdConsent();
+
+      if (!consentAllowed) {
+        debugPrint(
+          '⚠️ [ADMOB] Initial preload skipped because '
+          'UMP does not currently allow ad requests.',
+        );
+
         return;
       }
 
@@ -334,6 +421,18 @@ class HomeAdManager extends ChangeNotifier {
     required String purpose,
   }) async {
     if (_disposed) {
+      return false;
+    }
+
+    final bool consentAllowed =
+        await _checkAdConsent();
+
+    if (!consentAllowed) {
+      debugPrint(
+        '⚠️ [ADMOB] Cannot wait for ad because '
+        'UMP does not allow ad requests.',
+      );
+
       return false;
     }
 
@@ -494,6 +593,39 @@ class HomeAdManager extends ChangeNotifier {
     debugPrint(
       '🐱 [ADMOB] loadRewardedAd() called: $purpose',
     );
+
+    // ----------------------------------------------------------
+    // UMP CONSENT
+    // ----------------------------------------------------------
+
+    final bool consentAllowed =
+        await _checkAdConsent();
+
+    if (!consentAllowed) {
+      if (!_disposed) {
+        _adLoading = false;
+
+        _loadingPurpose = '';
+
+        _clearAdState();
+
+        _adLoadError =
+            'CONSENT_NOT_GRANTED | '
+            'Purpose: $purpose';
+
+        debugPrint(
+          '⚠️ [ADMOB] $_adLoadError',
+        );
+
+        _notify();
+      }
+
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // ADMOB INITIALIZATION
+    // ----------------------------------------------------------
 
     try {
       await _initializeAdMob();
@@ -814,6 +946,41 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    // ----------------------------------------------------------
+    // CHECK CONSENT AGAIN
+    // ----------------------------------------------------------
+
+    final bool consentAllowed =
+        await _checkAdConsent();
+
+    if (!consentAllowed) {
+      debugPrint(
+        '⚠️ [ADMOB] Consent is no longer available. '
+        'Discarding loaded ad.',
+      );
+
+      ad.dispose();
+
+      if (_disposed ||
+          requestId != _loadRequestId) {
+        return;
+      }
+
+      _adLoading = false;
+
+      _loadingPurpose = '';
+
+      _clearAdState();
+
+      _adLoadError =
+          'CONSENT_NOT_GRANTED | '
+          'Purpose: $purpose';
+
+      _notify();
+
+      return;
+    }
+
     debugPrint(
       '✅ [ADMOB] Ad loaded successfully: '
       '$purpose',
@@ -1094,6 +1261,18 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    final bool consentAllowed =
+        await _checkAdConsent();
+
+    if (!consentAllowed) {
+      debugPrint(
+        '⚠️ [ADMOB] Reload skipped because '
+        'UMP does not allow ad requests.',
+      );
+
+      return;
+    }
+
     if (_adLoading) {
       debugPrint(
         '⚠️ [ADMOB] Reload skipped: '
@@ -1292,6 +1471,18 @@ class HomeAdManager extends ChangeNotifier {
       debugPrint(
         '❌ [ADMOB] Cannot show ad: '
         'no authenticated user.',
+      );
+
+      return false;
+    }
+
+    final bool consentAllowed =
+        await _checkAdConsent();
+
+    if (!consentAllowed) {
+      debugPrint(
+        '⚠️ [ADMOB] Cannot show ad because '
+        'UMP does not allow ad requests.',
       );
 
       return false;
