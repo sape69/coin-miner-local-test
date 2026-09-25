@@ -9,17 +9,28 @@ import 'auth_gate.dart';
 // 🐱 STELLURIINI
 // ============================================================
 //
+// APP STARTUP
+//
+// 1. Firebase
+// 2. Google Mobile Ads
+// 3. UMP consent information
+// 4. Stelluriini app
+//
 // LANGUAGE
 //
 // Ensimmäisellä asennuksella oletuskieli on englanti.
 //
 // Jos käyttäjä vaihtaa kieltä:
+//
 //    ↓
-// valinta tallennetaan SharedPreferencesiin
+//
+// valinta tallennetaan SharedPreferencesiin.
 //
 // Seuraavalla käynnistyksellä:
+//
 //    ↓
-// viimeksi valittu kieli ladataan
+//
+// viimeksi valittu kieli ladataan.
 //
 // ============================================================
 
@@ -33,56 +44,11 @@ Future<void> main() async {
   await Firebase.initializeApp();
 
   // ==========================================================
-  // GOOGLE MOBILE ADS + UMP
+  // GOOGLE MOBILE ADS
   // ==========================================================
   //
-  // Päivitetään käyttäjän suostumustila ensin.
-  //
-  // AdMob-mainoksia ei ladata ennen kuin UMP kertoo,
-  // että mainosten pyytäminen on sallittua.
-  //
-  // ==========================================================
-
-  try {
-    final ConsentRequestParameters requestParameters =
-        ConsentRequestParameters();
-
-    await ConsentInformation.instance
-        .requestConsentInfoUpdate(
-      requestParameters,
-    );
-
-    if (ConsentInformation.instance
-        .isConsentFormAvailable) {
-      await ConsentForm.loadAndShowConsentFormIfRequired(
-        (FormError? error) {
-          if (error != null) {
-            debugPrint(
-              '🐱 Stelluriini: UMP consent form error: '
-              '${error.errorCode} - ${error.message}',
-            );
-          }
-        },
-      );
-    }
-
-    debugPrint(
-      '🐱 Stelluriini: UMP consent information updated.',
-    );
-  } catch (error) {
-    debugPrint(
-      '🐱 Stelluriini: UMP initialization error: $error',
-    );
-  }
-
-  // ==========================================================
-  // GOOGLE MOBILE ADS SDK
-  // ==========================================================
-  //
-  // SDK alustetaan vasta UMP-käsittelyn jälkeen.
-  //
-  // Varsinaiset RewardedAd.load()-kutsut tehdään myöhemmin
-  // HomeAdManagerissa.
+  // Alustetaan Google Mobile Ads SDK ennen ensimmäistä
+  // RewardedAd.load() -kutsua.
   //
   // ==========================================================
 
@@ -95,6 +61,50 @@ Future<void> main() async {
   } catch (error) {
     debugPrint(
       '🐱 Stelluriini: Google Mobile Ads initialization error: $error',
+    );
+  }
+
+  // ==========================================================
+  // UMP CONSENT
+  // ==========================================================
+  //
+  // requestConsentInfoUpdate() ei palauta bool-arvoa.
+  //
+  // Siksi sitä EI käytetä if-lauseen ehtona.
+  //
+  // ConsentForm.loadAndShowConsentFormIfRequired() näyttää
+  // lomakkeen vain silloin, kun se on käyttäjälle tarpeellinen.
+  //
+  // ==========================================================
+
+  try {
+    final ConsentInformation consentInformation =
+        ConsentInformation.instance;
+
+    await consentInformation.requestConsentInfoUpdate(
+      ConsentRequestParameters(),
+      () {
+        debugPrint(
+          '🐱 Stelluriini: UMP consent information updated.',
+        );
+      },
+      (FormError error) {
+        debugPrint(
+          '⚠️ Stelluriini: UMP consent information error: '
+          '${error.errorCode} - ${error.message}',
+        );
+      },
+    );
+
+    await consentInformation
+        .loadAndShowConsentFormIfRequired();
+
+    debugPrint(
+      '🐱 Stelluriini: UMP consent flow completed.',
+    );
+  } catch (error) {
+    debugPrint(
+      '⚠️ Stelluriini: UMP consent initialization error: $error',
     );
   }
 
@@ -121,8 +131,7 @@ class StelluriiniApp extends StatefulWidget {
       _StelluriiniAppState();
 }
 
-class _StelluriiniAppState
-    extends State<StelluriiniApp> {
+class _StelluriiniAppState extends State<StelluriiniApp> {
   // ==========================================================
   // LANGUAGE
   // ==========================================================
@@ -166,7 +175,7 @@ class _StelluriiniAppState
       });
     } catch (error) {
       debugPrint(
-        'Language load error: $error',
+        '🐱 Stelluriini: Language load error: $error',
       );
     }
   }
@@ -196,7 +205,7 @@ class _StelluriiniAppState
       });
     } catch (error) {
       debugPrint(
-        'Language save error: $error',
+        '🐱 Stelluriini: Language save error: $error',
       );
     }
   }
