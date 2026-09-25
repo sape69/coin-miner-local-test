@@ -1245,6 +1245,12 @@ async function verifyAdMobSignature(
   // ==========================================================
   // UNKNOWN KEY ID
   // ==========================================================
+  //
+  // Key rotation voi tehdä vanhasta cachesta hetkellisesti
+  // vanhentuneen. Tässä tapauksessa haetaan uudet avaimet
+  // kerran.
+  //
+  // ==========================================================
 
   if (
     !publicKeyData
@@ -1273,81 +1279,19 @@ async function verifyAdMobSignature(
   // VERIFY
   // ==========================================================
 
+  let result;
+
   try {
-    let result =
+    result =
       verifySignedQuery(
         publicKeyData,
         signedQueryString,
         signatureBuffer,
       );
-
-    // --------------------------------------------------------
-    // KEY ROTATION / RETRY
-    // --------------------------------------------------------
-
-    if (
-      !result.valid
-    ) {
-      publicKeys =
-        await getAdMobPublicKeys(
-          true,
-        );
-
-      publicKeyData =
-        publicKeys.get(
-          keyId,
-        );
-
-      if (
-        publicKeyData
-      ) {
-        result =
-          verifySignedQuery(
-            publicKeyData,
-            signedQueryString,
-            signatureBuffer,
-          );
-      }
-    }
-
-    if (
-      !result.valid
-    ) {
-      throw createError(
-        "ADMOB_INVALID_SIGNATURE",
-        "AdMob signature verification failed.",
-      );
-    }
-
-    console.log(
-      "🐱 AdMob SSV signature verified.",
-      {
-        keyId,
-
-        verificationMode:
-          result.mode,
-      },
-    );
-
-    return {
-      verified:
-        true,
-
-      signature,
-
-      keyId,
-
-      signedQueryString:
-        result.signedQueryString,
-
-      rawQueryString,
-    };
   } catch (error) {
     if (
       error?.code ===
-        "ADMOB_INVALID_SIGNATURE" ||
-      error?.code ===
-        "ADMOB_PUBLIC_KEY_NOT_FOUND"
+        "ADMOB_CRYPTO_VERIFICATION_ERROR"
     ) {
       throw error;
     }
@@ -1357,6 +1301,39 @@ async function verifyAdMobSignature(
       "AdMob cryptographic verification failed.",
     );
   }
+
+  if (
+    !result.valid
+  ) {
+    throw createError(
+      "ADMOB_INVALID_SIGNATURE",
+      "AdMob signature verification failed.",
+    );
+  }
+
+  console.log(
+    "🐱 AdMob SSV signature verified.",
+    {
+      keyId,
+
+      verificationMode:
+        result.mode,
+    },
+  );
+
+  return {
+    verified:
+      true,
+
+    signature,
+
+    keyId,
+
+    signedQueryString:
+      result.signedQueryString,
+
+    rawQueryString,
+  };
 }
 
 // ============================================================
