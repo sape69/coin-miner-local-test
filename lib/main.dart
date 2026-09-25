@@ -13,8 +13,7 @@ import 'auth_gate.dart';
 //
 // 1. Firebase
 // 2. Google Mobile Ads
-// 3. UMP consent information
-// 4. Stelluriini app
+// 3. Stelluriini app
 //
 // LANGUAGE
 //
@@ -61,50 +60,6 @@ Future<void> main() async {
   } catch (error) {
     debugPrint(
       '🐱 Stelluriini: Google Mobile Ads initialization error: $error',
-    );
-  }
-
-  // ==========================================================
-  // UMP CONSENT
-  // ==========================================================
-  //
-  // requestConsentInfoUpdate() ei palauta bool-arvoa.
-  //
-  // Siksi sitä EI käytetä if-lauseen ehtona.
-  //
-  // ConsentForm.loadAndShowConsentFormIfRequired() näyttää
-  // lomakkeen vain silloin, kun se on käyttäjälle tarpeellinen.
-  //
-  // ==========================================================
-
-  try {
-    final ConsentInformation consentInformation =
-        ConsentInformation.instance;
-
-    await consentInformation.requestConsentInfoUpdate(
-      ConsentRequestParameters(),
-      () {
-        debugPrint(
-          '🐱 Stelluriini: UMP consent information updated.',
-        );
-      },
-      (FormError error) {
-        debugPrint(
-          '⚠️ Stelluriini: UMP consent information error: '
-          '${error.errorCode} - ${error.message}',
-        );
-      },
-    );
-
-    await consentInformation
-        .loadAndShowConsentFormIfRequired();
-
-    debugPrint(
-      '🐱 Stelluriini: UMP consent flow completed.',
-    );
-  } catch (error) {
-    debugPrint(
-      '⚠️ Stelluriini: UMP consent initialization error: $error',
     );
   }
 
