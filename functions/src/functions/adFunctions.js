@@ -538,8 +538,26 @@ function validateVerifiedAdData(
   // ----------------------------------------------------------
   // FINAL NORMALIZED DATA
   // ----------------------------------------------------------
+  //
+  // IMPORTANT:
+  //
+  // This function is also called a second time by
+  // saveVerifiedAdMobReward().
+  //
+  // Therefore the normalized object must retain
+  // verified === true.
+  //
+  // The previous version removed this field here,
+  // causing the second validation to fail with:
+  //
+  // ADMOB_VERIFIED_DATA_MISSING
+  //
+  // ----------------------------------------------------------
 
   return {
+    verified:
+      true,
+
     uid,
 
     rewardPurpose,
