@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.stelluriini.app"
+        applicationId = "com.example.stelluriini"
 
         minSdk = 23
 
