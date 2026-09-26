@@ -6,14 +6,28 @@
 // AdMob Rewarded SSV verification.
 //
 // IMPORTANT:
-// Google signs the decoded query content up to (but not including)
-// "&signature=". The parameter order must be preserved.
 //
-// We do NOT:
+// Google signs the query content exactly as it appears in the
+// callback URL, preserving parameter order.
+//
+// We DO NOT:
+//
 // - sort parameters
 // - rebuild the signed query
+// - decode the complete signed query
+// - re-encode the signed query
 // - use req.query for cryptographic verification
-// - re-encode the signed content
+//
+// req.query is used only AFTER cryptographic verification for
+// normal application-level validation.
+//
+// AdMob SSV documentation:
+//
+// The last two query parameters are:
+//   signature
+//   key_id
+//
+// Everything before signature is the signed content.
 //
 // ============================================================
 
@@ -187,6 +201,10 @@ function validateUid(
 // ============================================================
 // 🧾 TRANSACTION ID
 // ============================================================
+//
+// AdMob transaction_id is a unique hex-encoded identifier.
+//
+// ============================================================
 
 function validateTransactionId(
   value,
@@ -257,6 +275,10 @@ function validateAdNetwork(
 // ============================================================
 // 🕒 TIMESTAMP
 // ============================================================
+//
+// AdMob timestamp is epoch milliseconds.
+//
+// ============================================================
 
 function validateTimestamp(
   value,
@@ -268,7 +290,9 @@ function validateTimestamp(
 
   if (
     !raw ||
-    !/^\d+$/.test(raw)
+    !/^\d+$/.test(
+      raw,
+    )
   ) {
     return 0;
   }
@@ -341,6 +365,10 @@ function validateKeyId(
 
 // ============================================================
 // ✍️ SIGNATURE
+// ============================================================
+//
+// AdMob uses base64url-compatible signature data.
+//
 // ============================================================
 
 function validateSignature(
@@ -909,6 +937,20 @@ function verifySignedQuery(
 // ============================================================
 // 🔐 VERIFY ADMOB SIGNATURE
 // ============================================================
+//
+// IMPORTANT:
+//
+// rawQueryString must remain untouched.
+//
+// We only locate:
+//
+// &signature=
+//
+// and split the final signature/key_id parameters.
+//
+// The signed part is passed to crypto exactly as received.
+//
+// ============================================================
 
 async function verifyAdMobSignature(
   rawQueryString,
@@ -935,43 +977,23 @@ async function verifyAdMobSignature(
   }
 
   // ----------------------------------------------------------
-  // DECODE QUERY FOR ADMOB SSV VERIFICATION
+  // DO NOT DECODE THE COMPLETE QUERY STRING.
   // ----------------------------------------------------------
   //
-  // AdMob's verification examples use the decoded query
-  // representation while preserving parameter order.
+  // Google requires the signed content to remain unchanged.
   //
-  // IMPORTANT:
-  // We do NOT rebuild or sort the parameters.
+  // Therefore:
+  //
+  // rawQueryString
+  //       ↓
+  // exact signed content
+  //
+  // Individual values are decoded later through req.query.
   //
   // ----------------------------------------------------------
 
-  let queryString;
-
-  try {
-    queryString =
-      decodeURIComponent(
-        rawQueryString,
-      );
-  } catch (_) {
-    throw createError(
-      "ADMOB_INVALID_SIGNATURE",
-      "AdMob query contains invalid URL encoding.",
-    );
-  }
-
-  if (
-    typeof queryString !==
-      "string" ||
-    !queryString ||
-    queryString.length >
-      MAX_QUERY_STRING_LENGTH
-  ) {
-    throw createError(
-      "ADMOB_INVALID_SIGNATURE",
-      "AdMob decoded query is invalid.",
-    );
-  }
+  const queryString =
+    rawQueryString;
 
   // ----------------------------------------------------------
   // SIGNATURE POSITION
@@ -994,14 +1016,22 @@ async function verifyAdMobSignature(
     );
   }
 
-  // Everything before &signature=
-  // is the cryptographically signed content.
+  // Everything before "&signature=" is signed.
 
   const signedQueryString =
     queryString.substring(
       0,
       signatureIndex,
     );
+
+  if (
+    !signedQueryString
+  ) {
+    throw createError(
+      "ADMOB_INVALID_SIGNATURE",
+      "AdMob signed query content is empty.",
+    );
+  }
 
   // ----------------------------------------------------------
   // SIGNATURE + KEY ID
@@ -1146,8 +1176,13 @@ async function verifyAdMobSignature(
       keyId,
     );
 
-  // Public keys rotate.
-  // Refresh once if the key is unknown.
+  // ----------------------------------------------------------
+  // PUBLIC KEY ROTATION
+  // ----------------------------------------------------------
+  //
+  // Refresh once when the key is unknown.
+  //
+  // ----------------------------------------------------------
 
   if (
     !publicKeyData
@@ -1243,6 +1278,13 @@ async function verifyAdMobSignature(
 // ============================================================
 // 🔎 QUERY VALUE
 // ============================================================
+//
+// req.query is used only after cryptographic verification.
+//
+// Express/query parser has already decoded the individual
+// parameter values for application-level validation.
+//
+// ============================================================
 
 function getQueryValue(
   query,
@@ -1269,6 +1311,12 @@ function getQueryValue(
 
 // ============================================================
 // 🧩 CUSTOM DATA
+// ============================================================
+//
+// AdMob custom_data may be percent escaped.
+//
+// Decode only this individual value.
+//
 // ============================================================
 
 function decodeCustomDataValue(
@@ -1307,6 +1355,17 @@ function decodeCustomDataValue(
 
 // ============================================================
 // 🧩 PARSE CUSTOM DATA
+// ============================================================
+//
+// Expected:
+//
+// uid:rewardPurpose
+//
+// Examples:
+//
+// abc123:mining_start
+// abc123:power_boost
+//
 // ============================================================
 
 function parseCustomData(
@@ -1460,7 +1519,7 @@ function getExpectedAdMobConfig(
 //
 // req.url is kept as a fallback.
 //
-// We never build the signed query from req.query.
+// We NEVER build the signed query from req.query.
 //
 // ============================================================
 
@@ -1609,6 +1668,18 @@ async function verifyFromRequest(
 
 // ============================================================
 // 🔐 COMPLETE ADMOB CALLBACK VERIFICATION
+// ============================================================
+//
+// Processing order:
+//
+// 1. Verify raw cryptographic signature.
+// 2. Read decoded query parameters.
+// 3. Validate parameters.
+// 4. Validate custom_data.
+// 5. Validate server configuration.
+// 6. Validate optional user_id.
+// 7. Return verified reward information.
+//
 // ============================================================
 
 async function verifyAdMobCallback(
@@ -1855,6 +1926,13 @@ async function verifyAdMobCallback(
 
   // ----------------------------------------------------------
   // 7. USER ID
+  // ----------------------------------------------------------
+  //
+  // user_id is optional in AdMob SSV.
+  //
+  // If present, it must match the UID encoded into
+  // custom_data.
+  //
   // ----------------------------------------------------------
 
   let normalizedUserId =
