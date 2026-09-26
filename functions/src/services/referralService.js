@@ -39,22 +39,8 @@ const {
   ONE_REFERRER_PER_USER,
   REFERRAL_CODE_LENGTH,
   REFERRAL_CODE_CHARACTERS,
+  MAX_CODE_GENERATION_ATTEMPTS,
 } = require("../config/referralConfig");
-
-
-// ============================================================
-// 🔢 REFERRAL CODE GENERATION LIMIT
-// ============================================================
-//
-// Kuinka monta kertaa palvelu yrittää luoda uuden referral-koodin
-// ennen kuin toiminto epäonnistuu.
-//
-// Tämä on tekninen turvallisuusraja.
-// Se ei ole käyttäjälle näkyvä asetus.
-//
-// ============================================================
-
-const MAX_CODE_GENERATION_ATTEMPTS = 10;
 
 
 // ============================================================
@@ -321,9 +307,19 @@ async function getOrCreateReferralCode(
   // 🆕 GENERATE NEW CODE
   // ----------------------------------------------------------
 
+  const maxAttempts =
+    Math.max(
+      1,
+      Math.floor(
+        Number(
+          MAX_CODE_GENERATION_ATTEMPTS,
+        ),
+      ),
+    );
+
   for (
     let attempt = 0;
-    attempt < MAX_CODE_GENERATION_ATTEMPTS;
+    attempt < maxAttempts;
     attempt += 1
   ) {
     const referralCode =
