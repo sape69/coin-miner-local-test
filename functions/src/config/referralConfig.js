@@ -157,6 +157,21 @@ const REFERRAL_CODE_CHARACTERS =
 
 
 // ============================================================
+// 🔁 MAX CODE GENERATION ATTEMPTS
+// ============================================================
+//
+// Kuinka monta kertaa järjestelmä yrittää luoda uuden
+// referral-koodin, jos satunnainen koodi on jo käytössä.
+//
+// Tämä estää referral-koodin luonnin jäämisen
+// määrittelemättömään tilaan.
+//
+// ============================================================
+
+const MAX_CODE_GENERATION_ATTEMPTS = 20;
+
+
+// ============================================================
 // 💰 MINIMUM REFERRAL BONUS
 // ============================================================
 //
@@ -413,6 +428,8 @@ module.exports = {
   REFERRAL_CODE_LENGTH,
 
   REFERRAL_CODE_CHARACTERS,
+
+  MAX_CODE_GENERATION_ATTEMPTS,
 
 
   // ----------------------------------------------------------
