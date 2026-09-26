@@ -6,6 +6,8 @@
 //
 // Stella Mining.
 //
+// Business/service-kerros Stelluriini-miningille.
+//
 // Vastuu:
 //
 // ⛏️ Mining Start
@@ -15,27 +17,27 @@
 // 🔒 Mining/Boost-idempotenssi
 // 📜 Mining History
 // 🔐 Varmennetun AdMob rewardin claim
-// 🤝 Referral-bonuksen käsittely
-//
-// AdMob SSV-verifiointi kuuluu admobService.js:lle.
-// AdMob reward -dokumentin validointi kuuluu
-// admobRewardService.js:lle.
-//
-// HTTP-callback kuuluu functions/ad.js:lle.
 //
 // TÄRKEÄÄ:
 //
-// AdMob reward ei itsessään anna STL-tokenia.
+// AdMob Reward EI ole STL-token-palkkio.
 //
-// AdMob toimii ainoastaan valtuutuksena:
+// AdMob reward ainoastaan valtuuttaa:
 //
 // - Mining Start
 // - Power Boost
 //
-// Varsinainen mining-tuotto lasketaan serverillä.
+// Varsinainen mining-tuotto lasketaan serverillä:
 //
-// Referral-bonus syntyy vain hyväksytystä
-// mining-tuotosta.
+// Hash Rate × Mining-aika × STL / Hash / Hour
+//
+// AdMob SSV-verifiointi kuuluu:
+// admobService.js
+//
+// AdMob reward -dokumentin validointi kuuluu:
+// admobRewardService.js
+//
+// HTTP/callable-käsittely kuuluu function-kerrokseen.
 //
 // ============================================================
 
@@ -74,19 +76,6 @@ const {
 
 
 // ============================================================
-// 🤝 REFERRAL SERVICE
-// ============================================================
-
-const {
-  getUserReferrer,
-  calculateServerReferralBonus,
-  recordReferralBonus,
-} = require(
-  "./referralService",
-);
-
-
-// ============================================================
 // 🧮 MINING UTILITIES
 // ============================================================
 
@@ -114,22 +103,14 @@ const {
 // 🔐 ADMOB REWARD SERVICE
 // ============================================================
 //
-// Tämä service on AdMob reward -dokumentin validoinnin
+// admobRewardService.js on reward-dokumentin validoinnin
 // auktoriteetti.
 //
-// Se tarkistaa muun muassa:
+// MiningService:
 //
-// - verified
-// - UID
-// - reward purpose
-// - transaction ID
-// - reward timestamp
-// - request timestamp
-// - expiration
-// - claim/replay protection
-//
-// MiningService tekee edelleen varsinaisen Firestore-claimin
-// omassa transaktiossaan.
+// 1. lukee reward-dokumentin transactionissa
+// 2. pyytää reward-dokumentin validoinnin
+// 3. claimaa rewardin samaan transactioniin
 //
 // ============================================================
 
@@ -162,7 +143,15 @@ function getSafeNumber(
 
 
 // ============================================================
-// 🛡️ SAFE UID
+// 🛡️ UID VALIDATION
+// ============================================================
+//
+// Firebase Auth UID:t ovat käytännössä turvallisia Firestore
+// document ID:itä.
+//
+// Tässä pidetään kuitenkin yksi keskitetty sääntö MiningServicen
+// käyttämille UID-arvoille.
+//
 // ============================================================
 
 function validateUid(
@@ -222,16 +211,13 @@ function validateUid(
 
 
 // ============================================================
-// 🆔 SAFE TRANSACTION ID
+// 🆔 TRANSACTION ID VALIDATION
 // ============================================================
 //
-// AdMob transaction_id tulee AdMob SSV:stä.
+// AdMob transaction_id tulee varmennetusta rewardista.
 //
-// Transaction ID:n pitää olla:
-//
-// - merkkijono
-// - 1–256 merkkiä
-// - heksadesimaalinen
+// Tämän säännön täytyy vastata
+// admobRewardService.js:n sääntöä.
 //
 // ============================================================
 
@@ -350,7 +336,7 @@ function getSafeDate(
       value.trim();
 
     if (
-      !normalized
+      normalized.length === 0
     ) {
       return null;
     }
@@ -412,7 +398,7 @@ function getUtcDateKey(
 
 
 // ============================================================
-// 🔐 ADMOB REWARD REF
+// 🔐 ADMOB REWARD REFERENCE
 // ============================================================
 
 function getAdMobRewardRef(
@@ -431,99 +417,15 @@ function getAdMobRewardRef(
 
 
 // ============================================================
-// 👤 USER REF
-// ============================================================
-
-function getUserRef(
-  uid,
-) {
-  return db
-    .collection(
-      "users",
-    )
-    .doc(
-      validateUid(
-        uid,
-      ),
-    );
-}
-
-
-// ============================================================
-// 👥 TOTAL USER COUNT
-// ============================================================
-//
-// Referral-bonusprosentti voi riippua käyttäjämäärästä.
-//
-// Laskenta tehdään serverillä.
-//
-// Aggregate count() vähentää turhaa käyttäjädokumenttien
-// lataamista verrattuna koko users-kokoelman lukemiseen.
-//
-// Jos käytössä oleva Firebase Admin SDK ei tue count()-
-// kyselyä, fallback käyttää tavallista get()-kyselyä.
-//
-// ============================================================
-
-async function getTotalUserCount() {
-  const usersRef =
-    db.collection(
-      "users",
-    );
-
-  try {
-    if (
-      typeof usersRef.count ===
-      "function"
-    ) {
-      const aggregateSnapshot =
-        await usersRef
-          .count()
-          .get();
-
-      const aggregateData =
-        aggregateSnapshot.data() ||
-        {};
-
-      return Math.max(
-        0,
-        Math.floor(
-          getSafeNumber(
-            aggregateData.count,
-            0,
-          ),
-        ),
-      );
-    }
-  } catch (
-    error
-  ) {
-    // --------------------------------------------------------
-    // Fallback alla.
-    // --------------------------------------------------------
-  }
-
-  const snapshot =
-    await usersRef.get();
-
-  return Math.max(
-    0,
-    snapshot.size,
-  );
-}
-
-
-// ============================================================
 // 🎁 CLAIM ADMOB REWARD
 // ============================================================
 //
-// Tämä funktio EI päätä, onko reward turvallinen.
+// Tämä ei itsessään päätä rewardin turvallisuutta.
 //
-// Reward on ensin validoitu
-// admobRewardService.js:n avulla.
+// validateVerifiedRewardDocument() tekee varsinaisen
+// validoinnin.
 //
-// Tämä funktio ainoastaan kirjoittaa claim-tilan.
-//
+// Tämä funktio merkitsee rewardin käytetyksi.
 // ============================================================
 
 function claimAdMobReward(
@@ -606,12 +508,6 @@ function claimAdMobReward(
 // ============================================================
 // 🎁 VERIFY + CLAIM ADMOB REWARD
 // ============================================================
-//
-// 1. Reward luetaan Firestore-transaktion sisällä.
-// 2. admobRewardService validoi rewardin.
-// 3. Claim kirjoitetaan samaan transaktioon.
-//
-// ============================================================
 
 async function verifyAndClaimAdMobReward(
   transaction,
@@ -625,20 +521,31 @@ async function verifyAndClaimAdMobReward(
       transactionId,
     );
 
+  // ----------------------------------------------------------
+  // READ
+  // ----------------------------------------------------------
+
   const rewardSnapshot =
     await transaction.get(
       rewardRef,
     );
+
+  // ----------------------------------------------------------
+  // VALIDATE
+  // ----------------------------------------------------------
+
+  const claimField =
+    expectedPurpose ===
+    "mining_start"
+      ? "miningStartClaimed"
+      : "powerBoostClaimed";
 
   const validated =
     validateVerifiedRewardDocument(
       rewardSnapshot,
       uid,
       expectedPurpose,
-      expectedPurpose ===
-        "mining_start"
-        ? "miningStartClaimed"
-        : "powerBoostClaimed",
+      claimField,
       {
         referenceNowMs:
           now.getTime(),
@@ -646,6 +553,10 @@ async function verifyAndClaimAdMobReward(
         transactionId,
       },
     );
+
+  // ----------------------------------------------------------
+  // CLAIM
+  // ----------------------------------------------------------
 
   const claimedData =
     claimAdMobReward(
@@ -848,9 +759,13 @@ function getMiningWindow(
 
   return {
     startedAt,
+
     endsAt,
+
     startMs,
+
     endMs,
+
     nowMs,
 
     effectiveNowMs:
@@ -869,11 +784,13 @@ function getMiningWindow(
 // ⚡ CALCULATE BOOSTS FROM HISTORY
 // ============================================================
 //
-// Power Boost ei stackaa.
+// Power Boostit eivät stackaa.
 //
-// Jos historiallisissa tiedoissa on päällekkäisiä
-// intervalleja, sama aika lasketaan vain kerran.
+// Jos historiassa on päällekkäisiä boosteja,
+// päällekkäinen aika lasketaan vain kerran.
 //
+// Jos useampi boosti osuu samaan aikaväliin,
+// käytetään suurinta hash ratea.
 // ============================================================
 
 function calculateBoostFromRecords(
@@ -924,9 +841,14 @@ function calculateBoostFromRecords(
     if (
       !recordMiningStart ||
       !boostStartedAt ||
-      !boostEndsAt ||
+      !boostEndsAt
+    ) {
+      continue;
+    }
+
+    if (
       recordMiningStart.getTime() !==
-        miningWindow.startMs
+      miningWindow.startMs
     ) {
       continue;
     }
@@ -1053,21 +975,23 @@ function calculateBoostFromRecords(
     }
 
     if (
-      segmentHashRate > 0
+      segmentHashRate <= 0
     ) {
-      const duration =
-        segmentEnd -
-        segmentStart;
-
-      elapsedMs +=
-        duration;
-
-      amount +=
-        calculatePowerBoostMining(
-          segmentHashRate,
-          duration,
-        );
+      continue;
     }
+
+    const duration =
+      segmentEnd -
+      segmentStart;
+
+    elapsedMs +=
+      duration;
+
+    amount +=
+      calculatePowerBoostMining(
+        segmentHashRate,
+        duration,
+      );
   }
 
   return {
@@ -1098,6 +1022,7 @@ function calculateCurrentStoredBoost(
   miningWindow,
 ) {
   if (
+    !data ||
     !miningWindow
   ) {
     return {
@@ -1186,7 +1111,7 @@ function calculateCompletedMining(
   if (
     !data ||
     typeof data !==
-    "object"
+      "object"
   ) {
     return {
       baseAmount: 0,
@@ -1376,6 +1301,25 @@ async function getPowerBoostHistory(
 
 
 // ============================================================
+// 👤 USER REFERENCE
+// ============================================================
+
+function getUserRef(
+  uid,
+) {
+  return db
+    .collection(
+      "users",
+    )
+    .doc(
+      validateUid(
+        uid,
+      ),
+    );
+}
+
+
+// ============================================================
 // ⛏️ START MINING
 // ============================================================
 
@@ -1421,12 +1365,27 @@ async function startMining(
           ? snapshot.data() || {}
           : {};
 
+      // --------------------------------------------------------
+      // SERVER IS AUTHORITATIVE
+      // --------------------------------------------------------
+      //
+      // Clientin dailyStreak-arvoa ei käytetä laskentaan.
+      //
+      // --------------------------------------------------------
+
       void dailyStreak;
 
       const authoritativeDailyStreak =
-        data.dailyStreak ??
-        data.streak ??
-        1;
+        Math.max(
+          1,
+          Math.floor(
+            getSafeNumber(
+              data.dailyStreak ??
+                data.streak,
+              1,
+            ),
+          ),
+        );
 
       const existingStart =
         getMiningStartTime(
@@ -1438,10 +1397,9 @@ async function startMining(
           data,
         );
 
-
-      // ======================================================
-      // 🔁 IDEMPOTENT MINING START
-      // ======================================================
+      // --------------------------------------------------------
+      // IDEMPOTENT MINING START
+      // --------------------------------------------------------
 
       if (
         data.miningStartTransactionId ===
@@ -1485,10 +1443,9 @@ async function startMining(
         };
       }
 
-
-      // ======================================================
-      // ⛏️ ACTIVE MINING
-      // ======================================================
+      // --------------------------------------------------------
+      // ACTIVE MINING
+      // --------------------------------------------------------
 
       if (
         existingStart &&
@@ -1507,10 +1464,9 @@ async function startMining(
         throw error;
       }
 
-
-      // ======================================================
-      // 🔒 PREVIOUS UNCLAIMED MINING
-      // ======================================================
+      // --------------------------------------------------------
+      // PREVIOUS UNCLAIMED MINING
+      // --------------------------------------------------------
 
       if (
         existingStart &&
@@ -1531,10 +1487,9 @@ async function startMining(
         throw error;
       }
 
-
-      // ======================================================
-      // 🔐 VERIFY + CLAIM ADMOB
-      // ======================================================
+      // --------------------------------------------------------
+      // VERIFY + CLAIM ADMOB
+      // --------------------------------------------------------
 
       await verifyAndClaimAdMobReward(
         transaction,
@@ -1544,10 +1499,9 @@ async function startMining(
         now,
       );
 
-
-      // ======================================================
-      // ⏱️ DURATION
-      // ======================================================
+      // --------------------------------------------------------
+      // DURATION
+      // --------------------------------------------------------
 
       const durationMs =
         Math.max(
@@ -1582,8 +1536,11 @@ async function startMining(
         );
 
       if (
+        !Number.isFinite(
+          miningEndsAt.getTime(),
+        ) ||
         miningEndsAt.getTime() <=
-        miningStartedAt.getTime()
+          miningStartedAt.getTime()
       ) {
         const error =
           new Error(
@@ -1596,20 +1553,32 @@ async function startMining(
         throw error;
       }
 
-
-      // ======================================================
-      // 🧮 HASH RATE
-      // ======================================================
+      // --------------------------------------------------------
+      // HASH RATE
+      // --------------------------------------------------------
 
       const hashRate =
         calculateDailyHashRate(
           authoritativeDailyStreak,
         );
 
+      if (
+        hashRate <= 0
+      ) {
+        const error =
+          new Error(
+            "Calculated mining Hash Rate is invalid.",
+          );
 
-      // ======================================================
-      // 💾 START NEW MINING
-      // ======================================================
+        error.code =
+          "MINING_INVALID_HASH_RATE";
+
+        throw error;
+      }
+
+      // --------------------------------------------------------
+      // SAVE MINING SESSION
+      // --------------------------------------------------------
 
       transaction.set(
         userRef,
@@ -1662,10 +1631,9 @@ async function startMining(
         },
       );
 
-
-      // ======================================================
-      // 📜 HISTORY
-      // ======================================================
+      // --------------------------------------------------------
+      // HISTORY
+      // --------------------------------------------------------
 
       transaction.set(
         historyRef,
@@ -1682,15 +1650,7 @@ async function startMining(
           hashRate,
 
           dailyStreak:
-            Math.max(
-              1,
-              Math.floor(
-                getSafeNumber(
-                  authoritativeDailyStreak,
-                  1,
-                ),
-              ),
-            ),
+            authoritativeDailyStreak,
 
           miningStartedAt,
 
@@ -1703,7 +1663,6 @@ async function startMining(
             FieldValue.serverTimestamp(),
         },
       );
-
 
       return {
         success:
@@ -1784,10 +1743,9 @@ async function applyPowerBoost(
           data,
         );
 
-
-      // ======================================================
-      // 🔁 IDEMPOTENT POWER BOOST
-      // ======================================================
+      // --------------------------------------------------------
+      // IDEMPOTENT BOOST
+      // --------------------------------------------------------
 
       if (
         data.powerBoostTransactionId ===
@@ -1821,10 +1779,9 @@ async function applyPowerBoost(
         };
       }
 
-
-      // ======================================================
-      // ⛏️ MINING MUST BE ACTIVE
-      // ======================================================
+      // --------------------------------------------------------
+      // MINING MUST BE ACTIVE
+      // --------------------------------------------------------
 
       if (
         !miningStartedAt ||
@@ -1843,10 +1800,9 @@ async function applyPowerBoost(
         throw error;
       }
 
-
-      // ======================================================
-      // ⚡ NO BOOST STACKING
-      // ======================================================
+      // --------------------------------------------------------
+      // NO BOOST STACKING
+      // --------------------------------------------------------
 
       const currentBoostStartedAt =
         getSafeDate(
@@ -1882,10 +1838,9 @@ async function applyPowerBoost(
         throw error;
       }
 
-
-      // ======================================================
-      // 📅 DAILY LIMIT
-      // ======================================================
+      // --------------------------------------------------------
+      // DAILY LIMIT
+      // --------------------------------------------------------
 
       const today =
         getUtcDateKey(
@@ -1899,17 +1854,13 @@ async function applyPowerBoost(
           : "";
 
       let adsToday =
-        getSafeNumber(
-          data.adsToday,
-          0,
-        );
-
-      if (
-        storedAdDate !==
+        storedAdDate ===
         today
-      ) {
-        adsToday = 0;
-      }
+          ? getSafeNumber(
+              data.adsToday,
+              0,
+            )
+          : 0;
 
       adsToday =
         Math.max(
@@ -1959,10 +1910,9 @@ async function applyPowerBoost(
         throw error;
       }
 
-
-      // ======================================================
-      // ⏱️ COOLDOWN
-      // ======================================================
+      // --------------------------------------------------------
+      // COOLDOWN
+      // --------------------------------------------------------
 
       const lastBoostAt =
         getSafeDate(
@@ -2002,10 +1952,9 @@ async function applyPowerBoost(
         }
       }
 
-
-      // ======================================================
-      // ⚡ BOOST HASH RATE
-      // ======================================================
+      // --------------------------------------------------------
+      // BOOST HASH RATE
+      // --------------------------------------------------------
 
       const boostHashRate =
         Math.max(
@@ -2030,10 +1979,9 @@ async function applyPowerBoost(
         throw error;
       }
 
-
-      // ======================================================
-      // ⏱️ BOOST DURATION
-      // ======================================================
+      // --------------------------------------------------------
+      // BOOST DURATION
+      // --------------------------------------------------------
 
       const requestedBoostDuration =
         Math.max(
@@ -2088,10 +2036,9 @@ async function applyPowerBoost(
         throw error;
       }
 
-
-      // ======================================================
-      // 🔐 VERIFY + CLAIM ADMOB
-      // ======================================================
+      // --------------------------------------------------------
+      // VERIFY + CLAIM ADMOB
+      // --------------------------------------------------------
 
       await verifyAndClaimAdMobReward(
         transaction,
@@ -2101,10 +2048,12 @@ async function applyPowerBoost(
         now,
       );
 
+      // --------------------------------------------------------
+      // SAVE BOOST
+      // --------------------------------------------------------
 
-      // ======================================================
-      // 💾 SAVE BOOST
-      // ======================================================
+      const newAdsToday =
+        adsToday + 1;
 
       transaction.set(
         userRef,
@@ -2128,7 +2077,7 @@ async function applyPowerBoost(
             validTransactionId,
 
           adsToday:
-            adsToday + 1,
+            newAdsToday,
 
           adsTodayDate:
             today,
@@ -2142,10 +2091,9 @@ async function applyPowerBoost(
         },
       );
 
-
-      // ======================================================
-      // 📜 HISTORY
-      // ======================================================
+      // --------------------------------------------------------
+      // HISTORY
+      // --------------------------------------------------------
 
       transaction.set(
         historyRef,
@@ -2184,7 +2132,6 @@ async function applyPowerBoost(
         },
       );
 
-
       return {
         success:
           true,
@@ -2208,7 +2155,7 @@ async function applyPowerBoost(
           actualBoostEnd,
 
         adsToday:
-          adsToday + 1,
+          newAdsToday,
       };
     },
   );
@@ -2216,303 +2163,7 @@ async function applyPowerBoost(
 
 
 // ============================================================
-// 🤝 APPLY REFERRAL BONUS
-// ============================================================
-//
-// Referral-bonus käsitellään vasta kun mining-tuotto
-// on lopullisesti laskettu.
-//
-// TÄRKEÄÄ:
-//
-// - referred user = mining-tuoton tuottanut käyttäjä
-// - referrer = referral-koodin omistaja
-// - bonus lasketaan serverillä
-// - client ei voi antaa bonusmäärää
-// - saldo päivitetään samalla Firestore-transaktiolla
-// - referral history kirjoitetaan samalla transaktiolla
-//
-// ============================================================
-
-async function applyReferralBonus(
-  transaction,
-  referredUid,
-  miningAmount,
-  totalUsers,
-) {
-  const referredId =
-    validateUid(
-      referredUid,
-    );
-
-  const amount =
-    Math.max(
-      0,
-      getSafeNumber(
-        miningAmount,
-        0,
-      ),
-    );
-
-  if (
-    amount <= 0
-  ) {
-    return {
-      applied:
-        false,
-
-      reason:
-        "MINING_AMOUNT_ZERO",
-    };
-  }
-
-  // ----------------------------------------------------------
-  // 👤 GET REFERRER
-  // ----------------------------------------------------------
-
-  const referral =
-    await getUserReferrer(
-      referredId,
-    );
-
-  if (
-    !referral ||
-    typeof referral.referrerUid !==
-      "string"
-  ) {
-    return {
-      applied:
-        false,
-
-      reason:
-        "REFERRER_NOT_FOUND",
-    };
-  }
-
-  const referrerId =
-    validateUid(
-      referral.referrerUid,
-    );
-
-  // ----------------------------------------------------------
-  // 🛡️ SELF REFERRAL
-  // ----------------------------------------------------------
-
-  if (
-    referrerId ===
-    referredId
-  ) {
-    const error =
-      new Error(
-        "Referral cannot point to the same user.",
-      );
-
-    error.code =
-      "REFERRAL_SELF_REFERRAL";
-
-    throw error;
-  }
-
-  // ----------------------------------------------------------
-  // 🧮 SERVER-SIDE BONUS
-  // ----------------------------------------------------------
-
-  const calculation =
-    calculateServerReferralBonus(
-      amount,
-      totalUsers,
-    );
-
-  const bonus =
-    Math.max(
-      0,
-      getSafeNumber(
-        calculation.bonus,
-        0,
-      ),
-    );
-
-  const bonusPercent =
-    Math.max(
-      0,
-      getSafeNumber(
-        calculation.bonusPercent,
-        0,
-      ),
-    );
-
-  const bonusRate =
-    Math.max(
-      0,
-      getSafeNumber(
-        calculation.bonusRate,
-        0,
-      ),
-    );
-
-  // ----------------------------------------------------------
-  // 💰 NO BONUS
-  // ----------------------------------------------------------
-
-  if (
-    bonus <= 0
-  ) {
-    return {
-      applied:
-        false,
-
-      reason:
-        "REFERRAL_BONUS_ZERO",
-
-      referrerUid:
-        referrerId,
-
-      miningAmount:
-        amount,
-
-      bonus:
-        0,
-
-      bonusPercent,
-
-      bonusRate,
-    };
-  }
-
-  // ----------------------------------------------------------
-  // 👤 REFERRER USER
-  // ----------------------------------------------------------
-
-  const referrerRef =
-    getUserRef(
-      referrerId,
-    );
-
-  const referrerSnapshot =
-    await transaction.get(
-      referrerRef,
-    );
-
-  if (
-    !referrerSnapshot.exists
-  ) {
-    const error =
-      new Error(
-        "Referral owner user document does not exist.",
-      );
-
-    error.code =
-      "REFERRAL_OWNER_USER_NOT_FOUND";
-
-    throw error;
-  }
-
-  const referrerData =
-    referrerSnapshot.data() ||
-    {};
-
-  const previousBalance =
-    Math.max(
-      0,
-      getSafeNumber(
-        referrerData.miningBalance,
-        0,
-      ),
-    );
-
-  const newBalance =
-    previousBalance +
-    bonus;
-
-  // ----------------------------------------------------------
-  // 💾 ADD REFERRAL BONUS TO REFERRER BALANCE
-  // ----------------------------------------------------------
-
-  transaction.set(
-    referrerRef,
-    {
-      miningBalance:
-        newBalance,
-
-      referralEarned:
-        FieldValue.increment(
-          bonus,
-        ),
-
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    },
-    {
-      merge:
-        true,
-    },
-  );
-
-  // ----------------------------------------------------------
-  // 📜 REFERRAL HISTORY
-  // ----------------------------------------------------------
-
-  const history =
-    await recordReferralBonus(
-      transaction,
-      {
-        referrerUid:
-          referrerId,
-
-        referredUid:
-          referredId,
-
-        miningAmount:
-          amount,
-
-        referralBonus:
-          bonus,
-
-        referralPercent:
-          bonusPercent,
-
-        miningHistoryId:
-          null,
-      },
-    );
-
-  return {
-    applied:
-      true,
-
-    referrerUid:
-      referrerId,
-
-    referredUid:
-      referredId,
-
-    miningAmount:
-      amount,
-
-    bonus,
-
-    bonusPercent,
-
-    bonusRate,
-
-    previousBalance,
-
-    newBalance,
-
-    historyId:
-      history.historyId,
-  };
-}
-
-
-// ============================================================
 // 💰 COMPLETE MINING
-// ============================================================
-//
-// Mining-tuotto hyväksytään tässä.
-//
-// Tämän jälkeen mahdollinen referral-bonus käsitellään
-// samassa Firestore-transaktiossa.
-//
 // ============================================================
 
 async function completeMining(
@@ -2532,23 +2183,6 @@ async function completeMining(
     createHistoryRef(
       validUid,
     );
-
-  // ----------------------------------------------------------
-  // 🤝 GLOBAL REFERRAL DATA
-  // ----------------------------------------------------------
-  //
-  // Referral-prosentin milestone-laskenta tarvitsee
-  // käyttäjämäärän.
-  //
-  // Haetaan tämä ennen mining-transaktiota.
-  //
-  // Itse saldojen ja mining-tilan kirjoitukset tapahtuvat
-  // edelleen yhdessä Firestore-transaktiossa.
-  //
-  // ----------------------------------------------------------
-
-  const totalUsers =
-    await getTotalUserCount();
 
   return db.runTransaction(
     async (
@@ -2605,10 +2239,9 @@ async function completeMining(
         throw error;
       }
 
-
-      // ======================================================
-      // 🔒 ALREADY CLAIMED
-      // ======================================================
+      // --------------------------------------------------------
+      // ALREADY CLAIMED
+      // --------------------------------------------------------
 
       if (
         data.miningClaimed ===
@@ -2633,18 +2266,14 @@ async function completeMining(
               ),
             ),
 
-          referralBonus:
-            0,
-
           message:
             "🐱⛏️ Tämä mining-jakso on jo käsitelty.",
         };
       }
 
-
-      // ======================================================
-      // ⏱️ MUST BE FINISHED
-      // ======================================================
+      // --------------------------------------------------------
+      // MUST BE FINISHED
+      // --------------------------------------------------------
 
       if (
         miningEndsAt.getTime() >
@@ -2661,10 +2290,9 @@ async function completeMining(
         throw error;
       }
 
-
-      // ======================================================
-      // 📜 READ ALL BOOSTS OF THIS MINING SESSION
-      // ======================================================
+      // --------------------------------------------------------
+      // READ BOOST HISTORY
+      // --------------------------------------------------------
 
       const boostRecords =
         await getPowerBoostHistory(
@@ -2674,10 +2302,9 @@ async function completeMining(
           transaction,
         );
 
-
-      // ======================================================
-      // 🧮 FINAL CALCULATION
-      // ======================================================
+      // --------------------------------------------------------
+      // FINAL CALCULATION
+      // --------------------------------------------------------
 
       const miningResult =
         calculateCompletedMining(
@@ -2708,10 +2335,9 @@ async function completeMining(
         previousBalance +
         amount;
 
-
-      // ======================================================
-      // 💾 SAVE MINING RESULT
-      // ======================================================
+      // --------------------------------------------------------
+      // SAVE RESULT
+      // --------------------------------------------------------
 
       transaction.set(
         userRef,
@@ -2755,10 +2381,9 @@ async function completeMining(
         },
       );
 
-
-      // ======================================================
-      // 📜 MINING HISTORY
-      // ======================================================
+      // --------------------------------------------------------
+      // HISTORY
+      // --------------------------------------------------------
 
       transaction.set(
         historyRef,
@@ -2798,91 +2423,6 @@ async function completeMining(
         },
       );
 
-
-      // ======================================================
-      // 🤝 REFERRAL BONUS
-      // ======================================================
-      //
-      // Referral syntyy vasta hyväksytystä mining-tuotosta.
-      //
-      // Kaikki tapahtuu saman Firestore-transaktion sisällä.
-      //
-      // ======================================================
-
-      const referralResult =
-        await applyReferralBonus(
-          transaction,
-          validUid,
-          amount,
-          totalUsers,
-        );
-
-
-      // ======================================================
-      // 📜 UPDATE MINING HISTORY WITH REFERRAL DATA
-      // ======================================================
-      //
-      // Jos referral-bonus syntyi, tallennetaan tieto myös
-      // mining_completed-historiaan.
-      //
-      // Tämä tehdään samalla transactionilla.
-      //
-      // ======================================================
-
-      if (
-        referralResult.applied
-      ) {
-        transaction.set(
-          historyRef,
-          {
-            referralApplied:
-              true,
-
-            referralBonus:
-              referralResult.bonus,
-
-            referralBonusPercent:
-              referralResult.bonusPercent,
-
-            referralBonusRate:
-              referralResult.bonusRate,
-
-            referralReferrerUid:
-              referralResult.referrerUid,
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          },
-          {
-            merge:
-              true,
-          },
-        );
-      } else {
-        transaction.set(
-          historyRef,
-          {
-            referralApplied:
-              false,
-
-            referralBonus:
-              0,
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          },
-          {
-            merge:
-              true,
-          },
-        );
-      }
-
-
-      // ======================================================
-      // 📤 RESULT
-      // ======================================================
-
       return {
         success:
           true,
@@ -2907,45 +2447,6 @@ async function completeMining(
         miningStartedAt,
 
         miningEndsAt,
-
-        referralApplied:
-          Boolean(
-            referralResult.applied,
-          ),
-
-        referralBonus:
-          Math.max(
-            0,
-            getSafeNumber(
-              referralResult.bonus,
-              0,
-            ),
-          ),
-
-        referralBonusPercent:
-          Math.max(
-            0,
-            getSafeNumber(
-              referralResult.bonusPercent,
-              0,
-            ),
-          ),
-
-        referralBonusRate:
-          Math.max(
-            0,
-            getSafeNumber(
-              referralResult.bonusRate,
-              0,
-            ),
-          ),
-
-        referralReferrerUid:
-          referralResult.referrerUid ||
-          null,
-
-        totalUsers:
-          totalUsers,
       };
     },
   );
@@ -3027,10 +2528,9 @@ async function getMiningStatus(
       boostRecords,
     );
 
-
-  // ==========================================================
-  // ⚡ POWER BOOST STATE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // POWER BOOST STATE
+  // ----------------------------------------------------------
 
   const powerBoostStartedAt =
     getSafeDate(
@@ -3066,10 +2566,9 @@ async function getMiningStatus(
           endsAt.getTime(),
     );
 
-
-  // ==========================================================
-  // 📅 ADS TODAY
-  // ==========================================================
+  // ----------------------------------------------------------
+  // ADS TODAY
+  // ----------------------------------------------------------
 
   const adsTodayDate =
     typeof data.adsTodayDate ===
@@ -3096,10 +2595,9 @@ async function getMiningStatus(
         )
       : 0;
 
-
-  // ==========================================================
-  // ⛏️ MINING STATE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // MINING STATE
+  // ----------------------------------------------------------
 
   const miningActive =
     Boolean(
@@ -3117,10 +2615,9 @@ async function getMiningStatus(
           now.getTime(),
     );
 
-
-  // ==========================================================
-  // 📤 RESULT
-  // ==========================================================
+  // ----------------------------------------------------------
+  // RESULT
+  // ----------------------------------------------------------
 
   return {
     success:
@@ -3159,6 +2656,12 @@ async function getMiningStatus(
           0,
         ),
       ),
+
+    miningStartedAt:
+      startedAt,
+
+    miningEndsAt:
+      endsAt,
 
     minedAmount:
       Math.max(
@@ -3205,12 +2708,6 @@ async function getMiningStatus(
         ),
       ),
 
-    miningStartedAt:
-      startedAt,
-
-    miningEndsAt:
-      endsAt,
-
     powerBoostActive,
 
     powerBoostHashRate,
@@ -3238,28 +2735,6 @@ async function getMiningStatus(
       "string"
         ? data.powerBoostTransactionId.trim()
         : "",
-
-    miningClaimed:
-      data.miningClaimed ===
-      true,
-
-    miningClaimedAmount:
-      Math.max(
-        0,
-        getSafeNumber(
-          data.miningClaimedAmount,
-          0,
-        ),
-      ),
-
-    referralEarned:
-      Math.max(
-        0,
-        getSafeNumber(
-          data.referralEarned,
-          0,
-        ),
-      ),
   };
 }
 
