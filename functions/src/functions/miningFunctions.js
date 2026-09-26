@@ -264,6 +264,28 @@ function dailyHashRate(streak) {
   );
 }
 
+// ------------------------------------------------------------
+// DAILY HASH RATE BONUS
+// ------------------------------------------------------------
+//
+// This is the bonus above the normal starting Hash Rate.
+// Example:
+// START = 1
+// DAY 1 = 1       -> bonus 0
+// DAY 2 = 2       -> bonus 1
+// DAY 3 = 3       -> bonus 2
+//
+// This must NOT be confused with the total daily Hash Rate.
+// ------------------------------------------------------------
+
+function dailyHashRateBonus(streak) {
+  return Math.max(
+    0,
+    dailyHashRate(streak) -
+      DAILY_HASH_RATE_START
+  );
+}
+
 function dailyStreak(data) {
   return Math.max(
     0,
@@ -330,6 +352,53 @@ function nextDailyClaim(
     dailyHashRate:
       dailyHashRate(streak),
   };
+}
+
+// ------------------------------------------------------------
+// NEXT DAILY HASH RATE
+// ------------------------------------------------------------
+//
+// If today's daily claim has NOT happened yet:
+// -> today's pending claim is the next claim.
+//
+// If today's claim has already happened:
+// -> tomorrow's rate is the next daily rate.
+//
+// The Hash Rate itself remains capped by dailyHashRate().
+// ------------------------------------------------------------
+
+function nextDailyHashRate(
+  data,
+  today
+) {
+  const daily =
+    nextDailyClaim(
+      data,
+      today
+    );
+
+  if (!daily.claimedToday) {
+    return daily.dailyHashRate;
+  }
+
+  return dailyHashRate(
+    daily.streak + 1
+  );
+}
+
+function nextDailyStreak(
+  data,
+  today
+) {
+  const daily =
+    nextDailyClaim(
+      data,
+      today
+    );
+
+  return daily.claimedToday
+    ? daily.streak + 1
+    : daily.streak;
 }
 
 // ============================================================
@@ -1201,6 +1270,18 @@ const getMiningStatus =
           effectiveRate *
           MINING_PER_HASH_PER_HOUR;
 
+        const nextRate =
+          nextDailyHashRate(
+            data,
+            today
+          );
+
+        const nextStreak =
+          nextDailyStreak(
+            data,
+            today
+          );
+
         return {
           success: true,
 
@@ -1288,14 +1369,19 @@ const getMiningStatus =
           dailyHashRate:
             daily.dailyHashRate,
 
+          // Actual bonus above the starting Hash Rate.
           dailyHashRateBonus:
-            daily.dailyHashRate,
+            dailyHashRateBonus(
+              daily.streak
+            ),
 
+          // The next Hash Rate that will become available
+          // through the daily streak system.
           nextDailyHashRate:
-            daily.dailyHashRate,
+            nextRate,
 
           nextDailyStreak:
-            daily.streak,
+            nextStreak,
 
           adsToday:
             ads.adsToday,
@@ -1445,6 +1531,17 @@ const claimMining =
               earlyNowMs
             );
 
+          const today =
+            getUtcDateString(
+              earlyNow
+            );
+
+          const daily =
+            nextDailyClaim(
+              earlyData,
+              today
+            );
+
           return {
             success: true,
 
@@ -1461,20 +1558,29 @@ const claimMining =
               earlyRate,
 
             dailyHashRate:
-              dailyHashRate(
-                dailyStreak(
-                  earlyData
-                ) || 1
+              daily.dailyHashRate,
+
+            dailyHashRateBonus:
+              dailyHashRateBonus(
+                daily.streak
               ),
 
             dailyStreak:
-              dailyStreak(
-                earlyData
-              ),
+              daily.streak,
 
             streak:
-              dailyStreak(
-                earlyData
+              daily.streak,
+
+            nextDailyHashRate:
+              nextDailyHashRate(
+                earlyData,
+                today
+              ),
+
+            nextDailyStreak:
+              nextDailyStreak(
+                earlyData,
+                today
               ),
 
             unclaimedMining:
@@ -1637,6 +1743,12 @@ const claimMining =
                   transaction
                 );
 
+              const daily =
+                nextDailyClaim(
+                  data,
+                  today
+                );
+
               return {
                 success: true,
 
@@ -1653,13 +1765,30 @@ const claimMining =
                   existingRate,
 
                 dailyHashRate:
-                  fallbackRate,
+                  daily.dailyHashRate,
+
+                dailyHashRateBonus:
+                  dailyHashRateBonus(
+                    daily.streak
+                  ),
 
                 dailyStreak:
-                  currentStreak,
+                  daily.streak,
 
                 streak:
-                  currentStreak,
+                  daily.streak,
+
+                nextDailyHashRate:
+                  nextDailyHashRate(
+                    data,
+                    today
+                  ),
+
+                nextDailyStreak:
+                  nextDailyStreak(
+                    data,
+                    today
+                  ),
 
                 unclaimedMining:
                   current.unclaimedMining,
@@ -1724,7 +1853,7 @@ const claimMining =
 
             // --------------------------------------------------
             // DAILY HASH RATE
-            // --------------------------------------------------
+            // ------------------------------------------------------------
 
             const daily =
               nextDailyClaim(
@@ -1960,6 +2089,11 @@ const claimMining =
                   hashRateAfter:
                     rate,
 
+                  dailyHashRateBonus:
+                    dailyHashRateBonus(
+                      daily.streak
+                    ),
+
                   dailyStreak:
                     daily.streak,
 
@@ -2051,6 +2185,11 @@ const claimMining =
                 dailyHashRate:
                   rate,
 
+                dailyHashRateBonus:
+                  dailyHashRateBonus(
+                    daily.streak
+                  ),
+
                 dailyStreak:
                   daily.streak,
 
@@ -2096,13 +2235,27 @@ const claimMining =
                 rate,
 
               dailyHashRateBonus:
-                rate,
+                dailyHashRateBonus(
+                  daily.streak
+                ),
 
               dailyStreak:
                 daily.streak,
 
               streak:
                 daily.streak,
+
+              nextDailyHashRate:
+                nextDailyHashRate(
+                  data,
+                  today
+                ),
+
+              nextDailyStreak:
+                nextDailyStreak(
+                  data,
+                  today
+                ),
 
               miningHashRate:
                 rate,
@@ -2709,8 +2862,25 @@ const powerBoost =
               dailyHashRate:
                 daily.dailyHashRate,
 
+              dailyHashRateBonus:
+                dailyHashRateBonus(
+                  daily.streak
+                ),
+
               dailyStreak:
                 daily.streak,
+
+              nextDailyHashRate:
+                nextDailyHashRate(
+                  data,
+                  today
+                ),
+
+              nextDailyStreak:
+                nextDailyStreak(
+                  data,
+                  today
+                ),
 
               transactionId:
                 authoritativeId,
