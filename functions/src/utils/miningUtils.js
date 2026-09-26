@@ -6,52 +6,101 @@
 //
 // Keskitetty Mining-laskenta.
 //
-// Ei kirjoita Firestoreen.
-// Ei käsittele Daily Streakia.
-// Ei käsittele Power Boostia.
-// Ei muuta käyttäjän saldoa.
+// Tämä tiedosto:
+//
+// ✅ laskee mining-tuoton
+// ✅ käsittelee mining-ajan
+// ✅ käsittelee mining-jakson Hash Raten
+// ✅ palauttaa mining-statuksen
+//
+// Tämä tiedosto EI:
+//
+// ❌ kirjoita Firestoreen
+// ❌ muuta käyttäjän saldoa
+// ❌ käsittele Daily Streakia
+// ❌ käsittele AdMobia
+// ❌ käsittele Power Boostia
 //
 // ============================================================
 
+
 const {
   MINING_PER_HASH_PER_HOUR,
-} = require("../config/miningConfig");
+} = require(
+  "../config/miningConfig",
+);
+
 
 // ============================================================
-// 🔢 SAFE VALUES
+// 🔢 SAFE NUMBER
 // ============================================================
 
-function getSafeNumber(value, fallback = 0) {
-  const number = Number(value);
+function getSafeNumber(
+  value,
+  fallback = 0,
+) {
+  const number =
+    Number(
+      value,
+    );
 
-  return Number.isFinite(number)
+  return Number.isFinite(
+    number,
+  )
     ? number
     : fallback;
 }
 
-function getSafeHashRate(value) {
-  const number = Number(value);
 
-  return Number.isFinite(number) &&
+// ============================================================
+// ⚡ SAFE HASH RATE
+// ============================================================
+
+function getSafeHashRate(
+  value,
+) {
+  const number =
+    Number(
+      value,
+    );
+
+  return Number.isFinite(
+    number,
+  ) &&
     number >= 0
     ? number
     : 0;
 }
 
-function getSafeMilliseconds(value) {
-  const number = Number(value);
 
-  return Number.isFinite(number) &&
+// ============================================================
+// 🕒 SAFE MILLISECONDS
+// ============================================================
+
+function getSafeMilliseconds(
+  value,
+) {
+  const number =
+    Number(
+      value,
+    );
+
+  return Number.isFinite(
+    number,
+  ) &&
     number >= 0
     ? number
     : 0;
 }
 
+
 // ============================================================
-// 🕒 DATE
+// 📅 SAFE DATE
 // ============================================================
 
-function getSafeDate(value) {
+function getSafeDate(
+  value,
+) {
   if (
     value === null ||
     value === undefined ||
@@ -60,88 +109,182 @@ function getSafeDate(value) {
     return null;
   }
 
-  if (value instanceof Date) {
-    return Number.isFinite(value.getTime())
-      ? new Date(value.getTime())
+
+  // ----------------------------------------------------------
+  // JavaScript Date
+  // ----------------------------------------------------------
+
+  if (
+    value instanceof Date
+  ) {
+    return Number.isFinite(
+      value.getTime(),
+    )
+      ? new Date(
+          value.getTime(),
+        )
       : null;
   }
 
+
+  // ----------------------------------------------------------
+  // Firestore Timestamp
+  // ----------------------------------------------------------
+
   if (
-    typeof value.toDate === "function"
+    typeof value.toDate ===
+    "function"
   ) {
     try {
-      const date = value.toDate();
+      const date =
+        value.toDate();
 
-      return date instanceof Date &&
-        Number.isFinite(date.getTime())
-        ? new Date(date.getTime())
+      return (
+        date instanceof Date &&
+        Number.isFinite(
+          date.getTime(),
+        )
+      )
+        ? new Date(
+            date.getTime(),
+          )
         : null;
-    } catch (error) {
+    } catch (
+      error
+    ) {
       return null;
     }
   }
 
-  if (typeof value === "string") {
-    const date = new Date(value);
 
-    return Number.isFinite(date.getTime())
-      ? date
-      : null;
-  }
+  // ----------------------------------------------------------
+  // ISO/string date
+  // ----------------------------------------------------------
 
   if (
-    typeof value === "number" &&
-    Number.isFinite(value)
+    typeof value ===
+    "string"
   ) {
-    const date = new Date(value);
+    const normalized =
+      value.trim();
 
-    return Number.isFinite(date.getTime())
+    if (
+      normalized.length === 0
+    ) {
+      return null;
+    }
+
+    const date =
+      new Date(
+        normalized,
+      );
+
+    return Number.isFinite(
+      date.getTime(),
+    )
       ? date
       : null;
   }
+
+
+  // ----------------------------------------------------------
+  // Milliseconds
+  // ----------------------------------------------------------
+
+  if (
+    typeof value ===
+      "number" &&
+    Number.isFinite(
+      value,
+    )
+  ) {
+    const date =
+      new Date(
+        value,
+      );
+
+    return Number.isFinite(
+      date.getTime(),
+    )
+      ? date
+      : null;
+  }
+
 
   return null;
 }
 
-function getSafeNow(value) {
-  return getSafeDate(value) || new Date();
+
+// ============================================================
+// 🕒 SAFE NOW
+// ============================================================
+
+function getSafeNow(
+  value,
+) {
+  return (
+    getSafeDate(
+      value,
+    ) ||
+    new Date()
+  );
 }
+
 
 // ============================================================
 // 💰 MINING RATE
 // ============================================================
+//
+// Keskitetty mining rate tulee miningConfig.js:stä.
+//
+// STL / Hash Rate / Hour
+//
+// ============================================================
 
 function getSafeMiningRate() {
-  const rate = Number(
-    MINING_PER_HASH_PER_HOUR
-  );
+  const rate =
+    Number(
+      MINING_PER_HASH_PER_HOUR,
+    );
 
-  return Number.isFinite(rate) && rate > 0
+  return Number.isFinite(
+    rate,
+  ) &&
+    rate > 0
     ? rate
     : 0;
 }
+
 
 // ============================================================
 // ⛏️ CALCULATE MINING
 // ============================================================
 //
-// Hash Rate × STL/HR/h × elapsed hours
+// Formula:
 //
-// Esim.
-// 3.5 HR × 0.10 × 24 h = 8.4 STL
+// Hash Rate
+// × STL / Hash / Hour
+// × elapsed hours
+//
+// Esimerkiksi:
+//
+// 3.5 HR × 0.10 × 24 h
+// = 8.4 STL
 //
 // ============================================================
 
 function calculateMining(
   hashRate,
-  elapsedMilliseconds
+  elapsedMilliseconds,
 ) {
   const safeHashRate =
-    getSafeHashRate(hashRate);
+    getSafeHashRate(
+      hashRate,
+    );
 
   const safeElapsed =
     getSafeMilliseconds(
-      elapsedMilliseconds
+      elapsedMilliseconds,
     );
 
   const rate =
@@ -155,71 +298,125 @@ function calculateMining(
     return 0;
   }
 
-  const hours =
-    safeElapsed / 3600000;
+  const elapsedHours =
+    safeElapsed /
+    3600000;
 
   const amount =
     safeHashRate *
     rate *
-    hours;
+    elapsedHours;
 
-  return Number.isFinite(amount) &&
-    amount >= 0
-    ? amount
-    : 0;
+  if (
+    !Number.isFinite(
+      amount,
+    ) ||
+    amount < 0
+  ) {
+    return 0;
+  }
+
+  return amount;
 }
 
+
 // ============================================================
-// ⏱️ MINING TIMES
+// ⏱️ MINING START TIME
 // ============================================================
 
-function getMiningStartTime(data) {
+function getMiningStartTime(
+  data,
+) {
   if (
     !data ||
-    typeof data !== "object"
+    typeof data !==
+    "object"
   ) {
     return null;
   }
 
   return getSafeDate(
-    data.miningStartedAt
+    data.miningStartedAt,
   );
 }
 
-function getMiningEndTime(data) {
+
+// ============================================================
+// ⏱️ MINING END TIME
+// ============================================================
+
+function getMiningEndTime(
+  data,
+) {
   if (
     !data ||
-    typeof data !== "object"
+    typeof data !==
+    "object"
   ) {
     return null;
   }
 
   return getSafeDate(
-    data.miningEndsAt
+    data.miningEndsAt,
   );
 }
+
 
 // ============================================================
 // ⚡ MINING HASH RATE
 // ============================================================
 //
-// Mining-cycle käyttää aina miningHashRate-kenttää.
-// Ei fallbackia hashRate-kenttään.
+// TÄRKEÄ:
+//
+// MiningService tallentaa nykyisen mining-jakson Hash Raten
+// kenttään:
+//
+//     hashRate
+//
+// Siksi tämä utility käyttää ensisijaisesti sitä.
+//
+// `miningHashRate` tuetaan myös yhteensopivuuden vuoksi,
+// mutta sitä ei käytetä ensisijaisena arvona.
 //
 // ============================================================
 
-function getMiningHashRate(data) {
+function getMiningHashRate(
+  data,
+) {
   if (
     !data ||
-    typeof data !== "object"
+    typeof data !==
+    "object"
   ) {
     return 0;
   }
 
+
+  // ----------------------------------------------------------
+  // PRIMARY FIELD
+  // ----------------------------------------------------------
+
+  const hashRate =
+    getSafeHashRate(
+      data.hashRate,
+    );
+
+  if (
+    hashRate > 0
+  ) {
+    return hashRate;
+  }
+
+
+  // ----------------------------------------------------------
+  // LEGACY / COMPATIBILITY FIELD
+  // ----------------------------------------------------------
+
   return getSafeHashRate(
-    data.miningHashRate
+    data.miningHashRate,
   );
 }
+
 
 // ============================================================
 // 🐱 MINING STATUS
@@ -227,28 +424,31 @@ function getMiningHashRate(data) {
 
 function calculateMiningStatus(
   data,
-  now = new Date()
+  now = new Date(),
 ) {
   const safeData =
     data &&
-    typeof data === "object"
+    typeof data ===
+      "object"
       ? data
       : {};
 
+
   const miningHashRate =
     getMiningHashRate(
-      safeData
+      safeData,
     );
 
   const miningStartedAt =
     getMiningStartTime(
-      safeData
+      safeData,
     );
 
   const miningEndsAt =
     getMiningEndTime(
-      safeData
+      safeData,
     );
+
 
   const baseResult = {
     hashRate:
@@ -257,27 +457,50 @@ function calculateMiningStatus(
     miningHashRate,
 
     miningStartedAt,
+
     miningEndsAt,
   };
+
+
+  // ==========================================================
+  // NO MINING SESSION
+  // ==========================================================
 
   if (
     !miningStartedAt ||
     !miningEndsAt
   ) {
     return {
-      miningActive: false,
-      miningFinished: false,
-      elapsedMs: 0,
-      miningRemainingMs: 0,
-      minedAmount: 0,
+      miningActive:
+        false,
+
+      miningFinished:
+        false,
+
+      elapsedMs:
+        0,
+
+      miningRemainingMs:
+        0,
+
+      minedAmount:
+        0,
+
       ...baseResult,
-      miningStartedAt: null,
-      miningEndsAt: null,
+
+      miningStartedAt:
+        null,
+
+      miningEndsAt:
+        null,
     };
   }
 
+
   const nowMs =
-    getSafeNow(now).getTime();
+    getSafeNow(
+      now,
+    ).getTime();
 
   const startMs =
     miningStartedAt.getTime();
@@ -285,86 +508,157 @@ function calculateMiningStatus(
   const endMs =
     miningEndsAt.getTime();
 
+
+  // ==========================================================
+  // INVALID TIME WINDOW
+  // ==========================================================
+
   if (
-    !Number.isFinite(nowMs) ||
-    !Number.isFinite(startMs) ||
-    !Number.isFinite(endMs) ||
+    !Number.isFinite(
+      nowMs,
+    ) ||
+    !Number.isFinite(
+      startMs,
+    ) ||
+    !Number.isFinite(
+      endMs,
+    ) ||
     endMs <= startMs
   ) {
     return {
-      miningActive: false,
-      miningFinished: false,
-      elapsedMs: 0,
-      miningRemainingMs: 0,
-      minedAmount: 0,
-      ...baseResult,
-    };
-  }
+      miningActive:
+        false,
 
-  // Ennen louhinnan alkua.
-  if (nowMs < startMs) {
-    return {
-      miningActive: false,
-      miningFinished: false,
-      elapsedMs: 0,
+      miningFinished:
+        false,
+
+      elapsedMs:
+        0,
+
       miningRemainingMs:
-        endMs - startMs,
-      minedAmount: 0,
+        0,
+
+      minedAmount:
+        0,
+
       ...baseResult,
     };
   }
 
-  // Aktiivinen louhinta.
-  if (nowMs < endMs) {
+
+  // ==========================================================
+  // BEFORE MINING START
+  // ==========================================================
+
+  if (
+    nowMs <
+    startMs
+  ) {
+    return {
+      miningActive:
+        false,
+
+      miningFinished:
+        false,
+
+      elapsedMs:
+        0,
+
+      miningRemainingMs:
+        endMs -
+        startMs,
+
+      minedAmount:
+        0,
+
+      ...baseResult,
+    };
+  }
+
+
+  // ==========================================================
+  // ACTIVE MINING
+  // ==========================================================
+
+  if (
+    nowMs <
+    endMs
+  ) {
     const elapsedMs =
       Math.min(
-        nowMs - startMs,
-        endMs - startMs
+        nowMs -
+          startMs,
+
+        endMs -
+          startMs,
       );
 
     const remainingMs =
       Math.max(
         0,
-        endMs - nowMs
+
+        endMs -
+          nowMs,
       );
 
     return {
-      miningActive: true,
-      miningFinished: false,
+      miningActive:
+        true,
+
+      miningFinished:
+        false,
+
       elapsedMs:
         Math.max(
           0,
-          elapsedMs
+          elapsedMs,
         ),
+
       miningRemainingMs:
         remainingMs,
+
       minedAmount:
         calculateMining(
           miningHashRate,
-          elapsedMs
+          elapsedMs,
         ),
+
       ...baseResult,
     };
   }
 
-  // Louhinta valmis.
+
+  // ==========================================================
+  // MINING FINISHED
+  // ==========================================================
+
   const durationMs =
-    endMs - startMs;
+    endMs -
+    startMs;
 
   return {
-    miningActive: false,
-    miningFinished: true,
+    miningActive:
+      false,
+
+    miningFinished:
+      true,
+
     elapsedMs:
       durationMs,
-    miningRemainingMs: 0,
+
+    miningRemainingMs:
+      0,
+
     minedAmount:
       calculateMining(
         miningHashRate,
-        durationMs
+        durationMs,
       ),
+
     ...baseResult,
   };
 }
+
 
 // ============================================================
 // 📦 EXPORTS
@@ -372,8 +666,12 @@ function calculateMiningStatus(
 
 module.exports = {
   calculateMining,
+
   getMiningStartTime,
+
   getMiningEndTime,
+
   getMiningHashRate,
+
   calculateMiningStatus,
 };
