@@ -7,6 +7,7 @@
 // Stella Referral System.
 //
 // Tämän palvelun vastuulla on:
+//
 // - referral-koodien luonti
 // - referral-koodien etsiminen
 // - kutsujan liittäminen käyttäjään
@@ -16,10 +17,10 @@
 //
 // TÄRKEÄÄ:
 //
-// Tämä palvelu ei vielä muuta käyttäjän STL-saldoa.
+// Tämä palvelu EI vielä muuta käyttäjän STL-saldoa.
 //
-// Varsinainen bonus kirjataan myöhemmässä vaiheessa yhdessä
-// mining-järjestelmän kanssa.
+// Varsinainen referral-bonus kirjataan myöhemmin
+// yhdessä mining-järjestelmän kanssa.
 //
 // ============================================================
 
@@ -27,6 +28,7 @@ const crypto = require("crypto");
 
 const {
   db,
+  FieldValue,
 } = require("../firebase/firebase");
 
 const {
@@ -86,6 +88,7 @@ function normalizeReferralCode(
 // Käytetään helposti luettavaa merkistöä.
 //
 // Poistetaan helposti sekoittuvat merkit:
+//
 // - 0
 // - O
 // - I
@@ -172,20 +175,23 @@ async function findReferralCode(
   }
 
   return {
-    referralCode: normalizedCode,
-    referrerUid: data.referrerUid,
+    referralCode:
+      normalizedCode,
+    referrerUid:
+      data.referrerUid,
   };
 }
 
 
 // ============================================================
-// 🪪 GET USER REFERRAL CODE
+// 🪪 GET OR CREATE USER REFERRAL CODE
 // ============================================================
 //
-// Palauttaa käyttäjän olemassa olevan referral-koodin.
+// Palauttaa käyttäjän olemassa olevan
+// referral-koodin.
 //
 // Jos käyttäjällä ei vielä ole koodia,
-// luodaan uusi koodi.
+// luodaan uusi yksilöllinen koodi.
 //
 // ============================================================
 
@@ -203,7 +209,9 @@ async function getOrCreateReferralCode(
 
   const userRef =
     db
-      .collection(USERS_COLLECTION)
+      .collection(
+        USERS_COLLECTION,
+      )
       .doc(userId);
 
   const userSnapshot =
@@ -246,6 +254,10 @@ async function getOrCreateReferralCode(
     const created =
       await db.runTransaction(
         async (transaction) => {
+          // ----------------------------------------------------
+          // 🔍 READ CODE
+          // ----------------------------------------------------
+
           const codeSnapshot =
             await transaction.get(
               codeRef,
@@ -255,15 +267,24 @@ async function getOrCreateReferralCode(
             return false;
           }
 
+          // ----------------------------------------------------
+          // 📝 WRITE CODE
+          // ----------------------------------------------------
+
           transaction.set(
             codeRef,
             {
-              referrerUid: userId,
+              referrerUid:
+                userId,
               referralCode,
               createdAt:
-                new Date(),
+                FieldValue.serverTimestamp(),
             },
           );
+
+          // ----------------------------------------------------
+          // 👤 WRITE USER
+          // ----------------------------------------------------
 
           transaction.update(
             userRef,
@@ -334,6 +355,7 @@ async function getReferralData(
 // 3. Käyttäjä ei voi kutsua itseään.
 // 4. Referral-koodin täytyy olla olemassa.
 // 5. Toiminto tehdään Firestore-transaktiona.
+// 6. Kaikki transaktion lukemiset tehdään ennen kirjoituksia.
 //
 // ============================================================
 
@@ -370,7 +392,9 @@ async function applyReferral(
 
   const userRef =
     db
-      .collection(USERS_COLLECTION)
+      .collection(
+        USERS_COLLECTION,
+      )
       .doc(userId);
 
   const referralRef =
@@ -382,6 +406,10 @@ async function applyReferral(
 
   return db.runTransaction(
     async (transaction) => {
+      // ======================================================
+      // 🔍 KAIKKI READIT ENSIN
+      // ======================================================
+
       const codeSnapshot =
         await transaction.get(
           codeRef,
@@ -401,29 +429,17 @@ async function applyReferral(
 
       if (
         typeof referrerUid !==
-        "string"
+        "string" ||
+        !referrerUid.trim()
       ) {
         throw new Error(
           "Invalid referral code.",
         );
       }
 
-      // --------------------------------------------------------
-      // 🚫 SELF REFERRAL
-      // --------------------------------------------------------
-
-      if (
-        !ALLOW_SELF_REFERRAL &&
-        referrerUid === userId
-      ) {
-        throw new Error(
-          "Self referral is not allowed.",
-        );
-      }
-
-      // --------------------------------------------------------
-      // 👤 READ USER
-      // --------------------------------------------------------
+      // ------------------------------------------------------
+      // 👤 USER
+      // ------------------------------------------------------
 
       const userSnapshot =
         await transaction.get(
@@ -439,9 +455,47 @@ async function applyReferral(
       const userData =
         userSnapshot.data() || {};
 
-      // --------------------------------------------------------
+      // ------------------------------------------------------
+      // 🔒 REFERRAL DOCUMENT
+      // ------------------------------------------------------
+
+      const referralSnapshot =
+        await transaction.get(
+          referralRef,
+        );
+
+      // ------------------------------------------------------
+      // 👥 REFERRER USER
+      // ------------------------------------------------------
+
+      const referrerRef =
+        db
+          .collection(
+            USERS_COLLECTION,
+          )
+          .doc(referrerUid);
+
+      const referrerSnapshot =
+        await transaction.get(
+          referrerRef,
+        );
+
+      // ======================================================
+      // 🚫 SELF REFERRAL
+      // ======================================================
+
+      if (
+        !ALLOW_SELF_REFERRAL &&
+        referrerUid === userId
+      ) {
+        throw new Error(
+          "Self referral is not allowed.",
+        );
+      }
+
+      // ======================================================
       // 🔒 EXISTING REFERRER
-      // --------------------------------------------------------
+      // ======================================================
 
       const existingReferrerUid =
         typeof userData.referrerUid ===
@@ -473,14 +527,9 @@ async function applyReferral(
         );
       }
 
-      // --------------------------------------------------------
-      // 🔒 REFERRAL DOCUMENT
-      // --------------------------------------------------------
-
-      const referralSnapshot =
-        await transaction.get(
-          referralRef,
-        );
+      // ======================================================
+      // 🔒 EXISTING REFERRAL DOCUMENT
+      // ======================================================
 
       if (
         referralSnapshot.exists &&
@@ -510,9 +559,38 @@ async function applyReferral(
         );
       }
 
-      // --------------------------------------------------------
-      // 📝 CREATE REFERRAL RELATIONSHIP
-      // --------------------------------------------------------
+      // ======================================================
+      // 👤 VERIFY REFERRER
+      // ======================================================
+
+      if (!referrerSnapshot.exists) {
+        throw new Error(
+          "Referrer profile not found.",
+        );
+      }
+
+      // ======================================================
+      // 📊 CURRENT REFERRAL COUNT
+      // ======================================================
+
+      const referrerData =
+        referrerSnapshot.data() ||
+        {};
+
+      const currentCount =
+        Number.isFinite(
+          Number(
+            referrerData.referralCount,
+          ),
+        )
+          ? Number(
+              referrerData.referralCount,
+            )
+          : 0;
+
+      // ======================================================
+      // 📝 REFERRAL RELATIONSHIP
+      // ======================================================
 
       const referralData = {
         userId,
@@ -520,7 +598,7 @@ async function applyReferral(
         referralCode:
           normalizedCode,
         createdAt:
-          new Date(),
+          FieldValue.serverTimestamp(),
       };
 
       transaction.set(
@@ -531,9 +609,9 @@ async function applyReferral(
         },
       );
 
-      // --------------------------------------------------------
+      // ======================================================
       // 👤 UPDATE USER PROFILE
-      // --------------------------------------------------------
+      // ======================================================
 
       transaction.update(
         userRef,
@@ -542,46 +620,25 @@ async function applyReferral(
           referralCodeUsed:
             normalizedCode,
           referralJoinedAt:
-            new Date(),
+            FieldValue.serverTimestamp(),
         },
       );
 
-      // --------------------------------------------------------
+      // ======================================================
       // 📊 UPDATE REFERRER COUNTER
-      // --------------------------------------------------------
+      // ======================================================
 
-      const referrerRef =
-        db
-          .collection(
-            USERS_COLLECTION,
-          )
-          .doc(referrerUid);
+      transaction.update(
+        referrerRef,
+        {
+          referralCount:
+            currentCount + 1,
+        },
+      );
 
-      const referrerSnapshot =
-        await transaction.get(
-          referrerRef,
-        );
-
-      if (referrerSnapshot.exists) {
-        const referrerData =
-          referrerSnapshot.data() ||
-          {};
-
-        const currentCount =
-          Number.isFinite(
-            referrerData.referralCount,
-          )
-            ? referrerData.referralCount
-            : 0;
-
-        transaction.update(
-          referrerRef,
-          {
-            referralCount:
-              currentCount + 1,
-          },
-        );
-      }
+      // ======================================================
+      // ✅ RESULT
+      // ======================================================
 
       return {
         success: true,
