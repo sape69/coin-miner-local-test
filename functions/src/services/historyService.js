@@ -1,12 +1,10 @@
 "use strict";
 
-
 // ============================================================
 // 🐱 STELLA HISTORY SERVICE
 // ============================================================
 //
-// Vastaa Stella-tapahtumahistorian
-// Firestore-referenceista.
+// Vastaa Stella-tapahtumahistorian Firestore-referenceista.
 //
 // Tämä service:
 //
@@ -24,6 +22,10 @@
 //
 // ============================================================
 
+
+// ============================================================
+// 👤 USER UTILITIES
+// ============================================================
 
 const {
   getHistoryCollection,
@@ -55,7 +57,8 @@ function validateHistoryDate(
   date,
 ) {
   if (
-    typeof date !== "string"
+    typeof date !==
+    "string"
   ) {
     const error =
       new Error(
@@ -68,10 +71,12 @@ function validateHistoryDate(
     throw error;
   }
 
-
   const value =
     date.trim();
 
+  // ----------------------------------------------------------
+  // FORMAT
+  // ----------------------------------------------------------
 
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(
@@ -89,6 +94,9 @@ function validateHistoryDate(
     throw error;
   }
 
+  // ----------------------------------------------------------
+  // CALENDAR VALIDATION
+  // ----------------------------------------------------------
 
   const [
     yearString,
@@ -97,24 +105,20 @@ function validateHistoryDate(
   ] =
     value.split("-");
 
-
   const year =
     Number(
       yearString,
     );
-
 
   const month =
     Number(
       monthString,
     );
 
-
   const day =
     Number(
       dayString,
     );
-
 
   const dateObject =
     new Date(
@@ -124,7 +128,6 @@ function validateHistoryDate(
         day,
       ),
     );
-
 
   if (
     Number.isNaN(
@@ -147,7 +150,6 @@ function validateHistoryDate(
 
     throw error;
   }
-
 
   return value;
 }
@@ -210,7 +212,6 @@ function createDailyHistoryRef(
     validateHistoryDate(
       date,
     );
-
 
   return getHistoryCollection(
     uid,
