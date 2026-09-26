@@ -76,8 +76,7 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Stelluriinin tiekartta kuvaa projektin suunniteltua '
           'suuntaa. Kehitys tapahtuu vaiheittain ja järjestelmiä '
-          'tasapainotetaan käyttäjämäärän, turvallisuuden ja '
-          'ekosysteemin kasvun mukaan.',
+          'testataan ennen seuraavaan vaiheeseen siirtymistä.',
     );
 
     // ==========================================================
@@ -120,8 +119,9 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           '🐾 Stelluriini-yhteisön kasvattaminen\n'
           '👥 Referral-järjestelmän käyttöönotto\n'
-          '🎁 Kutsujalle 5 % bonus kutsutun käyttäjän louhintatuotosta\n'
-          '📉 Referral-bonusten asteittainen pienentäminen käyttäjämäärän kasvaessa\n'
+          '🎁 Kutsujalle suunniteltu bonus kutsutun käyttäjän '
+          'louhintatuotosta\n'
+          '📉 Referral-bonusten tasapainottaminen kasvun mukana\n'
           '🛡️ Bottien ja väärinkäytösten torjunta\n'
           '🌍 Kielituen laajentaminen\n'
           '💬 Yhteisöominaisuuksien valmistelu',
@@ -151,84 +151,114 @@ class RoadmapPage extends StatelessWidget {
     );
 
     // ==========================================================
-    // PHASE 4
+    // PHASE 4 - TESTNET PREPARATION
     // ==========================================================
 
     final String phase4Title = _t(
       localization,
       'roadmapPhase4Title',
-      fallback: 'STL-ekosysteemi',
+      fallback: 'Testnet-valmistelu',
     );
 
     final String phase4Description = _t(
       localization,
       'roadmapPhase4Description',
       fallback:
-          '🪙 STL-ekosysteemin kehittäminen\n'
-          '🔗 Solana-lohkoketjuintegraation valmistelu\n'
-          '👛 Lompakkoyhteyden valmistelu\n'
-          '📊 Token- ja ekosysteemitietojen laajentaminen\n'
-          '🧪 STL-siirto-ominaisuuksien testaaminen\n'
-          '🔐 Lohkoketju- ja turvallisuusratkaisujen tarkistus',
+          '🧪 Solana Testnet -ympäristön valmistelu\n'
+          '🔗 Blockchain-integraation rakentaminen\n'
+          '👛 Testilompakoiden käyttöönotto\n'
+          '🪙 STL-tokenin Testnet-testauksen valmistelu\n'
+          '📤 STL-siirtojen testausympäristö\n'
+          '⛽ Solana-testiverkon transaktiomaksujen testaus\n'
+          '🔐 Turvallisuus- ja backend-testit\n'
+          '📊 Testnet-louhinnan ja blockchain-datan yhteensopivuuden tarkistus',
     );
 
     // ==========================================================
-    // PHASE 5
+    // PHASE 5 - SOLANA TESTNET
     // ==========================================================
 
     final String phase5Title = _t(
       localization,
       'roadmapPhase5Title',
-      fallback: 'Mainnet-valmistelu',
+      fallback: 'Solana Testnet',
     );
 
     final String phase5Description = _t(
       localization,
       'roadmapPhase5Description',
       fallback:
-          '🔐 Turvallisen Mainnet-infrastruktuurin valmistelu\n'
-          '👛 Solana-lompakkointegraation viimeistely\n'
-          '📤 STL-nostojärjestelmän kehittäminen\n'
-          '🧪 Nostojen testaaminen\n'
-          '💎 100 STL:n vähimmäisnostorajan valmistelu\n'
-          '🛡️ Transaktioiden ja turvallisuuden tarkistus',
+          '🧪 Stelluriinin Testnet-vaiheen käynnistäminen\n'
+          '🔗 Solana Testnet -integraation käyttöönotto\n'
+          '👛 Testilompakon yhdistäminen\n'
+          '🪙 STL-siirtojen testaaminen Testnetissä\n'
+          '📤 Testinostojen suorittaminen\n'
+          '⛽ Testiverkon transaktiokulujen käsittely\n'
+          '🛡️ Turvallisuus- ja väärinkäytöstestit\n'
+          '📱 Sovelluksen blockchain-toimintojen testaaminen oikeassa testiverkossa',
     );
 
     // ==========================================================
-    // PHASE 6
+    // PHASE 6 - MAINNET PREPARATION
     // ==========================================================
 
     final String phase6Title = _t(
       localization,
       'roadmapPhase6Title',
-      fallback: 'Mainnet ja STL-nostot',
+      fallback: 'Mainnet-valmistelu',
     );
 
     final String phase6Description = _t(
       localization,
       'roadmapPhase6Description',
       fallback:
-          '🚀 Stelluriinin Mainnet-vaiheen avaaminen\n'
-          '👛 Solana-lompakon yhdistäminen\n'
-          '📤 STL-nostojen käyttöönotto\n'
-          '💎 Vähimmäisnostotavoite: 100 STL\n'
-          '⛽ Käyttäjä maksaa oman Solana-verkkokulunsa\n'
-          '🪙 STL-siirto käyttäjän lompakkoon',
+          '🔐 Mainnet-infrastruktuurin valmistelu\n'
+          '🔗 Solana Mainnet -integraation viimeistely\n'
+          '👛 Mainnet-lompakkoratkaisun valmistelu\n'
+          '🪙 STL-tokenin Mainnet-konfiguraation tarkistus\n'
+          '📤 STL-nostojärjestelmän valmistelu\n'
+          '🧪 Testnet-tulosten tarkistus ennen Mainnetiä\n'
+          '🛡️ Turvallisuus- ja transaktiotarkastus\n'
+          '🚦 Mainnet-julkaisun viimeinen hyväksyntä',
     );
 
     // ==========================================================
-    // PHASE 7
+    // PHASE 7 - MAINNET
     // ==========================================================
 
     final String phase7Title = _t(
       localization,
       'roadmapPhase7Title',
-      fallback: 'Pörssi ja ekosysteemi',
+      fallback: 'Mainnet ja STL-nostot',
     );
 
     final String phase7Description = _t(
       localization,
       'roadmapPhase7Description',
+      fallback:
+          '🚀 Stelluriinin Mainnet-vaiheen avaaminen\n'
+          '🔗 Solana Mainnet -integraation käyttöönotto\n'
+          '👛 Mainnet-lompakon yhdistäminen\n'
+          '📤 STL-nostojen käyttöönotto\n'
+          '💎 Suunniteltu vähimmäisnosto: 100 STL\n'
+          '⛽ Käyttäjä maksaa oman Solana-verkkokulunsa\n'
+          '🪙 STL-siirto käyttäjän lompakkoon\n'
+          '📊 Mainnet-transaktioiden seuranta ja turvallisuusvalvonta',
+    );
+
+    // ==========================================================
+    // PHASE 8 - ECOSYSTEM
+    // ==========================================================
+
+    final String phase8Title = _t(
+      localization,
+      'roadmapPhase8Title',
+      fallback: 'Pörssi ja ekosysteemi',
+    );
+
+    final String phase8Description = _t(
+      localization,
+      'roadmapPhase8Description',
       fallback:
           '🌟 DEX- ja CEX-mahdollisuuksien tutkiminen\n'
           '💧 Likviditeettiratkaisujen valmistelu\n'
@@ -254,10 +284,22 @@ class RoadmapPage extends StatelessWidget {
       fallback: 'SUUNNITELTU',
     );
 
+    final String testnetText = _t(
+      localization,
+      'roadmapTestnet',
+      fallback: 'TESTNET',
+    );
+
     final String futureText = _t(
       localization,
       'roadmapFuture',
       fallback: 'TULEVAISUUS',
+    );
+
+    final String mainnetText = _t(
+      localization,
+      'roadmapMainnet',
+      fallback: 'MAINNET',
     );
 
     // ==========================================================
@@ -276,7 +318,7 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Stelluriiniin suunnitellaan referral-järjestelmää, '
           'jossa käyttäjä voi kutsua uusia käyttäjiä mukaan. '
-          'Kutsuja saa suunnitelman mukaan 5 % bonusosuuden '
+          'Kutsujalle voidaan antaa suunniteltu bonusosuus '
           'kutsutun käyttäjän louhintatuotosta.',
     );
 
@@ -292,8 +334,7 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Referral-bonusta ei ole tarkoitus pitää jatkuvasti '
           'samalla tasolla. Kun Stelluriinin käyttäjämäärä kasvaa, '
-          'bonusprosenttia voidaan pienentää vaiheittain. '
-          'Tavoitteena on pitää koko louhintatalous hallittuna.',
+          'bonusprosenttia voidaan pienentää vaiheittain.',
     );
 
     final String referralMilestoneTitle = _t(
@@ -306,9 +347,8 @@ class RoadmapPage extends StatelessWidget {
       localization,
       'roadmapReferralMilestoneText',
       fallback:
-          'Esimerkiksi 1 000 käyttäjän kohdalla referral-bonuksen '
-          'tasoa voidaan pienentää. Tarkat rajat ja prosentit '
-          'määritellään ennen järjestelmän julkaisua.',
+          'Tarkat käyttäjämäärärajat ja bonusprosentit määritellään '
+          'ennen referral-järjestelmän lopullista julkaisua.',
     );
 
     // ==========================================================
@@ -328,7 +368,7 @@ class RoadmapPage extends StatelessWidget {
           'Louhintajärjestelmän tavoitteena ei ole kasvattaa '
           'päivittäistä STL-määrää rajattomasti. Hash Rate, '
           'Power Boost ja Referral-bonukset suunnitellaan '
-          'yhdessä niin, että kokonaismäärä pysyy hallittavana.',
+          'yhdessä niin, että kokonaisuus pysyy hallittavana.',
     );
 
     final String miningRateTitle = _t(
@@ -362,6 +402,43 @@ class RoadmapPage extends StatelessWidget {
     );
 
     // ==========================================================
+    // TESTNET CARD
+    // ==========================================================
+
+    final String testnetCardTitle = _t(
+      localization,
+      'roadmapTestnetCardTitle',
+      fallback: '🧪 Stelluriini Testnet',
+    );
+
+    final String testnetCardText = _t(
+      localization,
+      'roadmapTestnetCardText',
+      fallback:
+          'Testnet-vaiheen tarkoituksena on testata Stelluriinin '
+          'blockchain-toiminnot turvallisessa Solana-testiverkossa '
+          'ennen Mainnet-julkaisua. Testnetissä voidaan testata '
+          'lompakoita, STL-siirtoja, transaktioita ja nostoprosessia '
+          'ilman Mainnet-varojen käyttämistä.',
+    );
+
+    final String testnetFlowTitle = _t(
+      localization,
+      'roadmapTestnetFlowTitle',
+      fallback: 'Testnet → Mainnet',
+    );
+
+    final String testnetFlowText = _t(
+      localization,
+      'roadmapTestnetFlowText',
+      fallback:
+          'Testnetin jälkeen tulokset tarkistetaan. Vasta kun '
+          'blockchain-integraatio, turvallisuus, lompakot ja '
+          'STL-siirrot toimivat suunnitellusti, siirrytään '
+          'Mainnet-valmisteluun.',
+    );
+
+    // ==========================================================
     // WITHDRAWAL
     // ==========================================================
 
@@ -377,9 +454,9 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'STL-nostot eivät ole käytettävissä nykyisessä '
           'louhintaversiossa. Ne on suunniteltu myöhempään '
-          'Mainnet-vaiheeseen sen jälkeen, kun tarvittava '
-          'lompakko-, turvallisuus- ja lohkoketjuinfrastruktuuri '
-          'on rakennettu ja testattu.',
+          'Mainnet-vaiheeseen sen jälkeen, kun lompakko-, '
+          'turvallisuus- ja blockchain-infrastruktuuri on '
+          'rakennettu ja testattu.',
     );
 
     final String plannedWithdrawalModel = _t(
@@ -409,8 +486,7 @@ class RoadmapPage extends StatelessWidget {
     final String communityText = _t(
       localization,
       'roadmapCommunityDescription',
-      fallback:
-          'Rakennetaan Stelluriini-yhteisöä vaiheittain.',
+      fallback: 'Rakennetaan Stelluriini-yhteisöä vaiheittain.',
     );
 
     final String stellaTitle = _t(
@@ -498,8 +574,8 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Tiekartta kuvaa Stelluriinin tämänhetkistä suunniteltua '
           'suuntaa. Päivämäärät, ominaisuudet, bonusprosentit, '
-          'käyttäjämäärärajat, prioriteetit ja julkaisusuunnitelmat '
-          'voivat muuttua projektin kehittyessä.',
+          'käyttäjämäärärajat, Testnet- ja Mainnet-vaiheet sekä '
+          'julkaisusuunnitelmat voivat muuttua projektin kehittyessä.',
     );
 
     final String stellaJourneyText = _t(
@@ -719,7 +795,7 @@ class RoadmapPage extends StatelessWidget {
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 4
+            // PHASE 4 - TESTNET PREPARATION
             // ==================================================
 
             _RoadmapStep(
@@ -730,15 +806,15 @@ class RoadmapPage extends StatelessWidget {
               ),
               title: phase4Title,
               description: phase4Description,
-              status: futureText,
-              accent: roadmapPinkColor,
-              icon: '🪙',
+              status: plannedText,
+              accent: roadmapAccentColor,
+              icon: '🧪',
             ),
 
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 5
+            // PHASE 5 - SOLANA TESTNET
             // ==================================================
 
             _RoadmapStep(
@@ -749,15 +825,15 @@ class RoadmapPage extends StatelessWidget {
               ),
               title: phase5Title,
               description: phase5Description,
-              status: futureText,
-              accent: roadmapAccentColor,
-              icon: '🔐',
+              status: testnetText,
+              accent: roadmapGoldColor,
+              icon: '🧪',
             ),
 
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 6
+            // PHASE 6 - MAINNET PREPARATION
             // ==================================================
 
             _RoadmapStep(
@@ -769,14 +845,14 @@ class RoadmapPage extends StatelessWidget {
               title: phase6Title,
               description: phase6Description,
               status: futureText,
-              accent: roadmapGoldColor,
-              icon: '🚀',
+              accent: roadmapPinkColor,
+              icon: '🔐',
             ),
 
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 7
+            // PHASE 7 - MAINNET
             // ==================================================
 
             _RoadmapStep(
@@ -787,12 +863,146 @@ class RoadmapPage extends StatelessWidget {
               ),
               title: phase7Title,
               description: phase7Description,
+              status: mainnetText,
+              accent: roadmapGoldColor,
+              icon: '🚀',
+            ),
+
+            const _RoadmapLine(),
+
+            // ==================================================
+            // PHASE 8 - ECOSYSTEM
+            // ==================================================
+
+            _RoadmapStep(
+              phase: _t(
+                localization,
+                'roadmapPhase8',
+                fallback: 'VAIHE 8',
+              ),
+              title: phase8Title,
+              description: phase8Description,
               status: futureText,
               accent: roadmapPinkColor,
               icon: '🌟',
             ),
 
             const SizedBox(height: 20),
+
+            // ==================================================
+            // TESTNET → MAINNET CARD
+            // ==================================================
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF21113B),
+                    Color(0xFF281746),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius:
+                    BorderRadius.circular(22),
+                border: Border.all(
+                  color:
+                      roadmapGoldColor.withValues(
+                    alpha: 0.24,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        roadmapGoldColor.withValues(
+                      alpha: 0.06,
+                    ),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    '🧪  →  🚀',
+                    style: TextStyle(
+                      fontSize: 34,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    testnetCardTitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapAccentColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    testnetCardText,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapSecondaryTextColor,
+                      fontSize: 13,
+                      height: 1.55,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding:
+                        const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color:
+                          roadmapGoldColor.withValues(
+                        alpha: 0.07,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(16),
+                      border: Border.all(
+                        color:
+                            roadmapGoldColor.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          testnetFlowTitle,
+                          textAlign:
+                              TextAlign.center,
+                          style: const TextStyle(
+                            color:
+                                roadmapGoldColor,
+                            fontSize: 16,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          testnetFlowText,
+                          textAlign:
+                              TextAlign.center,
+                          style:
+                              const TextStyle(
+                            color:
+                                roadmapSecondaryTextColor,
+                            fontSize: 12.5,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
 
             // ==================================================
             // REFERRAL SYSTEM
@@ -1429,9 +1639,7 @@ class _RoadmapInfoCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           child,
         ],
       ),
@@ -1459,8 +1667,7 @@ class _ReferralInfoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color:
-            roadmapSurfaceColor,
+        color: roadmapSurfaceColor,
         borderRadius:
             BorderRadius.circular(16),
         border: Border.all(
