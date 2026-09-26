@@ -37,6 +37,9 @@ const {
   ALLOW_SELF_REFERRAL,
   ALLOW_REFERRER_CHANGE,
   ONE_REFERRER_PER_USER,
+  REFERRAL_CODE_LENGTH,
+  REFERRAL_CODE_CHARACTERS,
+  MAX_CODE_GENERATION_ATTEMPTS,
 } = require("../config/referralConfig");
 
 
@@ -51,15 +54,6 @@ const REFERRAL_CODES_COLLECTION =
 
 const REFERRALS_COLLECTION =
   "referrals";
-
-
-// ============================================================
-// 🔢 REFERRAL CODE SETTINGS
-// ============================================================
-
-const REFERRAL_CODE_LENGTH = 8;
-
-const MAX_CODE_GENERATION_ATTEMPTS = 10;
 
 
 // ============================================================
@@ -85,31 +79,42 @@ function normalizeReferralCode(
 // 🔤 GENERATE RANDOM REFERRAL CODE
 // ============================================================
 //
-// Käytetään helposti luettavaa merkistöä.
-//
-// Poistetaan helposti sekoittuvat merkit:
-//
-// - 0
-// - O
-// - I
-// - 1
+// Käytetään referralConfig.js:n keskitettyä
+// merkkijoukkoa ja pituutta.
 //
 // ============================================================
 
 function generateRandomReferralCode() {
   const characters =
-    "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    REFERRAL_CODE_CHARACTERS;
+
+  if (
+    typeof characters !== "string" ||
+    characters.length === 0
+  ) {
+    throw new Error(
+      "Referral code character set is invalid.",
+    );
+  }
+
+  const length =
+    Math.max(
+      1,
+      Math.floor(
+        Number(
+          REFERRAL_CODE_LENGTH,
+        ),
+      ),
+    );
 
   const randomBytes =
-    crypto.randomBytes(
-      REFERRAL_CODE_LENGTH,
-    );
+    crypto.randomBytes(length);
 
   let code = "";
 
   for (
     let index = 0;
-    index < REFERRAL_CODE_LENGTH;
+    index < length;
     index += 1
   ) {
     code +=
@@ -180,8 +185,7 @@ async function findReferralCode(
   }
 
   // ----------------------------------------------------------
-  // 🔒 Varmistetaan että dokumentin referralCode
-  // vastaa dokumentin ID:tä, jos kenttä on olemassa.
+  // 🔒 Varmistetaan referral-koodin eheys.
   // ----------------------------------------------------------
 
   if (
@@ -207,9 +211,9 @@ async function findReferralCode(
 // ============================================================
 //
 // Palauttaa käyttäjän olemassa olevan
-// referral-koodin.
+// kelvollisen referral-koodin.
 //
-// Jos käyttäjällä ei vielä ole koodia,
+// Jos käyttäjällä ei ole kelvollista koodia,
 // luodaan uusi yksilöllinen koodi.
 //
 // ============================================================
@@ -253,12 +257,11 @@ async function getOrCreateReferralCode(
       userData.referralCode,
     );
 
-  if (existingCode) {
-    // --------------------------------------------------------
-    // 🔒 Varmistetaan että käyttäjän referral-koodi
-    // todella kuuluu hänelle.
-    // --------------------------------------------------------
+  // ----------------------------------------------------------
+  // 🔒 VALIDATE EXISTING CODE
+  // ----------------------------------------------------------
 
+  if (existingCode) {
     const existingCodeRef =
       db
         .collection(
@@ -276,25 +279,47 @@ async function getOrCreateReferralCode(
         existingCodeSnapshot.data() ||
         {};
 
+      const existingReferrerUid =
+        typeof existingCodeData.referrerUid ===
+        "string"
+          ? existingCodeData.referrerUid.trim()
+          : "";
+
+      const storedCode =
+        normalizeReferralCode(
+          existingCodeData.referralCode,
+        );
+
       if (
-        existingCodeData.referrerUid ===
-        normalizedUserId
+        existingReferrerUid ===
+          normalizedUserId &&
+        (
+          !storedCode ||
+          storedCode === existingCode
+        )
       ) {
         return existingCode;
       }
     }
-
-    // --------------------------------------------------------
-    // Jos käyttäjällä on rikkinäinen tai vanha
-    // referralCode-kenttä, jatketaan uuden koodin
-    // turvallista luontia.
-    // --------------------------------------------------------
   }
+
+  // ----------------------------------------------------------
+  // 🆕 GENERATE NEW CODE
+  // ----------------------------------------------------------
+
+  const maxAttempts =
+    Math.max(
+      1,
+      Math.floor(
+        Number(
+          MAX_CODE_GENERATION_ATTEMPTS,
+        ),
+      ),
+    );
 
   for (
     let attempt = 0;
-    attempt <
-    MAX_CODE_GENERATION_ATTEMPTS;
+    attempt < maxAttempts;
     attempt += 1
   ) {
     const referralCode =
@@ -311,7 +336,7 @@ async function getOrCreateReferralCode(
       await db.runTransaction(
         async (transaction) => {
           // --------------------------------------------------
-          // 🔍 READ CODE
+          // 🔍 READ GENERATED CODE
           // --------------------------------------------------
 
           const codeSnapshot =
@@ -324,7 +349,7 @@ async function getOrCreateReferralCode(
           }
 
           // --------------------------------------------------
-          // 👤 READ USER AGAIN
+          // 👤 READ CURRENT USER
           // --------------------------------------------------
 
           const currentUserSnapshot =
@@ -349,12 +374,57 @@ async function getOrCreateReferralCode(
               currentUserData.referralCode,
             );
 
+          // --------------------------------------------------
+          // 🔒 VALIDATE CURRENT USER CODE
+          // --------------------------------------------------
+
           if (currentCode) {
-            return false;
+            const currentCodeRef =
+              db
+                .collection(
+                  REFERRAL_CODES_COLLECTION,
+                )
+                .doc(currentCode);
+
+            const currentCodeSnapshot =
+              await transaction.get(
+                currentCodeRef,
+              );
+
+            if (
+              currentCodeSnapshot.exists
+            ) {
+              const currentCodeData =
+                currentCodeSnapshot.data() ||
+                {};
+
+              const currentReferrerUid =
+                typeof currentCodeData.referrerUid ===
+                "string"
+                  ? currentCodeData.referrerUid.trim()
+                  : "";
+
+              const storedCurrentCode =
+                normalizeReferralCode(
+                  currentCodeData.referralCode,
+                );
+
+              if (
+                currentReferrerUid ===
+                  normalizedUserId &&
+                (
+                  !storedCurrentCode ||
+                  storedCurrentCode ===
+                    currentCode
+                )
+              ) {
+                return currentCode;
+              }
+            }
           }
 
           // --------------------------------------------------
-          // 📝 WRITE REFERRAL CODE
+          // 📝 WRITE NEW REFERRAL CODE
           // --------------------------------------------------
 
           transaction.set(
@@ -381,33 +451,19 @@ async function getOrCreateReferralCode(
             },
           );
 
-          return true;
+          return referralCode;
         },
       );
 
-    if (created) {
-      return referralCode;
-    }
+    // --------------------------------------------------------
+    // Existing valid code or newly created code.
+    // --------------------------------------------------------
 
-    // Jos toinen samanaikainen prosessi loi käyttäjälle
-    // referral-koodin, haetaan se ennen uuden yrityksen tekemistä.
-
-    const refreshedUserSnapshot =
-      await userRef.get();
-
-    if (refreshedUserSnapshot.exists) {
-      const refreshedData =
-        refreshedUserSnapshot.data() ||
-        {};
-
-      const refreshedCode =
-        normalizeReferralCode(
-          refreshedData.referralCode,
-        );
-
-      if (refreshedCode) {
-        return refreshedCode;
-      }
+    if (
+      typeof created === "string" &&
+      created.length > 0
+    ) {
+      return created;
     }
   }
 
@@ -433,12 +489,15 @@ async function getReferralData(
     );
   }
 
+  const normalizedUserId =
+    userId.trim();
+
   const referralRef =
     db
       .collection(
         REFERRALS_COLLECTION,
       )
-      .doc(userId.trim());
+      .doc(normalizedUserId);
 
   const snapshot =
     await referralRef.get();
@@ -608,6 +667,27 @@ async function applyReferral(
           referrerRef,
         );
 
+      // ------------------------------------------------------
+      // 📊 EXISTING REFERRAL DATA
+      // ------------------------------------------------------
+
+      const existingReferrerUid =
+        typeof userData.referrerUid ===
+        "string"
+          ? userData.referrerUid.trim()
+          : "";
+
+      const existingReferral =
+        referralSnapshot.exists
+          ? referralSnapshot.data() || {}
+          : {};
+
+      const existingReferralUid =
+        typeof existingReferral.referrerUid ===
+        "string"
+          ? existingReferral.referrerUid.trim()
+          : "";
+
       // ======================================================
       // 🚫 SELF REFERRAL
       // ======================================================
@@ -632,31 +712,21 @@ async function applyReferral(
       }
 
       // ======================================================
-      // 🔒 EXISTING REFERRER
+      // 🔒 SAME REFERRAL ALREADY APPLIED
       // ======================================================
-
-      const existingReferrerUid =
-        typeof userData.referrerUid ===
-        "string"
-          ? userData.referrerUid.trim()
-          : "";
-
-      // ------------------------------------------------------
-      // Sama referral on jo käytössä.
-      //
-      // TÄRKEÄÄ:
-      // Tätä ei käsitellä uutena referralina,
-      // joten referralCount ei kasva uudelleen.
-      // ------------------------------------------------------
 
       if (
         existingReferrerUid ===
-        referrerUid
+          referrerUid ||
+        existingReferralUid ===
+          referrerUid
       ) {
         return {
           success: true,
 
           alreadyApplied: true,
+
+          changedReferrer: false,
 
           userId:
             normalizedUserId,
@@ -669,57 +739,14 @@ async function applyReferral(
       }
 
       // ======================================================
-      // 🔒 EXISTING REFERRAL DOCUMENT
+      // 🔒 EXISTING REFERRAL LOCK
       // ======================================================
 
       if (
-        referralSnapshot.exists
-      ) {
-        const existingReferral =
-          referralSnapshot.data() ||
-          {};
-
-        const existingReferralUid =
-          typeof existingReferral.referrerUid ===
-          "string"
-            ? existingReferral.referrerUid.trim()
-            : "";
-
-        if (
-          existingReferralUid ===
-          referrerUid
-        ) {
-          return {
-            success: true,
-
-            alreadyApplied: true,
-
-            userId:
-              normalizedUserId,
-
-            referrerUid,
-
-            referralCode:
-              normalizedCode,
-          };
-        }
-
-        if (
-          ONE_REFERRER_PER_USER &&
-          !ALLOW_REFERRER_CHANGE
-        ) {
-          throw new Error(
-            "Referral has already been assigned.",
-          );
-        }
-      }
-
-      // ======================================================
-      // 🔒 EXISTING USER REFERRER
-      // ======================================================
-
-      if (
-        existingReferrerUid &&
+        (
+          existingReferrerUid ||
+          existingReferralUid
+        ) &&
         ONE_REFERRER_PER_USER &&
         !ALLOW_REFERRER_CHANGE
       ) {
@@ -729,7 +756,7 @@ async function applyReferral(
       }
 
       // ======================================================
-      // 📊 CURRENT REFERRAL COUNTS
+      // 📊 CURRENT NEW REFERRER COUNT
       // ======================================================
 
       const newReferrerData =
@@ -753,25 +780,23 @@ async function applyReferral(
       // ======================================================
       // 🔄 OPTIONAL REFERRER CHANGE
       // ======================================================
-      //
-      // Jos referralin vaihtaminen on sallittu:
-      //
-      // - vanhan kutsujan referralCount pienenee
-      // - uuden kutsujan referralCount kasvaa
-      //
-      // Näin laskurit pysyvät johdonmukaisina.
-      //
-      // ======================================================
 
       let oldReferrerRef = null;
+
       let oldReferrerSnapshot = null;
+
       let oldReferrerCount = 0;
 
+      const previousReferrerUid =
+        existingReferrerUid ||
+        existingReferralUid ||
+        "";
+
       if (
-        existingReferrerUid &&
-        ALLOW_REFERRER_CHANGE &&
-        existingReferrerUid !==
-          referrerUid
+        previousReferrerUid &&
+        previousReferrerUid !==
+          referrerUid &&
+        ALLOW_REFERRER_CHANGE
       ) {
         oldReferrerRef =
           db
@@ -779,7 +804,7 @@ async function applyReferral(
               USERS_COLLECTION,
             )
             .doc(
-              existingReferrerUid,
+              previousReferrerUid,
             );
 
         oldReferrerSnapshot =
@@ -811,33 +836,34 @@ async function applyReferral(
       }
 
       // ======================================================
+      // 🕐 ORIGINAL CREATED AT
+      // ======================================================
+
+      const originalCreatedAt =
+        existingReferral.createdAt ||
+        FieldValue.serverTimestamp();
+
+      // ======================================================
       // 📝 REFERRAL RELATIONSHIP
       // ======================================================
 
-      const referralData = {
-        userId:
-          normalizedUserId,
-
-        referrerUid,
-
-        referralCode:
-          normalizedCode,
-
-        createdAt:
-          referralSnapshot.exists &&
-          referralSnapshot.data()
-            ?.createdAt
-            ? referralSnapshot.data()
-                .createdAt
-            : FieldValue.serverTimestamp(),
-
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      };
-
       transaction.set(
         referralRef,
-        referralData,
+        {
+          userId:
+            normalizedUserId,
+
+          referrerUid,
+
+          referralCode:
+            normalizedCode,
+
+          createdAt:
+            originalCreatedAt,
+
+          updatedAt:
+            FieldValue.serverTimestamp(),
+        },
         {
           merge: false,
         },
@@ -856,12 +882,8 @@ async function applyReferral(
             normalizedCode,
 
           referralJoinedAt:
-            referralSnapshot.exists &&
-            referralSnapshot.data()
-              ?.createdAt
-            ? referralSnapshot.data()
-                .createdAt
-            : FieldValue.serverTimestamp(),
+            existingReferral.createdAt ||
+            FieldValue.serverTimestamp(),
 
           referralUpdatedAt:
             FieldValue.serverTimestamp(),
@@ -911,8 +933,8 @@ async function applyReferral(
 
         changedReferrer:
           Boolean(
-            existingReferrerUid &&
-            existingReferrerUid !==
+            previousReferrerUid &&
+            previousReferrerUid !==
               referrerUid,
           ),
 
@@ -922,7 +944,8 @@ async function applyReferral(
         referrerUid,
 
         previousReferrerUid:
-          existingReferrerUid || null,
+          previousReferrerUid ||
+          null,
 
         referralCode:
           normalizedCode,
@@ -975,22 +998,21 @@ function calculateReferralBonus(
       : 0;
 
   const rate =
-    getReferralBonusRate(
-      safeUserCount,
+    Number(
+      getReferralBonusRate(
+        safeUserCount,
+      ),
     );
 
-  const safeRate =
-    Number(rate);
-
   if (
-    !Number.isFinite(safeRate) ||
-    safeRate < 0
+    !Number.isFinite(rate) ||
+    rate < 0
   ) {
     return 0;
   }
 
   const bonus =
-    amount * safeRate;
+    amount * rate;
 
   if (
     !isValidReferralBonus(
