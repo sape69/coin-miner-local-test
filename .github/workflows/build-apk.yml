@@ -50,31 +50,19 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           echo "ANDROID_HOME=$ANDROID_HOME"
 
-          if [ ! -d "$ANDROID_SDK_ROOT" ]; then
-            echo "ERROR: Android SDK directory not found."
-            exit 1
-          fi
-
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
 
           if [ ! -x "$SDKMANAGER" ]; then
             echo "ERROR: sdkmanager not found."
-
-            find "$ANDROID_SDK_ROOT/cmdline-tools" \
-              -maxdepth 4 \
-              -type f \
-              -name sdkmanager \
-              -print || true
-
             exit 1
           fi
 
           echo ""
-          echo "===== SDKMANAGER VERSION ====="
+          echo "SDKMANAGER:"
           "$SDKMANAGER" --version
 
       # ==========================================================
-      # 5. Install Android SDK packages
+      # 5. Install Android SDK 36
       # ==========================================================
       - name: Install Android SDK packages
         run: |
@@ -82,15 +70,15 @@ jobs:
 
           echo "Accepting Android SDK licenses..."
 
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
 
           echo ""
-          echo "Installing required Android SDK packages..."
+          echo "Installing Android SDK 36..."
 
           "$SDKMANAGER" \
             "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.1"
+            "platforms;android-36" \
+            "build-tools;36.0.0"
 
       # ==========================================================
       # 6. Verify Flutter project
@@ -105,7 +93,7 @@ jobs:
           ls -la
 
           echo ""
-          echo "===== ANDROID DIRECTORY ====="
+          echo "===== ANDROID FILES ====="
 
           find android \
             -maxdepth 6 \
@@ -117,81 +105,164 @@ jobs:
       # ==========================================================
       - name: Verify Firebase configuration
         run: |
-          if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: android/app/google-services.json not found."
+          FILE="android/app/google-services.json"
+
+          if [ ! -f "$FILE" ]; then
+            echo "ERROR: $FILE not found."
             exit 1
           fi
 
+          echo ""
           echo "Firebase configuration found."
 
+          python3 - "$FILE" <<'PY'
+          import json
+          import sys
+
+          path = sys.argv[1]
+
+          with open(path, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          expected = "com.example.stelluriini"
+
+          found = []
+
+          for client in data.get("client", []):
+              package_name = (
+                  client
+                  .get("client_info", {})
+                  .get("android_client_info", {})
+                  .get("package_name")
+              )
+
+              if package_name:
+                  found.append(package_name)
+
+          print("")
+          print("Firebase Android package names:")
+          for package_name in found:
+              print("  " + package_name)
+
+          if expected not in found:
+              print("")
+              print("ERROR:")
+              print("Expected Firebase package:")
+              print(expected)
+              sys.exit(1)
+
+          print("")
+          print("Firebase package check PASSED.")
+          PY
+
       # ==========================================================
-      # 8. Diagnose ALL Android manifests
+      # 8. Verify applicationId / namespace
       # ==========================================================
-      - name: Diagnose Android manifests
+      - name: Verify Android application identity
         run: |
-          echo ""
-          echo "=================================================="
-          echo "ANDROID MANIFEST DIAGNOSTICS"
-          echo "=================================================="
+          FILE="android/app/build.gradle"
 
-          echo ""
-          echo "===== ALL MANIFEST FILES ====="
-
-          find android \
-            -type f \
-            -name "AndroidManifest.xml" \
-            -print \
-            | sort
-
-          echo ""
-          echo "===== MANIFEST CONTENTS ====="
-
-          while IFS= read -r file; do
-            echo ""
-            echo "-----------------------------------------------"
-            echo "FILE: $file"
-            echo "-----------------------------------------------"
-
-            cat "$file"
-
-          done < <(
-            find android \
-              -type f \
-              -name "AndroidManifest.xml" \
-              -print \
-              | sort
-          )
-
-      # ==========================================================
-      # 9. Search Flutter V1 references
-      # ==========================================================
-      - name: Diagnose Flutter V1 references
-        run: |
-          echo ""
-          echo "=================================================="
-          echo "FLUTTER V1 REFERENCE SEARCH"
-          echo "=================================================="
-
-          echo ""
-          echo "===== SEARCH android/ FOR io.flutter.app ====="
-
-          if grep -Rni \
-            --exclude-dir=.gradle \
-            --exclude-dir=build \
-            "io.flutter.app" \
-            android 2>/dev/null; then
-
-            echo ""
-            echo "WARNING: Flutter V1 reference found in android/."
-
-          else
-
-            echo "No io.flutter.app references found in android/."
-
+          if [ ! -f "$FILE" ]; then
+            echo "ERROR: $FILE not found."
+            exit 1
           fi
 
           echo ""
-          echo "===== SEARCH ENTIRE REPOSITORY FOR io.flutter.app ====="
+          echo "=================================================="
+          echo "ANDROID APPLICATION IDENTITY"
+          echo "=================================================="
+
+          echo ""
+          echo "Git commit:"
+          git rev-parse HEAD
+
+          echo ""
+          echo "Branch:"
+          git branch --show-current
+
+          echo ""
+          echo "===== android/app/build.gradle ====="
+
+          grep -n -E \
+            'namespace|applicationId|compileSdk|targetSdk|minSdk' \
+            "$FILE" || true
+
+          echo ""
+          echo "===== EXPECTED VALUES ====="
+          echo "namespace     = com.stelluriini.app"
+          echo "applicationId = com.example.stelluriini"
+
+          echo ""
+          echo "===== CHECK APPLICATION ID ====="
+
+          if ! grep -q 'applicationId = "com.example.stelluriini"' "$FILE"; then
+            echo ""
+            echo "ERROR: applicationId is NOT com.example.stelluriini."
+            echo ""
+            echo "The repository version used by GitHub Actions is:"
+            grep -n "applicationId" "$FILE" || true
+            exit 1
+          fi
+
+          echo "applicationId CHECK PASSED."
+
+          echo ""
+          echo "===== CHECK NAMESPACE ====="
+
+          if ! grep -q 'namespace = "com.stelluriini.app"' "$FILE"; then
+            echo ""
+            echo "ERROR: namespace is not com.stelluriini.app."
+            grep -n "namespace" "$FILE" || true
+            exit 1
+          fi
+
+          echo "namespace CHECK PASSED."
+
+      # ==========================================================
+      # 9. Diagnose Android manifest
+      # ==========================================================
+      - name: Verify Android manifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          echo ""
+          echo "=================================================="
+          echo "ANDROID MANIFEST"
+          echo "=================================================="
+
+          if [ ! -f "$MANIFEST" ]; then
+            echo "ERROR: Manifest not found."
+            exit 1
+          fi
+
+          echo ""
+          echo "Manifest:"
+          cat "$MANIFEST"
+
+          echo ""
+          echo "===== FLUTTER EMBEDDING ====="
+
+          if grep -q 'android:name="flutterEmbedding"' "$MANIFEST" &&
+             grep -q 'android:value="2"' "$MANIFEST"; then
+
+            echo "Flutter V2 embedding detected."
+
+          else
+
+            echo "ERROR: Flutter V2 embedding metadata not found."
+            exit 1
+
+          fi
+
+      # ==========================================================
+      # 10. Search old Flutter V1 references
+      # ==========================================================
+      - name: Check Flutter V1 references
+        run: |
+          echo ""
+          echo "=================================================="
+          echo "FLUTTER V1 CHECK"
+          echo "=================================================="
 
           if grep -Rni \
             --exclude-dir=.git \
@@ -199,66 +270,27 @@ jobs:
             --exclude-dir=build \
             --exclude-dir=.dart_tool \
             "io.flutter.app" \
-            . 2>/dev/null; then
+            android . 2>/dev/null; then
 
             echo ""
-            echo "WARNING: Flutter V1 reference found somewhere in repository."
+            echo "ERROR: Flutter V1 reference found."
+            exit 1
 
           else
 
-            echo "No io.flutter.app references found in repository."
+            echo "No Flutter V1 references found."
 
           fi
 
       # ==========================================================
-      # 10. Diagnose flutterEmbedding
-      # ==========================================================
-      - name: Diagnose flutterEmbedding metadata
-        run: |
-          echo ""
-          echo "=================================================="
-          echo "FLUTTER EMBEDDING SEARCH"
-          echo "=================================================="
-
-          echo ""
-          echo "===== SEARCH FOR flutterEmbedding ====="
-
-          grep -Rni \
-            --exclude-dir=.gradle \
-            --exclude-dir=build \
-            "flutterEmbedding" \
-            android 2>/dev/null || true
-
-          echo ""
-          echo "===== SEARCH FOR EMBEDDING VALUE 1 ====="
-
-          grep -Rni \
-            --exclude-dir=.gradle \
-            --exclude-dir=build \
-            'android:value="1"' \
-            android 2>/dev/null || true
-
-          echo ""
-          echo "===== SEARCH FOR EMBEDDING VALUE 2 ====="
-
-          grep -Rni \
-            --exclude-dir=.gradle \
-            --exclude-dir=build \
-            'android:value="2"' \
-            android 2>/dev/null || true
-
-      # ==========================================================
       # 11. Diagnose MainActivity
       # ==========================================================
-      - name: Diagnose MainActivity
+      - name: Verify MainActivity
         run: |
           echo ""
           echo "=================================================="
-          echo "MAIN ACTIVITY DIAGNOSTICS"
+          echo "MAIN ACTIVITY"
           echo "=================================================="
-
-          echo ""
-          echo "===== MAIN ACTIVITY FILES ====="
 
           find android/app/src \
             -type f \
@@ -271,16 +303,13 @@ jobs:
             | sort
 
           echo ""
-          echo "===== MAIN ACTIVITY CONTENT ====="
 
           while IFS= read -r file; do
-            echo ""
             echo "-----------------------------------------------"
             echo "FILE: $file"
             echo "-----------------------------------------------"
-
             cat "$file"
-
+            echo ""
           done < <(
             find android/app/src \
               -type f \
@@ -294,249 +323,18 @@ jobs:
           )
 
       # ==========================================================
-      # 12. Diagnose Flutter
+      # 12. Flutter diagnostics
       # ==========================================================
-      - name: Diagnose Flutter project
+      - name: Flutter diagnostics
         run: |
           echo ""
-          echo "=================================================="
-          echo "FLUTTER PROJECT DIAGNOSTICS"
-          echo "=================================================="
-
-          echo ""
-          echo "===== FLUTTER VERSION ====="
-
           flutter --version
 
           echo ""
-          echo "===== DART VERSION ====="
-
           dart --version
 
-          echo ""
-          echo "===== FLUTTER DOCTOR ====="
-
-          flutter doctor -v
-
       # ==========================================================
-      # 13. Diagnose Gradle configuration
-      # ==========================================================
-      - name: Diagnose Gradle configuration
-        run: |
-          echo ""
-          echo "=================================================="
-          echo "GRADLE DIAGNOSTICS"
-          echo "=================================================="
-
-          echo ""
-          echo "===== android/settings.gradle ====="
-
-          if [ -f android/settings.gradle ]; then
-            cat android/settings.gradle
-          else
-            echo "File not found."
-          fi
-
-          echo ""
-          echo "===== android/settings.gradle.kts ====="
-
-          if [ -f android/settings.gradle.kts ]; then
-            cat android/settings.gradle.kts
-          else
-            echo "File not found."
-          fi
-
-          echo ""
-          echo "===== android/build.gradle ====="
-
-          if [ -f android/build.gradle ]; then
-            cat android/build.gradle
-          else
-            echo "File not found."
-          fi
-
-          echo ""
-          echo "===== android/build.gradle.kts ====="
-
-          if [ -f android/build.gradle.kts ]; then
-            cat android/build.gradle.kts
-          else
-            echo "File not found."
-          fi
-
-          echo ""
-          echo "===== android/app/build.gradle ====="
-
-          if [ -f android/app/build.gradle ]; then
-            cat android/app/build.gradle
-          else
-            echo "File not found."
-          fi
-
-          echo ""
-          echo "===== android/app/build.gradle.kts ====="
-
-          if [ -f android/app/build.gradle.kts ]; then
-            cat android/app/build.gradle.kts
-          else
-            echo "File not found."
-          fi
-
-      # ==========================================================
-      # 14. EXACT FLUTTER MANIFEST DETECTION TEST
-      #
-      # This reproduces the important part of Flutter's
-      # AndroidProject.computeEmbeddingVersion() logic.
-      # ==========================================================
-      - name: Exact Flutter embedding detection test
-        shell: bash
-        run: |
-          echo ""
-          echo "=================================================="
-          echo "EXACT FLUTTER EMBEDDING DETECTION TEST"
-          echo "=================================================="
-
-          echo ""
-          echo "Flutter 3.29.3 checks whether the Android project"
-          echo "uses Gradle and then selects its manifest."
-          echo ""
-
-          if [ -f android/build.gradle ]; then
-            echo "Gradle detection:"
-            echo "android/build.gradle EXISTS"
-            echo "Flutter should use:"
-            echo "android/app/src/main/AndroidManifest.xml"
-
-            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
-
-          elif [ -f android/build.gradle.kts ]; then
-            echo "Gradle detection:"
-            echo "android/build.gradle.kts EXISTS"
-            echo "Flutter should use:"
-            echo "android/app/src/main/AndroidManifest.xml"
-
-            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
-
-          else
-            echo "Gradle detection:"
-            echo "NO android/build.gradle"
-            echo "NO android/build.gradle.kts"
-
-            echo ""
-            echo "Flutter would fall back to:"
-            echo "android/AndroidManifest.xml"
-
-            SELECTED_MANIFEST="android/AndroidManifest.xml"
-          fi
-
-          echo ""
-          echo "=================================================="
-          echo "SELECTED MANIFEST"
-          echo "=================================================="
-
-          echo "$SELECTED_MANIFEST"
-
-          if [ ! -f "$SELECTED_MANIFEST" ]; then
-            echo ""
-            echo "ERROR:"
-            echo "Selected Flutter manifest does not exist."
-            exit 1
-          fi
-
-          echo ""
-          echo "=================================================="
-          echo "SELECTED MANIFEST CONTENT"
-          echo "=================================================="
-
-          cat "$SELECTED_MANIFEST"
-
-          echo ""
-          echo "=================================================="
-          echo "XML PARSER RESULT"
-          echo "=================================================="
-
-          python3 - "$SELECTED_MANIFEST" <<'PY'
-          import sys
-          import xml.etree.ElementTree as ET
-
-          manifest_path = sys.argv[1]
-
-          print(f"Parsing: {manifest_path}")
-
-          try:
-              tree = ET.parse(manifest_path)
-              root = tree.getroot()
-          except Exception as exc:
-              print(f"ERROR: XML parsing failed: {exc}")
-              sys.exit(1)
-
-          ANDROID_NS = "http://schemas.android.com/apk/res/android"
-          NAME = f"{{{ANDROID_NS}}}name"
-          VALUE = f"{{{ANDROID_NS}}}value"
-
-          print("")
-          print("XML parsing succeeded.")
-
-          for application in root.iter("application"):
-              application_name = application.attrib.get(NAME)
-
-              print("")
-              print("Application android:name:")
-              print(repr(application_name))
-
-              if application_name == "io.flutter.app.FlutterApplication":
-                  print("")
-                  print("RESULT: FLUTTER V1")
-                  print("Reason: FlutterApplication V1 detected.")
-                  sys.exit(2)
-
-          for metadata in root.iter("meta-data"):
-              name = metadata.attrib.get(NAME)
-              value = metadata.attrib.get(VALUE)
-
-              if name == "flutterEmbedding":
-                  print("")
-                  print("Found flutterEmbedding metadata.")
-                  print(f"android:name = {name!r}")
-                  print(f"android:value = {value!r}")
-
-                  if value == "1":
-                      print("")
-                      print("RESULT: FLUTTER V1")
-                      print("Reason: flutterEmbedding value is 1.")
-                      sys.exit(2)
-
-                  if value == "2":
-                      print("")
-                      print("RESULT: FLUTTER V2")
-                      print("Reason: flutterEmbedding value is 2.")
-                      sys.exit(0)
-
-          print("")
-          print("RESULT: FLUTTER V1")
-          print("Reason: flutterEmbedding value 2 was not found.")
-          sys.exit(2)
-          PY
-
-          XML_RESULT=$?
-
-          echo ""
-          echo "=================================================="
-          echo "EXACT DETECTION EXIT CODE: $XML_RESULT"
-          echo "=================================================="
-
-          if [ "$XML_RESULT" -ne 0 ]; then
-            echo ""
-            echo "Flutter's expected V2 embedding was NOT detected"
-            echo "in the manifest selected by the same basic logic."
-            exit 1
-          fi
-
-          echo ""
-          echo "EXACT FLUTTER EMBEDDING TEST PASSED."
-
-      # ==========================================================
-      # 15. Configure AndroidX
+      # 13. Configure AndroidX
       # ==========================================================
       - name: Configure AndroidX
         run: |
@@ -544,179 +342,144 @@ jobs:
             touch android/gradle.properties
           fi
 
-          if ! grep -q "^android.useAndroidX=true" android/gradle.properties; then
-            echo "android.useAndroidX=true" >> android/gradle.properties
-          fi
+          grep -q "^android.useAndroidX=true" \
+            android/gradle.properties \
+            || echo "android.useAndroidX=true" >> android/gradle.properties
 
-          if ! grep -q "^android.enableJetifier=true" android/gradle.properties; then
-            echo "android.enableJetifier=true" >> android/gradle.properties
-          fi
+          grep -q "^android.enableJetifier=true" \
+            android/gradle.properties \
+            || echo "android.enableJetifier=true" >> android/gradle.properties
 
           echo ""
-          echo "===== android/gradle.properties ====="
-
+          echo "===== gradle.properties ====="
           cat android/gradle.properties
 
       # ==========================================================
-      # 16. Flutter clean
+      # 14. Flutter clean
       # ==========================================================
       - name: Flutter clean
         run: |
           flutter clean
 
       # ==========================================================
-      # 17. Flutter pub get
+      # 15. Flutter pub get
       # ==========================================================
       - name: Flutter pub get
         run: |
           flutter pub get
 
       # ==========================================================
-      # 18. Generate Stelluriini app icon
+      # 16. Generate app icon
       # ==========================================================
       - name: Generate Stelluriini app icon
         run: |
-          echo ""
-          echo "=================================================="
-          echo "GENERATING STELLURIINI APP ICON"
-          echo "=================================================="
-
-          echo ""
-          echo "Checking logo asset..."
-
           if [ ! -f assets/images/stelluriini_logo.png ]; then
-            echo "ERROR: Stelluriini logo was not found:"
-            echo "assets/images/stelluriini_logo.png"
+            echo "ERROR: Stelluriini logo not found."
             exit 1
           fi
 
-          echo "Logo found:"
-          ls -lh assets/images/stelluriini_logo.png
-
-          echo ""
-          echo "Running flutter_launcher_icons..."
-
           dart run flutter_launcher_icons
 
-          echo ""
-          echo "Stelluriini app icon generation completed."
-
       # ==========================================================
-      # 19. Flutter analyze
+      # 17. Flutter analyze
       # ==========================================================
       - name: Flutter analyze
         run: |
           flutter analyze
 
       # ==========================================================
-      # 20. FINAL EXACT EMBEDDING CHECK
+      # 18. Final identity check
       # ==========================================================
-      - name: Final exact embedding check
-        shell: bash
+      - name: Final Android identity check
         run: |
           echo ""
           echo "=================================================="
-          echo "FINAL EMBEDDING CHECK BEFORE BUILD"
+          echo "FINAL ANDROID IDENTITY CHECK"
           echo "=================================================="
 
-          if [ -f android/build.gradle ]; then
-            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
-          elif [ -f android/build.gradle.kts ]; then
-            SELECTED_MANIFEST="android/app/src/main/AndroidManifest.xml"
-          else
-            SELECTED_MANIFEST="android/AndroidManifest.xml"
-          fi
-
-          echo "Flutter-selected manifest:"
-          echo "$SELECTED_MANIFEST"
+          echo ""
+          echo "BUILD.GRADLE:"
+          grep -n -E \
+            'namespace|applicationId|compileSdk|targetSdk|minSdk' \
+            android/app/build.gradle
 
           echo ""
-          echo "Manifest exists?"
-
-          if [ ! -f "$SELECTED_MANIFEST" ]; then
-            echo "NO"
-            exit 1
-          fi
-
-          echo "YES"
+          echo "FIREBASE:"
+          grep -n "package_name" \
+            android/app/google-services.json
 
           echo ""
-          echo "Manifest:"
-          cat "$SELECTED_MANIFEST"
+          echo "MANIFEST:"
+          grep -n "flutterEmbedding" \
+            android/app/src/main/AndroidManifest.xml || true
 
           echo ""
-          echo "Embedding metadata:"
-
-          grep -n "flutterEmbedding" "$SELECTED_MANIFEST" || true
-          grep -n 'android:value="2"' "$SELECTED_MANIFEST" || true
-
-          echo ""
-          echo "Final exact check passed."
+          echo "FINAL CHECK PASSED."
 
       # ==========================================================
-      # 21. Verbose APK build
+      # 19. Build release APK
       # ==========================================================
-      - name: Build release APK - verbose diagnostics
+      - name: Build release APK
         shell: bash
         run: |
           set +e
 
           echo ""
           echo "=================================================="
-          echo "FLUTTER VERBOSE APK BUILD"
+          echo "BUILDING RELEASE APK"
           echo "=================================================="
 
-          flutter build apk --release -v 2>&1 | tee flutter_build.log
+          flutter build apk --release 2>&1 | tee flutter_build.log
 
           BUILD_EXIT=${PIPESTATUS[0]}
 
           echo ""
           echo "=================================================="
-          echo "SEARCHING BUILD LOG"
+          echo "BUILD RESULT"
           echo "=================================================="
 
+          echo "Exit code: $BUILD_EXIT"
+
           echo ""
-          echo "--- Android embedding references ---"
+          echo "=================================================="
+          echo "IMPORTANT ERRORS"
+          echo "=================================================="
 
           grep -ni -E \
-            "embedding|FlutterActivity|FlutterApplication|AndroidManifest|project.dart|v1|v2" \
+            "FAILURE:|ERROR:|Execution failed|BUILD FAILED|Exception:|Could not|What went wrong|Caused by:" \
             flutter_build.log \
-            | tail -200 || true
+            | tail -80 || true
 
           echo ""
-          echo "--- Manifest references ---"
+          echo "=================================================="
+          echo "FLUTTER V1 / EMBEDDING ERRORS"
+          echo "=================================================="
 
           grep -ni -E \
-            "AndroidManifest.xml|flutterEmbedding" \
+            "deleted Android v1 embedding|FlutterApplication|io.flutter.app|flutterEmbedding" \
             flutter_build.log \
-            | tail -100 || true
+            | tail -50 || true
 
           echo ""
-          echo "--- Final Flutter error ---"
-
-          grep -ni -E \
-            "Build failed due to use of deleted Android v1 embedding|FAILURE|ERROR|Exception" \
-            flutter_build.log \
-            | tail -100 || true
-
-          echo ""
-          echo "Flutter build exit code: $BUILD_EXIT"
+          echo "=================================================="
+          echo "END OF BUILD"
+          echo "=================================================="
 
           exit "$BUILD_EXIT"
 
       # ==========================================================
-      # 22. Upload verbose build log
+      # 20. Upload build log
       # ==========================================================
-      - name: Upload Flutter build diagnostics
+      - name: Upload Flutter build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-build-diagnostics
+          name: flutter-build-log
           path: flutter_build.log
           if-no-files-found: ignore
 
       # ==========================================================
-      # 23. Verify APK
+      # 21. Verify APK
       # ==========================================================
       - name: Verify APK
         if: success()
@@ -733,7 +496,7 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 24. Upload APK
+      # 22. Upload APK
       # ==========================================================
       - name: Upload APK
         if: success()
