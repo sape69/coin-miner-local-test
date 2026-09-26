@@ -52,15 +52,16 @@ const {
 //
 // ============================================================
 
-const MAX_DOCUMENT_ID_BYTES = 1500;
+const MAX_DOCUMENT_ID_BYTES =
+  1500;
 
 
 // ============================================================
 // 🔐 CREATE FIRESTORE ID ERROR
 // ============================================================
 //
-// Keskitetty virheen luonti pitää validoinnin siistinä
-// ja varmistaa yhdenmukaiset error-koodit.
+// Keskitetty virheen luonti pitää validoinnin
+// yhdenmukaisena eri käyttötarkoituksissa.
 //
 // ============================================================
 
@@ -139,7 +140,8 @@ function validateDocumentId(
   // ==========================================================
 
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     throw createDocumentIdError(
       "FIRESTORE_INVALID_DOCUMENT_ID",
@@ -236,11 +238,6 @@ function validateDocumentId(
   //
   // __.*__
   //
-  // Esimerkiksi:
-  //
-  // __name__
-  // __example__
-  //
   // ==========================================================
 
   if (
@@ -262,8 +259,8 @@ function validateDocumentId(
   //
   // Firestore käyttää tavukokoa.
   //
-  // Buffer.byteLength(..., "utf8") huomioi tämän oikein
-  // myös Unicode-merkkien kanssa.
+  // Buffer.byteLength(..., "utf8") huomioi oikein myös
+  // Unicode-merkit.
   //
   // ==========================================================
 
@@ -283,6 +280,7 @@ function validateDocumentId(
       parameterName,
       {
         byteLength,
+
         maxBytes:
           MAX_DOCUMENT_ID_BYTES,
       },
@@ -359,19 +357,15 @@ function getHistoryCollection(
 //
 // admobRewards/{transactionId}
 //
-// AdMob transaction_id toimii dokumentin ID:nä.
+// AdMob transaction_id voidaan käyttää dokumentin ID:nä.
 //
-// Tämä mahdollistaa duplicate-tarkistuksen:
+// HUOM:
 //
-// transactionId
-//      ↓
-// admobRewards/{transactionId}
+// Tämä funktio ainoastaan luo DocumentReference-olion.
+// Se ei lue eikä kirjoita Firestorea.
 //
-// Sama transaction_id voidaan tunnistaa jo käsitellyksi
-// ilman, että transaction ID:n sisältöä tarvitsee muuttaa.
-//
-// Varsinainen atominen käsittely kuuluu AdMob/SSV
-// business/service-kerrokseen.
+// Varsinainen reward-validointi ja atominen käsittely
+// kuuluvat AdMob/SSV-service-kerrokseen.
 //
 // ============================================================
 
