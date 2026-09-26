@@ -4,7 +4,7 @@
 // 🐱 STELLURIINI - MINING SERVICE
 // ============================================================
 //
-// Business/service-kerros Stelluriini-miningille.
+// Stella Mining.
 //
 // Vastuu:
 //
@@ -15,12 +15,27 @@
 // 🔒 Mining/Boost-idempotenssi
 // 📜 Mining History
 // 🔐 Varmennetun AdMob rewardin claim
+// 🤝 Referral-bonuksen käsittely
 //
 // AdMob SSV-verifiointi kuuluu admobService.js:lle.
 // AdMob reward -dokumentin validointi kuuluu
 // admobRewardService.js:lle.
 //
 // HTTP-callback kuuluu functions/ad.js:lle.
+//
+// TÄRKEÄÄ:
+//
+// AdMob reward ei itsessään anna STL-tokenia.
+//
+// AdMob toimii ainoastaan valtuutuksena:
+//
+// - Mining Start
+// - Power Boost
+//
+// Varsinainen mining-tuotto lasketaan serverillä.
+//
+// Referral-bonus syntyy vain hyväksytystä
+// mining-tuotosta.
 //
 // ============================================================
 
@@ -55,6 +70,19 @@ const {
   MINING_DURATION_MS,
 } = require(
   "../config/miningConfig",
+);
+
+
+// ============================================================
+// 🤝 REFERRAL SERVICE
+// ============================================================
+
+const {
+  getUserReferrer,
+  calculateServerReferralBonus,
+  recordReferralBonus,
+} = require(
+  "./referralService",
 );
 
 
@@ -199,17 +227,11 @@ function validateUid(
 //
 // AdMob transaction_id tulee AdMob SSV:stä.
 //
-// TÄRKEÄ:
-// admobRewardService.js käyttää samaa validointisääntöä.
-//
 // Transaction ID:n pitää olla:
 //
 // - merkkijono
 // - 1–256 merkkiä
 // - heksadesimaalinen
-//
-// Näin MiningService ja admobRewardService eivät
-// hylkää samaa rewardia eri sääntöjen vuoksi.
 //
 // ============================================================
 
@@ -248,11 +270,6 @@ function validateTransactionId(
 
     throw error;
   }
-
-  // ----------------------------------------------------------
-  // IMPORTANT:
-  // Tämä vastaa admobRewardService.js:n sääntöä.
-  // ----------------------------------------------------------
 
   if (
     !/^[A-Fa-f0-9]+$/.test(
@@ -414,6 +431,89 @@ function getAdMobRewardRef(
 
 
 // ============================================================
+// 👤 USER REF
+// ============================================================
+
+function getUserRef(
+  uid,
+) {
+  return db
+    .collection(
+      "users",
+    )
+    .doc(
+      validateUid(
+        uid,
+      ),
+    );
+}
+
+
+// ============================================================
+// 👥 TOTAL USER COUNT
+// ============================================================
+//
+// Referral-bonusprosentti voi riippua käyttäjämäärästä.
+//
+// Laskenta tehdään serverillä.
+//
+// Aggregate count() vähentää turhaa käyttäjädokumenttien
+// lataamista verrattuna koko users-kokoelman lukemiseen.
+//
+// Jos käytössä oleva Firebase Admin SDK ei tue count()-
+// kyselyä, fallback käyttää tavallista get()-kyselyä.
+//
+// ============================================================
+
+async function getTotalUserCount() {
+  const usersRef =
+    db.collection(
+      "users",
+    );
+
+  try {
+    if (
+      typeof usersRef.count ===
+      "function"
+    ) {
+      const aggregateSnapshot =
+        await usersRef
+          .count()
+          .get();
+
+      const aggregateData =
+        aggregateSnapshot.data() ||
+        {};
+
+      return Math.max(
+        0,
+        Math.floor(
+          getSafeNumber(
+            aggregateData.count,
+            0,
+          ),
+        ),
+      );
+    }
+  } catch (
+    error
+  ) {
+    // --------------------------------------------------------
+    // Fallback alla.
+    // --------------------------------------------------------
+  }
+
+  const snapshot =
+    await usersRef.get();
+
+  return Math.max(
+    0,
+    snapshot.size,
+  );
+}
+
+
+// ============================================================
 // 🎁 CLAIM ADMOB REWARD
 // ============================================================
 //
@@ -507,13 +607,9 @@ function claimAdMobReward(
 // 🎁 VERIFY + CLAIM ADMOB REWARD
 // ============================================================
 //
-// TÄRKEÄ:
-//
 // 1. Reward luetaan Firestore-transaktion sisällä.
 // 2. admobRewardService validoi rewardin.
 // 3. Claim kirjoitetaan samaan transaktioon.
-//
-// Näin rewardin validointi ja claim pysyvät atomisina.
 //
 // ============================================================
 
@@ -529,18 +625,10 @@ async function verifyAndClaimAdMobReward(
       transactionId,
     );
 
-  // ----------------------------------------------------------
-  // 🔐 READ VERIFIED REWARD
-  // ----------------------------------------------------------
-
   const rewardSnapshot =
     await transaction.get(
       rewardRef,
     );
-
-  // ----------------------------------------------------------
-  // 🔐 FULL VALIDATION
-  // ----------------------------------------------------------
 
   const validated =
     validateVerifiedRewardDocument(
@@ -558,10 +646,6 @@ async function verifyAndClaimAdMobReward(
         transactionId,
       },
     );
-
-  // ----------------------------------------------------------
-  // 🔒 CLAIM
-  // ----------------------------------------------------------
 
   const claimedData =
     claimAdMobReward(
@@ -1288,25 +1372,6 @@ async function getPowerBoostHistory(
     ) =>
       doc.data() || {},
   );
-}
-
-
-// ============================================================
-// 👤 USER REF
-// ============================================================
-
-function getUserRef(
-  uid,
-) {
-  return db
-    .collection(
-      "users",
-    )
-    .doc(
-      validateUid(
-        uid,
-      ),
-    );
 }
 
 
@@ -2151,7 +2216,303 @@ async function applyPowerBoost(
 
 
 // ============================================================
+// 🤝 APPLY REFERRAL BONUS
+// ============================================================
+//
+// Referral-bonus käsitellään vasta kun mining-tuotto
+// on lopullisesti laskettu.
+//
+// TÄRKEÄÄ:
+//
+// - referred user = mining-tuoton tuottanut käyttäjä
+// - referrer = referral-koodin omistaja
+// - bonus lasketaan serverillä
+// - client ei voi antaa bonusmäärää
+// - saldo päivitetään samalla Firestore-transaktiolla
+// - referral history kirjoitetaan samalla transaktiolla
+//
+// ============================================================
+
+async function applyReferralBonus(
+  transaction,
+  referredUid,
+  miningAmount,
+  totalUsers,
+) {
+  const referredId =
+    validateUid(
+      referredUid,
+    );
+
+  const amount =
+    Math.max(
+      0,
+      getSafeNumber(
+        miningAmount,
+        0,
+      ),
+    );
+
+  if (
+    amount <= 0
+  ) {
+    return {
+      applied:
+        false,
+
+      reason:
+        "MINING_AMOUNT_ZERO",
+    };
+  }
+
+  // ----------------------------------------------------------
+  // 👤 GET REFERRER
+  // ----------------------------------------------------------
+
+  const referral =
+    await getUserReferrer(
+      referredId,
+    );
+
+  if (
+    !referral ||
+    typeof referral.referrerUid !==
+      "string"
+  ) {
+    return {
+      applied:
+        false,
+
+      reason:
+        "REFERRER_NOT_FOUND",
+    };
+  }
+
+  const referrerId =
+    validateUid(
+      referral.referrerUid,
+    );
+
+  // ----------------------------------------------------------
+  // 🛡️ SELF REFERRAL
+  // ----------------------------------------------------------
+
+  if (
+    referrerId ===
+    referredId
+  ) {
+    const error =
+      new Error(
+        "Referral cannot point to the same user.",
+      );
+
+    error.code =
+      "REFERRAL_SELF_REFERRAL";
+
+    throw error;
+  }
+
+  // ----------------------------------------------------------
+  // 🧮 SERVER-SIDE BONUS
+  // ----------------------------------------------------------
+
+  const calculation =
+    calculateServerReferralBonus(
+      amount,
+      totalUsers,
+    );
+
+  const bonus =
+    Math.max(
+      0,
+      getSafeNumber(
+        calculation.bonus,
+        0,
+      ),
+    );
+
+  const bonusPercent =
+    Math.max(
+      0,
+      getSafeNumber(
+        calculation.bonusPercent,
+        0,
+      ),
+    );
+
+  const bonusRate =
+    Math.max(
+      0,
+      getSafeNumber(
+        calculation.bonusRate,
+        0,
+      ),
+    );
+
+  // ----------------------------------------------------------
+  // 💰 NO BONUS
+  // ----------------------------------------------------------
+
+  if (
+    bonus <= 0
+  ) {
+    return {
+      applied:
+        false,
+
+      reason:
+        "REFERRAL_BONUS_ZERO",
+
+      referrerUid:
+        referrerId,
+
+      miningAmount:
+        amount,
+
+      bonus:
+        0,
+
+      bonusPercent,
+
+      bonusRate,
+    };
+  }
+
+  // ----------------------------------------------------------
+  // 👤 REFERRER USER
+  // ----------------------------------------------------------
+
+  const referrerRef =
+    getUserRef(
+      referrerId,
+    );
+
+  const referrerSnapshot =
+    await transaction.get(
+      referrerRef,
+    );
+
+  if (
+    !referrerSnapshot.exists
+  ) {
+    const error =
+      new Error(
+        "Referral owner user document does not exist.",
+      );
+
+    error.code =
+      "REFERRAL_OWNER_USER_NOT_FOUND";
+
+    throw error;
+  }
+
+  const referrerData =
+    referrerSnapshot.data() ||
+    {};
+
+  const previousBalance =
+    Math.max(
+      0,
+      getSafeNumber(
+        referrerData.miningBalance,
+        0,
+      ),
+    );
+
+  const newBalance =
+    previousBalance +
+    bonus;
+
+  // ----------------------------------------------------------
+  // 💾 ADD REFERRAL BONUS TO REFERRER BALANCE
+  // ----------------------------------------------------------
+
+  transaction.set(
+    referrerRef,
+    {
+      miningBalance:
+        newBalance,
+
+      referralEarned:
+        FieldValue.increment(
+          bonus,
+        ),
+
+      updatedAt:
+        FieldValue.serverTimestamp(),
+    },
+    {
+      merge:
+        true,
+    },
+  );
+
+  // ----------------------------------------------------------
+  // 📜 REFERRAL HISTORY
+  // ----------------------------------------------------------
+
+  const history =
+    await recordReferralBonus(
+      transaction,
+      {
+        referrerUid:
+          referrerId,
+
+        referredUid:
+          referredId,
+
+        miningAmount:
+          amount,
+
+        referralBonus:
+          bonus,
+
+        referralPercent:
+          bonusPercent,
+
+        miningHistoryId:
+          null,
+      },
+    );
+
+  return {
+    applied:
+      true,
+
+    referrerUid:
+      referrerId,
+
+    referredUid:
+      referredId,
+
+    miningAmount:
+      amount,
+
+    bonus,
+
+    bonusPercent,
+
+    bonusRate,
+
+    previousBalance,
+
+    newBalance,
+
+    historyId:
+      history.historyId,
+  };
+}
+
+
+// ============================================================
 // 💰 COMPLETE MINING
+// ============================================================
+//
+// Mining-tuotto hyväksytään tässä.
+//
+// Tämän jälkeen mahdollinen referral-bonus käsitellään
+// samassa Firestore-transaktiossa.
+//
 // ============================================================
 
 async function completeMining(
@@ -2171,6 +2532,23 @@ async function completeMining(
     createHistoryRef(
       validUid,
     );
+
+  // ----------------------------------------------------------
+  // 🤝 GLOBAL REFERRAL DATA
+  // ----------------------------------------------------------
+  //
+  // Referral-prosentin milestone-laskenta tarvitsee
+  // käyttäjämäärän.
+  //
+  // Haetaan tämä ennen mining-transaktiota.
+  //
+  // Itse saldojen ja mining-tilan kirjoitukset tapahtuvat
+  // edelleen yhdessä Firestore-transaktiossa.
+  //
+  // ----------------------------------------------------------
+
+  const totalUsers =
+    await getTotalUserCount();
 
   return db.runTransaction(
     async (
@@ -2255,6 +2633,9 @@ async function completeMining(
               ),
             ),
 
+          referralBonus:
+            0,
+
           message:
             "🐱⛏️ Tämä mining-jakso on jo käsitelty.",
         };
@@ -2329,7 +2710,7 @@ async function completeMining(
 
 
       // ======================================================
-      // 💾 SAVE RESULT
+      // 💾 SAVE MINING RESULT
       // ======================================================
 
       transaction.set(
@@ -2376,7 +2757,7 @@ async function completeMining(
 
 
       // ======================================================
-      // 📜 HISTORY
+      // 📜 MINING HISTORY
       // ======================================================
 
       transaction.set(
@@ -2418,6 +2799,90 @@ async function completeMining(
       );
 
 
+      // ======================================================
+      // 🤝 REFERRAL BONUS
+      // ======================================================
+      //
+      // Referral syntyy vasta hyväksytystä mining-tuotosta.
+      //
+      // Kaikki tapahtuu saman Firestore-transaktion sisällä.
+      //
+      // ======================================================
+
+      const referralResult =
+        await applyReferralBonus(
+          transaction,
+          validUid,
+          amount,
+          totalUsers,
+        );
+
+
+      // ======================================================
+      // 📜 UPDATE MINING HISTORY WITH REFERRAL DATA
+      // ======================================================
+      //
+      // Jos referral-bonus syntyi, tallennetaan tieto myös
+      // mining_completed-historiaan.
+      //
+      // Tämä tehdään samalla transactionilla.
+      //
+      // ======================================================
+
+      if (
+        referralResult.applied
+      ) {
+        transaction.set(
+          historyRef,
+          {
+            referralApplied:
+              true,
+
+            referralBonus:
+              referralResult.bonus,
+
+            referralBonusPercent:
+              referralResult.bonusPercent,
+
+            referralBonusRate:
+              referralResult.bonusRate,
+
+            referralReferrerUid:
+              referralResult.referrerUid,
+
+            updatedAt:
+              FieldValue.serverTimestamp(),
+          },
+          {
+            merge:
+              true,
+          },
+        );
+      } else {
+        transaction.set(
+          historyRef,
+          {
+            referralApplied:
+              false,
+
+            referralBonus:
+              0,
+
+            updatedAt:
+              FieldValue.serverTimestamp(),
+          },
+          {
+            merge:
+              true,
+          },
+        );
+      }
+
+
+      // ======================================================
+      // 📤 RESULT
+      // ======================================================
+
       return {
         success:
           true,
@@ -2442,6 +2907,45 @@ async function completeMining(
         miningStartedAt,
 
         miningEndsAt,
+
+        referralApplied:
+          Boolean(
+            referralResult.applied,
+          ),
+
+        referralBonus:
+          Math.max(
+            0,
+            getSafeNumber(
+              referralResult.bonus,
+              0,
+            ),
+          ),
+
+        referralBonusPercent:
+          Math.max(
+            0,
+            getSafeNumber(
+              referralResult.bonusPercent,
+              0,
+            ),
+          ),
+
+        referralBonusRate:
+          Math.max(
+            0,
+            getSafeNumber(
+              referralResult.bonusRate,
+              0,
+            ),
+          ),
+
+        referralReferrerUid:
+          referralResult.referrerUid ||
+          null,
+
+        totalUsers:
+          totalUsers,
       };
     },
   );
@@ -2656,12 +3160,6 @@ async function getMiningStatus(
         ),
       ),
 
-    miningStartedAt:
-      startedAt,
-
-    miningEndsAt:
-      endsAt,
-
     minedAmount:
       Math.max(
         0,
@@ -2707,6 +3205,12 @@ async function getMiningStatus(
         ),
       ),
 
+    miningStartedAt:
+      startedAt,
+
+    miningEndsAt:
+      endsAt,
+
     powerBoostActive,
 
     powerBoostHashRate,
@@ -2734,6 +3238,28 @@ async function getMiningStatus(
       "string"
         ? data.powerBoostTransactionId.trim()
         : "",
+
+    miningClaimed:
+      data.miningClaimed ===
+      true,
+
+    miningClaimedAmount:
+      Math.max(
+        0,
+        getSafeNumber(
+          data.miningClaimedAmount,
+          0,
+        ),
+      ),
+
+    referralEarned:
+      Math.max(
+        0,
+        getSafeNumber(
+          data.referralEarned,
+          0,
+        ),
+      ),
   };
 }
 
