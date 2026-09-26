@@ -86,6 +86,8 @@ class HomeAdManager extends ChangeNotifier {
 
   bool _consentCheckCompleted = false;
 
+  Future<bool>? _consentCheckFuture;
+
   // ============================================================
   // 🔒 FLOW STATE
   // ============================================================
@@ -171,7 +173,23 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🔐 CHECK UMP CONSENT
+  // 🔐 REQUEST + SHOW UMP CONSENT
+  // ============================================================
+  //
+  // IMPORTANT:
+  //
+  // Google UMP requires requestConsentInfoUpdate() before
+  // canRequestAds() can reliably be used.
+  //
+  // Flow:
+  //
+  // 1. requestConsentInfoUpdate()
+  // 2. loadAndShowConsentFormIfRequired()
+  // 3. canRequestAds()
+  //
+  // The operation is protected against duplicate simultaneous
+  // consent requests.
+  //
   // ============================================================
 
   Future<bool> _checkAdConsent() async {
@@ -179,10 +197,141 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    final Future<bool>? existingFuture =
+        _consentCheckFuture;
+
+    if (existingFuture != null) {
+      debugPrint(
+        '🐱 [ADMOB] Consent check already running. '
+        'Waiting for existing check...',
+      );
+
+      return existingFuture;
+    }
+
+    final Future<bool> future =
+        _performConsentCheck();
+
+    _consentCheckFuture = future;
+
+    try {
+      return await future;
+    } finally {
+      if (identical(
+        _consentCheckFuture,
+        future,
+      )) {
+        _consentCheckFuture = null;
+      }
+    }
+  }
+
+  Future<bool> _performConsentCheck() async {
+    if (_disposed) {
+      return false;
+    }
+
     try {
       debugPrint(
-        '🐱 [ADMOB] Checking UMP canRequestAds()...',
+        '================================================',
       );
+
+      debugPrint(
+        '🐱 [ADMOB] START UMP CONSENT CHECK',
+      );
+
+      // ----------------------------------------------------------
+      // STEP 1
+      // ----------------------------------------------------------
+
+      final ConsentRequestParameters params =
+          ConsentRequestParameters();
+
+      final Completer<void> updateCompleter =
+          Completer<void>();
+
+      debugPrint(
+        '🐱 [ADMOB] Requesting fresh UMP consent information...',
+      );
+
+      ConsentInformation.instance.requestConsentInfoUpdate(
+        params,
+        () {
+          debugPrint(
+            '✅ [ADMOB] UMP consent information updated.',
+          );
+
+          if (!updateCompleter.isCompleted) {
+            updateCompleter.complete();
+          }
+        },
+        (FormError error) {
+          debugPrint(
+            '❌ [ADMOB] UMP consent information update failed: '
+            'code=${error.errorCode} '
+            'message=${error.message}',
+          );
+
+          if (!updateCompleter.isCompleted) {
+            updateCompleter.completeError(error);
+          }
+        },
+      );
+
+      await updateCompleter.future;
+
+      if (_disposed) {
+        return false;
+      }
+
+      // ----------------------------------------------------------
+      // STEP 2
+      // ----------------------------------------------------------
+      //
+      // If a consent form is required, Google loads and shows it.
+      // If no form is required, the callback completes immediately.
+      //
+      // ----------------------------------------------------------
+
+      final Completer<FormError?> formCompleter =
+          Completer<FormError?>();
+
+      debugPrint(
+        '🐱 [ADMOB] Checking whether UMP consent form is required...',
+      );
+
+      ConsentForm.loadAndShowConsentFormIfRequired(
+        (
+          FormError? error,
+        ) {
+          if (!formCompleter.isCompleted) {
+            formCompleter.complete(error);
+          }
+        },
+      );
+
+      final FormError? formError =
+          await formCompleter.future;
+
+      if (formError != null) {
+        debugPrint(
+          '⚠️ [ADMOB] UMP consent form returned an error: '
+          'code=${formError.errorCode} '
+          'message=${formError.message}',
+        );
+      } else {
+        debugPrint(
+          '✅ [ADMOB] UMP consent form handling completed.',
+        );
+      }
+
+      if (_disposed) {
+        return false;
+      }
+
+      // ----------------------------------------------------------
+      // STEP 3
+      // ----------------------------------------------------------
 
       final bool canRequest =
           await ConsentInformation.instance
@@ -192,17 +341,43 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
-      _canRequestAds = canRequest;
+      _canRequestAds =
+          canRequest;
 
-      _consentCheckCompleted = true;
+      _consentCheckCompleted =
+          true;
 
       if (canRequest) {
         debugPrint(
-          '✅ [ADMOB] UMP allows ad requests.',
+          '================================================',
+        );
+
+        debugPrint(
+          '✅ [ADMOB] UMP ALLOWS AD REQUESTS',
+        );
+
+        debugPrint(
+          '🐱 [ADMOB] canRequestAds=true',
+        );
+
+        debugPrint(
+          '================================================',
         );
       } else {
         debugPrint(
-          '⚠️ [ADMOB] UMP does not currently allow ad requests.',
+          '================================================',
+        );
+
+        debugPrint(
+          '⚠️ [ADMOB] UMP DOES NOT ALLOW AD REQUESTS',
+        );
+
+        debugPrint(
+          '🐱 [ADMOB] canRequestAds=false',
+        );
+
+        debugPrint(
+          '================================================',
         );
       }
 
@@ -211,14 +386,59 @@ class HomeAdManager extends ChangeNotifier {
       return canRequest;
     } catch (error) {
       debugPrint(
-        '❌ [ADMOB] UMP canRequestAds() failed: '
-        '$error',
+        '❌ [ADMOB] UMP consent flow failed: $error',
       );
 
-      if (!_disposed) {
-        _canRequestAds = false;
+      if (_disposed) {
+        return false;
+      }
 
-        _consentCheckCompleted = true;
+      // ----------------------------------------------------------
+      // IMPORTANT
+      // ----------------------------------------------------------
+      //
+      // If consent update itself failed, Google allows us to check
+      // canRequestAds() because a previous valid consent decision
+      // may still exist locally.
+      //
+      // ----------------------------------------------------------
+
+      try {
+        final bool canRequest =
+            await ConsentInformation.instance
+                .canRequestAds();
+
+        if (!_disposed) {
+          _canRequestAds =
+              canRequest;
+
+          _consentCheckCompleted =
+              true;
+
+          if (canRequest) {
+            debugPrint(
+              '⚠️ [ADMOB] UMP update failed, but previous consent '
+              'still allows ad requests.',
+            );
+
+            _notify();
+
+            return true;
+          }
+        }
+      } catch (fallbackError) {
+        debugPrint(
+          '❌ [ADMOB] Fallback canRequestAds() failed: '
+          '$fallbackError',
+        );
+      }
+
+      if (!_disposed) {
+        _canRequestAds =
+            false;
+
+        _consentCheckCompleted =
+            true;
 
         _adLoadError =
             'CONSENT_CHECK_FAILED | '
@@ -287,11 +507,9 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     try {
-      await _initializeAdMob();
-
-      if (_disposed) {
-        return;
-      }
+      // ----------------------------------------------------------
+      // UMP FIRST
+      // ----------------------------------------------------------
 
       final bool consentAllowed =
           await _checkAdConsent();
@@ -304,6 +522,24 @@ class HomeAdManager extends ChangeNotifier {
 
         return;
       }
+
+      if (_disposed) {
+        return;
+      }
+
+      // ----------------------------------------------------------
+      // ADMOB INITIALIZATION
+      // ----------------------------------------------------------
+
+      await _initializeAdMob();
+
+      if (_disposed) {
+        return;
+      }
+
+      // ----------------------------------------------------------
+      // INITIAL MINING AD
+      // ----------------------------------------------------------
 
       await _preloadMiningAd();
     } catch (error) {
@@ -328,7 +564,8 @@ class HomeAdManager extends ChangeNotifier {
   String _getAdUnitId(
     String purpose,
   ) {
-    if (purpose == powerBoostPurpose) {
+    if (purpose ==
+        powerBoostPurpose) {
       return powerBoostRewardedAdUnitId;
     }
 
@@ -408,7 +645,8 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     await loadRewardedAd(
-      purpose: miningStartPurpose,
+      purpose:
+          miningStartPurpose,
       notifyOnLoadError: false,
     );
   }
