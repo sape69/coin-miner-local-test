@@ -1,4 +1,4 @@
-name: Build Stelluriini APK
+name: Build stelluriini APK
 
 on:
   workflow_dispatch:
@@ -237,12 +237,6 @@ jobs:
 
       # ==========================================================
       # 10. Diagnose Flutter V1 references
-      #
-      # IMPORTANT:
-      # Search ONLY android/.
-      #
-      # Do NOT search "." because this workflow itself contains
-      # diagnostic strings.
       # ==========================================================
       - name: Diagnose Flutter V1 references
         shell: bash
@@ -545,9 +539,9 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # 19. Generate Stelluriini app icon
+      # 19. Generate stelluriini app icon
       # ==========================================================
-      - name: Generate Stelluriini app icon
+      - name: Generate stelluriini app icon
         run: |
           echo ""
           echo "=================================================="
@@ -566,7 +560,7 @@ jobs:
           dart run flutter_launcher_icons
 
           echo ""
-          echo "Stelluriini app icon generation completed."
+          echo "stelluriini app icon generation completed."
 
       # ==========================================================
       # 20. Flutter analyze
@@ -576,7 +570,7 @@ jobs:
           flutter analyze
 
       # ==========================================================
-      # 21. Final package + embedding check
+      # 21. Final Android configuration check
       # ==========================================================
       - name: Final Android configuration check
         shell: bash
@@ -609,6 +603,7 @@ jobs:
             exit 1
           fi
 
+          grep -n "android:label" "$MANIFEST" || true
           grep -n "flutterEmbedding" "$MANIFEST" || true
           grep -n 'android:value="2"' "$MANIFEST" || true
 
@@ -679,17 +674,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-build-diagnostics
+          name: stelluriini-build-diagnostics
           path: flutter_build.log
           if-no-files-found: ignore
 
       # ==========================================================
-      # 24. Verify APK
+      # 24. Verify and rename APK
       # ==========================================================
-      - name: Verify APK
+      - name: Verify and rename APK
         if: success()
+        shell: bash
         run: |
           APK="build/app/outputs/flutter-apk/app-release.apk"
+          RENAMED_APK="build/app/outputs/flutter-apk/stelluriini.apk"
 
           if [ ! -f "$APK" ]; then
             echo "ERROR: APK was not created."
@@ -697,16 +694,25 @@ jobs:
           fi
 
           echo ""
-          echo "APK successfully created:"
+          echo "Original APK:"
           ls -lh "$APK"
 
+          mv "$APK" "$RENAMED_APK"
+
+          echo ""
+          echo "Final APK:"
+          ls -lh "$RENAMED_APK"
+
+          echo ""
+          echo "stelluriini.apk created successfully."
+
       # ==========================================================
-      # 25. Upload APK
+      # 25. Upload stelluriini APK
       # ==========================================================
-      - name: Upload APK
+      - name: Upload stelluriini APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: stelluriini-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/stelluriini.apk
           if-no-files-found: error
