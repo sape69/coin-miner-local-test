@@ -5,6 +5,27 @@ import '../../widgets/cat_avatar.dart';
 import '../../widgets/stelluriini_logo.dart';
 
 // ============================================================
+// 🐱 STELLURIINI ROADMAP
+// ============================================================
+//
+// Stelluriinin suunniteltu eteneminen:
+//
+// 1. Stella Mining
+// 2. Yhteisö ja Referral
+// 3. Louhinnan tasapainotus
+// 4. Testnet-valmistelu
+// 5. Solana Testnet
+// 6. Mainnet-valmistelu
+// 7. Solana Mainnet ja STL-nostot
+// 8. Pörssi ja ekosysteemi
+//
+// HUOM:
+// Testnet ja Mainnet ovat erillisiä vaiheita.
+// Mainnet-toimintoja ei esitetä nykyisin käytössä olevina.
+//
+// ============================================================
+
+// ============================================================
 // STELLA THEME COLORS
 // ============================================================
 
@@ -55,7 +76,7 @@ class RoadmapPage extends StatelessWidget {
         AppLocalizations(languageCode);
 
     // ==========================================================
-    // TRANSLATED TEXT
+    // GENERAL TEXT
     // ==========================================================
 
     final String roadmapTitle = _t(
@@ -76,7 +97,8 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Stelluriinin tiekartta kuvaa projektin suunniteltua '
           'suuntaa. Kehitys tapahtuu vaiheittain ja järjestelmiä '
-          'testataan ennen seuraavaan vaiheeseen siirtymistä.',
+          'testataan, tasapainotetaan ja vahvistetaan ennen '
+          'seuraavaan vaiheeseen siirtymistä.',
     );
 
     // ==========================================================
@@ -96,7 +118,7 @@ class RoadmapPage extends StatelessWidget {
           '🐱 Stelluriini-identiteetin rakentaminen\n'
           '🎨 Stellan visuaalisen tyylin luominen\n'
           '📱 Stelluriini-sovelluksen kehittäminen\n'
-          '⛏️ Stella Mining -järjestelmän käyttöönotto\n'
+          '⛏️ Stella Mining -järjestelmä\n'
           '⚡ Hash Rate -järjestelmä\n'
           '📺 Power Boost -järjestelmä\n'
           '⏱️ Louhintajaksojen hallinta\n'
@@ -118,10 +140,9 @@ class RoadmapPage extends StatelessWidget {
       'roadmapPhase2Description',
       fallback:
           '🐾 Stelluriini-yhteisön kasvattaminen\n'
-          '👥 Referral-järjestelmän käyttöönotto\n'
-          '🎁 Kutsujalle suunniteltu bonus kutsutun käyttäjän '
-          'louhintatuotosta\n'
-          '📉 Referral-bonusten tasapainottaminen kasvun mukana\n'
+          '👥 Referral-järjestelmän valmistelu\n'
+          '🎁 Suunniteltu referral-bonus\n'
+          '📉 Bonusjärjestelmän tasapainotus kasvun mukaan\n'
           '🛡️ Bottien ja väärinkäytösten torjunta\n'
           '🌍 Kielituen laajentaminen\n'
           '💬 Yhteisöominaisuuksien valmistelu',
@@ -144,14 +165,14 @@ class RoadmapPage extends StatelessWidget {
           '📊 Hash Rate -talouden tarkempi tasapainotus\n'
           '⛏️ Louhintatuoton säätäminen käyttäjämäärän mukaan\n'
           '⚡ Power Boost -järjestelmän kehittäminen\n'
-          '👥 Referral-järjestelmän käyttäjämäärärajat\n'
-          '📉 Bonusprosenttien asteittainen laskeminen kasvun mukana\n'
+          '👥 Referral-järjestelmän rajat\n'
+          '📉 Bonusprosenttien mahdollinen asteittainen laskeminen\n'
           '🤖 Bot- ja monikäyttäjäväärinkäytösten tunnistaminen\n'
           '🔐 Backend- ja turvallisuusjärjestelmien vahvistaminen',
     );
 
     // ==========================================================
-    // PHASE 4 - TESTNET PREPARATION
+    // PHASE 4
     // ==========================================================
 
     final String phase4Title = _t(
@@ -165,17 +186,16 @@ class RoadmapPage extends StatelessWidget {
       'roadmapPhase4Description',
       fallback:
           '🧪 Solana Testnet -ympäristön valmistelu\n'
-          '🔗 Blockchain-integraation rakentaminen\n'
-          '👛 Testilompakoiden käyttöönotto\n'
-          '🪙 STL-tokenin Testnet-testauksen valmistelu\n'
-          '📤 STL-siirtojen testausympäristö\n'
-          '⛽ Solana-testiverkon transaktiomaksujen testaus\n'
-          '🔐 Turvallisuus- ja backend-testit\n'
-          '📊 Testnet-louhinnan ja blockchain-datan yhteensopivuuden tarkistus',
+          '🔗 Solana-integraation tekninen valmistelu\n'
+          '👛 Testilompakon yhdistämisen valmistelu\n'
+          '🪙 STL-siirtojen testaus Testnetissä\n'
+          '📤 Testnet-nostojen tekninen kokeilu\n'
+          '🔐 Transaktioiden turvallisuuden tarkistus\n'
+          '🧪 Testaus ennen Mainnetiin siirtymistä',
     );
 
     // ==========================================================
-    // PHASE 5 - SOLANA TESTNET
+    // PHASE 5
     // ==========================================================
 
     final String phase5Title = _t(
@@ -188,18 +208,17 @@ class RoadmapPage extends StatelessWidget {
       localization,
       'roadmapPhase5Description',
       fallback:
-          '🧪 Stelluriinin Testnet-vaiheen käynnistäminen\n'
-          '🔗 Solana Testnet -integraation käyttöönotto\n'
-          '👛 Testilompakon yhdistäminen\n'
-          '🪙 STL-siirtojen testaaminen Testnetissä\n'
+          '🧪 Stelluriinin Solana Testnet -vaihe\n'
+          '🔗 STL-siirtojen testaaminen Testnetissä\n'
+          '👛 Testilompakoiden yhdistäminen\n'
           '📤 Testinostojen suorittaminen\n'
-          '⛽ Testiverkon transaktiokulujen käsittely\n'
-          '🛡️ Turvallisuus- ja väärinkäytöstestit\n'
-          '📱 Sovelluksen blockchain-toimintojen testaaminen oikeassa testiverkossa',
+          '⛽ Solana-verkkokulujen testaaminen\n'
+          '🛡️ Virhetilanteiden ja turvallisuuden testaaminen\n'
+          '📊 Testitulosten seuranta ja järjestelmän korjaaminen',
     );
 
     // ==========================================================
-    // PHASE 6 - MAINNET PREPARATION
+    // PHASE 6
     // ==========================================================
 
     final String phase6Title = _t(
@@ -213,41 +232,39 @@ class RoadmapPage extends StatelessWidget {
       'roadmapPhase6Description',
       fallback:
           '🔐 Mainnet-infrastruktuurin valmistelu\n'
-          '🔗 Solana Mainnet -integraation viimeistely\n'
-          '👛 Mainnet-lompakkoratkaisun valmistelu\n'
-          '🪙 STL-tokenin Mainnet-konfiguraation tarkistus\n'
+          '👛 Solana-lompakkointegraation viimeistely\n'
           '📤 STL-nostojärjestelmän valmistelu\n'
-          '🧪 Testnet-tulosten tarkistus ennen Mainnetiä\n'
-          '🛡️ Turvallisuus- ja transaktiotarkastus\n'
-          '🚦 Mainnet-julkaisun viimeinen hyväksyntä',
+          '🧪 Testnet-tulosten tarkistus\n'
+          '🛡️ Turvallisuus- ja transaktiotarkistus\n'
+          '⚙️ Backend-järjestelmien viimeistely\n'
+          '🚦 Mainnet-julkaisun tekninen valmiustarkistus',
     );
 
     // ==========================================================
-    // PHASE 7 - MAINNET
+    // PHASE 7
     // ==========================================================
 
     final String phase7Title = _t(
       localization,
       'roadmapPhase7Title',
-      fallback: 'Mainnet ja STL-nostot',
+      fallback: 'Solana Mainnet ja STL-nostot',
     );
 
     final String phase7Description = _t(
       localization,
       'roadmapPhase7Description',
       fallback:
-          '🚀 Stelluriinin Mainnet-vaiheen avaaminen\n'
-          '🔗 Solana Mainnet -integraation käyttöönotto\n'
-          '👛 Mainnet-lompakon yhdistäminen\n'
+          '🚀 Stelluriinin Solana Mainnet -vaiheen avaaminen\n'
+          '🔗 STL:n Mainnet-integraatio\n'
+          '👛 Solana-lompakon yhdistäminen\n'
           '📤 STL-nostojen käyttöönotto\n'
           '💎 Suunniteltu vähimmäisnosto: 100 STL\n'
           '⛽ Käyttäjä maksaa oman Solana-verkkokulunsa\n'
-          '🪙 STL-siirto käyttäjän lompakkoon\n'
-          '📊 Mainnet-transaktioiden seuranta ja turvallisuusvalvonta',
+          '🪙 STL-siirto käyttäjän lompakkoon',
     );
 
     // ==========================================================
-    // PHASE 8 - ECOSYSTEM
+    // PHASE 8
     // ==========================================================
 
     final String phase8Title = _t(
@@ -284,10 +301,10 @@ class RoadmapPage extends StatelessWidget {
       fallback: 'SUUNNITELTU',
     );
 
-    final String testnetText = _t(
+    final String testingText = _t(
       localization,
-      'roadmapTestnet',
-      fallback: 'TESTNET',
+      'roadmapTesting',
+      fallback: 'TESTAUS',
     );
 
     final String futureText = _t(
@@ -296,10 +313,58 @@ class RoadmapPage extends StatelessWidget {
       fallback: 'TULEVAISUUS',
     );
 
+    // ==========================================================
+    // TESTNET CARD
+    // ==========================================================
+
+    final String testnetTitle = _t(
+      localization,
+      'roadmapTestnetTitle',
+      fallback: 'Solana Testnet',
+    );
+
+    final String testnetText = _t(
+      localization,
+      'roadmapTestnetDescription',
+      fallback:
+          'Testnet toimii Stelluriinin turvallisena testivaiheena. '
+          'Sen avulla voidaan testata STL-siirtoja, lompakkoyhteyksiä, '
+          'nostoja ja transaktioiden toimintaa ennen Mainnetiin '
+          'siirtymistä.',
+    );
+
+    final String testnetNotice = _t(
+      localization,
+      'roadmapTestnetNotice',
+      fallback:
+          '🧪 Testnet = testiverkko • Ei oikeita Mainnet-varoja',
+    );
+
+    // ==========================================================
+    // MAINNET CARD
+    // ==========================================================
+
+    final String mainnetTitle = _t(
+      localization,
+      'roadmapMainnetTitle',
+      fallback: 'Solana Mainnet',
+    );
+
     final String mainnetText = _t(
       localization,
-      'roadmapMainnet',
-      fallback: 'MAINNET',
+      'roadmapMainnetDescription',
+      fallback:
+          'Mainnet on suunniteltu vasta Testnet-vaiheen jälkeen. '
+          'Ennen käyttöönottoa Solana-integraatio, lompakot, '
+          'STL-siirrot, nostot ja turvallisuusratkaisut testataan '
+          'ja tarkistetaan.',
+    );
+
+    final String mainnetNotice = _t(
+      localization,
+      'roadmapMainnetNotice',
+      fallback:
+          '🚀 Mainnet = tuleva julkaisu • Ei vielä käytössä',
     );
 
     // ==========================================================
@@ -318,7 +383,7 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Stelluriiniin suunnitellaan referral-järjestelmää, '
           'jossa käyttäjä voi kutsua uusia käyttäjiä mukaan. '
-          'Kutsujalle voidaan antaa suunniteltu bonusosuus '
+          'Kutsuja saa suunnitelman mukaan bonusosuuden '
           'kutsutun käyttäjän louhintatuotosta.',
     );
 
@@ -347,8 +412,8 @@ class RoadmapPage extends StatelessWidget {
       localization,
       'roadmapReferralMilestoneText',
       fallback:
-          'Tarkat käyttäjämäärärajat ja bonusprosentit määritellään '
-          'ennen referral-järjestelmän lopullista julkaisua.',
+          'Tarkat käyttäjämäärärajat ja prosentit määritellään '
+          'ennen referral-järjestelmän julkaisua.',
     );
 
     // ==========================================================
@@ -397,45 +462,7 @@ class RoadmapPage extends StatelessWidget {
       'roadmapBoostText',
       fallback:
           'Power Boost tarjoaa määräaikaisen lisäyksen käyttäjän '
-          'louhintatehoon. Boostin nykyinen suunniteltu kesto on '
-          '4 tuntia.',
-    );
-
-    // ==========================================================
-    // TESTNET CARD
-    // ==========================================================
-
-    final String testnetCardTitle = _t(
-      localization,
-      'roadmapTestnetCardTitle',
-      fallback: '🧪 Stelluriini Testnet',
-    );
-
-    final String testnetCardText = _t(
-      localization,
-      'roadmapTestnetCardText',
-      fallback:
-          'Testnet-vaiheen tarkoituksena on testata Stelluriinin '
-          'blockchain-toiminnot turvallisessa Solana-testiverkossa '
-          'ennen Mainnet-julkaisua. Testnetissä voidaan testata '
-          'lompakoita, STL-siirtoja, transaktioita ja nostoprosessia '
-          'ilman Mainnet-varojen käyttämistä.',
-    );
-
-    final String testnetFlowTitle = _t(
-      localization,
-      'roadmapTestnetFlowTitle',
-      fallback: 'Testnet → Mainnet',
-    );
-
-    final String testnetFlowText = _t(
-      localization,
-      'roadmapTestnetFlowText',
-      fallback:
-          'Testnetin jälkeen tulokset tarkistetaan. Vasta kun '
-          'blockchain-integraatio, turvallisuus, lompakot ja '
-          'STL-siirrot toimivat suunnitellusti, siirrytään '
-          'Mainnet-valmisteluun.',
+          'louhintatehoon.',
     );
 
     // ==========================================================
@@ -454,9 +481,9 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'STL-nostot eivät ole käytettävissä nykyisessä '
           'louhintaversiossa. Ne on suunniteltu myöhempään '
-          'Mainnet-vaiheeseen sen jälkeen, kun lompakko-, '
-          'turvallisuus- ja blockchain-infrastruktuuri on '
-          'rakennettu ja testattu.',
+          'Mainnet-vaiheeseen sen jälkeen, kun tarvittava '
+          'lompakko-, turvallisuus- ja lohkoketjuinfrastruktuuri '
+          'on rakennettu ja testattu.',
     );
 
     final String plannedWithdrawalModel = _t(
@@ -486,7 +513,8 @@ class RoadmapPage extends StatelessWidget {
     final String communityText = _t(
       localization,
       'roadmapCommunityDescription',
-      fallback: 'Rakennetaan Stelluriini-yhteisöä vaiheittain.',
+      fallback:
+          'Rakennetaan Stelluriini-yhteisöä vaiheittain.',
     );
 
     final String stellaTitle = _t(
@@ -574,8 +602,8 @@ class RoadmapPage extends StatelessWidget {
       fallback:
           'Tiekartta kuvaa Stelluriinin tämänhetkistä suunniteltua '
           'suuntaa. Päivämäärät, ominaisuudet, bonusprosentit, '
-          'käyttäjämäärärajat, Testnet- ja Mainnet-vaiheet sekä '
-          'julkaisusuunnitelmat voivat muuttua projektin kehittyessä.',
+          'käyttäjämäärärajat, prioriteetit ja julkaisusuunnitelmat '
+          'voivat muuttua projektin kehittyessä.',
     );
 
     final String stellaJourneyText = _t(
@@ -795,7 +823,7 @@ class RoadmapPage extends StatelessWidget {
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 4 - TESTNET PREPARATION
+            // PHASE 4
             // ==================================================
 
             _RoadmapStep(
@@ -814,7 +842,7 @@ class RoadmapPage extends StatelessWidget {
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 5 - SOLANA TESTNET
+            // PHASE 5
             // ==================================================
 
             _RoadmapStep(
@@ -825,15 +853,15 @@ class RoadmapPage extends StatelessWidget {
               ),
               title: phase5Title,
               description: phase5Description,
-              status: testnetText,
+              status: testingText,
               accent: roadmapGoldColor,
-              icon: '🧪',
+              icon: '🔬',
             ),
 
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 6 - MAINNET PREPARATION
+            // PHASE 6
             // ==================================================
 
             _RoadmapStep(
@@ -852,7 +880,7 @@ class RoadmapPage extends StatelessWidget {
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 7 - MAINNET
+            // PHASE 7
             // ==================================================
 
             _RoadmapStep(
@@ -863,7 +891,7 @@ class RoadmapPage extends StatelessWidget {
               ),
               title: phase7Title,
               description: phase7Description,
-              status: mainnetText,
+              status: futureText,
               accent: roadmapGoldColor,
               icon: '🚀',
             ),
@@ -871,7 +899,7 @@ class RoadmapPage extends StatelessWidget {
             const _RoadmapLine(),
 
             // ==================================================
-            // PHASE 8 - ECOSYSTEM
+            // PHASE 8
             // ==================================================
 
             _RoadmapStep(
@@ -887,19 +915,21 @@ class RoadmapPage extends StatelessWidget {
               icon: '🌟',
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
 
             // ==================================================
-            // TESTNET → MAINNET CARD
+            // TESTNET INFO
             // ==================================================
 
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [
-                    Color(0xFF21113B),
-                    Color(0xFF281746),
+                    roadmapAccentColor.withValues(
+                      alpha: 0.10,
+                    ),
+                    roadmapCardColor,
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -908,31 +938,41 @@ class RoadmapPage extends StatelessWidget {
                     BorderRadius.circular(22),
                 border: Border.all(
                   color:
-                      roadmapGoldColor.withValues(
-                    alpha: 0.24,
+                      roadmapAccentColor.withValues(
+                    alpha: 0.25,
                   ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        roadmapGoldColor.withValues(
-                      alpha: 0.06,
-                    ),
-                    blurRadius: 20,
-                  ),
-                ],
               ),
               child: Column(
                 children: [
-                  const Text(
-                    '🧪  →  🚀',
-                    style: TextStyle(
-                      fontSize: 34,
+                  Container(
+                    width: 62,
+                    height: 62,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          roadmapAccentColor.withValues(
+                        alpha: 0.12,
+                      ),
+                      border: Border.all(
+                        color:
+                            roadmapAccentColor.withValues(
+                          alpha: 0.30,
+                        ),
+                      ),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '🧪',
+                        style: TextStyle(
+                          fontSize: 31,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Text(
-                    testnetCardTitle,
+                    testnetTitle,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: roadmapAccentColor,
@@ -942,60 +982,44 @@ class RoadmapPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    testnetCardText,
+                    testnetText,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: roadmapSecondaryTextColor,
+                      color:
+                          roadmapSecondaryTextColor,
                       fontSize: 13,
                       height: 1.55,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Container(
                     padding:
-                        const EdgeInsets.all(15),
+                        const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color:
-                          roadmapGoldColor.withValues(
-                        alpha: 0.07,
+                          roadmapAccentColor.withValues(
+                        alpha: 0.08,
                       ),
                       borderRadius:
-                          BorderRadius.circular(16),
+                          BorderRadius.circular(14),
                       border: Border.all(
                         color:
-                            roadmapGoldColor.withValues(
+                            roadmapAccentColor.withValues(
                           alpha: 0.16,
                         ),
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          testnetFlowTitle,
-                          textAlign:
-                              TextAlign.center,
-                          style: const TextStyle(
-                            color:
-                                roadmapGoldColor,
-                            fontSize: 16,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          testnetFlowText,
-                          textAlign:
-                              TextAlign.center,
-                          style:
-                              const TextStyle(
-                            color:
-                                roadmapSecondaryTextColor,
-                            fontSize: 12.5,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      testnetNotice,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: roadmapTextColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -1003,6 +1027,117 @@ class RoadmapPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 18),
+
+            // ==================================================
+            // MAINNET INFO
+            // ==================================================
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    roadmapGoldColor.withValues(
+                      alpha: 0.08,
+                    ),
+                    roadmapCardColor,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius:
+                    BorderRadius.circular(22),
+                border: Border.all(
+                  color:
+                      roadmapGoldColor.withValues(
+                    alpha: 0.25,
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 62,
+                    height: 62,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          roadmapGoldColor.withValues(
+                        alpha: 0.12,
+                      ),
+                      border: Border.all(
+                        color:
+                            roadmapGoldColor.withValues(
+                          alpha: 0.30,
+                        ),
+                      ),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '🚀',
+                        style: TextStyle(
+                          fontSize: 31,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    mainnetTitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: roadmapGoldColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    mainnetText,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color:
+                          roadmapSecondaryTextColor,
+                      fontSize: 13,
+                      height: 1.55,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          roadmapGoldColor.withValues(
+                        alpha: 0.08,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(14),
+                      border: Border.all(
+                        color:
+                            roadmapGoldColor.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      mainnetNotice,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: roadmapTextColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
             // ==================================================
             // REFERRAL SYSTEM
