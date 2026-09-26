@@ -141,6 +141,7 @@ jobs:
 
           print("")
           print("Firebase Android package names:")
+
           for package_name in found:
               print("  " + package_name)
 
@@ -199,7 +200,7 @@ jobs:
             echo ""
             echo "ERROR: applicationId is NOT com.example.stelluriini."
             echo ""
-            echo "The repository version used by GitHub Actions is:"
+            echo "Repository version:"
             grep -n "applicationId" "$FILE" || true
             exit 1
           fi
@@ -219,7 +220,7 @@ jobs:
           echo "namespace CHECK PASSED."
 
       # ==========================================================
-      # 9. Diagnose Android manifest
+      # 9. Verify Android manifest
       # ==========================================================
       - name: Verify Android manifest
         run: |
@@ -255,7 +256,12 @@ jobs:
           fi
 
       # ==========================================================
-      # 10. Search old Flutter V1 references
+      # 10. Check Flutter V1 references
+      #
+      # IMPORTANT:
+      # Search ONLY android/.
+      # Do NOT search the whole repository because this workflow
+      # itself contains the text "io.flutter.app".
       # ==========================================================
       - name: Check Flutter V1 references
         run: |
@@ -264,23 +270,39 @@ jobs:
           echo "FLUTTER V1 CHECK"
           echo "=================================================="
 
+          echo ""
+          echo "Searching only android/..."
+
+          V1_FOUND=0
+
           if grep -Rni \
-            --exclude-dir=.git \
             --exclude-dir=.gradle \
             --exclude-dir=build \
-            --exclude-dir=.dart_tool \
             "io.flutter.app" \
-            android . 2>/dev/null; then
+            android 2>/dev/null; then
 
-            echo ""
-            echo "ERROR: Flutter V1 reference found."
-            exit 1
-
-          else
-
-            echo "No Flutter V1 references found."
+            V1_FOUND=1
 
           fi
+
+          if grep -Rni \
+            --exclude-dir=.gradle \
+            --exclude-dir=build \
+            "FlutterApplication" \
+            android 2>/dev/null; then
+
+            V1_FOUND=1
+
+          fi
+
+          if [ "$V1_FOUND" -eq 1 ]; then
+            echo ""
+            echo "ERROR: Flutter V1 reference found inside android/."
+            exit 1
+          fi
+
+          echo ""
+          echo "No Flutter V1 references found in android/."
 
       # ==========================================================
       # 11. Diagnose MainActivity
