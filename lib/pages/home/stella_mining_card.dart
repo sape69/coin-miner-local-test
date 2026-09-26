@@ -1,10 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/cat_avatar.dart';
 import 'mining_progress_card.dart';
 import 'stella_mining_days_card.dart';
 
 // ============================================================
 // 🐱 STELLURIINI STELLA MINING CARD
+// ============================================================
+//
+// Stella Mining Card.
+//
+// Stella käyttää oikeaa CatAvatar-kuvaa nykyisen 🐱⛏️
+// emoji-kuvan sijaan.
+//
+// Mukana:
+// - Stella-kuvan kelluva animaatio
+// - Power Boost -animaatio
+// - kultainen boost-hehku
+// - kipinät
+// - hakku-ikoni
+// - Stella Mining Days
+// - Mining Progress
+//
 // ============================================================
 
 class StellaMiningCard extends StatefulWidget {
@@ -122,6 +139,10 @@ class _StellaMiningCardState
       ),
     );
 
+    // ----------------------------------------------------------
+    // SCALE
+    // ----------------------------------------------------------
+
     _boostScale =
         TweenSequence<double>(
       [
@@ -160,6 +181,10 @@ class _StellaMiningCardState
         curve: Curves.easeOut,
       ),
     );
+
+    // ----------------------------------------------------------
+    // ROTATION
+    // ----------------------------------------------------------
 
     _boostRotation =
         TweenSequence<double>(
@@ -200,6 +225,10 @@ class _StellaMiningCardState
       ),
     );
 
+    // ----------------------------------------------------------
+    // GLOW
+    // ----------------------------------------------------------
+
     _boostGlow =
         TweenSequence<double>(
       [
@@ -239,6 +268,10 @@ class _StellaMiningCardState
       ),
     );
 
+    // ----------------------------------------------------------
+    // SPARKLE OPACITY
+    // ----------------------------------------------------------
+
     _boostOpacity =
         TweenSequence<double>(
       [
@@ -271,9 +304,11 @@ class _StellaMiningCardState
       ),
     );
 
-    // Jos kortti avataan tilanteessa,
-    // jossa Power Boost on jo aktiivinen,
+    // ----------------------------------------------------------
+    // Jos boost on jo aktiivinen kortin avautuessa,
     // näytetään animaatio kerran.
+    // ----------------------------------------------------------
+
     if (widget.boostActive) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) {
@@ -295,10 +330,12 @@ class _StellaMiningCardState
   ) {
     super.didUpdateWidget(oldWidget);
 
-    // Power Boost vaihtui:
+    // Power Boost:
+    //
     // false → true
     //
     // Stella reagoi boostin aktivointiin.
+
     if (!oldWidget.boostActive &&
         widget.boostActive) {
       _playBoostAnimation();
@@ -341,7 +378,7 @@ class _StellaMiningCardState
   }
 
   // ============================================================
-  // 🐱 STELLA ICON
+  // 🐱 STELLA MINING IMAGE
   // ============================================================
 
   Widget _buildStellaIcon() {
@@ -380,124 +417,303 @@ class _StellaMiningCardState
             angle: boostRotation,
             child: Transform.scale(
               scale: boostScale,
-              child: Stack(
-                alignment: Alignment.center,
-                clipBehavior: Clip.none,
-                children: [
-                  // ------------------------------------------------
-                  // 🌟 BOOST GLOW
-                  // ------------------------------------------------
+              child: SizedBox(
+                width: 150,
+                height: 150,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    // ==================================================
+                    // 🌟 BOOST GLOW
+                    // ==================================================
 
-                  if (glow > 0)
+                    if (glow > 0)
+                      Container(
+                        width: 138,
+                        height: 138,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  goldColor.withValues(
+                                alpha: 0.55 * glow,
+                              ),
+                              blurRadius:
+                                  30 * glow,
+                              spreadRadius:
+                                  8 * glow,
+                            ),
+                            BoxShadow(
+                              color:
+                                  pinkColor.withValues(
+                                alpha: 0.35 * glow,
+                              ),
+                              blurRadius:
+                                  48 * glow,
+                              spreadRadius:
+                                  5 * glow,
+                            ),
+                            BoxShadow(
+                              color:
+                                  accentColor.withValues(
+                                alpha: 0.25 * glow,
+                              ),
+                              blurRadius:
+                                  60 * glow,
+                              spreadRadius:
+                                  4 * glow,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // ==================================================
+                    // 💜 STELLA BACKGROUND
+                    // ==================================================
+
                     Container(
-                      width: 135,
-                      height: 135,
+                      width: 126,
+                      height: 126,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        gradient:
+                            const RadialGradient(
+                          colors: [
+                            Color(0xFF43266B),
+                            Color(0xFF281544),
+                          ],
+                        ),
+                        border: Border.all(
+                          color:
+                              accentColor.withValues(
+                            alpha: 0.35,
+                          ),
+                          width: 2,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: goldColor.withValues(
-                              alpha: 0.55 * glow,
+                            color:
+                                accentColor.withValues(
+                              alpha: 0.16,
                             ),
-                            blurRadius: 28 * glow,
-                            spreadRadius: 8 * glow,
-                          ),
-                          BoxShadow(
-                            color: pinkColor.withValues(
-                              alpha: 0.35 * glow,
-                            ),
-                            blurRadius: 45 * glow,
-                            spreadRadius: 5 * glow,
+                            blurRadius: 18,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
                     ),
 
-                  // ------------------------------------------------
-                  // 🐱 STELLA
-                  // ------------------------------------------------
+                    // ==================================================
+                    // 🐱 REAL STELLA IMAGE
+                    // ==================================================
 
-                  Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accentColor.withValues(
-                        alpha: 0.15,
+                    Container(
+                      width: 105,
+                      height: 105,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                Colors.black.withValues(
+                              alpha: 0.25,
+                            ),
+                            blurRadius: 12,
+                            offset:
+                                const Offset(
+                              0,
+                              5,
+                            ),
+                          ),
+                        ],
                       ),
-                      border: Border.all(
-                        color: accentColor.withValues(
-                          alpha: 0.10,
+                      child: const ClipOval(
+                        child: CatAvatar(
+                          size: 105,
                         ),
                       ),
                     ),
-                    child: const Center(
-                      child: Text(
-                        '🐱⛏️',
-                        style: TextStyle(
-                          fontSize: 55,
-                        ),
-                      ),
-                    ),
-                  ),
 
-                  // ------------------------------------------------
-                  // ✨ SPARKLE
-                  // ------------------------------------------------
+                    // ==================================================
+                    // ⛏️ MINING PICKAXE
+                    // ==================================================
 
-                  if (opacity > 0)
                     Positioned(
-                      top: -12,
-                      right: -12,
-                      child: Opacity(
-                        opacity: opacity,
-                        child: const Text(
-                          '✨',
-                          style: TextStyle(
-                            fontSize: 30,
+                      right: 3,
+                      bottom: 6,
+                      child: Transform.rotate(
+                        angle: -0.48,
+                        child: Container(
+                          width: 47,
+                          height: 47,
+                          decoration:
+                              BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                backgroundColor
+                                    .withValues(
+                              alpha: 0.88,
+                            ),
+                            border: Border.all(
+                              color:
+                                  goldColor
+                                      .withValues(
+                                alpha: 0.65,
+                              ),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    goldColor
+                                        .withValues(
+                                  alpha: 0.30,
+                                ),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text(
+                              '⛏️',
+                              style: TextStyle(
+                                fontSize: 27,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
 
-                  // ------------------------------------------------
-                  // ⚡ LIGHTNING
-                  // ------------------------------------------------
+                    // ==================================================
+                    // ✨ SPARKLE
+                    // ==================================================
 
-                  if (opacity > 0)
-                    Positioned(
-                      bottom: -8,
-                      left: -18,
-                      child: Opacity(
-                        opacity: opacity,
-                        child: const Text(
-                          '⚡',
-                          style: TextStyle(
-                            fontSize: 27,
+                    if (opacity > 0)
+                      Positioned(
+                        top: -8,
+                        right: 0,
+                        child: Opacity(
+                          opacity: opacity,
+                          child: const Text(
+                            '✨',
+                            style: TextStyle(
+                              fontSize: 30,
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                  // ------------------------------------------------
-                  // 💫 STAR
-                  // ------------------------------------------------
+                    // ==================================================
+                    // ⚡ LIGHTNING
+                    // ==================================================
 
-                  if (opacity > 0)
-                    Positioned(
-                      top: 5,
-                      left: -20,
-                      child: Opacity(
-                        opacity: opacity,
-                        child: const Text(
-                          '💫',
-                          style: TextStyle(
-                            fontSize: 24,
+                    if (opacity > 0)
+                      Positioned(
+                        bottom: -3,
+                        left: -4,
+                        child: Opacity(
+                          opacity: opacity,
+                          child: const Text(
+                            '⚡',
+                            style: TextStyle(
+                              fontSize: 27,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+
+                    // ==================================================
+                    // 💫 STAR
+                    // ==================================================
+
+                    if (opacity > 0)
+                      Positioned(
+                        top: 13,
+                        left: -5,
+                        child: Opacity(
+                          opacity: opacity,
+                          child: const Text(
+                            '💫',
+                            style: TextStyle(
+                              fontSize: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // ==================================================
+                    // 🪙 STL BADGE
+                    // ==================================================
+
+                    if (widget.miningActive)
+                      Positioned(
+                        left: -8,
+                        bottom: 8,
+                        child: AnimatedOpacity(
+                          opacity:
+                              0.75 +
+                                  (widget
+                                              .catAnimation
+                                              .value /
+                                          100)
+                                      .clamp(
+                                    0.0,
+                                    0.25,
+                                  ),
+                          duration:
+                              const Duration(
+                            milliseconds: 150,
+                          ),
+                          child: Container(
+                            padding:
+                                const EdgeInsets
+                                    .symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration:
+                                BoxDecoration(
+                              color:
+                                  goldColor,
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(
+                                10,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      goldColor
+                                          .withValues(
+                                    alpha: 0.30,
+                                  ),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              'STL',
+                              style:
+                                  TextStyle(
+                                color:
+                                    backgroundColor,
+                                fontSize: 10,
+                                fontWeight:
+                                    FontWeight
+                                        .bold,
+                                letterSpacing:
+                                    1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -517,8 +733,10 @@ class _StellaMiningCardState
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
+        borderRadius:
+            BorderRadius.circular(30),
+        gradient:
+            const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -527,7 +745,8 @@ class _StellaMiningCardState
           ],
         ),
         border: Border.all(
-          color: accentColor.withValues(
+          color:
+              accentColor.withValues(
             alpha: 0.40,
           ),
         ),
@@ -561,7 +780,8 @@ class _StellaMiningCardState
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               letterSpacing: 1,
             ),
           ),
@@ -578,7 +798,8 @@ class _StellaMiningCardState
             widget.miningSubtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: secondaryTextColor,
+              color:
+                  secondaryTextColor,
               fontSize: 14,
             ),
           ),
@@ -595,11 +816,13 @@ class _StellaMiningCardState
             _formatStl(
               widget.unclaimedMining,
             ),
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: const TextStyle(
               color: goldColor,
               fontSize: 38,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
 
@@ -610,10 +833,12 @@ class _StellaMiningCardState
           const Text(
             'STL',
             style: TextStyle(
-              color: secondaryTextColor,
+              color:
+                  secondaryTextColor,
               letterSpacing: 2,
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight:
+                  FontWeight.w600,
             ),
           ),
 
@@ -627,17 +852,27 @@ class _StellaMiningCardState
 
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets
+                    .symmetric(
               vertical: 15,
               horizontal: 20,
             ),
-            decoration: BoxDecoration(
-              color: backgroundColor.withValues(
+            decoration:
+                BoxDecoration(
+              color:
+                  backgroundColor
+                      .withValues(
                 alpha: 0.55,
               ),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius:
+                  BorderRadius.circular(
+                18,
+              ),
               border: Border.all(
-                color: accentColor.withValues(
+                color:
+                    accentColor
+                        .withValues(
                   alpha: 0.08,
                 ),
               ),
@@ -646,11 +881,14 @@ class _StellaMiningCardState
               children: [
                 Text(
                   widget.timerText,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  textAlign:
+                      TextAlign.center,
+                  style:
+                      const TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
                 const SizedBox(
@@ -658,11 +896,15 @@ class _StellaMiningCardState
                 ),
                 Text(
                   widget.timerLabel,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: secondaryTextColor,
+                  textAlign:
+                      TextAlign.center,
+                  style:
+                      const TextStyle(
+                    color:
+                        secondaryTextColor,
                     fontSize: 11,
-                    letterSpacing: 1.5,
+                    letterSpacing:
+                        1.5,
                   ),
                 ),
               ],
@@ -688,8 +930,10 @@ class _StellaMiningCardState
           // ----------------------------------------------------
 
           StellaMiningDaysCard(
-            languageCode: widget.languageCode,
-            dailyStreak: widget.dailyStreak,
+            languageCode:
+                widget.languageCode,
+            dailyStreak:
+                widget.dailyStreak,
           ),
 
           const SizedBox(
@@ -701,12 +945,18 @@ class _StellaMiningCardState
           // ----------------------------------------------------
 
           MiningProgressCard(
-            miningActive: widget.miningActive,
-            miningRemainingMs: widget.miningRemainingMs,
-            miningDurationMs: widget.miningDurationMs,
-            title: widget.miningProgressTitle,
-            stlPerHourText: widget.stlPerHourText,
-            dailyHashRateText: widget.dailyHashRateText,
+            miningActive:
+                widget.miningActive,
+            miningRemainingMs:
+                widget.miningRemainingMs,
+            miningDurationMs:
+                widget.miningDurationMs,
+            title:
+                widget.miningProgressTitle,
+            stlPerHourText:
+                widget.stlPerHourText,
+            dailyHashRateText:
+                widget.dailyHashRateText,
             dailyHashRateDayText:
                 widget.dailyHashRateDayText,
           ),
