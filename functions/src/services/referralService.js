@@ -14,12 +14,13 @@
 // - referral-suhteen luomisesta
 // - referral-suhteen lukitsemisesta
 // - self-referralin estämisestä
-// - referral-bonuksen laskemisesta
+// - referral-bonuksen server-side laskemisesta
 // - referral-bonuksen validoinnista
+// - referral-historian tallentamisesta
 //
 // TÄRKEÄÄ:
 //
-// Referral-bonus ei synny rekisteröitymisestä.
+// Referral-bonus EI synny rekisteröitymisestä.
 //
 // Referral-bonus syntyy vain hyväksytystä mining-tuotosta.
 //
@@ -38,6 +39,10 @@ const {
   db,
   FieldValue,
 } = require("../firebase/firebase");
+
+const {
+  getUserRef,
+} = require("../utils/userUtils");
 
 const {
   DEFAULT_REFERRAL_BONUS_PERCENT,
@@ -62,22 +67,6 @@ const {
 // ============================================================
 // FIRESTORE COLLECTIONS
 // ============================================================
-//
-// Referral-koodi toimii omana Firestore-dokumenttinaan:
-//
-// referralCodes/{CODE}
-//
-// Dokumentti sisältää esimerkiksi:
-//
-// {
-//   uid: "...",
-//   referralCode: "...",
-//   createdAt: ...
-// }
-//
-// Tämä mahdollistaa referral-koodin turvallisen yksilöllisyyden.
-//
-// ============================================================
 
 const REFERRAL_CODES_COLLECTION =
   "referralCodes";
@@ -92,8 +81,12 @@ function safeString(value) {
     : "";
 }
 
-function safeNumber(value, fallback = 0) {
-  const result = Number(value);
+function safeNumber(
+  value,
+  fallback = 0,
+) {
+  const result =
+    Number(value);
 
   return Number.isFinite(result)
     ? result
@@ -104,7 +97,8 @@ function positiveNumber(
   value,
   fallback = 0,
 ) {
-  const result = Number(value);
+  const result =
+    Number(value);
 
   return Number.isFinite(result) &&
     result > 0
@@ -117,7 +111,8 @@ function positiveNumber(
 // ============================================================
 
 function validateUid(uid) {
-  const value = safeString(uid);
+  const value =
+    safeString(uid);
 
   if (!value) {
     throw new Error(
@@ -223,21 +218,14 @@ function getReferralCodeRef(code) {
     .doc(normalized);
 }
 
-function getUserRef(uid) {
-  return db
-    .collection("users")
-    .doc(
-      validateUid(uid),
-    );
-}
-
 function getReferralHistoryCollection(
   uid,
 ) {
-  return getUserRef(uid)
-    .collection(
-      REFERRAL_HISTORY_COLLECTION,
-    );
+  return getUserRef(
+    validateUid(uid),
+  ).collection(
+    REFERRAL_HISTORY_COLLECTION,
+  );
 }
 
 // ============================================================
@@ -308,9 +296,12 @@ async function getReferralCodeOwner(
 
   return {
     uid,
+
     referralCode:
       normalized,
+
     ref,
+
     data,
   };
 }
@@ -319,10 +310,16 @@ async function getReferralCodeOwner(
 // CREATE UNIQUE REFERRAL CODE
 // ============================================================
 //
-// Jos koodi on jo käytössä, yritetään uudelleen.
+// Luo käyttäjälle yksilöllisen referral-koodin.
 //
-// Transaktio varmistaa, että kaksi samanaikaista käyttäjää
-// eivät voi ottaa samaa referral-koodia.
+// Jos käyttäjällä on jo validi koodi:
+//
+// - tarkistetaan myös sen Firestore-omistaja
+// - koodia ei vaihdeta
+//
+// Jos koodi on ristiriidassa toisen käyttäjän kanssa,
+// operation epäonnistuu eikä käyttäjän referral-suhdetta
+// muuteta.
 //
 // ============================================================
 
@@ -377,27 +374,66 @@ async function createReferralCode(
           );
 
         if (
-          !existingCodeSnapshot.exists
+          existingCodeSnapshot.exists
         ) {
-          transaction.set(
-            existingCodeRef,
-            {
-              uid: userId,
+          const existingCodeData =
+            existingCodeSnapshot.data() ||
+            {};
+
+          const ownerUid =
+            safeString(
+              existingCodeData.uid,
+            );
+
+          // ----------------------------------------------------
+          // CODE BELONGS TO THIS USER
+          // ----------------------------------------------------
+
+          if (
+            ownerUid === userId
+          ) {
+            return {
+              success: true,
+
+              created: false,
 
               referralCode:
                 existingCode,
+            };
+          }
 
-              createdAt:
-                FieldValue.serverTimestamp(),
+          // ----------------------------------------------------
+          // CODE BELONGS TO SOMEONE ELSE
+          // ----------------------------------------------------
 
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            },
-            {
-              merge: true,
-            },
+          throw new Error(
+            "REFERRAL_CODE_OWNERSHIP_CONFLICT",
           );
         }
+
+        // ------------------------------------------------------
+        // EXISTING USER CODE BUT MISSING INDEX
+        // ------------------------------------------------------
+
+        transaction.set(
+          existingCodeRef,
+          {
+            uid: userId,
+
+            referralCode:
+              existingCode,
+
+            createdAt:
+              existingReferral.createdAt ||
+              FieldValue.serverTimestamp(),
+
+            updatedAt:
+              FieldValue.serverTimestamp(),
+          },
+          {
+            merge: true,
+          },
+        );
 
         return {
           success: true,
@@ -494,13 +530,6 @@ async function createReferralCode(
 
 // ============================================================
 // ENSURE REFERRAL CODE
-// ============================================================
-//
-// Käytetään esimerkiksi rekisteröinnin jälkeen.
-//
-// Jos käyttäjällä on jo referral-koodi,
-// sitä ei vaihdeta.
-//
 // ============================================================
 
 async function ensureReferralCode(
@@ -659,7 +688,7 @@ async function setReferrer(
       }
 
       // ------------------------------------------------------
-      // ONE REFERRER
+      // ONE REFERRER PER USER
       // ------------------------------------------------------
 
       if (
@@ -690,6 +719,7 @@ async function setReferrer(
             referrerUid,
 
             assignedAt:
+              existingReferral.assignedAt ||
               FieldValue.serverTimestamp(),
 
             updatedAt:
@@ -706,10 +736,6 @@ async function setReferrer(
 
       // ------------------------------------------------------
       // REFERRER COUNTER
-      // ------------------------------------------------------
-      //
-      // Tämä ei rajoita kutsujan kutsumien käyttäjien määrää.
-      //
       // ------------------------------------------------------
 
       const referrerRef =
@@ -846,7 +872,7 @@ function getServerReferralBonusRate(
 // CALCULATE SERVER REFERRAL BONUS
 // ============================================================
 //
-// Bonus lasketaan vain hyväksytystä mining-tuotosta.
+// Tämä on ainoa normaali tapa laskea referral-bonus.
 //
 // ============================================================
 
@@ -867,19 +893,23 @@ function calculateServerReferralBonus(
       miningAmount,
     );
 
+  const bonusPercent =
+    getReferralBonusPercent(
+      totalUsers,
+    );
+
+  const bonusRate =
+    getReferralBonusRate(
+      totalUsers,
+    );
+
   if (amount <= 0) {
     return {
       bonus: 0,
 
-      bonusPercent:
-        getReferralBonusPercent(
-          totalUsers,
-        ),
+      bonusPercent,
 
-      bonusRate:
-        getReferralBonusRate(
-          totalUsers,
-        ),
+      bonusRate,
 
       source:
         REFERRAL_BONUS_SOURCE,
@@ -889,16 +919,6 @@ function calculateServerReferralBonus(
   const bonus =
     calculateReferralBonus(
       amount,
-      totalUsers,
-    );
-
-  const bonusPercent =
-    getReferralBonusPercent(
-      totalUsers,
-    );
-
-  const bonusRate =
-    getReferralBonusRate(
       totalUsers,
     );
 
@@ -939,14 +959,24 @@ function validateReferralBonus(
 }
 
 // ============================================================
-// CREATE REFERRAL HISTORY
+// RECORD REFERRAL BONUS
 // ============================================================
 //
-// Tätä voidaan kutsua myöhemmin mining-järjestelmästä,
-// kun hyväksytty mining-tuotto on syntynyt.
+// TÄRKEÄÄ:
 //
-// Tämä funktio ei laske eikä hyväksy käyttäjän lähettämää
-// bonusmäärää itsenäisesti.
+// Tämä funktio EI hyväksy clientin lähettämää
+// referralBonus- tai referralPercent-arvoa
+// totuutena.
+//
+// Bonus lasketaan täällä uudelleen:
+//
+// miningAmount
+//      +
+// totalUsers
+//      ↓
+// server-side percentage
+//      ↓
+// server-side referral bonus
 //
 // ============================================================
 
@@ -956,8 +986,7 @@ async function recordReferralBonus(
     referrerUid,
     referredUid,
     miningAmount,
-    referralBonus,
-    referralPercent,
+    totalUsers,
     miningHistoryId = null,
   },
 ) {
@@ -985,16 +1014,26 @@ async function recordReferralBonus(
       miningAmount,
     );
 
-  const bonus =
-    positiveNumber(
-      referralBonus,
-    );
-
   if (amount <= 0) {
     throw new Error(
       "REFERRAL_MINING_AMOUNT_INVALID",
     );
   }
+
+  // ----------------------------------------------------------
+  // SERVER-SIDE CALCULATION
+  // ----------------------------------------------------------
+
+  const calculation =
+    calculateServerReferralBonus(
+      amount,
+      totalUsers,
+    );
+
+  const bonus =
+    positiveNumber(
+      calculation.bonus,
+    );
 
   if (
     !validateReferralBonus(
@@ -1006,49 +1045,114 @@ async function recordReferralBonus(
     );
   }
 
-  const percent =
+  const referralPercent =
     positiveNumber(
-      referralPercent,
+      calculation.bonusPercent,
     );
+
+  // ----------------------------------------------------------
+  // VERIFY REFERRAL RELATIONSHIP
+  // ----------------------------------------------------------
+  //
+  // Referral-suhde tarkistetaan serveriltä juuri ennen
+  // historian kirjoittamista.
+  //
+  // ----------------------------------------------------------
+
+  const referredUserRef =
+    getUserRef(
+      referredId,
+    );
+
+  const referredSnapshot =
+    transaction
+      ? await transaction.get(
+          referredUserRef,
+        )
+      : await referredUserRef.get();
+
+  if (
+    !referredSnapshot.exists
+  ) {
+    throw new Error(
+      "REFERRAL_REFERRED_USER_NOT_FOUND",
+    );
+  }
+
+  const referredData =
+    referredSnapshot.data() || {};
+
+  const referral =
+    getReferralData(
+      referredData,
+    );
+
+  const actualReferrerUid =
+    safeString(
+      referral.referrerUid,
+    );
+
+  if (
+    actualReferrerUid !==
+    referrerId
+  ) {
+    throw new Error(
+      "REFERRAL_RELATIONSHIP_INVALID",
+    );
+  }
+
+  // ----------------------------------------------------------
+  // HISTORY
+  // ----------------------------------------------------------
 
   const historyRef =
     getReferralHistoryCollection(
       referrerId,
     ).doc();
 
-  transaction.set(
-    historyRef,
-    {
-      type:
-        "referral_bonus",
+  const historyData = {
+    type:
+      "referral_bonus",
 
-      source:
-        REFERRAL_BONUS_SOURCE,
+    source:
+      REFERRAL_BONUS_SOURCE,
 
-      referrerUid:
-        referrerId,
+    referrerUid:
+      referrerId,
 
-      referredUid:
-        referredId,
+    referredUid:
+      referredId,
 
-      miningAmount:
-        amount,
+    miningAmount:
+      amount,
 
-      referralBonus:
-        bonus,
+    referralBonus:
+      bonus,
 
-      referralPercent:
-        percent,
+    referralPercent,
 
-      miningHistoryId:
-        safeString(
-          miningHistoryId,
-        ) || null,
+    referralRate:
+      calculation.bonusRate,
 
-      createdAt:
-        FieldValue.serverTimestamp(),
-    },
-  );
+    miningHistoryId:
+      safeString(
+        miningHistoryId,
+      ) || null,
+
+    createdAt:
+      FieldValue.serverTimestamp(),
+  };
+
+  if (transaction) {
+    transaction.set(
+      historyRef,
+      historyData,
+    );
+  } else {
+    await historyRef.set(
+      historyData,
+    );
+  }
 
   return {
     success: true,
@@ -1068,17 +1172,18 @@ async function recordReferralBonus(
     referralBonus:
       bonus,
 
-    referralPercent:
-      percent,
+    referralPercent,
+
+    referralRate:
+      calculation.bonusRate,
+
+    source:
+      REFERRAL_BONUS_SOURCE,
   };
 }
 
 // ============================================================
 // REFERRAL CONFIG STATUS
-// ============================================================
-//
-// Hyödyllinen backendin sisäiseen tarkistukseen.
-//
 // ============================================================
 
 function getReferralConfigStatus() {
