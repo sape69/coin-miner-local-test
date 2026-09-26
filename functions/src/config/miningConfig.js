@@ -20,6 +20,7 @@
 //
 // ============================================================
 
+
 // ============================================================
 // 🎁 DAILY HASH RATE
 // ============================================================
@@ -32,25 +33,25 @@
 // Day 6  = 3.0 HR
 // Day 7+ = 3.5 HR
 //
-// The Daily Hash Rate is assigned to the NEW mining cycle.
+// Daily Hash Rate assigned to a NEW mining cycle.
 //
-// IMPORTANT:
-//
-// miningHashRate belongs only to the mining cycle in which
-// it was created.
-//
-// A later Daily Hash Rate must never modify a historical
+// A later Daily Hash Rate must NEVER modify an existing
 // mining cycle's Hash Rate.
 //
 // ============================================================
 
-const DAILY_HASH_RATE_START = 0.5;
+const DAILY_HASH_RATE_START =
+  0.5;
 
-const DAILY_HASH_RATE_STEP = 0.5;
+const DAILY_HASH_RATE_STEP =
+  0.5;
 
-const DAILY_HASH_RATE_MAX_DAY = 7;
+const DAILY_HASH_RATE_MAX_DAY =
+  7;
 
-const MAX_DAILY_HASH_RATE = 3.5;
+const MAX_DAILY_HASH_RATE =
+  3.5;
+
 
 // ============================================================
 // ⛏️ MINING CYCLE
@@ -58,21 +59,21 @@ const MAX_DAILY_HASH_RATE = 3.5;
 //
 // One mining cycle lasts 24 hours.
 //
-// The Hash Rate stored in miningHashRate belongs ONLY to
+// The Hash Rate stored for a mining cycle belongs ONLY to
 // that specific mining cycle.
-//
-// A new cycle receives its own Hash Rate.
 //
 // ============================================================
 
 const MINING_DURATION_MS =
   24 * 60 * 60 * 1000;
 
+
 // ============================================================
 // 💰 MINING RATE
 // ============================================================
 //
 // STL generated per:
+//
 // - 1 Hash Rate
 // - 1 hour
 //
@@ -87,7 +88,9 @@ const MINING_DURATION_MS =
 //
 // ============================================================
 
-const MINING_PER_HASH_PER_HOUR = 0.10;
+const MINING_PER_HASH_PER_HOUR =
+  0.10;
+
 
 // ============================================================
 // ⚡ POWER BOOST
@@ -111,16 +114,18 @@ const MINING_PER_HASH_PER_HOUR = 0.10;
 //
 // Therefore:
 //
-// - Boost can never continue after the mining cycle.
-// - Boost can never carry into a new mining cycle.
+// - Boost cannot continue after the mining cycle.
+// - Boost cannot carry into a new mining cycle.
 // - Only boost time inside the current mining cycle counts.
 //
 // ============================================================
 
-const AD_HASH_RATE_BONUS = 0.5833;
+const AD_HASH_RATE_BONUS =
+  0.5833;
 
 const AD_BOOST_DURATION_MS =
   4 * 60 * 60 * 1000;
+
 
 // ============================================================
 // 📺 ADMOB DAILY LIMIT
@@ -132,11 +137,13 @@ const AD_BOOST_DURATION_MS =
 // Each successfully verified Power Boost SSV reward consumes
 // exactly one slot.
 //
-// Mining Start does not use this Power Boost daily counter.
+// Mining Start does NOT use this Power Boost daily counter.
 //
 // ============================================================
 
-const MAX_ADS_PER_DAY = 6;
+const MAX_ADS_PER_DAY =
+  6;
+
 
 // ============================================================
 // ⏱️ ADMOB POWER BOOST COOLDOWN
@@ -147,19 +154,19 @@ const MAX_ADS_PER_DAY = 6;
 //
 // Current configuration:
 //
-// 4 hours
+// 4 hours.
 //
 // ============================================================
 
 const AD_COOLDOWN_MS =
   4 * 60 * 60 * 1000;
 
+
 // ============================================================
 // 📺 ADMOB REWARDED AD UNIT IDS
 // ============================================================
 //
-// These are the complete AdMob ad unit IDs used by the
-// Flutter application when loading Rewarded Ads.
+// Complete AdMob ad unit IDs used by the Flutter application.
 //
 // Mining Start:
 // ca-app-pub-1131012057145658/6674097787
@@ -169,8 +176,10 @@ const AD_COOLDOWN_MS =
 //
 // IMPORTANT:
 //
-// These values are NOT the same format as the `ad_unit`
-// parameter received in an AdMob SSV callback.
+// These are Flutter/AdMob Rewarded Ad unit IDs.
+//
+// They are NOT the same format as the `ad_unit` parameter
+// received in an AdMob SSV callback.
 //
 // ============================================================
 
@@ -179,6 +188,7 @@ const ADMOB_MINING_AD_UNIT_ID =
 
 const ADMOB_POWER_BOOST_AD_UNIT_ID =
   "ca-app-pub-1131012057145658/7225738491";
+
 
 // ============================================================
 // 🔐 ADMOB SSV AD UNIT IDS
@@ -198,8 +208,6 @@ const ADMOB_POWER_BOOST_AD_UNIT_ID =
 // Keep these values separate from the Flutter Rewarded Ad
 // unit IDs above.
 //
-// Google AdMob SSV documentation specifies that `ad_unit`
-// identifies the AdMob ad unit used for the rewarded ad.
 // ============================================================
 
 const ADMOB_MINING_SSV_AD_UNIT_ID =
@@ -207,6 +215,7 @@ const ADMOB_MINING_SSV_AD_UNIT_ID =
 
 const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
   "7225738491";
+
 
 // ============================================================
 // 🎁 ADMOB MINING SSV REWARD
@@ -221,10 +230,12 @@ const ADMOB_POWER_BOOST_SSV_AD_UNIT_ID =
 //
 // ============================================================
 
-const ADMOB_MINING_SSV_REWARD_AMOUNT = 1;
+const ADMOB_MINING_SSV_REWARD_AMOUNT =
+  1;
 
 const ADMOB_MINING_SSV_REWARD_ITEM =
   "Mining";
+
 
 // ============================================================
 // ⚡ ADMOB POWER BOOST SSV REWARD
@@ -240,10 +251,12 @@ const ADMOB_MINING_SSV_REWARD_ITEM =
 //
 // ============================================================
 
-const ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT = 1;
+const ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT =
+  1;
 
 const ADMOB_POWER_BOOST_SSV_REWARD_ITEM =
   "Power Boost";
+
 
 // ============================================================
 // 📜 TRANSACTION HISTORY
@@ -254,47 +267,76 @@ const ADMOB_POWER_BOOST_SSV_REWARD_ITEM =
 //
 // ============================================================
 
-const MAX_TRANSACTION_HISTORY = 50;
+const MAX_TRANSACTION_HISTORY =
+  50;
+
 
 // ============================================================
 // 📦 EXPORTS
 // ============================================================
 
 module.exports = {
+  // ----------------------------------------------------------
   // Daily Hash Rate
+  // ----------------------------------------------------------
+
   DAILY_HASH_RATE_START,
   DAILY_HASH_RATE_STEP,
   DAILY_HASH_RATE_MAX_DAY,
   MAX_DAILY_HASH_RATE,
 
+  // ----------------------------------------------------------
   // Mining
+  // ----------------------------------------------------------
+
   MINING_DURATION_MS,
   MINING_PER_HASH_PER_HOUR,
 
+  // ----------------------------------------------------------
   // Power Boost
+  // ----------------------------------------------------------
+
   AD_HASH_RATE_BONUS,
   AD_BOOST_DURATION_MS,
 
+  // ----------------------------------------------------------
   // AdMob limits
+  // ----------------------------------------------------------
+
   MAX_ADS_PER_DAY,
   AD_COOLDOWN_MS,
 
-  // AdMob rewarded ad units
+  // ----------------------------------------------------------
+  // AdMob Rewarded Ad units
+  // ----------------------------------------------------------
+
   ADMOB_MINING_AD_UNIT_ID,
   ADMOB_POWER_BOOST_AD_UNIT_ID,
 
+  // ----------------------------------------------------------
   // AdMob SSV ad units
+  // ----------------------------------------------------------
+
   ADMOB_MINING_SSV_AD_UNIT_ID,
   ADMOB_POWER_BOOST_SSV_AD_UNIT_ID,
 
+  // ----------------------------------------------------------
   // Mining SSV reward
+  // ----------------------------------------------------------
+
   ADMOB_MINING_SSV_REWARD_AMOUNT,
   ADMOB_MINING_SSV_REWARD_ITEM,
 
+  // ----------------------------------------------------------
   // Power Boost SSV reward
+  // ----------------------------------------------------------
+
   ADMOB_POWER_BOOST_SSV_REWARD_AMOUNT,
   ADMOB_POWER_BOOST_SSV_REWARD_ITEM,
 
+  // ----------------------------------------------------------
   // History
+  // ----------------------------------------------------------
+
   MAX_TRANSACTION_HISTORY,
 };
