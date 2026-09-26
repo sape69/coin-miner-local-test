@@ -10,11 +10,35 @@ import '../widgets/cat_avatar.dart';
 //
 // Firebase Authentication - salasanan palautus.
 //
+// Tärkeää:
+//
+// Firebase Authenticationin Password Reset -sähköposti
+// käyttää käyttäjän valitsemaa sovelluksen kieltä.
+//
+// Ennen sendPasswordResetEmail()-kutsua asetetaan Firebase
+// Authenticationille oikea kielikoodi setLanguageCode()-kutsulla.
+//
+// Tuetut Stelluriini-kielet:
+//
+// 🇫🇮 fi
+// 🇬🇧 en
+// 🇩🇪 de
+// 🇪🇸 es
+// 🇫🇷 fr
+// 🇨🇳 zh-CN
+// 🇻🇳 vi
+// 🇯🇵 ja
+//
+// Firebase käyttää omaa Password Reset -sähköpostipohjaansa.
+// Firebase Consolen template-muokkaus ei tällä hetkellä ole
+// käytettävissä tässä projektissa.
+//
 // Tämä sivu:
 // - käyttää Stelluriinin Stella-teemaa
 // - käyttää keskitettyä lokalisaatiojärjestelmää
 // - tukee Firebase Password Reset -toimintoa
 // - tukee kaikkia sovelluksen kieliä
+// - välittää sovelluksen kielen Firebase Authenticationille
 // - sisältää kielivalinnan
 // - käsittelee yleisimmät Firebase Auth -virheet
 // - käyttää eksplisiittisiä TextField-värejä
@@ -42,8 +66,7 @@ class ForgotPasswordPage extends StatefulWidget {
 // STATE
 // ============================================================
 
-class _ForgotPasswordPageState
-    extends State<ForgotPasswordPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController emailController =
       TextEditingController();
 
@@ -86,6 +109,54 @@ class _ForgotPasswordPageState
 
   String _t(String key) {
     return localization.get(key);
+  }
+
+  // ==========================================================
+  // 🔥 FIREBASE LANGUAGE
+  // ==========================================================
+  //
+  // Sovelluksen lokalisaatiokoodit eivät kaikissa tapauksissa
+  // ole yksi yhteen Firebase Authenticationin kielikoodien
+  // kanssa.
+  //
+  // Erityisesti:
+  //
+  // zh -> zh-CN
+  //
+  // ==========================================================
+
+  String _firebaseLanguageCode() {
+    switch (widget.languageCode.toLowerCase()) {
+      case 'fi':
+        return 'fi';
+
+      case 'en':
+        return 'en';
+
+      case 'de':
+        return 'de';
+
+      case 'es':
+        return 'es';
+
+      case 'fr':
+        return 'fr';
+
+      case 'zh':
+      case 'zh-cn':
+        return 'zh-CN';
+
+      case 'vi':
+        return 'vi';
+
+      case 'ja':
+        return 'ja';
+
+      default:
+        // Jos sovelluksen kieli ei jostain syystä tunnistu,
+        // käytetään englantia turvallisena oletuksena.
+        return 'en';
+    }
   }
 
   // ==========================================================
@@ -134,8 +205,7 @@ class _ForgotPasswordPageState
   Future<void> _resetPassword() async {
     FocusScope.of(context).unfocus();
 
-    final String email =
-        emailController.text.trim();
+    final String email = emailController.text.trim();
 
     // --------------------------------------------------------
     // EMPTY EMAIL
@@ -154,8 +224,36 @@ class _ForgotPasswordPageState
     });
 
     try {
-      await FirebaseAuth.instance
-          .sendPasswordResetEmail(
+      // ======================================================
+      // 🌍 SET FIREBASE EMAIL LANGUAGE
+      // ======================================================
+      //
+      // Tämä on tärkein uusi osa.
+      //
+      // Firebase Authentication käyttää tätä kielikoodia
+      // Password Reset -sähköpostin lokalisoimiseen.
+      //
+      // Esimerkiksi:
+      //
+      // English -> en
+      // Finnish  -> fi
+      // German   -> de
+      // Chinese  -> zh-CN
+      //
+      // ======================================================
+
+      final String firebaseLanguageCode =
+          _firebaseLanguageCode();
+
+      await FirebaseAuth.instance.setLanguageCode(
+        firebaseLanguageCode,
+      );
+
+      // ======================================================
+      // 📧 SEND PASSWORD RESET EMAIL
+      // ======================================================
+
+      await FirebaseAuth.instance.sendPasswordResetEmail(
         email: email,
       );
 
@@ -231,8 +329,7 @@ class _ForgotPasswordPageState
   // ==========================================================
 
   Future<void> _openLanguageDialog() async {
-    final changeLanguage =
-        widget.changeLanguage;
+    final changeLanguage = widget.changeLanguage;
 
     if (changeLanguage == null) {
       return;
@@ -263,12 +360,10 @@ class _ForgotPasswordPageState
                   .map(
                 (entry) {
                   final bool selected =
-                      widget.languageCode ==
-                          entry.key;
+                      widget.languageCode == entry.key;
 
                   return Padding(
-                    padding:
-                        const EdgeInsets.only(
+                    padding: const EdgeInsets.only(
                       bottom: 10,
                     ),
                     child: SizedBox(
@@ -281,15 +376,13 @@ class _ForgotPasswordPageState
                                   entry.key,
                                 );
 
-                                if (dialogContext
-                                    .mounted) {
+                                if (dialogContext.mounted) {
                                   Navigator.pop(
                                     dialogContext,
                                   );
                                 }
                               },
-                        style:
-                            ElevatedButton.styleFrom(
+                        style: ElevatedButton.styleFrom(
                           backgroundColor:
                               selected
                                   ? accentColor
@@ -301,8 +394,7 @@ class _ForgotPasswordPageState
                             0xFF120B24,
                           ),
                           padding:
-                              const EdgeInsets
-                                  .symmetric(
+                              const EdgeInsets.symmetric(
                             vertical: 14,
                           ),
                           shape:
@@ -402,8 +494,7 @@ class _ForgotPasswordPageState
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.fromLTRB(
+            padding: const EdgeInsets.fromLTRB(
               24,
               12,
               24,
@@ -422,8 +513,7 @@ class _ForgotPasswordPageState
                   borderRadius:
                       BorderRadius.circular(24),
                   side: BorderSide(
-                    color:
-                        accentColor.withValues(
+                    color: accentColor.withValues(
                       alpha: 0.18,
                     ),
                     width: 1,
@@ -476,7 +566,7 @@ class _ForgotPasswordPageState
                       // ==================================================
 
                       const Text(
-                        'STELLURIINI',
+                        'Stelluriini',
                         textAlign:
                             TextAlign.center,
                         style: TextStyle(
@@ -560,8 +650,7 @@ class _ForgotPasswordPageState
                             emailController,
                         enabled: !loading,
                         keyboardType:
-                            TextInputType
-                                .emailAddress,
+                            TextInputType.emailAddress,
                         textInputAction:
                             TextInputAction.done,
                         autocorrect: false,
@@ -602,8 +691,7 @@ class _ForgotPasswordPageState
                           ),
                           prefixIcon:
                               const Icon(
-                            Icons
-                                .email_outlined,
+                            Icons.email_outlined,
                             color:
                                 secondaryTextColor,
                           ),
@@ -618,15 +706,13 @@ class _ForgotPasswordPageState
                           border:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
                             borderSide:
                                 BorderSide(
                               color:
-                                  accentColor
-                                      .withValues(
+                                  accentColor.withValues(
                                 alpha: 0.20,
                               ),
                               width: 1,
@@ -640,15 +726,13 @@ class _ForgotPasswordPageState
                           enabledBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
                             borderSide:
                                 BorderSide(
                               color:
-                                  accentColor
-                                      .withValues(
+                                  accentColor.withValues(
                                 alpha: 0.25,
                               ),
                               width: 1,
@@ -662,8 +746,7 @@ class _ForgotPasswordPageState
                           focusedBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
                             borderSide:
@@ -681,15 +764,13 @@ class _ForgotPasswordPageState
                           disabledBorder:
                               OutlineInputBorder(
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               16,
                             ),
                             borderSide:
                                 BorderSide(
                               color:
-                                  accentColor
-                                      .withValues(
+                                  accentColor.withValues(
                                 alpha: 0.10,
                               ),
                               width: 1,
@@ -697,8 +778,7 @@ class _ForgotPasswordPageState
                           ),
 
                           contentPadding:
-                              const EdgeInsets
-                                  .symmetric(
+                              const EdgeInsets.symmetric(
                             horizontal: 18,
                             vertical: 18,
                           ),
@@ -723,8 +803,7 @@ class _ForgotPasswordPageState
                               ? null
                               : _resetPassword,
                           style:
-                              ElevatedButton
-                                  .styleFrom(
+                              ElevatedButton.styleFrom(
                             backgroundColor:
                                 accentColor,
                             foregroundColor:
@@ -732,8 +811,7 @@ class _ForgotPasswordPageState
                               0xFF120B24,
                             ),
                             disabledBackgroundColor:
-                                accentColor
-                                    .withValues(
+                                accentColor.withValues(
                               alpha: 0.45,
                             ),
                             disabledForegroundColor:
@@ -744,8 +822,7 @@ class _ForgotPasswordPageState
                             shape:
                                 RoundedRectangleBorder(
                               borderRadius:
-                                  BorderRadius
-                                      .circular(
+                                  BorderRadius.circular(
                                 16,
                               ),
                             ),
@@ -769,9 +846,7 @@ class _ForgotPasswordPageState
                                 ),
                           label: Text(
                             loading
-                                ? _t(
-                                    'sending',
-                                  )
+                                ? _t('sending')
                                 : _t(
                                     'sendPasswordReset',
                                   ),
@@ -807,8 +882,7 @@ class _ForgotPasswordPageState
                               pinkColor,
                         ),
                         icon: const Icon(
-                          Icons
-                              .arrow_back_rounded,
+                          Icons.arrow_back_rounded,
                         ),
                         label: Text(
                           _t('login'),
