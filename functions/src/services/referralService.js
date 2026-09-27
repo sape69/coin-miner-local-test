@@ -17,6 +17,7 @@
 // - referral-bonuksen server-side laskemisesta
 // - referral-bonuksen validoinnista
 // - referral-historian tallentamisesta
+// - referral-bonuksen duplikaattien estämisestä
 //
 // TÄRKEÄÄ:
 //
@@ -425,10 +426,6 @@ async function createReferralCode(
               existingCodeData.uid,
             );
 
-          // ----------------------------------------------------
-          // CODE BELONGS TO THIS USER
-          // ----------------------------------------------------
-
           if (
             ownerUid === userId
           ) {
@@ -441,10 +438,6 @@ async function createReferralCode(
                 existingCode,
             };
           }
-
-          // ----------------------------------------------------
-          // CODE BELONGS TO SOMEONE ELSE
-          // ----------------------------------------------------
 
           throw new Error(
             "REFERRAL_CODE_OWNERSHIP_CONFLICT",
@@ -690,10 +683,6 @@ async function setReferrer(
       if (
         existingReferrerUid
       ) {
-        // ----------------------------------------------------
-        // SAME REFERRER
-        // ----------------------------------------------------
-
         if (
           existingReferrerUid ===
           userId
@@ -702,10 +691,6 @@ async function setReferrer(
             "REFERRAL_SELF_REFERRAL",
           );
         }
-
-        // ----------------------------------------------------
-        // SAME REFERRAL RELATIONSHIP
-        // ----------------------------------------------------
 
         if (
           existingReferralCode ===
@@ -726,10 +711,6 @@ async function setReferrer(
               normalizedCode,
           };
         }
-
-        // ----------------------------------------------------
-        // REFERRER CHANGE DISABLED
-        // ----------------------------------------------------
 
         if (
           !ALLOW_REFERRER_CHANGE
@@ -830,16 +811,6 @@ async function setReferrer(
 
       // ------------------------------------------------------
       // REFERRER COUNTER
-      // ------------------------------------------------------
-      //
-      // Jos referral vaihdetaan sallittuna toimintona,
-      // vanhan kutsujan laskuria pienennetään.
-      //
-      // Uuden kutsujan laskuria kasvatetaan.
-      //
-      // Jos referral-suhdetta ei ollut aikaisemmin,
-      // vain uusi kutsuja saa +1.
-      //
       // ------------------------------------------------------
 
       if (
@@ -1139,6 +1110,43 @@ function validateReferralBonus(
 }
 
 // ============================================================
+// BUILD REFERRAL HISTORY ID
+// ============================================================
+//
+// Jos miningHistoryId löytyy, sitä käytetään deterministisenä
+// tunnisteena.
+//
+// Tämä estää saman hyväksytyn mining-tapahtuman kirjaamisen
+// referral-bonukseksi useita kertoja.
+//
+// Jos miningHistoryId puuttuu, käytetään Firestore-auto-ID:tä.
+//
+// ============================================================
+
+function getReferralHistoryRef(
+  referrerUid,
+  miningHistoryId = null,
+) {
+  const collection =
+    getReferralHistoryCollection(
+      referrerUid,
+    );
+
+  const historyId =
+    safeString(
+      miningHistoryId,
+    );
+
+  if (historyId) {
+    return collection.doc(
+      `mining_${historyId}`,
+    );
+  }
+
+  return collection.doc();
+}
+
+// ============================================================
 // RECORD REFERRAL BONUS
 // ============================================================
 //
@@ -1157,6 +1165,16 @@ function validateReferralBonus(
 // server-side percentage
 //      ↓
 // server-side referral bonus
+//
+// Jos miningHistoryId on annettu, samaa mining-tapahtumaa
+// ei voida kirjata uudelleen toiseksi referral-bonukseksi.
+//
+// HUOM:
+//
+// Varsinainen referrerin miningBalance-saldon kasvatus
+// tehdään mining-transaktion vastuulla.
+// Tämä palvelu vastaa referral-bonuksen laskennasta,
+// validoinnista ja historian kirjaamisesta.
 //
 // ============================================================
 
@@ -1277,13 +1295,110 @@ async function recordReferralBonus(
   }
 
   // ----------------------------------------------------------
-  // HISTORY
+  // HISTORY REFERENCE
   // ----------------------------------------------------------
 
   const historyRef =
-    getReferralHistoryCollection(
+    getReferralHistoryRef(
       referrerId,
-    ).doc();
+      miningHistoryId,
+    );
+
+  // ----------------------------------------------------------
+  // DUPLICATE PROTECTION
+  // ----------------------------------------------------------
+  //
+  // Jos miningHistoryId löytyy, transaction lukee historian
+  // ennen kuin kirjoitetaan siihen.
+  //
+  // Tämä pitää tehdä ennen mitään transaction-writea.
+  //
+  // ----------------------------------------------------------
+
+  let existingHistorySnapshot =
+    null;
+
+  if (
+    transaction &&
+    safeString(
+      miningHistoryId,
+    )
+  ) {
+    existingHistorySnapshot =
+      await transaction.get(
+        historyRef,
+      );
+  } else if (
+    !transaction &&
+    safeString(
+      miningHistoryId,
+    )
+  ) {
+    existingHistorySnapshot =
+      await historyRef.get();
+  }
+
+  if (
+    existingHistorySnapshot &&
+    existingHistorySnapshot.exists
+  ) {
+    const existingData =
+      existingHistorySnapshot.data() ||
+      {};
+
+    return {
+      success: true,
+
+      duplicate: true,
+
+      historyId:
+        historyRef.id,
+
+      referrerUid:
+        safeString(
+          existingData.referrerUid,
+        ) ||
+        referrerId,
+
+      referredUid:
+        safeString(
+          existingData.referredUid,
+        ) ||
+        referredId,
+
+      miningAmount:
+        safeNumber(
+          existingData.miningAmount,
+          amount,
+        ),
+
+      referralBonus:
+        safeNumber(
+          existingData.referralBonus,
+          bonus,
+        ),
+
+      referralPercent:
+        safeNumber(
+          existingData.referralPercent,
+          referralPercent,
+        ),
+
+      referralRate:
+        safeNumber(
+          existingData.referralRate,
+          calculation.bonusRate,
+        ),
+
+      source:
+        existingData.source ||
+        REFERRAL_BONUS_SOURCE,
+    };
+  }
+
+  // ----------------------------------------------------------
+  // HISTORY
+  // ----------------------------------------------------------
 
   const historyData = {
     type:
@@ -1331,6 +1446,8 @@ async function recordReferralBonus(
 
   return {
     success: true,
+
+    duplicate: false,
 
     historyId:
       historyRef.id,
@@ -1451,4 +1568,6 @@ module.exports = {
   getReferralCodeRef,
 
   getReferralHistoryCollection,
+
+  getReferralHistoryRef,
 };
