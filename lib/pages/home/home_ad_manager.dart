@@ -6,7 +6,25 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeAdManager extends ChangeNotifier {
   // ============================================================
-  // 📺 ADMOB
+  // 🐱 STELLURIINI - ADMOB MANAGER
+  // ============================================================
+  //
+  // Stella Mining.
+  //
+  // IMPORTANT:
+  //
+  // AdMob reward is NOT an STL token reward.
+  //
+  // AdMob authorizes:
+  // - Mining Start
+  // - Power Boost
+  //
+  // The actual mining state is handled by Firebase Functions.
+  //
+  // ============================================================
+
+  // ============================================================
+  // 📺 ADMOB AD UNITS
   // ============================================================
 
   static const String miningRewardedAdUnitId =
@@ -15,9 +33,11 @@ class HomeAdManager extends ChangeNotifier {
   static const String powerBoostRewardedAdUnitId =
       'ca-app-pub-1131012057145658/7225738491';
 
-  static const String powerBoostPurpose = 'power_boost';
+  static const String powerBoostPurpose =
+      'power_boost';
 
-  static const String miningStartPurpose = 'mining_start';
+  static const String miningStartPurpose =
+      'mining_start';
 
   // ============================================================
   // ⏱️ TIMEOUTS
@@ -173,23 +193,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🔐 REQUEST + SHOW UMP CONSENT
-  // ============================================================
-  //
-  // IMPORTANT:
-  //
-  // Google UMP requires requestConsentInfoUpdate() before
-  // canRequestAds() can reliably be used.
-  //
-  // Flow:
-  //
-  // 1. requestConsentInfoUpdate()
-  // 2. loadAndShowConsentFormIfRequired()
-  // 3. canRequestAds()
-  //
-  // The operation is protected against duplicate simultaneous
-  // consent requests.
-  //
+  // 🔐 UMP CONSENT
   // ============================================================
 
   Future<bool> _checkAdConsent() async {
@@ -240,10 +244,6 @@ class HomeAdManager extends ChangeNotifier {
         '🐱 [ADMOB] START UMP CONSENT CHECK',
       );
 
-      // ----------------------------------------------------------
-      // STEP 1
-      // ----------------------------------------------------------
-
       final ConsentRequestParameters params =
           ConsentRequestParameters();
 
@@ -285,12 +285,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // ----------------------------------------------------------
-      // STEP 2
-      // ----------------------------------------------------------
-      //
-      // If a consent form is required, Google loads and shows it.
-      // If no form is required, the callback completes immediately.
-      //
+      // SHOW CONSENT FORM IF REQUIRED
       // ----------------------------------------------------------
 
       final Completer<FormError?> formCompleter =
@@ -330,7 +325,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // ----------------------------------------------------------
-      // STEP 3
+      // CHECK AD REQUEST PERMISSION
       // ----------------------------------------------------------
 
       final bool canRequest =
@@ -349,35 +344,11 @@ class HomeAdManager extends ChangeNotifier {
 
       if (canRequest) {
         debugPrint(
-          '================================================',
-        );
-
-        debugPrint(
           '✅ [ADMOB] UMP ALLOWS AD REQUESTS',
-        );
-
-        debugPrint(
-          '🐱 [ADMOB] canRequestAds=true',
-        );
-
-        debugPrint(
-          '================================================',
         );
       } else {
         debugPrint(
-          '================================================',
-        );
-
-        debugPrint(
           '⚠️ [ADMOB] UMP DOES NOT ALLOW AD REQUESTS',
-        );
-
-        debugPrint(
-          '🐱 [ADMOB] canRequestAds=false',
-        );
-
-        debugPrint(
-          '================================================',
         );
       }
 
@@ -394,13 +365,7 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       // ----------------------------------------------------------
-      // IMPORTANT
-      // ----------------------------------------------------------
-      //
-      // If consent update itself failed, Google allows us to check
-      // canRequestAds() because a previous valid consent decision
-      // may still exist locally.
-      //
+      // FALLBACK
       // ----------------------------------------------------------
 
       try {
@@ -417,8 +382,8 @@ class HomeAdManager extends ChangeNotifier {
 
           if (canRequest) {
             debugPrint(
-              '⚠️ [ADMOB] UMP update failed, but previous consent '
-              'still allows ad requests.',
+              '⚠️ [ADMOB] UMP update failed, but previous '
+              'consent still allows ad requests.',
             );
 
             _notify();
@@ -441,8 +406,7 @@ class HomeAdManager extends ChangeNotifier {
             true;
 
         _adLoadError =
-            'CONSENT_CHECK_FAILED | '
-            '$error';
+            'CONSENT_CHECK_FAILED | $error';
 
         _notify();
       }
@@ -478,7 +442,7 @@ class HomeAdManager extends ChangeNotifier {
           await _mobileAdsInitialization!;
 
       debugPrint(
-        '🐱 [ADMOB] Mobile Ads initialized successfully.',
+        '✅ [ADMOB] Mobile Ads initialized successfully.',
       );
 
       debugPrint(
@@ -507,10 +471,6 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     try {
-      // ----------------------------------------------------------
-      // UMP FIRST
-      // ----------------------------------------------------------
-
       final bool consentAllowed =
           await _checkAdConsent();
 
@@ -527,19 +487,11 @@ class HomeAdManager extends ChangeNotifier {
         return;
       }
 
-      // ----------------------------------------------------------
-      // ADMOB INITIALIZATION
-      // ----------------------------------------------------------
-
       await _initializeAdMob();
 
       if (_disposed) {
         return;
       }
-
-      // ----------------------------------------------------------
-      // INITIAL MINING AD
-      // ----------------------------------------------------------
 
       await _preloadMiningAd();
     } catch (error) {
@@ -620,7 +572,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🚀 INITIAL PRELOAD
+  // 🚀 INITIAL MINING PRELOAD
   // ============================================================
 
   Future<void> _preloadMiningAd() async {
@@ -652,25 +604,13 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // ⏳ WAIT FOR AD
+  // ⏳ WAIT FOR READY AD
   // ============================================================
 
   Future<bool> waitForRewardedAd({
     required String purpose,
   }) async {
     if (_disposed) {
-      return false;
-    }
-
-    final bool consentAllowed =
-        await _checkAdConsent();
-
-    if (!consentAllowed) {
-      debugPrint(
-        '⚠️ [ADMOB] Cannot wait for ad because '
-        'UMP does not allow ad requests.',
-      );
-
       return false;
     }
 
@@ -686,20 +626,59 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    // ----------------------------------------------------------
+    // IMPORTANT
+    //
+    // Do not run a new consent flow here if consent has already
+    // completed successfully.
+    //
+    // This prevents the "Preparing ad..." flow from being delayed
+    // by another UMP operation.
+    // ----------------------------------------------------------
+
+    if (!_consentCheckCompleted) {
+      final bool consentAllowed =
+          await _checkAdConsent();
+
+      if (!consentAllowed) {
+        debugPrint(
+          '⚠️ [ADMOB] Cannot wait for ad because '
+          'UMP does not allow ad requests.',
+        );
+
+        return false;
+      }
+    } else if (!_canRequestAds) {
+      debugPrint(
+        '⚠️ [ADMOB] Cannot wait for ad because '
+        'canRequestAds=false.',
+      );
+
+      return false;
+    }
+
     debugPrint(
       '🐱 [ADMOB] Waiting for rewarded ad: $purpose',
     );
+
+    // ----------------------------------------------------------
+    // ALREADY READY
+    // ----------------------------------------------------------
 
     if (_isReadyFor(
       purpose,
       user.uid,
     )) {
       debugPrint(
-        '🐱 [ADMOB] Ad already ready: $purpose',
+        '✅ [ADMOB] Ad already ready: $purpose',
       );
 
       return true;
     }
+
+    // ----------------------------------------------------------
+    // WRONG READY AD
+    // ----------------------------------------------------------
 
     if (_rewardedAd != null &&
         !_isReadyFor(
@@ -713,6 +692,10 @@ class HomeAdManager extends ChangeNotifier {
 
       _disposeCurrentAd();
     }
+
+    // ----------------------------------------------------------
+    // WRONG LOAD
+    // ----------------------------------------------------------
 
     if (_adLoading &&
         _loadingPurpose != purpose) {
@@ -730,12 +713,20 @@ class HomeAdManager extends ChangeNotifier {
       _notify();
     }
 
+    // ----------------------------------------------------------
+    // START LOAD
+    // ----------------------------------------------------------
+
     if (!_adLoading) {
       await loadRewardedAd(
         purpose: purpose,
         notifyOnLoadError: true,
       );
     }
+
+    // ----------------------------------------------------------
+    // WAIT
+    // ----------------------------------------------------------
 
     final Stopwatch stopwatch =
         Stopwatch()..start();
@@ -771,6 +762,14 @@ class HomeAdManager extends ChangeNotifier {
 
       if (!_adLoading ||
           _loadingPurpose != purpose) {
+        // A load can finish and store the ad between checks.
+        if (_isReadyFor(
+          purpose,
+          activeUser.uid,
+        )) {
+          return true;
+        }
+
         debugPrint(
           '⚠️ [ADMOB] Ad loading stopped before '
           'ad became ready: $purpose',
@@ -829,15 +828,17 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     debugPrint(
-      '🐱 [ADMOB] loadRewardedAd() called: $purpose',
+      '🐱 [ADMOB] loadRewardedAd(): $purpose',
     );
 
     // ----------------------------------------------------------
-    // UMP CONSENT
+    // CONSENT
     // ----------------------------------------------------------
 
     final bool consentAllowed =
-        await _checkAdConsent();
+        _consentCheckCompleted
+            ? _canRequestAds
+            : await _checkAdConsent();
 
     if (!consentAllowed) {
       if (!_disposed) {
@@ -894,6 +895,10 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    // ----------------------------------------------------------
+    // AUTH USER
+    // ----------------------------------------------------------
+
     final User? user =
         _auth.currentUser;
 
@@ -916,16 +921,24 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    // ----------------------------------------------------------
+    // ALREADY READY
+    // ----------------------------------------------------------
+
     if (_isReadyFor(
       purpose,
       user.uid,
     )) {
       debugPrint(
-        '🐱 [ADMOB] Existing ready ad used: $purpose',
+        '✅ [ADMOB] Existing ready ad used: $purpose',
       );
 
       return;
     }
+
+    // ----------------------------------------------------------
+    // EXISTING LOAD
+    // ----------------------------------------------------------
 
     if (_adLoading) {
       if (_loadingPurpose == purpose) {
@@ -948,6 +961,10 @@ class HomeAdManager extends ChangeNotifier {
       _loadingPurpose = '';
     }
 
+    // ----------------------------------------------------------
+    // OLD AD
+    // ----------------------------------------------------------
+
     if (_rewardedAd != null) {
       debugPrint(
         '🐱 [ADMOB] Disposing previous rewarded ad.',
@@ -955,6 +972,10 @@ class HomeAdManager extends ChangeNotifier {
 
       _disposeCurrentAd();
     }
+
+    // ----------------------------------------------------------
+    // NEW REQUEST
+    // ----------------------------------------------------------
 
     final int requestId =
         ++_loadRequestId;
@@ -1081,6 +1102,10 @@ class HomeAdManager extends ChangeNotifier {
       ),
     );
 
+    // ----------------------------------------------------------
+    // LOAD TIMEOUT
+    // ----------------------------------------------------------
+
     unawaited(
       Future<void>.delayed(
         adLoadTimeout,
@@ -1103,8 +1128,7 @@ class HomeAdManager extends ChangeNotifier {
           }
 
           debugPrint(
-            '❌ [ADMOB] LOAD TIMEOUT: '
-            '$purpose',
+            '❌ [ADMOB] LOAD TIMEOUT: $purpose',
           );
 
           _loadRequestId++;
@@ -1125,9 +1149,7 @@ class HomeAdManager extends ChangeNotifier {
 
           if (notifyOnLoadError) {
             debugPrint(
-              '❌ [ADMOB] Ad load timed out. '
-              'Check AdMob configuration and '
-              'Android logcat.',
+              '❌ [ADMOB] Ad load timed out.',
             );
           }
         },
@@ -1137,6 +1159,22 @@ class HomeAdManager extends ChangeNotifier {
 
   // ============================================================
   // 🔐 FINISH AD LOAD + SSV
+  // ============================================================
+  //
+  // IMPORTANT CHANGE:
+  //
+  // We DO NOT call _checkAdConsent() again here.
+  //
+  // The ad was already loaded successfully by AdMob.
+  //
+  // Re-running UMP here could delay the transition from:
+  //
+  // Preparing ad...
+  //
+  // to:
+  //
+  // Ad ready.
+  //
   // ============================================================
 
   Future<void> _finishAdLoad({
@@ -1157,6 +1195,10 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    // ----------------------------------------------------------
+    // AUTH CHECK
+    // ----------------------------------------------------------
+
     final User? activeUser =
         _auth.currentUser;
 
@@ -1169,64 +1211,36 @@ class HomeAdManager extends ChangeNotifier {
 
       ad.dispose();
 
-      _adLoading = false;
+      if (!_disposed &&
+          requestId == _loadRequestId) {
+        _adLoading = false;
 
-      _loadingPurpose = '';
+        _loadingPurpose = '';
 
-      _clearAdState();
+        _clearAdState();
 
-      _adLoadError =
-          'AUTH_USER_CHANGED | '
-          'Purpose: $purpose';
+        _adLoadError =
+            'AUTH_USER_CHANGED | '
+            'Purpose: $purpose';
 
-      _notify();
-
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // CHECK CONSENT AGAIN
-    // ----------------------------------------------------------
-
-    final bool consentAllowed =
-        await _checkAdConsent();
-
-    if (!consentAllowed) {
-      debugPrint(
-        '⚠️ [ADMOB] Consent is no longer available. '
-        'Discarding loaded ad.',
-      );
-
-      ad.dispose();
-
-      if (_disposed ||
-          requestId != _loadRequestId) {
-        return;
+        _notify();
       }
 
-      _adLoading = false;
-
-      _loadingPurpose = '';
-
-      _clearAdState();
-
-      _adLoadError =
-          'CONSENT_NOT_GRANTED | '
-          'Purpose: $purpose';
-
-      _notify();
-
       return;
     }
+
+    // ----------------------------------------------------------
+    // ADMOB HAS ALREADY CONFIRMED THE AD IS LOADED
+    // ----------------------------------------------------------
 
     debugPrint(
       '✅ [ADMOB] Ad loaded successfully: '
       '$purpose',
     );
 
-    // ==========================================================
-    // 🔐 SERVER-SIDE VERIFICATION
-    // ==========================================================
+    // ----------------------------------------------------------
+    // SERVER-SIDE VERIFICATION
+    // ----------------------------------------------------------
 
     try {
       debugPrint(
@@ -1274,6 +1288,10 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
+    // ----------------------------------------------------------
+    // REQUEST STILL VALID?
+    // ----------------------------------------------------------
+
     if (_disposed ||
         requestId != _loadRequestId) {
       ad.dispose();
@@ -1303,26 +1321,6 @@ class HomeAdManager extends ChangeNotifier {
 
       return;
     }
-
-    // ==========================================================
-    // 📺 STORE READY AD
-    // ==========================================================
-
-    _rewardedAd = ad;
-
-    _rewardedAdPurpose =
-        purpose;
-
-    _rewardedAdUserUid =
-        loadingUid;
-
-    _adReady = true;
-
-    _adLoading = false;
-
-    _loadingPurpose = '';
-
-    _adLoadError = '';
 
     // ==========================================================
     // 📺 FULL SCREEN CALLBACK
@@ -1367,7 +1365,9 @@ class HomeAdManager extends ChangeNotifier {
           '$purpose',
         );
 
-        ad.dispose();
+        try {
+          ad.dispose();
+        } catch (_) {}
 
         _clearAdState();
 
@@ -1403,7 +1403,9 @@ class HomeAdManager extends ChangeNotifier {
           'Message: ${error.message}',
         );
 
-        ad.dispose();
+        try {
+          ad.dispose();
+        } catch (_) {}
 
         _clearAdState();
 
@@ -1440,6 +1442,26 @@ class HomeAdManager extends ChangeNotifier {
       },
     );
 
+    // ==========================================================
+    // 📺 STORE READY AD
+    // ==========================================================
+
+    _rewardedAd = ad;
+
+    _rewardedAdPurpose =
+        purpose;
+
+    _rewardedAdUserUid =
+        loadingUid;
+
+    _adReady = true;
+
+    _adLoading = false;
+
+    _loadingPurpose = '';
+
+    _adLoadError = '';
+
     _notify();
 
     debugPrint(
@@ -1475,8 +1497,7 @@ class HomeAdManager extends ChangeNotifier {
     String purpose,
   ) async {
     debugPrint(
-      '🐱 [ADMOB] Reload scheduled: '
-      '$purpose',
+      '🐱 [ADMOB] Reload scheduled: $purpose',
     );
 
     await Future<void>.delayed(
@@ -1500,7 +1521,9 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     final bool consentAllowed =
-        await _checkAdConsent();
+        _consentCheckCompleted
+            ? _canRequestAds
+            : await _checkAdConsent();
 
     if (!consentAllowed) {
       debugPrint(
@@ -1539,7 +1562,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🎁 REWARD CALLBACK
+  // 🎁 REWARD EARNED
   // ============================================================
 
   void _handleRewardEarned(
@@ -1580,8 +1603,7 @@ class HomeAdManager extends ChangeNotifier {
     }
 
     debugPrint(
-      '🎁 [ADMOB] REWARD EARNED: '
-      '$purpose',
+      '🎁 [ADMOB] REWARD EARNED: $purpose',
     );
 
     unawaited(
@@ -1714,8 +1736,14 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    // ----------------------------------------------------------
+    // CONSENT
+    // ----------------------------------------------------------
+
     final bool consentAllowed =
-        await _checkAdConsent();
+        _consentCheckCompleted
+            ? _canRequestAds
+            : await _checkAdConsent();
 
     if (!consentAllowed) {
       debugPrint(
@@ -2062,6 +2090,10 @@ class HomeAdManager extends ChangeNotifier {
     }
   }
 
+  // ============================================================
+  // 🔄 RESET REWARD CALLBACK STATE
+  // ============================================================
+
   void _resetRewardCallbackState(
     String purpose,
   ) {
@@ -2102,6 +2134,10 @@ class HomeAdManager extends ChangeNotifier {
     _adLoading = false;
 
     _loadingPurpose = '';
+
+    _rewardedAdPurpose = '';
+
+    _rewardedAdUserUid = '';
 
     try {
       ad?.dispose();
