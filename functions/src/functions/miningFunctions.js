@@ -22,19 +22,6 @@
 // IMPORTANT:
 // All authoritative mining and reward decisions happen
 // server-side.
-//
-// DAILY MINING DAY:
-//
-// Day 1 = first 24h mining cycle
-// Day 2 = second completed mining cycle
-// Day 3 = third completed mining cycle
-// ...
-// Day 7 = 3.5 HR
-// Day 7+ remains at the configured maximum.
-//
-// IMPORTANT:
-// Mining day progression is based on completed mining cycles,
-// NOT UTC calendar dates.
 // ============================================================
 
 const {
@@ -50,7 +37,6 @@ const {
 const {
   DAILY_HASH_RATE_START,
   DAILY_HASH_RATE_STEP,
-  DAILY_HASH_RATE_MAX_DAY,
   MAX_DAILY_HASH_RATE,
   MINING_DURATION_MS,
   MINING_PER_HASH_PER_HOUR,
@@ -247,21 +233,24 @@ function timestampMs(value) {
 }
 
 // ============================================================
-// DAILY MINING DAY
+// DAILY HASH RATE
 // ============================================================
 //
-// IMPORTANT:
+// IMPORTANT FIX:
 //
-// Mining day is now tied to mining cycles:
+// Päivän Hash Rate ei saa jäädä kiinni
+// DAILY_HASH_RATE_MAX_DAY-arvoon.
 //
-// Cycle 1 -> Day 1 -> 0.5 HR
-// Cycle 2 -> Day 2 -> 1.0 HR
-// Cycle 3 -> Day 3 -> 1.5 HR
+// Päivä määräytyy nyt suoraan streakin perusteella:
+//
+// Day 1 -> START
+// Day 2 -> START + STEP
+// Day 3 -> START + STEP * 2
+// Day 4 -> START + STEP * 3
 // ...
-// Cycle 7 -> Day 7 -> 3.5 HR
-// Cycle 8+ -> Day 7 -> 3.5 HR
 //
-// UTC calendar date is NOT used to advance the mining day.
+// Ainoa lopullinen rajoitus on MAX_DAILY_HASH_RATE.
+//
 // ============================================================
 
 function dailyHashRate(streak) {
@@ -273,19 +262,39 @@ function dailyHashRate(streak) {
       )
     );
 
-  const effectiveDay =
-    Math.min(
-      day,
-      DAILY_HASH_RATE_MAX_DAY
+  const start =
+    positive(
+      DAILY_HASH_RATE_START,
+      1
     );
 
-  return Math.min(
-    MAX_DAILY_HASH_RATE,
+  const step =
     Math.max(
-      DAILY_HASH_RATE_START,
-      DAILY_HASH_RATE_START +
-        (effectiveDay - 1) *
-          DAILY_HASH_RATE_STEP
+      0,
+      number(
+        DAILY_HASH_RATE_STEP,
+        0
+      )
+    );
+
+  const maximum =
+    Math.max(
+      start,
+      positive(
+        MAX_DAILY_HASH_RATE,
+        start
+      )
+    );
+
+  const calculated =
+    start +
+    (day - 1) * step;
+
+  return Math.min(
+    maximum,
+    Math.max(
+      start,
+      calculated
     )
   );
 }
@@ -294,77 +303,92 @@ function dailyHashRateBonus(streak) {
   return Math.max(
     0,
     dailyHashRate(streak) -
-      DAILY_HASH_RATE_START
+      dailyHashRate(1)
   );
 }
 
 function dailyStreak(data) {
-  const stored =
-    number(
-      data.dailyStreak ??
-        data.streak,
-      0
-    );
-
-  if (!Number.isFinite(stored)) {
-    return 0;
-  }
-
   return Math.max(
     0,
-    Math.floor(stored)
-  );
-}
-
-function currentMiningDay(data) {
-  const current =
-    dailyStreak(data);
-
-  return Math.max(
-    1,
-    Math.min(
-      DAILY_HASH_RATE_MAX_DAY,
-      current
+    Math.floor(
+      number(
+        data.dailyStreak ??
+          data.streak,
+        0
+      )
     )
   );
 }
 
-function nextMiningDay(data) {
-  const current =
-    currentMiningDay(data);
-
-  return Math.min(
-    DAILY_HASH_RATE_MAX_DAY,
-    current + 1
-  );
-}
-
 // ============================================================
-// DAILY COMPATIBILITY HELPER
-// ============================================================
-//
-// This function keeps the existing response structure used by
-// Flutter.
-//
-// `claimedToday` is now informational only.
-// It does NOT control mining-day progression.
+// DAILY CLAIM CALCULATION
 // ============================================================
 
 function nextDailyClaim(
   data,
   today
 ) {
-  const streak =
-    currentMiningDay(data);
-
   const last =
     typeof data.lastDailyDate === "string"
       ? data.lastDailyDate
       : "";
 
+  const current =
+    dailyStreak(data);
+
+  // ----------------------------------------------------------
+  // Same UTC day:
+  // Do NOT increase streak.
+  // ----------------------------------------------------------
+
+  if (last === today) {
+    const streak =
+      Math.max(
+        1,
+        current
+      );
+
+    return {
+      claimedToday: true,
+
+      streak,
+
+      dailyHashRate:
+        dailyHashRate(streak),
+    };
+  }
+
+  // ----------------------------------------------------------
+  // Calculate previous UTC day.
+  // ----------------------------------------------------------
+
+  const yesterday =
+    new Date(
+      `${today}T00:00:00.000Z`
+    );
+
+  yesterday.setUTCDate(
+    yesterday.getUTCDate() - 1
+  );
+
+  const yesterdayString =
+    yesterday
+      .toISOString()
+      .slice(0, 10);
+
+  // ----------------------------------------------------------
+  // Consecutive day:
+  // increase streak by exactly 1.
+  // ----------------------------------------------------------
+
+  const streak =
+    last === yesterdayString &&
+    current > 0
+      ? current + 1
+      : 1;
+
   return {
-    claimedToday:
-      last === today,
+    claimedToday: false,
 
     streak,
 
@@ -375,18 +399,36 @@ function nextDailyClaim(
 
 function nextDailyHashRate(
   data,
-  _today
+  today
 ) {
+  const daily =
+    nextDailyClaim(
+      data,
+      today
+    );
+
+  if (!daily.claimedToday) {
+    return daily.dailyHashRate;
+  }
+
   return dailyHashRate(
-    nextMiningDay(data)
+    daily.streak + 1
   );
 }
 
 function nextDailyStreak(
   data,
-  _today
+  today
 ) {
-  return nextMiningDay(data);
+  const daily =
+    nextDailyClaim(
+      data,
+      today
+    );
+
+  return daily.claimedToday
+    ? daily.streak + 1
+    : daily.streak;
 }
 
 // ============================================================
@@ -1348,6 +1390,9 @@ const getMiningStatus =
           dailyClaimed:
             daily.claimedToday,
 
+          miningDay:
+            daily.streak,
+
           streak:
             daily.streak,
 
@@ -1482,9 +1527,9 @@ const claimMining =
             : miningHashRate(
                 earlyData,
                 dailyHashRate(
-                  currentMiningDay(
+                  dailyStreak(
                     earlyData
-                  )
+                  ) || 1
                 )
               );
 
@@ -1533,6 +1578,9 @@ const claimMining =
 
             miningHashRate:
               earlyRate,
+
+            miningDay:
+              daily.streak,
 
             dailyHashRate:
               daily.dailyHashRate,
@@ -1664,55 +1712,31 @@ const claimMining =
                 ? userSnapshot.data() || {}
                 : {};
 
-            // --------------------------------------------------
-            // PREVIOUS MINING CYCLE
-            // --------------------------------------------------
+            const currentStreak =
+              dailyStreak(data);
+
+            const fallbackRate =
+              dailyHashRate(
+                currentStreak || 1
+              );
 
             const previous =
               miningWindow(data);
 
-            const previousCompleted =
-              previous.valid &&
-              previous.miningEndMs <=
-                nowMs;
-
-            const currentStreak =
-              currentMiningDay(data);
-
-            // --------------------------------------------------
-            // DETERMINE NEW MINING DAY
-            // --------------------------------------------------
-            //
-            // FIRST CYCLE:
-            // Day 1
-            //
-            // COMPLETED PREVIOUS CYCLE:
-            // Day 2, 3, 4... up to Day 7
-            //
-            // This is intentionally independent of the
-            // UTC calendar date.
-            // --------------------------------------------------
-
-            const newStreak =
-              previousCompleted
-                ? Math.min(
-                    DAILY_HASH_RATE_MAX_DAY,
-                    currentStreak + 1
-                  )
-                : currentStreak;
-
-            const rate =
-              dailyHashRate(
-                newStreak
-              );
+            const existingRate =
+              previous.valid
+                ? historicalHashRate(data)
+                : miningHashRate(
+                    data,
+                    fallbackRate
+                  );
 
             const status =
               calculateMiningStatus(
                 {
                   ...data,
                   hashRate:
-                    historicalHashRate(data) ||
-                    rate,
+                    existingRate,
                 },
                 now
               );
@@ -1744,14 +1768,13 @@ const claimMining =
                 miningActive: true,
 
                 hashRate:
-                  historicalHashRate(
-                    data
-                  ),
+                  existingRate,
 
                 miningHashRate:
-                  historicalHashRate(
-                    data
-                  ),
+                  existingRate,
+
+                miningDay:
+                  daily.streak,
 
                 dailyHashRate:
                   daily.dailyHashRate,
@@ -1810,10 +1833,6 @@ const claimMining =
               };
             }
 
-            // --------------------------------------------------
-            // VALIDATE ADMOB REWARD
-            // --------------------------------------------------
-
             let validated;
 
             try {
@@ -1840,9 +1859,34 @@ const claimMining =
             const authoritativeId =
               validated.transactionId;
 
-            // --------------------------------------------------
-            // BALANCE
-            // --------------------------------------------------
+            // ------------------------------------------------
+            // DAILY STREAK
+            // ------------------------------------------------
+            //
+            // TÄMÄ ON TÄRKEÄ KORJAUS:
+            //
+            // daily.streak lasketaan aina nykyisen
+            // lastDailyDate-arvon ja tämän UTC-päivän
+            // perusteella.
+            //
+            // Jos:
+            // lastDailyDate = eilen
+            //
+            // ja:
+            // today = tänään
+            //
+            // streak kasvaa +1.
+            //
+            // ------------------------------------------------
+
+            const daily =
+              nextDailyClaim(
+                data,
+                today
+              );
+
+            const rate =
+              daily.dailyHashRate;
 
             const oldBalance =
               nonNegative(
@@ -1863,12 +1907,14 @@ const claimMining =
             let completedPrevious =
               false;
 
-            // --------------------------------------------------
-            // COMPLETE PREVIOUS 24H CYCLE
-            // --------------------------------------------------
+            // ------------------------------------------------
+            // COMPLETE PREVIOUS MINING CYCLE
+            // ------------------------------------------------
 
             if (
-              previousCompleted
+              previous.valid &&
+              previous.miningEndMs <=
+                nowMs
             ) {
               const previousRate =
                 historicalHashRate(
@@ -1908,20 +1954,21 @@ const claimMining =
                   cycle.totalMining
                 );
 
-              newBalance =
-                oldBalance +
-                collected;
+              if (
+                collected > 0
+              ) {
+                newBalance =
+                  oldBalance +
+                  collected;
 
-              // IMPORTANT:
-              // The cycle is considered completed even if the
-              // calculated amount happens to be zero.
-              completedPrevious =
-                true;
+                completedPrevious =
+                  true;
+              }
             }
 
-            // --------------------------------------------------
+            // ------------------------------------------------
             // ACHIEVEMENTS
-            // --------------------------------------------------
+            // ------------------------------------------------
 
             await updateMiningAchievements(
               transaction,
@@ -1931,9 +1978,9 @@ const claimMining =
               now
             );
 
-            // --------------------------------------------------
-            // NEW MINING WINDOW
-            // --------------------------------------------------
+            // ------------------------------------------------
+            // NEW MINING CYCLE
+            // ------------------------------------------------
 
             const startedAt =
               now;
@@ -1944,10 +1991,6 @@ const claimMining =
                   MINING_DURATION_MS
               );
 
-            // --------------------------------------------------
-            // USER DOCUMENT
-            // --------------------------------------------------
-
             transaction.set(
               userRef,
               {
@@ -1955,13 +1998,14 @@ const claimMining =
                   rate,
 
                 dailyStreak:
-                  newStreak,
+                  daily.streak,
 
                 streak:
-                  newStreak,
+                  daily.streak,
 
-                // Kept for backwards compatibility.
-                // It no longer controls mining-day progression.
+                // IMPORTANT:
+                // Tämä päivitetään vain kun päivän
+                // Mining Start todella tapahtuu.
                 lastDailyDate:
                   today,
 
@@ -1994,9 +2038,9 @@ const claimMining =
               }
             );
 
-            // --------------------------------------------------
+            // ------------------------------------------------
             // CONSUME ADMOB MINING START REWARD
-            // --------------------------------------------------
+            // ------------------------------------------------
 
             transaction.set(
               rewardRef,
@@ -2030,65 +2074,72 @@ const claimMining =
               }
             );
 
-            // --------------------------------------------------
-            // DAILY MINING DAY HISTORY
-            // --------------------------------------------------
-            //
-            // Every new mining cycle gets its own daily HR
-            // history record.
-            // --------------------------------------------------
+            // ------------------------------------------------
+            // DAILY HASH RATE HISTORY
+            // ------------------------------------------------
 
-            transaction.set(
-              getHistoryCollection(uid)
-                .doc(),
-              {
-                type:
-                  "dailyHashRate",
+            if (
+              !daily.claimedToday
+            ) {
+              transaction.set(
+                getHistoryCollection(uid)
+                  .doc(),
+                {
+                  type:
+                    "dailyHashRate",
 
-                title:
-                  "Stella Mining Day 🐱✨",
+                  title:
+                    "Stella Daily Hash Rate 🐱✨",
 
-                amount:
-                  rate,
+                  amount:
+                    rate,
 
-                hashRate:
-                  rate,
+                  hashRate:
+                    rate,
 
-                dailyHashRate:
-                  rate,
+                  dailyHashRate:
+                    rate,
 
-                hashRateBefore:
-                  previousCompleted
-                    ? historicalHashRate(
-                        data
-                      )
-                    : 0,
+                  hashRateBefore:
+                    historicalHashRate(
+                      data
+                    ),
 
-                hashRateAfter:
-                  rate,
+                  hashRateAfter:
+                    rate,
 
-                dailyHashRateBonus:
-                  dailyHashRateBonus(
-                    newStreak
-                  ),
+                  dailyHashRateBonus:
+                    dailyHashRateBonus(
+                      daily.streak
+                    ),
 
-                dailyStreak:
-                  newStreak,
+                  dailyStreak:
+                    daily.streak,
 
-                streak:
-                  newStreak,
+                  streak:
+                    daily.streak,
 
-                miningCycle:
-                  newStreak,
+                  miningDay:
+                    daily.streak,
 
-                createdAt:
-                  FieldValue.serverTimestamp(),
-              }
-            );
+                  previousDailyDate:
+                    typeof data.lastDailyDate ===
+                    "string"
+                      ? data.lastDailyDate
+                      : null,
 
-            // --------------------------------------------------
-            // PREVIOUS MINING REWARD HISTORY
-            // --------------------------------------------------
+                  currentDailyDate:
+                    today,
+
+                  createdAt:
+                    FieldValue.serverTimestamp(),
+                }
+              );
+            }
+
+            // ------------------------------------------------
+            // PREVIOUS MINING REWARD
+            // ------------------------------------------------
 
             if (
               completedPrevious
@@ -2134,18 +2185,15 @@ const claimMining =
                   miningEndsAt:
                     previous.miningEndsAt,
 
-                  miningDay:
-                    currentStreak,
-
                   createdAt:
                     FieldValue.serverTimestamp(),
                 }
               );
             }
 
-            // --------------------------------------------------
+            // ------------------------------------------------
             // NEW MINING HISTORY
-            // --------------------------------------------------
+            // ------------------------------------------------
 
             transaction.set(
               getHistoryCollection(uid)
@@ -2157,8 +2205,7 @@ const claimMining =
                 title:
                   "Stella Mining Started 🐱⛏️",
 
-                amount:
-                  0,
+                amount: 0,
 
                 hashRate:
                   rate,
@@ -2171,17 +2218,17 @@ const claimMining =
 
                 dailyHashRateBonus:
                   dailyHashRateBonus(
-                    newStreak
+                    daily.streak
                   ),
 
                 dailyStreak:
-                  newStreak,
+                  daily.streak,
 
                 streak:
-                  newStreak,
+                  daily.streak,
 
-                miningCycle:
-                  newStreak,
+                miningDay:
+                  daily.streak,
 
                 miningDurationMs:
                   MINING_DURATION_MS,
@@ -2203,10 +2250,6 @@ const claimMining =
               }
             );
 
-            // --------------------------------------------------
-            // RESPONSE
-            // --------------------------------------------------
-
             return {
               success: true,
 
@@ -2225,32 +2268,33 @@ const claimMining =
               hashRate:
                 rate,
 
+              miningDay:
+                daily.streak,
+
               dailyHashRate:
                 rate,
 
               dailyHashRateBonus:
                 dailyHashRateBonus(
-                  newStreak
+                  daily.streak
                 ),
 
               dailyStreak:
-                newStreak,
+                daily.streak,
 
               streak:
-                newStreak,
+                daily.streak,
 
               nextDailyHashRate:
-                dailyHashRate(
-                  Math.min(
-                    DAILY_HASH_RATE_MAX_DAY,
-                    newStreak + 1
-                  )
+                nextDailyHashRate(
+                  data,
+                  today
                 ),
 
               nextDailyStreak:
-                Math.min(
-                  DAILY_HASH_RATE_MAX_DAY,
-                  newStreak + 1
+                nextDailyStreak(
+                  data,
+                  today
                 ),
 
               miningHashRate:
@@ -2286,13 +2330,10 @@ const claimMining =
               rewardConsumed:
                 true,
 
-              miningDay:
-                newStreak,
-
               message:
                 completedPrevious
-                  ? `🐱✨ Stella keräsi STL:t ja aloitti Mining Day ${newStreak}! Päivän Hash Rate: ${rate.toFixed(4)} HR.`
-                  : `🐱✨ Stella aloitti Mining Day ${newStreak}! Päivän Hash Rate: ${rate.toFixed(4)} HR.`,
+                  ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
+                  : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
             };
           }
         );
@@ -2749,9 +2790,6 @@ const powerBoost =
                 miningHashRate:
                   rate,
 
-                miningDay:
-                  currentMiningDay(data),
-
                 adsToday:
                   newAdsToday,
 
@@ -2821,6 +2859,9 @@ const powerBoost =
                 rate +
                 AD_HASH_RATE_BONUS,
 
+              miningDay:
+                daily.streak,
+
               dailyHashRate:
                 daily.dailyHashRate,
 
@@ -2830,6 +2871,9 @@ const powerBoost =
                 ),
 
               dailyStreak:
+                daily.streak,
+
+              streak:
                 daily.streak,
 
               nextDailyHashRate:
@@ -2843,9 +2887,6 @@ const powerBoost =
                   data,
                   today
                 ),
-
-              miningDay:
-                currentMiningDay(data),
 
               transactionId:
                 authoritativeId,
