@@ -33,7 +33,7 @@ const {
   MAX_CODE_GENERATION_ATTEMPTS,
   MIN_REFERRAL_BONUS,
   REFERRAL_BONUS_SOURCE,
-  REFERRAL_BONUS_SERVER_SIDE,
+  REFERRAL_CALCULATION_SERVER_SIDE,
   ONE_REFERRER_PER_USER,
   ALLOW_SELF_REFERRAL,
   ALLOW_REFERRER_CHANGE,
@@ -58,6 +58,7 @@ const {
 //
 // Tämä estää tilanteen, jossa sama koodi käsitellään
 // useana eri koodina vain kirjainkoon vuoksi.
+//
 // ============================================================
 
 function normalizeReferralCode(
@@ -199,14 +200,27 @@ function generateReferralCode() {
 function generateReferralCodeCandidates(
   attempts = MAX_CODE_GENERATION_ATTEMPTS
 ) {
+  const parsedAttempts =
+    Number(attempts);
+
   const safeAttempts =
-    Math.max(
-      1,
-      Math.floor(
-        Number(attempts) ||
-          MAX_CODE_GENERATION_ATTEMPTS
-      )
-    );
+    Number.isFinite(
+      parsedAttempts
+    )
+      ? Math.max(
+          1,
+          Math.floor(
+            parsedAttempts
+          )
+        )
+      : Math.max(
+          1,
+          Math.floor(
+            Number(
+              MAX_CODE_GENERATION_ATTEMPTS
+            ) || 1
+          )
+        );
 
   const candidates =
     new Set();
@@ -422,9 +436,7 @@ function calculateReferralMiningBonus(
     );
 
   if (
-    !Number.isFinite(
-      bonus
-    ) ||
+    !Number.isFinite(bonus) ||
     bonus <= 0
   ) {
     return 0;
@@ -576,7 +588,10 @@ function normalizeReferralDocument(
   data
 ) {
   const source =
-    data || {};
+    data &&
+    typeof data === "object"
+      ? data
+      : {};
 
   const userId =
     typeof source.userId ===
@@ -635,7 +650,7 @@ function normalizeReferralDocument(
       REFERRAL_BONUS_SOURCE,
 
     serverSide:
-      REFERRAL_BONUS_SERVER_SIDE,
+      REFERRAL_CALCULATION_SERVER_SIDE,
   };
 }
 
@@ -648,7 +663,10 @@ function normalizeUserReferralData(
   data
 ) {
   const source =
-    data || {};
+    data &&
+    typeof data === "object"
+      ? data
+      : {};
 
   const referralCode =
     normalizeReferralCode(
@@ -776,7 +794,7 @@ function buildReferralBonusHistory(
         : null,
 
     serverSide:
-      REFERRAL_BONUS_SERVER_SIDE,
+      REFERRAL_CALCULATION_SERVER_SIDE,
   };
 }
 
@@ -881,13 +899,13 @@ function buildReferralSummary(
       REFERRAL_BONUS_SOURCE,
 
     serverSide:
-      REFERRAL_BONUS_SERVER_SIDE,
+      REFERRAL_CALCULATION_SERVER_SIDE,
   };
 }
 
 
 // ============================================================
-// EXPORTS
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
