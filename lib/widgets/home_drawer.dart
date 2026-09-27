@@ -16,16 +16,36 @@ import 'cat_avatar.dart';
 // - käyttää keskitettyä AppLocalizations-järjestelmää
 // - käyttää Achievementsin omaa lokalisaatiota
 // - tukee kaikkia nykyisiä kieliä
-// - sisältää navigoinnit:
+//
+// Sisältää navigoinnit:
 //   • Language
 //   • About Stelluriini
 //   • White Paper
 //   • Roadmap
-//   • Referral / Kutsutut ystävät
 //   • Achievements
+//   • Referrals
 //   • Transaction History
 //   • Logout
-// - käyttää samaa Stella-visuaalista ilmettä kuin HomePage
+//
+// Referral-näkymässä voidaan myöhemmin näyttää:
+//   • kaikki kutsutut käyttäjät
+//   • aktiiviset käyttäjät
+//   • ei-aktiiviset käyttäjät
+//   • kutsutusta kertynyt referral-bonus
+//
+// TÄRKEÄÄ:
+//
+// Aktiivinen käyttäjä tarkoittaa Stelluriinissa käyttäjää,
+// joka louhii parhaillaan.
+//
+// Pelkkä:
+//   • kirjautuminen
+//   • sovelluksen avaaminen
+//   • viimeksi nähty
+//
+// EI tarkoita aktiivista louhijaa.
+//
+// Varsinainen mining-status tarkistetaan backendistä.
 //
 // ============================================================
 
@@ -48,11 +68,11 @@ const Color pinkAccentColor =
 const Color goldAccentColor =
     Color(0xFFFFD166);
 
-const Color referralAccentColor =
-    Color(0xFFB58CFF);
-
 const Color logoutColor =
     Color(0xFFFF8A8A);
+
+const Color referralColor =
+    Color(0xFF9BE7FF);
 
 // ============================================================
 // 🐱 HOME DRAWER
@@ -65,21 +85,18 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
-
-  // ==========================================================
-  // 🔗 REFERRAL
-  // ==========================================================
-  //
-  // Optional tässä vaiheessa, jotta nykyinen HomePage ei hajoa
-  // ennen kuin sen navigointi päivitetään.
-  //
-  // Se muutetaan seuraavassa vaiheessa toimivaksi ReferralPage-
-  // navigoinniksi.
-  //
-
-  final VoidCallback? onReferralPressed;
-
   final VoidCallback onAchievementsPressed;
+
+  // ==========================================================
+  // 🐾 REFERRALS
+  // ==========================================================
+  //
+  // Avataan kutsuttujen käyttäjien näkymä.
+  //
+  // Varsinainen ReferralPage rakennetaan erikseen.
+  //
+  final VoidCallback onReferralsPressed;
+
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onLogoutPressed;
 
@@ -90,8 +107,8 @@ class HomeDrawer extends StatelessWidget {
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
-    this.onReferralPressed,
     required this.onAchievementsPressed,
+    required this.onReferralsPressed,
     required this.onTransactionHistoryPressed,
     required this.onLogoutPressed,
   });
@@ -633,30 +650,6 @@ class HomeDrawer extends StatelessWidget {
                   ),
 
                   // ------------------------------------------------
-                  // 🔗 REFERRAL / KUTSUTUT
-                  // ------------------------------------------------
-                  //
-                  // Tämä avaa myöhemmin varsinaisen ReferralPage-
-                  // näkymän.
-                  //
-                  // Nyt callback on optional, jotta tämä tiedosto
-                  // voidaan lisätä ilman että nykyinen HomePage
-                  // rikkoutuu.
-                  //
-
-                  _menuItem(
-                    icon:
-                        Icons.group_add_rounded,
-                    title:
-                        'Kutsutut ystävät',
-                    onTap:
-                        onReferralPressed ??
-                            () {},
-                    iconColor:
-                        referralAccentColor,
-                  ),
-
-                  // ------------------------------------------------
                   // ACHIEVEMENTS
                   // ------------------------------------------------
 
@@ -672,6 +665,33 @@ class HomeDrawer extends StatelessWidget {
                         onAchievementsPressed,
                     iconColor:
                         goldAccentColor,
+                  ),
+
+                  // ------------------------------------------------
+                  // 🐾 REFERRALS
+                  // ------------------------------------------------
+                  //
+                  // Tästä avataan kutsuttujen käyttäjien näkymä.
+                  //
+                  // Aktiivinen =
+                  // käyttäjä louhii parhaillaan.
+                  //
+                  // Ei aktiivinen =
+                  // käyttäjä ei tällä hetkellä louhi.
+                  //
+                  // ------------------------------------------------
+
+                  _menuItem(
+                    icon:
+                        Icons.people_alt_rounded,
+                    title:
+                        'Referrals',
+                    onTap:
+                        onReferralsPressed,
+                    iconColor:
+                        referralColor,
+                    badge:
+                        'STELLA',
                   ),
 
                   // ------------------------------------------------
