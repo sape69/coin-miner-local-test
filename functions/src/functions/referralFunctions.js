@@ -154,6 +154,15 @@ function randomReferralCode() {
       )
     );
 
+  if (
+    typeof characters !== "string" ||
+    characters.length === 0
+  ) {
+    throw new Error(
+      "REFERRAL_CODE_CHARACTERS must contain at least one character."
+    );
+  }
+
   for (
     let i = 0;
     i < length;
@@ -216,8 +225,12 @@ async function findUserByReferralCode(
     snapshot.docs[0];
 
   return {
-    ref: document.ref,
-    id: document.id,
+    ref:
+      document.ref,
+
+    id:
+      document.id,
+
     data:
       document.data() || {},
   };
@@ -233,26 +246,16 @@ async function findUserByReferralCode(
 //
 // ÄLÄ lue koko users-kokoelmaa tässä.
 //
-// Aiempi rakenne:
-//
-// users/
-//   user1
-//   user2
-//   user3
-//   ...
-//
-// aiheutti koko users-kokoelman lukemisen jokaisen
-// referral-bonuksen yhteydessä.
-//
-// Uusi rakenne:
+// Käytössä oleva rakenne:
 //
 // system/
 //   statistics/
-//     totalUsers
+//     counters/
+//       totalUsers
 //
 // Dokumentti:
 //
-// system/statistics/totalUsers
+// system/statistics/counters/totalUsers
 //
 // {
 //   count: 123
@@ -324,9 +327,11 @@ async function calculateServerReferralBonus(
 
   if (amount <= 0) {
     return {
-      miningAmount: 0,
+      miningAmount:
+        0,
 
-      totalUsers: 0,
+      totalUsers:
+        0,
 
       bonusPercent:
         DEFAULT_REFERRAL_BONUS_PERCENT,
@@ -334,7 +339,8 @@ async function calculateServerReferralBonus(
       bonusRate:
         getReferralBonusRate(0),
 
-      bonus: 0,
+      bonus:
+        0,
     };
   }
 
@@ -372,22 +378,11 @@ async function calculateServerReferralBonus(
     bonus:
       Math.max(
         0,
-        nonNegative(bonus)
+        nonNegative(
+          bonus
+        )
       ),
   };
-}
-
-// ============================================================
-// REFERRAL HISTORY
-// ============================================================
-
-function getReferralHistoryCollection(
-  uid
-) {
-  return getUserRef(uid)
-    .collection(
-      REFERRAL_HISTORY_COLLECTION
-    );
 }
 
 // ============================================================
@@ -420,7 +415,9 @@ async function createReferralCodeForUser(
           : {};
 
       const referral =
-        getReferralData(data);
+        getReferralData(
+          data
+        );
 
       const existingCode =
         normalizeReferralCode(
@@ -429,8 +426,11 @@ async function createReferralCodeForUser(
 
       if (existingCode) {
         return {
-          code: existingCode,
-          created: false,
+          code:
+            existingCode,
+
+          created:
+            false,
         };
       }
 
@@ -453,6 +453,9 @@ async function createReferralCodeForUser(
           continue;
         }
 
+        const now =
+          FieldValue.serverTimestamp();
+
         transaction.set(
           userRef,
           {
@@ -463,20 +466,23 @@ async function createReferralCodeForUser(
 
               createdAt:
                 referral.createdAt ||
-                FieldValue.serverTimestamp(),
+                now,
 
               updatedAt:
-                FieldValue.serverTimestamp(),
+                now,
             },
           },
           {
-            merge: true,
+            merge:
+              true,
           }
         );
 
         return {
           code,
-          created: true,
+
+          created:
+            true,
         };
       }
 
@@ -495,7 +501,8 @@ async function createReferralCodeForUser(
 const getReferralInfo =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (request) => {
       try {
@@ -519,7 +526,9 @@ const getReferralInfo =
             : {};
 
         const referral =
-          getReferralData(data);
+          getReferralData(
+            data
+          );
 
         let code =
           normalizeReferralCode(
@@ -565,7 +574,8 @@ const getReferralInfo =
           );
 
         return {
-          success: true,
+          success:
+            true,
 
           referralCode:
             code,
@@ -626,7 +636,8 @@ const getReferralInfo =
 const createReferralCode =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (request) => {
       try {
@@ -646,7 +657,8 @@ const createReferralCode =
           );
 
         return {
-          success: true,
+          success:
+            true,
 
           referralCode:
             result.code,
@@ -687,7 +699,8 @@ const createReferralCode =
 const applyReferralCode =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (request) => {
       try {
@@ -819,7 +832,8 @@ const applyReferralCode =
                 },
               },
               {
-                merge: true,
+                merge:
+                  true,
               }
             );
 
@@ -848,12 +862,14 @@ const applyReferralCode =
                 },
               },
               {
-                merge: true,
+                merge:
+                  true,
               }
             );
 
             return {
-              success: true,
+              success:
+                true,
 
               referralApplied:
                 true,
@@ -923,8 +939,11 @@ async function processReferralMiningReward(
     amount <= 0
   ) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -935,8 +954,11 @@ async function processReferralMiningReward(
 
   if (!transactionId) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -954,8 +976,11 @@ async function processReferralMiningReward(
     !referredSnapshot.exists
   ) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -974,8 +999,11 @@ async function processReferralMiningReward(
 
   if (!referrerUid) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -985,8 +1013,11 @@ async function processReferralMiningReward(
       referredUid
   ) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -1012,9 +1043,14 @@ async function processReferralMiningReward(
     existingReward.exists
   ) {
     return {
-      rewarded: false,
-      duplicate: true,
-      bonus: 0,
+      rewarded:
+        false,
+
+      duplicate:
+        true,
+
+      bonus:
+        0,
     };
   }
 
@@ -1039,8 +1075,11 @@ async function processReferralMiningReward(
     )
   ) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -1062,8 +1101,11 @@ async function processReferralMiningReward(
     !referrerSnapshot.exists
   ) {
     return {
-      rewarded: false,
-      bonus: 0,
+      rewarded:
+        false,
+
+      bonus:
+        0,
     };
   }
 
@@ -1114,7 +1156,8 @@ async function processReferralMiningReward(
         FieldValue.serverTimestamp(),
     },
     {
-      merge: true,
+      merge:
+        true,
     }
   );
 
@@ -1166,7 +1209,8 @@ async function processReferralMiningReward(
         FieldValue.serverTimestamp(),
     },
     {
-      merge: false,
+      merge:
+        false,
     }
   );
 
@@ -1219,9 +1263,11 @@ async function processReferralMiningReward(
   );
 
   return {
-    rewarded: true,
+    rewarded:
+      true,
 
-    duplicate: false,
+    duplicate:
+      false,
 
     referrerUid,
 
@@ -1256,7 +1302,8 @@ async function processReferralMiningReward(
 const getReferralStatistics =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (request) => {
       try {
@@ -1280,7 +1327,9 @@ const getReferralStatistics =
             : {};
 
         const referral =
-          getReferralData(data);
+          getReferralData(
+            data
+          );
 
         const totalUsers =
           await getTotalUserCount();
@@ -1296,7 +1345,8 @@ const getReferralStatistics =
           );
 
         return {
-          success: true,
+          success:
+            true,
 
           referralCode:
             normalizeReferralCode(
@@ -1364,11 +1414,15 @@ const getReferralStatistics =
 
 module.exports = {
   getReferralInfo,
+
   createReferralCode,
+
   applyReferralCode,
+
   getReferralStatistics,
 
   // Backend-only function.
+  //
   // Tätä käytetään miningFunctions.js:n
   // hyväksytyn mining rewardin yhteydessä.
   processReferralMiningReward,
