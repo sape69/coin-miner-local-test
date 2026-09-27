@@ -6,22 +6,19 @@
 //
 // Stella Mining.
 //
-// IMPORTANT:
-// AdMob reward is NOT an STL token reward.
-//
-// AdMob only authorizes:
+// AdMob ei anna suoraan STL-tokenia.
+// AdMob vahvistaa:
 // - Mining Start
 // - Power Boost
 //
 // Mining:
 // Hash Rate × STL / Hash / Hour × elapsed time.
 //
-// Power Boost:
-// Temporary additional Hash Rate during the active boost.
+// Achievement reward:
+// Achievementin avautuminen maksaa achievementin reward-arvon
+// käyttäjän miningBalance-saldoon.
 //
-// IMPORTANT:
-// All authoritative mining and reward decisions happen
-// server-side.
+// Achievement target/reward tulee achievementFunctions.js:stä.
 // ============================================================
 
 const {
@@ -68,6 +65,18 @@ const {
   getVerifiedPowerBoostReward,
   validateVerifiedRewardDocument,
 } = require("../services/admobRewardService");
+
+// ============================================================
+// 🏆 ACHIEVEMENTS
+// ============================================================
+//
+// Targetit ja palkinnot ovat keskitettynä
+// achievementFunctions.js-tiedostossa.
+// ============================================================
+
+const {
+  getAchievementDefinition,
+} = require("./achievementFunctions");
 
 // ============================================================
 // VALUE HELPERS
@@ -235,23 +244,6 @@ function timestampMs(value) {
 // ============================================================
 // DAILY HASH RATE
 // ============================================================
-//
-// IMPORTANT FIX:
-//
-// Päivän Hash Rate ei saa jäädä kiinni
-// DAILY_HASH_RATE_MAX_DAY-arvoon.
-//
-// Päivä määräytyy nyt suoraan streakin perusteella:
-//
-// Day 1 -> START
-// Day 2 -> START + STEP
-// Day 3 -> START + STEP * 2
-// Day 4 -> START + STEP * 3
-// ...
-//
-// Ainoa lopullinen rajoitus on MAX_DAILY_HASH_RATE.
-//
-// ============================================================
 
 function dailyHashRate(streak) {
   const day =
@@ -321,7 +313,7 @@ function dailyStreak(data) {
 }
 
 // ============================================================
-// DAILY CLAIM CALCULATION
+// DAILY CLAIM
 // ============================================================
 
 function nextDailyClaim(
@@ -336,11 +328,6 @@ function nextDailyClaim(
   const current =
     dailyStreak(data);
 
-  // ----------------------------------------------------------
-  // Same UTC day:
-  // Do NOT increase streak.
-  // ----------------------------------------------------------
-
   if (last === today) {
     const streak =
       Math.max(
@@ -350,17 +337,11 @@ function nextDailyClaim(
 
     return {
       claimedToday: true,
-
       streak,
-
       dailyHashRate:
         dailyHashRate(streak),
     };
   }
-
-  // ----------------------------------------------------------
-  // Calculate previous UTC day.
-  // ----------------------------------------------------------
 
   const yesterday =
     new Date(
@@ -376,11 +357,6 @@ function nextDailyClaim(
       .toISOString()
       .slice(0, 10);
 
-  // ----------------------------------------------------------
-  // Consecutive day:
-  // increase streak by exactly 1.
-  // ----------------------------------------------------------
-
   const streak =
     last === yesterdayString &&
     current > 0
@@ -389,9 +365,7 @@ function nextDailyClaim(
 
   return {
     claimedToday: false,
-
     streak,
-
     dailyHashRate:
       dailyHashRate(streak),
   };
@@ -916,12 +890,9 @@ async function calculateMiningCycle(
 
   return {
     baseMining,
-
     adBoostMining,
-
     boostMilliseconds:
       boostMs,
-
     totalMining:
       Math.max(
         0,
@@ -1004,7 +975,7 @@ async function currentUnclaimedMining(
 }
 
 // ============================================================
-// ACHIEVEMENTS
+// 🏆 ACHIEVEMENT HELPERS
 // ============================================================
 
 function achievementCollection(uid) {
@@ -1035,9 +1006,7 @@ async function achievementData(
 }
 
 function achievementUpdate(
-  id,
-  target,
-  reward,
+  definition,
   progress,
   existing,
   now
@@ -1053,7 +1022,17 @@ function achievementUpdate(
   const safeTarget =
     Math.max(
       0,
-      number(target)
+      number(
+        definition.target
+      )
+    );
+
+  const safeReward =
+    Math.max(
+      0,
+      number(
+        definition.reward
+      )
     );
 
   const safeProgress =
@@ -1075,8 +1054,12 @@ function achievementUpdate(
       safeProgress >= safeTarget
     );
 
+  const rewardClaimed =
+    existing.rewardClaimed === true;
+
   const update = {
-    achievementId: id,
+    achievementId:
+      definition.id,
 
     progress:
       safeProgress,
@@ -1084,12 +1067,12 @@ function achievementUpdate(
     target:
       safeTarget,
 
-    reward,
+    reward:
+      safeReward,
 
     unlocked,
 
-    rewardClaimed:
-      existing.rewardClaimed === true,
+    rewardClaimed,
 
     updatedAt:
       now,
@@ -1102,10 +1085,41 @@ function achievementUpdate(
   ) {
     update.unlockedAt =
       now;
+  } else if (
+    existing.unlockedAt
+  ) {
+    update.unlockedAt =
+      existing.unlockedAt;
+  }
+
+  if (
+    existing.rewardClaimedAt
+  ) {
+    update.rewardClaimedAt =
+      existing.rewardClaimedAt;
   }
 
   return update;
 }
+
+// ============================================================
+// 🏆 UPDATE MINING ACHIEVEMENTS
+// ============================================================
+//
+// TÄRKEÄ MUUTOS:
+//
+// Kun achievement avautuu:
+//
+// 1. progress päivittyy
+// 2. unlocked = true
+// 3. rewardClaimed = true
+// 4. achievement reward lisätään miningBalanceen
+// 5. historyyn tallennetaan achievement_reward
+//
+// Kaikki tapahtuu saman Firestore-transaktion sisällä.
+//
+// rewardClaimed estää kaksinkertaisen palkinnon.
+// ============================================================
 
 async function updateMiningAchievements(
   transaction,
@@ -1114,81 +1128,135 @@ async function updateMiningAchievements(
   started,
   now
 ) {
-  const first =
-    await achievementData(
-      transaction,
-      uid,
+  const firstDefinition =
+    getAchievementDefinition(
       "first_paw"
     );
 
-  const miner =
-    await achievementData(
-      transaction,
-      uid,
+  const minerDefinition =
+    getAchievementDefinition(
       "little_miner"
     );
 
-  const hunter =
-    await achievementData(
-      transaction,
-      uid,
+  const hunterDefinition =
+    getAchievementDefinition(
       "stl_hunter"
     );
 
-  if (started) {
-    transaction.set(
-      first.ref,
+  const definitions = [
+    firstDefinition,
+    minerDefinition,
+    hunterDefinition,
+  ].filter(Boolean);
+
+  const collectedAmount =
+    nonNegative(collected);
+
+  const results = [];
+
+  let totalReward = 0;
+
+  for (
+    const definition of definitions
+  ) {
+    const item =
+      await achievementData(
+        transaction,
+        uid,
+        definition.id
+      );
+
+    let progress =
+      nonNegative(
+        item.data.progress
+      );
+
+    if (
+      definition.id ===
+      "first_paw"
+    ) {
+      if (started) {
+        progress =
+          Math.max(
+            progress,
+            definition.target
+          );
+      }
+    } else if (
+      definition.id ===
+        "little_miner" ||
+      definition.id ===
+        "stl_hunter"
+    ) {
+      if (collectedAmount > 0) {
+        progress +=
+          collectedAmount;
+      }
+    }
+
+    const wasUnlocked =
+      item.data.unlocked === true;
+
+    const wasRewardClaimed =
+      item.data.rewardClaimed === true;
+
+    const update =
       achievementUpdate(
-        "first_paw",
-        1,
-        2,
-        1,
-        first.data,
+        definition,
+        progress,
+        item.data,
         now
-      ),
+      );
+
+    const newlyRewardable =
+      update.unlocked === true &&
+      wasRewardClaimed === false;
+
+    if (newlyRewardable) {
+      update.rewardClaimed =
+        true;
+
+      update.rewardClaimedAt =
+        now;
+
+      totalReward +=
+        Math.max(
+          0,
+          number(
+            definition.reward
+          )
+        );
+
+      results.push({
+        achievementId:
+          definition.id,
+
+        reward:
+          Math.max(
+            0,
+            number(
+              definition.reward
+            )
+          ),
+
+        newlyUnlocked:
+          !wasUnlocked,
+      });
+    }
+
+    transaction.set(
+      item.ref,
+      update,
       {
         merge: true,
       }
     );
   }
 
-  if (collected <= 0) {
-    return;
-  }
-
-  transaction.set(
-    miner.ref,
-    achievementUpdate(
-      "little_miner",
-      10,
-      5,
-      nonNegative(
-        miner.data.progress
-      ) + collected,
-      miner.data,
-      now
-    ),
-    {
-      merge: true,
-    }
-  );
-
-  transaction.set(
-    hunter.ref,
-    achievementUpdate(
-      "stl_hunter",
-      100,
-      10,
-      nonNegative(
-        hunter.data.progress
-      ) + collected,
-      hunter.data,
-      now
-    ),
-    {
-      merge: true,
-    }
-  );
+  return {
+    totalReward,
+    rewards: results,
+  };
 }
 
 // ============================================================
@@ -1859,26 +1927,6 @@ const claimMining =
             const authoritativeId =
               validated.transactionId;
 
-            // ------------------------------------------------
-            // DAILY STREAK
-            // ------------------------------------------------
-            //
-            // TÄMÄ ON TÄRKEÄ KORJAUS:
-            //
-            // daily.streak lasketaan aina nykyisen
-            // lastDailyDate-arvon ja tämän UTC-päivän
-            // perusteella.
-            //
-            // Jos:
-            // lastDailyDate = eilen
-            //
-            // ja:
-            // today = tänään
-            //
-            // streak kasvaa +1.
-            //
-            // ------------------------------------------------
-
             const daily =
               nextDailyClaim(
                 data,
@@ -1899,13 +1947,9 @@ const claimMining =
             let collected = 0;
 
             let previousBase = 0;
-
             let previousBoost = 0;
-
             let previousBoostMs = 0;
-
-            let completedPrevious =
-              false;
+            let completedPrevious = false;
 
             // ------------------------------------------------
             // COMPLETE PREVIOUS MINING CYCLE
@@ -1970,13 +2014,66 @@ const claimMining =
             // ACHIEVEMENTS
             // ------------------------------------------------
 
-            await updateMiningAchievements(
-              transaction,
-              uid,
-              collected,
-              true,
-              now
-            );
+            const achievementResult =
+              await updateMiningAchievements(
+                transaction,
+                uid,
+                collected,
+                true,
+                now
+              );
+
+            const achievementReward =
+              Math.max(
+                0,
+                number(
+                  achievementResult
+                    .totalReward
+                )
+              );
+
+            // ------------------------------------------------
+            // 🐱 ADD ACHIEVEMENT REWARDS TO STL BALANCE
+            // ------------------------------------------------
+
+            if (
+              achievementReward > 0
+            ) {
+              newBalance +=
+                achievementReward;
+
+              for (
+                const reward
+                of achievementResult.rewards
+              ) {
+                transaction.set(
+                  getHistoryCollection(uid)
+                    .doc(),
+                  {
+                    type:
+                      "achievement_reward",
+
+                    title:
+                      "Stella Achievement Reward 🐱🏆✨",
+
+                    achievementId:
+                      reward.achievementId,
+
+                    amount:
+                      reward.reward,
+
+                    balanceAfter:
+                      newBalance,
+
+                    reward:
+                      reward.reward,
+
+                    createdAt:
+                      FieldValue.serverTimestamp(),
+                  }
+                );
+              }
+            }
 
             // ------------------------------------------------
             // NEW MINING CYCLE
@@ -2003,9 +2100,6 @@ const claimMining =
                 streak:
                   daily.streak,
 
-                // IMPORTANT:
-                // Tämä päivitetään vain kun päivän
-                // Mining Start todella tapahtuu.
                 lastDailyDate:
                   today,
 
@@ -2259,6 +2353,11 @@ const claimMining =
 
               collected,
 
+              achievementReward,
+
+              achievementRewards:
+                achievementResult.rewards,
+
               completedPreviousCycle:
                 completedPrevious,
 
@@ -2331,9 +2430,11 @@ const claimMining =
                 true,
 
               message:
-                completedPrevious
-                  ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
-                  : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
+                achievementReward > 0
+                  ? `🐱🏆✨ Stella avasi achievement-palkinnon! +${achievementReward} STL.`
+                  : completedPrevious
+                    ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
+                    : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
             };
           }
         );
