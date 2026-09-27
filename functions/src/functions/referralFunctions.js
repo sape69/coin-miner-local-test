@@ -229,25 +229,83 @@ async function findUserByReferralCode(
 //
 // Referral milestone määräytyy käyttäjämäärän perusteella.
 //
-// Tämä lasketaan serverillä.
-// Client ei voi lähettää käyttäjämäärää.
+// TÄRKEÄ:
+//
+// ÄLÄ lue koko users-kokoelmaa tässä.
+//
+// Aiempi rakenne:
+//
+// users/
+//   user1
+//   user2
+//   user3
+//   ...
+//
+// aiheutti koko users-kokoelman lukemisen jokaisen
+// referral-bonuksen yhteydessä.
+//
+// Uusi rakenne:
+//
+// system/
+//   statistics/
+//     totalUsers
+//
+// Dokumentti:
+//
+// system/statistics/totalUsers
+//
+// {
+//   count: 123
+// }
+//
+// Laskuri päivitetään uuden käyttäjän rekisteröityessä.
 //
 // ============================================================
+
+const TOTAL_USERS_STATISTICS_REF =
+  db
+    .collection("system")
+    .doc("statistics");
+
+const TOTAL_USERS_DOCUMENT_ID =
+  "totalUsers";
 
 async function getTotalUserCount(
   transaction = null
 ) {
-  const usersRef =
-    db.collection("users");
+  const totalUsersRef =
+    TOTAL_USERS_STATISTICS_REF
+      .collection("counters")
+      .doc(
+        TOTAL_USERS_DOCUMENT_ID
+      );
 
   const snapshot =
     transaction
-      ? await transaction.get(usersRef)
-      : await usersRef.get();
+      ? await transaction.get(
+          totalUsersRef
+        )
+      : await totalUsersRef.get();
+
+  if (!snapshot.exists) {
+    console.warn(
+      "🐱 Stelluriini totalUsers counter does not exist yet."
+    );
+
+    return 0;
+  }
+
+  const data =
+    snapshot.data() || {};
 
   return Math.max(
     0,
-    snapshot.size
+    Math.floor(
+      number(
+        data.count,
+        0
+      )
+    )
   );
 }
 
@@ -267,11 +325,15 @@ async function calculateServerReferralBonus(
   if (amount <= 0) {
     return {
       miningAmount: 0,
+
       totalUsers: 0,
+
       bonusPercent:
         DEFAULT_REFERRAL_BONUS_PERCENT,
+
       bonusRate:
         getReferralBonusRate(0),
+
       bonus: 0,
     };
   }
@@ -298,7 +360,8 @@ async function calculateServerReferralBonus(
     );
 
   return {
-    miningAmount: amount,
+    miningAmount:
+      amount,
 
     totalUsers,
 
@@ -840,7 +903,7 @@ const applyReferralCode =
 //
 // Tätä ei ole tarkoitettu clientin kutsuttavaksi.
 //
-// Mining Function kutsuu tätä myöhemmin transactionin sisällä.
+// Mining Function kutsuu tätä transactionin sisällä.
 //
 // ============================================================
 
@@ -1306,7 +1369,7 @@ module.exports = {
   getReferralStatistics,
 
   // Backend-only function.
-  // Tätä käytetään myöhemmin miningFunctions.js:n
+  // Tätä käytetään miningFunctions.js:n
   // hyväksytyn mining rewardin yhteydessä.
   processReferralMiningReward,
 };
