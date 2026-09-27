@@ -16,36 +16,21 @@ import 'cat_avatar.dart';
 // - käyttää keskitettyä AppLocalizations-järjestelmää
 // - käyttää Achievementsin omaa lokalisaatiota
 // - tukee kaikkia nykyisiä kieliä
-//
-// Sisältää navigoinnit:
+// - sisältää navigoinnit:
 //   • Language
 //   • About Stelluriini
 //   • White Paper
 //   • Roadmap
 //   • Achievements
-//   • Referrals
+//   • Referrals / Invited Users
 //   • Transaction History
 //   • Logout
 //
-// Referral-näkymässä voidaan myöhemmin näyttää:
-//   • kaikki kutsutut käyttäjät
-//   • aktiiviset käyttäjät
-//   • ei-aktiiviset käyttäjät
-//   • kutsutusta kertynyt referral-bonus
-//
-// TÄRKEÄÄ:
-//
-// Aktiivinen käyttäjä tarkoittaa Stelluriinissa käyttäjää,
-// joka louhii parhaillaan.
-//
-// Pelkkä:
-//   • kirjautuminen
-//   • sovelluksen avaaminen
-//   • viimeksi nähty
-//
-// EI tarkoita aktiivista louhijaa.
-//
-// Varsinainen mining-status tarkistetaan backendistä.
+// REFERRAL:
+// - käyttäjä voi nähdä kutsumansa käyttäjät
+// - aktiivinen = käyttäjä louhii parhaillaan
+// - ei aktiivinen = käyttäjä ei louhi parhaillaan
+// - referral-bonus lasketaan aina backendissä
 //
 // ============================================================
 
@@ -71,9 +56,6 @@ const Color goldAccentColor =
 const Color logoutColor =
     Color(0xFFFF8A8A);
 
-const Color referralColor =
-    Color(0xFF9BE7FF);
-
 // ============================================================
 // 🐱 HOME DRAWER
 // ============================================================
@@ -86,17 +68,7 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
   final VoidCallback onAchievementsPressed;
-
-  // ==========================================================
-  // 🐾 REFERRALS
-  // ==========================================================
-  //
-  // Avataan kutsuttujen käyttäjien näkymä.
-  //
-  // Varsinainen ReferralPage rakennetaan erikseen.
-  //
   final VoidCallback onReferralsPressed;
-
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onLogoutPressed;
 
@@ -668,16 +640,19 @@ class HomeDrawer extends StatelessWidget {
                   ),
 
                   // ------------------------------------------------
-                  // 🐾 REFERRALS
+                  // 👥 REFERRALS
                   // ------------------------------------------------
                   //
-                  // Tästä avataan kutsuttujen käyttäjien näkymä.
+                  // Täältä avataan käyttäjän kutsumat käyttäjät.
                   //
-                  // Aktiivinen =
+                  // Aktiivinen tarkoittaa:
                   // käyttäjä louhii parhaillaan.
                   //
-                  // Ei aktiivinen =
-                  // käyttäjä ei tällä hetkellä louhi.
+                  // Ei aktiivinen tarkoittaa:
+                  // käyttäjä ei louhi parhaillaan.
+                  //
+                  // Referral-bonus ei lasketa täällä.
+                  // Backend vastaa siitä.
                   //
                   // ------------------------------------------------
 
@@ -685,13 +660,11 @@ class HomeDrawer extends StatelessWidget {
                     icon:
                         Icons.people_alt_rounded,
                     title:
-                        'Referrals',
+                        'Kutsutut',
                     onTap:
                         onReferralsPressed,
                     iconColor:
-                        referralColor,
-                    badge:
-                        'STELLA',
+                        accentColor,
                   ),
 
                   // ------------------------------------------------
