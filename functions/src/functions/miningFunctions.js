@@ -18,7 +18,12 @@
 // Achievementin avautuminen maksaa achievementin reward-arvon
 // käyttäjän miningBalance-saldoon.
 //
+// Referral reward:
+// Kutsujalle maksetaan referralConfig.js:n mukainen bonus
+// vain kutsutun käyttäjän hyväksytystä mining-tuotosta.
+//
 // Achievement target/reward tulee achievementFunctions.js:stä.
+//
 // ============================================================
 
 const {
@@ -69,14 +74,29 @@ const {
 // ============================================================
 // 🏆 ACHIEVEMENTS
 // ============================================================
-//
-// Targetit ja palkinnot ovat keskitettynä
-// achievementFunctions.js-tiedostossa.
-// ============================================================
 
 const {
   getAchievementDefinition,
 } = require("./achievementFunctions");
+
+// ============================================================
+// 🔗 REFERRAL
+// ============================================================
+//
+// Referral-bonus käsitellään backendissä saman Firestore-
+// transaktion sisällä kuin hyväksytty mining-tuotto.
+//
+// Client ei päätä:
+// - referral-prosenttia
+// - bonusmäärää
+// - referreria
+// - mining-tuottoa
+//
+// ============================================================
+
+const {
+  processReferralMiningReward,
+} = require("./referralFunctions");
 
 // ============================================================
 // VALUE HELPERS
@@ -1105,21 +1125,6 @@ function achievementUpdate(
 // ============================================================
 // 🏆 UPDATE MINING ACHIEVEMENTS
 // ============================================================
-//
-// TÄRKEÄ MUUTOS:
-//
-// Kun achievement avautuu:
-//
-// 1. progress päivittyy
-// 2. unlocked = true
-// 3. rewardClaimed = true
-// 4. achievement reward lisätään miningBalanceen
-// 5. historyyn tallennetaan achievement_reward
-//
-// Kaikki tapahtuu saman Firestore-transaktion sisällä.
-//
-// rewardClaimed estää kaksinkertaisen palkinnon.
-// ============================================================
 
 async function updateMiningAchievements(
   transaction,
@@ -2011,6 +2016,51 @@ const claimMining =
             }
 
             // ------------------------------------------------
+            // 🔗 REFERRAL REWARD
+            // ------------------------------------------------
+            //
+            // Referral käsitellään vain silloin, kun edellinen
+            // mining-cycle on oikeasti valmistunut ja sen
+            // hyväksytty tuotto on positiivinen.
+            //
+            // Sama miningTransactionId annetaan myöhemmin
+            // mining_history-tapahtumalle ja referralille.
+            //
+            // Referral bonus menee kutsujan miningBalanceen.
+            // Se EI lisää kutsutun käyttäjän saldoa.
+            //
+            // Tämä suoritetaan ennen transaction.set()-kutsuja,
+            // jotta kaikki transaction-readit tehdään ennen
+            // Firestore-kirjoituksia.
+            // ------------------------------------------------
+
+            let referralResult = {
+              rewarded: false,
+              duplicate: false,
+              bonus: 0,
+            };
+
+            let miningTransactionId = "";
+
+            if (
+              completedPrevious &&
+              collected > 0
+            ) {
+              miningTransactionId =
+                getHistoryCollection(uid)
+                  .doc()
+                  .id;
+
+              referralResult =
+                await processReferralMiningReward(
+                  transaction,
+                  uid,
+                  collected,
+                  miningTransactionId
+                );
+            }
+
+            // ------------------------------------------------
             // ACHIEVEMENTS
             // ------------------------------------------------
 
@@ -2234,13 +2284,20 @@ const claimMining =
             // ------------------------------------------------
             // PREVIOUS MINING REWARD
             // ------------------------------------------------
+            //
+            // Käytetään referralin kanssa samaa transaction ID:tä.
+            // Tämä mahdollistaa referral-bonuksen idempotentin
+            // käsittelyn.
+            // ------------------------------------------------
 
             if (
               completedPrevious
             ) {
               transaction.set(
                 getHistoryCollection(uid)
-                  .doc(),
+                  .doc(
+                    miningTransactionId
+                  ),
                 {
                   type:
                     "mining_reward",
@@ -2278,6 +2335,14 @@ const claimMining =
 
                   miningEndsAt:
                     previous.miningEndsAt,
+
+                  miningTransactionId:
+                    miningTransactionId,
+
+                  referralReward:
+                    referralResult.rewarded
+                      ? referralResult.bonus
+                      : 0,
 
                   createdAt:
                     FieldValue.serverTimestamp(),
@@ -2358,6 +2423,33 @@ const claimMining =
               achievementRewards:
                 achievementResult.rewards,
 
+              // ------------------------------------------------
+              // 🔗 REFERRAL RESULT
+              // ------------------------------------------------
+
+              referralReward:
+                referralResult.rewarded
+                  ? referralResult.bonus
+                  : 0,
+
+              referralRewarded:
+                referralResult.rewarded === true,
+
+              referralDuplicate:
+                referralResult.duplicate === true,
+
+              referralUid:
+                referralResult.referrerUid ||
+                null,
+
+              referralBonusPercent:
+                referralResult.bonusPercent ||
+                0,
+
+              referralBonusRate:
+                referralResult.bonusRate ||
+                0,
+
               completedPreviousCycle:
                 completedPrevious,
 
@@ -2392,9 +2484,9 @@ const claimMining =
 
               nextDailyStreak:
                 nextDailyStreak(
-                  data,
-                  today
-                ),
+                data,
+                today
+              ),
 
               miningHashRate:
                 rate,
@@ -2430,11 +2522,13 @@ const claimMining =
                 true,
 
               message:
-                achievementReward > 0
-                  ? `🐱🏆✨ Stella avasi achievement-palkinnon! +${achievementReward} STL.`
-                  : completedPrevious
-                    ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
-                    : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
+                referralResult.rewarded
+                  ? `🐱🔗✨ Referral-bonus ${referralResult.bonus.toFixed(4)} STL maksettiin kutsujalle.`
+                  : achievementReward > 0
+                    ? `🐱🏆✨ Stella avasi achievement-palkinnon! +${achievementReward} STL.`
+                    : completedPrevious
+                      ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
+                      : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
             };
           }
         );
