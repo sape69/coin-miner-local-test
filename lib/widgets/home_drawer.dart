@@ -21,6 +21,7 @@ import 'cat_avatar.dart';
 //   • About Stelluriini
 //   • White Paper
 //   • Roadmap
+//   • Referral / Kutsutut ystävät
 //   • Achievements
 //   • Transaction History
 //   • Logout
@@ -47,6 +48,9 @@ const Color pinkAccentColor =
 const Color goldAccentColor =
     Color(0xFFFFD166);
 
+const Color referralAccentColor =
+    Color(0xFFB58CFF);
+
 const Color logoutColor =
     Color(0xFFFF8A8A);
 
@@ -61,6 +65,20 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
+
+  // ==========================================================
+  // 🔗 REFERRAL
+  // ==========================================================
+  //
+  // Optional tässä vaiheessa, jotta nykyinen HomePage ei hajoa
+  // ennen kuin sen navigointi päivitetään.
+  //
+  // Se muutetaan seuraavassa vaiheessa toimivaksi ReferralPage-
+  // navigoinniksi.
+  //
+
+  final VoidCallback? onReferralPressed;
+
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onLogoutPressed;
@@ -72,6 +90,7 @@ class HomeDrawer extends StatelessWidget {
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
+    this.onReferralPressed,
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onLogoutPressed,
@@ -611,6 +630,30 @@ class HomeDrawer extends StatelessWidget {
                     ),
                     onTap:
                         onRoadmapPressed,
+                  ),
+
+                  // ------------------------------------------------
+                  // 🔗 REFERRAL / KUTSUTUT
+                  // ------------------------------------------------
+                  //
+                  // Tämä avaa myöhemmin varsinaisen ReferralPage-
+                  // näkymän.
+                  //
+                  // Nyt callback on optional, jotta tämä tiedosto
+                  // voidaan lisätä ilman että nykyinen HomePage
+                  // rikkoutuu.
+                  //
+
+                  _menuItem(
+                    icon:
+                        Icons.group_add_rounded,
+                    title:
+                        'Kutsutut ystävät',
+                    onTap:
+                        onReferralPressed ??
+                            () {},
+                    iconColor:
+                        referralAccentColor,
                   ),
 
                   // ------------------------------------------------
