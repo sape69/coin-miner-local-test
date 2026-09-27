@@ -16,6 +16,9 @@
 // Referral-bonus muodostuu ainoastaan kutsutun käyttäjän
 // hyväksytystä louhintatuotosta.
 //
+// Client ei päätä referral-bonuksen määrää.
+// Backend laskee bonuksen server-side.
+//
 // ============================================================
 
 
@@ -35,10 +38,7 @@ const DEFAULT_REFERRAL_BONUS_PERCENT = 5;
 // 📉 REFERRAL MILESTONES
 // ============================================================
 //
-// Referral-bonus voidaan porrastaa järjestelmän kokonaiskäyttäjien
-// määrän perusteella.
-//
-// Esimerkki:
+// Referral-bonus porrastuu järjestelmän käyttäjämäärän mukaan.
 //
 // 0 - 999 käyttäjää
 //     → 5 %
@@ -54,6 +54,11 @@ const DEFAULT_REFERRAL_BONUS_PERCENT = 5;
 //
 // 25 000+ käyttäjää
 //     → 1 %
+//
+// HUOM:
+//
+// Lista pidetään suurimmasta milestone-arvosta
+// pienimpään, jotta oikea taso löytyy heti.
 //
 // ============================================================
 
@@ -84,7 +89,7 @@ const REFERRAL_MILESTONES = [
 // 👤 REFERRAL RELATIONSHIP
 // ============================================================
 //
-// YHDELLÄ KÄYTTÄJÄLLÄ voi olla vain yksi kutsuja.
+// Yhdellä käyttäjällä voi olla vain yksi kutsuja.
 //
 // Tämä EI rajoita kutsujan kutsumien käyttäjien määrää.
 //
@@ -97,7 +102,7 @@ const REFERRAL_MILESTONES = [
 //   ├── Käyttäjä E
 //   └── ...
 //
-// Kutsujalla EI ole ylärajaa.
+// Kutsujalla ei ole ylärajaa.
 //
 // ============================================================
 
@@ -108,7 +113,7 @@ const ONE_REFERRER_PER_USER = true;
 // 🔄 REFERRER CHANGE
 // ============================================================
 //
-// Referral-suhdetta ei voi vaihtaa normaalisti sen jälkeen,
+// Referral-suhdetta ei voi vaihtaa sen jälkeen,
 // kun käyttäjälle on asetettu kutsuja.
 //
 // ============================================================
@@ -163,9 +168,6 @@ const REFERRAL_CODE_CHARACTERS =
 // Kuinka monta kertaa järjestelmä yrittää luoda uuden
 // referral-koodin, jos satunnainen koodi on jo käytössä.
 //
-// Tämä estää referral-koodin luonnin jäämisen
-// määrittelemättömään tilaan.
-//
 // ============================================================
 
 const MAX_CODE_GENERATION_ATTEMPTS = 20;
@@ -175,9 +177,14 @@ const MAX_CODE_GENERATION_ATTEMPTS = 20;
 // 💰 MINIMUM REFERRAL BONUS
 // ============================================================
 //
-// Referral-laskennan tekninen minimiraja.
+// Referral-bonuksen tekninen minimiraja.
+//
+// 0 tarkoittaa, ettei erillistä STL-määrärajaa aseteta.
 //
 // Tämä EI ole käyttäjän STL-nostoraja.
+//
+// Varsinaisen bonuksen täytyy kuitenkin olla positiivinen,
+// jotta referral-tapahtuma voidaan kirjata.
 //
 // ============================================================
 
@@ -190,7 +197,7 @@ const MIN_REFERRAL_BONUS = 0;
 //
 // Referral-bonus syntyy vain hyväksytystä mining-tuotosta.
 //
-// Mainosten katsomisesta ei makseta suoraan referral-bonusta.
+// Mainoksen katsomisesta ei makseta suoraan referral-bonusta.
 //
 // ============================================================
 
@@ -219,10 +226,7 @@ const REFERRAL_CALCULATION_SERVER_SIDE = true;
 // 📜 REFERRAL HISTORY
 // ============================================================
 //
-// Referral-tapahtumille voidaan käyttää omaa historiaa.
-//
-// Varsinainen STL-kirjaus tehdään myöhemmin mining-järjestelmän
-// kanssa.
+// Referral-tapahtumille käytetään omaa historiaa.
 //
 // ============================================================
 
@@ -234,8 +238,8 @@ const REFERRAL_HISTORY_COLLECTION =
 // 👤 USER REFERRAL DATA
 // ============================================================
 //
-// Käyttäjän referral-tiedot voidaan säilyttää myös käyttäjän
-// omassa Firestore-dokumentissa.
+// Käyttäjän referral-tiedot säilytetään käyttäjän
+// omassa Firestore-dokumentissa tässä kentässä.
 //
 // ============================================================
 
@@ -256,14 +260,17 @@ const REFERRAL_DATA_FIELD =
 function getReferralBonusPercent(
   totalUsers,
 ) {
+  const numericUsers =
+    Number(totalUsers);
+
   const userCount =
     Number.isFinite(
-      Number(totalUsers),
+      numericUsers,
     )
       ? Math.max(
           0,
           Math.floor(
-            Number(totalUsers),
+            numericUsers,
           ),
         )
       : 0;
@@ -271,15 +278,42 @@ function getReferralBonusPercent(
   for (
     const milestone of REFERRAL_MILESTONES
   ) {
+    const minUsers =
+      Number(
+        milestone.minUsers,
+      );
+
+    const bonusPercent =
+      Number(
+        milestone.bonusPercent,
+      );
+
+    if (
+      !Number.isFinite(
+        minUsers,
+      ) ||
+      !Number.isFinite(
+        bonusPercent,
+      )
+    ) {
+      continue;
+    }
+
     if (
       userCount >=
-      milestone.minUsers
+      minUsers
     ) {
-      return milestone.bonusPercent;
+      return Math.max(
+        0,
+        bonusPercent,
+      );
     }
   }
 
-  return DEFAULT_REFERRAL_BONUS_PERCENT;
+  return Math.max(
+    0,
+    DEFAULT_REFERRAL_BONUS_PERCENT,
+  );
 }
 
 
@@ -287,9 +321,7 @@ function getReferralBonusPercent(
 // 🔄 GET REFERRAL BONUS RATE
 // ============================================================
 //
-// ReferralService käyttää tätä funktiota.
-//
-// Palautusarvo on desimaalimuodossa:
+// Muuttaa prosenttiluvun desimaalimuotoon.
 //
 // 5 % = 0.05
 // 4 % = 0.04
@@ -339,7 +371,9 @@ function calculateReferralBonus(
     Number(miningAmount);
 
   if (
-    !Number.isFinite(amount) ||
+    !Number.isFinite(
+      amount,
+    ) ||
     amount <= 0
   ) {
     return 0;
@@ -350,12 +384,24 @@ function calculateReferralBonus(
       totalUsers,
     );
 
+  if (
+    !Number.isFinite(
+      rate,
+    ) ||
+    rate <= 0
+  ) {
+    return 0;
+  }
+
   const bonus =
     amount * rate;
 
   if (
-    !Number.isFinite(bonus) ||
-    bonus <= MIN_REFERRAL_BONUS
+    !Number.isFinite(
+      bonus,
+    ) ||
+    bonus <=
+      MIN_REFERRAL_BONUS
   ) {
     return 0;
   }
@@ -368,7 +414,9 @@ function calculateReferralBonus(
 // 🛡️ VALIDATE REFERRAL BONUS
 // ============================================================
 //
-// Varmistaa, että laskettu referral-bonus on kelvollinen.
+// Varmistaa, että referral-bonus on kelvollinen.
+//
+// Bonus ei voi olla negatiivinen eikä nolla.
 //
 // ============================================================
 
@@ -379,8 +427,11 @@ function isValidReferralBonus(
     Number(bonus);
 
   return (
-    Number.isFinite(amount) &&
-    amount > MIN_REFERRAL_BONUS
+    Number.isFinite(
+      amount,
+    ) &&
+    amount >
+      MIN_REFERRAL_BONUS
   );
 }
 
