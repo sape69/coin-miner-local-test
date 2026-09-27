@@ -10,39 +10,13 @@ import 'cat_avatar.dart';
 //
 // Sovelluksen päävalikko.
 //
-// Tämä widget:
-// - käyttää Stelluriinin violetti/pinkki-teemaa
-// - käyttää samaa languageCode-arvoa kuin HomePage
-// - käyttää keskitettyä AppLocalizations-järjestelmää
-// - käyttää Achievementsin omaa lokalisaatiota
-// - tukee kaikkia nykyisiä kieliä
+// Referral-osio:
+// - näyttää kutsutut käyttäjät
+// - näyttää aktiiviset / ei-aktiiviset kutsutut
+// - aktiivinen tarkoittaa käyttäjää, joka louhii parhaillaan
+// - avaa erillisen Referral-näkymän callbackin kautta
 //
-// Valikko sisältää:
-// • Language
-// • About Stelluriini
-// • White Paper
-// • Roadmap
-// • Referrals
-// • Achievements
-// • Transaction History
-// • Logout
-//
-// REFERRALS:
-//
-// Referrals avaa myöhemmin oman referral-näkymän,
-// jossa käyttäjä näkee:
-// • kuinka monta käyttäjää hän on kutsunut
-// • ketkä kutsutuista louhivat parhaillaan
-// • ketkä eivät tällä hetkellä louhi
-// • aktiivisten kutsuttujen määrän
-//
-// TÄRKEÄÄ:
-//
-// "Aktiivinen" tarkoittaa tässä projektissa:
-// kutsuttu käyttäjä louhii parhaillaan.
-//
-// Referral-bonuksen määrä ei määräydy tämän UI:n perusteella.
-// Backend laskee referral-bonukset server-side.
+// Referral-bonus lasketaan edelleen backendissä.
 //
 // ============================================================
 
@@ -65,11 +39,14 @@ const Color pinkAccentColor =
 const Color goldAccentColor =
     Color(0xFFFFD166);
 
+const Color activeColor =
+    Color(0xFF70F0A8);
+
+const Color inactiveColor =
+    Color(0xFF8D879F);
+
 const Color logoutColor =
     Color(0xFFFF8A8A);
-
-const Color activeColor =
-    Color(0xFF72F6B0);
 
 // ============================================================
 // 🐱 HOME DRAWER
@@ -82,15 +59,9 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
-
-  // ==========================================================
-  // 👥 REFERRALS
-  // ==========================================================
-
-  final VoidCallback onReferralsPressed;
-
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
+  final VoidCallback onReferralPressed;
   final VoidCallback onLogoutPressed;
 
   const HomeDrawer({
@@ -100,9 +71,9 @@ class HomeDrawer extends StatelessWidget {
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
-    required this.onReferralsPressed,
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
+    required this.onReferralPressed,
     required this.onLogoutPressed,
   });
 
@@ -302,17 +273,8 @@ class HomeDrawer extends StatelessWidget {
   // ==========================================================
   // 👥 REFERRAL MENU ITEM
   // ==========================================================
-  //
-  // Tämä avaa referral-näkymän.
-  //
-  // Aktiivisuutta ei päätetä tässä Drawerissa.
-  //
-  // Referral-näkymä saa myöhemmin backendiltä tiedon siitä,
-  // louhiiko kutsuttu käyttäjä parhaillaan.
-  //
-  // ==========================================================
 
-  Widget _referralMenuItem() {
+  Widget _referralItem() {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
@@ -325,12 +287,28 @@ class HomeDrawer extends StatelessWidget {
         child: InkWell(
           borderRadius:
               BorderRadius.circular(16),
-          onTap: onReferralsPressed,
+          onTap: onReferralPressed,
           child: Container(
             padding:
                 const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
+            ),
+            decoration:
+                BoxDecoration(
+              color:
+                  activeColor.withValues(
+                alpha: 0.035,
+              ),
+              borderRadius:
+                  BorderRadius.circular(16),
+              border:
+                  Border.all(
+                color:
+                    activeColor.withValues(
+                  alpha: 0.08,
+                ),
+              ),
             ),
             child: Row(
               children: [
@@ -351,10 +329,10 @@ class HomeDrawer extends StatelessWidget {
                           Alignment.bottomRight,
                       colors: [
                         accentColor.withValues(
-                          alpha: 0.30,
+                          alpha: 0.28,
                         ),
                         activeColor.withValues(
-                          alpha: 0.13,
+                          alpha: 0.16,
                         ),
                       ],
                     ),
@@ -366,12 +344,13 @@ class HomeDrawer extends StatelessWidget {
                         Border.all(
                       color:
                           activeColor.withValues(
-                        alpha: 0.22,
+                        alpha: 0.20,
                       ),
                     ),
                   ),
                   child: const Icon(
-                    Icons.groups_rounded,
+                    Icons
+                        .groups_rounded,
                     color:
                         activeColor,
                     size: 23,
@@ -383,14 +362,13 @@ class HomeDrawer extends StatelessWidget {
                 ),
 
                 // ==================================================
-                // TITLE + DESCRIPTION
+                // REFERRAL TITLE
                 // ==================================================
 
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         _t('referrals'),
@@ -413,7 +391,7 @@ class HomeDrawer extends StatelessWidget {
 
                       Text(
                         _t(
-                          'referralsDescription',
+                          'referralMiningActivity',
                         ),
                         maxLines: 1,
                         overflow:
@@ -423,7 +401,7 @@ class HomeDrawer extends StatelessWidget {
                           color:
                               Colors.white
                                   .withValues(
-                            alpha: 0.48,
+                            alpha: 0.52,
                           ),
                           fontSize: 11,
                           fontWeight:
@@ -434,17 +412,15 @@ class HomeDrawer extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(
-                  width: 4,
-                ),
-
                 // ==================================================
-                // PEOPLE INDICATOR
+                // PEOPLE ICON
                 // ==================================================
 
                 Container(
-                  width: 30,
-                  height: 30,
+                  padding:
+                      const EdgeInsets.all(
+                    7,
+                  ),
                   decoration:
                       BoxDecoration(
                     color:
@@ -814,10 +790,10 @@ class HomeDrawer extends StatelessWidget {
                   ),
 
                   // ------------------------------------------------
-                  // REFERRALS
+                  // 👥 REFERRALS
                   // ------------------------------------------------
 
-                  _referralMenuItem(),
+                  _referralItem(),
 
                   // ------------------------------------------------
                   // ACHIEVEMENTS
