@@ -22,7 +22,6 @@
 // IMPORTANT:
 // All authoritative mining and reward decisions happen
 // server-side.
-//
 // ============================================================
 
 const {
@@ -264,20 +263,6 @@ function dailyHashRate(streak) {
   );
 }
 
-// ------------------------------------------------------------
-// DAILY HASH RATE BONUS
-// ------------------------------------------------------------
-//
-// This is the bonus above the normal starting Hash Rate.
-// Example:
-// START = 1
-// DAY 1 = 1       -> bonus 0
-// DAY 2 = 2       -> bonus 1
-// DAY 3 = 3       -> bonus 2
-//
-// This must NOT be confused with the total daily Hash Rate.
-// ------------------------------------------------------------
-
 function dailyHashRateBonus(streak) {
   return Math.max(
     0,
@@ -353,19 +338,6 @@ function nextDailyClaim(
       dailyHashRate(streak),
   };
 }
-
-// ------------------------------------------------------------
-// NEXT DAILY HASH RATE
-// ------------------------------------------------------------
-//
-// If today's daily claim has NOT happened yet:
-// -> today's pending claim is the next claim.
-//
-// If today's claim has already happened:
-// -> tomorrow's rate is the next daily rate.
-//
-// The Hash Rate itself remains capped by dailyHashRate().
-// ------------------------------------------------------------
 
 function nextDailyHashRate(
   data,
@@ -1369,14 +1341,11 @@ const getMiningStatus =
           dailyHashRate:
             daily.dailyHashRate,
 
-          // Actual bonus above the starting Hash Rate.
           dailyHashRateBonus:
             dailyHashRateBonus(
               daily.streak
             ),
 
-          // The next Hash Rate that will become available
-          // through the daily streak system.
           nextDailyHashRate:
             nextRate,
 
@@ -1470,10 +1439,6 @@ const claimMining =
             ? request.data.adMobTransactionId.trim()
             : "";
 
-        // ------------------------------------------------------
-        // FAST PRE-CHECK
-        // ------------------------------------------------------
-
         const earlyNow =
           new Date();
 
@@ -1516,10 +1481,6 @@ const claimMining =
             },
             earlyNow
           );
-
-        // ------------------------------------------------------
-        // ALREADY MINING
-        // ------------------------------------------------------
 
         if (
           earlyStatus.miningActive
@@ -1618,10 +1579,6 @@ const claimMining =
           };
         }
 
-        // ------------------------------------------------------
-        // VERIFIED ADMOB REWARD
-        // ------------------------------------------------------
-
         let verified;
 
         try {
@@ -1665,10 +1622,6 @@ const claimMining =
           );
         }
 
-        // ------------------------------------------------------
-        // ATOMIC TRANSACTION
-        // ------------------------------------------------------
-
         return await db.runTransaction(
           async (transaction) => {
             const now =
@@ -1679,10 +1632,6 @@ const claimMining =
 
             const today =
               getUtcDateString(now);
-
-            // --------------------------------------------------
-            // ALL INITIAL READS FIRST
-            // --------------------------------------------------
 
             const userSnapshot =
               await transaction.get(
@@ -1727,10 +1676,6 @@ const claimMining =
                 },
                 now
               );
-
-            // --------------------------------------------------
-            // CONCURRENT MINING CHECK
-            // --------------------------------------------------
 
             if (
               status.miningActive
@@ -1821,10 +1766,6 @@ const claimMining =
               };
             }
 
-            // --------------------------------------------------
-            // AUTHORITATIVE REWARD VALIDATION
-            // --------------------------------------------------
-
             let validated;
 
             try {
@@ -1851,10 +1792,6 @@ const claimMining =
             const authoritativeId =
               validated.transactionId;
 
-            // --------------------------------------------------
-            // DAILY HASH RATE
-            // ------------------------------------------------------------
-
             const daily =
               nextDailyClaim(
                 data,
@@ -1863,10 +1800,6 @@ const claimMining =
 
             const rate =
               daily.dailyHashRate;
-
-            // --------------------------------------------------
-            // EXISTING BALANCE
-            // --------------------------------------------------
 
             const oldBalance =
               nonNegative(
@@ -1886,10 +1819,6 @@ const claimMining =
 
             let completedPrevious =
               false;
-
-            // --------------------------------------------------
-            // COLLECT COMPLETED PREVIOUS CYCLE
-            // --------------------------------------------------
 
             if (
               previous.valid &&
@@ -1946,10 +1875,6 @@ const claimMining =
               }
             }
 
-            // --------------------------------------------------
-            // ACHIEVEMENTS
-            // --------------------------------------------------
-
             await updateMiningAchievements(
               transaction,
               uid,
@@ -1957,10 +1882,6 @@ const claimMining =
               true,
               now
             );
-
-            // --------------------------------------------------
-            // NEW MINING WINDOW
-            // --------------------------------------------------
 
             const startedAt =
               now;
@@ -1970,10 +1891,6 @@ const claimMining =
                 nowMs +
                   MINING_DURATION_MS
               );
-
-            // --------------------------------------------------
-            // USER UPDATE
-            // --------------------------------------------------
 
             transaction.set(
               userRef,
@@ -2019,10 +1936,6 @@ const claimMining =
               }
             );
 
-            // --------------------------------------------------
-            // CONSUME ADMOB REWARD
-            // --------------------------------------------------
-
             transaction.set(
               rewardRef,
               {
@@ -2054,10 +1967,6 @@ const claimMining =
                 merge: true,
               }
             );
-
-            // --------------------------------------------------
-            // DAILY HISTORY
-            // --------------------------------------------------
 
             if (
               !daily.claimedToday
@@ -2105,10 +2014,6 @@ const claimMining =
                 }
               );
             }
-
-            // --------------------------------------------------
-            // COMPLETED MINING HISTORY
-            // --------------------------------------------------
 
             if (
               completedPrevious
@@ -2159,10 +2064,6 @@ const claimMining =
                 }
               );
             }
-
-            // --------------------------------------------------
-            // NEW MINING HISTORY
-            // --------------------------------------------------
 
             transaction.set(
               getHistoryCollection(uid)
@@ -2349,10 +2250,6 @@ const powerBoost =
             ? request.data.adMobTransactionId.trim()
             : "";
 
-        // ------------------------------------------------------
-        // FAST PRE-CHECK
-        // ------------------------------------------------------
-
         const earlyNow =
           new Date();
 
@@ -2434,10 +2331,6 @@ const powerBoost =
           );
         }
 
-        // ------------------------------------------------------
-        // VERIFIED ADMOB REWARD
-        // ------------------------------------------------------
-
         let verified;
 
         try {
@@ -2481,10 +2374,6 @@ const powerBoost =
           );
         }
 
-        // ------------------------------------------------------
-        // ATOMIC TRANSACTION
-        // ------------------------------------------------------
-
         return await db.runTransaction(
           async (transaction) => {
             const now =
@@ -2495,10 +2384,6 @@ const powerBoost =
 
             const today =
               getUtcDateString(now);
-
-            // --------------------------------------------------
-            // ALL INITIAL READS FIRST
-            // --------------------------------------------------
 
             const userSnapshot =
               await transaction.get(
@@ -2559,10 +2444,6 @@ const powerBoost =
               );
             }
 
-            // --------------------------------------------------
-            // AUTHORITATIVE REWARD VALIDATION
-            // --------------------------------------------------
-
             let validated;
 
             try {
@@ -2588,10 +2469,6 @@ const powerBoost =
 
             const authoritativeId =
               validated.transactionId;
-
-            // --------------------------------------------------
-            // CURRENT AD STATE
-            // --------------------------------------------------
 
             const currentAds =
               adStatus(
@@ -2628,10 +2505,6 @@ const powerBoost =
                 "🐱 Power Boost ei ole vielä valmis käytettäväksi uudelleen."
               );
             }
-
-            // --------------------------------------------------
-            // BOOST WINDOW
-            // --------------------------------------------------
 
             const boostStartedAt =
               now;
@@ -2683,10 +2556,6 @@ const powerBoost =
             const newAdsToday =
               oldAds + 1;
 
-            // --------------------------------------------------
-            // USER UPDATE
-            // --------------------------------------------------
-
             transaction.set(
               userRef,
               {
@@ -2716,10 +2585,6 @@ const powerBoost =
               }
             );
 
-            // --------------------------------------------------
-            // CONSUME ADMOB REWARD
-            // --------------------------------------------------
-
             transaction.set(
               rewardSnapshot.ref,
               {
@@ -2748,10 +2613,6 @@ const powerBoost =
                 merge: true,
               }
             );
-
-            // --------------------------------------------------
-            // HISTORY
-            // --------------------------------------------------
 
             transaction.set(
               getHistoryCollection(uid)
