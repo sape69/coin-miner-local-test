@@ -8,7 +8,7 @@
 // IMPORTANT:
 //
 // Google signs the query content exactly as it appears in the
-// callback URL, preserving parameter order.
+// callback URL.
 //
 // We DO NOT:
 //
@@ -18,16 +18,17 @@
 // - re-encode the signed query
 // - use req.query for cryptographic verification
 //
-// req.query is used only AFTER cryptographic verification for
-// normal application-level validation.
+// Only the individual decoded parameters are validated AFTER
+// cryptographic verification.
 //
-// AdMob SSV documentation:
+// AdMob SSV uses ECDSA with SHA-256.
 //
-// The last two query parameters are:
+// The final two query parameters are:
+//
 //   signature
 //   key_id
 //
-// Everything before signature is the signed content.
+// Everything before "&signature=" is the signed content.
 //
 // ============================================================
 
@@ -195,6 +196,15 @@ function validateUid(
     return "";
   }
 
+  // Control characters are never valid application UID data.
+  if (
+    /[\u0000-\u001F\u007F]/.test(
+      uid,
+    )
+  ) {
+    return "";
+  }
+
   return uid;
 }
 
@@ -277,6 +287,10 @@ function validateAdNetwork(
 // ============================================================
 //
 // AdMob timestamp is epoch milliseconds.
+//
+// We reject timestamps in the future beyond a small clock
+// tolerance. We intentionally do NOT reject old timestamps
+// here because AdMob SSV callbacks can be delayed or retried.
 //
 // ============================================================
 
@@ -759,6 +773,11 @@ function fetchPublicKeys() {
 // ============================================================
 // 🔐 PUBLIC KEY CACHE
 // ============================================================
+//
+// Google recommends caching AdMob public keys, but not for
+// longer than 24 hours because keys can rotate.
+//
+// ============================================================
 
 async function getAdMobPublicKeys(
   forceRefresh = false,
@@ -876,6 +895,10 @@ function createAdMobPublicKey(
 // ============================================================
 // 🔐 CRYPTOGRAPHIC VERIFICATION
 // ============================================================
+//
+// AdMob SSV uses ECDSA + SHA-256 and DER signature encoding.
+//
+// ============================================================
 
 function verifyWithPublicKey(
   publicKeyData,
@@ -942,13 +965,13 @@ function verifySignedQuery(
 //
 // rawQueryString must remain untouched.
 //
-// We only locate:
+// We locate the FINAL "&signature=" parameter and verify that
+// the following two parameters are exactly:
 //
-// &signature=
+//   signature=...
+//   key_id=...
 //
-// and split the final signature/key_id parameters.
-//
-// The signed part is passed to crypto exactly as received.
+// The signed content is everything before "&signature=".
 //
 // ============================================================
 
@@ -977,33 +1000,21 @@ async function verifyAdMobSignature(
   }
 
   // ----------------------------------------------------------
-  // DO NOT DECODE THE COMPLETE QUERY STRING.
-  // ----------------------------------------------------------
-  //
-  // Google requires the signed content to remain unchanged.
-  //
-  // Therefore:
-  //
-  // rawQueryString
-  //       ↓
-  // exact signed content
-  //
-  // Individual values are decoded later through req.query.
-  //
+  // DO NOT DECODE OR REBUILD THIS STRING.
   // ----------------------------------------------------------
 
   const queryString =
     rawQueryString;
 
   // ----------------------------------------------------------
-  // SIGNATURE POSITION
+  // FIND FINAL SIGNATURE PARAMETER
   // ----------------------------------------------------------
 
   const signatureMarker =
     "&signature=";
 
   const signatureIndex =
-    queryString.indexOf(
+    queryString.lastIndexOf(
       signatureMarker,
     );
 
@@ -1015,8 +1026,6 @@ async function verifyAdMobSignature(
       "AdMob signature parameter was not found.",
     );
   }
-
-  // Everything before "&signature=" is signed.
 
   const signedQueryString =
     queryString.substring(
@@ -1034,7 +1043,7 @@ async function verifyAdMobSignature(
   }
 
   // ----------------------------------------------------------
-  // SIGNATURE + KEY ID
+  // FINAL SIGNATURE + KEY ID
   // ----------------------------------------------------------
 
   const signatureAndKeyId =
@@ -1086,7 +1095,7 @@ async function verifyAdMobSignature(
   }
 
   // ----------------------------------------------------------
-  // DUPLICATE SIGNATURE / KEY ID
+  // PREVENT DUPLICATE SIGNATURE / KEY ID PARAMETERS
   // ----------------------------------------------------------
 
   const signedParameters =
@@ -1098,10 +1107,20 @@ async function verifyAdMobSignature(
     const parameter of
     signedParameters
   ) {
+    const equalsIndex =
+      parameter.indexOf("=");
+
+    const parameterName =
+      equalsIndex === -1
+        ? parameter
+        : parameter.substring(
+            0,
+            equalsIndex,
+          );
+
     if (
-      parameter.startsWith(
-        "signature=",
-      )
+      parameterName ===
+      "signature"
     ) {
       throw createError(
         "ADMOB_INVALID_SIGNATURE",
@@ -1110,9 +1129,8 @@ async function verifyAdMobSignature(
     }
 
     if (
-      parameter.startsWith(
-        "key_id=",
-      )
+      parameterName ===
+      "key_id"
     ) {
       throw createError(
         "ADMOB_INVALID_KEY_ID",
@@ -1178,10 +1196,6 @@ async function verifyAdMobSignature(
 
   // ----------------------------------------------------------
   // PUBLIC KEY ROTATION
-  // ----------------------------------------------------------
-  //
-  // Refresh once when the key is unknown.
-  //
   // ----------------------------------------------------------
 
   if (
@@ -1279,10 +1293,7 @@ async function verifyAdMobSignature(
 // 🔎 QUERY VALUE
 // ============================================================
 //
-// req.query is used only after cryptographic verification.
-//
-// Express/query parser has already decoded the individual
-// parameter values for application-level validation.
+// req.query is used ONLY after cryptographic verification.
 //
 // ============================================================
 
@@ -1313,9 +1324,9 @@ function getQueryValue(
 // 🧩 CUSTOM DATA
 // ============================================================
 //
-// AdMob custom_data may be percent escaped.
+// AdMob custom_data is percent escaped.
 //
-// Decode only this individual value.
+// Only this individual value is decoded.
 //
 // ============================================================
 
@@ -1517,9 +1528,9 @@ function getExpectedAdMobConfig(
 // originalUrl is preferred because it preserves the original
 // request URL through Express routing.
 //
-// req.url is kept as a fallback.
+// req.url is a fallback.
 //
-// We NEVER build the signed query from req.query.
+// We NEVER construct the signed query from req.query.
 //
 // ============================================================
 
