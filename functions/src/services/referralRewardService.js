@@ -4,25 +4,29 @@
 // 🐱 STELLURIINI - REFERRAL REWARD SERVICE
 // ============================================================
 //
-// Stella Referral Rewards.
+// Stella Referral System.
 //
-// Tämän palvelun vastuulla on:
+// Tämän palvelun tehtävä:
 //
-// - referral-suhteen tarkistaminen
-// - referral-bonusprosentin määrittäminen
-// - mining-tuotosta syntyvän referral-bonuksen laskeminen
-// - referral-bonuksen kirjaaminen kutsujalle
-// - referral-bonuksen historian kirjoittaminen
-// - duplikaattibonusten estäminen
+// 1. Selvittää kutsutun käyttäjän kutsuja.
+// 2. Tarkistaa referral-suhteen.
+// 3. Laskea referral-bonus hyväksytystä louhintatuotosta.
+// 4. Kirjata referral-tapahtuma Firestoreen.
+// 5. Lisätä referral-bonus kutsujan STL-saldoon.
 //
 // TÄRKEÄÄ:
 //
-// Referral-bonus EI ole käyttäjän oma mining-tuotto.
+// Referral-bonusta EI makseta:
 //
-// Bonus syntyy vain, kun serveri on hyväksynyt kutsutun
-// käyttäjän todellisen mining-tuoton.
+// - rekisteröitymisestä
+// - AdMob-mainoksesta
+// - Power Boostista
+// - referral-koodin käyttämisestä
 //
-// Tämä palvelu ei luota clientin lähettämään bonusmäärään.
+// Referral-bonus syntyy AINOASTAAN kutsutun käyttäjän
+// hyväksytystä mining-tuotosta.
+//
+// Kaikki laskenta tapahtuu backendissä.
 //
 // ============================================================
 
@@ -31,137 +35,575 @@ const {
 } = require("../firebase/firebase");
 
 const {
-  getUserRef,
-  getHistoryCollection,
-} = require("../utils/userUtils");
+  getReferralBonusRate,
+  calculateReferralBonus,
+  isValidReferralBonus,
+  REFERRAL_BONUS_SOURCE,
+  REFERRAL_HISTORY_COLLECTION,
+  REFERRAL_DATA_FIELD,
+  ONE_REFERRER_PER_USER,
+  ALLOW_SELF_REFERRAL,
+} = require("../config/referralConfig");
 
 const {
-  getReferralData,
-  calculateReferralBonus,
-} = require("./referralService");
-
-
-// ============================================================
-// 📊 REFERRAL BONUS TYPE
-// ============================================================
-
-const REFERRAL_BONUS_TYPE =
-  "referral_bonus";
-
-const REFERRAL_BONUS_TITLE =
-  "Stella Referral Bonus 🐱💜";
+  getUserRef,
+} = require("../utils/userUtils");
 
 
 // ============================================================
 // 🔢 VALUE HELPERS
 // ============================================================
 
-function positiveNumber(
+function safeNumber(
   value,
+  fallback = 0
 ) {
-  const result =
+  const number =
     Number(value);
 
-  if (
-    !Number.isFinite(result) ||
-    result <= 0
-  ) {
-    return 0;
-  }
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
 
-  return result;
+
+function positiveNumber(
+  value,
+  fallback = 0
+) {
+  const number =
+    Number(value);
+
+  return Number.isFinite(number) &&
+    number > 0
+    ? number
+    : fallback;
 }
 
 
 // ============================================================
-// 🆔 REFERRAL REWARD ID
+// 👤 REFERRER ID
 // ============================================================
 //
-// Luodaan deterministinen tunniste yhdelle mining-cyclelle.
+// Referral-suhde voidaan tallentaa:
 //
-// Jos sama mining-tuotto käsitellään uudelleen,
-// sama reward ID estää uuden referral-bonuksen.
+// users/{uid}.referral.referrerId
+//
+// tai:
+//
+// users/{uid}.referrerId
+//
+// Tämä palvelu tukee molempia muotoja, mutta uusi järjestelmä
+// käyttää ensisijaisesti referral.referrerId-kenttää.
 //
 // ============================================================
 
-function createReferralRewardId(
-  miningId,
-  miningStartedAt,
-  miningEndsAt,
+function getReferrerId(
+  userData
 ) {
-  const explicitId =
-    typeof miningId === "string"
-      ? miningId.trim()
-      : "";
+  const data =
+    userData || {};
 
-  if (explicitId) {
-    return `referral_${explicitId}`;
-  }
-
-  const start =
-    miningStartedAt instanceof Date
-      ? miningStartedAt.getTime()
-      : new Date(
-          miningStartedAt || 0,
-        ).getTime();
-
-  const end =
-    miningEndsAt instanceof Date
-      ? miningEndsAt.getTime()
-      : new Date(
-          miningEndsAt || 0,
-        ).getTime();
+  const referral =
+    data[REFERRAL_DATA_FIELD];
 
   if (
-    !Number.isFinite(start) ||
-    !Number.isFinite(end) ||
-    start <= 0 ||
-    end <= start
+    referral &&
+    typeof referral === "object" &&
+    typeof referral.referrerId ===
+      "string"
   ) {
-    return "";
+    const referrerId =
+      referral.referrerId.trim();
+
+    if (referrerId) {
+      return referrerId;
+    }
   }
 
-  return `referral_${start}_${end}`;
+  if (
+    typeof data.referrerId ===
+    "string"
+  ) {
+    const referrerId =
+      data.referrerId.trim();
+
+    if (referrerId) {
+      return referrerId;
+    }
+  }
+
+  return null;
 }
 
 
 // ============================================================
-// 🔍 GET REFERRAL REWARD RECORD
+// 🔐 REFERRAL RELATIONSHIP VALIDATION
 // ============================================================
 
-async function getReferralRewardRecord(
-  transaction,
-  referrerUid,
-  rewardId,
+function validateReferralRelationship(
+  referredUserId,
+  referrerId
 ) {
   if (
-    !transaction ||
-    typeof referrerUid !== "string" ||
-    !referrerUid.trim() ||
-    typeof rewardId !== "string" ||
-    !rewardId.trim()
+    typeof referredUserId !==
+      "string" ||
+    !referredUserId.trim()
   ) {
-    return null;
+    return {
+      valid: false,
+      reason:
+        "REFERRED_USER_ID_MISSING",
+    };
   }
 
-  const rewardRef =
-    getUserRef(referrerUid)
-      .collection("referralRewards")
-      .doc(rewardId);
+  if (
+    typeof referrerId !==
+      "string" ||
+    !referrerId.trim()
+  ) {
+    return {
+      valid: false,
+      reason:
+        "REFERRER_ID_MISSING",
+    };
+  }
 
-  const snapshot =
-    await transaction.get(
-      rewardRef,
-    );
+  const referred =
+    referredUserId.trim();
 
-  if (!snapshot.exists) {
-    return null;
+  const referrer =
+    referrerId.trim();
+
+  if (
+    !ALLOW_SELF_REFERRAL &&
+    referred === referrer
+  ) {
+    return {
+      valid: false,
+      reason:
+        "SELF_REFERRAL",
+    };
   }
 
   return {
-    ref: rewardRef,
-    data:
-      snapshot.data() || {},
+    valid: true,
+    reason: null,
+  };
+}
+
+
+// ============================================================
+// 📊 REFERRAL RATE
+// ============================================================
+//
+// Referral-prosentti määräytyy järjestelmän käyttäjämäärän
+// perusteella.
+//
+// Tämä palvelu ei hyväksy clientin lähettämää prosenttia.
+//
+// ============================================================
+
+function getServerReferralRate(
+  totalUsers
+) {
+  return getReferralBonusRate(
+    totalUsers
+  );
+}
+
+
+// ============================================================
+// 🧮 CALCULATE REFERRAL REWARD
+// ============================================================
+//
+// Laskee kutsujalle maksettavan referral-bonuksen.
+//
+// amount = kutsutun käyttäjän hyväksytty mining-tuotto.
+//
+// ============================================================
+
+function calculateReward(
+  miningAmount,
+  totalUsers
+) {
+  const amount =
+    positiveNumber(
+      miningAmount
+    );
+
+  if (amount <= 0) {
+    return 0;
+  }
+
+  const bonus =
+    calculateReferralBonus(
+      amount,
+      totalUsers
+    );
+
+  return positiveNumber(
+    bonus
+  );
+}
+
+
+// ============================================================
+// 📜 REFERRAL HISTORY REF
+// ============================================================
+
+function getReferralHistoryCollection(
+  referrerId
+) {
+  return getUserRef(
+    referrerId
+  ).collection(
+    REFERRAL_HISTORY_COLLECTION
+  );
+}
+
+
+// ============================================================
+// 🧾 REFERRAL HISTORY DATA
+// ============================================================
+
+function buildReferralHistory(
+  {
+    referredUserId,
+    referrerId,
+    miningAmount,
+    bonusAmount,
+    bonusRate,
+    totalUsers,
+    miningTransactionId = null,
+    now,
+  }
+) {
+  return {
+    type:
+      "referral_reward",
+
+    title:
+      "Stella Referral Reward 🐱🤝✨",
+
+    referralBonusSource:
+      REFERRAL_BONUS_SOURCE,
+
+    referredUserId,
+
+    referrerId,
+
+    miningAmount,
+
+    bonusAmount,
+
+    bonusRate,
+
+    bonusPercent:
+      bonusRate * 100,
+
+    totalUsers,
+
+    miningTransactionId,
+
+    createdAt:
+      now ||
+      FieldValue.serverTimestamp(),
+  };
+}
+
+
+// ============================================================
+// 💰 BUILD REFERRER BALANCE UPDATE
+// ============================================================
+//
+// Referral-bonus lisätään kutsujan miningBalance-saldoon.
+//
+// Käytetään Firestore atomic increment -operaatiota.
+//
+// ============================================================
+
+function buildBalanceUpdate(
+  bonusAmount
+) {
+  return {
+    miningBalance:
+      FieldValue.increment(
+        bonusAmount
+      ),
+
+    updatedAt:
+      FieldValue.serverTimestamp(),
+  };
+}
+
+
+// ============================================================
+// 🔎 FIND REFERRAL RELATIONSHIP
+// ============================================================
+//
+// Hakee kutsutun käyttäjän dokumentin ja selvittää kutsujan.
+//
+// transaction voidaan antaa mukaan, jotta toiminto voidaan
+// suorittaa osana olemassa olevaa Firestore transactionia.
+//
+// ============================================================
+
+async function getReferralRelationship(
+  transaction,
+  referredUserId
+) {
+  if (
+    typeof referredUserId !==
+      "string" ||
+    !referredUserId.trim()
+  ) {
+    return {
+      found: false,
+
+      referredUserId:
+        referredUserId || null,
+
+      referrerId: null,
+
+      userData: {},
+    };
+  }
+
+  const userRef =
+    getUserRef(
+      referredUserId
+    );
+
+  const snapshot =
+    transaction
+      ? await transaction.get(
+          userRef
+        )
+      : await userRef.get();
+
+  if (!snapshot.exists) {
+    return {
+      found: false,
+
+      referredUserId,
+
+      referrerId: null,
+
+      userData: {},
+    };
+  }
+
+  const userData =
+    snapshot.data() || {};
+
+  const referrerId =
+    getReferrerId(
+      userData
+    );
+
+  return {
+    found: true,
+
+    referredUserId,
+
+    referrerId,
+
+    userData,
+
+    userRef,
+  };
+}
+
+
+// ============================================================
+// 🎁 PREPARE REFERRAL REWARD
+// ============================================================
+//
+// Tämä funktio tekee kaiken laskennan mutta EI vielä kirjoita
+// Firestoreen.
+//
+// Tämä on tarkoitettu erityisesti miningFunctions.js:n
+// transaction-käyttöön.
+//
+// ============================================================
+
+async function prepareReferralReward(
+  transaction,
+  {
+    referredUserId,
+    miningAmount,
+    totalUsers,
+    miningTransactionId = null,
+  }
+) {
+  const amount =
+    positiveNumber(
+      miningAmount
+    );
+
+  if (amount <= 0) {
+    return {
+      eligible: false,
+
+      reason:
+        "MINING_AMOUNT_ZERO",
+
+      bonusAmount: 0,
+
+      referrerId: null,
+
+      referredUserId,
+
+      miningAmount: 0,
+
+      bonusRate:
+        getServerReferralRate(
+          totalUsers
+        ),
+    };
+  }
+
+  const relationship =
+    await getReferralRelationship(
+      transaction,
+      referredUserId
+    );
+
+  if (
+    !relationship.found
+  ) {
+    return {
+      eligible: false,
+
+      reason:
+        "REFERRED_USER_NOT_FOUND",
+
+      bonusAmount: 0,
+
+      referrerId: null,
+
+      referredUserId,
+
+      miningAmount: amount,
+
+      bonusRate:
+        getServerReferralRate(
+          totalUsers
+        ),
+    };
+  }
+
+  const referrerId =
+    relationship.referrerId;
+
+  if (!referrerId) {
+    return {
+      eligible: false,
+
+      reason:
+        "NO_REFERRER",
+
+      bonusAmount: 0,
+
+      referrerId: null,
+
+      referredUserId,
+
+      miningAmount: amount,
+
+      bonusRate:
+        getServerReferralRate(
+          totalUsers
+        ),
+    };
+  }
+
+  const relationshipValidation =
+    validateReferralRelationship(
+      referredUserId,
+      referrerId
+    );
+
+  if (
+    !relationshipValidation.valid
+  ) {
+    return {
+      eligible: false,
+
+      reason:
+        relationshipValidation.reason,
+
+      bonusAmount: 0,
+
+      referrerId,
+
+      referredUserId,
+
+      miningAmount: amount,
+
+      bonusRate:
+        getServerReferralRate(
+          totalUsers
+        ),
+    };
+  }
+
+  const bonusRate =
+    getServerReferralRate(
+      totalUsers
+    );
+
+  const bonusAmount =
+    calculateReward(
+      amount,
+      totalUsers
+    );
+
+  if (
+    !isValidReferralBonus(
+      bonusAmount
+    )
+  ) {
+    return {
+      eligible: false,
+
+      reason:
+        "BONUS_ZERO",
+
+      bonusAmount: 0,
+
+      referrerId,
+
+      referredUserId,
+
+      miningAmount: amount,
+
+      bonusRate,
+    };
+  }
+
+  return {
+    eligible: true,
+
+    reason: null,
+
+    bonusAmount,
+
+    referrerId,
+
+    referredUserId,
+
+    miningAmount: amount,
+
+    bonusRate,
+
+    totalUsers:
+      safeNumber(
+        totalUsers
+      ),
+
+    miningTransactionId,
   };
 }
 
@@ -170,428 +612,281 @@ async function getReferralRewardRecord(
 // 💰 APPLY REFERRAL REWARD
 // ============================================================
 //
-// Kirjaa referral-bonuksen kutsujalle.
+// Kirjoittaa referral-bonuksen kutsujan saldoon.
 //
-// PARAMETRIT:
-//
-// transaction
-// userId
-// miningAmount
-// miningId
-// miningStartedAt
-// miningEndsAt
-// now
-//
-// `miningAmount` on serverin laskema hyväksytty mining-tuotto.
-//
-// Client ei saa määrätä tätä arvoa.
+// Tämä funktio on tarkoitettu käytettäväksi transactionin
+// sisällä.
 //
 // ============================================================
 
 async function applyReferralReward(
   transaction,
-  userId,
-  miningAmount,
-  options = {},
+  reward,
+  now
 ) {
   if (
-    !transaction
+    !reward ||
+    reward.eligible !== true
   ) {
-    throw new Error(
-      "Firestore transaction is required.",
-    );
+    return {
+      applied: false,
+
+      bonusAmount: 0,
+
+      referrerId:
+        reward?.referrerId ||
+        null,
+    };
   }
 
-  if (
-    typeof userId !== "string" ||
-    !userId.trim()
-  ) {
-    throw new Error(
-      "Invalid userId.",
-    );
-  }
-
-  const amount =
+  const bonusAmount =
     positiveNumber(
-      miningAmount,
+      reward.bonusAmount
     );
 
-  // ----------------------------------------------------------
-  // NO MINING REWARD
-  // ----------------------------------------------------------
-
-  if (amount <= 0) {
-    return {
-      applied: false,
-      reason:
-        "NO_MINING_REWARD",
-      bonus: 0,
-    };
-  }
-
-  // ----------------------------------------------------------
-  // REFERRAL DATA
-  // ----------------------------------------------------------
-
-  const referralData =
-    await getReferralData(
-      userId,
-    );
-
-  if (!referralData) {
-    return {
-      applied: false,
-      reason:
-        "NO_REFERRER",
-      bonus: 0,
-    };
-  }
-
-  const referrerUid =
-    typeof referralData.referrerUid ===
-    "string"
-      ? referralData.referrerUid.trim()
+  const referrerId =
+    typeof reward.referrerId ===
+      "string"
+      ? reward.referrerId.trim()
       : "";
 
-  if (!referrerUid) {
-    return {
-      applied: false,
-      reason:
-        "INVALID_REFERRER",
-      bonus: 0,
-    };
-  }
-
-  // ----------------------------------------------------------
-  // SELF REFERRAL PROTECTION
-  // ----------------------------------------------------------
-
   if (
-    referrerUid === userId
+    !referrerId ||
+    bonusAmount <= 0
   ) {
     return {
       applied: false,
-      reason:
-        "SELF_REFERRAL",
-      bonus: 0,
+
+      bonusAmount: 0,
+
+      referrerId:
+        referrerId || null,
     };
   }
-
-  // ----------------------------------------------------------
-  // REWARD ID
-  // ----------------------------------------------------------
-
-  const rewardId =
-    createReferralRewardId(
-      options.miningId,
-      options.miningStartedAt,
-      options.miningEndsAt,
-    );
-
-  if (!rewardId) {
-    throw new Error(
-      "Unable to create referral reward ID.",
-    );
-  }
-
-  // ----------------------------------------------------------
-  // DUPLICATE CHECK
-  // ----------------------------------------------------------
-
-  const existingReward =
-    await getReferralRewardRecord(
-      transaction,
-      referrerUid,
-      rewardId,
-    );
-
-  if (existingReward) {
-    return {
-      applied: false,
-      alreadyApplied: true,
-      reason:
-        "ALREADY_APPLIED",
-      bonus:
-        positiveNumber(
-          existingReward.data
-            ?.bonus,
-        ),
-      referrerUid,
-      rewardId,
-    };
-  }
-
-  // ----------------------------------------------------------
-  // REFERRER USER
-  // ----------------------------------------------------------
 
   const referrerRef =
     getUserRef(
-      referrerUid,
+      referrerId
     );
 
   const referrerSnapshot =
     await transaction.get(
-      referrerRef,
+      referrerRef
     );
 
-  if (!referrerSnapshot.exists) {
+  if (
+    !referrerSnapshot.exists
+  ) {
     return {
       applied: false,
+
+      bonusAmount: 0,
+
+      referrerId,
+
       reason:
         "REFERRER_NOT_FOUND",
-      bonus: 0,
-      referrerUid,
-      rewardId,
     };
   }
 
-  const referrerData =
-    referrerSnapshot.data() || {};
+  const historyRef =
+    getReferralHistoryCollection(
+      referrerId
+    ).doc();
 
-  // ----------------------------------------------------------
-  // REFERRAL COUNT
-  // ----------------------------------------------------------
+  const history =
+    buildReferralHistory({
+      referredUserId:
+        reward.referredUserId,
 
-  const referralCount =
-    Number.isFinite(
-      Number(
-        referrerData.referralCount,
-      ),
-    )
-      ? Math.max(
-          0,
-          Math.floor(
-            Number(
-              referrerData.referralCount,
-            ),
-          ),
-        )
-      : 0;
+      referrerId,
 
-  // ----------------------------------------------------------
-  // CALCULATE BONUS
-  // ----------------------------------------------------------
+      miningAmount:
+        reward.miningAmount,
 
-  const bonus =
-    positiveNumber(
-      calculateReferralBonus(
-        amount,
-        referralCount,
-      ),
-    );
+      bonusAmount,
 
-  if (bonus <= 0) {
-    return {
-      applied: false,
-      reason:
-        "BONUS_ZERO",
-      bonus: 0,
-      referrerUid,
-      rewardId,
-    };
-  }
+      bonusRate:
+        reward.bonusRate,
 
-  // ----------------------------------------------------------
-  // CURRENT REFERRER BALANCE
-  // ----------------------------------------------------------
+      totalUsers:
+        reward.totalUsers,
 
-  const currentBalance =
-    positiveNumber(
-      referrerData.miningBalance,
-    );
+      miningTransactionId:
+        reward.miningTransactionId,
 
-  const newBalance =
-    currentBalance +
-    bonus;
-
-  const now =
-    options.now instanceof Date
-      ? options.now
-      : new Date();
-
-  // ----------------------------------------------------------
-  // REFERRER BALANCE UPDATE
-  // ----------------------------------------------------------
+      now,
+    });
 
   transaction.set(
     referrerRef,
-    {
-      miningBalance:
-        newBalance,
-
-      referralEarnings:
-        FieldValue.increment(
-          bonus,
-        ),
-
-      referralBonusCount:
-        FieldValue.increment(
-          1,
-        ),
-
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    },
+    buildBalanceUpdate(
+      bonusAmount
+    ),
     {
       merge: true,
-    },
+    }
   );
 
-  // ----------------------------------------------------------
-  // REFERRAL REWARD RECORD
-  // ----------------------------------------------------------
-
-  const rewardRef =
-    referrerRef
-      .collection(
-        "referralRewards",
-      )
-      .doc(rewardId);
-
   transaction.set(
-    rewardRef,
-    {
-      rewardId,
-
-      type:
-        REFERRAL_BONUS_TYPE,
-
-      title:
-        REFERRAL_BONUS_TITLE,
-
-      userId,
-
-      referrerUid,
-
-      miningAmount:
-        amount,
-
-      referralCount,
-
-      bonus,
-
-      balanceBefore:
-        currentBalance,
-
-      balanceAfter:
-        newBalance,
-
-      miningId:
-        typeof options.miningId ===
-        "string"
-          ? options.miningId
-          : null,
-
-      miningStartedAt:
-        options.miningStartedAt ||
-        null,
-
-      miningEndsAt:
-        options.miningEndsAt ||
-        null,
-
-      createdAt:
-        FieldValue.serverTimestamp(),
-
-      processedAt:
-        now,
-    },
-    {
-      merge: false,
-    },
-  );
-
-  // ----------------------------------------------------------
-  // REFERRER HISTORY
-  // ----------------------------------------------------------
-
-  transaction.set(
-    getHistoryCollection(
-      referrerUid,
-    ).doc(),
-    {
-      type:
-        REFERRAL_BONUS_TYPE,
-
-      title:
-        REFERRAL_BONUS_TITLE,
-
-      amount:
-        bonus,
-
-      referralBonus:
-        bonus,
-
-      referralUserId:
-        userId,
-
-      referrerUid,
-
-      referralCount,
-
-      miningAmount:
-        amount,
-
-      balanceAfter:
-        newBalance,
-
-      miningId:
-        typeof options.miningId ===
-        "string"
-          ? options.miningId
-          : null,
-
-      miningStartedAt:
-        options.miningStartedAt ||
-        null,
-
-      miningEndsAt:
-        options.miningEndsAt ||
-        null,
-
-      createdAt:
-        FieldValue.serverTimestamp(),
-    },
+    historyRef,
+    history
   );
 
   return {
     applied: true,
 
-    alreadyApplied: false,
+    bonusAmount,
 
-    reason:
-      "APPLIED",
+    referrerId,
 
-    bonus,
-
-    miningAmount:
-      amount,
-
-    referrerUid,
-
-    referralCount,
-
-    rewardId,
-
-    balanceBefore:
-      currentBalance,
-
-    balanceAfter:
-      newBalance,
+    historyId:
+      historyRef.id,
   };
 }
 
 
 // ============================================================
-// 📤 EXPORTS
+// 🧩 PROCESS REFERRAL REWARD
+// ============================================================
+//
+// Yhdistetty helper:
+//
+// 1. Selvittää referral-suhteen.
+// 2. Laskee bonuksen.
+// 3. Lisää bonuksen kutsujan saldoon.
+// 4. Luo referral history -merkinnän.
+//
+// Kaikki tehdään saman transactionin sisällä.
+//
+// ============================================================
+
+async function processReferralReward(
+  transaction,
+  {
+    referredUserId,
+    miningAmount,
+    totalUsers,
+    miningTransactionId = null,
+    now = new Date(),
+  }
+) {
+  const reward =
+    await prepareReferralReward(
+      transaction,
+      {
+        referredUserId,
+
+        miningAmount,
+
+        totalUsers,
+
+        miningTransactionId,
+      }
+    );
+
+  if (
+    !reward.eligible
+  ) {
+    return {
+      ...reward,
+
+      applied: false,
+    };
+  }
+
+  const applied =
+    await applyReferralReward(
+      transaction,
+      reward,
+      now
+    );
+
+  return {
+    ...reward,
+
+    ...applied,
+  };
+}
+
+
+// ============================================================
+// 📊 REFERRAL SUMMARY
+// ============================================================
+//
+// Turvallinen yhteenveto clientille tai muille backend
+// funktioille.
+//
+// ============================================================
+
+function buildReferralSummary(
+  {
+    referrerId = null,
+    bonusRate = 0,
+    totalUsers = 0,
+  }
+) {
+  return {
+    hasReferrer:
+      typeof referrerId ===
+        "string" &&
+      referrerId.trim().length > 0,
+
+    referrerId:
+      referrerId || null,
+
+    bonusRate:
+      safeNumber(
+        bonusRate
+      ),
+
+    bonusPercent:
+      safeNumber(
+        bonusRate
+      ) * 100,
+
+    totalUsers:
+      Math.max(
+        0,
+        Math.floor(
+          safeNumber(
+            totalUsers
+          )
+        )
+      ),
+
+    oneReferrerPerUser:
+      ONE_REFERRER_PER_USER,
+
+    selfReferralAllowed:
+      ALLOW_SELF_REFERRAL,
+
+    bonusSource:
+      REFERRAL_BONUS_SOURCE,
+  };
+}
+
+
+// ============================================================
+// 📦 EXPORTS
 // ============================================================
 
 module.exports = {
-  REFERRAL_BONUS_TYPE,
-  REFERRAL_BONUS_TITLE,
+  getReferrerId,
 
-  createReferralRewardId,
+  validateReferralRelationship,
+
+  getServerReferralRate,
+
+  calculateReward,
+
+  getReferralRelationship,
+
+  prepareReferralReward,
 
   applyReferralReward,
+
+  processReferralReward,
+
+  buildReferralSummary,
 };
