@@ -1125,6 +1125,15 @@ function achievementUpdate(
 // ============================================================
 // 🏆 UPDATE MINING ACHIEVEMENTS
 // ============================================================
+//
+// TÄRKEÄ FIRESTORE-KORJAUS:
+//
+// Kaikki transaction.get()-luvut tehdään ensin.
+// Vasta sen jälkeen tehdään transaction.set()-kirjoitukset.
+//
+// Tämä estää Firestore transaction read-after-write
+// -virheen, jos achievementeja on useita.
+// ============================================================
 
 async function updateMiningAchievements(
   transaction,
@@ -1157,9 +1166,15 @@ async function updateMiningAchievements(
   const collectedAmount =
     nonNegative(collected);
 
-  const results = [];
+  // ----------------------------------------------------------
+  // READ PHASE
+  // ----------------------------------------------------------
+  //
+  // Kaikki achievement-dokumentit luetaan ensin.
+  // Mitään transaction.set()-kutsua ei tehdä tässä vaiheessa.
+  // ----------------------------------------------------------
 
-  let totalReward = 0;
+  const items = [];
 
   for (
     const definition of definitions
@@ -1171,9 +1186,33 @@ async function updateMiningAchievements(
         definition.id
       );
 
+    items.push({
+      definition,
+      ref: item.ref,
+      data: item.data,
+    });
+  }
+
+  // ----------------------------------------------------------
+  // CALCULATION PHASE
+  // ----------------------------------------------------------
+
+  const updates = [];
+
+  let totalReward = 0;
+
+  for (
+    const item of items
+  ) {
+    const {
+      definition,
+      ref,
+      data,
+    } = item;
+
     let progress =
       nonNegative(
-        item.data.progress
+        data.progress
       );
 
     if (
@@ -1184,7 +1223,9 @@ async function updateMiningAchievements(
         progress =
           Math.max(
             progress,
-            definition.target
+            number(
+              definition.target
+            )
           );
       }
     } else if (
@@ -1200,16 +1241,16 @@ async function updateMiningAchievements(
     }
 
     const wasUnlocked =
-      item.data.unlocked === true;
+      data.unlocked === true;
 
     const wasRewardClaimed =
-      item.data.rewardClaimed === true;
+      data.rewardClaimed === true;
 
     const update =
       achievementUpdate(
         definition,
         progress,
-        item.data,
+        data,
         now
       );
 
@@ -1217,14 +1258,10 @@ async function updateMiningAchievements(
       update.unlocked === true &&
       wasRewardClaimed === false;
 
+    let reward = 0;
+
     if (newlyRewardable) {
-      update.rewardClaimed =
-        true;
-
-      update.rewardClaimedAt =
-        now;
-
-      totalReward +=
+      reward =
         Math.max(
           0,
           number(
@@ -1232,35 +1269,72 @@ async function updateMiningAchievements(
           )
         );
 
-      results.push({
-        achievementId:
-          definition.id,
+      update.rewardClaimed =
+        true;
 
-        reward:
-          Math.max(
-            0,
-            number(
-              definition.reward
-            )
-          ),
+      update.rewardClaimedAt =
+        now;
 
-        newlyUnlocked:
-          !wasUnlocked,
-      });
+      totalReward +=
+        reward;
     }
 
+    updates.push({
+      ref,
+      update,
+
+      achievementId:
+        definition.id,
+
+      reward,
+
+      newlyUnlocked:
+        !wasUnlocked &&
+        update.unlocked === true,
+    });
+  }
+
+  // ----------------------------------------------------------
+  // WRITE PHASE
+  // ----------------------------------------------------------
+  //
+  // Kaikki transaction.set()-kutsut vasta nyt.
+  // ----------------------------------------------------------
+
+  for (
+    const item of updates
+  ) {
     transaction.set(
       item.ref,
-      update,
+      item.update,
       {
         merge: true,
       }
     );
   }
 
+  const rewards =
+    updates
+      .filter(
+        (item) =>
+          item.reward > 0
+      )
+      .map(
+        (item) => ({
+          achievementId:
+            item.achievementId,
+
+          reward:
+            item.reward,
+
+          newlyUnlocked:
+            item.newlyUnlocked,
+        })
+      );
+
   return {
     totalReward,
-    rewards: results,
+    rewards,
   };
 }
 
@@ -2018,21 +2092,6 @@ const claimMining =
             // ------------------------------------------------
             // 🔗 REFERRAL REWARD
             // ------------------------------------------------
-            //
-            // Referral käsitellään vain silloin, kun edellinen
-            // mining-cycle on oikeasti valmistunut ja sen
-            // hyväksytty tuotto on positiivinen.
-            //
-            // Sama miningTransactionId annetaan myöhemmin
-            // mining_history-tapahtumalle ja referralille.
-            //
-            // Referral bonus menee kutsujan miningBalanceen.
-            // Se EI lisää kutsutun käyttäjän saldoa.
-            //
-            // Tämä suoritetaan ennen transaction.set()-kutsuja,
-            // jotta kaikki transaction-readit tehdään ennen
-            // Firestore-kirjoituksia.
-            // ------------------------------------------------
 
             let referralResult = {
               rewarded: false,
@@ -2284,11 +2343,6 @@ const claimMining =
             // ------------------------------------------------
             // PREVIOUS MINING REWARD
             // ------------------------------------------------
-            //
-            // Käytetään referralin kanssa samaa transaction ID:tä.
-            // Tämä mahdollistaa referral-bonuksen idempotentin
-            // käsittelyn.
-            // ------------------------------------------------
 
             if (
               completedPrevious
@@ -2423,10 +2477,6 @@ const claimMining =
               achievementRewards:
                 achievementResult.rewards,
 
-              // ------------------------------------------------
-              // 🔗 REFERRAL RESULT
-              // ------------------------------------------------
-
               referralReward:
                 referralResult.rewarded
                   ? referralResult.bonus
@@ -2484,9 +2534,9 @@ const claimMining =
 
               nextDailyStreak:
                 nextDailyStreak(
-                data,
-                today
-              ),
+                  data,
+                  today
+                ),
 
               miningHashRate:
                 rate,
