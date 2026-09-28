@@ -72,14 +72,10 @@ class _StellaStatusCardState
 
   late final AnimationController _animationController;
 
-  late final Animation<double> _scaleAnimation;
-
   late final Animation<double> _verticalAnimation;
-
   late final Animation<double> _horizontalAnimation;
-
+  late final Animation<double> _scaleAnimation;
   late final Animation<double> _rotationAnimation;
-
   late final Animation<double> _glowAnimation;
 
   // ==========================================================
@@ -93,65 +89,71 @@ class _StellaStatusCardState
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(
-        milliseconds: 2200,
+        milliseconds: 2600,
       ),
-    )..repeat(
-        reverse: true,
-      );
+    )..repeat();
+
+    // ----------------------------------------------------------
+    // 🐱 VISIBLE FLOAT
+    // ----------------------------------------------------------
+    //
+    // Stella liikkuu selvästi ylös ja alas.
+    //
+    // 18 px liike tekee animaatiosta näkyvän myös puhelimessa.
+    //
+
+    _verticalAnimation = Tween<double>(
+      begin: -18.0,
+      end: 18.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+
+    // ----------------------------------------------------------
+    // ↔️ SIDE TO SIDE
+    // ----------------------------------------------------------
+
+    _horizontalAnimation = Tween<double>(
+      begin: -8.0,
+      end: 8.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
 
     // ----------------------------------------------------------
     // 💫 SCALE
     // ----------------------------------------------------------
+    //
+    // Kevyt "hengitys".
+    //
 
     _scaleAnimation = Tween<double>(
       begin: 0.94,
-      end: 1.06,
+      end: 1.04,
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: Curves.easeInOut,
+        curve: Curves.easeInOutSine,
       ),
     );
 
     // ----------------------------------------------------------
-    // 🐱 VERTICAL FLOAT
-    // ----------------------------------------------------------
-
-    _verticalAnimation = Tween<double>(
-      begin: 7.0,
-      end: -7.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    // ----------------------------------------------------------
-    // ↔️ HORIZONTAL FLOAT
-    // ----------------------------------------------------------
-
-    _horizontalAnimation = Tween<double>(
-      begin: -3.5,
-      end: 3.5,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    // ----------------------------------------------------------
-    // 🔄 SLIGHT ROTATION
+    // 🔄 ROTATION
     // ----------------------------------------------------------
 
     _rotationAnimation = Tween<double>(
-      begin: -0.018,
-      end: 0.018,
+      begin: -0.035,
+      end: 0.035,
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: Curves.easeInOut,
+        curve: Curves.easeInOutSine,
       ),
     );
 
@@ -160,12 +162,12 @@ class _StellaStatusCardState
     // ----------------------------------------------------------
 
     _glowAnimation = Tween<double>(
-      begin: 0.65,
-      end: 1.15,
+      begin: 0.55,
+      end: 1.35,
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: Curves.easeInOut,
+        curve: Curves.easeInOutSine,
       ),
     );
   }
@@ -195,9 +197,7 @@ class _StellaStatusCardState
       _animationController
         ..stop()
         ..reset()
-        ..repeat(
-          reverse: true,
-        );
+        ..repeat();
     }
   }
 
@@ -297,27 +297,15 @@ class _StellaStatusCardState
         BuildContext context,
         Widget? child,
       ) {
-        final double scale =
-            _scaleAnimation.value;
-
-        final double verticalOffset =
-            _verticalAnimation.value;
-
-        final double horizontalOffset =
-            _horizontalAnimation.value;
-
-        final double rotation =
-            _rotationAnimation.value;
-
         return Transform.translate(
           offset: Offset(
-            horizontalOffset,
-            verticalOffset,
+            _horizontalAnimation.value,
+            _verticalAnimation.value,
           ),
           child: Transform.rotate(
-            angle: rotation,
+            angle: _rotationAnimation.value,
             child: Transform.scale(
-              scale: scale,
+              scale: _scaleAnimation.value,
               child: child,
             ),
           ),
@@ -330,17 +318,17 @@ class _StellaStatusCardState
           shape: BoxShape.circle,
           border: Border.all(
             color: _statusColor.withValues(
-              alpha: 0.55,
+              alpha: 0.65,
             ),
             width: 3,
           ),
           boxShadow: [
             BoxShadow(
               color: _statusColor.withValues(
-                alpha: 0.30,
+                alpha: 0.35,
               ),
-              blurRadius: 35,
-              spreadRadius: 5,
+              blurRadius: 40,
+              spreadRadius: 7,
             ),
           ],
         ),
@@ -382,26 +370,29 @@ class _StellaStatusCardState
         final double glow =
             _glowAnimation.value;
 
-        return Container(
-          width: 225 + (8 * glow),
-          height: 225 + (8 * glow),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                _statusColor.withValues(
-                  alpha: 0.18 * glow,
-                ),
-                _statusColor.withValues(
-                  alpha: 0.05 * glow,
-                ),
-                Colors.transparent,
-              ],
-              stops: const [
-                0.0,
-                0.55,
-                1.0,
-              ],
+        return Transform.scale(
+          scale: 0.92 + (glow * 0.10),
+          child: Container(
+            width: 235,
+            height: 235,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  _statusColor.withValues(
+                    alpha: 0.22 * glow,
+                  ),
+                  _statusColor.withValues(
+                    alpha: 0.07 * glow,
+                  ),
+                  Colors.transparent,
+                ],
+                stops: const [
+                  0.0,
+                  0.55,
+                  1.0,
+                ],
+              ),
             ),
           ),
         );
@@ -419,55 +410,75 @@ class _StellaStatusCardState
     required Color color,
     required double phase,
   }) {
-    return Align(
-      alignment: alignment,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (
-          BuildContext context,
-          Widget? child,
-        ) {
-          final double value =
-              _animationController.value;
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (
+        BuildContext context,
+        Widget? child,
+      ) {
+        final double value =
+            _animationController.value;
 
-          final double wave =
-              (math.sin(
-                    (value * math.pi * 2) +
-                        phase,
-                  ) +
-                  1) /
-              2;
+        final double wave =
+            (math.sin(
+                      (value * math.pi * 2) +
+                          phase,
+                    ) +
+                    1) /
+                2;
 
-          final double opacity =
-              0.35 + (wave * 0.65);
+        final double opacity =
+            0.25 + (wave * 0.75);
 
-          final double particleScale =
-              0.75 + (wave * 0.45);
+        final double scale =
+            0.70 + (wave * 0.65);
 
-          return Opacity(
-            opacity: opacity,
-            child: Transform.scale(
-              scale: particleScale,
-              child: child,
+        final double vertical =
+            math.sin(
+                  (value * math.pi * 2) +
+                      phase,
+                ) *
+                10;
+
+        final double horizontal =
+            math.cos(
+                  (value * math.pi * 2) +
+                      phase,
+                ) *
+                7;
+
+        return Align(
+          alignment: alignment,
+          child: Transform.translate(
+            offset: Offset(
+              horizontal,
+              vertical,
             ),
-          );
-        },
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(
-                  alpha: 0.85,
-                ),
-                blurRadius: 14,
-                spreadRadius: 1,
+            child: Opacity(
+              opacity: opacity,
+              child: Transform.scale(
+                scale: scale,
+                child: child,
               ),
-            ],
+            ),
           ),
+        );
+      },
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(
+                alpha: 0.90,
+              ),
+              blurRadius: 16,
+              spreadRadius: 2,
+            ),
+          ],
         ),
       ),
     );
@@ -569,13 +580,13 @@ class _StellaStatusCardState
 
           SizedBox(
             width: 280,
-            height: 250,
+            height: 260,
             child: Stack(
               alignment: Alignment.center,
               clipBehavior: Clip.none,
               children: [
                 // ------------------------------------------------
-                // 🌟 ANIMATED BACKGROUND GLOW
+                // 🌟 GLOW
                 // ------------------------------------------------
 
                 _buildBackgroundGlow(),
