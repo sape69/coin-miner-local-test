@@ -44,8 +44,9 @@
 // ============================================================
 //
 // Referral mining reward:
+//
 // - maksetaan kutsujalle vain hyväksytystä mining-tuotosta
-// - käsitellään Firestore-transaktion sisällä
+// - käsitellään mining-transaktion yhteydessä
 // - käytetään miningTransactionId:tä idempotenssin varmistamiseen
 //
 // ============================================================
@@ -92,7 +93,12 @@ const REFERRAL_CODE_LENGTH =
   Number.isFinite(
     Number(CONFIG_REFERRAL_CODE_LENGTH)
   )
-    ? Number(CONFIG_REFERRAL_CODE_LENGTH)
+    ? Math.max(
+        4,
+        Math.floor(
+          Number(CONFIG_REFERRAL_CODE_LENGTH)
+        )
+      )
     : 8;
 
 const REFERRAL_CODE_ALPHABET =
@@ -375,7 +381,7 @@ function safeDisplayName(
 //
 // ACTIVE = käyttäjän mining-jakso on juuri nyt käynnissä.
 //
-// Tämä tarkistetaan:
+// Tarkistus:
 //
 // miningStartedAt <= nyt < miningEndsAt
 //
@@ -407,7 +413,7 @@ function miningWindowActive(
 // LAST MINING ACTIVITY
 // ============================================================
 //
-// Tätä käytetään vain järjestämiseen ja lisätietona.
+// Tätä käytetään vain järjestämiseen.
 //
 // Se EI määritä active/inactive-tilaa.
 //
@@ -515,6 +521,17 @@ async function findUserByReferralCode(
 async function ensureReferralCode(
   uid
 ) {
+  if (
+    typeof uid !==
+        "string" ||
+    !uid.trim()
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "🐱 Käyttäjän tunniste puuttuu."
+    );
+  }
+
   const userRef =
     getUserRef(uid);
 
@@ -601,6 +618,11 @@ async function getTotalUserCount() {
 // ============================================================
 // CALCULATE REFERRAL BONUS FOR USER
 // ============================================================
+//
+// Haetaan yhden kutsutun käyttäjän referral-bonukset
+// referral-historiasta.
+//
+// ============================================================
 
 async function getReferralBonusForUser(
   referrerUid,
@@ -655,11 +677,9 @@ async function getReferralBonusForUser(
 // PROCESS REFERRAL MINING REWARD
 // ============================================================
 //
-// Tätä funktiota kutsuu miningFunctions.js.
+// Tätä kutsuu miningFunctions.js.
 //
-// Tämä EI käynnistä uutta Firestore-transaktiota.
-//
-// Se käyttää miningFunctions.js:n olemassa olevaa
+// Tämä funktio käyttää kutsujan antamaa Firestore
 // transaction-objektia.
 //
 // ============================================================
@@ -877,6 +897,10 @@ async function processReferralMiningReward(
     };
   }
 
+  // ----------------------------------------------------------
+  // REFERRER BALANCE
+  // ----------------------------------------------------------
+
   const oldBalance =
     nonNegative(
       referrerData.miningBalance
@@ -885,10 +909,6 @@ async function processReferralMiningReward(
   const newBalance =
     oldBalance +
     bonus;
-
-  // ----------------------------------------------------------
-  // REFERRER BALANCE
-  // ----------------------------------------------------------
 
   transaction.set(
     referrerRef,
@@ -1393,14 +1413,11 @@ const getReferredUsers =
             document.data() ||
             {};
 
-          const miningActive =
+          const active =
             miningWindowActive(
               data,
               nowMs
             );
-
-          const active =
-            miningActive;
 
           const lastActivity =
             lastActivityMs(
@@ -1431,7 +1448,8 @@ const getReferredUsers =
 
             active,
 
-            miningActive,
+            miningActive:
+              active,
 
             lastActivityAt:
               lastActivity > 0
@@ -1851,14 +1869,11 @@ const getReferralDashboard =
             document.data() ||
             {};
 
-          const miningActive =
+          const active =
             miningWindowActive(
               data,
               nowMs
             );
-
-          const active =
-            miningActive;
 
           const lastActivity =
             lastActivityMs(
@@ -1883,7 +1898,8 @@ const getReferralDashboard =
 
             active,
 
-            miningActive,
+            miningActive:
+              active,
 
             lastActivityAt:
               lastActivity > 0
