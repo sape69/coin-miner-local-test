@@ -46,21 +46,15 @@ import 'package:flutter/services.dart';
 // ============================================================
 
 const Color backgroundColor = Color(0xFF120B24);
-
 const Color surfaceColor = Color(0xFF1A0E31);
-
 const Color cardColor = Color(0xFF21113B);
 
 const Color accentColor = Color(0xFFB58CFF);
-
 const Color pinkAccentColor = Color(0xFFFFB7E8);
-
 const Color goldAccentColor = Color(0xFFFFD166);
 
 const Color activeColor = Color(0xFF70E6A5);
-
 const Color inactiveColor = Color(0xFFAAA1BA);
-
 const Color referralBlueColor = Color(0xFF9BE7FF);
 
 // ============================================================
@@ -104,90 +98,57 @@ class _ReferralsPageState extends State<ReferralsPage> {
   late final FirebaseFunctions _functions;
 
   // ==========================================================
-  // 🌍 TRANSLATION
+  // 🌍 LANGUAGE
   // ==========================================================
 
+  String get _language =>
+      widget.languageCode.toLowerCase();
+
   bool get _isFinnish =>
-      widget.languageCode.toLowerCase().startsWith('fi');
+      _language.startsWith('fi');
 
   bool get _isGerman =>
-      widget.languageCode.toLowerCase().startsWith('de');
+      _language.startsWith('de');
 
   bool get _isSpanish =>
-      widget.languageCode.toLowerCase().startsWith('es');
+      _language.startsWith('es');
 
   bool get _isFrench =>
-      widget.languageCode.toLowerCase().startsWith('fr');
+      _language.startsWith('fr');
 
   bool get _isChinese =>
-      widget.languageCode.toLowerCase().startsWith('zh');
+      _language.startsWith('zh');
 
   bool get _isVietnamese =>
-      widget.languageCode.toLowerCase().startsWith('vi');
+      _language.startsWith('vi');
 
   bool get _isJapanese =>
-      widget.languageCode.toLowerCase().startsWith('ja');
+      _language.startsWith('ja');
+
+  // ==========================================================
+  // 📝 TRANSLATIONS
+  // ==========================================================
 
   String get _title {
-    if (_isFinnish) {
-      return 'Kutsutut';
-    }
-
-    if (_isGerman) {
-      return 'Empfehlungen';
-    }
-
-    if (_isSpanish) {
-      return 'Referidos';
-    }
-
-    if (_isFrench) {
-      return 'Parrainages';
-    }
-
-    if (_isChinese) {
-      return '邀请用户';
-    }
-
-    if (_isVietnamese) {
-      return 'Người được mời';
-    }
-
-    if (_isJapanese) {
-      return '招待したユーザー';
-    }
+    if (_isFinnish) return 'Kutsutut';
+    if (_isGerman) return 'Empfehlungen';
+    if (_isSpanish) return 'Referidos';
+    if (_isFrench) return 'Parrainages';
+    if (_isChinese) return '邀请用户';
+    if (_isVietnamese) return 'Người được mời';
+    if (_isJapanese) return '招待したユーザー';
 
     return 'Referrals';
   }
 
   String get _communityTitle {
-    if (_isFinnish) {
-      return 'STELLA-YHTEISÖ';
-    }
-
-    if (_isGerman) {
-      return 'STELLA COMMUNITY';
-    }
-
-    if (_isSpanish) {
-      return 'COMUNIDAD STELLA';
-    }
-
-    if (_isFrench) {
-      return 'COMMUNAUTÉ STELLA';
-    }
-
-    if (_isChinese) {
-      return 'STELLA 社区';
-    }
-
-    if (_isVietnamese) {
-      return 'CỘNG ĐỒNG STELLA';
-    }
-
-    if (_isJapanese) {
-      return 'STELLA コミュニティ';
-    }
+    if (_isFinnish) return 'STELLA-YHTEISÖ';
+    if (_isGerman) return 'STELLA COMMUNITY';
+    if (_isSpanish) return 'COMUNIDAD STELLA';
+    if (_isFrench) return 'COMMUNAUTÉ STELLA';
+    if (_isChinese) return 'STELLA 社区';
+    if (_isVietnamese) return 'CỘNG ĐỒNG STELLA';
+    if (_isJapanese) return 'STELLA コミュニティ';
 
     return 'STELLA COMMUNITY';
   }
@@ -225,97 +186,73 @@ class _ReferralsPageState extends State<ReferralsPage> {
   }
 
   String get _active {
-    if (_isFinnish) {
-      return 'Louhii nyt';
-    }
-
-    if (_isGerman) {
-      return 'Mining aktiv';
-    }
-
-    if (_isSpanish) {
-      return 'Minando ahora';
-    }
-
-    if (_isFrench) {
-      return 'Mine maintenant';
-    }
-
-    if (_isChinese) {
-      return '正在挖矿';
-    }
-
-    if (_isVietnamese) {
-      return 'Đang đào';
-    }
-
-    if (_isJapanese) {
-      return '現在マイニング中';
-    }
+    if (_isFinnish) return 'Louhii nyt';
+    if (_isGerman) return 'Mining aktiv';
+    if (_isSpanish) return 'Minando ahora';
+    if (_isFrench) return 'Mine maintenant';
+    if (_isChinese) return '正在挖矿';
+    if (_isVietnamese) return 'Đang đào';
+    if (_isJapanese) return '現在マイニング中';
 
     return 'Mining now';
   }
 
   String get _inactive {
-    if (_isFinnish) {
-      return 'Ei louhi';
-    }
-
-    if (_isGerman) {
-      return 'Nicht aktiv';
-    }
-
-    if (_isSpanish) {
-      return 'No está minando';
-    }
-
-    if (_isFrench) {
-      return 'Ne mine pas';
-    }
-
-    if (_isChinese) {
-      return '未挖矿';
-    }
-
-    if (_isVietnamese) {
-      return 'Không đào';
-    }
-
-    if (_isJapanese) {
-      return 'マイニングしていません';
-    }
+    if (_isFinnish) return 'Ei louhi';
+    if (_isGerman) return 'Nicht aktiv';
+    if (_isSpanish) return 'No está minando';
+    if (_isFrench) return 'Ne mine pas';
+    if (_isChinese) return '未挖矿';
+    if (_isVietnamese) return 'Không đào';
+    if (_isJapanese) return 'マイニングしていません';
 
     return 'Not mining';
   }
 
   String get _totalInvited {
-    if (_isFinnish) {
-      return 'Kutsutut';
-    }
+    if (_isFinnish) return 'Kutsutut';
+    if (_isGerman) return 'Eingeladen';
+    if (_isSpanish) return 'Invitados';
+    if (_isFrench) return 'Invités';
+    if (_isChinese) return '已邀请';
+    if (_isVietnamese) return 'Đã mời';
+    if (_isJapanese) return '招待済み';
 
     return 'Invited';
   }
 
   String get _miningNow {
-    if (_isFinnish) {
-      return 'Louhii nyt';
-    }
+    if (_isFinnish) return 'Louhii nyt';
+    if (_isGerman) return 'Mining aktiv';
+    if (_isSpanish) return 'Minando ahora';
+    if (_isFrench) return 'Mine maintenant';
+    if (_isChinese) return '正在挖矿';
+    if (_isVietnamese) return 'Đang đào';
+    if (_isJapanese) return '現在マイニング中';
 
     return 'Mining now';
   }
 
   String get _notMining {
-    if (_isFinnish) {
-      return 'Ei louhi';
-    }
+    if (_isFinnish) return 'Ei louhi';
+    if (_isGerman) return 'Nicht aktiv';
+    if (_isSpanish) return 'No está minando';
+    if (_isFrench) return 'Ne mine pas';
+    if (_isChinese) return '未挖矿';
+    if (_isVietnamese) return 'Không đào';
+    if (_isJapanese) return 'マイニングしていません';
 
     return 'Not mining';
   }
 
   String get _referralCodeTitle {
-    if (_isFinnish) {
-      return 'Sinun referral-koodisi';
-    }
+    if (_isFinnish) return 'Sinun referral-koodisi';
+    if (_isGerman) return 'Dein Empfehlungscode';
+    if (_isSpanish) return 'Tu código de referido';
+    if (_isFrench) return 'Votre code de parrainage';
+    if (_isChinese) return '你的推荐码';
+    if (_isVietnamese) return 'Mã giới thiệu của bạn';
+    if (_isJapanese) return 'あなたの紹介コード';
 
     return 'Your referral code';
   }
@@ -325,23 +262,123 @@ class _ReferralsPageState extends State<ReferralsPage> {
       return 'Et ole vielä kutsunut käyttäjiä.';
     }
 
+    if (_isGerman) {
+      return 'Du hast noch niemanden eingeladen.';
+    }
+
+    if (_isSpanish) {
+      return 'Todavía no has invitado a nadie.';
+    }
+
+    if (_isFrench) {
+      return 'Vous n’avez encore invité personne.';
+    }
+
+    if (_isChinese) {
+      return '你还没有邀请任何用户。';
+    }
+
+    if (_isVietnamese) {
+      return 'Bạn chưa mời người dùng nào.';
+    }
+
+    if (_isJapanese) {
+      return 'まだ誰も招待していません。';
+    }
+
     return 'You have not invited anyone yet.';
   }
 
   String get _tryAgain {
-    if (_isFinnish) {
-      return 'Yritä uudelleen';
-    }
+    if (_isFinnish) return 'Yritä uudelleen';
+    if (_isGerman) return 'Erneut versuchen';
+    if (_isSpanish) return 'Intentar de nuevo';
+    if (_isFrench) return 'Réessayer';
+    if (_isChinese) return '重试';
+    if (_isVietnamese) return 'Thử lại';
+    if (_isJapanese) return '再試行';
 
     return 'Try again';
   }
 
   String get _refresh {
-    if (_isFinnish) {
-      return 'Päivitä';
-    }
+    if (_isFinnish) return 'Päivitä';
+    if (_isGerman) return 'Aktualisieren';
+    if (_isSpanish) return 'Actualizar';
+    if (_isFrench) return 'Actualiser';
+    if (_isChinese) return '刷新';
+    if (_isVietnamese) return 'Làm mới';
+    if (_isJapanese) return '更新';
 
     return 'Refresh';
+  }
+
+  String get _copy {
+    if (_isFinnish) return 'Kopioi';
+    if (_isGerman) return 'Kopieren';
+    if (_isSpanish) return 'Copiar';
+    if (_isFrench) return 'Copier';
+    if (_isChinese) return '复制';
+    if (_isVietnamese) return 'Sao chép';
+    if (_isJapanese) return 'コピー';
+
+    return 'Copy';
+  }
+
+  String get _copied {
+    if (_isFinnish) return 'Referral-koodi kopioitu';
+    if (_isGerman) return 'Empfehlungscode kopiert';
+    if (_isSpanish) return 'Código de referido copiado';
+    if (_isFrench) return 'Code de parrainage copié';
+    if (_isChinese) return '推荐码已复制';
+    if (_isVietnamese) return 'Đã sao chép mã giới thiệu';
+    if (_isJapanese) return '紹介コードをコピーしました';
+
+    return 'Referral code copied';
+  }
+
+  String get _invitedUsers {
+    if (_isFinnish) return 'Kutsutut käyttäjät';
+    if (_isGerman) return 'Eingeladene Benutzer';
+    if (_isSpanish) return 'Usuarios invitados';
+    if (_isFrench) return 'Utilisateurs invités';
+    if (_isChinese) return '已邀请用户';
+    if (_isVietnamese) return 'Người dùng đã mời';
+    if (_isJapanese) return '招待したユーザー';
+
+    return 'Invited users';
+  }
+
+  String get _loadError {
+    if (_isFinnish) {
+      return 'Referral-tietoja ei voitu ladata.';
+    }
+
+    if (_isGerman) {
+      return 'Empfehlungsdaten konnten nicht geladen werden.';
+    }
+
+    if (_isSpanish) {
+      return 'No se pudieron cargar los datos de referidos.';
+    }
+
+    if (_isFrench) {
+      return 'Impossible de charger les données de parrainage.';
+    }
+
+    if (_isChinese) {
+      return '无法加载推荐数据。';
+    }
+
+    if (_isVietnamese) {
+      return 'Không thể tải dữ liệu giới thiệu.';
+    }
+
+    if (_isJapanese) {
+      return '紹介データを読み込めませんでした。';
+    }
+
+    return 'Referral data could not be loaded.';
   }
 
   // ==========================================================
@@ -367,36 +404,46 @@ class _ReferralsPageState extends State<ReferralsPage> {
     bool refresh = false,
   }) async {
     if (refresh) {
-      setState(() {
-        _refreshing = true;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _refreshing = true;
+          _error = null;
+        });
+      }
     } else {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = true;
+          _error = null;
+        });
+      }
     }
 
     try {
-      final HttpsCallable callable = _functions.httpsCallable(
+      final HttpsCallable callable =
+          _functions.httpsCallable(
         'getReferralStatus',
       );
 
-      final HttpsCallableResult result = await callable.call();
+      final HttpsCallableResult result =
+          await callable.call();
 
       final dynamic rawData = result.data;
 
       if (rawData is! Map) {
-        throw Exception('Invalid referral response.');
+        throw Exception(
+          'Invalid referral response.',
+        );
       }
 
       final Map<String, dynamic> data =
           Map<String, dynamic>.from(rawData);
 
-      final dynamic rawReferrals = data['referrals'];
+      final dynamic rawReferrals =
+          data['referrals'];
 
-      final List<_ReferralUser> loadedReferrals = [];
+      final List<_ReferralUser> loadedReferrals =
+          [];
 
       if (rawReferrals is List) {
         for (final dynamic item in rawReferrals) {
@@ -413,38 +460,57 @@ class _ReferralsPageState extends State<ReferralsPage> {
         }
       }
 
-      final int calculatedActive = loadedReferrals
-          .where(
+      // Backendin arvot voidaan ottaa vastaan,
+      // mutta lista toimii myös varmistuksena.
+      final int calculatedActive =
+          loadedReferrals.where(
             (user) => user.isMining,
-          )
-          .length;
+          ).length;
 
       final int calculatedInactive =
-          loadedReferrals.length - calculatedActive;
+          loadedReferrals.length -
+              calculatedActive;
+
+      final int loadedReferralCount =
+          _readInt(
+        data['referralCount'],
+        fallback: loadedReferrals.length,
+      );
+
+      final int loadedActiveCount =
+          _readInt(
+        data['activeCount'],
+        fallback: calculatedActive,
+      );
+
+      final int loadedInactiveCount =
+          _readInt(
+        data['inactiveCount'],
+        fallback: calculatedInactive,
+      );
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _referralCode = _readString(
-          data['referralCode'],
-        );
+        _referralCode =
+            _readString(data['referralCode']);
 
-        _referralCount = _readInt(
-          data['referralCount'],
-          fallback: loadedReferrals.length,
-        );
+        _referralCount =
+            loadedReferralCount < 0
+                ? 0
+                : loadedReferralCount;
 
-        _activeCount = _readInt(
-          data['activeCount'],
-          fallback: calculatedActive,
-        );
+        _activeCount =
+            loadedActiveCount < 0
+                ? 0
+                : loadedActiveCount;
 
-        _inactiveCount = _readInt(
-          data['inactiveCount'],
-          fallback: calculatedInactive,
-        );
+        _inactiveCount =
+            loadedInactiveCount < 0
+                ? 0
+                : loadedInactiveCount;
 
         _referrals = loadedReferrals;
 
@@ -515,6 +581,21 @@ class _ReferralsPageState extends State<ReferralsPage> {
           text: _referralCode,
         ),
       );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_copied),
+          backgroundColor: cardColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      );
     } catch (_) {
       if (!mounted) {
         return;
@@ -524,30 +605,17 @@ class _ReferralsPageState extends State<ReferralsPage> {
         SnackBar(
           content: Text(
             _isFinnish
-                ? 'Referral-koodin kopiointi epäonnistui'
-                : 'Could not copy referral code',
+                ? 'Koodin kopiointi epäonnistui'
+                : 'Could not copy the code',
           ),
           backgroundColor: cardColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
-
-      return;
     }
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isFinnish
-              ? 'Referral-koodi kopioitu'
-              : 'Referral code copied',
-        ),
-        backgroundColor: cardColor,
-      ),
-    );
   }
 
   // ==========================================================
@@ -570,9 +638,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
           color: cardColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: color.withValues(
-              alpha: 0.18,
-            ),
+            color: color.withValues(alpha: 0.18),
           ),
         ),
         child: Column(
@@ -581,9 +647,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: color.withValues(
-                  alpha: 0.12,
-                ),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -608,9 +672,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withValues(
-                  alpha: 0.60,
-                ),
+                color: Colors.white.withValues(alpha: 0.60),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -649,15 +711,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
         ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withValues(
-            alpha: 0.30,
-          ),
+          color: accentColor.withValues(alpha: 0.30),
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(
-              alpha: 0.08,
-            ),
+            color: accentColor.withValues(alpha: 0.08),
             blurRadius: 20,
           ),
         ],
@@ -698,12 +756,10 @@ class _ReferralsPageState extends State<ReferralsPage> {
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 15,
-              vertical: 13,
+              vertical: 9,
             ),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(
-                alpha: 0.18,
-              ),
+              color: Colors.black.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -711,6 +767,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
                 Expanded(
                   child: Text(
                     _referralCode,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: referralBlueColor,
                       fontSize: 20,
@@ -725,7 +783,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     Icons.copy_rounded,
                     color: Colors.white,
                   ),
-                  tooltip: _isFinnish ? 'Kopioi' : 'Copy',
+                  tooltip: _copy,
                 ),
               ],
             ),
@@ -750,18 +808,19 @@ class _ReferralsPageState extends State<ReferralsPage> {
     final String statusText =
         active ? _active : _inactive;
 
+    final String username =
+        user.username.isEmpty
+            ? 'Stelluriini User'
+            : user.username;
+
     return Container(
-      margin: const EdgeInsets.only(
-        bottom: 12,
-      ),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: statusColor.withValues(
-            alpha: 0.16,
-          ),
+          color: statusColor.withValues(alpha: 0.16),
         ),
       ),
       child: Row(
@@ -780,19 +839,13 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      accentColor.withValues(
-                        alpha: 0.24,
-                      ),
-                      pinkAccentColor.withValues(
-                        alpha: 0.12,
-                      ),
+                      accentColor.withValues(alpha: 0.24),
+                      pinkAccentColor.withValues(alpha: 0.12),
                     ],
                   ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: accentColor.withValues(
-                      alpha: 0.22,
-                    ),
+                    color: accentColor.withValues(alpha: 0.22),
                   ),
                 ),
                 child: const Icon(
@@ -801,11 +854,6 @@ class _ReferralsPageState extends State<ReferralsPage> {
                   size: 27,
                 ),
               ),
-
-              // ==================================================
-              // ACTIVE DOT
-              // ==================================================
-
               Positioned(
                 right: 1,
                 bottom: 1,
@@ -836,9 +884,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.username.isEmpty
-                      ? 'Stelluriini User'
-                      : user.username,
+                  username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -854,9 +900,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(
-                      alpha: 0.10,
-                    ),
+                    color: statusColor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -911,9 +955,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               Text(
                 'STL',
                 style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.45,
-                  ),
+                  color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
@@ -944,9 +986,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
           color: cardColor,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: accentColor.withValues(
-              alpha: 0.14,
-            ),
+            color: accentColor.withValues(alpha: 0.14),
           ),
         ),
         child: Column(
@@ -955,9 +995,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               width: 68,
               height: 68,
               decoration: BoxDecoration(
-                color: accentColor.withValues(
-                  alpha: 0.10,
-                ),
+                color: accentColor.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -971,9 +1009,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               _noReferrals,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(
-                  alpha: 0.72,
-                ),
+                color: Colors.white.withValues(alpha: 0.72),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -1012,9 +1048,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
             color: cardColor,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: pinkAccentColor.withValues(
-                alpha: 0.16,
-              ),
+              color: pinkAccentColor.withValues(alpha: 0.16),
             ),
           ),
           child: Column(
@@ -1027,9 +1061,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               ),
               const SizedBox(height: 15),
               Text(
-                _isFinnish
-                    ? 'Referral-tietoja ei voitu ladata.'
-                    : 'Referral data could not be loaded.',
+                _loadError,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -1039,9 +1071,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
               ),
               const SizedBox(height: 18),
               ElevatedButton.icon(
-                onPressed: () => _loadReferralStatus(
-                  refresh: true,
-                ),
+                onPressed: _refreshing
+                    ? null
+                    : () => _loadReferralStatus(
+                          refresh: true,
+                        ),
                 icon: const Icon(
                   Icons.refresh_rounded,
                 ),
@@ -1088,9 +1122,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: accentColor.withValues(
-                  alpha: 0.12,
-                ),
+                color: accentColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -1115,8 +1147,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
             onPressed: _refreshing
                 ? null
                 : () => _loadReferralStatus(
-                    refresh: true,
-                  ),
+                      refresh: true,
+                    ),
             icon: _refreshing
                 ? const SizedBox(
                     width: 20,
@@ -1310,9 +1342,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              _isFinnish
-                                  ? 'Kutsutut käyttäjät'
-                                  : 'Invited users',
+                              _invitedUsers,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -1356,33 +1386,51 @@ class _ReferralUser {
     Map<String, dynamic> data,
   ) {
     final dynamic rawActive =
-        data['isMining'] ?? data['active'] ?? false;
+        data['isMining'] ??
+            data['active'] ??
+            false;
 
     final dynamic rawBonus =
-        data['referralBonus'] ?? data['bonus'] ?? 0;
+        data['referralBonus'] ??
+            data['bonus'] ??
+            0;
 
     double bonus = 0;
 
     if (rawBonus is num) {
       bonus = rawBonus.toDouble();
     } else {
-      bonus = double.tryParse(
+      bonus =
+          double.tryParse(
             rawBonus.toString(),
           ) ??
           0;
     }
 
+    if (bonus < 0) {
+      bonus = 0;
+    }
+
+    final String uid =
+        data['uid']?.toString() ??
+            data['userId']?.toString() ??
+            '';
+
+    final String username =
+        data['username']?.toString() ??
+            data['displayName']?.toString() ??
+            data['name']?.toString() ??
+            '';
+
+    final bool isMining =
+        rawActive == true ||
+        rawActive.toString().toLowerCase() == 'true';
+
     return _ReferralUser(
-      uid: data['uid']?.toString() ??
-          data['userId']?.toString() ??
-          '',
-      username: data['username']?.toString() ??
-          data['displayName']?.toString() ??
-          data['name']?.toString() ??
-          '',
-      isMining: rawActive == true ||
-          rawActive.toString() == 'true',
-      referralBonus: bonus < 0 ? 0 : bonus,
+      uid: uid,
+      username: username,
+      isMining: isMining,
+      referralBonus: bonus,
     );
   }
 }
