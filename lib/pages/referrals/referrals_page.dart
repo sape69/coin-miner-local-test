@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 //
 // Stella Referral Community.
 //
+// TÄRKEÄÄ:
+//
 // ACTIVE = käyttäjä louhii parhaillaan.
 //
 // Aktiiviseksi EI lasketa:
@@ -44,15 +46,21 @@ import 'package:flutter/services.dart';
 // ============================================================
 
 const Color backgroundColor = Color(0xFF120B24);
+
 const Color surfaceColor = Color(0xFF1A0E31);
+
 const Color cardColor = Color(0xFF21113B);
 
 const Color accentColor = Color(0xFFB58CFF);
+
 const Color pinkAccentColor = Color(0xFFFFB7E8);
+
 const Color goldAccentColor = Color(0xFFFFD166);
 
 const Color activeColor = Color(0xFF70E6A5);
+
 const Color inactiveColor = Color(0xFFAAA1BA);
+
 const Color referralBlueColor = Color(0xFF9BE7FF);
 
 // ============================================================
@@ -96,7 +104,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
   late final FirebaseFunctions _functions;
 
   // ==========================================================
-  // 🌍 LANGUAGE
+  // 🌍 TRANSLATION
   // ==========================================================
 
   bool get _isFinnish =>
@@ -119,10 +127,6 @@ class _ReferralsPageState extends State<ReferralsPage> {
 
   bool get _isJapanese =>
       widget.languageCode.toLowerCase().startsWith('ja');
-
-  // ==========================================================
-  // 📝 TRANSLATIONS
-  // ==========================================================
 
   String get _title {
     if (_isFinnish) {
@@ -340,30 +344,6 @@ class _ReferralsPageState extends State<ReferralsPage> {
     return 'Refresh';
   }
 
-  String get _copy {
-    if (_isFinnish) {
-      return 'Kopioi';
-    }
-
-    return 'Copy';
-  }
-
-  String get _codeCopied {
-    if (_isFinnish) {
-      return 'Referral-koodi kopioitu';
-    }
-
-    return 'Referral code copied';
-  }
-
-  String get _invitedUsers {
-    if (_isFinnish) {
-      return 'Kutsutut käyttäjät';
-    }
-
-    return 'Invited users';
-  }
-
   // ==========================================================
   // 🚀 INIT
   // ==========================================================
@@ -408,9 +388,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
       final dynamic rawData = result.data;
 
       if (rawData is! Map) {
-        throw Exception(
-          'Invalid referral response.',
-        );
+        throw Exception('Invalid referral response.');
       }
 
       final Map<String, dynamic> data =
@@ -435,11 +413,10 @@ class _ReferralsPageState extends State<ReferralsPage> {
         }
       }
 
-      // Backend is the source of truth for mining status,
-      // but these calculated values protect the UI if the
-      // aggregate counters are missing from the response.
       final int calculatedActive = loadedReferrals
-          .where((user) => user.isMining)
+          .where(
+            (user) => user.isMining,
+          )
           .length;
 
       final int calculatedInactive =
@@ -532,11 +509,30 @@ class _ReferralsPageState extends State<ReferralsPage> {
       return;
     }
 
-    await Clipboard.setData(
-      ClipboardData(
-        text: _referralCode,
-      ),
-    );
+    try {
+      await Clipboard.setData(
+        ClipboardData(
+          text: _referralCode,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isFinnish
+                ? 'Referral-koodin kopiointi epäonnistui'
+                : 'Could not copy referral code',
+          ),
+          backgroundColor: cardColor,
+        ),
+      );
+
+      return;
+    }
 
     if (!mounted) {
       return;
@@ -544,7 +540,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_codeCopied),
+        content: Text(
+          _isFinnish
+              ? 'Referral-koodi kopioitu'
+              : 'Referral code copied',
+        ),
         backgroundColor: cardColor,
       ),
     );
@@ -725,7 +725,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     Icons.copy_rounded,
                     color: Colors.white,
                   ),
-                  tooltip: _copy,
+                  tooltip: _isFinnish ? 'Kopioi' : 'Copy',
                 ),
               ],
             ),
@@ -801,6 +801,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
                   size: 27,
                 ),
               ),
+
+              // ==================================================
+              // ACTIVE DOT
+              // ==================================================
+
               Positioned(
                 right: 1,
                 bottom: 1,
@@ -1305,7 +1310,9 @@ class _ReferralsPageState extends State<ReferralsPage> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              _invitedUsers,
+                              _isFinnish
+                                  ? 'Kutsutut käyttäjät'
+                                  : 'Invited users',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -1349,22 +1356,17 @@ class _ReferralUser {
     Map<String, dynamic> data,
   ) {
     final dynamic rawActive =
-        data['isMining'] ??
-        data['active'] ??
-        false;
+        data['isMining'] ?? data['active'] ?? false;
 
     final dynamic rawBonus =
-        data['referralBonus'] ??
-        data['bonus'] ??
-        0;
+        data['referralBonus'] ?? data['bonus'] ?? 0;
 
     double bonus = 0;
 
     if (rawBonus is num) {
       bonus = rawBonus.toDouble();
     } else {
-      bonus =
-          double.tryParse(
+      bonus = double.tryParse(
             rawBonus.toString(),
           ) ??
           0;
@@ -1379,7 +1381,7 @@ class _ReferralUser {
           data['name']?.toString() ??
           '',
       isMining: rawActive == true ||
-          rawActive.toString().toLowerCase() == 'true',
+          rawActive.toString() == 'true',
       referralBonus: bonus < 0 ? 0 : bonus,
     );
   }
