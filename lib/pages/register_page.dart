@@ -1,5 +1,7 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../localization.dart';
 import '../widgets/cat_avatar.dart';
@@ -17,9 +19,17 @@ import '../widgets/cat_avatar.dart';
 // - sähköposti
 // - salasana
 // - salasanan vahvistus
+// - Referral-koodi
 // - Firebase Auth
+// - Referral Cloud Function
 // - kielenvaihto
 // - Firebase-virheiden käsittely
+//
+// Referral:
+// - käyttäjä voi syöttää olemassa olevan referral-koodin
+// - koodi on valinnainen
+// - koodi normalisoidaan isoiksi kirjaimiksi
+// - backend vahvistaa koodin
 //
 // Ensimmäisen asennuksen oletuskieli on englanti.
 // LoginPage välittää nykyisen kielivalinnan tänne.
@@ -55,6 +65,9 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
 
   final TextEditingController confirmController =
+      TextEditingController();
+
+  final TextEditingController referralController =
       TextEditingController();
 
   // ==========================================================
@@ -114,26 +127,13 @@ class _RegisterPageState extends State<RegisterPage> {
     emailController.dispose();
     passwordController.dispose();
     confirmController.dispose();
+    referralController.dispose();
 
     super.dispose();
   }
 
   // ==========================================================
   // 💬 MESSAGE
-  // ==========================================================
-  //
-  // Stella-tyylinen ilmoitus.
-  //
-  // Onnistuminen:
-  // - tumma ja selkeä tausta
-  // - kultainen reunus
-  // - kultainen kuvake
-  // - voimakkaampi varjo
-  //
-  // Virhe:
-  // - tumma violetti/punainen tausta
-  // - pinkki reunus
-  //
   // ==========================================================
 
   void _message(
@@ -241,9 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isError
-                            ? 'Stelluriini'
-                            : 'Stelluriini',
+                        'Stelluriini',
                         style: TextStyle(
                           color: isError
                               ? const Color(0xFFFFB0C9)
@@ -299,6 +297,30 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
+  // 👥 REFERRAL CODE
+  // ==========================================================
+  //
+  // Referral-koodit ovat nykyisen järjestelmän mukaisesti
+  // 8-merkkisiä ja tallennetaan uppercase-muodossa.
+  //
+  // Esimerkiksi:
+  //
+  // jj6hdnv4
+  //
+  // muuttuu:
+  //
+  // JJ6HDNV4
+  //
+  // ==========================================================
+
+  String _normalizedReferralCode() {
+    return referralController.text
+        .trim()
+        .toUpperCase()
+        .replaceAll(RegExp(r'\s+'), '');
+  }
+
+  // ==========================================================
   // 🔐 REGISTER
   // ==========================================================
 
@@ -318,6 +340,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final String confirmPassword =
         confirmController.text;
+
+    final String referralCode =
+        _normalizedReferralCode();
 
     // --------------------------------------------------------
     // EMPTY FIELDS
@@ -377,6 +402,31 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    // --------------------------------------------------------
+    // REFERRAL FORMAT
+    // --------------------------------------------------------
+    //
+    // Referral on valinnainen.
+    //
+    // Jos käyttäjä antaa koodin, sen täytyy olla täsmälleen
+    // 8 merkkiä ja sisältää vain A-Z / 0-9.
+    //
+    // Backend tarkistaa lopullisesti, onko koodi olemassa.
+    // --------------------------------------------------------
+
+    if (referralCode.isNotEmpty) {
+      final bool validReferralFormat =
+          RegExp(r'^[A-Z0-9]{8}$')
+              .hasMatch(referralCode);
+
+      if (!validReferralFormat) {
+        _message(
+          'Referral code must contain exactly 8 letters or numbers.',
+        );
+        return;
+      }
+    }
+
     setState(() {
       loading = true;
     });
@@ -399,10 +449,152 @@ class _RegisterPageState extends State<RegisterPage> {
 
       final User? user = credential.user;
 
-      if (user != null) {
-        await user.updateDisplayName(username);
-        await user.reload();
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'registration-failed',
+          message: 'Firebase user was not created.',
+        );
       }
+
+      await user.updateDisplayName(username);
+      await user.reload();
+
+      // ------------------------------------------------------
+      // 👥 APPLY REFERRAL
+      // ------------------------------------------------------
+      //
+      // Referral käsitellään backendissä.
+      //
+      // Backend:
+      // - tarkistaa referralCodes/{CODE}
+      // - tarkistaa referrerin
+      // - estää self-referralin
+      // - lukitsee referrer-suhteen
+      // - tallentaa referral-suhteen
+      //
+      // Callable:
+      // applyReferralCode
+      //
+      // Referral on täysin vapaaehtoinen.
+      // Ilman koodia tätä kutsua ei tehdä.
+      // ------------------------------------------------------
+
+      if (referralCode.isNotEmpty) {
+        try {
+          final HttpsCallable applyReferralCode =
+              FirebaseFunctions.instanceFor(
+            region: 'us-central1',
+          ).httpsCallable(
+            'applyReferralCode',
+          );
+
+          await applyReferralCode.call(
+            <String, dynamic>{
+              'referralCode': referralCode,
+            },
+          );
+
+          debugPrint(
+            'Referral applied successfully: '
+            '$referralCode',
+          );
+        } on FirebaseFunctionsException catch (error) {
+          debugPrint(
+            'Referral error: '
+            '${error.code} - ${error.message}',
+          );
+
+          // --------------------------------------------------
+          // TILI ON JO LUOTU.
+          //
+          // Referral-ongelma ei poisteta juuri luotua tiliä.
+          // Näin vältetään tilin ja referral-datan
+          // epäjohdonmukainen rollback.
+          // --------------------------------------------------
+
+          String referralMessage =
+              'Account created, but the referral code '
+              'could not be applied.';
+
+          switch (error.code) {
+            case 'invalid-argument':
+              referralMessage =
+                  'The referral code is invalid.';
+              break;
+
+            case 'not-found':
+              referralMessage =
+                  'The referral code was not found.';
+              break;
+
+            case 'already-exists':
+              referralMessage =
+                  'This referral has already been applied.';
+              break;
+
+            case 'failed-precondition':
+              referralMessage =
+                  'This referral code cannot be used.';
+              break;
+
+            case 'permission-denied':
+              referralMessage =
+                  'The referral code could not be applied.';
+              break;
+
+            case 'unauthenticated':
+              referralMessage =
+                  'Your account was created, but the '
+                  'referral could not be connected.';
+              break;
+
+            case 'internal':
+              referralMessage =
+                  'Your account was created, but the '
+                  'referral service is temporarily unavailable.';
+              break;
+          }
+
+          _message(
+            referralMessage,
+          );
+
+          await Future<void>.delayed(
+            const Duration(milliseconds: 1200),
+          );
+
+          if (!mounted) {
+            return;
+          }
+
+          Navigator.of(context).pop();
+          return;
+        } catch (error) {
+          debugPrint(
+            'Unexpected referral error: $error',
+          );
+
+          _message(
+            'Account created, but the referral '
+            'could not be applied.',
+          );
+
+          await Future<void>.delayed(
+            const Duration(milliseconds: 1200),
+          );
+
+          if (!mounted) {
+            return;
+          }
+
+          Navigator.of(context).pop();
+          return;
+        }
+      }
+
+      // ------------------------------------------------------
+      // REGISTRATION SUCCESS
+      // ------------------------------------------------------
 
       if (!mounted) {
         return;
@@ -640,6 +832,16 @@ class _RegisterPageState extends State<RegisterPage> {
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: inputColor,
+      labelStyle: const TextStyle(
+        color: secondaryTextColor,
+      ),
+      hintStyle: TextStyle(
+        color: secondaryTextColor.withValues(
+          alpha: 0.65,
+        ),
+      ),
+      prefixIconColor: accentColor,
+      suffixIconColor: secondaryTextColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
@@ -876,12 +1078,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       obscureText:
                           !showConfirmPassword,
                       textInputAction:
-                          TextInputAction.done,
-                      onSubmitted: (_) {
-                        if (!loading) {
-                          _register();
-                        }
-                      },
+                          TextInputAction.next,
                       style: const TextStyle(
                         color: primaryTextColor,
                       ),
@@ -909,6 +1106,233 @@ class _RegisterPageState extends State<RegisterPage> {
                                   });
                                 },
                         ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ==================================================
+                    // 👥 REFERRAL CODE
+                    // ==================================================
+                    //
+                    // Käyttäjän kutsukoodi.
+                    //
+                    // Valinnainen:
+                    // käyttäjä voi jättää kentän tyhjäksi.
+                    //
+                    // ==================================================
+
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(18),
+                        gradient:
+                            LinearGradient(
+                          begin:
+                              Alignment.topLeft,
+                          end:
+                              Alignment.bottomRight,
+                          colors: [
+                            accentColor.withValues(
+                              alpha: 0.08,
+                            ),
+                            pinkColor.withValues(
+                              alpha: 0.035,
+                            ),
+                          ],
+                        ),
+                        border: Border.all(
+                          color:
+                              accentColor.withValues(
+                            alpha: 0.16,
+                          ),
+                        ),
+                      ),
+                      padding:
+                          const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          // --------------------------------------------
+                          // HEADER
+                          // --------------------------------------------
+
+                          Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration:
+                                    BoxDecoration(
+                                  gradient:
+                                      LinearGradient(
+                                    begin:
+                                        Alignment.topLeft,
+                                    end:
+                                        Alignment.bottomRight,
+                                    colors: [
+                                      accentColor
+                                          .withValues(
+                                        alpha: 0.24,
+                                      ),
+                                      pinkColor
+                                          .withValues(
+                                        alpha: 0.16,
+                                      ),
+                                    ],
+                                  ),
+                                  borderRadius:
+                                      BorderRadius
+                                          .circular(
+                                    13,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons
+                                      .groups_rounded,
+                                  color:
+                                      pinkColor,
+                                  size: 22,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                width: 12,
+                              ),
+
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment
+                                          .start,
+                                  children: [
+                                    const Text(
+                                      'Referral code',
+                                      style:
+                                          TextStyle(
+                                        color:
+                                            primaryTextColor,
+                                        fontSize: 15,
+                                        fontWeight:
+                                            FontWeight
+                                                .w700,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 2,
+                                    ),
+                                    Text(
+                                      'Optional • invite a Stella friend',
+                                      style:
+                                          TextStyle(
+                                        color:
+                                            secondaryTextColor
+                                                .withValues(
+                                          alpha: 0.78,
+                                        ),
+                                        fontSize: 11,
+                                        fontWeight:
+                                            FontWeight
+                                                .w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const Text(
+                                '🐾',
+                                style:
+                                    TextStyle(
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(
+                            height: 12,
+                          ),
+
+                          // --------------------------------------------
+                          // CODE INPUT
+                          // --------------------------------------------
+
+                          TextField(
+                            controller:
+                                referralController,
+                            enabled: !loading,
+                            keyboardType:
+                                TextInputType
+                                    .text,
+                            textInputAction:
+                                TextInputAction
+                                    .done,
+                            textCapitalization:
+                                TextCapitalization
+                                    .characters,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            maxLength: 8,
+                            inputFormatters: [
+                              FilteringTextInputFormatter
+                                  .allow(
+                                RegExp(
+                                  r'[A-Za-z0-9]',
+                                ),
+                              ),
+                              LengthLimitingTextInputFormatter(
+                                8,
+                              ),
+                            ],
+                            style:
+                                const TextStyle(
+                              color:
+                                  primaryTextColor,
+                              fontSize: 17,
+                              fontWeight:
+                                  FontWeight.bold,
+                              letterSpacing: 2.5,
+                            ),
+                            decoration:
+                                _inputDecoration(
+                              label:
+                                  'Referral code',
+                              icon: Icons
+                                  .card_giftcard_rounded,
+                            ).copyWith(
+                              hintText:
+                                  'Example JJ6HDNV4',
+                              counterText: '',
+                            ),
+                            onChanged:
+                                (String value) {
+                              final String normalized =
+                                  value
+                                      .toUpperCase();
+
+                              if (value !=
+                                  normalized) {
+                                referralController
+                                    .value =
+                                    referralController
+                                        .value
+                                        .copyWith(
+                                  text:
+                                      normalized,
+                                  selection:
+                                      TextSelection
+                                          .collapsed(
+                                    offset:
+                                        normalized
+                                            .length,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ),
 
