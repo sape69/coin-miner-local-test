@@ -1254,8 +1254,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 referralController,
                             enabled: !loading,
                             keyboardType:
-                                TextInputType
-                                    .ascii,
+                                TextInputType.text,
                             textInputAction:
                                 TextInputAction.done,
                             textCapitalization:
