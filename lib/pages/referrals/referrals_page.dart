@@ -1,13 +1,12 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // ============================================================
 // 🐱 STELLURIINI - REFERRALS PAGE
 // ============================================================
 //
 // Stella Referral Community.
-//
-// TÄRKEÄÄ:
 //
 // ACTIVE = käyttäjä louhii parhaillaan.
 //
@@ -44,32 +43,17 @@ import 'package:flutter/material.dart';
 // 🎨 STELLURIINI COLORS
 // ============================================================
 
-const Color backgroundColor =
-    Color(0xFF120B24);
+const Color backgroundColor = Color(0xFF120B24);
+const Color surfaceColor = Color(0xFF1A0E31);
+const Color cardColor = Color(0xFF21113B);
 
-const Color surfaceColor =
-    Color(0xFF1A0E31);
+const Color accentColor = Color(0xFFB58CFF);
+const Color pinkAccentColor = Color(0xFFFFB7E8);
+const Color goldAccentColor = Color(0xFFFFD166);
 
-const Color cardColor =
-    Color(0xFF21113B);
-
-const Color accentColor =
-    Color(0xFFB58CFF);
-
-const Color pinkAccentColor =
-    Color(0xFFFFB7E8);
-
-const Color goldAccentColor =
-    Color(0xFFFFD166);
-
-const Color activeColor =
-    Color(0xFF70E6A5);
-
-const Color inactiveColor =
-    Color(0xFFAAA1BA);
-
-const Color referralBlueColor =
-    Color(0xFF9BE7FF);
+const Color activeColor = Color(0xFF70E6A5);
+const Color inactiveColor = Color(0xFFAAA1BA);
+const Color referralBlueColor = Color(0xFF9BE7FF);
 
 // ============================================================
 // 🐾 REFERRALS PAGE
@@ -84,16 +68,14 @@ class ReferralsPage extends StatefulWidget {
   });
 
   @override
-  State<ReferralsPage> createState() =>
-      _ReferralsPageState();
+  State<ReferralsPage> createState() => _ReferralsPageState();
 }
 
 // ============================================================
 // 🐾 STATE
 // ============================================================
 
-class _ReferralsPageState
-    extends State<ReferralsPage> {
+class _ReferralsPageState extends State<ReferralsPage> {
   bool _loading = true;
   bool _refreshing = false;
 
@@ -114,43 +96,33 @@ class _ReferralsPageState
   late final FirebaseFunctions _functions;
 
   // ==========================================================
-  // 🌍 TRANSLATION
+  // 🌍 LANGUAGE
   // ==========================================================
 
   bool get _isFinnish =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('fi');
+      widget.languageCode.toLowerCase().startsWith('fi');
 
   bool get _isGerman =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('de');
+      widget.languageCode.toLowerCase().startsWith('de');
 
   bool get _isSpanish =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('es');
+      widget.languageCode.toLowerCase().startsWith('es');
 
   bool get _isFrench =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('fr');
+      widget.languageCode.toLowerCase().startsWith('fr');
 
   bool get _isChinese =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('zh');
+      widget.languageCode.toLowerCase().startsWith('zh');
 
   bool get _isVietnamese =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('vi');
+      widget.languageCode.toLowerCase().startsWith('vi');
 
   bool get _isJapanese =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('ja');
+      widget.languageCode.toLowerCase().startsWith('ja');
+
+  // ==========================================================
+  // 📝 TRANSLATIONS
+  // ==========================================================
 
   String get _title {
     if (_isFinnish) {
@@ -344,14 +316,6 @@ class _ReferralsPageState
     return 'Your referral code';
   }
 
-  String get _bonusTitle {
-    if (_isFinnish) {
-      return 'Referral-bonus';
-    }
-
-    return 'Referral bonus';
-  }
-
   String get _noReferrals {
     if (_isFinnish) {
       return 'Et ole vielä kutsunut käyttäjiä.';
@@ -376,6 +340,30 @@ class _ReferralsPageState
     return 'Refresh';
   }
 
+  String get _copy {
+    if (_isFinnish) {
+      return 'Kopioi';
+    }
+
+    return 'Copy';
+  }
+
+  String get _codeCopied {
+    if (_isFinnish) {
+      return 'Referral-koodi kopioitu';
+    }
+
+    return 'Referral code copied';
+  }
+
+  String get _invitedUsers {
+    if (_isFinnish) {
+      return 'Kutsutut käyttäjät';
+    }
+
+    return 'Invited users';
+  }
+
   // ==========================================================
   // 🚀 INIT
   // ==========================================================
@@ -384,8 +372,7 @@ class _ReferralsPageState
   void initState() {
     super.initState();
 
-    _functions =
-        FirebaseFunctions.instanceFor(
+    _functions = FirebaseFunctions.instanceFor(
       region: 'us-central1',
     );
 
@@ -412,16 +399,13 @@ class _ReferralsPageState
     }
 
     try {
-      final HttpsCallable callable =
-          _functions.httpsCallable(
+      final HttpsCallable callable = _functions.httpsCallable(
         'getReferralStatus',
       );
 
-      final HttpsCallableResult result =
-          await callable.call();
+      final HttpsCallableResult result = await callable.call();
 
-      final dynamic rawData =
-          result.data;
+      final dynamic rawData = result.data;
 
       if (rawData is! Map) {
         throw Exception(
@@ -430,83 +414,62 @@ class _ReferralsPageState
       }
 
       final Map<String, dynamic> data =
-          Map<String, dynamic>.from(
-        rawData,
-      );
+          Map<String, dynamic>.from(rawData);
 
-      final dynamic rawReferrals =
-          data['referrals'];
+      final dynamic rawReferrals = data['referrals'];
 
-      final List<_ReferralUser>
-          loadedReferrals = [];
+      final List<_ReferralUser> loadedReferrals = [];
 
       if (rawReferrals is List) {
-        for (
-          final dynamic item
-              in rawReferrals
-        ) {
+        for (final dynamic item in rawReferrals) {
           if (item is! Map) {
             continue;
           }
 
-          final Map<String, dynamic>
-              referral =
-              Map<String, dynamic>.from(
-            item,
-          );
+          final Map<String, dynamic> referral =
+              Map<String, dynamic>.from(item);
 
           loadedReferrals.add(
-            _ReferralUser.fromMap(
-              referral,
-            ),
+            _ReferralUser.fromMap(referral),
           );
         }
       }
 
-      final int calculatedActive =
-          loadedReferrals
-              .where(
-                (user) => user.isMining,
-              )
-              .length;
+      // Backend is the source of truth for mining status,
+      // but these calculated values protect the UI if the
+      // aggregate counters are missing from the response.
+      final int calculatedActive = loadedReferrals
+          .where((user) => user.isMining)
+          .length;
 
       final int calculatedInactive =
-          loadedReferrals.length -
-              calculatedActive;
+          loadedReferrals.length - calculatedActive;
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _referralCode =
-            _readString(
+        _referralCode = _readString(
           data['referralCode'],
         );
 
-        _referralCount =
-            _readInt(
+        _referralCount = _readInt(
           data['referralCount'],
-          fallback:
-              loadedReferrals.length,
+          fallback: loadedReferrals.length,
         );
 
-        _activeCount =
-            _readInt(
+        _activeCount = _readInt(
           data['activeCount'],
-          fallback:
-              calculatedActive,
+          fallback: calculatedActive,
         );
 
-        _inactiveCount =
-            _readInt(
+        _inactiveCount = _readInt(
           data['inactiveCount'],
-          fallback:
-              calculatedInactive,
+          fallback: calculatedInactive,
         );
 
-        _referrals =
-            loadedReferrals;
+        _referrals = loadedReferrals;
 
         _loading = false;
         _refreshing = false;
@@ -520,8 +483,7 @@ class _ReferralsPageState
       setState(() {
         _loading = false;
         _refreshing = false;
-        _error =
-            error.toString();
+        _error = error.toString();
       });
     }
   }
@@ -542,8 +504,7 @@ class _ReferralsPageState
       return value.toInt();
     }
 
-    final int? parsed =
-        int.tryParse(
+    final int? parsed = int.tryParse(
       value?.toString() ?? '',
     );
 
@@ -554,9 +515,7 @@ class _ReferralsPageState
   // 🔤 SAFE STRING
   // ==========================================================
 
-  String _readString(
-    dynamic value,
-  ) {
+  String _readString(dynamic value) {
     if (value == null) {
       return '';
     }
@@ -573,25 +532,20 @@ class _ReferralsPageState
       return;
     }
 
-    await ClipboardHelper.copy(
-      _referralCode,
+    await Clipboard.setData(
+      ClipboardData(
+        text: _referralCode,
+      ),
     );
 
     if (!mounted) {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          _isFinnish
-              ? 'Referral-koodi kopioitu'
-              : 'Referral code copied',
-        ),
-        backgroundColor:
-            cardColor,
+        content: Text(_codeCopied),
+        backgroundColor: cardColor,
       ),
     );
   }
@@ -608,23 +562,15 @@ class _ReferralsPageState
   }) {
     return Expanded(
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 10,
           vertical: 15,
         ),
-        decoration:
-            BoxDecoration(
-          color:
-              cardColor,
-          borderRadius:
-              BorderRadius.circular(
-            18,
-          ),
-          border:
-              Border.all(
-            color:
-                color.withValues(
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: color.withValues(
               alpha: 0.18,
             ),
           ),
@@ -634,14 +580,11 @@ class _ReferralsPageState
             Container(
               width: 42,
               height: 42,
-              decoration:
-                  BoxDecoration(
-                color:
-                    color.withValues(
+              decoration: BoxDecoration(
+                color: color.withValues(
                   alpha: 0.12,
                 ),
-                shape:
-                    BoxShape.circle,
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
@@ -649,39 +592,27 @@ class _ReferralsPageState
                 size: 22,
               ),
             ),
-            const SizedBox(
-              height: 9,
-            ),
+            const SizedBox(height: 9),
             Text(
               value,
-              style:
-                  TextStyle(
+              style: TextStyle(
                 color: color,
                 fontSize: 22,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(
-              height: 3,
-            ),
+            const SizedBox(height: 3),
             Text(
               label,
-              textAlign:
-                  TextAlign.center,
+              textAlign: TextAlign.center,
               maxLines: 2,
-              overflow:
-                  TextOverflow.ellipsis,
-              style:
-                  TextStyle(
-                color:
-                    Colors.white
-                        .withValues(
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(
                   alpha: 0.60,
                 ),
                 fontSize: 10,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -700,43 +631,31 @@ class _ReferralsPageState
     }
 
     return Container(
-      margin:
-          const EdgeInsets.fromLTRB(
+      margin: const EdgeInsets.fromLTRB(
         16,
         0,
         16,
         18,
       ),
-      padding:
-          const EdgeInsets.all(18),
-      decoration:
-          BoxDecoration(
-        gradient:
-            const LinearGradient(
-          begin:
-              Alignment.topLeft,
-          end:
-              Alignment.bottomRight,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Color(0xFF2D174D),
             Color(0xFF1A0E31),
           ],
         ),
-        borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
-        border:
-            Border.all(
-          color:
-              accentColor.withValues(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: accentColor.withValues(
             alpha: 0.30,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                accentColor.withValues(
+            color: accentColor.withValues(
               alpha: 0.08,
             ),
             blurRadius: 20,
@@ -744,100 +663,69 @@ class _ReferralsPageState
         ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
                 width: 42,
                 height: 42,
-                decoration:
-                    BoxDecoration(
-                  color:
-                      referralBlueColor
-                          .withValues(
+                decoration: BoxDecoration(
+                  color: referralBlueColor.withValues(
                     alpha: 0.12,
                   ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    13,
-                  ),
+                  borderRadius: BorderRadius.circular(13),
                 ),
                 child: const Icon(
                   Icons.link_rounded,
-                  color:
-                      referralBlueColor,
+                  color: referralBlueColor,
                 ),
               ),
-              const SizedBox(
-                width: 12,
-              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   _referralCodeTitle,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 14,
-                    fontWeight:
-                        FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(
-            height: 15,
-          ),
+          const SizedBox(height: 15),
           Container(
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 15,
               vertical: 13,
             ),
-            decoration:
-                BoxDecoration(
-              color:
-                  Colors.black.withValues(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(
                 alpha: 0.18,
               ),
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     _referralCode,
-                    style:
-                        const TextStyle(
-                      color:
-                          referralBlueColor,
+                    style: const TextStyle(
+                      color: referralBlueColor,
                       fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
-                      letterSpacing:
-                          2.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2.5,
                     ),
                   ),
                 ),
                 IconButton(
-                  onPressed:
-                      _copyReferralCode,
-                  icon:
-                      const Icon(
+                  onPressed: _copyReferralCode,
+                  icon: const Icon(
                     Icons.copy_rounded,
-                    color:
-                        Colors.white,
+                    color: Colors.white,
                   ),
-                  tooltip:
-                      _isFinnish
-                          ? 'Kopioi'
-                          : 'Copy',
+                  tooltip: _copy,
                 ),
               ],
             ),
@@ -854,38 +742,24 @@ class _ReferralsPageState
   Widget _referralUserCard(
     _ReferralUser user,
   ) {
-    final bool active =
-        user.isMining;
+    final bool active = user.isMining;
 
     final Color statusColor =
-        active
-            ? activeColor
-            : inactiveColor;
+        active ? activeColor : inactiveColor;
 
     final String statusText =
-        active
-            ? _active
-            : _inactive;
+        active ? _active : _inactive;
 
     return Container(
-      margin:
-          const EdgeInsets.only(
+      margin: const EdgeInsets.only(
         bottom: 12,
       ),
-      padding:
-          const EdgeInsets.all(15),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
-        borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
-        border:
-            Border.all(
-          color:
-              statusColor.withValues(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: statusColor.withValues(
             alpha: 0.16,
           ),
         ),
@@ -901,63 +775,43 @@ class _ReferralsPageState
               Container(
                 width: 52,
                 height: 52,
-                decoration:
-                    BoxDecoration(
-                  gradient:
-                      LinearGradient(
-                    begin:
-                        Alignment.topLeft,
-                    end:
-                        Alignment.bottomRight,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
                       accentColor.withValues(
                         alpha: 0.24,
                       ),
-                      pinkAccentColor
-                          .withValues(
+                      pinkAccentColor.withValues(
                         alpha: 0.12,
                       ),
                     ],
                   ),
-                  shape:
-                      BoxShape.circle,
-                  border:
-                      Border.all(
-                    color:
-                        accentColor
-                            .withValues(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: accentColor.withValues(
                       alpha: 0.22,
                     ),
                   ),
                 ),
                 child: const Icon(
                   Icons.person_rounded,
-                  color:
-                      pinkAccentColor,
+                  color: pinkAccentColor,
                   size: 27,
                 ),
               ),
-
-              // ==================================================
-              // ACTIVE DOT
-              // ==================================================
-
               Positioned(
                 right: 1,
                 bottom: 1,
                 child: Container(
                   width: 15,
                   height: 15,
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        statusColor,
-                    shape:
-                        BoxShape.circle,
-                    border:
-                        Border.all(
-                      color:
-                          cardColor,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: cardColor,
                       width: 2.5,
                     ),
                   ),
@@ -966,9 +820,7 @@ class _ReferralsPageState
             ],
           ),
 
-          const SizedBox(
-            width: 13,
-          ),
+          const SizedBox(width: 13),
 
           // ======================================================
           // USER INFO
@@ -976,80 +828,53 @@ class _ReferralsPageState
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   user.username.isEmpty
                       ? 'Stelluriini User'
                       : user.username,
                   maxLines: 1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 15,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-
-                const SizedBox(
-                  height: 7,
-                ),
-
+                const SizedBox(height: 7),
                 Container(
-                  padding:
-                      const EdgeInsets
-                          .symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 9,
                     vertical: 4,
                   ),
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        statusColor.withValues(
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(
                       alpha: 0.10,
                     ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      20,
-                    ),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
-                    mainAxisSize:
-                        MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         width: 6,
                         height: 6,
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              statusColor,
-                          shape:
-                              BoxShape.circle,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(
-                        width: 6,
-                      ),
+                      const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           statusText,
                           maxLines: 1,
-                          overflow:
-                              TextOverflow
-                                  .ellipsis,
-                          style:
-                              TextStyle(
-                            color:
-                                statusColor,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: statusColor,
                             fontSize: 10,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -1060,47 +885,33 @@ class _ReferralsPageState
             ),
           ),
 
-          const SizedBox(
-            width: 8,
-          ),
+          const SizedBox(width: 8),
 
           // ======================================================
           // BONUS
           // ======================================================
 
           Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                user.referralBonus
-                    .toStringAsFixed(2),
-                style:
-                    const TextStyle(
-                  color:
-                      goldAccentColor,
+                user.referralBonus.toStringAsFixed(2),
+                style: const TextStyle(
+                  color: goldAccentColor,
                   fontSize: 15,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(
-                height: 2,
-              ),
+              const SizedBox(height: 2),
               Text(
                 'STL',
-                style:
-                    TextStyle(
-                  color:
-                      Colors.white
-                          .withValues(
+                style: TextStyle(
+                  color: Colors.white.withValues(
                     alpha: 0.45,
                   ),
                   fontSize: 9,
-                  fontWeight:
-                      FontWeight.bold,
-                  letterSpacing:
-                      0.8,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
                 ),
               ),
             ],
@@ -1117,29 +928,18 @@ class _ReferralsPageState
   Widget _referralList() {
     if (_referrals.isEmpty) {
       return Container(
-        margin:
-            const EdgeInsets.fromLTRB(
+        margin: const EdgeInsets.fromLTRB(
           16,
           4,
           16,
           20,
         ),
-        padding:
-            const EdgeInsets.all(
-          28,
-        ),
-        decoration:
-            BoxDecoration(
-          color:
-              cardColor,
-          borderRadius:
-              BorderRadius.circular(
-            22,
-          ),
-          border:
-              Border.all(
-            color:
-                accentColor.withValues(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: accentColor.withValues(
               alpha: 0.14,
             ),
           ),
@@ -1149,39 +949,28 @@ class _ReferralsPageState
             Container(
               width: 68,
               height: 68,
-              decoration:
-                  BoxDecoration(
-                color:
-                    accentColor.withValues(
+              decoration: BoxDecoration(
+                color: accentColor.withValues(
                   alpha: 0.10,
                 ),
-                shape:
-                    BoxShape.circle,
+                shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.people_outline_rounded,
-                color:
-                    accentColor,
+                color: accentColor,
                 size: 32,
               ),
             ),
-            const SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16),
             Text(
               _noReferrals,
-              textAlign:
-                  TextAlign.center,
-              style:
-                  TextStyle(
-                color:
-                    Colors.white
-                        .withValues(
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(
                   alpha: 0.72,
                 ),
                 fontSize: 14,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -1190,20 +979,16 @@ class _ReferralsPageState
     }
 
     return Padding(
-      padding:
-          const EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         16,
         4,
         16,
         20,
       ),
       child: Column(
-        children:
-            _referrals
-                .map(
-                  _referralUserCard,
-                )
-                .toList(),
+        children: _referrals
+            .map(_referralUserCard)
+            .toList(),
       ),
     );
   }
@@ -1215,88 +1000,52 @@ class _ReferralsPageState
   Widget _errorView() {
     return Center(
       child: Padding(
-        padding:
-            const EdgeInsets.all(
-          24,
-        ),
+        padding: const EdgeInsets.all(24),
         child: Container(
-          padding:
-              const EdgeInsets.all(
-            24,
-          ),
-          decoration:
-              BoxDecoration(
-            color:
-                cardColor,
-            borderRadius:
-                BorderRadius.circular(
-              22,
-            ),
-            border:
-                Border.all(
-              color:
-                  pinkAccentColor
-                      .withValues(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: pinkAccentColor.withValues(
                 alpha: 0.16,
               ),
             ),
           ),
           child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons
-                    .cloud_off_rounded,
-                color:
-                    pinkAccentColor,
+                Icons.cloud_off_rounded,
+                color: pinkAccentColor,
                 size: 48,
               ),
-              const SizedBox(
-                height: 15,
-              ),
+              const SizedBox(height: 15),
               Text(
                 _isFinnish
                     ? 'Referral-tietoja ei voitu ladata.'
                     : 'Referral data could not be loaded.',
-                textAlign:
-                    TextAlign.center,
-                style:
-                    const TextStyle(
-                  color:
-                      Colors.white,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 16,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(
-                height: 18,
-              ),
+              const SizedBox(height: 18),
               ElevatedButton.icon(
-                onPressed:
-                    () =>
-                        _loadReferralStatus(
-                      refresh: true,
-                    ),
-                icon:
-                    const Icon(
+                onPressed: () => _loadReferralStatus(
+                  refresh: true,
+                ),
+                icon: const Icon(
                   Icons.refresh_rounded,
                 ),
-                label:
-                    Text(_tryAgain),
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      accentColor,
-                  foregroundColor:
-                      backgroundColor,
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      14,
-                    ),
+                label: Text(_tryAgain),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: backgroundColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -1312,25 +1061,19 @@ class _ReferralsPageState
   // ==========================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          backgroundColor,
+      backgroundColor: backgroundColor,
 
       // ========================================================
       // APP BAR
       // ========================================================
 
       appBar: AppBar(
-        backgroundColor:
-            backgroundColor,
+        backgroundColor: backgroundColor,
         elevation: 0,
-        surfaceTintColor:
-            Colors.transparent,
-        iconTheme:
-            const IconThemeData(
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(
           color: Colors.white,
         ),
         titleSpacing: 0,
@@ -1339,74 +1082,51 @@ class _ReferralsPageState
             Container(
               width: 38,
               height: 38,
-              decoration:
-                  BoxDecoration(
-                color:
-                    accentColor.withValues(
+              decoration: BoxDecoration(
+                color: accentColor.withValues(
                   alpha: 0.12,
                 ),
-                borderRadius:
-                    BorderRadius.circular(
-                  12,
-                ),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child:
-                  const Icon(
-                Icons
-                    .people_alt_rounded,
-                color:
-                    pinkAccentColor,
+              child: const Icon(
+                Icons.people_alt_rounded,
+                color: pinkAccentColor,
                 size: 21,
               ),
             ),
-            const SizedBox(
-              width: 11,
-            ),
+            const SizedBox(width: 11),
             Text(
               _title,
-              style:
-                  const TextStyle(
-                color:
-                    Colors.white,
+              style: const TextStyle(
+                color: Colors.white,
                 fontSize: 20,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            onPressed:
-                _refreshing
-                    ? null
-                    : () =>
-                        _loadReferralStatus(
-                      refresh: true,
+            onPressed: _refreshing
+                ? null
+                : () => _loadReferralStatus(
+                    refresh: true,
+                  ),
+            icon: _refreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: accentColor,
                     ),
-            icon:
-                _refreshing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth:
-                              2,
-                          color:
-                              accentColor,
-                        ),
-                      )
-                    : const Icon(
-                        Icons
-                            .refresh_rounded,
-                      ),
-            tooltip:
-                _refresh,
+                  )
+                : const Icon(
+                    Icons.refresh_rounded,
+                  ),
+            tooltip: _refresh,
           ),
-          const SizedBox(
-            width: 4,
-          ),
+          const SizedBox(width: 4),
         ],
       ),
 
@@ -1416,30 +1136,22 @@ class _ReferralsPageState
 
       body: _loading
           ? const Center(
-              child:
-                  CircularProgressIndicator(
-                color:
-                    accentColor,
+              child: CircularProgressIndicator(
+                color: accentColor,
               ),
             )
           : _error != null
               ? _errorView()
               : RefreshIndicator(
-                  color:
-                      accentColor,
-                  backgroundColor:
-                      cardColor,
-                  onRefresh:
-                      () =>
-                          _loadReferralStatus(
+                  color: accentColor,
+                  backgroundColor: cardColor,
+                  onRefresh: () => _loadReferralStatus(
                     refresh: true,
                   ),
-                  child:
-                      ListView(
+                  child: ListView(
                     physics:
                         const AlwaysScrollableScrollPhysics(),
-                    padding:
-                        const EdgeInsets.only(
+                    padding: const EdgeInsets.only(
                       top: 8,
                       bottom: 24,
                     ),
@@ -1449,123 +1161,73 @@ class _ReferralsPageState
                       // ==================================================
 
                       Container(
-                        margin:
-                            const EdgeInsets
-                                .fromLTRB(
+                        margin: const EdgeInsets.fromLTRB(
                           16,
                           0,
                           16,
                           18,
                         ),
-                        padding:
-                            const EdgeInsets
-                                .all(
-                          20,
-                        ),
-                        decoration:
-                            BoxDecoration(
-                          gradient:
-                              const LinearGradient(
-                            begin:
-                                Alignment
-                                    .topLeft,
-                            end:
-                                Alignment
-                                    .bottomRight,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                             colors: [
-                              Color(
-                                0xFF2D174D,
-                              ),
-                              Color(
-                                0xFF1A0E31,
-                              ),
+                              Color(0xFF2D174D),
+                              Color(0xFF1A0E31),
                             ],
                           ),
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            22,
-                          ),
-                          border:
-                              Border.all(
-                            color:
-                                accentColor
-                                    .withValues(
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: accentColor.withValues(
                               alpha: 0.25,
                             ),
                           ),
                         ),
-                        child:
-                            Row(
+                        child: Row(
                           children: [
                             Container(
                               width: 58,
                               height: 58,
-                              decoration:
-                                  BoxDecoration(
-                                gradient:
-                                    const LinearGradient(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
                                   colors: [
                                     accentColor,
                                     pinkAccentColor,
                                   ],
                                 ),
-                                shape:
-                                    BoxShape
-                                        .circle,
+                                shape: BoxShape.circle,
                               ),
-                              child:
-                                  const Icon(
-                                Icons
-                                    .groups_rounded,
-                                color:
-                                    backgroundColor,
+                              child: const Icon(
+                                Icons.groups_rounded,
+                                color: backgroundColor,
                                 size: 30,
                               ),
                             ),
-                            const SizedBox(
-                              width: 15,
-                            ),
+                            const SizedBox(width: 15),
                             Expanded(
-                              child:
-                                  Column(
+                              child: Column(
                                 crossAxisAlignment:
-                                    CrossAxisAlignment
-                                        .start,
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     _communityTitle,
-                                    style:
-                                        const TextStyle(
-                                      color:
-                                          goldAccentColor,
-                                      fontSize:
-                                          11,
-                                      fontWeight:
-                                          FontWeight
-                                              .bold,
-                                      letterSpacing:
-                                          1.2,
+                                    style: const TextStyle(
+                                      color: goldAccentColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
+                                  const SizedBox(height: 5),
                                   Text(
                                     _description,
-                                    style:
-                                        TextStyle(
-                                      color:
-                                          Colors
-                                              .white
-                                              .withValues(
-                                        alpha:
-                                            0.72,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.72,
                                       ),
-                                      fontSize:
-                                          12,
-                                      height:
-                                          1.35,
+                                      fontSize: 12,
+                                      height: 1.35,
                                     ),
                                   ),
                                 ],
@@ -1580,63 +1242,38 @@ class _ReferralsPageState
                       // ==================================================
 
                       Padding(
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                         ),
-                        child:
-                            Row(
+                        child: Row(
                           children: [
                             _statCard(
-                              icon:
-                                  Icons
-                                      .people_alt_rounded,
-                              value:
-                                  _referralCount
-                                      .toString(),
-                              label:
-                                  _totalInvited,
-                              color:
-                                  accentColor,
+                              icon: Icons.people_alt_rounded,
+                              value: _referralCount.toString(),
+                              label: _totalInvited,
+                              color: accentColor,
                             ),
-                            const SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             _statCard(
                               icon:
-                                  Icons
-                                      .play_circle_fill_rounded,
-                              value:
-                                  _activeCount
-                                      .toString(),
-                              label:
-                                  _miningNow,
-                              color:
-                                  activeColor,
+                                  Icons.play_circle_fill_rounded,
+                              value: _activeCount.toString(),
+                              label: _miningNow,
+                              color: activeColor,
                             ),
-                            const SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             _statCard(
                               icon:
-                                  Icons
-                                      .pause_circle_filled_rounded,
-                              value:
-                                  _inactiveCount
-                                      .toString(),
-                              label:
-                                  _notMining,
-                              color:
-                                  inactiveColor,
+                                  Icons.pause_circle_filled_rounded,
+                              value: _inactiveCount.toString(),
+                              label: _notMining,
+                              color: inactiveColor,
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 18,
-                      ),
+                      const SizedBox(height: 18),
 
                       // ==================================================
                       // REFERRAL CODE
@@ -1649,46 +1286,30 @@ class _ReferralsPageState
                       // ==================================================
 
                       Padding(
-                        padding:
-                            const EdgeInsets
-                                .fromLTRB(
+                        padding: const EdgeInsets.fromLTRB(
                           18,
                           2,
                           18,
                           12,
                         ),
-                        child:
-                            Row(
+                        child: Row(
                           children: [
                             Container(
                               width: 5,
                               height: 22,
-                              decoration:
-                                  BoxDecoration(
-                                color:
-                                    pinkAccentColor,
+                              decoration: BoxDecoration(
+                                color: pinkAccentColor,
                                 borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                  10,
-                                ),
+                                    BorderRadius.circular(10),
                               ),
                             ),
-                            const SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             Text(
-                              _isFinnish
-                                  ? 'Kutsutut käyttäjät'
-                                  : 'Invited users',
-                              style:
-                                  const TextStyle(
-                                color:
-                                    Colors.white,
-                                fontSize:
-                                    17,
-                                fontWeight:
-                                    FontWeight.bold,
+                              _invitedUsers,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
@@ -1729,66 +1350,37 @@ class _ReferralUser {
   ) {
     final dynamic rawActive =
         data['isMining'] ??
-            data['active'] ??
-            false;
+        data['active'] ??
+        false;
 
     final dynamic rawBonus =
         data['referralBonus'] ??
-            data['bonus'] ??
-            0;
+        data['bonus'] ??
+        0;
 
     double bonus = 0;
 
     if (rawBonus is num) {
-      bonus =
-          rawBonus.toDouble();
+      bonus = rawBonus.toDouble();
     } else {
       bonus =
           double.tryParse(
-                rawBonus.toString(),
-              ) ??
-              0;
+            rawBonus.toString(),
+          ) ??
+          0;
     }
 
     return _ReferralUser(
-      uid:
-          data['uid']?.toString() ??
-              data['userId']?.toString() ??
-              '',
-      username:
-          data['username']?.toString() ??
-              data['displayName']?.toString() ??
-              data['name']?.toString() ??
-              '',
-      isMining:
-          rawActive == true ||
-          rawActive.toString() ==
-              'true',
-      referralBonus:
-          bonus < 0 ? 0 : bonus,
+      uid: data['uid']?.toString() ??
+          data['userId']?.toString() ??
+          '',
+      username: data['username']?.toString() ??
+          data['displayName']?.toString() ??
+          data['name']?.toString() ??
+          '',
+      isMining: rawActive == true ||
+          rawActive.toString().toLowerCase() == 'true',
+      referralBonus: bonus < 0 ? 0 : bonus,
     );
-  }
-}
-
-// ============================================================
-// 📋 CLIPBOARD HELPER
-// ============================================================
-//
-// Flutter Clipboard API pidetään tässä pienessä helperissä,
-// jotta ReferralPage pysyy muuten selkeänä.
-//
-// ============================================================
-
-class ClipboardHelper {
-  static Future<void> copy(
-    String text,
-  ) async {
-    // Käytetään Flutterin Clipboardia.
-    //
-    // Importataan services vasta tässä tiedostossa
-    // dynaamisesti? Ei mahdollista Dartissa.
-    //
-    // Siksi tämä toteutetaan myöhemmin yhdessä
-    // keskitetyn clipboard-ratkaisun kanssa.
   }
 }
