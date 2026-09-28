@@ -6,48 +6,30 @@
 //
 // Stella Referral System.
 //
-// Referral-järjestelmä toimii kokonaan backendissä.
-//
-// Client EI päätä:
-// - referral-bonusprosenttia
-// - bonusmäärää
-// - referreria
-// - aktiivisuustilaa
-// - referral-palkkion maksamista
-//
-// Client voi pyytää:
-// - oman referral-koodin
-// - kutsuttujen käyttäjien listan
-// - aktiivisten kutsuttujen määrän
-// - referral-bonusten kokonaismäärän
-//
-// ============================================================
-//
-// AKTIIVISUUS:
-//
-// 🟢 ACTIVE
-//     = käyttäjän mining-jakso on tällä hetkellä käynnissä.
-//
-// 🔴 INACTIVE
-//     = käyttäjä ei tällä hetkellä louhi.
+// Tämä tiedosto sisältää Firebase Callable Functions -rajapinnan.
 //
 // TÄRKEÄÄ:
 //
-// "Aktiivinen" EI tarkoita:
-// - viimeksi kirjautunutta
-// - äskettäin sovellusta käyttänyttä
-// - viimeksi päivitettyä käyttäjää
+// Referral-liiketoimintalogiikka kuuluu:
 //
-// Aktiivinen tarkoittaa tässä referral-järjestelmässä
-// nimenomaan sitä, että käyttäjä louhii parhaillaan.
+//   services/referralService.js
 //
-// ============================================================
+// Tämä tiedosto EI päätä:
+// - referral-bonusprosenttia
+// - bonusmäärää
+// - referral-koodin uniikkiutta
+// - referral-suhdetta
+// - referral-idempotenssia
 //
-// REFERRAL MINING REWARD:
+// Service hoitaa nämä asiat server-side.
 //
-// - maksetaan kutsujalle vain hyväksytystä mining-tuotosta
-// - käsitellään mining-transaktion yhteydessä
-// - käytetään miningTransactionId:tä idempotenssin varmistamiseen
+// Client voi pyytää:
+//
+// - oman referral-koodin
+// - referral-koodin käyttämistä
+// - kutsuttujen käyttäjien listan
+// - referral-statuksen
+// - referral-dashboardin
 //
 // ============================================================
 
@@ -71,17 +53,25 @@ const {
 } = require("../utils/dateUtils");
 
 const {
-  DEFAULT_REFERRAL_BONUS_PERCENT,
   REFERRAL_MILESTONES,
-  REFERRAL_CODE_LENGTH:
-    CONFIG_REFERRAL_CODE_LENGTH,
-  REFERRAL_CODE_CHARACTERS,
-  MAX_CODE_GENERATION_ATTEMPTS,
-  getReferralBonusPercent,
-  getReferralBonusRate,
-  calculateReferralBonus,
-  isValidReferralBonus,
 } = require("../config/referralConfig");
+
+const {
+  normalizeReferralCode,
+  getReferralData,
+} = require("../utils/referralUtils");
+
+const {
+  referralCodesCollection,
+  referralsCollection,
+  getTotalUsers,
+  getCurrentReferralBonusPercent,
+  findReferralCode,
+  ensureReferralCode,
+  createReferralRelationship,
+  applyReferralMiningReward,
+  getReferralSummary,
+} = require("../services/referralService");
 
 // ============================================================
 // CONSTANTS
@@ -89,48 +79,13 @@ const {
 
 const MAX_REFERRAL_LIST = 100;
 
-const REFERRAL_CODE_LENGTH =
-  Number.isFinite(
-    Number(CONFIG_REFERRAL_CODE_LENGTH)
-  )
-    ? Math.max(
-        4,
-        Math.floor(
-          Number(
-            CONFIG_REFERRAL_CODE_LENGTH
-          )
-        )
-      )
-    : 8;
-
-const REFERRAL_CODE_ALPHABET =
-  typeof REFERRAL_CODE_CHARACTERS ===
-      "string" &&
-    REFERRAL_CODE_CHARACTERS.length > 0
-    ? REFERRAL_CODE_CHARACTERS
-    : "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-
-const MAX_CODE_ATTEMPTS =
-  Number.isFinite(
-    Number(MAX_CODE_GENERATION_ATTEMPTS)
-  )
-    ? Math.max(
-        1,
-        Math.floor(
-          Number(
-            MAX_CODE_GENERATION_ATTEMPTS
-          )
-        )
-      )
-    : 20;
-
 // ============================================================
 // VALUE HELPERS
 // ============================================================
 
 function number(
   value,
-  fallback = 0
+  fallback = 0,
 ) {
   const result =
     Number(value);
@@ -142,7 +97,7 @@ function number(
 
 function nonNegative(
   value,
-  fallback = 0
+  fallback = 0,
 ) {
   const result =
     Number(value);
@@ -157,7 +112,9 @@ function nonNegative(
 // TIMESTAMP HELPERS
 // ============================================================
 
-function timestampMs(value) {
+function timestampMs(
+  value,
+) {
   if (!value) {
     return 0;
   }
@@ -188,7 +145,7 @@ function timestampMs(value) {
 
       return date instanceof Date &&
           Number.isFinite(
-            date.getTime()
+            date.getTime(),
           )
         ? date.getTime()
         : 0;
@@ -201,7 +158,7 @@ function timestampMs(value) {
     value instanceof Date
   ) {
     return Number.isFinite(
-      value.getTime()
+      value.getTime(),
     )
       ? value.getTime()
       : 0;
@@ -221,7 +178,7 @@ function timestampMs(value) {
 
   if (
     typeof value ===
-        "number" &&
+      "number" &&
     Number.isFinite(value)
   ) {
     return value;
@@ -231,116 +188,12 @@ function timestampMs(value) {
 }
 
 // ============================================================
-// REFERRAL BONUS CONFIG
-// ============================================================
-
-function getCurrentReferralBonusPercent(
-  totalUsers
-) {
-  try {
-    return Math.max(
-      0,
-      Number(
-        getReferralBonusPercent(
-          totalUsers
-        )
-      )
-    );
-  } catch (error) {
-    console.error(
-      "getReferralBonusPercent error:",
-      error
-    );
-
-    return Math.max(
-      0,
-      number(
-        DEFAULT_REFERRAL_BONUS_PERCENT,
-        0
-      )
-    );
-  }
-}
-
-function getCurrentReferralBonusRate(
-  totalUsers
-) {
-  try {
-    return Math.max(
-      0,
-      Number(
-        getReferralBonusRate(
-          totalUsers
-        )
-      )
-    );
-  } catch (error) {
-    console.error(
-      "getReferralBonusRate error:",
-      error
-    );
-
-    return (
-      getCurrentReferralBonusPercent(
-        totalUsers
-      ) / 100
-    );
-  }
-}
-
-// ============================================================
-// REFERRAL CODE
-// ============================================================
-
-function normalizeReferralCode(
-  value
-) {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return "";
-  }
-
-  return value
-    .trim()
-    .toUpperCase()
-    .replace(
-      /[^A-Z0-9]/g,
-      ""
-    );
-}
-
-function generateReferralCode() {
-  let code = "";
-
-  for (
-    let i = 0;
-    i < REFERRAL_CODE_LENGTH;
-    i++
-  ) {
-    const index =
-      Math.floor(
-        Math.random() *
-          REFERRAL_CODE_ALPHABET.length
-      );
-
-    code +=
-      REFERRAL_CODE_ALPHABET[
-        index
-      ];
-  }
-
-  return code;
-}
-
-// ============================================================
 // USER DISPLAY NAME
 // ============================================================
 
 function safeDisplayName(
   data,
-  uid
+  uid,
 ) {
   const candidates = [
     data.username,
@@ -354,7 +207,7 @@ function safeDisplayName(
   ) {
     if (
       typeof candidate ===
-          "string" &&
+        "string" &&
       candidate.trim()
     ) {
       return candidate
@@ -365,12 +218,12 @@ function safeDisplayName(
 
   if (
     typeof uid ===
-        "string" &&
+      "string" &&
     uid.length > 0
   ) {
     return `Stella Miner ${uid.slice(
       0,
-      6
+      6,
     )}`;
   }
 
@@ -381,26 +234,36 @@ function safeDisplayName(
 // MINING STATUS
 // ============================================================
 //
-// ACTIVE = käyttäjän mining-jakso on juuri nyt käynnissä.
+// ACTIVE:
 //
-// Tarkistus:
+//   miningStartedAt <= now < miningEndsAt
 //
-// miningStartedAt <= nyt < miningEndsAt
+// TÄRKEÄÄ:
+//
+// Referral-aktiivisuus tarkoittaa tässä:
+//
+//   käyttäjän mining-jakso on parhaillaan käynnissä.
+//
+// Se EI tarkoita:
+//
+// - viimeksi kirjautunutta
+// - viimeksi sovellusta käyttänyttä
+// - viimeksi päivitettyä käyttäjää
 //
 // ============================================================
 
 function miningWindowActive(
   data,
-  nowMs
+  nowMs,
 ) {
   const startMs =
     timestampMs(
-      data.miningStartedAt
+      data.miningStartedAt,
     );
 
   const endMs =
     timestampMs(
-      data.miningEndsAt
+      data.miningEndsAt,
     );
 
   return (
@@ -415,14 +278,14 @@ function miningWindowActive(
 // LAST MINING ACTIVITY
 // ============================================================
 //
-// Tätä käytetään vain järjestämiseen.
+// Tätä käytetään vain listan järjestämiseen.
 //
 // Se EI määritä active/inactive-tilaa.
 //
 // ============================================================
 
 function lastActivityMs(
-  data
+  data,
 ) {
   const candidates = [
     data.lastMiningAt,
@@ -441,7 +304,7 @@ function lastActivityMs(
     latest =
       Math.max(
         latest,
-        timestampMs(value)
+        timestampMs(value),
       );
   }
 
@@ -449,220 +312,46 @@ function lastActivityMs(
 }
 
 // ============================================================
-// REFERRAL ACTIVE USER
-// ============================================================
-
-function isReferralUserActive(
-  data,
-  nowMs
-) {
-  return miningWindowActive(
-    data,
-    nowMs
-  );
-}
-
-// ============================================================
-// REFERRAL CODE LOOKUP
-// ============================================================
-
-async function findUserByReferralCode(
-  code,
-  transaction = null
-) {
-  const normalized =
-    normalizeReferralCode(
-      code
-    );
-
-  if (!normalized) {
-    return null;
-  }
-
-  const query =
-    db.collection("users")
-      .where(
-        "referralCode",
-        "==",
-        normalized
-      )
-      .limit(1);
-
-  const snapshot =
-    transaction
-      ? await transaction.get(
-          query
-        )
-      : await query.get();
-
-  if (
-    snapshot.empty
-  ) {
-    return null;
-  }
-
-  const document =
-    snapshot.docs[0];
-
-  return {
-    uid:
-      document.id,
-
-    ref:
-      document.ref,
-
-    data:
-      document.data() || {},
-  };
-}
-
-// ============================================================
-// ENSURE OWN REFERRAL CODE
-// ============================================================
-
-async function ensureReferralCode(
-  uid
-) {
-  if (
-    typeof uid !==
-        "string" ||
-    !uid.trim()
-  ) {
-    throw new HttpsError(
-      "invalid-argument",
-      "🐱 Käyttäjän tunniste puuttuu."
-    );
-  }
-
-  const userRef =
-    getUserRef(uid);
-
-  const snapshot =
-    await userRef.get();
-
-  const data =
-    snapshot.exists
-      ? snapshot.data() || {}
-      : {};
-
-  const existing =
-    normalizeReferralCode(
-      data.referralCode
-    );
-
-  if (existing) {
-    return existing;
-  }
-
-  for (
-    let attempt = 0;
-    attempt <
-      MAX_CODE_ATTEMPTS;
-    attempt++
-  ) {
-    const code =
-      generateReferralCode();
-
-    const existingUser =
-      await findUserByReferralCode(
-        code
-      );
-
-    if (existingUser) {
-      continue;
-    }
-
-    const latestSnapshot =
-      await userRef.get();
-
-    const latestData =
-      latestSnapshot.exists
-        ? latestSnapshot.data() || {}
-        : {};
-
-    const latestCode =
-      normalizeReferralCode(
-        latestData.referralCode
-      );
-
-    if (latestCode) {
-      return latestCode;
-    }
-
-    await userRef.set(
-      {
-        referralCode:
-          code,
-
-        referralCodeCreatedAt:
-          FieldValue.serverTimestamp(),
-
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      },
-      {
-        merge: true,
-      }
-    );
-
-    return code;
-  }
-
-  throw new HttpsError(
-    "resource-exhausted",
-    "🐱 Referral-koodin luominen epäonnistui. Yritä uudelleen."
-  );
-}
-
-// ============================================================
-// TOTAL USER COUNT
-// ============================================================
-
-async function getTotalUserCount() {
-  const snapshot =
-    await db
-      .collection("users")
-      .count()
-      .get();
-
-  return Math.max(
-    0,
-    number(
-      snapshot.data().count,
-      0
-    )
-  );
-}
-
-// ============================================================
-// CALCULATE REFERRAL BONUS FOR USER
+// REFERRAL BONUS HISTORY
 // ============================================================
 //
-// Haetaan yhden kutsutun käyttäjän referral-bonukset
-// referral-historiasta.
+// Hakee yhden kutsutun käyttäjän tuottaman referral-bonuksen
+// kutsujalle.
+//
+// Varsinainen bonuslaskenta tapahtuu referralServicessä.
+// Tämä funktio vain lukee historian käyttöliittymää varten.
 //
 // ============================================================
 
 async function getReferralBonusForUser(
   referrerUid,
-  referredUid
+  referredUid,
 ) {
+  if (
+    typeof referrerUid !==
+      "string" ||
+    typeof referredUid !==
+      "string"
+  ) {
+    return 0;
+  }
+
   let total = 0;
 
   try {
     const historyQuery =
       getHistoryCollection(
-        referrerUid
+        referrerUid,
       )
         .where(
           "referredUid",
           "==",
-          referredUid
+          referredUid,
         )
         .where(
           "type",
           "==",
-          "referral_reward"
+          "referral_reward",
         );
 
     const snapshot =
@@ -675,365 +364,252 @@ async function getReferralBonusForUser(
 
         total +=
           nonNegative(
-            data.amount
+            data.amount,
           );
-      }
+      },
     );
   } catch (error) {
     console.error(
       "Referral bonus history error:",
-      error
+      error,
     );
   }
 
   return Math.max(
     0,
-    total
+    total,
   );
 }
 
 // ============================================================
-// PROCESS REFERRAL MINING REWARD
+// GET REFERRAL RELATIONSHIPS
 // ============================================================
 //
-// Tätä kutsuu miningFunctions.js.
+// Uusi referral-arkkitehtuuri käyttää:
 //
-// Tämä funktio käyttää kutsujan antamaa Firestore
-// transaction-objektia.
+//   referrals/{referredUid}
+//
+// eikä enää pelkästään:
+//
+//   users.where("referrerUid", "==", uid)
 //
 // ============================================================
 
-async function processReferralMiningReward(
-  transaction,
-  referredUid,
-  miningAmount,
-  miningTransactionId
+async function getReferredRelationshipDocuments(
+  uid,
 ) {
-  const collected =
-    nonNegative(
-      miningAmount
-    );
-
-  if (!transaction) {
-    throw new Error(
-      "Referral reward requires a Firestore transaction."
-    );
-  }
-
-  if (!referredUid) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-    };
-  }
-
-  if (collected <= 0) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-    };
-  }
-
-  if (
-    typeof miningTransactionId !==
-        "string" ||
-    !miningTransactionId.trim()
-  ) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-    };
-  }
-
-  const referredUserRef =
-    getUserRef(
-      referredUid
-    );
-
-  const referredSnapshot =
-    await transaction.get(
-      referredUserRef
-    );
-
-  if (
-    !referredSnapshot.exists
-  ) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-    };
-  }
-
-  const referredData =
-    referredSnapshot.data() ||
-    {};
-
-  const referrerUid =
-    typeof referredData.referrerUid ===
-        "string"
-      ? referredData.referrerUid.trim()
-      : "";
-
-  if (
-    !referrerUid ||
-    referrerUid === referredUid
-  ) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-    };
-  }
-
-  const referrerRef =
-    getUserRef(
-      referrerUid
-    );
-
-  const referrerSnapshot =
-    await transaction.get(
-      referrerRef
-    );
-
-  if (
-    !referrerSnapshot.exists
-  ) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-      referrerUid,
-    };
-  }
-
-  const referrerData =
-    referrerSnapshot.data() ||
-    {};
-
-  // ----------------------------------------------------------
-  // IDEMPOTENCY
-  // ----------------------------------------------------------
-
-  const historyRef =
-    getHistoryCollection(
-      referrerUid
-    ).doc(
-      `referral_${miningTransactionId}`
-    );
-
-  const existingHistory =
-    await transaction.get(
-      historyRef
-    );
-
-  if (
-    existingHistory.exists
-  ) {
-    return {
-      rewarded: false,
-      duplicate: true,
-      bonus: 0,
-      referrerUid,
-    };
-  }
-
-  // ----------------------------------------------------------
-  // TOTAL USERS
-  // ----------------------------------------------------------
-
-  let totalUsers = 0;
-
-  try {
-    totalUsers =
-      await getTotalUserCount();
-  } catch (countError) {
-    console.error(
-      "Referral user count error:",
-      countError
-    );
-
-    totalUsers = 0;
-  }
-
-  // ----------------------------------------------------------
-  // BONUS
-  // ----------------------------------------------------------
-
-  const bonusPercent =
-    getCurrentReferralBonusPercent(
-      totalUsers
-    );
-
-  const bonusRate =
-    getCurrentReferralBonusRate(
-      totalUsers
-    );
-
-  let bonus = 0;
-
-  try {
-    bonus =
-      Number(
-        calculateReferralBonus(
-          collected,
-          totalUsers
-        )
+  const query =
+    referralsCollection()
+      .where(
+        "referrerUid",
+        "==",
+        uid,
+      )
+      .limit(
+        MAX_REFERRAL_LIST,
       );
-  } catch (calculationError) {
-    console.error(
-      "Referral bonus calculation error:",
-      calculationError
+
+  const snapshot =
+    await query.get();
+
+  return snapshot.docs;
+}
+
+// ============================================================
+// BUILD REFERRAL USER LIST
+// ============================================================
+
+async function buildReferralUsers(
+  uid,
+  options = {},
+) {
+  const now =
+    options.now instanceof Date
+      ? options.now
+      : new Date();
+
+  const nowMs =
+    now.getTime();
+
+  const relationshipDocuments =
+    await getReferredRelationshipDocuments(
+      uid,
     );
 
-    bonus =
-      collected *
-      bonusRate;
-  }
+  const users = [];
 
-  bonus =
-    Math.max(
-      0,
-      bonus
-    );
-
-  if (
-    !isValidReferralBonus(
-      bonus
-    )
+  for (
+    const relationshipDocument
+      of relationshipDocuments
   ) {
-    return {
-      rewarded: false,
-      duplicate: false,
-      bonus: 0,
-      referrerUid,
-      bonusPercent,
-      bonusRate,
-      totalUsers,
-    };
-  }
+    const relationshipData =
+      relationshipDocument.data() ||
+      {};
 
-  // ----------------------------------------------------------
-  // REFERRER BALANCE
-  // ----------------------------------------------------------
+    const referredUid =
+      typeof relationshipData.referredUid ===
+          "string"
+        ? relationshipData.referredUid.trim()
+        : relationshipDocument.id;
 
-  const oldBalance =
-    nonNegative(
-      referrerData.miningBalance
-    );
-
-  const newBalance =
-    oldBalance +
-    bonus;
-
-  transaction.set(
-    referrerRef,
-    {
-      miningBalance:
-        newBalance,
-
-      referralTotalEarned:
-        FieldValue.increment(
-          bonus
-        ),
-
-      referralLastRewardAt:
-        FieldValue.serverTimestamp(),
-
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    },
-    {
-      merge: true,
+    if (!referredUid) {
+      continue;
     }
-  );
 
-  // ----------------------------------------------------------
-  // REFERRAL HISTORY
-  // ----------------------------------------------------------
+    const userSnapshot =
+      await getUserRef(
+        referredUid,
+      ).get();
 
-  transaction.set(
-    historyRef,
-    {
-      type:
-        "referral_reward",
-
-      title:
-        "Stella Referral Reward 🐱🔗✨",
-
-      amount:
-        bonus,
-
-      balanceAfter:
-        newBalance,
-
-      referredUid,
-
-      referrerUid,
-
-      miningAmount:
-        collected,
-
-      bonus,
-
-      bonusPercent,
-
-      bonusRate,
-
-      totalUsers,
-
-      miningTransactionId,
-
-      createdAt:
-        FieldValue.serverTimestamp(),
-    },
-    {
-      merge: false,
+    if (
+      !userSnapshot.exists
+    ) {
+      continue;
     }
-  );
 
-  // ----------------------------------------------------------
-  // REFERRER SUMMARY
-  // ----------------------------------------------------------
+    const userData =
+      userSnapshot.data() || {};
 
-  transaction.set(
-    referrerRef,
-    {
-      referralLastMiningAmount:
-        collected,
+    const active =
+      miningWindowActive(
+        userData,
+        nowMs,
+      );
 
-      referralLastBonus:
-        bonus,
+    const lastActivity =
+      lastActivityMs(
+        userData,
+      );
 
-      referralLastReferredUid:
+    const referralBonus =
+      await getReferralBonusForUser(
+        uid,
+        referredUid,
+      );
+
+    users.push({
+      uid:
         referredUid,
 
-      updatedAt:
-        FieldValue.serverTimestamp(),
+      displayName:
+        safeDisplayName(
+          userData,
+          referredUid,
+        ),
+
+      username:
+        safeDisplayName(
+          userData,
+          referredUid,
+        ),
+
+      active,
+
+      miningActive:
+        active,
+
+      isMining:
+        active,
+
+      lastActivityAt:
+        lastActivity > 0
+          ? new Date(
+              lastActivity,
+            ).toISOString()
+          : null,
+
+      referralJoinedAt:
+        timestampMs(
+          relationshipData.createdAt,
+        ) > 0
+          ? new Date(
+              timestampMs(
+                relationshipData.createdAt,
+              ),
+            ).toISOString()
+          : timestampMs(
+                userData.referralJoinedAt,
+              ) > 0
+            ? new Date(
+                timestampMs(
+                  userData.referralJoinedAt,
+                ),
+              ).toISOString()
+            : null,
+
+      referralBonusEarned:
+        Math.max(
+          0,
+          referralBonus,
+        ),
+
+      referralBonus:
+        Math.max(
+          0,
+          referralBonus,
+        ),
+    });
+  }
+
+  users.sort(
+    (a, b) => {
+      if (
+        a.active !==
+        b.active
+      ) {
+        return a.active
+          ? -1
+          : 1;
+      }
+
+      return (
+        timestampMs(
+          b.lastActivityAt,
+        ) -
+        timestampMs(
+          a.lastActivityAt,
+        )
+      );
     },
-    {
-      merge: true,
-    }
   );
 
-  return {
-    rewarded: true,
+  return users;
+}
 
-    duplicate: false,
+// ============================================================
+// ENSURE REFERRAL CODE - CALLABLE SAFE WRAPPER
+// ============================================================
+//
+// referralService.ensureReferralCode() vaatii Firestore
+// transactionin.
+//
+// Tämä wrapper hoitaa transaktion callable-kutsulle.
+//
+// ============================================================
 
-    bonus,
+async function ensureUserReferralCode(
+  uid,
+) {
+  return db.runTransaction(
+    async (transaction) => {
+      return ensureReferralCode(
+        uid,
+        transaction,
+      );
+    },
+  );
+}
 
-    referrerUid,
+// ============================================================
+// GET TOTAL REFERRAL REWARDS
+// ============================================================
 
-    bonusPercent,
-
-    bonusRate,
-
-    totalUsers,
-  };
+function getTotalReferralRewards(
+  userData,
+) {
+  return nonNegative(
+    userData.referralTotalEarned,
+  );
 }
 
 // ============================================================
@@ -1051,33 +627,38 @@ const getReferralProfile =
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
-            "🐱 Kirjaudu sisään nähdäksesi referral-tietosi."
+            "🐱 Kirjaudu sisään nähdäksesi referral-tietosi.",
           );
         }
 
         const uid =
           request.auth.uid;
 
-        const code =
-          await ensureReferralCode(
-            uid
+        const ensured =
+          await ensureUserReferralCode(
+            uid,
           );
 
         const totalUsers =
-          await getTotalUserCount();
+          await getTotalUsers();
+
+        const bonusConfig =
+          getCurrentReferralBonusPercent();
 
         const snapshot =
-          await getUserRef(uid)
-            .get();
+          await getUserRef(
+            uid,
+          ).get();
 
         const data =
           snapshot.exists
             ? snapshot.data() || {}
             : {};
 
-        const totalEarned =
-          nonNegative(
-            data.referralTotalEarned
+        const bonusPercent =
+          number(
+            bonusConfig.bonusPercent,
+            0,
           );
 
         return {
@@ -1085,25 +666,30 @@ const getReferralProfile =
             true,
 
           referralCode:
-            code,
+            ensured.code,
 
           referralBonusPercent:
-            getCurrentReferralBonusPercent(
-              totalUsers
-            ),
+            bonusPercent,
 
           referralBonusRate:
-            getCurrentReferralBonusRate(
-              totalUsers
-            ),
+            bonusPercent / 100,
 
-          totalUsers,
+          totalUsers:
+            Math.max(
+              0,
+              number(
+                totalUsers,
+                0,
+              ),
+            ),
 
           referralMilestones:
             REFERRAL_MILESTONES,
 
           totalReferralRewards:
-            totalEarned,
+            getTotalReferralRewards(
+              data,
+            ),
 
           message:
             "🐱🔗 Stella Referral on valmis.",
@@ -1111,7 +697,7 @@ const getReferralProfile =
       } catch (error) {
         console.error(
           "getReferralProfile error:",
-          error
+          error,
         );
 
         if (
@@ -1123,14 +709,18 @@ const getReferralProfile =
 
         throw new HttpsError(
           "internal",
-          "🐱 Referral-tietojen lataaminen epäonnistui."
+          "🐱 Referral-tietojen lataaminen epäonnistui.",
         );
       }
-    }
+    },
   );
 
 // ============================================================
 // APPLY REFERRAL CODE
+// ============================================================
+//
+// Referral-suhde luodaan referralServicen kautta.
+//
 // ============================================================
 
 const applyReferralCode =
@@ -1144,7 +734,7 @@ const applyReferralCode =
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
-            "🐱 Kirjaudu sisään käyttääksesi referral-koodia."
+            "🐱 Kirjaudu sisään käyttääksesi referral-koodia.",
           );
         }
 
@@ -1153,13 +743,13 @@ const applyReferralCode =
 
         const code =
           normalizeReferralCode(
-            request.data?.referralCode
+            request.data?.referralCode,
           );
 
         if (!code) {
           throw new HttpsError(
             "invalid-argument",
-            "🐱 Referral-koodi puuttuu."
+            "🐱 Referral-koodi puuttuu.",
           );
         }
 
@@ -1168,162 +758,169 @@ const applyReferralCode =
         ) {
           throw new HttpsError(
             "invalid-argument",
-            "🐱 Referral-koodi on liian lyhyt."
+            "🐱 Referral-koodi on liian lyhyt.",
           );
         }
 
-        const userRef =
-          getUserRef(uid);
+        const result =
+          await db.runTransaction(
+            async (transaction) => {
+              const userRef =
+                getUserRef(uid);
 
-        return await db.runTransaction(
-          async (transaction) => {
-            const userSnapshot =
-              await transaction.get(
-                userRef
-              );
+              const userSnapshot =
+                await transaction.get(
+                  userRef,
+                );
 
-            const userData =
-              userSnapshot.exists
-                ? userSnapshot.data() || {}
-                : {};
+              const userData =
+                userSnapshot.exists
+                  ? userSnapshot.data() || {}
+                  : {};
 
-            const alreadyReferred =
-              typeof userData.referrerUid ===
-                    "string" &&
-              userData.referrerUid.trim();
+              const referralData =
+                getReferralData(
+                  userData,
+                );
 
-            if (
-              alreadyReferred
-            ) {
-              throw new HttpsError(
-                "already-exists",
-                "🐱 Referral-koodi on jo liitetty tähän käyttäjään."
-              );
-            }
+              // ------------------------------------------------
+              // Referral-suhdetta ei voi vaihtaa.
+              // ------------------------------------------------
 
-            const ownCode =
-              normalizeReferralCode(
-                userData.referralCode
-              );
+              if (
+                referralData.referrerUid
+              ) {
+                throw new HttpsError(
+                  "already-exists",
+                  "🐱 Referral-koodi on jo liitetty tähän käyttäjään.",
+                );
+              }
 
-            if (
-              ownCode &&
-              ownCode === code
-            ) {
-              throw new HttpsError(
-                "invalid-argument",
-                "🐱 Et voi käyttää omaa referral-koodiasi."
-              );
-            }
+              // ------------------------------------------------
+              // Oma koodi
+              // ------------------------------------------------
 
-            const referrer =
-              await findUserByReferralCode(
-                code,
-                transaction
-              );
+              const ownCode =
+                normalizeReferralCode(
+                  userData.referralCode,
+                );
 
-            if (!referrer) {
-              throw new HttpsError(
-                "not-found",
-                "🐱 Referral-koodia ei löytynyt."
-              );
-            }
+              if (
+                ownCode &&
+                ownCode === code
+              ) {
+                throw new HttpsError(
+                  "invalid-argument",
+                  "🐱 Et voi käyttää omaa referral-koodiasi.",
+                );
+              }
 
-            if (
-              referrer.uid === uid
-            ) {
-              throw new HttpsError(
-                "invalid-argument",
-                "🐱 Et voi käyttää omaa referral-koodiasi."
-              );
-            }
+              // ------------------------------------------------
+              // Varmista, että koodi löytyy.
+              // ------------------------------------------------
 
-            transaction.set(
-              userRef,
-              {
-                referrerUid:
-                  referrer.uid,
-
-                referralCodeUsed:
+              const referrer =
+                await findReferralCode(
                   code,
+                  transaction,
+                );
 
-                referralJoinedAt:
-                  FieldValue.serverTimestamp(),
-
-                updatedAt:
-                  FieldValue.serverTimestamp(),
-              },
-              {
-                merge: true,
+              if (!referrer) {
+                throw new HttpsError(
+                  "not-found",
+                  "🐱 Referral-koodia ei löytynyt.",
+                );
               }
-            );
 
-            transaction.set(
-              referrer.ref,
-              {
-                referralCount:
-                  FieldValue.increment(
-                    1
-                  ),
-
-                updatedAt:
-                  FieldValue.serverTimestamp(),
-              },
-              {
-                merge: true,
+              if (
+                referrer.uid === uid
+              ) {
+                throw new HttpsError(
+                  "invalid-argument",
+                  "🐱 Et voi käyttää omaa referral-koodiasi.",
+                );
               }
-            );
 
-            transaction.set(
-              getHistoryCollection(
-                uid
-              ).doc(),
-              {
-                type:
-                  "referral_joined",
+              // ------------------------------------------------
+              // Service luo varsinaisen suhteen.
+              // ------------------------------------------------
 
-                title:
-                  "Stella Referral Joined 🐱🔗",
-
-                referralCode:
+              const relationship =
+                await createReferralRelationship(
+                  uid,
                   code,
+                  transaction,
+                );
 
-                referrerUid:
-                  referrer.uid,
-
-                createdAt:
-                  FieldValue.serverTimestamp(),
+              if (
+                relationship.alreadyExists &&
+                relationship.referrerUid
+              ) {
+                throw new HttpsError(
+                  "already-exists",
+                  "🐱 Referral-koodi on jo liitetty tähän käyttäjään.",
+                );
               }
-            );
 
-            return {
-              success:
-                true,
+              // ------------------------------------------------
+              // Referral history
+              // ------------------------------------------------
 
-              applied:
-                true,
+              transaction.set(
+                getHistoryCollection(
+                  uid,
+                ).doc(),
+                {
+                  type:
+                    "referral_joined",
 
-              referralCode:
-                code,
+                  title:
+                    "Stella Referral Joined 🐱🔗",
 
-              referrerUid:
-                referrer.uid,
+                  referralCode:
+                    code,
 
-              referrerName:
-                safeDisplayName(
-                  referrer.data,
-                  referrer.uid
-                ),
+                  referrerUid:
+                    referrer.uid,
 
-              message:
-                "🐱✨ Referral-koodi liitettiin onnistuneesti!",
-            };
-          }
-        );
+                  createdAt:
+                    FieldValue.serverTimestamp(),
+                },
+              );
+
+              return {
+                relationship,
+                referrer,
+              };
+            },
+          );
+
+        return {
+          success:
+            true,
+
+          applied:
+            true,
+
+          referralCode:
+            code,
+
+          referrerUid:
+            result.referrer.uid,
+
+          referrerName:
+            safeDisplayName(
+              result.referrer.data,
+              result.referrer.uid,
+            ),
+
+          message:
+            "🐱✨ Referral-koodi liitettiin onnistuneesti!",
+        };
       } catch (error) {
         console.error(
           "applyReferralCode error:",
-          error
+          error,
         );
 
         if (
@@ -1333,12 +930,32 @@ const applyReferralCode =
           throw error;
         }
 
+        if (
+          error?.message ===
+          "REFERRAL_CODE_NOT_FOUND"
+        ) {
+          throw new HttpsError(
+            "not-found",
+            "🐱 Referral-koodia ei löytynyt.",
+          );
+        }
+
+        if (
+          error?.message ===
+          "REFERRAL_SELF_REFERRAL"
+        ) {
+          throw new HttpsError(
+            "invalid-argument",
+            "🐱 Et voi käyttää omaa referral-koodiasi.",
+          );
+        }
+
         throw new HttpsError(
           "internal",
-          "🐱 Referral-koodin käyttäminen epäonnistui."
+          "🐱 Referral-koodin käyttäminen epäonnistui.",
         );
       }
-    }
+    },
   );
 
 // ============================================================
@@ -1359,7 +976,7 @@ const getReferredUsers =
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
-            "🐱 Kirjaudu sisään nähdäksesi kutsutut käyttäjät."
+            "🐱 Kirjaudu sisään nähdäksesi kutsutut käyttäjät.",
           );
         }
 
@@ -1369,178 +986,82 @@ const getReferredUsers =
         const now =
           new Date();
 
-        const nowMs =
-          now.getTime();
-
         const today =
           getUtcDateString(
-            now
+            now,
           );
 
-        const ownSnapshot =
-          await getUserRef(uid)
-            .get();
+        const referralSummary =
+          await getReferralSummary(
+            uid,
+          );
 
-        const ownData =
-          ownSnapshot.exists
-            ? ownSnapshot.data() || {}
-            : {};
-
-        const referralCode =
-          await ensureReferralCode(
-            uid
+        const ensured =
+          await ensureUserReferralCode(
+            uid,
           );
 
         const totalUsers =
-          await getTotalUserCount();
+          await getTotalUsers();
 
-        const referredQuery =
-          db.collection("users")
-            .where(
-              "referrerUid",
-              "==",
-              uid
-            )
-            .limit(
-              MAX_REFERRAL_LIST
-            );
+        const bonusConfig =
+          getCurrentReferralBonusPercent();
 
-        const referredSnapshot =
-          await referredQuery.get();
+        const userSnapshot =
+          await getUserRef(
+            uid,
+          ).get();
 
-        const users = [];
+        const ownData =
+          userSnapshot.exists
+            ? userSnapshot.data() || {}
+            : {};
 
-        let activeCount =
-          0;
-
-        let inactiveCount =
-          0;
-
-        const totalReferralRewards =
-          nonNegative(
-            ownData.referralTotalEarned
+        const users =
+          await buildReferralUsers(
+            uid,
+            {
+              now,
+            },
           );
 
-        for (
-          const document
-            of referredSnapshot.docs
-        ) {
-          const referredUid =
-            document.id;
+        const activeCount =
+          users.filter(
+            (user) =>
+              user.active,
+          ).length;
 
-          const data =
-            document.data() ||
-            {};
+        const inactiveCount =
+          users.length -
+          activeCount;
 
-          const active =
-            miningWindowActive(
-              data,
-              nowMs
-            );
-
-          const lastActivity =
-            lastActivityMs(
-              data
-            );
-
-          if (active) {
-            activeCount++;
-          } else {
-            inactiveCount++;
-          }
-
-          const userReferralBonus =
-            await getReferralBonusForUser(
-              uid,
-              referredUid
-            );
-
-          users.push({
-            uid:
-              referredUid,
-
-            displayName:
-              safeDisplayName(
-                data,
-                referredUid
-              ),
-
-            active,
-
-            miningActive:
-              active,
-
-            lastActivityAt:
-              lastActivity > 0
-                ? new Date(
-                    lastActivity
-                  ).toISOString()
-                : null,
-
-            referralJoinedAt:
-              timestampMs(
-                data.referralJoinedAt
-              ) > 0
-                ? new Date(
-                    timestampMs(
-                      data.referralJoinedAt
-                    )
-                  ).toISOString()
-                : null,
-
-            referralBonusEarned:
-              Math.max(
-                0,
-                userReferralBonus
-              ),
-          });
-        }
-
-        users.sort(
-          (a, b) => {
-            if (
-              a.active !==
-              b.active
-            ) {
-              return a.active
-                ? -1
-                : 1;
-            }
-
-            const aTime =
-              timestampMs(
-                a.lastActivityAt
-              );
-
-            const bTime =
-              timestampMs(
-                b.lastActivityAt
-              );
-
-            return (
-              bTime -
-              aTime
-            );
-          }
-        );
+        const bonusPercent =
+          number(
+            bonusConfig.bonusPercent,
+            0,
+          );
 
         return {
           success:
             true,
 
-          referralCode,
+          referralCode:
+            ensured.code,
 
           referralBonusPercent:
-            getCurrentReferralBonusPercent(
-              totalUsers
-            ),
+            bonusPercent,
 
           referralBonusRate:
-            getCurrentReferralBonusRate(
-              totalUsers
-            ),
+            bonusPercent / 100,
 
-          totalUsers,
+          totalUsers:
+            Math.max(
+              0,
+              number(
+                totalUsers,
+                0,
+              ),
+            ),
 
           invitedCount:
             users.length,
@@ -1549,7 +1070,12 @@ const getReferredUsers =
 
           inactiveCount,
 
-          totalReferralRewards,
+          totalReferralRewards:
+            getTotalReferralRewards(
+              ownData,
+            ),
+
+          referralSummary,
 
           generatedAt:
             now.toISOString(),
@@ -1562,7 +1088,7 @@ const getReferredUsers =
       } catch (error) {
         console.error(
           "getReferredUsers error:",
-          error
+          error,
         );
 
         if (
@@ -1574,10 +1100,10 @@ const getReferredUsers =
 
         throw new HttpsError(
           "internal",
-          "🐱 Kutsuttujen käyttäjien lataaminen epäonnistui."
+          "🐱 Kutsuttujen käyttäjien lataaminen epäonnistui.",
         );
       }
-    }
+    },
   );
 
 // ============================================================
@@ -1586,7 +1112,7 @@ const getReferredUsers =
 //
 // Flutter ReferralsPage käyttää tätä callablea.
 //
-// Flutter odottaa:
+// Palautetaan edelleen yhteensopiva rakenne:
 //
 // {
 //   referralCode: "...",
@@ -1619,7 +1145,7 @@ const getReferralStatus =
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
-            "🐱 Kirjaudu sisään nähdäksesi Stella Referralin."
+            "🐱 Kirjaudu sisään nähdäksesi Stella Referralin.",
           );
         }
 
@@ -1629,116 +1155,66 @@ const getReferralStatus =
         const now =
           new Date();
 
-        const nowMs =
-          now.getTime();
-
-        const ownSnapshot =
-          await getUserRef(uid)
-            .get();
-
-        const ownData =
-          ownSnapshot.exists
-            ? ownSnapshot.data() || {}
-            : {};
-
-        const referralCode =
-          await ensureReferralCode(
-            uid
+        const ensured =
+          await ensureUserReferralCode(
+            uid,
           );
 
-        const referredQuery =
-          db.collection("users")
-            .where(
-              "referrerUid",
-              "==",
-              uid
-            )
-            .limit(
-              MAX_REFERRAL_LIST
-            );
+        const userSnapshot =
+          await getUserRef(
+            uid,
+          ).get();
 
-        const referredSnapshot =
-          await referredQuery.get();
+        const userData =
+          userSnapshot.exists
+            ? userSnapshot.data() || {}
+            : {};
 
-        const referrals = [];
+        const referrals =
+          await buildReferralUsers(
+            uid,
+            {
+              now,
+            },
+          );
 
-        let activeCount =
-          0;
+        const activeCount =
+          referrals.filter(
+            (referral) =>
+              referral.isMining,
+          ).length;
 
-        let inactiveCount =
-          0;
+        const inactiveCount =
+          referrals.length -
+          activeCount;
 
-        for (
-          const document
-            of referredSnapshot.docs
-        ) {
-          const referredUid =
-            document.id;
+        // ------------------------------------------------------
+        // Flutter-yhteensopiva suppea lista
+        // ------------------------------------------------------
 
-          const data =
-            document.data() ||
-            {};
+        const compactReferrals =
+          referrals.map(
+            (referral) => ({
+              uid:
+                referral.uid,
 
-          const isMining =
-            isReferralUserActive(
-              data,
-              nowMs
-            );
+              username:
+                referral.username,
 
-          if (isMining) {
-            activeCount++;
-          } else {
-            inactiveCount++;
-          }
+              isMining:
+                referral.isMining,
 
-          const referralBonus =
-            await getReferralBonusForUser(
-              uid,
-              referredUid
-            );
-
-          referrals.push({
-            uid:
-              referredUid,
-
-            username:
-              safeDisplayName(
-                data,
-                referredUid
-              ),
-
-            isMining,
-
-            referralBonus:
-              Math.max(
-                0,
-                referralBonus
-              ),
-          });
-        }
-
-        referrals.sort(
-          (a, b) => {
-            if (
-              a.isMining !==
-              b.isMining
-            ) {
-              return a.isMining
-                ? -1
-                : 1;
-            }
-
-            return a.username.localeCompare(
-              b.username
-            );
-          }
-        );
+              referralBonus:
+                referral.referralBonus,
+            }),
+          );
 
         return {
           success:
             true,
 
-          referralCode,
+          referralCode:
+            ensured.code,
 
           referralCount:
             referrals.length,
@@ -1747,11 +1223,12 @@ const getReferralStatus =
 
           inactiveCount,
 
-          referrals,
+          referrals:
+            compactReferrals,
 
           totalReferralRewards:
-            nonNegative(
-              ownData.referralTotalEarned
+            getTotalReferralRewards(
+              userData,
             ),
 
           generatedAt:
@@ -1760,7 +1237,7 @@ const getReferralStatus =
       } catch (error) {
         console.error(
           "getReferralStatus error:",
-          error
+          error,
         );
 
         if (
@@ -1772,10 +1249,10 @@ const getReferralStatus =
 
         throw new HttpsError(
           "internal",
-          "🐱 Referral-tietojen lataaminen epäonnistui."
+          "🐱 Referral-tietojen lataaminen epäonnistui.",
         );
       }
-    }
+    },
   );
 
 // ============================================================
@@ -1796,27 +1273,25 @@ const getReferralDashboard =
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
-            "🐱 Kirjaudu sisään nähdäksesi Stella Referralin."
+            "🐱 Kirjaudu sisään nähdäksesi Stella Referralin.",
           );
         }
 
         const uid =
           request.auth.uid;
 
-        const code =
-          await ensureReferralCode(
-            uid
-          );
-
         const now =
           new Date();
 
-        const nowMs =
-          now.getTime();
+        const ensured =
+          await ensureUserReferralCode(
+            uid,
+          );
 
         const userSnapshot =
-          await getUserRef(uid)
-            .get();
+          await getUserRef(
+            uid,
+          ).get();
 
         const userData =
           userSnapshot.exists
@@ -1824,133 +1299,56 @@ const getReferralDashboard =
             : {};
 
         const totalUsers =
-          await getTotalUserCount();
+          await getTotalUsers();
 
-        const referredQuery =
-          db.collection("users")
-            .where(
-              "referrerUid",
-              "==",
-              uid
-            )
-            .limit(
-              MAX_REFERRAL_LIST
-            );
+        const bonusConfig =
+          getCurrentReferralBonusPercent();
 
-        const referredSnapshot =
-          await referredQuery.get();
+        const users =
+          await buildReferralUsers(
+            uid,
+            {
+              now,
+            },
+          );
 
-        const users = [];
+        const activeCount =
+          users.filter(
+            (user) =>
+              user.active,
+          ).length;
 
-        let activeCount =
-          0;
+        const inactiveCount =
+          users.length -
+          activeCount;
 
-        let inactiveCount =
-          0;
-
-        for (
-          const document
-            of referredSnapshot.docs
-        ) {
-          const referredUid =
-            document.id;
-
-          const data =
-            document.data() ||
-            {};
-
-          const active =
-            miningWindowActive(
-              data,
-              nowMs
-            );
-
-          const lastActivity =
-            lastActivityMs(
-              data
-            );
-
-          if (active) {
-            activeCount++;
-          } else {
-            inactiveCount++;
-          }
-
-          users.push({
-            uid:
-              referredUid,
-
-            displayName:
-              safeDisplayName(
-                data,
-                referredUid
-              ),
-
-            active,
-
-            miningActive:
-              active,
-
-            lastActivityAt:
-              lastActivity > 0
-                ? new Date(
-                    lastActivity
-                  ).toISOString()
-                : null,
-
-            referralJoinedAt:
-              timestampMs(
-                data.referralJoinedAt
-              ) > 0
-                ? new Date(
-                    timestampMs(
-                      data.referralJoinedAt
-                    )
-                  ).toISOString()
-                : null,
-          });
-        }
-
-        users.sort(
-          (a, b) => {
-            if (
-              a.active !==
-              b.active
-            ) {
-              return a.active
-                ? -1
-                : 1;
-            }
-
-            return (
-              timestampMs(
-                b.lastActivityAt
-              ) -
-              timestampMs(
-                a.lastActivityAt
-              )
-            );
-          }
-        );
+        const bonusPercent =
+          number(
+            bonusConfig.bonusPercent,
+            0,
+          );
 
         return {
           success:
             true,
 
           referralCode:
-            code,
+            ensured.code,
 
           referralBonusPercent:
-            getCurrentReferralBonusPercent(
-              totalUsers
-            ),
+            bonusPercent,
 
           referralBonusRate:
-            getCurrentReferralBonusRate(
-              totalUsers
-            ),
+            bonusPercent / 100,
 
-          totalUsers,
+          totalUsers:
+            Math.max(
+              0,
+              number(
+                totalUsers,
+                0,
+              ),
+            ),
 
           invitedCount:
             users.length,
@@ -1960,8 +1358,8 @@ const getReferralDashboard =
           inactiveCount,
 
           totalReferralRewards:
-            nonNegative(
-              userData.referralTotalEarned
+            getTotalReferralRewards(
+              userData,
             ),
 
           users,
@@ -1972,7 +1370,7 @@ const getReferralDashboard =
       } catch (error) {
         console.error(
           "getReferralDashboard error:",
-          error
+          error,
         );
 
         if (
@@ -1984,10 +1382,10 @@ const getReferralDashboard =
 
         throw new HttpsError(
           "internal",
-          "🐱 Stella Referral Dashboardin lataaminen epäonnistui."
+          "🐱 Stella Referral Dashboardin lataaminen epäonnistui.",
         );
       }
-    }
+    },
   );
 
 // ============================================================
@@ -1995,7 +1393,15 @@ const getReferralDashboard =
 // ============================================================
 
 module.exports = {
-  processReferralMiningReward,
+  // ----------------------------------------------------------
+  // Mining käyttää tätä.
+  // ----------------------------------------------------------
+
+  applyReferralMiningReward,
+
+  // ----------------------------------------------------------
+  // Callable Functions
+  // ----------------------------------------------------------
 
   getReferralProfile,
 
