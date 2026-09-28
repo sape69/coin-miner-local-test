@@ -72,11 +72,10 @@ const {
 const {
   DEFAULT_REFERRAL_BONUS_PERCENT,
   REFERRAL_MILESTONES,
-  REFERRAL_CODE_LENGTH: CONFIG_REFERRAL_CODE_LENGTH,
+  REFERRAL_CODE_LENGTH:
+    CONFIG_REFERRAL_CODE_LENGTH,
   REFERRAL_CODE_CHARACTERS,
   MAX_CODE_GENERATION_ATTEMPTS,
-  REFERRAL_HISTORY_COLLECTION,
-  REFERRAL_DATA_FIELD,
   getReferralBonusPercent,
   getReferralBonusRate,
   calculateReferralBonus,
@@ -98,8 +97,8 @@ const REFERRAL_CODE_LENGTH =
 
 const REFERRAL_CODE_ALPHABET =
   typeof REFERRAL_CODE_CHARACTERS ===
-    "string" &&
-  REFERRAL_CODE_CHARACTERS.length > 0
+      "string" &&
+    REFERRAL_CODE_CHARACTERS.length > 0
     ? REFERRAL_CODE_CHARACTERS
     : "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -141,20 +140,7 @@ function nonNegative(
     Number(value);
 
   return Number.isFinite(result) &&
-    result >= 0
-    ? result
-    : fallback;
-}
-
-function positive(
-  value,
-  fallback = 0
-) {
-  const result =
-    Number(value);
-
-  return Number.isFinite(result) &&
-    result > 0
+      result >= 0
     ? result
     : fallback;
 }
@@ -193,9 +179,9 @@ function timestampMs(value) {
         value.toDate();
 
       return date instanceof Date &&
-        Number.isFinite(
-          date.getTime()
-        )
+          Number.isFinite(
+            date.getTime()
+          )
         ? date.getTime()
         : 0;
     } catch (_) {
@@ -227,7 +213,7 @@ function timestampMs(value) {
 
   if (
     typeof value ===
-      "number" &&
+        "number" &&
     Number.isFinite(value)
   ) {
     return value;
@@ -238,27 +224,6 @@ function timestampMs(value) {
 
 // ============================================================
 // REFERRAL BONUS CONFIG
-// ============================================================
-//
-// Bonusprosentti tulee referralConfig.js:stä.
-//
-// Esimerkiksi:
-//
-// 0 - 999 käyttäjää
-//     5 %
-//
-// 1 000 - 4 999
-//     4 %
-//
-// 5 000 - 9 999
-//     3 %
-//
-// 10 000 - 24 999
-//     2 %
-//
-// 25 000+
-//     1 %
-//
 // ============================================================
 
 function getCurrentReferralBonusPercent(
@@ -381,7 +346,7 @@ function safeDisplayName(
   ) {
     if (
       typeof candidate ===
-        "string" &&
+          "string" &&
       candidate.trim()
     ) {
       return candidate
@@ -392,7 +357,7 @@ function safeDisplayName(
 
   if (
     typeof uid ===
-      "string" &&
+        "string" &&
     uid.length > 0
   ) {
     return `Stella Miner ${uid.slice(
@@ -408,14 +373,11 @@ function safeDisplayName(
 // MINING STATUS
 // ============================================================
 //
-// Tämä määrittää referral-listan aktiivisuuden.
+// ACTIVE = käyttäjän mining-jakso on juuri nyt käynnissä.
 //
-// 🟢 ACTIVE
-//     Käyttäjän miningStartedAt on alkanut
-//     ja miningEndsAt ei ole vielä saavutettu.
+// Tämä tarkistetaan:
 //
-// 🔴 INACTIVE
-//     Mining-jakso ei ole tällä hetkellä käynnissä.
+// miningStartedAt <= nyt < miningEndsAt
 //
 // ============================================================
 
@@ -445,9 +407,9 @@ function miningWindowActive(
 // LAST MINING ACTIVITY
 // ============================================================
 //
-// Tätä käytetään vain lisätietona UI:lle.
+// Tätä käytetään vain järjestämiseen ja lisätietona.
 //
-// TÄMÄ EI määritä active/inactive-tilaa.
+// Se EI määritä active/inactive-tilaa.
 //
 // ============================================================
 
@@ -480,17 +442,6 @@ function lastActivityMs(
 
 // ============================================================
 // REFERRAL ACTIVE USER
-// ============================================================
-//
-// TÄRKEÄÄ:
-//
-// Aktiivinen tarkoittaa AINOASTAAN:
-//
-//     miningWindowActive === true
-//
-// Emme enää käytä viimeisimmän toiminnan perusteella
-// muodostettua 7 päivän aktiivisuusikkunaa.
-//
 // ============================================================
 
 function isReferralUserActive(
@@ -630,10 +581,6 @@ async function ensureReferralCode(
 // ============================================================
 // TOTAL USER COUNT
 // ============================================================
-//
-// Referral milestone tarvitsee järjestelmän käyttäjämäärän.
-//
-// ============================================================
 
 async function getTotalUserCount() {
   const snapshot =
@@ -652,22 +599,68 @@ async function getTotalUserCount() {
 }
 
 // ============================================================
+// CALCULATE REFERRAL BONUS FOR USER
+// ============================================================
+
+async function getReferralBonusForUser(
+  referrerUid,
+  referredUid
+) {
+  let total = 0;
+
+  try {
+    const historyQuery =
+      getHistoryCollection(
+        referrerUid
+      )
+        .where(
+          "referredUid",
+          "==",
+          referredUid
+        )
+        .where(
+          "type",
+          "==",
+          "referral_reward"
+        );
+
+    const snapshot =
+      await historyQuery.get();
+
+    snapshot.forEach(
+      (document) => {
+        const data =
+          document.data() || {};
+
+        total +=
+          nonNegative(
+            data.amount
+          );
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Referral bonus history error:",
+      error
+    );
+  }
+
+  return Math.max(
+    0,
+    total
+  );
+}
+
+// ============================================================
 // PROCESS REFERRAL MINING REWARD
 // ============================================================
 //
-// Tätä funktiota kutsuu miningFunctions.js:
+// Tätä funktiota kutsuu miningFunctions.js.
 //
-// processReferralMiningReward(
-//   transaction,
-//   uid,
-//   collected,
-//   miningTransactionId
-// )
-//
-// Tämä funktio EI tee erillistä Firestore transactionia.
+// Tämä EI käynnistä uutta Firestore-transaktiota.
 //
 // Se käyttää miningFunctions.js:n olemassa olevaa
-// transactionia.
+// transaction-objektia.
 //
 // ============================================================
 
@@ -706,7 +699,7 @@ async function processReferralMiningReward(
 
   if (
     typeof miningTransactionId !==
-      "string" ||
+        "string" ||
     !miningTransactionId.trim()
   ) {
     return {
@@ -742,7 +735,7 @@ async function processReferralMiningReward(
 
   const referrerUid =
     typeof referredData.referrerUid ===
-      "string"
+        "string"
       ? referredData.referrerUid.trim()
       : "";
 
@@ -812,19 +805,6 @@ async function processReferralMiningReward(
   // ----------------------------------------------------------
   // TOTAL USERS
   // ----------------------------------------------------------
-
-  //
-  // Referral milestone määräytyy järjestelmän
-  // käyttäjämäärän perusteella.
-  //
-  // Koska tämä funktio toimii jo olemassa olevan
-  // Firestore-transaktion sisällä, luetaan käyttäjämäärä
-  // ennen varsinaista bonuslaskua.
-  //
-  // Huom:
-  // bonuslaskenta käyttää referralConfig.js:n
-  // server-side logiikkaa.
-  //
 
   let totalUsers = 0;
 
@@ -1024,7 +1004,8 @@ async function processReferralMiningReward(
 const getReferralProfile =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (request) => {
       try {
@@ -1061,7 +1042,8 @@ const getReferralProfile =
           );
 
         return {
-          success: true,
+          success:
+            true,
 
           referralCode:
             code,
@@ -1115,7 +1097,8 @@ const getReferralProfile =
 const applyReferralCode =
   onCall(
     {
-      region: "us-central1",
+      region:
+        "us-central1",
     },
     async (request) => {
       try {
@@ -1162,13 +1145,12 @@ const applyReferralCode =
 
             const userData =
               userSnapshot.exists
-                ? userSnapshot.data() ||
-                  {}
+                ? userSnapshot.data() || {}
                 : {};
 
             const alreadyReferred =
               typeof userData.referrerUid ===
-                "string" &&
+                    "string" &&
               userData.referrerUid.trim();
 
             if (
@@ -1276,9 +1258,11 @@ const applyReferralCode =
             );
 
             return {
-              success: true,
+              success:
+                true,
 
-              applied: true,
+              applied:
+                true,
 
               referralCode:
                 code,
@@ -1321,36 +1305,15 @@ const applyReferralCode =
 // ============================================================
 // GET REFERRED USERS
 // ============================================================
-//
-// Flutter Referral UI käyttää tätä listaan.
-//
-// Jokainen käyttäjä sisältää:
-//
-// - displayName
-// - active
-// - miningActive
-// - lastActivityAt
-// - referralJoinedAt
-// - referralBonusEarned
-//
-// TÄRKEÄÄ:
-//
-// active === miningActive
-//
-// Eli:
-//
-// 🟢 active = louhii juuri nyt
-// 🔴 inactive = ei louhi juuri nyt
-//
-// Hash Ratea EI palauteta.
-//
-// ============================================================
 
 const getReferredUsers =
   onCall(
     {
-      region: "us-central1",
-      timeoutSeconds: 120,
+      region:
+        "us-central1",
+
+      timeoutSeconds:
+        120,
     },
     async (request) => {
       try {
@@ -1381,8 +1344,7 @@ const getReferredUsers =
 
         const ownData =
           ownSnapshot.exists
-            ? ownSnapshot.data() ||
-              {}
+            ? ownSnapshot.data() || {}
             : {};
 
         const referralCode =
@@ -1392,10 +1354,6 @@ const getReferredUsers =
 
         const totalUsers =
           await getTotalUserCount();
-
-        // ------------------------------------------------------
-        // FIND REFERRED USERS
-        // ------------------------------------------------------
 
         const referredQuery =
           db.collection("users")
@@ -1413,18 +1371,16 @@ const getReferredUsers =
 
         const users = [];
 
-        let activeCount = 0;
+        let activeCount =
+          0;
 
-        let inactiveCount = 0;
+        let inactiveCount =
+          0;
 
         const totalReferralRewards =
           nonNegative(
             ownData.referralTotalEarned
           );
-
-        // ------------------------------------------------------
-        // READ EACH REFERRED USER
-        // ------------------------------------------------------
 
         for (
           const document
@@ -1437,19 +1393,11 @@ const getReferredUsers =
             document.data() ||
             {};
 
-          // ----------------------------------------------------
-          // MINING STATUS
-          // ----------------------------------------------------
-
           const miningActive =
             miningWindowActive(
               data,
               nowMs
             );
-
-          // ----------------------------------------------------
-          // ACTIVE = MINING
-          // ----------------------------------------------------
 
           const active =
             miningActive;
@@ -1465,54 +1413,11 @@ const getReferredUsers =
             inactiveCount++;
           }
 
-          // ----------------------------------------------------
-          // REFERRAL BONUS FOR THIS USER
-          // ----------------------------------------------------
-
-          let userReferralBonus =
-            0;
-
-          try {
-            const historyQuery =
-              getHistoryCollection(
-                uid
-              )
-                .where(
-                  "referredUid",
-                  "==",
-                  referredUid
-                )
-                .where(
-                  "type",
-                  "==",
-                  "referral_reward"
-                );
-
-            const historySnapshot =
-              await historyQuery.get();
-
-            historySnapshot.forEach(
-              (
-                historyDocument
-              ) => {
-                const historyData =
-                  historyDocument.data() ||
-                  {};
-
-                userReferralBonus +=
-                  nonNegative(
-                    historyData.amount
-                  );
-              }
+          const userReferralBonus =
+            await getReferralBonusForUser(
+              uid,
+              referredUid
             );
-          } catch (
-            historyError
-          ) {
-            console.error(
-              "Referral history read error:",
-              historyError
-            );
-          }
 
           users.push({
             uid:
@@ -1554,16 +1459,6 @@ const getReferredUsers =
           });
         }
 
-        // ------------------------------------------------------
-        // SORTING
-        // ------------------------------------------------------
-        //
-        // 1. Louhivat ensin
-        // 2. Ei louhivia sen jälkeen
-        // 3. Viimeisin mining-aktiivisuus
-        //
-        // ------------------------------------------------------
-
         users.sort(
           (a, b) => {
             if (
@@ -1592,12 +1487,9 @@ const getReferredUsers =
           }
         );
 
-        // ------------------------------------------------------
-        // RESPONSE
-        // ------------------------------------------------------
-
         return {
-          success: true,
+          success:
+            true,
 
           referralCode,
 
@@ -1652,25 +1544,244 @@ const getReferredUsers =
   );
 
 // ============================================================
-// GET FULL REFERRAL DASHBOARD
+// GET REFERRAL STATUS
 // ============================================================
 //
-// Flutter voi käyttää tätä myöhemmin yhtenä kutsuna.
+// Flutter ReferralsPage käyttää tätä callablea.
 //
-// Myös tässä:
+// Flutter odottaa:
 //
-// 🟢 active = louhii juuri nyt
-// 🔴 inactive = ei louhi juuri nyt
+// {
+//   referralCode: "...",
+//   referralCount: 5,
+//   activeCount: 2,
+//   inactiveCount: 3,
+//   referrals: [
+//     {
+//       uid: "...",
+//       username: "...",
+//       isMining: true,
+//       referralBonus: 12.5
+//     }
+//   ]
+// }
 //
-// Hash Ratea ei palauteta.
-//
+// ============================================================
+
+const getReferralStatus =
+  onCall(
+    {
+      region:
+        "us-central1",
+
+      timeoutSeconds:
+        120,
+    },
+    async (request) => {
+      try {
+        if (!request.auth) {
+          throw new HttpsError(
+            "unauthenticated",
+            "🐱 Kirjaudu sisään nähdäksesi Stella Referralin."
+          );
+        }
+
+        const uid =
+          request.auth.uid;
+
+        const now =
+          new Date();
+
+        const nowMs =
+          now.getTime();
+
+        // ------------------------------------------------------
+        // OWN USER
+        // ------------------------------------------------------
+
+        const ownSnapshot =
+          await getUserRef(uid)
+            .get();
+
+        const ownData =
+          ownSnapshot.exists
+            ? ownSnapshot.data() || {}
+            : {};
+
+        // ------------------------------------------------------
+        // REFERRAL CODE
+        // ------------------------------------------------------
+
+        const referralCode =
+          await ensureReferralCode(
+            uid
+          );
+
+        // ------------------------------------------------------
+        // FIND REFERRED USERS
+        // ------------------------------------------------------
+
+        const referredQuery =
+          db.collection("users")
+            .where(
+              "referrerUid",
+              "==",
+              uid
+            )
+            .limit(
+              MAX_REFERRAL_LIST
+            );
+
+        const referredSnapshot =
+          await referredQuery.get();
+
+        const referrals = [];
+
+        let activeCount =
+          0;
+
+        let inactiveCount =
+          0;
+
+        // ------------------------------------------------------
+        // BUILD REFERRAL LIST
+        // ------------------------------------------------------
+
+        for (
+          const document
+            of referredSnapshot.docs
+        ) {
+          const referredUid =
+            document.id;
+
+          const data =
+            document.data() ||
+            {};
+
+          const isMining =
+            isReferralUserActive(
+              data,
+              nowMs
+            );
+
+          if (isMining) {
+            activeCount++;
+          } else {
+            inactiveCount++;
+          }
+
+          const referralBonus =
+            await getReferralBonusForUser(
+              uid,
+              referredUid
+            );
+
+          referrals.push({
+            uid:
+              referredUid,
+
+            username:
+              safeDisplayName(
+                data,
+                referredUid
+              ),
+
+            isMining,
+
+            referralBonus:
+              Math.max(
+                0,
+                referralBonus
+              ),
+          });
+        }
+
+        // ------------------------------------------------------
+        // SORT
+        // ------------------------------------------------------
+        //
+        // Louhivat ensin.
+        // Sen jälkeen ei-louhivat.
+        //
+        // ------------------------------------------------------
+
+        referrals.sort(
+          (a, b) => {
+            if (
+              a.isMining !==
+              b.isMining
+            ) {
+              return a.isMining
+                ? -1
+                : 1;
+            }
+
+            return a.username.localeCompare(
+              b.username
+            );
+          }
+        );
+
+        // ------------------------------------------------------
+        // RESPONSE
+        // ------------------------------------------------------
+
+        return {
+          success:
+            true,
+
+          referralCode,
+
+          referralCount:
+            referrals.length,
+
+          activeCount,
+
+          inactiveCount,
+
+          referrals,
+
+          totalReferralRewards:
+            nonNegative(
+              ownData.referralTotalEarned
+            ),
+
+          generatedAt:
+            now.toISOString(),
+        };
+      } catch (error) {
+        console.error(
+          "getReferralStatus error:",
+          error
+        );
+
+        if (
+          error instanceof
+          HttpsError
+        ) {
+          throw error;
+        }
+
+        throw new HttpsError(
+          "internal",
+          "🐱 Referral-tietojen lataaminen epäonnistui."
+        );
+      }
+    }
+  );
+
+// ============================================================
+// GET FULL REFERRAL DASHBOARD
 // ============================================================
 
 const getReferralDashboard =
   onCall(
     {
-      region: "us-central1",
-      timeoutSeconds: 120,
+      region:
+        "us-central1",
+
+      timeoutSeconds:
+        120,
     },
     async (request) => {
       try {
@@ -1701,8 +1812,7 @@ const getReferralDashboard =
 
         const userData =
           userSnapshot.exists
-            ? userSnapshot.data() ||
-              {}
+            ? userSnapshot.data() || {}
             : {};
 
         const totalUsers =
@@ -1724,9 +1834,11 @@ const getReferralDashboard =
 
         const users = [];
 
-        let activeCount = 0;
+        let activeCount =
+          0;
 
-        let inactiveCount = 0;
+        let inactiveCount =
+          0;
 
         for (
           const document
@@ -1793,10 +1905,6 @@ const getReferralDashboard =
           });
         }
 
-        // ------------------------------------------------------
-        // SORT
-        // ------------------------------------------------------
-
         users.sort(
           (a, b) => {
             if (
@@ -1819,12 +1927,9 @@ const getReferralDashboard =
           }
         );
 
-        // ------------------------------------------------------
-        // RESPONSE
-        // ------------------------------------------------------
-
         return {
-          success: true,
+          success:
+            true,
 
           referralCode:
             code,
@@ -1891,6 +1996,8 @@ module.exports = {
   applyReferralCode,
 
   getReferredUsers,
+
+  getReferralStatus,
 
   getReferralDashboard,
 };
