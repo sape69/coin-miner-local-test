@@ -15,7 +15,7 @@
 //
 // functions/src/functions/
 //
-// Tämä tiedosto toimii vain keskitettynä export-pisteenä.
+// Tämä tiedosto toimii keskitettynä export-pisteenä.
 //
 // ============================================================
 
@@ -79,6 +79,41 @@ const {
 
 
 // ============================================================
+// 🔗 REFERRAL
+// ============================================================
+//
+// Stella Referral System.
+//
+// Flutter käyttää tällä hetkellä:
+//
+// getReferralStatus
+//
+// Lisäksi backendissä ovat:
+//
+// getReferralProfile
+// applyReferralCode
+// getReferredUsers
+// getReferralDashboard
+//
+// processReferralMiningReward
+// ei ole suoraan clientin callable,
+// vaan mining-järjestelmä käyttää sitä referral-bonuksen
+// käsittelyyn.
+//
+// ============================================================
+
+const {
+  getReferralProfile,
+  applyReferralCode,
+  getReferredUsers,
+  getReferralStatus,
+  getReferralDashboard,
+} = require(
+  "./src/functions/referralFunctions",
+);
+
+
+// ============================================================
 // ⛏️ MINING EXPORTS
 // ============================================================
 
@@ -125,3 +160,37 @@ exports.getAchievements =
 
 exports.getAchievementsCompleted =
   getAchievementsCompleted;
+
+
+// ============================================================
+// 🔗 REFERRAL EXPORTS
+// ============================================================
+//
+// Nämä ovat nyt Firebase Cloud Functions -exportteja.
+//
+// Flutter voi kutsua:
+//
+// FirebaseFunctions
+//   .httpsCallable('getReferralStatus')
+//
+// ============================================================
+
+exports.getReferralProfile =
+  getReferralProfile;
+
+exports.applyReferralCode =
+  applyReferralCode;
+
+exports.getReferredUsers =
+  getReferredUsers;
+
+exports.getReferralStatus =
+  getReferralStatus;
+
+exports.getReferralDashboard =
+  getReferralDashboard;
+
+
+// ============================================================
+// 🐱 END OF STELLURIINI CLOUD FUNCTIONS
+// ============================================================
