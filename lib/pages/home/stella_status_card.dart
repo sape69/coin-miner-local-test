@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 // ============================================================
@@ -12,11 +14,11 @@ import 'package:flutter/material.dart';
 //
 // HomePage antaa komponentille aktiivisen tilan.
 //
-// Esimerkiksi:
+// Stella-kuvat:
 //
-// StellaStatusCard(
-//   status: StellaStatus.mining,
-// )
+// ⛏️ assets/images/stella_mining.png
+// 😴 assets/images/stella_sleeping.png
+// ⚡ assets/images/stella_boosting.png
 //
 // ============================================================
 
@@ -72,6 +74,18 @@ class _StellaStatusCardState
 
   late final Animation<double> _scaleAnimation;
 
+  late final Animation<double> _verticalAnimation;
+
+  late final Animation<double> _horizontalAnimation;
+
+  late final Animation<double> _rotationAnimation;
+
+  late final Animation<double> _glowAnimation;
+
+  // ==========================================================
+  // 🚀 INIT
+  // ==========================================================
+
   @override
   void initState() {
     super.initState();
@@ -79,15 +93,75 @@ class _StellaStatusCardState
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(
-        milliseconds: 1800,
+        milliseconds: 2200,
       ),
     )..repeat(
         reverse: true,
       );
 
+    // ----------------------------------------------------------
+    // 💫 SCALE
+    // ----------------------------------------------------------
+
     _scaleAnimation = Tween<double>(
-      begin: 0.97,
-      end: 1.03,
+      begin: 0.94,
+      end: 1.06,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // ----------------------------------------------------------
+    // 🐱 VERTICAL FLOAT
+    // ----------------------------------------------------------
+
+    _verticalAnimation = Tween<double>(
+      begin: 7.0,
+      end: -7.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // ----------------------------------------------------------
+    // ↔️ HORIZONTAL FLOAT
+    // ----------------------------------------------------------
+
+    _horizontalAnimation = Tween<double>(
+      begin: -3.5,
+      end: 3.5,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // ----------------------------------------------------------
+    // 🔄 SLIGHT ROTATION
+    // ----------------------------------------------------------
+
+    _rotationAnimation = Tween<double>(
+      begin: -0.018,
+      end: 0.018,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // ----------------------------------------------------------
+    // 🌟 GLOW
+    // ----------------------------------------------------------
+
+    _glowAnimation = Tween<double>(
+      begin: 0.65,
+      end: 1.15,
     ).animate(
       CurvedAnimation(
         parent: _animationController,
@@ -95,6 +169,10 @@ class _StellaStatusCardState
       ),
     );
   }
+
+  // ==========================================================
+  // 🧹 DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
@@ -177,14 +255,6 @@ class _StellaStatusCardState
   // ==========================================================
   // 🐱 STATUS IMAGE
   // ==========================================================
-  //
-  // Näytetään vain yksi aktiivinen Stella-kuva kerrallaan.
-  //
-  // ⛏️ assets/images/stella_mining.png
-  // 😴 assets/images/stella_sleeping.png
-  // ⚡ assets/images/stella_boosting.png
-  //
-  // ==========================================================
 
   String get _imagePath {
     switch (widget.status) {
@@ -222,14 +292,35 @@ class _StellaStatusCardState
 
   Widget _buildStellaImage() {
     return AnimatedBuilder(
-      animation: _scaleAnimation,
+      animation: _animationController,
       builder: (
         BuildContext context,
         Widget? child,
       ) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
+        final double scale =
+            _scaleAnimation.value;
+
+        final double verticalOffset =
+            _verticalAnimation.value;
+
+        final double horizontalOffset =
+            _horizontalAnimation.value;
+
+        final double rotation =
+            _rotationAnimation.value;
+
+        return Transform.translate(
+          offset: Offset(
+            horizontalOffset,
+            verticalOffset,
+          ),
+          child: Transform.rotate(
+            angle: rotation,
+            child: Transform.scale(
+              scale: scale,
+              child: child,
+            ),
+          ),
         );
       },
       child: Container(
@@ -278,6 +369,47 @@ class _StellaStatusCardState
   }
 
   // ==========================================================
+  // 🌟 ANIMATED BACKGROUND GLOW
+  // ==========================================================
+
+  Widget _buildBackgroundGlow() {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (
+        BuildContext context,
+        Widget? child,
+      ) {
+        final double glow =
+            _glowAnimation.value;
+
+        return Container(
+          width: 225 + (8 * glow),
+          height: 225 + (8 * glow),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                _statusColor.withValues(
+                  alpha: 0.18 * glow,
+                ),
+                _statusColor.withValues(
+                  alpha: 0.05 * glow,
+                ),
+                Colors.transparent,
+              ],
+              stops: const [
+                0.0,
+                0.55,
+                1.0,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
   // ✨ PARTICLE EFFECT
   // ==========================================================
 
@@ -285,6 +417,7 @@ class _StellaStatusCardState
     required double size,
     required Alignment alignment,
     required Color color,
+    required double phase,
   }) {
     return Align(
       alignment: alignment,
@@ -294,13 +427,29 @@ class _StellaStatusCardState
           BuildContext context,
           Widget? child,
         ) {
+          final double value =
+              _animationController.value;
+
+          final double wave =
+              (math.sin(
+                    (value * math.pi * 2) +
+                        phase,
+                  ) +
+                  1) /
+              2;
+
           final double opacity =
-              0.25 +
-              (_animationController.value * 0.55);
+              0.35 + (wave * 0.65);
+
+          final double particleScale =
+              0.75 + (wave * 0.45);
 
           return Opacity(
             opacity: opacity,
-            child: child,
+            child: Transform.scale(
+              scale: particleScale,
+              child: child,
+            ),
           );
         },
         child: Container(
@@ -312,9 +461,10 @@ class _StellaStatusCardState
             boxShadow: [
               BoxShadow(
                 color: color.withValues(
-                  alpha: 0.7,
+                  alpha: 0.85,
                 ),
-                blurRadius: 12,
+                blurRadius: 14,
+                spreadRadius: 1,
               ),
             ],
           ),
@@ -337,7 +487,8 @@ class _StellaStatusCardState
         color: _statusColor.withValues(
           alpha: 0.14,
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius:
+            BorderRadius.circular(30),
         border: Border.all(
           color: _statusColor.withValues(
             alpha: 0.55,
@@ -367,7 +518,8 @@ class _StellaStatusCardState
             style: TextStyle(
               color: _statusColor,
               fontSize: 14,
-              fontWeight: FontWeight.w800,
+              fontWeight:
+                  FontWeight.w800,
             ),
           ),
         ],
@@ -391,7 +543,8 @@ class _StellaStatusCardState
       ),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius:
+            BorderRadius.circular(28),
         border: Border.all(
           color: _statusColor.withValues(
             alpha: 0.32,
@@ -415,51 +568,57 @@ class _StellaStatusCardState
           // ====================================================
 
           SizedBox(
-            width: 260,
-            height: 240,
+            width: 280,
+            height: 250,
             child: Stack(
               alignment: Alignment.center,
+              clipBehavior: Clip.none,
               children: [
-                // Background glow
-                Container(
-                  width: 220,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        _statusColor.withValues(
-                          alpha: 0.16,
-                        ),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
+                // ------------------------------------------------
+                // 🌟 ANIMATED BACKGROUND GLOW
+                // ------------------------------------------------
+
+                _buildBackgroundGlow(),
+
+                // ------------------------------------------------
+                // ✨ PARTICLES
+                // ------------------------------------------------
 
                 _buildGlowParticle(
-                  size: 7,
-                  alignment: Alignment.topLeft,
+                  size: 8,
+                  alignment:
+                      Alignment.topLeft,
                   color: _statusColor,
-                ),
-
-                _buildGlowParticle(
-                  size: 5,
-                  alignment: Alignment.topRight,
-                  color: pinkColor,
+                  phase: 0,
                 ),
 
                 _buildGlowParticle(
                   size: 6,
-                  alignment: Alignment.bottomLeft,
-                  color: goldColor,
+                  alignment:
+                      Alignment.topRight,
+                  color: pinkColor,
+                  phase: math.pi / 2,
                 ),
 
                 _buildGlowParticle(
-                  size: 4,
-                  alignment: Alignment.bottomRight,
-                  color: _statusColor,
+                  size: 7,
+                  alignment:
+                      Alignment.bottomLeft,
+                  color: goldColor,
+                  phase: math.pi,
                 ),
+
+                _buildGlowParticle(
+                  size: 5,
+                  alignment:
+                      Alignment.bottomRight,
+                  color: _statusColor,
+                  phase: math.pi * 1.5,
+                ),
+
+                // ------------------------------------------------
+                // 🐱 STELLA
+                // ------------------------------------------------
 
                 _buildStellaImage(),
               ],
@@ -486,7 +645,8 @@ class _StellaStatusCardState
             style: const TextStyle(
               color: primaryTextColor,
               fontSize: 24,
-              fontWeight: FontWeight.w800,
+              fontWeight:
+                  FontWeight.w800,
               letterSpacing: 0.2,
             ),
           ),
@@ -506,9 +666,11 @@ class _StellaStatusCardState
               key: ValueKey<String>(
                 _description,
               ),
-              textAlign: TextAlign.center,
+              textAlign:
+                  TextAlign.center,
               style: const TextStyle(
-                color: secondaryTextColor,
+                color:
+                    secondaryTextColor,
                 fontSize: 15,
                 height: 1.4,
               ),
