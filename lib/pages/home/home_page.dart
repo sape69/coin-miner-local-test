@@ -12,6 +12,7 @@ import '../../widgets/stelluriini_logo.dart';
 import '../about/about_page.dart';
 import '../achievements/achievements_page.dart';
 import '../history/transaction_history_page.dart';
+import '../referrals/referrals_page.dart';
 import '../roadmap/roadmap_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
@@ -1076,6 +1077,18 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 👥 REFERRALS
+  // ============================================================
+
+  void _openReferrals() {
+    _openPage(
+      ReferralsPage(
+        languageCode: widget.languageCode,
+      ),
+    );
+  }
+
+  // ============================================================
   // 🌐 LANGUAGE DIALOG
   // ============================================================
 
@@ -1468,6 +1481,13 @@ class _HomePageState extends State<HomePage>
         onAchievementsPressed: _openAchievements,
         onTransactionHistoryPressed:
             _openTransactionHistory,
+
+        // ========================================================
+        // 👥 REFERRALS
+        // ========================================================
+
+        onReferralPressed: _openReferrals,
+
         onLogoutPressed: _logout,
       ),
       body: SafeArea(
