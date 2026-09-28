@@ -71,6 +71,21 @@ class _RegisterPageState extends State<RegisterPage> {
   bool showConfirmPassword = false;
 
   // ==========================================================
+  // 🌍 CURRENT PAGE LANGUAGE
+  // ==========================================================
+  //
+  // Tärkeä:
+  //
+  // RegisterPage voi saada languageCode-arvon parentilta,
+  // mutta sivun pitää pystyä vaihtamaan kielensä välittömästi
+  // myös itse.
+  //
+  // Tämän vuoksi emme käytä localizationissa suoraan
+  // widget.languageCode-arvoa.
+  //
+  String currentLanguageCode = 'en';
+
+  // ==========================================================
   // 🎨 STELLA COLORS
   // ==========================================================
 
@@ -109,10 +124,41 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
 
   AppLocalizations get localization =>
-      AppLocalizations(widget.languageCode);
+      AppLocalizations(currentLanguageCode);
 
   String _t(String key) {
     return localization.get(key);
+  }
+
+  // ==========================================================
+  // INIT STATE
+  // ==========================================================
+
+  @override
+  void initState() {
+    super.initState();
+
+    currentLanguageCode = widget.languageCode;
+  }
+
+  // ==========================================================
+  // WIDGET UPDATE
+  // ==========================================================
+  //
+  // Jos parent päivittää languageCode-arvon esimerkiksi
+  // sovelluksen yleisen kielenvaihdon kautta, pidetään myös
+  // tämän sivun oma kielitila ajan tasalla.
+  //
+  @override
+  void didUpdateWidget(
+    covariant RegisterPage oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.languageCode != widget.languageCode &&
+        currentLanguageCode != widget.languageCode) {
+      currentLanguageCode = widget.languageCode;
+    }
   }
 
   // ==========================================================
@@ -222,9 +268,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     size: 28,
                   ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -254,9 +298,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                 ),
-
                 const SizedBox(width: 8),
-
                 IconButton(
                   visualDensity:
                       VisualDensity.compact,
@@ -284,22 +326,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ==========================================================
   // 🔍 VALIDATE REFERRAL CODE
-  // ==========================================================
-  //
-  // TÄRKEÄ:
-  //
-  // Tätä kutsutaan ENNEN Firebase Auth -tilin luomista.
-  //
-  // Palauttaa:
-  //
-  // true  = koodi on voimassa
-  // false = koodia ei löytynyt / se ei ole voimassa
-  // null  = tarkistusta ei voitu suorittaa
-  //
-  // Backend-funktio:
-  //
-  // validateReferralCode
-  //
   // ==========================================================
 
   Future<bool?> _validateReferralCode(
@@ -330,23 +356,17 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
 
-      final dynamic data =
-          result.data;
+      final dynamic data = result.data;
 
       if (data is Map) {
-        final dynamic success =
-            data['success'];
+        final dynamic success = data['success'];
+        final dynamic valid = data['valid'];
 
-        final dynamic valid =
-            data['valid'];
-
-        if (success == true &&
-            valid == true) {
+        if (success == true && valid == true) {
           return true;
         }
 
-        if (success == true &&
-            valid == false) {
+        if (success == true && valid == false) {
           return false;
         }
       }
@@ -407,15 +427,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ==========================================================
   // ❓ INVALID REFERRAL DIALOG
-  // ==========================================================
-  //
-  // Väärä referral-koodi EI luo tiliä.
-  //
-  // Käyttäjälle annetaan kaksi vaihtoehtoa:
-  //
-  // 1. Jatka ilman referral-koodia
-  // 2. Palaa muuttamaan koodia
-  //
   // ==========================================================
 
   Future<bool> _askContinueWithoutReferral() async {
@@ -546,13 +557,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   // 🔗 APPLY REFERRAL CODE
   // ==========================================================
-  //
-  // Tämä suoritetaan vasta sen jälkeen kun:
-  //
-  // - referral on validoitu
-  // - Firebase Auth -tili on luotu
-  //
-  // ==========================================================
 
   Future<bool> _applyReferralCode(
     String referralCode,
@@ -582,18 +586,13 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
 
-      final dynamic data =
-          result.data;
+      final dynamic data = result.data;
 
       if (data is Map) {
-        final dynamic success =
-            data['success'];
+        final dynamic success = data['success'];
+        final dynamic applied = data['applied'];
 
-        final dynamic applied =
-            data['applied'];
-
-        if (success == true ||
-            applied == true) {
+        if (success == true || applied == true) {
           return true;
         }
       }
@@ -770,10 +769,6 @@ class _RegisterPageState extends State<RegisterPage> {
           referralCode,
         );
 
-        // ----------------------------------------------------
-        // VALIDATION ERROR
-        // ----------------------------------------------------
-
         if (referralValid == null) {
           if (mounted) {
             setState(() {
@@ -783,10 +778,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
           return;
         }
-
-        // ----------------------------------------------------
-        // INVALID CODE
-        // ----------------------------------------------------
 
         if (referralValid == false) {
           if (mounted) {
@@ -799,20 +790,12 @@ class _RegisterPageState extends State<RegisterPage> {
               await _askContinueWithoutReferral();
 
           if (!continueWithoutReferral) {
-            // Käyttäjä haluaa korjata koodin.
             return;
           }
 
-          // Käyttäjä hyväksyi tilin luonnin ilman
-          // referral-koodia.
           referralController.clear();
           referralCode = '';
         }
-
-        // ----------------------------------------------------
-        // Jos true:
-        // referralCode säilyy ja tili voidaan luoda.
-        // ----------------------------------------------------
 
         if (!mounted) {
           return;
@@ -838,8 +821,7 @@ class _RegisterPageState extends State<RegisterPage> {
       // 👤 SAVE USERNAME
       // ======================================================
 
-      final User? user =
-          credential.user;
+      final User? user = credential.user;
 
       if (user != null) {
         await user.updateDisplayName(
@@ -860,12 +842,6 @@ class _RegisterPageState extends State<RegisterPage> {
         );
 
         if (!referralApplied) {
-          // Tiliä EI poisteta.
-          //
-          // Koodi oli jo validoitu ennen tilin luomista,
-          // joten tässä tilanteessa kyseessä on backend-
-          // tai verkko-ongelma tilin luonnin jälkeen.
-
           if (!mounted) {
             return;
           }
@@ -1035,7 +1011,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   MapEntry<String, String> entry,
                 ) {
                   final bool selected =
-                      widget.languageCode ==
+                      currentLanguageCode ==
                           entry.key;
 
                   return Padding(
@@ -1052,6 +1028,22 @@ class _RegisterPageState extends State<RegisterPage> {
                                 await changeLanguage(
                                   entry.key,
                                 );
+
+                                if (!mounted) {
+                                  return;
+                                }
+
+                                // --------------------------------
+                                // TÄRKEÄ KORJAUS
+                                // --------------------------------
+                                //
+                                // Päivitetään tämän sivun oma
+                                // kieli heti valinnan jälkeen.
+                                //
+                                setState(() {
+                                  currentLanguageCode =
+                                      entry.key;
+                                });
 
                                 if (dialogContext
                                     .mounted) {
