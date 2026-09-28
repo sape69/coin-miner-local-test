@@ -1,1740 +1,672 @@
 import 'package:flutter/material.dart';
 
-import '../../localization.dart';
-import '../../widgets/cat_avatar.dart';
-import '../../widgets/stelluriini_logo.dart';
-
 // ============================================================
-// 🐱 STELLURIINI ROADMAP
+// 🐱 STELLURIINI - ROADMAP PAGE
 // ============================================================
 //
-// Stelluriinin suunniteltu eteneminen:
+// Stella • Stelluriini • STL • Solana
 //
-// 1. Stella Mining
-// 2. Yhteisö ja Referral
-// 3. Louhinnan tasapainotus
-// 4. Testnet-valmistelu
+// Roadmap:
+// 1. Foundation & App
+// 2. Community & Referral
+// 3. Mining Economy Balance
+// 4. Solana Testnet Preparation
 // 5. Solana Testnet
-// 6. Mainnet-valmistelu
-// 7. Solana Mainnet ja STL-nostot
-// 8. Pörssi ja ekosysteemi
+// 6. Long-Term Development
+// 7. Solana Mainnet & STL Withdrawals
+// 8. Exchange & Ecosystem
 //
-// HUOM:
-// Testnet ja Mainnet ovat erillisiä vaiheita.
-// Mainnet-toimintoja ei esitetä nykyisin käytössä olevina.
+// IMPORTANT:
+// - Mainnet is NOT currently active.
+// - Withdrawals are NOT currently active.
+// - 100 STL is a planned minimum withdrawal model.
+// - Roadmap items may change during development.
 //
 // ============================================================
 
-// ============================================================
-// STELLA THEME COLORS
-// ============================================================
-
-const Color roadmapBackgroundColor = Color(0xFF120B24);
-const Color roadmapSurfaceColor = Color(0xFF1A0E31);
-const Color roadmapCardColor = Color(0xFF21113B);
-
-const Color roadmapAccentColor = Color(0xFFB58CFF);
-const Color roadmapPinkColor = Color(0xFFFFB7E8);
-const Color roadmapGoldColor = Color(0xFFFFD166);
-
-const Color roadmapTextColor = Color(0xFFF8F4FF);
-const Color roadmapSecondaryTextColor = Color(0xFFBDB4D1);
-
-// ============================================================
-// ROADMAP PAGE
-// ============================================================
-
-class RoadmapPage extends StatelessWidget {
-  final String languageCode;
-
+class RoadmapPage extends StatefulWidget {
   const RoadmapPage({
     super.key,
-    this.languageCode = 'fi',
   });
 
-  // ============================================================
-  // LOCALIZATION HELPER
-  // ============================================================
+  @override
+  State<RoadmapPage> createState() => _RoadmapPageState();
+}
 
-  String _t(
-    AppLocalizations localization,
-    String key, {
-    required String fallback,
-  }) {
-    final String value = localization.get(key);
+class _RoadmapPageState extends State<RoadmapPage>
+    with SingleTickerProviderStateMixin {
+  // ==========================================================
+  // 🎨 STELLURIINI COLORS
+  // ==========================================================
 
-    if (value == key) {
-      return fallback;
-    }
+  static const Color backgroundColor =
+      Color(0xFF120B24);
 
-    return value;
+  static const Color surfaceColor =
+      Color(0xFF1A0E31);
+
+  static const Color cardColor =
+      Color(0xFF21113B);
+
+  static const Color purpleColor =
+      Color(0xFFB58CFF);
+
+  static const Color pinkColor =
+      Color(0xFFFFB7E8);
+
+  static const Color goldColor =
+      Color(0xFFFFD166);
+
+  static const Color primaryTextColor =
+      Color(0xFFF8F4FF);
+
+  static const Color secondaryTextColor =
+      Color(0xFFBDB4D1);
+
+  // ==========================================================
+  // ✨ ANIMATION
+  // ==========================================================
+
+  late final AnimationController _animationController;
+
+  late final Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: 2400,
+      ),
+    )..repeat(
+        reverse: true,
+      );
+
+    _glowAnimation = Tween<double>(
+      begin: 0.55,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    final AppLocalizations localization =
-        AppLocalizations(languageCode);
-
-    // ==========================================================
-    // GENERAL TEXT
-    // ==========================================================
-
-    final String roadmapTitle = _t(
-      localization,
-      'roadmapTitle',
-      fallback: 'Stelluriinin tiekartta',
-    );
-
-    final String journeyTitle = _t(
-      localization,
-      'roadmapJourney',
-      fallback: 'Matkamme',
-    );
-
-    final String journeyDescription = _t(
-      localization,
-      'roadmapJourneyDescription',
-      fallback:
-          'Stelluriinin tiekartta kuvaa projektin suunniteltua '
-          'suuntaa. Kehitys tapahtuu vaiheittain ja järjestelmiä '
-          'testataan, tasapainotetaan ja vahvistetaan ennen '
-          'seuraavaan vaiheeseen siirtymistä.',
-    );
-
-    // ==========================================================
-    // PHASE 1
-    // ==========================================================
-
-    final String phase1Title = _t(
-      localization,
-      'roadmapPhase1Title',
-      fallback: 'Stella Mining',
-    );
-
-    final String phase1Description = _t(
-      localization,
-      'roadmapPhase1Description',
-      fallback:
-          '🐱 Stelluriini-identiteetin rakentaminen\n'
-          '🎨 Stellan visuaalisen tyylin luominen\n'
-          '📱 Stelluriini-sovelluksen kehittäminen\n'
-          '⛏️ Stella Mining -järjestelmä\n'
-          '⚡ Hash Rate -järjestelmä\n'
-          '📺 Power Boost -järjestelmä\n'
-          '⏱️ Louhintajaksojen hallinta\n'
-          '📜 Louhinta- ja tapahtumahistoria',
-    );
-
-    // ==========================================================
-    // PHASE 2
-    // ==========================================================
-
-    final String phase2Title = _t(
-      localization,
-      'roadmapPhase2Title',
-      fallback: 'Yhteisö ja Referral',
-    );
-
-    final String phase2Description = _t(
-      localization,
-      'roadmapPhase2Description',
-      fallback:
-          '🐾 Stelluriini-yhteisön kasvattaminen\n'
-          '👥 Referral-järjestelmän valmistelu\n'
-          '🎁 Suunniteltu referral-bonus\n'
-          '📉 Bonusjärjestelmän tasapainotus kasvun mukaan\n'
-          '🛡️ Bottien ja väärinkäytösten torjunta\n'
-          '🌍 Kielituen laajentaminen\n'
-          '💬 Yhteisöominaisuuksien valmistelu',
-    );
-
-    // ==========================================================
-    // PHASE 3
-    // ==========================================================
-
-    final String phase3Title = _t(
-      localization,
-      'roadmapPhase3Title',
-      fallback: 'Louhinnan tasapainotus',
-    );
-
-    final String phase3Description = _t(
-      localization,
-      'roadmapPhase3Description',
-      fallback:
-          '📊 Hash Rate -talouden tarkempi tasapainotus\n'
-          '⛏️ Louhintatuoton säätäminen käyttäjämäärän mukaan\n'
-          '⚡ Power Boost -järjestelmän kehittäminen\n'
-          '👥 Referral-järjestelmän rajat\n'
-          '📉 Bonusprosenttien mahdollinen asteittainen laskeminen\n'
-          '🤖 Bot- ja monikäyttäjäväärinkäytösten tunnistaminen\n'
-          '🔐 Backend- ja turvallisuusjärjestelmien vahvistaminen',
-    );
-
-    // ==========================================================
-    // PHASE 4
-    // ==========================================================
-
-    final String phase4Title = _t(
-      localization,
-      'roadmapPhase4Title',
-      fallback: 'Testnet-valmistelu',
-    );
-
-    final String phase4Description = _t(
-      localization,
-      'roadmapPhase4Description',
-      fallback:
-          '🧪 Solana Testnet -ympäristön valmistelu\n'
-          '🔗 Solana-integraation tekninen valmistelu\n'
-          '👛 Testilompakon yhdistämisen valmistelu\n'
-          '🪙 STL-siirtojen testaus Testnetissä\n'
-          '📤 Testnet-nostojen tekninen kokeilu\n'
-          '🔐 Transaktioiden turvallisuuden tarkistus\n'
-          '🧪 Testaus ennen Mainnetiin siirtymistä',
-    );
-
-    // ==========================================================
-    // PHASE 5
-    // ==========================================================
-
-    final String phase5Title = _t(
-      localization,
-      'roadmapPhase5Title',
-      fallback: 'Solana Testnet',
-    );
-
-    final String phase5Description = _t(
-      localization,
-      'roadmapPhase5Description',
-      fallback:
-          '🧪 Stelluriinin Solana Testnet -vaihe\n'
-          '🔗 STL-siirtojen testaaminen Testnetissä\n'
-          '👛 Testilompakoiden yhdistäminen\n'
-          '📤 Testinostojen suorittaminen\n'
-          '⛽ Solana-verkkokulujen testaaminen\n'
-          '🛡️ Virhetilanteiden ja turvallisuuden testaaminen\n'
-          '📊 Testitulosten seuranta ja järjestelmän korjaaminen',
-    );
-
-    // ==========================================================
-    // PHASE 6
-    // ==========================================================
-
-    final String phase6Title = _t(
-      localization,
-      'roadmapPhase6Title',
-      fallback: 'Mainnet-valmistelu',
-    );
-
-    final String phase6Description = _t(
-      localization,
-      'roadmapPhase6Description',
-      fallback:
-          '🔐 Mainnet-infrastruktuurin valmistelu\n'
-          '👛 Solana-lompakkointegraation viimeistely\n'
-          '📤 STL-nostojärjestelmän valmistelu\n'
-          '🧪 Testnet-tulosten tarkistus\n'
-          '🛡️ Turvallisuus- ja transaktiotarkistus\n'
-          '⚙️ Backend-järjestelmien viimeistely\n'
-          '🚦 Mainnet-julkaisun tekninen valmiustarkistus',
-    );
-
-    // ==========================================================
-    // PHASE 7
-    // ==========================================================
-
-    final String phase7Title = _t(
-      localization,
-      'roadmapPhase7Title',
-      fallback: 'Solana Mainnet ja STL-nostot',
-    );
-
-    final String phase7Description = _t(
-      localization,
-      'roadmapPhase7Description',
-      fallback:
-          '🚀 Stelluriinin Solana Mainnet -vaiheen avaaminen\n'
-          '🔗 STL:n Mainnet-integraatio\n'
-          '👛 Solana-lompakon yhdistäminen\n'
-          '📤 STL-nostojen käyttöönotto\n'
-          '💎 Suunniteltu vähimmäisnosto: 100 STL\n'
-          '⛽ Käyttäjä maksaa oman Solana-verkkokulunsa\n'
-          '🪙 STL-siirto käyttäjän lompakkoon',
-    );
-
-    // ==========================================================
-    // PHASE 8
-    // ==========================================================
-
-    final String phase8Title = _t(
-      localization,
-      'roadmapPhase8Title',
-      fallback: 'Pörssi ja ekosysteemi',
-    );
-
-    final String phase8Description = _t(
-      localization,
-      'roadmapPhase8Description',
-      fallback:
-          '🌟 DEX- ja CEX-mahdollisuuksien tutkiminen\n'
-          '💧 Likviditeettiratkaisujen valmistelu\n'
-          '📈 STL-ekosysteemin laajentaminen\n'
-          '🤝 Kumppanuuksien kehittäminen\n'
-          '🐱 Uusien Stella-kokemusten esittely\n'
-          '🚀 STL:n tulevien käyttötapojen tutkiminen',
-    );
-
-    // ==========================================================
-    // STATUS TEXT
-    // ==========================================================
-
-    final String inProgressText = _t(
-      localization,
-      'roadmapInProgress',
-      fallback: 'KÄYNNISSÄ',
-    );
-
-    final String plannedText = _t(
-      localization,
-      'roadmapPlanned',
-      fallback: 'SUUNNITELTU',
-    );
-
-    final String testingText = _t(
-      localization,
-      'roadmapTesting',
-      fallback: 'TESTAUS',
-    );
-
-    final String futureText = _t(
-      localization,
-      'roadmapFuture',
-      fallback: 'TULEVAISUUS',
-    );
-
-    // ==========================================================
-    // TESTNET CARD
-    // ==========================================================
-
-    final String testnetTitle = _t(
-      localization,
-      'roadmapTestnetTitle',
-      fallback: 'Solana Testnet',
-    );
-
-    final String testnetText = _t(
-      localization,
-      'roadmapTestnetDescription',
-      fallback:
-          'Testnet toimii Stelluriinin turvallisena testivaiheena. '
-          'Sen avulla voidaan testata STL-siirtoja, lompakkoyhteyksiä, '
-          'nostoja ja transaktioiden toimintaa ennen Mainnetiin '
-          'siirtymistä.',
-    );
-
-    final String testnetNotice = _t(
-      localization,
-      'roadmapTestnetNotice',
-      fallback:
-          '🧪 Testnet = testiverkko • Ei oikeita Mainnet-varoja',
-    );
-
-    // ==========================================================
-    // MAINNET CARD
-    // ==========================================================
-
-    final String mainnetTitle = _t(
-      localization,
-      'roadmapMainnetTitle',
-      fallback: 'Solana Mainnet',
-    );
-
-    final String mainnetText = _t(
-      localization,
-      'roadmapMainnetDescription',
-      fallback:
-          'Mainnet on suunniteltu vasta Testnet-vaiheen jälkeen. '
-          'Ennen käyttöönottoa Solana-integraatio, lompakot, '
-          'STL-siirrot, nostot ja turvallisuusratkaisut testataan '
-          'ja tarkistetaan.',
-    );
-
-    final String mainnetNotice = _t(
-      localization,
-      'roadmapMainnetNotice',
-      fallback:
-          '🚀 Mainnet = tuleva julkaisu • Ei vielä käytössä',
-    );
-
-    // ==========================================================
-    // REFERRAL CARD
-    // ==========================================================
-
-    final String referralTitle = _t(
-      localization,
-      'roadmapReferralTitle',
-      fallback: 'Referral-järjestelmä',
-    );
-
-    final String referralDescription = _t(
-      localization,
-      'roadmapReferralDescription',
-      fallback:
-          'Stelluriiniin suunnitellaan referral-järjestelmää, '
-          'jossa käyttäjä voi kutsua uusia käyttäjiä mukaan. '
-          'Kutsuja saa suunnitelman mukaan bonusosuuden '
-          'kutsutun käyttäjän louhintatuotosta.',
-    );
-
-    final String referralBalanceTitle = _t(
-      localization,
-      'roadmapReferralBalanceTitle',
-      fallback: 'Kasvun mukana tasapainottuva bonus',
-    );
-
-    final String referralBalanceText = _t(
-      localization,
-      'roadmapReferralBalanceText',
-      fallback:
-          'Referral-bonusta ei ole tarkoitus pitää jatkuvasti '
-          'samalla tasolla. Kun Stelluriinin käyttäjämäärä kasvaa, '
-          'bonusprosenttia voidaan pienentää vaiheittain.',
-    );
-
-    final String referralMilestoneTitle = _t(
-      localization,
-      'roadmapReferralMilestoneTitle',
-      fallback: 'Käyttäjämäärän vaikutus',
-    );
-
-    final String referralMilestoneText = _t(
-      localization,
-      'roadmapReferralMilestoneText',
-      fallback:
-          'Tarkat käyttäjämäärärajat ja prosentit määritellään '
-          'ennen referral-järjestelmän julkaisua.',
-    );
-
-    // ==========================================================
-    // MINING BALANCE CARD
-    // ==========================================================
-
-    final String miningBalanceTitle = _t(
-      localization,
-      'roadmapMiningBalanceTitle',
-      fallback: 'Louhintatalouden tasapaino',
-    );
-
-    final String miningBalanceText = _t(
-      localization,
-      'roadmapMiningBalanceText',
-      fallback:
-          'Louhintajärjestelmän tavoitteena ei ole kasvattaa '
-          'päivittäistä STL-määrää rajattomasti. Hash Rate, '
-          'Power Boost ja Referral-bonukset suunnitellaan '
-          'yhdessä niin, että kokonaisuus pysyy hallittavana.',
-    );
-
-    final String miningRateTitle = _t(
-      localization,
-      'roadmapMiningRateTitle',
-      fallback: 'Hash Rate',
-    );
-
-    final String miningRateText = _t(
-      localization,
-      'roadmapMiningRateText',
-      fallback:
-          'Peruslouhinta muodostaa käyttäjän normaalin Hash Rate '
-          '-tason. Käyttäjä voi kehittää omaa louhintatehoaan '
-          'sovelluksen sisäisten järjestelmien kautta.',
-    );
-
-    final String boostTitle = _t(
-      localization,
-      'roadmapBoostTitle',
-      fallback: 'Power Boost',
-    );
-
-    final String boostText = _t(
-      localization,
-      'roadmapBoostText',
-      fallback:
-          'Power Boost tarjoaa määräaikaisen lisäyksen käyttäjän '
-          'louhintatehoon.',
-    );
-
-    // ==========================================================
-    // WITHDRAWAL
-    // ==========================================================
-
-    final String futureWithdrawalsTitle = _t(
-      localization,
-      'futureWithdrawalsTitle',
-      fallback: 'Tulevat STL-nostot',
-    );
-
-    final String futureWithdrawalsDescription = _t(
-      localization,
-      'futureWithdrawals',
-      fallback:
-          'STL-nostot eivät ole käytettävissä nykyisessä '
-          'louhintaversiossa. Ne on suunniteltu myöhempään '
-          'Mainnet-vaiheeseen sen jälkeen, kun tarvittava '
-          'lompakko-, turvallisuus- ja lohkoketjuinfrastruktuuri '
-          'on rakennettu ja testattu.',
-    );
-
-    final String plannedWithdrawalModel = _t(
-      localization,
-      'plannedWithdrawalModel',
-      fallback:
-          '🐱 Suunniteltu malli: 100 STL vähimmäisnosto • '
-          'Käyttäjä maksaa Solana-verkkokulun',
-    );
-
-    // ==========================================================
-    // DEVELOPMENT PRINCIPLES
-    // ==========================================================
-
-    final String developmentPrinciplesTitle = _t(
-      localization,
-      'developmentPrinciples',
-      fallback: 'Kehitysperiaatteet',
-    );
-
-    final String communityTitle = _t(
-      localization,
-      'roadmapCommunity',
-      fallback: 'Yhteisö',
-    );
-
-    final String communityText = _t(
-      localization,
-      'roadmapCommunityDescription',
-      fallback:
-          'Rakennetaan Stelluriini-yhteisöä vaiheittain.',
-    );
-
-    final String stellaTitle = _t(
-      localization,
-      'roadmapStella',
-      fallback: 'Stella',
-    );
-
-    final String stellaText = _t(
-      localization,
-      'roadmapStellaDescription',
-      fallback:
-          'Pidetään Stella projektin identiteetin sydämessä.',
-    );
-
-    final String securityTitle = _t(
-      localization,
-      'roadmapSecurity',
-      fallback: 'Turvallisuus',
-    );
-
-    final String securityText = _t(
-      localization,
-      'roadmapSecurityDescription',
-      fallback:
-          'Louhinta-, referral-, lompakko- ja blockchain-ominaisuudet '
-          'kehitetään ja testataan ennen julkaisua.',
-    );
-
-    final String antiBotTitle = _t(
-      localization,
-      'roadmapAntiBot',
-      fallback: 'Botintorjunta',
-    );
-
-    final String antiBotText = _t(
-      localization,
-      'roadmapAntiBotDescription',
-      fallback:
-          'Järjestelmässä huomioidaan bottien, automaation ja '
-          'väärinkäytösten tunnistaminen.',
-    );
-
-    final String innovationTitle = _t(
-      localization,
-      'roadmapInnovation',
-      fallback: 'Innovaatio',
-    );
-
-    final String innovationText = _t(
-      localization,
-      'roadmapInnovationDescription',
-      fallback:
-          'Tutkitaan uusia sovelluksia, pelejä ja digitaalisia '
-          'Stella-kokemuksia.',
-    );
-
-    final String growthTitle = _t(
-      localization,
-      'roadmapLongTermGrowth',
-      fallback: 'Pitkän aikavälin kasvu',
-    );
-
-    final String growthText = _t(
-      localization,
-      'roadmapLongTermGrowthDescription',
-      fallback:
-          'Ekosysteemiä kasvatetaan vaiheittain ja louhintataloutta '
-          'tasapainotetaan käyttäjämäärän mukaan.',
-    );
-
-    // ==========================================================
-    // NOTICE
-    // ==========================================================
-
-    final String noticeTitle = _t(
-      localization,
-      'roadmapNotice',
-      fallback: 'Tiekarttahuomautus',
-    );
-
-    final String noticeText = _t(
-      localization,
-      'roadmapNoticeDescription',
-      fallback:
-          'Tiekartta kuvaa Stelluriinin tämänhetkistä suunniteltua '
-          'suuntaa. Päivämäärät, ominaisuudet, bonusprosentit, '
-          'käyttäjämäärärajat, prioriteetit ja julkaisusuunnitelmat '
-          'voivat muuttua projektin kehittyessä.',
-    );
-
-    final String stellaJourneyText = _t(
-      localization,
-      'roadmapStellaJourney',
-      fallback:
-          '🐱 Stella kulkee mukana tällä matkalla!',
-    );
-
-    final String ecosystemText = _t(
-      localization,
-      'roadmapEcosystemDescription',
-      fallback:
-          'Jokainen vaihe on uusi askel kohti '
-          'Stelluriini-ekosysteemiä.',
-    );
-
-    // ============================================================
-    // UI
-    // ============================================================
-
-    return Scaffold(
-      backgroundColor: roadmapBackgroundColor,
-
-      // ========================================================
-      // APP BAR
-      // ========================================================
-
-      appBar: AppBar(
-        backgroundColor: roadmapBackgroundColor,
-        foregroundColor: roadmapTextColor,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          roadmapTitle,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // ==========================================================
+  // 🧱 ROADMAP DATA
+  // ==========================================================
+
+  final List<_RoadmapItem> _roadmapItems = const [
+    _RoadmapItem(
+      phase: 'Phase 1 – Foundation',
+      title: 'Building Stelluriini',
+      description:
+          'Building the Stelluriini project, STL token and Stella ecosystem.',
+      status: 'In Progress',
+      icon: Icons.pets_rounded,
+      color: pinkColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 2 – App',
+      title: 'Stelluriini App Development',
+      description:
+          'Mining, Stella Power Boost, user progress and transaction history.',
+      status: 'In Progress',
+      icon: Icons.groups_rounded,
+      color: purpleColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 3 – Community',
+      title: 'Growing the Community',
+      description:
+          'Building the community, collecting feedback and developing the Stelluriini brand.',
+      status: 'Planned',
+      icon: Icons.balance_rounded,
+      color: goldColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 4 – Ecosystem',
+      title: 'Expanding the STL Ecosystem',
+      description:
+          'Developing STL token use cases and expanding the Stelluriini ecosystem.',
+      status: 'Planned',
+      icon: Icons.science_rounded,
+      color: purpleColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 5 – Testnet',
+      title: 'Solana Testnet',
+      description:
+          'Testing STL transfers, wallet connections, transactions and withdrawal functionality before Mainnet.',
+      status: 'Testing',
+      icon: Icons.science_outlined,
+      color: purpleColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 6 – Long-Term Development',
+      title: 'The Next Stage of Stelluriini',
+      description:
+          'Continuous development of the Stelluriini ecosystem, new features and responses to community needs.',
+      status: 'Future',
+      icon: Icons.lock_open_rounded,
+      color: pinkColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 7 – Mainnet',
+      title: 'Solana Mainnet & STL Withdrawals',
+      description:
+          'Opening the Stelluriini Solana Mainnet phase and introducing STL withdrawals after testing and security checks.',
+      status: 'Future',
+      icon: Icons.rocket_launch_rounded,
+      color: goldColor,
+    ),
+    _RoadmapItem(
+      phase: 'Phase 8 – Ecosystem',
+      title: 'Exchange & Ecosystem',
+      description:
+          'Exploring DEX and CEX opportunities, liquidity solutions, partnerships and future STL use cases.',
+      status: 'Future',
+      icon: Icons.account_balance_rounded,
+      color: purpleColor,
+    ),
+  ];
+
+  // ==========================================================
+  // 🏷️ STATUS COLOR
+  // ==========================================================
+
+  Color _statusColor(
+    String status,
+  ) {
+    switch (status) {
+      case 'In Progress':
+        return pinkColor;
+
+      case 'Testing':
+        return goldColor;
+
+      case 'Planned':
+        return purpleColor;
+
+      case 'Future':
+        return goldColor;
+
+      default:
+        return purpleColor;
+    }
+  }
+
+  // ==========================================================
+  // 🏷️ STATUS ICON
+  // ==========================================================
+
+  IconData _statusIcon(
+    String status,
+  ) {
+    switch (status) {
+      case 'In Progress':
+        return Icons.play_circle_fill_rounded;
+
+      case 'Testing':
+        return Icons.science_rounded;
+
+      case 'Planned':
+        return Icons.schedule_rounded;
+
+      case 'Future':
+        return Icons.auto_awesome_rounded;
+
+      default:
+        return Icons.circle;
+    }
+  }
+
+  // ==========================================================
+  // 🌟 GLOW
+  // ==========================================================
+
+  Widget _buildAnimatedGlow(
+    Color color,
+  ) {
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (
+        BuildContext context,
+        Widget? child,
+      ) {
+        final double value =
+            _glowAnimation.value;
+
+        return Container(
+          width: 95 + (value * 10),
+          height: 95 + (value * 10),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                color.withValues(
+                  alpha: 0.18 * value,
+                ),
+                color.withValues(
+                  alpha: 0.06 * value,
+                ),
+                Colors.transparent,
+              ],
+              stops: const [
+                0.0,
+                0.55,
+                1.0,
+              ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // 🟣 PHASE ICON
+  // ==========================================================
+
+  Widget _buildPhaseIcon(
+    _RoadmapItem item,
+  ) {
+    return SizedBox(
+      width: 92,
+      height: 92,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _buildAnimatedGlow(
+            item.color,
+          ),
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: surfaceColor,
+              border: Border.all(
+                color: item.color.withValues(
+                  alpha: 0.55,
+                ),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: item.color.withValues(
+                    alpha: 0.20,
+                  ),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Icon(
+              item.icon,
+              color: item.color,
+              size: 36,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🏷️ STATUS BADGE
+  // ==========================================================
+
+  Widget _buildStatusBadge(
+    String status,
+  ) {
+    final Color color =
+        _statusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(
+          alpha: 0.12,
+        ),
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(
+            alpha: 0.35,
+          ),
+          width: 1,
         ),
       ),
-
-      // ========================================================
-      // BODY
-      // ========================================================
-
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            8,
-            16,
-            32,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _statusIcon(status),
+            color: color,
+            size: 15,
           ),
+          const SizedBox(width: 6),
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight:
+                  FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 📦 ROADMAP CARD
+  // ==========================================================
+
+  Widget _buildRoadmapCard(
+    _RoadmapItem item,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(
+        bottom: 22,
+      ),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius:
+            BorderRadius.circular(28),
+        border: Border.all(
+          color: item.color.withValues(
+            alpha: 0.22,
+          ),
+          width: 1.3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: item.color.withValues(
+              alpha: 0.07,
+            ),
+            blurRadius: 25,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          22,
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            // ==================================================
-            // STELLA HEADER
-            // ==================================================
+            Row(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                _buildPhaseIcon(item),
 
-            Container(
-              padding: const EdgeInsets.fromLTRB(
-                24,
-                28,
-                24,
-                26,
-              ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF21113B),
-                    Color(0xFF2A1648),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.phase,
+                              style: TextStyle(
+                                color:
+                                    item.color,
+                                fontSize: 15,
+                                fontWeight:
+                                    FontWeight.w800,
+                                letterSpacing:
+                                    0.7,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 8,
+                          ),
+                          _buildStatusBadge(
+                            item.status,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
+                      Text(
+                        item.title,
+                        style:
+                            const TextStyle(
+                          color:
+                              primaryTextColor,
+                          fontSize: 25,
+                          fontWeight:
+                              FontWeight.w800,
+                          height: 1.15,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                borderRadius:
-                    BorderRadius.circular(26),
-                border: Border.all(
-                  color:
-                      roadmapAccentColor.withValues(
-                    alpha: 0.30,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        roadmapAccentColor.withValues(
-                      alpha: 0.10,
-                    ),
-                    blurRadius: 24,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const CatAvatar(
-                    size: 110,
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'STELLURIINI',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: roadmapPinkColor,
-                      fontSize: 27,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 3,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'STL • SOLANA',
-                    style: TextStyle(
-                      color: roadmapAccentColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    '🐾 ${_t(
-                      localization,
-                      'roadmapStellaIntro',
-                      fallback:
-                          'Seuraa Stellan matkaa kohti tulevaisuutta.',
-                    )} 🐾',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapSecondaryTextColor,
-                      fontSize: 15,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ==================================================
-            // INTRODUCTION
-            // ==================================================
-
-            _RoadmapInfoCard(
-              icon: Icons.map_rounded,
-              title: journeyTitle,
-              accent: roadmapAccentColor,
-              child: Text(
-                journeyDescription,
-                style: const TextStyle(
-                  color: roadmapSecondaryTextColor,
-                  fontSize: 15,
-                  height: 1.6,
-                ),
-              ),
+              ],
             ),
 
             const SizedBox(height: 18),
-
-            // ==================================================
-            // PHASE 1
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase1',
-                fallback: 'VAIHE 1',
-              ),
-              title: phase1Title,
-              description: phase1Description,
-              status: inProgressText,
-              accent: roadmapPinkColor,
-              icon: '🐱',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 2
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase2',
-                fallback: 'VAIHE 2',
-              ),
-              title: phase2Title,
-              description: phase2Description,
-              status: plannedText,
-              accent: roadmapAccentColor,
-              icon: '👥',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 3
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase3',
-                fallback: 'VAIHE 3',
-              ),
-              title: phase3Title,
-              description: phase3Description,
-              status: plannedText,
-              accent: roadmapGoldColor,
-              icon: '⚖️',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 4
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase4',
-                fallback: 'VAIHE 4',
-              ),
-              title: phase4Title,
-              description: phase4Description,
-              status: plannedText,
-              accent: roadmapAccentColor,
-              icon: '🧪',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 5
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase5',
-                fallback: 'VAIHE 5',
-              ),
-              title: phase5Title,
-              description: phase5Description,
-              status: testingText,
-              accent: roadmapGoldColor,
-              icon: '🔬',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 6
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase6',
-                fallback: 'VAIHE 6',
-              ),
-              title: phase6Title,
-              description: phase6Description,
-              status: futureText,
-              accent: roadmapPinkColor,
-              icon: '🔐',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 7
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase7',
-                fallback: 'VAIHE 7',
-              ),
-              title: phase7Title,
-              description: phase7Description,
-              status: futureText,
-              accent: roadmapGoldColor,
-              icon: '🚀',
-            ),
-
-            const _RoadmapLine(),
-
-            // ==================================================
-            // PHASE 8
-            // ==================================================
-
-            _RoadmapStep(
-              phase: _t(
-                localization,
-                'roadmapPhase8',
-                fallback: 'VAIHE 8',
-              ),
-              title: phase8Title,
-              description: phase8Description,
-              status: futureText,
-              accent: roadmapPinkColor,
-              icon: '🌟',
-            ),
-
-            const SizedBox(height: 22),
-
-            // ==================================================
-            // TESTNET INFO
-            // ==================================================
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    roadmapAccentColor.withValues(
-                      alpha: 0.10,
-                    ),
-                    roadmapCardColor,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius:
-                    BorderRadius.circular(22),
-                border: Border.all(
-                  color:
-                      roadmapAccentColor.withValues(
-                    alpha: 0.25,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          roadmapAccentColor.withValues(
-                        alpha: 0.12,
-                      ),
-                      border: Border.all(
-                        color:
-                            roadmapAccentColor.withValues(
-                          alpha: 0.30,
-                        ),
-                      ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '🧪',
-                        style: TextStyle(
-                          fontSize: 31,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    testnetTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapAccentColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    testnetText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color:
-                          roadmapSecondaryTextColor,
-                      fontSize: 13,
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          roadmapAccentColor.withValues(
-                        alpha: 0.08,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(14),
-                      border: Border.all(
-                        color:
-                            roadmapAccentColor.withValues(
-                          alpha: 0.16,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      testnetNotice,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: roadmapTextColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            // ==================================================
-            // MAINNET INFO
-            // ==================================================
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    roadmapGoldColor.withValues(
-                      alpha: 0.08,
-                    ),
-                    roadmapCardColor,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius:
-                    BorderRadius.circular(22),
-                border: Border.all(
-                  color:
-                      roadmapGoldColor.withValues(
-                    alpha: 0.25,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          roadmapGoldColor.withValues(
-                        alpha: 0.12,
-                      ),
-                      border: Border.all(
-                        color:
-                            roadmapGoldColor.withValues(
-                          alpha: 0.30,
-                        ),
-                      ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '🚀',
-                        style: TextStyle(
-                          fontSize: 31,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    mainnetTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapGoldColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    mainnetText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color:
-                          roadmapSecondaryTextColor,
-                      fontSize: 13,
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          roadmapGoldColor.withValues(
-                        alpha: 0.08,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(14),
-                      border: Border.all(
-                        color:
-                            roadmapGoldColor.withValues(
-                          alpha: 0.16,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      mainnetNotice,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: roadmapTextColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ==================================================
-            // REFERRAL SYSTEM
-            // ==================================================
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: roadmapCardColor,
-                borderRadius:
-                    BorderRadius.circular(22),
-                border: Border.all(
-                  color:
-                      roadmapAccentColor.withValues(
-                    alpha: 0.22,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.group_add_rounded,
-                    color: roadmapAccentColor,
-                    size: 34,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    referralTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapAccentColor,
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    referralDescription,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapSecondaryTextColor,
-                      fontSize: 13,
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _ReferralInfoRow(
-                    icon: Icons.auto_awesome_rounded,
-                    title: referralBalanceTitle,
-                    text: referralBalanceText,
-                  ),
-                  const SizedBox(height: 14),
-                  _ReferralInfoRow(
-                    icon: Icons.people_alt_rounded,
-                    title: referralMilestoneTitle,
-                    text: referralMilestoneText,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            // ==================================================
-            // MINING ECONOMY
-            // ==================================================
-
-            _RoadmapInfoCard(
-              icon: Icons.speed_rounded,
-              title: miningBalanceTitle,
-              accent: roadmapGoldColor,
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    miningBalanceText,
-                    style: const TextStyle(
-                      color: roadmapSecondaryTextColor,
-                      fontSize: 14,
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  _PrincipleRow(
-                    icon: Icons.bolt_rounded,
-                    title: miningRateTitle,
-                    text: miningRateText,
-                  ),
-                  const SizedBox(height: 14),
-                  _PrincipleRow(
-                    icon: Icons.flash_on_rounded,
-                    title: boostTitle,
-                    text: boostText,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ==================================================
-            // WITHDRAWAL EXPLANATION
-            // ==================================================
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: roadmapCardColor,
-                borderRadius:
-                    BorderRadius.circular(22),
-                border: Border.all(
-                  color:
-                      roadmapGoldColor.withValues(
-                    alpha: 0.20,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: roadmapGoldColor,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    futureWithdrawalsTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapGoldColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    futureWithdrawalsDescription,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapSecondaryTextColor,
-                      fontSize: 13,
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          roadmapGoldColor.withValues(
-                        alpha: 0.08,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(14),
-                      border: Border.all(
-                        color:
-                            roadmapGoldColor.withValues(
-                          alpha: 0.15,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      plannedWithdrawalModel,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color:
-                            roadmapSecondaryTextColor,
-                        fontSize: 12,
-                        height: 1.45,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ==================================================
-            // STELLA CARD
-            // ==================================================
-
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: roadmapCardColor,
-                borderRadius:
-                    BorderRadius.circular(22),
-                border: Border.all(
-                  color:
-                      roadmapPinkColor.withValues(
-                    alpha: 0.20,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const StelluriiniLogo(
-                    size: 72,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    stellaJourneyText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: roadmapPinkColor,
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    ecosystemText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color:
-                          roadmapSecondaryTextColor,
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            // ==================================================
-            // DEVELOPMENT PRINCIPLES
-            // ==================================================
-
-            _RoadmapInfoCard(
-              icon: Icons.rocket_launch_rounded,
-              title: developmentPrinciplesTitle,
-              accent: roadmapGoldColor,
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  _PrincipleRow(
-                    icon: Icons.groups_rounded,
-                    title: communityTitle,
-                    text: communityText,
-                  ),
-                  const SizedBox(height: 14),
-                  _PrincipleRow(
-                    icon: Icons.pets_rounded,
-                    title: stellaTitle,
-                    text: stellaText,
-                  ),
-                  const SizedBox(height: 14),
-                  _PrincipleRow(
-                    icon: Icons.security_rounded,
-                    title: securityTitle,
-                    text: securityText,
-                  ),
-                  const SizedBox(height: 14),
-                  _PrincipleRow(
-                    icon: Icons.shield_rounded,
-                    title: antiBotTitle,
-                    text: antiBotText,
-                  ),
-                  const SizedBox(height: 14),
-                  _PrincipleRow(
-                    icon: Icons.auto_awesome_rounded,
-                    title: innovationTitle,
-                    text: innovationText,
-                  ),
-                  const SizedBox(height: 14),
-                  _PrincipleRow(
-                    icon: Icons.trending_up_rounded,
-                    title: growthTitle,
-                    text: growthText,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            // ==================================================
-            // IMPORTANT NOTICE
-            // ==================================================
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color:
-                    Colors.orangeAccent.withValues(
-                  alpha: 0.07,
-                ),
-                borderRadius:
-                    BorderRadius.circular(20),
-                border: Border.all(
-                  color:
-                      Colors.orangeAccent.withValues(
-                    alpha: 0.22,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    color: Colors.orangeAccent,
-                    size: 30,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    noticeTitle,
-                    style: const TextStyle(
-                      color: Colors.orangeAccent,
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    noticeText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color:
-                          roadmapSecondaryTextColor,
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // ==================================================
-            // FOOTER
-            // ==================================================
 
             Text(
-              _t(
-                localization,
-                'roadmapFooter',
-                fallback:
-                    '🐾 STELLA • STELLURIINI • STL • SOLANA 🐾',
-              ),
-              textAlign: TextAlign.center,
+              item.description,
               style: const TextStyle(
-                color: roadmapPinkColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
+                color:
+                    secondaryTextColor,
+                fontSize: 16,
+                height: 1.55,
               ),
             ),
 
-            const SizedBox(height: 8),
+            if (item.phase ==
+                'Phase 7 – Mainnet') ...[
+              const SizedBox(height: 18),
+              _buildMainnetNotice(),
+            ],
 
-            const Text(
-              '17 602 539 062 STL',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: roadmapGoldColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 20),
+            if (item.phase ==
+                'Phase 8 – Ecosystem') ...[
+              const SizedBox(height: 18),
+              _buildEcosystemPoints(),
+            ],
           ],
         ),
       ),
     );
   }
-}
 
-// ============================================================
-// ROADMAP STEP
-// ============================================================
+  // ==========================================================
+  // 🚀 MAINNET NOTICE
+  // ==========================================================
 
-class _RoadmapStep extends StatelessWidget {
-  final String phase;
-  final String title;
-  final String description;
-  final String status;
-  final Color accent;
-  final String icon;
-
-  const _RoadmapStep({
-    required this.phase,
-    required this.title,
-    required this.description,
-    required this.status,
-    required this.accent,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        // ======================================================
-        // MARKER
-        // ======================================================
-
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color:
-                accent.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color:
-                  accent.withValues(alpha: 0.45),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color:
-                    accent.withValues(alpha: 0.08),
-                blurRadius: 12,
+  Widget _buildMainnetNotice() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: goldColor.withValues(
+          alpha: 0.08,
+        ),
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: goldColor.withValues(
+            alpha: 0.28,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.rocket_launch_rounded,
+                color: goldColor,
+                size: 23,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Mainnet = tuleva julkaisu • Ei vielä käytössä',
+                  style: const TextStyle(
+                    color: goldColor,
+                    fontSize: 14,
+                    fontWeight:
+                        FontWeight.w800,
+                  ),
+                ),
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              icon,
-              style: const TextStyle(
-                fontSize: 25,
-              ),
+          const SizedBox(height: 12),
+          const Text(
+            'Ennen käyttöönottoa Solana-integraatio, '
+            'lompakot, STL-siirrot, nostot ja '
+            'turvallisuusratkaisut testataan.',
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 14,
+              height: 1.45,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🌌 ECOSYSTEM POINTS
+  // ==========================================================
+
+  Widget _buildEcosystemPoints() {
+    const List<String> points = [
+      'DEX- ja CEX-mahdollisuuksien tutkiminen',
+      'Likviditeettiratkaisujen valmistelu',
+      'STL-ekosysteemin laajentaminen',
+      'Kumppanuuksien kehittäminen',
+      'Uusien Stella-kokemusten esittely',
+      'STL:n tulevien käyttötapojen tutkiminen',
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: purpleColor.withValues(
+            alpha: 0.18,
+          ),
         ),
-
-        const SizedBox(width: 14),
-
-        // ======================================================
-        // CARD
-        // ======================================================
-
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: roadmapCardColor,
-              borderRadius:
-                  BorderRadius.circular(20),
-              border: Border.all(
-                color:
-                    accent.withValues(alpha: 0.17),
-              ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Pörssi ja ekosysteemi',
+            style: TextStyle(
+              color: primaryTextColor,
+              fontSize: 18,
+              fontWeight:
+                  FontWeight.w800,
             ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Row(
+          ),
+          const SizedBox(height: 12),
+          ...points.map(
+            (String point) {
+              return Padding(
+                padding:
+                    const EdgeInsets.only(
+                  bottom: 9,
+                ),
+                child: Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        phase,
-                        style: TextStyle(
-                          color: accent,
-                          fontSize: 12,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing: 1.5,
-                        ),
+                    const Text(
+                      '✦',
+                      style: TextStyle(
+                        color: purpleColor,
+                        fontSize: 17,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            accent.withValues(
-                          alpha: 0.12,
-                        ),
-                        borderRadius:
-                            BorderRadius.circular(10),
-                        border: Border.all(
-                          color:
-                              accent.withValues(
-                            alpha: 0.15,
-                          ),
-                        ),
-                      ),
+                    const SizedBox(width: 9),
+                    Expanded(
                       child: Text(
-                        status,
-                        style: TextStyle(
-                          color: accent,
-                          fontSize: 9,
-                          fontWeight:
-                              FontWeight.bold,
+                        point,
+                        style:
+                            const TextStyle(
+                          color:
+                              secondaryTextColor,
+                          fontSize: 14,
+                          height: 1.35,
                         ),
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 9),
-
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: roadmapTextColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                Text(
-                  description,
-                  style: const TextStyle(
-                    color:
-                        roadmapSecondaryTextColor,
-                    fontSize: 14,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
-}
 
-// ============================================================
-// ROADMAP LINE
-// ============================================================
+  // ==========================================================
+  // ⚖️ MINING ECONOMY
+  // ==========================================================
 
-class _RoadmapLine extends StatelessWidget {
-  const _RoadmapLine();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildMiningBalanceCard() {
     return Container(
       margin: const EdgeInsets.only(
-        left: 26,
-        top: 4,
-        bottom: 4,
+        bottom: 22,
       ),
-      width: 2,
-      height: 35,
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color:
-            roadmapAccentColor.withValues(
-          alpha: 0.25,
-        ),
+        color: cardColor,
         borderRadius:
-            BorderRadius.circular(2),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// INFORMATION CARD
-// ============================================================
-
-class _RoadmapInfoCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color accent;
-  final Widget child;
-
-  const _RoadmapInfoCard({
-    required this.icon,
-    required this.title,
-    required this.accent,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: roadmapCardColor,
-        borderRadius:
-            BorderRadius.circular(22),
+            BorderRadius.circular(28),
         border: Border.all(
-          color:
-              accent.withValues(alpha: 0.18),
+          color: goldColor.withValues(
+            alpha: 0.22,
+          ),
         ),
       ),
       child: Column(
@@ -1744,144 +676,107 @@ class _RoadmapInfoCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
-                  color:
-                      accent.withValues(
-                    alpha: 0.11,
+                  color: goldColor.withValues(
+                    alpha: 0.10,
                   ),
                   borderRadius:
-                      BorderRadius.circular(14),
+                      BorderRadius.circular(18),
                 ),
-                child: Icon(
-                  icon,
-                  color: accent,
-                  size: 24,
+                child: const Icon(
+                  Icons.speed_rounded,
+                  color: goldColor,
+                  size: 30,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              const SizedBox(width: 14),
+              const Expanded(
                 child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: roadmapTextColor,
-                    fontSize: 20,
+                  'Louhintatalouden tasapaino',
+                  style: TextStyle(
+                    color: primaryTextColor,
+                    fontSize: 25,
                     fontWeight:
-                        FontWeight.bold,
+                        FontWeight.w800,
+                    height: 1.15,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
-    );
-  }
-}
 
-// ============================================================
-// REFERRAL INFO ROW
-// ============================================================
+          const SizedBox(height: 20),
 
-class _ReferralInfoRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
-
-  const _ReferralInfoRow({
-    required this.icon,
-    required this.title,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: roadmapSurfaceColor,
-        borderRadius:
-            BorderRadius.circular(16),
-        border: Border.all(
-          color:
-              roadmapAccentColor.withValues(
-            alpha: 0.10,
-          ),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            color: roadmapAccentColor,
-            size: 21,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: roadmapTextColor,
-                    fontSize: 14,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    color:
-                        roadmapSecondaryTextColor,
-                    fontSize: 12.5,
-                    height: 1.45,
-                  ),
-                ),
-              ],
+          const Text(
+            'Louhintajärjestelmän tavoitteena ei ole '
+            'kasvattaa päivittäistä STL-määrää '
+            'rajattomasti. Hash Rate, Power Boost '
+            'ja Referral-bonukset suunnitellaan '
+            'yhdessä niin, että kokonaisuus pysyy '
+            'hallittavana.',
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 16,
+              height: 1.55,
             ),
           ),
+
+          const SizedBox(height: 22),
+
+          _buildInfoRow(
+            icon: Icons.bolt_rounded,
+            title: 'Hash Rate',
+            text:
+                'Peruslouhinta muodostaa käyttäjän normaalin Hash Rate -tason.',
+            color: purpleColor,
+          ),
+
+          const SizedBox(height: 18),
+
+          _buildInfoRow(
+            icon: Icons.flash_on_rounded,
+            title: 'Power Boost',
+            text:
+                'Power Boost tarjoaa määräaikaisen lisäyksen käyttäjän louhintatehoon.',
+            color: pinkColor,
+          ),
+
+          const SizedBox(height: 18),
+
+          _buildInfoRow(
+            icon: Icons.groups_rounded,
+            title: 'Referral',
+            text:
+                'Referral-bonukset suunnitellaan kasvun mukana tasapainottuviksi.',
+            color: goldColor,
+          ),
         ],
       ),
     );
   }
-}
 
-// ============================================================
-// PRINCIPLE ROW
-// ============================================================
+  // ==========================================================
+  // ℹ️ INFO ROW
+  // ==========================================================
 
-class _PrincipleRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
-
-  const _PrincipleRow({
-    required this.icon,
-    required this.title,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String title,
+    required String text,
+    required Color color,
+  }) {
     return Row(
       crossAxisAlignment:
           CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
-          color: roadmapAccentColor,
-          size: 20,
+          color: color,
+          size: 25,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment:
@@ -1890,19 +785,18 @@ class _PrincipleRow extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  color: roadmapTextColor,
-                  fontSize: 15,
+                  color: primaryTextColor,
+                  fontSize: 17,
                   fontWeight:
-                      FontWeight.bold,
+                      FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 5),
               Text(
                 text,
                 style: const TextStyle(
-                  color:
-                      roadmapSecondaryTextColor,
-                  fontSize: 13,
+                  color: secondaryTextColor,
+                  fontSize: 14,
                   height: 1.45,
                 ),
               ),
@@ -1912,4 +806,581 @@ class _PrincipleRow extends StatelessWidget {
       ],
     );
   }
+
+  // ==========================================================
+  // 💎 WITHDRAWAL CARD
+  // ==========================================================
+
+  Widget _buildWithdrawalCard() {
+    return Container(
+      margin: const EdgeInsets.only(
+        bottom: 22,
+      ),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius:
+            BorderRadius.circular(28),
+        border: Border.all(
+          color: goldColor.withValues(
+            alpha: 0.24,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.account_balance_wallet_rounded,
+            color: goldColor,
+            size: 44,
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Potential Future Withdrawals',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: goldColor,
+              fontSize: 23,
+              fontWeight:
+                  FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'A possible future withdrawal system '
+            'will be designed separately and its '
+            'terms will be announced before implementation.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius:
+                  BorderRadius.circular(18),
+              border: Border.all(
+                color: goldColor.withValues(
+                  alpha: 0.18,
+                ),
+              ),
+            ),
+            child: const Column(
+              children: [
+                Text(
+                  'Planned minimum withdrawal',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color:
+                        secondaryTextColor,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  '100 STL',
+                  style: TextStyle(
+                    color: goldColor,
+                    fontSize: 25,
+                    fontWeight:
+                        FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'User pays the Solana network fee.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color:
+                        secondaryTextColor,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🐾 STELLA JOURNEY
+  // ==========================================================
+
+  Widget _buildStellaJourney() {
+    return Container(
+      margin: const EdgeInsets.only(
+        bottom: 22,
+      ),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius:
+            BorderRadius.circular(28),
+        border: Border.all(
+          color: pinkColor.withValues(
+            alpha: 0.22,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: surfaceColor,
+              border: Border.all(
+                color: pinkColor.withValues(
+                  alpha: 0.35,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: pinkColor.withValues(
+                    alpha: 0.12,
+                  ),
+                  blurRadius: 24,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.pets_rounded,
+              color: pinkColor,
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Stella’s Journey 🐾',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: pinkColor,
+              fontSize: 25,
+              fontWeight:
+                  FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'The Stelluriini ecosystem will be developed '
+            'step by step around the community, app and STL token.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 16,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🛡️ DEVELOPMENT PRINCIPLES
+  // ==========================================================
+
+  Widget _buildDevelopmentPrinciples() {
+    return Container(
+      margin: const EdgeInsets.only(
+        bottom: 22,
+      ),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius:
+            BorderRadius.circular(28),
+        border: Border.all(
+          color: purpleColor.withValues(
+            alpha: 0.22,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: goldColor.withValues(
+                    alpha: 0.10,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.rocket_launch_rounded,
+                  color: goldColor,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Development Principles',
+                  style: TextStyle(
+                    color: primaryTextColor,
+                    fontSize: 24,
+                    fontWeight:
+                        FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          _buildInfoRow(
+            icon: Icons.groups_rounded,
+            title: 'Community',
+            text:
+                'The community is at the heart of Stelluriini development. Feedback and user ideas help guide future development.',
+            color: purpleColor,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildInfoRow(
+            icon: Icons.security_rounded,
+            title: 'Security',
+            text:
+                'Security, server infrastructure and application reliability will be continuously improved.',
+            color: purpleColor,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildInfoRow(
+            icon: Icons.shield_rounded,
+            title: 'Botintorjunta',
+            text:
+                'Järjestelmässä huomioidaan botit, automaatio ja väärinkäytösten tunnistaminen.',
+            color: pinkColor,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildInfoRow(
+            icon: Icons.auto_awesome_rounded,
+            title: 'Innovation',
+            text:
+                'New use cases, features and technologies will be explored as the project develops.',
+            color: purpleColor,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildInfoRow(
+            icon: Icons.trending_up_rounded,
+            title: 'Long-Term Growth',
+            text:
+                'The goal is to build a sustainable and gradually evolving Stelluriini ecosystem.',
+            color: goldColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // ⚠️ IMPORTANT NOTICE
+  // ==========================================================
+
+  Widget _buildImportantNotice() {
+    return Container(
+      margin: const EdgeInsets.only(
+        bottom: 22,
+      ),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: const Color(0xFF211827),
+        borderRadius:
+            BorderRadius.circular(28),
+        border: Border.all(
+          color: goldColor.withValues(
+            alpha: 0.28,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            color: goldColor,
+            size: 42,
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Important Notice',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: goldColor,
+              fontSize: 23,
+              fontWeight:
+                  FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'The roadmap describes the planned '
+            'development direction of Stelluriini. '
+            'Phases, features and timelines may '
+            'change during project development.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 15,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🏠 BUILD
+  // ==========================================================
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      backgroundColor:
+          backgroundColor,
+
+      appBar: AppBar(
+        backgroundColor:
+            surfaceColor,
+        elevation: 0,
+        centerTitle: false,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: primaryTextColor,
+            size: 30,
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        title: const Text(
+          'Stelluriini Roadmap',
+          style: TextStyle(
+            color: primaryTextColor,
+            fontSize: 25,
+            fontWeight:
+                FontWeight.w800,
+          ),
+        ),
+      ),
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics:
+              const BouncingScrollPhysics(),
+          padding:
+              const EdgeInsets.fromLTRB(
+            20,
+            22,
+            20,
+            40,
+          ),
+          child: Column(
+            children: [
+              // ==================================================
+              // 🗺️ JOURNEY HEADER
+              // ==================================================
+
+              Container(
+                width: double.infinity,
+                margin:
+                    const EdgeInsets.only(
+                  bottom: 22,
+                ),
+                padding:
+                    const EdgeInsets.all(22),
+                decoration:
+                    BoxDecoration(
+                  color: cardColor,
+                  borderRadius:
+                      BorderRadius.circular(
+                    28,
+                  ),
+                  border: Border.all(
+                    color:
+                        purpleColor.withValues(
+                      alpha: 0.24,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration:
+                              BoxDecoration(
+                            color:
+                                purpleColor.withValues(
+                              alpha: 0.10,
+                            ),
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              18,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.map_rounded,
+                            color:
+                                purpleColor,
+                            size: 31,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 14,
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'The Stelluriini Journey',
+                            style:
+                                TextStyle(
+                              color:
+                                  primaryTextColor,
+                              fontSize: 24,
+                              fontWeight:
+                                  FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 18,
+                    ),
+                    const Text(
+                      'Stelluriini development progresses '
+                      'step by step toward a broader '
+                      'community, ecosystem and new use cases.',
+                      style: TextStyle(
+                        color:
+                            secondaryTextColor,
+                        fontSize: 16,
+                        height: 1.55,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ==================================================
+              // 🐾 ROADMAP PHASES
+              // ==================================================
+
+              ..._roadmapItems.map(
+                (
+                  _RoadmapItem item,
+                ) {
+                  return _buildRoadmapCard(
+                    item,
+                  );
+                },
+              ),
+
+              // ==================================================
+              // ⚖️ MINING BALANCE
+              // ==================================================
+
+              _buildMiningBalanceCard(),
+
+              // ==================================================
+              // 💎 WITHDRAWALS
+              // ==================================================
+
+              _buildWithdrawalCard(),
+
+              // ==================================================
+              // 🐱 STELLA JOURNEY
+              // ==================================================
+
+              _buildStellaJourney(),
+
+              // ==================================================
+              // 🚀 DEVELOPMENT PRINCIPLES
+              // ==================================================
+
+              _buildDevelopmentPrinciples(),
+
+              // ==================================================
+              // ⚠️ NOTICE
+              // ==================================================
+
+              _buildImportantNotice(),
+
+              // ==================================================
+              // 🐾 FOOTER
+              // ==================================================
+
+              const SizedBox(height: 8),
+
+              const Text(
+                'STELLA • STELLURIINI • STL • SOLANA',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: pinkColor,
+                  fontSize: 14,
+                  fontWeight:
+                      FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// 📦 ROADMAP MODEL
+// ============================================================
+
+class _RoadmapItem {
+  final String phase;
+  final String title;
+  final String description;
+  final String status;
+  final IconData icon;
+  final Color color;
+
+  const _RoadmapItem({
+    required this.phase,
+    required this.title,
+    required this.description,
+    required this.status,
+    required this.icon,
+    required this.color,
+  });
 }
