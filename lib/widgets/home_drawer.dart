@@ -24,29 +24,23 @@ import 'cat_avatar.dart';
 // 🎨 STELLURIINI COLORS
 // ============================================================
 
-const Color backgroundColor =
-    Color(0xFF120B24);
+const Color backgroundColor = Color(0xFF120B24);
 
-const Color cardColor =
-    Color(0xFF21113B);
+const Color cardColor = Color(0xFF21113B);
 
-const Color accentColor =
-    Color(0xFFB58CFF);
+const Color accentColor = Color(0xFFB58CFF);
 
-const Color pinkAccentColor =
-    Color(0xFFFFB7E8);
+const Color pinkAccentColor = Color(0xFFFFB7E8);
 
-const Color goldAccentColor =
-    Color(0xFFFFD166);
+const Color goldAccentColor = Color(0xFFFFD166);
 
-const Color activeColor =
-    Color(0xFF70F0A8);
+// Stella-teeman aktiivinen väri.
+// Referral käyttää tätä nykyisen vihreän sijaan.
+const Color referralAccentColor = Color(0xFFFFB7E8);
 
-const Color inactiveColor =
-    Color(0xFF8D879F);
+const Color inactiveColor = Color(0xFF8D879F);
 
-const Color logoutColor =
-    Color(0xFFFF8A8A);
+const Color logoutColor = Color(0xFFFF8A8A);
 
 // ============================================================
 // 🐱 HOME DRAWER
@@ -81,8 +75,7 @@ class HomeDrawer extends StatelessWidget {
   // 🌍 MAIN LOCALIZATION
   // ==========================================================
 
-  AppLocalizations get _localization =>
-      AppLocalizations(languageCode);
+  AppLocalizations get _localization => AppLocalizations(languageCode);
 
   String _t(String key) {
     return _localization.get(key);
@@ -92,11 +85,10 @@ class HomeDrawer extends StatelessWidget {
   // 🏆 ACHIEVEMENTS LOCALIZATION
   // ==========================================================
 
-  AchievementsLocalization
-      get _achievementsLocalization =>
-          AchievementsLocalization(
-            languageCode,
-          );
+  AchievementsLocalization get _achievementsLocalization =>
+      AchievementsLocalization(
+        languageCode,
+      );
 
   // ==========================================================
   // 📋 MENU ITEM
@@ -109,8 +101,7 @@ class HomeDrawer extends StatelessWidget {
     String? badge,
     Color? iconColor,
   }) {
-    final Color currentIconColor =
-        iconColor ?? pinkAccentColor;
+    final Color currentIconColor = iconColor ?? pinkAccentColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -119,15 +110,12 @@ class HomeDrawer extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
             ),
@@ -140,14 +128,10 @@ class HomeDrawer extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        LinearGradient(
-                      begin:
-                          Alignment.topLeft,
-                      end:
-                          Alignment.bottomRight,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
                         accentColor.withValues(
                           alpha: 0.28,
@@ -157,22 +141,16 @@ class HomeDrawer extends StatelessWidget {
                         ),
                       ],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
-                    border:
-                        Border.all(
-                      color:
-                          currentIconColor.withValues(
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: currentIconColor.withValues(
                         alpha: 0.20,
                       ),
                     ),
                   ),
                   child: Icon(
                     icon,
-                    color:
-                        currentIconColor,
+                    color: currentIconColor,
                     size: 23,
                   ),
                 ),
@@ -189,15 +167,11 @@ class HomeDrawer extends StatelessWidget {
                   child: Text(
                     title,
                     maxLines: 2,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.white,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 16,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -211,35 +185,23 @@ class HomeDrawer extends StatelessWidget {
                     width: 8,
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets
-                            .symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          goldAccentColor
-                              .withValues(
+                    decoration: BoxDecoration(
+                      color: goldAccentColor.withValues(
                         alpha: 0.15,
                       ),
-                      borderRadius:
-                          BorderRadius.circular(
-                        20,
-                      ),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       badge,
-                      style:
-                          const TextStyle(
-                        color:
-                            goldAccentColor,
+                      style: const TextStyle(
+                        color: goldAccentColor,
                         fontSize: 10,
-                        fontWeight:
-                            FontWeight.bold,
-                        letterSpacing:
-                            0.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
@@ -254,11 +216,8 @@ class HomeDrawer extends StatelessWidget {
                 // ==================================================
 
                 Icon(
-                  Icons
-                      .chevron_right_rounded,
-                  color:
-                      Colors.white
-                          .withValues(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white.withValues(
                     alpha: 0.30,
                   ),
                 ),
@@ -282,33 +241,64 @@ class HomeDrawer extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16),
           onTap: onReferralPressed,
+          splashColor: referralAccentColor.withValues(
+            alpha: 0.10,
+          ),
+          highlightColor: referralAccentColor.withValues(
+            alpha: 0.045,
+          ),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
             ),
-            decoration:
-                BoxDecoration(
-              color:
-                  activeColor.withValues(
-                alpha: 0.035,
+            decoration: BoxDecoration(
+              // ==================================================
+              // STELLA PURPLE / PINK BACKGROUND
+              // ==================================================
+
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accentColor.withValues(
+                    alpha: 0.055,
+                  ),
+                  pinkAccentColor.withValues(
+                    alpha: 0.025,
+                  ),
+                ],
               ),
-              borderRadius:
-                  BorderRadius.circular(16),
-              border:
-                  Border.all(
-                color:
-                    activeColor.withValues(
-                  alpha: 0.08,
+
+              borderRadius: BorderRadius.circular(16),
+
+              // ==================================================
+              // STELLA PINK BORDER
+              // ==================================================
+
+              border: Border.all(
+                color: pinkAccentColor.withValues(
+                  alpha: 0.12,
                 ),
               ),
+
+              // ==================================================
+              // SUBTLE STELLA GLOW
+              // ==================================================
+
+              boxShadow: [
+                BoxShadow(
+                  color: pinkAccentColor.withValues(
+                    alpha: 0.035,
+                  ),
+                  blurRadius: 12,
+                  spreadRadius: 0,
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -319,40 +309,37 @@ class HomeDrawer extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        LinearGradient(
-                      begin:
-                          Alignment.topLeft,
-                      end:
-                          Alignment.bottomRight,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
                         accentColor.withValues(
-                          alpha: 0.28,
+                          alpha: 0.30,
                         ),
-                        activeColor.withValues(
-                          alpha: 0.16,
+                        pinkAccentColor.withValues(
+                          alpha: 0.22,
                         ),
                       ],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
-                    border:
-                        Border.all(
-                      color:
-                          activeColor.withValues(
-                        alpha: 0.20,
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: pinkAccentColor.withValues(
+                        alpha: 0.25,
                       ),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: pinkAccentColor.withValues(
+                          alpha: 0.08,
+                        ),
+                        blurRadius: 10,
+                      ),
+                    ],
                   ),
                   child: const Icon(
-                    Icons
-                        .groups_rounded,
-                    color:
-                        activeColor,
+                    Icons.groups_rounded,
+                    color: pinkAccentColor,
                     size: 23,
                   ),
                 ),
@@ -367,21 +354,16 @@ class HomeDrawer extends StatelessWidget {
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _t('referrals'),
                         maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 16,
-                          fontWeight:
-                              FontWeight.w600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
@@ -390,22 +372,15 @@ class HomeDrawer extends StatelessWidget {
                       ),
 
                       Text(
-                        _t(
-                          'referralMiningActivity',
-                        ),
+                        _t('referralMiningActivity'),
                         maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style:
-                            TextStyle(
-                          color:
-                              Colors.white
-                                  .withValues(
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(
                             alpha: 0.52,
                           ),
                           fontSize: 11,
-                          fontWeight:
-                              FontWeight.w500,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -413,28 +388,34 @@ class HomeDrawer extends StatelessWidget {
                 ),
 
                 // ==================================================
-                // PEOPLE ICON
+                // REFERRAL ARROW
                 // ==================================================
 
                 Container(
-                  padding:
-                      const EdgeInsets.all(
-                    7,
-                  ),
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        activeColor.withValues(
-                      alpha: 0.10,
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        accentColor.withValues(
+                          alpha: 0.16,
+                        ),
+                        pinkAccentColor.withValues(
+                          alpha: 0.10,
+                        ),
+                      ],
                     ),
-                    shape:
-                        BoxShape.circle,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: pinkAccentColor.withValues(
+                        alpha: 0.12,
+                      ),
+                    ),
                   ),
                   child: const Icon(
-                    Icons
-                        .arrow_forward_ios_rounded,
-                    color:
-                        activeColor,
+                    Icons.arrow_forward_ios_rounded,
+                    color: pinkAccentColor,
                     size: 13,
                   ),
                 ),
@@ -458,15 +439,12 @@ class HomeDrawer extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16),
           onTap: onLogoutPressed,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
             ),
@@ -479,28 +457,20 @@ class HomeDrawer extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        logoutColor.withValues(
+                  decoration: BoxDecoration(
+                    color: logoutColor.withValues(
                       alpha: 0.10,
                     ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
-                    border:
-                        Border.all(
-                      color:
-                          logoutColor.withValues(
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: logoutColor.withValues(
                         alpha: 0.20,
                       ),
                     ),
                   ),
                   child: const Icon(
                     Icons.logout_rounded,
-                    color:
-                        logoutColor,
+                    color: logoutColor,
                     size: 23,
                   ),
                 ),
@@ -517,15 +487,11 @@ class HomeDrawer extends StatelessWidget {
                   child: Text(
                     _t('logout'),
                     maxLines: 2,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.white,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 16,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -535,10 +501,8 @@ class HomeDrawer extends StatelessWidget {
                 ),
 
                 const Icon(
-                  Icons
-                      .chevron_right_rounded,
-                  color:
-                      Colors.white30,
+                  Icons.chevron_right_rounded,
+                  color: Colors.white30,
                 ),
               ],
             ),
@@ -557,8 +521,7 @@ class HomeDrawer extends StatelessWidget {
     BuildContext context,
   ) {
     return Drawer(
-      backgroundColor:
-          backgroundColor,
+      backgroundColor: backgroundColor,
       child: SafeArea(
         child: Column(
           children: [
@@ -567,43 +530,30 @@ class HomeDrawer extends StatelessWidget {
             // ==================================================
 
             Container(
-              width:
-                  double.infinity,
-              margin:
-                  const EdgeInsets.all(12),
-              padding:
-                  const EdgeInsets.symmetric(
+              width: double.infinity,
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(
                 horizontal: 20,
                 vertical: 22,
               ),
-              decoration:
-                  BoxDecoration(
-                gradient:
-                    const LinearGradient(
-                  begin:
-                      Alignment.topLeft,
-                  end:
-                      Alignment.bottomRight,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: [
                     Color(0xFF2D174D),
                     Color(0xFF1B1033),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.circular(
-                  24,
-                ),
-                border:
-                    Border.all(
-                  color:
-                      accentColor.withValues(
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: accentColor.withValues(
                     alpha: 0.45,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        accentColor.withValues(
+                    color: accentColor.withValues(
                       alpha: 0.14,
                     ),
                     blurRadius: 24,
@@ -619,36 +569,28 @@ class HomeDrawer extends StatelessWidget {
 
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceBetween,
+                        MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         '🐱',
-                        style:
-                            TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                         ),
                       ),
                       Text(
                         '🐾 STL • SOLANA 🐾',
-                        style:
-                            TextStyle(
-                          color:
-                              pinkAccentColor
-                                  .withValues(
+                        style: TextStyle(
+                          color: pinkAccentColor.withValues(
                             alpha: 0.90,
                           ),
                           fontSize: 11,
-                          fontWeight:
-                              FontWeight.bold,
-                          letterSpacing:
-                              1,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
                         ),
                       ),
                       const Text(
                         '🐱',
-                        style:
-                            TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                         ),
                       ),
@@ -677,15 +619,11 @@ class HomeDrawer extends StatelessWidget {
 
                   const Text(
                     'STELLURIINI',
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        TextStyle(
-                      color:
-                          Colors.white,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
                       fontSize: 24,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 3,
                     ),
                   ),
@@ -699,21 +637,14 @@ class HomeDrawer extends StatelessWidget {
                   // ==================================================
 
                   Text(
-                    _t(
-                      'stellaCommunity',
-                    ),
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        TextStyle(
-                      color:
-                          pinkAccentColor
-                              .withValues(
+                    _t('stellaCommunity'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: pinkAccentColor.withValues(
                         alpha: 0.85,
                       ),
                       fontSize: 13,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: 1,
                     ),
                   ),
@@ -727,8 +658,7 @@ class HomeDrawer extends StatelessWidget {
 
             Expanded(
               child: ListView(
-                padding:
-                    const EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   top: 4,
                   bottom: 8,
                 ),
@@ -738,13 +668,9 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon:
-                        Icons.language_rounded,
-                    title: _t(
-                      'language',
-                    ),
-                    onTap:
-                        onLanguagePressed,
+                    icon: Icons.language_rounded,
+                    title: _t('language'),
+                    onTap: onLanguagePressed,
                   ),
 
                   // ------------------------------------------------
@@ -752,13 +678,9 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon:
-                        Icons.info_outline_rounded,
-                    title: _t(
-                      'aboutStelluriini',
-                    ),
-                    onTap:
-                        onAboutPressed,
+                    icon: Icons.info_outline_rounded,
+                    title: _t('aboutStelluriini'),
+                    onTap: onAboutPressed,
                   ),
 
                   // ------------------------------------------------
@@ -766,13 +688,9 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon:
-                        Icons.description_outlined,
-                    title: _t(
-                      'whitePaper',
-                    ),
-                    onTap:
-                        onWhitePaperPressed,
+                    icon: Icons.description_outlined,
+                    title: _t('whitePaper'),
+                    onTap: onWhitePaperPressed,
                   ),
 
                   // ------------------------------------------------
@@ -780,13 +698,9 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon:
-                        Icons.map_outlined,
-                    title: _t(
-                      'roadmap',
-                    ),
-                    onTap:
-                        onRoadmapPressed,
+                    icon: Icons.map_outlined,
+                    title: _t('roadmap'),
+                    onTap: onRoadmapPressed,
                   ),
 
                   // ------------------------------------------------
@@ -800,17 +714,12 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon:
-                        Icons.emoji_events_rounded,
-                    title:
-                        _achievementsLocalization
-                            .get(
+                    icon: Icons.emoji_events_rounded,
+                    title: _achievementsLocalization.get(
                       'achievementsTitle',
                     ),
-                    onTap:
-                        onAchievementsPressed,
-                    iconColor:
-                        goldAccentColor,
+                    onTap: onAchievementsPressed,
+                    iconColor: goldAccentColor,
                   ),
 
                   // ------------------------------------------------
@@ -818,13 +727,9 @@ class HomeDrawer extends StatelessWidget {
                   // ------------------------------------------------
 
                   _menuItem(
-                    icon:
-                        Icons.history_rounded,
-                    title: _t(
-                      'transactionHistory',
-                    ),
-                    onTap:
-                        onTransactionHistoryPressed,
+                    icon: Icons.history_rounded,
+                    title: _t('transactionHistory'),
+                    onTap: onTransactionHistoryPressed,
                   ),
 
                   // ------------------------------------------------
@@ -841,32 +746,22 @@ class HomeDrawer extends StatelessWidget {
             // ==================================================
 
             Container(
-              width:
-                  double.infinity,
-              margin:
-                  const EdgeInsets.fromLTRB(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(
                 16,
                 4,
                 16,
                 16,
               ),
-              padding:
-                  const EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
-              decoration:
-                  BoxDecoration(
-                color:
-                    cardColor,
-                borderRadius:
-                    BorderRadius.circular(
-                  18,
-                ),
-                border:
-                    Border.all(
-                  color:
-                      accentColor.withValues(
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: accentColor.withValues(
                     alpha: 0.16,
                   ),
                 ),
@@ -878,14 +773,11 @@ class HomeDrawer extends StatelessWidget {
                   // ==================================================
 
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
                         '🐾',
-                        style:
-                            TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                         ),
                       ),
@@ -896,21 +788,14 @@ class HomeDrawer extends StatelessWidget {
 
                       Flexible(
                         child: Text(
-                          _t(
-                            'footerTagline',
-                          ),
-                          textAlign:
-                              TextAlign.center,
-                          style:
-                              TextStyle(
-                            color:
-                                Colors.white
-                                    .withValues(
+                          _t('footerTagline'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(
                               alpha: 0.60,
                             ),
                             fontSize: 11,
-                            fontWeight:
-                                FontWeight.w600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -921,8 +806,7 @@ class HomeDrawer extends StatelessWidget {
 
                       const Text(
                         '🐾',
-                        style:
-                            TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                         ),
                       ),
@@ -938,21 +822,14 @@ class HomeDrawer extends StatelessWidget {
                   // ==================================================
 
                   Text(
-                    _t(
-                      'footerToken',
-                    ),
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        TextStyle(
-                      color:
-                          pinkAccentColor
-                              .withValues(
+                    _t('footerToken'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: pinkAccentColor.withValues(
                         alpha: 0.72,
                       ),
                       fontSize: 10,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
                   ),
