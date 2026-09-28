@@ -94,6 +94,7 @@ const {
 // applyReferralCode
 // getReferredUsers
 // getReferralDashboard
+// validateReferralCode
 //
 // processReferralMiningReward
 // ei ole suoraan clientin callable,
@@ -110,6 +111,24 @@ const {
   getReferralDashboard,
 } = require(
   "./src/functions/referralFunctions",
+);
+
+
+// ============================================================
+// 🔍 REFERRAL CODE VALIDATION
+// ============================================================
+//
+// Tarkistaa referral-koodin ennen Firebase Auth -tilin
+// luomista.
+//
+// Tämä funktio ei luo käyttäjää eikä referral-suhdetta.
+//
+// ============================================================
+
+const {
+  validateReferralCode,
+} = require(
+  "./src/functions/validateReferralCode",
 );
 
 
@@ -173,6 +192,9 @@ exports.getAchievementsCompleted =
 // FirebaseFunctions
 //   .httpsCallable('getReferralStatus')
 //
+// FirebaseFunctions
+//   .httpsCallable('validateReferralCode')
+//
 // ============================================================
 
 exports.getReferralProfile =
@@ -189,6 +211,9 @@ exports.getReferralStatus =
 
 exports.getReferralDashboard =
   getReferralDashboard;
+
+exports.validateReferralCode =
+  validateReferralCode;
 
 
 // ============================================================
