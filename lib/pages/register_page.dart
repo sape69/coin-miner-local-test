@@ -11,43 +11,19 @@ import '../widgets/cat_avatar.dart';
 //
 // Firebase Email/Password -tilin luonti.
 //
-// Ominaisuudet:
-// - Stella-teema
-// - keskitetty localization
-// - käyttäjänimi
-// - sähköposti
-// - salasana
-// - salasanan vahvistus
-// - vapaaehtoinen Referral Code
-// - Referral-koodin ennakkotarkistus
-// - Firebase Auth
-// - Firebase Functions / Referral
-// - kielenvaihto
-// - Firebase-virheiden käsittely
+// Referral-flow:
 //
-// Referral toimii näin:
-//
-// 1. Käyttäjä kirjoittaa Referral Coden.
-// 2. Referral Code tarkistetaan ENSIN backendissä.
-// 3. Jos koodi on voimassa:
-//      -> Firebase-tili luodaan
-//      -> referral liitetään käyttäjään
-//
-// 4. Jos koodi on väärä:
-//      -> tiliä EI vielä luoda
-//      -> käyttäjältä kysytään:
-//
-//         "Jatketaanko ilman referral-koodia?"
-//
-//      -> Käyttäjä voi:
-//         - käyttää toista koodia
-//         - jatkaa ilman koodia
-//
-// 5. Jos käyttäjä jatkaa ilman koodia:
-//      -> referral jätetään pois
-//      -> tili luodaan normaalisti
-//
-// Referral-bonuslaskenta tapahtuu edelleen backendissä.
+// 1. Käyttäjä kirjoittaa referral-koodin.
+// 2. Flutter tarkistaa koodin backendiltä ENNEN tilin luomista.
+// 3. Jos koodi on väärä:
+//    -> tiliä EI luoda
+//    -> käyttäjältä kysytään haluaako hän jatkaa ilman koodia.
+// 4. Jos käyttäjä jatkaa ilman koodia:
+//    -> referral-kenttä tyhjennetään
+//    -> tili luodaan normaalisti.
+// 5. Jos koodi on oikea:
+//    -> Firebase Auth luo tilin
+//    -> applyReferralCode yhdistää referralin.
 //
 // ============================================================
 
@@ -64,16 +40,6 @@ class RegisterPage extends StatefulWidget {
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
-}
-
-// ============================================================
-// 🔗 REFERRAL VALIDATION RESULT
-// ============================================================
-
-enum _ReferralValidationResult {
-  valid,
-  invalid,
-  error,
 }
 
 class _RegisterPageState extends State<RegisterPage> {
@@ -256,7 +222,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     size: 28,
                   ),
                 ),
+
                 const SizedBox(width: 14),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -286,7 +254,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                 ),
+
                 const SizedBox(width: 8),
+
                 IconButton(
                   visualDensity:
                       VisualDensity.compact,
@@ -318,25 +288,28 @@ class _RegisterPageState extends State<RegisterPage> {
   //
   // TÄRKEÄ:
   //
-  // Tämä tapahtuu ENNEN Firebase Auth -tilin luomista.
+  // Tätä kutsutaan ENNEN Firebase Auth -tilin luomista.
   //
-  // Client ei päätä itse, onko referral-koodi olemassa.
-  // Backend tarkistaa sen.
+  // Palauttaa:
   //
-  // Firebase Function:
+  // true  = koodi on voimassa
+  // false = koodia ei löytynyt / se ei ole voimassa
+  // null  = tarkistusta ei voitu suorittaa
+  //
+  // Backend-funktio:
   //
   // validateReferralCode
   //
   // ==========================================================
 
-  Future<_ReferralValidationResult> _validateReferralCode(
+  Future<bool?> _validateReferralCode(
     String referralCode,
   ) async {
     final String code =
         referralCode.trim().toUpperCase();
 
     if (code.isEmpty) {
-      return _ReferralValidationResult.valid;
+      return true;
     }
 
     try {
@@ -357,396 +330,227 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
 
-      final dynamic data = result.data;
-
-      // ------------------------------------------------------
-      // BACKEND RESPONSE
-      // ------------------------------------------------------
-      //
-      // Tuetaan muutamaa turvallista vastausmuotoa:
-      //
-      // {
-      //   valid: true
-      // }
-      //
-      // tai
-      //
-      // {
-      //   exists: true
-      // }
-      //
-      // tai
-      //
-      // {
-      //   success: true
-      // }
-      //
-      // ------------------------------------------------------
+      final dynamic data =
+          result.data;
 
       if (data is Map) {
-        final dynamic valid =
-            data['valid'];
-
-        final dynamic exists =
-            data['exists'];
-
-        final dynamic isValid =
-            data['isValid'];
-
         final dynamic success =
             data['success'];
 
-        if (valid == true ||
-            exists == true ||
-            isValid == true ||
-            success == true) {
-          return _ReferralValidationResult.valid;
+        final dynamic valid =
+            data['valid'];
+
+        if (success == true &&
+            valid == true) {
+          return true;
         }
 
-        if (valid == false ||
-            exists == false ||
-            isValid == false) {
-          return _ReferralValidationResult.invalid;
+        if (success == true &&
+            valid == false) {
+          return false;
         }
       }
 
-      // Tuntematon vastaus ei saa luoda tiliä.
-      return _ReferralValidationResult.invalid;
+      debugPrint(
+        'Referral validation returned '
+        'unexpected response: $data',
+      );
+
+      return null;
     } on FirebaseFunctionsException catch (error) {
       debugPrint(
         'Referral validation error: '
         '${error.code} - ${error.message}',
       );
 
-      // ------------------------------------------------------
-      // Koodi ei löytynyt
-      // ------------------------------------------------------
+      switch (error.code) {
+        case 'not-found':
+          return false;
 
-      if (error.code == 'not-found' ||
-          error.code == 'invalid-argument') {
-        return _ReferralValidationResult.invalid;
+        case 'invalid-argument':
+          return false;
+
+        case 'unauthenticated':
+          _message(
+            'Referral code validation requires '
+            'a valid connection.',
+          );
+          return null;
+
+        case 'network-error':
+        case 'unavailable':
+          _message(
+            'Network error. '
+            'Please check your connection and try again.',
+          );
+          return null;
+
+        default:
+          _message(
+            error.message ??
+                'The referral code could not be checked.',
+          );
+          return null;
       }
-
-      // ------------------------------------------------------
-      // Yhteys / backend ei vastaa
-      // ------------------------------------------------------
-
-      if (error.code == 'network-error' ||
-          error.code == 'unavailable' ||
-          error.code == 'deadline-exceeded') {
-        _message(
-          'Referral code could not be checked. '
-          'Please check your connection and try again.',
-        );
-
-        return _ReferralValidationResult.error;
-      }
-
-      _message(
-        error.message ??
-            'Referral code could not be checked.',
-      );
-
-      return _ReferralValidationResult.error;
     } catch (error) {
       debugPrint(
         'Referral validation unexpected error: $error',
       );
 
       _message(
-        'Referral code could not be checked.',
+        'The referral code could not be checked.',
       );
 
-      return _ReferralValidationResult.error;
+      return null;
     }
   }
 
   // ==========================================================
-  // ❌ INVALID REFERRAL DIALOG
+  // ❓ INVALID REFERRAL DIALOG
   // ==========================================================
   //
-  // Jos käyttäjä antaa väärän referral-koodin:
-  //
-  // TILIÄ EI LUODA.
+  // Väärä referral-koodi EI luo tiliä.
   //
   // Käyttäjälle annetaan kaksi vaihtoehtoa:
   //
-  // 1. Käytä toista koodia
-  // 2. Jatka ilman referral-koodia
+  // 1. Jatka ilman referral-koodia
+  // 2. Palaa muuttamaan koodia
   //
   // ==========================================================
 
-  Future<bool> _showInvalidReferralDialog(
-    String referralCode,
-  ) async {
+  Future<bool> _askContinueWithoutReferral() async {
     if (!mounted) {
       return false;
     }
 
-    final bool? continueWithoutCode =
+    final bool? continueWithoutReferral =
         await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (
-        BuildContext dialogContext,
-      ) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: cardColor,
-          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(
-              color: referralColor.withValues(
-                alpha: 0.35,
-              ),
-              width: 1.2,
-            ),
+            borderRadius:
+                BorderRadius.circular(24),
           ),
-          titlePadding:
-              const EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            8,
-          ),
-          contentPadding:
-              const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            24,
-          ),
-          title: Row(
+          title: const Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      referralColor.withValues(
-                        alpha: 0.28,
-                      ),
-                      referralPinkColor.withValues(
-                        alpha: 0.20,
-                      ),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.link_off_rounded,
-                  color: referralPinkColor,
-                  size: 25,
-                ),
+              Icon(
+                Icons.link_off_rounded,
+                color: pinkColor,
+                size: 28,
               ),
-              const SizedBox(width: 14),
-              const Expanded(
+              SizedBox(width: 10),
+              Expanded(
                 child: Text(
-                  'Referral Code',
+                  'Referral code not found',
                   style: TextStyle(
                     color: primaryTextColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 19,
                   ),
                 ),
               ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-
-              const Text(
-                'This referral code was not found.',
-                style: TextStyle(
-                  color: primaryTextColor,
-                  fontSize: 15,
-                  height: 1.45,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Text(
-                'The account has not been created yet.',
-                style: TextStyle(
-                  color: secondaryTextColor,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: inputColor,
-                  borderRadius:
-                      BorderRadius.circular(14),
-                  border: Border.all(
-                    color:
-                        referralPinkColor.withValues(
-                      alpha: 0.20,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons
-                          .confirmation_number_outlined,
-                      color: referralPinkColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        referralCode
-                            .trim()
-                            .toUpperCase(),
-                        maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: primaryTextColor,
-                          fontWeight:
-                              FontWeight.w700,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              const Text(
-                'Would you like to continue without a referral code?',
-                style: TextStyle(
-                  color: secondaryTextColor,
-                  fontSize: 13,
-                  height: 1.45,
-                ),
-              ),
-
-              const SizedBox(height: 22),
-
-              // ------------------------------------------------
-              // USE ANOTHER CODE
-              // ------------------------------------------------
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(
-                      dialogContext,
-                    ).pop(false);
-                  },
-                  icon: const Icon(
-                    Icons.edit_rounded,
-                    size: 19,
-                  ),
-                  label: const Text(
-                    'Use another code',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  style:
-                      OutlinedButton.styleFrom(
-                    foregroundColor:
-                        referralPinkColor,
-                    side: BorderSide(
-                      color:
-                          referralPinkColor
-                              .withValues(
-                        alpha: 0.55,
-                      ),
-                    ),
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        15,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // ------------------------------------------------
-              // CONTINUE WITHOUT CODE
-              // ------------------------------------------------
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(
-                      dialogContext,
-                    ).pop(true);
-                  },
-                  icon: const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 19,
-                  ),
-                  label: const Text(
-                    'Continue without code',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        accentColor,
-                    foregroundColor:
-                        Colors.white,
-                    elevation: 0,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        15,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          content: const Text(
+            'The referral code you entered is not valid.\n\n'
+            'Would you like to continue creating your '
+            'Stelluriini account without a referral code?',
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 15,
+              height: 1.5,
+            ),
           ),
+          actionsPadding:
+              const EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            20,
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.of(
+                    dialogContext,
+                  ).pop(false);
+                },
+                style:
+                    OutlinedButton.styleFrom(
+                  foregroundColor: pinkColor,
+                  side: const BorderSide(
+                    color: pinkColor,
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(
+                    vertical: 13,
+                  ),
+                  shape:
+                      RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Change referral code',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(
+                    dialogContext,
+                  ).pop(true);
+                },
+                style:
+                    ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(
+                    vertical: 13,
+                  ),
+                  shape:
+                      RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Continue without referral',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
 
-    return continueWithoutCode == true;
+    return continueWithoutReferral == true;
   }
 
   // ==========================================================
   // 🔗 APPLY REFERRAL CODE
   // ==========================================================
   //
-  // Tämä kutsutaan VASTA kun Firebase-tili on onnistuneesti
-  // luotu ja referral-koodi on jo validoitu.
+  // Tämä suoritetaan vasta sen jälkeen kun:
+  //
+  // - referral on validoitu
+  // - Firebase Auth -tili on luotu
   //
   // ==========================================================
 
@@ -811,7 +615,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
         case 'already-exists':
           message =
-              'A referral code is already connected to this account.';
+              'A referral code is already connected '
+              'to this account.';
           break;
 
         case 'invalid-argument':
@@ -946,6 +751,10 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    // --------------------------------------------------------
+    // LOADING
+    // --------------------------------------------------------
+
     setState(() {
       loading = true;
     });
@@ -954,85 +763,68 @@ class _RegisterPageState extends State<RegisterPage> {
       // ======================================================
       // 🔍 VALIDATE REFERRAL BEFORE ACCOUNT CREATION
       // ======================================================
-      //
-      // TÄMÄ ON TÄRKEIN MUUTOS.
-      //
-      // Firebase Auth -tiliä EI luoda ennen kuin referral
-      // on tarkistettu.
-      //
-      // ======================================================
 
       if (referralCode.isNotEmpty) {
-        final _ReferralValidationResult
-            validationResult =
+        final bool? referralValid =
             await _validateReferralCode(
           referralCode,
         );
+
+        // ----------------------------------------------------
+        // VALIDATION ERROR
+        // ----------------------------------------------------
+
+        if (referralValid == null) {
+          if (mounted) {
+            setState(() {
+              loading = false;
+            });
+          }
+
+          return;
+        }
+
+        // ----------------------------------------------------
+        // INVALID CODE
+        // ----------------------------------------------------
+
+        if (referralValid == false) {
+          if (mounted) {
+            setState(() {
+              loading = false;
+            });
+          }
+
+          final bool continueWithoutReferral =
+              await _askContinueWithoutReferral();
+
+          if (!continueWithoutReferral) {
+            // Käyttäjä haluaa korjata koodin.
+            return;
+          }
+
+          // Käyttäjä hyväksyi tilin luonnin ilman
+          // referral-koodia.
+          referralController.clear();
+          referralCode = '';
+        }
+
+        // ----------------------------------------------------
+        // Jos true:
+        // referralCode säilyy ja tili voidaan luoda.
+        // ----------------------------------------------------
 
         if (!mounted) {
           return;
         }
 
-        // ----------------------------------------------------
-        // BACKEND / NETWORK ERROR
-        // ----------------------------------------------------
-
-        if (validationResult ==
-            _ReferralValidationResult.error) {
-          return;
-        }
-
-        // ----------------------------------------------------
-        // INVALID REFERRAL
-        // ----------------------------------------------------
-
-        if (validationResult ==
-            _ReferralValidationResult.invalid) {
-          final bool continueWithoutCode =
-              await _showInvalidReferralDialog(
-            referralCode,
-          );
-
-          if (!mounted) {
-            return;
-          }
-
-          // --------------------------------------------------
-          // USER CHOSE TO USE ANOTHER CODE
-          // --------------------------------------------------
-
-          if (!continueWithoutCode) {
-            return;
-          }
-
-          // --------------------------------------------------
-          // USER CHOSE:
-          //
-          // CONTINUE WITHOUT REFERRAL CODE
-          // --------------------------------------------------
-          //
-          // Referral-koodia ei enää käytetä tässä
-          // rekisteröinnissä.
-          //
-          // Tili voidaan nyt luoda normaalisti.
-          // --------------------------------------------------
-
-          referralCode = '';
-
-          referralController.clear();
-        }
+        setState(() {
+          loading = true;
+        });
       }
 
       // ======================================================
-      // CREATE FIREBASE ACCOUNT
-      // ======================================================
-      //
-      // Tähän päästään vasta kun:
-      //
-      // - referral oli tyhjä
-      // - referral oli validi
-      // - tai käyttäjä vahvisti jatkavansa ilman referralia
-      //
+      // 🔐 CREATE FIREBASE ACCOUNT
       // ======================================================
 
       final UserCredential credential =
@@ -1043,7 +835,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       // ======================================================
-      // SAVE USERNAME
+      // 👤 SAVE USERNAME
       // ======================================================
 
       final User? user =
@@ -1058,15 +850,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       // ======================================================
-      // APPLY REFERRAL
-      // ======================================================
-      //
-      // Tämä suoritetaan vain jos referral oli:
-      //
-      // 1. annettu
-      // 2. validoitu onnistuneesti
-      // 3. tili luotiin
-      //
+      // 🔗 APPLY VERIFIED REFERRAL
       // ======================================================
 
       if (referralCode.isNotEmpty) {
@@ -1076,22 +860,25 @@ class _RegisterPageState extends State<RegisterPage> {
         );
 
         if (!referralApplied) {
-          // --------------------------------------------------
-          // Tili on tässä vaiheessa jo olemassa.
+          // Tiliä EI poisteta.
           //
-          // Tiliä EI poisteta referral-virheen vuoksi.
-          //
-          // Ennakkovalidointi estää normaalisti tämän
-          // tilanteen väärällä koodilla.
-          // --------------------------------------------------
+          // Koodi oli jo validoitu ennen tilin luomista,
+          // joten tässä tilanteessa kyseessä on backend-
+          // tai verkko-ongelma tilin luonnin jälkeen.
 
           if (!mounted) {
             return;
           }
 
+          _message(
+            'Your account was created, but the referral '
+            'could not be connected. Please contact support '
+            'if this continues.',
+          );
+
           await Future<void>.delayed(
             const Duration(
-              milliseconds: 500,
+              milliseconds: 1200,
             ),
           );
 
@@ -1106,7 +893,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       // ======================================================
-      // SUCCESS
+      // 🎉 SUCCESS
       // ======================================================
 
       if (!mounted) {
@@ -1392,10 +1179,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
 
-      // ======================================================
-      // APP BAR
-      // ======================================================
-
       appBar: AppBar(
         backgroundColor: backgroundColor,
         foregroundColor: primaryTextColor,
@@ -1421,10 +1204,6 @@ class _RegisterPageState extends State<RegisterPage> {
         ],
       ),
 
-      // ======================================================
-      // BODY
-      // ======================================================
-
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -1441,10 +1220,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ==================================================
-                    // 🐱 STELLA
-                    // ==================================================
-
                     const CatAvatar(
                       size: 110,
                     ),
@@ -1892,10 +1667,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
 
                     const SizedBox(height: 8),
-
-                    // ==================================================
-                    // STELLA FOOTER
-                    // ==================================================
 
                     const Text(
                       '🐱💜',
