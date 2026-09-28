@@ -43,7 +43,7 @@
 //
 // ============================================================
 //
-// Referral mining reward:
+// REFERRAL MINING REWARD:
 //
 // - maksetaan kutsujalle vain hyväksytystä mining-tuotosta
 // - käsitellään mining-transaktion yhteydessä
@@ -96,7 +96,9 @@ const REFERRAL_CODE_LENGTH =
     ? Math.max(
         4,
         Math.floor(
-          Number(CONFIG_REFERRAL_CODE_LENGTH)
+          Number(
+            CONFIG_REFERRAL_CODE_LENGTH
+          )
         )
       )
     : 8;
@@ -568,6 +570,23 @@ async function ensureReferralCode(
 
     if (existingUser) {
       continue;
+    }
+
+    const latestSnapshot =
+      await userRef.get();
+
+    const latestData =
+      latestSnapshot.exists
+        ? latestSnapshot.data() || {}
+        : {};
+
+    const latestCode =
+      normalizeReferralCode(
+        latestData.referralCode
+      );
+
+    if (latestCode) {
+      return latestCode;
     }
 
     await userRef.set(
@@ -1613,10 +1632,6 @@ const getReferralStatus =
         const nowMs =
           now.getTime();
 
-        // ------------------------------------------------------
-        // OWN USER
-        // ------------------------------------------------------
-
         const ownSnapshot =
           await getUserRef(uid)
             .get();
@@ -1626,18 +1641,10 @@ const getReferralStatus =
             ? ownSnapshot.data() || {}
             : {};
 
-        // ------------------------------------------------------
-        // REFERRAL CODE
-        // ------------------------------------------------------
-
         const referralCode =
           await ensureReferralCode(
             uid
           );
-
-        // ------------------------------------------------------
-        // FIND REFERRED USERS
-        // ------------------------------------------------------
 
         const referredQuery =
           db.collection("users")
@@ -1660,10 +1667,6 @@ const getReferralStatus =
 
         let inactiveCount =
           0;
-
-        // ------------------------------------------------------
-        // BUILD REFERRAL LIST
-        // ------------------------------------------------------
 
         for (
           const document
@@ -1714,15 +1717,6 @@ const getReferralStatus =
           });
         }
 
-        // ------------------------------------------------------
-        // SORT
-        // ------------------------------------------------------
-        //
-        // Louhivat ensin.
-        // Sen jälkeen ei-louhivat.
-        //
-        // ------------------------------------------------------
-
         referrals.sort(
           (a, b) => {
             if (
@@ -1739,10 +1733,6 @@ const getReferralStatus =
             );
           }
         );
-
-        // ------------------------------------------------------
-        // RESPONSE
-        // ------------------------------------------------------
 
         return {
           success:
