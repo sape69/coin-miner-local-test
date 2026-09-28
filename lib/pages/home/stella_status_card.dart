@@ -46,9 +46,6 @@ class _StellaStatusCardState
   // 🎨 STELLA COLORS
   // ==========================================================
 
-  static const Color backgroundColor =
-      Color(0xFF120B24);
-
   static const Color cardColor =
       Color(0xFF21113B);
 
@@ -181,7 +178,7 @@ class _StellaStatusCardState
   // 🐱 STATUS IMAGE
   // ==========================================================
   //
-  // Nämä kuvat lisätään seuraavassa vaiheessa assets-kansioon.
+  // Näytetään vain yksi aktiivinen Stella-kuva kerrallaan.
   //
   // ⛏️ assets/images/stella_mining.png
   // 😴 assets/images/stella_sleeping.png
