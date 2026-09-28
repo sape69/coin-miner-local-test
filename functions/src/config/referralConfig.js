@@ -11,7 +11,7 @@
 //
 // TÄRKEÄÄ:
 //
-// Referral ei anna käyttäjälle STL-palkkiota rekisteröitymisestä.
+// Referral EI anna käyttäjälle STL-palkkiota rekisteröitymisestä.
 //
 // Referral-bonus muodostuu ainoastaan kutsutun käyttäjän
 // hyväksytystä louhintatuotosta.
@@ -55,8 +55,6 @@ const DEFAULT_REFERRAL_BONUS_PERCENT = 5;
 // 25 000+ käyttäjää
 //     → 1 %
 //
-// HUOM:
-//
 // Lista pidetään suurimmasta milestone-arvosta
 // pienimpään, jotta oikea taso löytyy heti.
 //
@@ -67,17 +65,14 @@ const REFERRAL_MILESTONES = [
     minUsers: 25000,
     bonusPercent: 1,
   },
-
   {
     minUsers: 10000,
     bonusPercent: 2,
   },
-
   {
     minUsers: 5000,
     bonusPercent: 3,
   },
-
   {
     minUsers: 1000,
     bonusPercent: 4,
@@ -91,7 +86,7 @@ const REFERRAL_MILESTONES = [
 //
 // Yhdellä käyttäjällä voi olla vain yksi kutsuja.
 //
-// Tämä EI rajoita kutsujan kutsumien käyttäjien määrää.
+// Kutsujalla ei ole ylärajaa kutsuttujen käyttäjien määrälle.
 //
 // Esimerkiksi:
 //
@@ -99,10 +94,7 @@ const REFERRAL_MILESTONES = [
 //   ├── Käyttäjä B
 //   ├── Käyttäjä C
 //   ├── Käyttäjä D
-//   ├── Käyttäjä E
 //   └── ...
-//
-// Kutsujalla ei ole ylärajaa.
 //
 // ============================================================
 
@@ -177,14 +169,12 @@ const MAX_CODE_GENERATION_ATTEMPTS = 20;
 // 💰 MINIMUM REFERRAL BONUS
 // ============================================================
 //
-// Referral-bonuksen tekninen minimiraja.
-//
 // 0 tarkoittaa, ettei erillistä STL-määrärajaa aseteta.
 //
-// Tämä EI ole käyttäjän STL-nostoraja.
+// Varsinaisen referral-bonuksen täytyy kuitenkin olla
+// positiivinen, jotta referral-tapahtuma voidaan kirjata.
 //
-// Varsinaisen bonuksen täytyy kuitenkin olla positiivinen,
-// jotta referral-tapahtuma voidaan kirjata.
+// Tämä EI ole käyttäjän STL-nostoraja.
 //
 // ============================================================
 
@@ -226,7 +216,14 @@ const REFERRAL_CALCULATION_SERVER_SIDE = true;
 // 📜 REFERRAL HISTORY
 // ============================================================
 //
-// Referral-tapahtumille käytetään omaa historiaa.
+// Referral-tapahtumien historialle määritellään oma
+// kokoelman nimi.
+//
+// Huom:
+// Nykyinen referralFunctions.js käyttää käyttäjän
+// history-kokoelmaa referral_reward-tapahtumien tallentamiseen.
+// Tämä vakio pidetään mukana tulevaa erillistä referral-historiaa
+// varten eikä sitä käytetä vielä automaattisesti.
 //
 // ============================================================
 
@@ -238,8 +235,16 @@ const REFERRAL_HISTORY_COLLECTION =
 // 👤 USER REFERRAL DATA
 // ============================================================
 //
-// Käyttäjän referral-tiedot säilytetään käyttäjän
-// omassa Firestore-dokumentissa tässä kentässä.
+// Käyttäjän referral-tiedot voidaan ryhmitellä tämän kentän
+// alle tulevissa rakennepäivityksissä.
+//
+// Nykyinen referralFunctions.js käyttää kuitenkin suoraan
+// kenttiä kuten:
+//
+// - referrerUid
+// - referralCode
+// - referralCodeUsed
+// - referralJoinedAt
 //
 // ============================================================
 
@@ -276,7 +281,8 @@ function getReferralBonusPercent(
       : 0;
 
   for (
-    const milestone of REFERRAL_MILESTONES
+    const milestone of
+      REFERRAL_MILESTONES
   ) {
     const minUsers =
       Number(
@@ -441,7 +447,6 @@ function isValidReferralBonus(
 // ============================================================
 
 module.exports = {
-
   // ----------------------------------------------------------
   // 🎁 DEFAULT BONUS
   // ----------------------------------------------------------
