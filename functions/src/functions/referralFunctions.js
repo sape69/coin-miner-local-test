@@ -31,6 +31,10 @@
 // - referral-statuksen
 // - referral-dashboardin
 //
+// Mining käyttää:
+//
+// - processReferralMiningReward()
+//
 // ============================================================
 
 const {
@@ -62,6 +66,7 @@ const {
 } = require("../utils/referralUtils");
 
 const {
+  referralCodesCollection,
   referralsCollection,
   getTotalUsers,
   getCurrentReferralBonusPercent,
@@ -72,13 +77,11 @@ const {
   getReferralSummary,
 } = require("../services/referralService");
 
-
 // ============================================================
 // CONSTANTS
 // ============================================================
 
 const MAX_REFERRAL_LIST = 100;
-
 
 // ============================================================
 // VALUE HELPERS
@@ -96,7 +99,6 @@ function number(
     : fallback;
 }
 
-
 function nonNegative(
   value,
   fallback = 0,
@@ -109,7 +111,6 @@ function nonNegative(
     ? result
     : fallback;
 }
-
 
 // ============================================================
 // TIMESTAMP HELPERS
@@ -190,7 +191,6 @@ function timestampMs(
   return 0;
 }
 
-
 // ============================================================
 // USER DISPLAY NAME
 // ============================================================
@@ -233,7 +233,6 @@ function safeDisplayName(
 
   return "Stella Miner";
 }
-
 
 // ============================================================
 // MINING STATUS
@@ -279,15 +278,8 @@ function miningWindowActive(
   );
 }
 
-
 // ============================================================
 // LAST MINING ACTIVITY
-// ============================================================
-//
-// Tätä käytetään vain listan järjestämiseen.
-//
-// Se EI määritä active/inactive-tilaa.
-//
 // ============================================================
 
 function lastActivityMs(
@@ -316,7 +308,6 @@ function lastActivityMs(
 
   return latest;
 }
-
 
 // ============================================================
 // REFERRAL BONUS HISTORY
@@ -388,19 +379,8 @@ async function getReferralBonusForUser(
   );
 }
 
-
 // ============================================================
 // GET REFERRAL RELATIONSHIPS
-// ============================================================
-//
-// Uusi referral-arkkitehtuuri käyttää:
-//
-//   referrals/{referredUid}
-//
-// eikä enää pelkästään:
-//
-//   users.where("referrerUid", "==", uid)
-//
 // ============================================================
 
 async function getReferredRelationshipDocuments(
@@ -422,7 +402,6 @@ async function getReferredRelationshipDocuments(
 
   return snapshot.docs;
 }
-
 
 // ============================================================
 // BUILD REFERRAL USER LIST
@@ -585,16 +564,8 @@ async function buildReferralUsers(
   return users;
 }
 
-
 // ============================================================
 // ENSURE REFERRAL CODE - CALLABLE SAFE WRAPPER
-// ============================================================
-//
-// referralService.ensureReferralCode() vaatii Firestore
-// transactionin.
-//
-// Tämä wrapper hoitaa transaktion callable-kutsulle.
-//
 // ============================================================
 
 async function ensureUserReferralCode(
@@ -610,7 +581,6 @@ async function ensureUserReferralCode(
   );
 }
 
-
 // ============================================================
 // GET TOTAL REFERRAL REWARDS
 // ============================================================
@@ -623,6 +593,57 @@ function getTotalReferralRewards(
   );
 }
 
+// ============================================================
+// 🔗 PROCESS REFERRAL MINING REWARD
+// ============================================================
+//
+// Tämä adapteri yhdistää miningFunctions.js:n Referral-kutsun
+// referralService.js:n varsinaiseen liiketoimintalogiikkaan.
+//
+// TÄRKEÄÄ:
+//
+// - miningAmount tulee backendin hyväksymästä mining-tuotosta.
+// - client ei lähetä referral-bonusmäärää.
+// - referralService laskee prosenttiosuuden.
+// - referralService tarkistaa idempotenssin.
+// - kaikki Firestore-kirjoitukset tehdään saman transactionin
+//   sisällä.
+//
+// Parametrit:
+//
+// referredUid
+//   = käyttäjä, jonka mining-tuotosta referral-bonus syntyy
+//
+// miningAmount
+//   = backendin hyväksymä mining-tuotto
+//
+// miningTransactionId
+//   = hyväksytyn mining-tapahtuman yksilöllinen ID
+//
+// transaction
+//   = sama Firestore transaction, jossa mining hyväksytään
+//
+// ============================================================
+
+async function processReferralMiningReward(
+  referredUid,
+  miningAmount,
+  miningTransactionId,
+  transaction,
+) {
+  if (!transaction) {
+    throw new Error(
+      "REFERRAL_TRANSACTION_REQUIRED",
+    );
+  }
+
+  return applyReferralMiningReward(
+    referredUid,
+    miningAmount,
+    miningTransactionId,
+    transaction,
+  );
+}
 
 // ============================================================
 // GET REFERRAL PROFILE
@@ -653,11 +674,6 @@ const getReferralProfile =
 
         const totalUsers =
           await getTotalUsers();
-
-        // ------------------------------------------------------
-        // TÄRKEÄÄ:
-        // getCurrentReferralBonusPercent() on async.
-        // ------------------------------------------------------
 
         const bonusConfig =
           await getCurrentReferralBonusPercent();
@@ -732,13 +748,8 @@ const getReferralProfile =
     },
   );
 
-
 // ============================================================
 // APPLY REFERRAL CODE
-// ============================================================
-//
-// Referral-suhde luodaan referralServicen kautta.
-//
 // ============================================================
 
 const applyReferralCode =
@@ -802,10 +813,6 @@ const applyReferralCode =
                   userData,
                 );
 
-              // ------------------------------------------------
-              // Referral-suhdetta ei voi vaihtaa.
-              // ------------------------------------------------
-
               if (
                 referralData.referrerUid
               ) {
@@ -814,10 +821,6 @@ const applyReferralCode =
                   "🐱 Referral-koodi on jo liitetty tähän käyttäjään.",
                 );
               }
-
-              // ------------------------------------------------
-              // Oma koodi
-              // ------------------------------------------------
 
               const ownCode =
                 normalizeReferralCode(
@@ -833,10 +836,6 @@ const applyReferralCode =
                   "🐱 Et voi käyttää omaa referral-koodiasi.",
                 );
               }
-
-              // ------------------------------------------------
-              // Varmista, että koodi löytyy.
-              // ------------------------------------------------
 
               const referrer =
                 await findReferralCode(
@@ -860,10 +859,6 @@ const applyReferralCode =
                 );
               }
 
-              // ------------------------------------------------
-              // Service luo varsinaisen suhteen.
-              // ------------------------------------------------
-
               const relationship =
                 await createReferralRelationship(
                   uid,
@@ -880,10 +875,6 @@ const applyReferralCode =
                   "🐱 Referral-koodi on jo liitetty tähän käyttäjään.",
                 );
               }
-
-              // ------------------------------------------------
-              // Referral history
-              // ------------------------------------------------
 
               transaction.set(
                 getHistoryCollection(
@@ -977,7 +968,6 @@ const applyReferralCode =
     },
   );
 
-
 // ============================================================
 // GET REFERRED USERS
 // ============================================================
@@ -1023,11 +1013,6 @@ const getReferredUsers =
 
         const totalUsers =
           await getTotalUsers();
-
-        // ------------------------------------------------------
-        // TÄRKEÄÄ:
-        // getCurrentReferralBonusPercent() on async.
-        // ------------------------------------------------------
 
         const bonusConfig =
           await getCurrentReferralBonusPercent();
@@ -1131,30 +1116,8 @@ const getReferredUsers =
     },
   );
 
-
 // ============================================================
 // GET REFERRAL STATUS
-// ============================================================
-//
-// Flutter ReferralsPage käyttää tätä callablea.
-//
-// Palautetaan edelleen yhteensopiva rakenne:
-//
-// {
-//   referralCode: "...",
-//   referralCount: 5,
-//   activeCount: 2,
-//   inactiveCount: 3,
-//   referrals: [
-//     {
-//       uid: "...",
-//       username: "...",
-//       isMining: true,
-//       referralBonus: 12.5
-//     }
-//   ]
-// }
-//
 // ============================================================
 
 const getReferralStatus =
@@ -1213,10 +1176,6 @@ const getReferralStatus =
         const inactiveCount =
           referrals.length -
           activeCount;
-
-        // ------------------------------------------------------
-        // Flutter-yhteensopiva suppea lista
-        // ------------------------------------------------------
 
         const compactReferrals =
           referrals.map(
@@ -1281,7 +1240,6 @@ const getReferralStatus =
     },
   );
 
-
 // ============================================================
 // GET FULL REFERRAL DASHBOARD
 // ============================================================
@@ -1327,11 +1285,6 @@ const getReferralDashboard =
 
         const totalUsers =
           await getTotalUsers();
-
-        // ------------------------------------------------------
-        // TÄRKEÄÄ:
-        // getCurrentReferralBonusPercent() on async.
-        // ------------------------------------------------------
 
         const bonusConfig =
           await getCurrentReferralBonusPercent();
@@ -1420,7 +1373,6 @@ const getReferralDashboard =
     },
   );
 
-
 // ============================================================
 // EXPORTS
 // ============================================================
@@ -1430,6 +1382,10 @@ module.exports = {
   // Mining käyttää tätä.
   // ----------------------------------------------------------
 
+  processReferralMiningReward,
+
+  // Säilytetään myös suora service-wrapper mahdollisia
+  // muita backend-kutsuja varten.
   applyReferralMiningReward,
 
   // ----------------------------------------------------------
