@@ -22,6 +22,7 @@
 // - referral-prosentin
 // - bonusmäärän
 // - bonus-historian
+// - referralTotalEarned-arvon
 //
 // Referral-bonus syntyy vain hyväksytystä mining-tuotosta.
 //
@@ -185,7 +186,8 @@ function getReferralRelationshipRef(
 // Referral-milestonet perustuvat järjestelmän
 // käyttäjämäärään.
 //
-// Käytetään users-kokoelman dokumenttien määrää.
+// Käytetään users-kokoelman dokumenttien määrää,
+// ellei keskitettyä stats/global-laskuria ole saatavilla.
 //
 // ============================================================
 
@@ -194,14 +196,6 @@ async function getTotalUsers(
 ) {
   const usersQuery =
     db.collection("users");
-
-  // ----------------------------------------------------------
-  // Firestore count aggregation ei ole kaikissa ympäristöissä
-  // käytettävissä samalla tavalla.
-  //
-  // Referral-järjestelmässä käytetään ensisijaisesti keskitettyä
-  // stats-dokumenttia, jos sellainen on olemassa.
-  // ----------------------------------------------------------
 
   const statsRef =
     db.collection("stats")
@@ -232,11 +226,6 @@ async function getTotalUsers(
         );
       }
     }
-
-    // --------------------------------------------------------
-    // Jos globaalia käyttäjälaskuria ei ole vielä olemassa,
-    // käytetään users-kokoelman lukumäärää.
-    // --------------------------------------------------------
 
     const snapshot =
       await transaction.get(
@@ -563,7 +552,7 @@ async function createReferralRelationship(
     !safeUid
   ) {
     throw new Error(
-      "REFERRAL_INVALID_REREFERRED_UID",
+      "REFERRAL_INVALID_REFERRED_UID",
     );
   }
 
@@ -885,6 +874,16 @@ async function referralBonusAlreadyProcessed(
 //
 // miningAmount on kutsutun käyttäjän hyväksytty mining-tuotto.
 //
+// ONNISTUNEESSA TAPAHTUMASSA PÄIVITETÄÄN:
+//
+// 1. referrer miningBalance
+// 2. referrer referralTotalEarned
+// 3. user history
+// 4. referralHistory
+// 5. idempotency-document
+//
+// Kaikki kuuluvat samaan Firestore-transaktioon.
+//
 // ============================================================
 
 async function applyReferralMiningReward(
@@ -907,7 +906,7 @@ async function applyReferralMiningReward(
         false,
 
       reason:
-        "INVALID_REREFERRED_UID",
+        "INVALID_REFERRED_UID",
 
       bonus:
         0,
@@ -1080,12 +1079,27 @@ async function applyReferralMiningReward(
       ),
     );
 
+  const oldReferralTotal =
+    Math.max(
+      0,
+      safeNumber(
+        referrerData.referralTotalEarned,
+      ),
+    );
+
   const newBalance =
     oldBalance +
     reward.bonus;
 
+  const newReferralTotal =
+    oldReferralTotal +
+    reward.bonus;
+
+  const now =
+    FieldValue.serverTimestamp();
+
   // ----------------------------------------------------------
-  // Kutsujan miningBalance
+  // 💰 Kutsujan miningBalance
   // ----------------------------------------------------------
 
   transaction.set(
@@ -1094,8 +1108,15 @@ async function applyReferralMiningReward(
       miningBalance:
         newBalance,
 
+      // ------------------------------------------------------
+      // 📊 Referral-bonusten kumulatiivinen määrä
+      // ------------------------------------------------------
+
+      referralTotalEarned:
+        newReferralTotal,
+
       updatedAt:
-        FieldValue.serverTimestamp(),
+        now,
     },
     {
       merge: true,
@@ -1103,7 +1124,7 @@ async function applyReferralMiningReward(
   );
 
   // ----------------------------------------------------------
-  // Referral history
+  // 📜 Referral history käyttäjän omassa historiassa
   // ----------------------------------------------------------
 
   const historyRef =
@@ -1153,12 +1174,12 @@ async function applyReferralMiningReward(
         "mining",
 
       createdAt:
-        FieldValue.serverTimestamp(),
+        now,
     },
   );
 
   // ----------------------------------------------------------
-  // Erillinen Referral-history
+  // 📜 Erillinen Referral-history
   // ----------------------------------------------------------
 
   const referralHistoryRef =
@@ -1186,6 +1207,10 @@ async function applyReferralMiningReward(
       bonusPercent:
         reward.bonusPercent,
 
+      bonusRate:
+        reward.bonusPercent /
+        100,
+
       totalUsers:
         reward.totalUsers,
 
@@ -1195,12 +1220,17 @@ async function applyReferralMiningReward(
         bonusId,
 
       createdAt:
-        FieldValue.serverTimestamp(),
+        now,
     },
   );
 
   // ----------------------------------------------------------
-  // Idempotency document
+  // 🛡️ Idempotency document
+  // ----------------------------------------------------------
+  //
+  // Jos sama miningTransactionId yritetään käsitellä uudelleen,
+  // tämä dokumentti estää toisen referral-maksun.
+  //
   // ----------------------------------------------------------
 
   const processedRef =
@@ -1229,7 +1259,7 @@ async function applyReferralMiningReward(
         reward.bonus,
 
       createdAt:
-        FieldValue.serverTimestamp(),
+        now,
     },
   );
 
@@ -1262,6 +1292,12 @@ async function applyReferralMiningReward(
 
     referralBonusId:
       bonusId,
+
+    referralTotalEarned:
+      newReferralTotal,
+
+    miningBalance:
+      newBalance,
   };
 }
 
@@ -1272,7 +1308,7 @@ async function applyReferralMiningReward(
 //
 // Palauttaa käyttäjän Referral-tiedot.
 //
-// Tätä voidaan käyttää myöhemmin esimerkiksi
+// Tätä voidaan käyttää esimerkiksi
 // getReferralStatus-callable-funktiossa.
 //
 // ============================================================
@@ -1323,7 +1359,13 @@ async function getReferralSummary(
       referralCodeUsed:
         "",
 
+      referralJoinedAt:
+        null,
+
       referralCount:
+        0,
+
+      referralTotalEarned:
         0,
     };
   }
@@ -1355,6 +1397,14 @@ async function getReferralSummary(
     referralCount:
       getReferralCount(
         data,
+      ),
+
+    referralTotalEarned:
+      Math.max(
+        0,
+        safeNumber(
+          data.referralTotalEarned,
+        ),
       ),
   };
 }
