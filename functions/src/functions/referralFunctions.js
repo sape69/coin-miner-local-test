@@ -62,7 +62,6 @@ const {
 } = require("../utils/referralUtils");
 
 const {
-  referralCodesCollection,
   referralsCollection,
   getTotalUsers,
   getCurrentReferralBonusPercent,
@@ -73,11 +72,13 @@ const {
   getReferralSummary,
 } = require("../services/referralService");
 
+
 // ============================================================
 // CONSTANTS
 // ============================================================
 
 const MAX_REFERRAL_LIST = 100;
+
 
 // ============================================================
 // VALUE HELPERS
@@ -95,6 +96,7 @@ function number(
     : fallback;
 }
 
+
 function nonNegative(
   value,
   fallback = 0,
@@ -107,6 +109,7 @@ function nonNegative(
     ? result
     : fallback;
 }
+
 
 // ============================================================
 // TIMESTAMP HELPERS
@@ -187,6 +190,7 @@ function timestampMs(
   return 0;
 }
 
+
 // ============================================================
 // USER DISPLAY NAME
 // ============================================================
@@ -229,6 +233,7 @@ function safeDisplayName(
 
   return "Stella Miner";
 }
+
 
 // ============================================================
 // MINING STATUS
@@ -274,6 +279,7 @@ function miningWindowActive(
   );
 }
 
+
 // ============================================================
 // LAST MINING ACTIVITY
 // ============================================================
@@ -310,6 +316,7 @@ function lastActivityMs(
 
   return latest;
 }
+
 
 // ============================================================
 // REFERRAL BONUS HISTORY
@@ -381,6 +388,7 @@ async function getReferralBonusForUser(
   );
 }
 
+
 // ============================================================
 // GET REFERRAL RELATIONSHIPS
 // ============================================================
@@ -414,6 +422,7 @@ async function getReferredRelationshipDocuments(
 
   return snapshot.docs;
 }
+
 
 // ============================================================
 // BUILD REFERRAL USER LIST
@@ -576,6 +585,7 @@ async function buildReferralUsers(
   return users;
 }
 
+
 // ============================================================
 // ENSURE REFERRAL CODE - CALLABLE SAFE WRAPPER
 // ============================================================
@@ -600,6 +610,7 @@ async function ensureUserReferralCode(
   );
 }
 
+
 // ============================================================
 // GET TOTAL REFERRAL REWARDS
 // ============================================================
@@ -611,6 +622,7 @@ function getTotalReferralRewards(
     userData.referralTotalEarned,
   );
 }
+
 
 // ============================================================
 // GET REFERRAL PROFILE
@@ -642,8 +654,13 @@ const getReferralProfile =
         const totalUsers =
           await getTotalUsers();
 
+        // ------------------------------------------------------
+        // TÄRKEÄÄ:
+        // getCurrentReferralBonusPercent() on async.
+        // ------------------------------------------------------
+
         const bonusConfig =
-          getCurrentReferralBonusPercent();
+          await getCurrentReferralBonusPercent();
 
         const snapshot =
           await getUserRef(
@@ -715,6 +732,7 @@ const getReferralProfile =
     },
   );
 
+
 // ============================================================
 // APPLY REFERRAL CODE
 // ============================================================
@@ -754,7 +772,8 @@ const applyReferralCode =
         }
 
         if (
-          code.length < 4
+          code.length <
+          4
         ) {
           throw new HttpsError(
             "invalid-argument",
@@ -958,6 +977,7 @@ const applyReferralCode =
     },
   );
 
+
 // ============================================================
 // GET REFERRED USERS
 // ============================================================
@@ -1004,8 +1024,13 @@ const getReferredUsers =
         const totalUsers =
           await getTotalUsers();
 
+        // ------------------------------------------------------
+        // TÄRKEÄÄ:
+        // getCurrentReferralBonusPercent() on async.
+        // ------------------------------------------------------
+
         const bonusConfig =
-          getCurrentReferralBonusPercent();
+          await getCurrentReferralBonusPercent();
 
         const userSnapshot =
           await getUserRef(
@@ -1105,6 +1130,7 @@ const getReferredUsers =
       }
     },
   );
+
 
 // ============================================================
 // GET REFERRAL STATUS
@@ -1255,6 +1281,7 @@ const getReferralStatus =
     },
   );
 
+
 // ============================================================
 // GET FULL REFERRAL DASHBOARD
 // ============================================================
@@ -1301,8 +1328,13 @@ const getReferralDashboard =
         const totalUsers =
           await getTotalUsers();
 
+        // ------------------------------------------------------
+        // TÄRKEÄÄ:
+        // getCurrentReferralBonusPercent() on async.
+        // ------------------------------------------------------
+
         const bonusConfig =
-          getCurrentReferralBonusPercent();
+          await getCurrentReferralBonusPercent();
 
         const users =
           await buildReferralUsers(
@@ -1387,6 +1419,7 @@ const getReferralDashboard =
       }
     },
   );
+
 
 // ============================================================
 // EXPORTS
