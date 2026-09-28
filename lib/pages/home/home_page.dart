@@ -1077,7 +1077,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 👥 REFERRALS
+  // 👥 OPEN REFERRALS
   // ============================================================
 
   void _openReferrals() {
@@ -1481,13 +1481,7 @@ class _HomePageState extends State<HomePage>
         onAchievementsPressed: _openAchievements,
         onTransactionHistoryPressed:
             _openTransactionHistory,
-
-        // ========================================================
-        // 👥 REFERRALS
-        // ========================================================
-
         onReferralPressed: _openReferrals,
-
         onLogoutPressed: _logout,
       ),
       body: SafeArea(
