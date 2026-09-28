@@ -7,6 +7,7 @@
 // Stella Mining.
 //
 // AdMob ei anna suoraan STL-tokenia.
+//
 // AdMob vahvistaa:
 // - Mining Start
 // - Power Boost
@@ -21,8 +22,6 @@
 // Referral reward:
 // Kutsujalle maksetaan referralConfig.js:n mukainen bonus
 // vain kutsutun käyttäjän hyväksytystä mining-tuotosta.
-//
-// Achievement target/reward tulee achievementFunctions.js:stä.
 //
 // ============================================================
 
@@ -81,17 +80,6 @@ const {
 
 // ============================================================
 // 🔗 REFERRAL
-// ============================================================
-//
-// Referral-bonus käsitellään backendissä saman Firestore-
-// transaktion sisällä kuin hyväksytty mining-tuotto.
-//
-// Client ei päätä:
-// - referral-prosenttia
-// - bonusmäärää
-// - referreria
-// - mining-tuottoa
-//
 // ============================================================
 
 const {
@@ -1003,26 +991,34 @@ function achievementCollection(uid) {
     .collection("achievements");
 }
 
-async function achievementData(
+async function readAchievementData(
   transaction,
   uid,
-  id
+  definitions
 ) {
-  const ref =
-    achievementCollection(uid)
-      .doc(id);
+  const items = [];
 
-  const snapshot =
-    await transaction.get(ref);
+  for (
+    const definition of definitions
+  ) {
+    const ref =
+      achievementCollection(uid)
+        .doc(definition.id);
 
-  return {
-    ref,
+    const snapshot =
+      await transaction.get(ref);
 
-    data:
-      snapshot.exists
-        ? snapshot.data() || {}
-        : {},
-  };
+    items.push({
+      definition,
+      ref,
+      data:
+        snapshot.exists
+          ? snapshot.data() || {}
+          : {},
+    });
+  }
+
+  return items;
 }
 
 function achievementUpdate(
@@ -1123,83 +1119,43 @@ function achievementUpdate(
 }
 
 // ============================================================
-// 🏆 UPDATE MINING ACHIEVEMENTS
+// 🏆 PREPARE MINING ACHIEVEMENTS
 // ============================================================
 //
 // TÄRKEÄ FIRESTORE-KORJAUS:
 //
-// Kaikki transaction.get()-luvut tehdään ensin.
-// Vasta sen jälkeen tehdään transaction.set()-kirjoitukset.
+// Ensin kaikki achievement READ-operaatiot.
+// Sen jälkeen referral-järjestelmän READ-operaatiot.
+// Vasta tämän jälkeen tehdään ensimmäiset WRITE-operaatiot.
 //
-// Tämä estää Firestore transaction read-after-write
-// -virheen, jos achievementeja on useita.
 // ============================================================
 
-async function updateMiningAchievements(
+async function prepareMiningAchievements(
   transaction,
   uid,
   collected,
   started,
   now
 ) {
-  const firstDefinition =
-    getAchievementDefinition(
-      "first_paw"
-    );
-
-  const minerDefinition =
-    getAchievementDefinition(
-      "little_miner"
-    );
-
-  const hunterDefinition =
-    getAchievementDefinition(
-      "stl_hunter"
-    );
-
   const definitions = [
-    firstDefinition,
-    minerDefinition,
-    hunterDefinition,
+    getAchievementDefinition("first_paw"),
+    getAchievementDefinition("little_miner"),
+    getAchievementDefinition("stl_hunter"),
   ].filter(Boolean);
 
-  const collectedAmount =
-    nonNegative(collected);
-
-  // ----------------------------------------------------------
-  // READ PHASE
-  // ----------------------------------------------------------
-  //
-  // Kaikki achievement-dokumentit luetaan ensin.
-  // Mitään transaction.set()-kutsua ei tehdä tässä vaiheessa.
-  // ----------------------------------------------------------
-
-  const items = [];
-
-  for (
-    const definition of definitions
-  ) {
-    const item =
-      await achievementData(
-        transaction,
-        uid,
-        definition.id
-      );
-
-    items.push({
-      definition,
-      ref: item.ref,
-      data: item.data,
-    });
-  }
-
-  // ----------------------------------------------------------
-  // CALCULATION PHASE
-  // ----------------------------------------------------------
+  const items =
+    await readAchievementData(
+      transaction,
+      uid,
+      definitions
+    );
 
   const updates = [];
 
   let totalReward = 0;
+
+  const collectedAmount =
+    nonNegative(collected);
 
   for (
     const item of items
@@ -1294,15 +1250,37 @@ async function updateMiningAchievements(
     });
   }
 
-  // ----------------------------------------------------------
-  // WRITE PHASE
-  // ----------------------------------------------------------
-  //
-  // Kaikki transaction.set()-kutsut vasta nyt.
-  // ----------------------------------------------------------
+  return {
+    updates,
+    totalReward,
+    rewards:
+      updates
+        .filter(
+          (item) =>
+            item.reward > 0
+        )
+        .map(
+          (item) => ({
+            achievementId:
+              item.achievementId,
 
+            reward:
+              item.reward,
+
+            newlyUnlocked:
+              item.newlyUnlocked,
+          })
+        ),
+  };
+}
+
+function writeMiningAchievements(
+  transaction,
+  achievementResult
+) {
   for (
-    const item of updates
+    const item of
+      achievementResult.updates
   ) {
     transaction.set(
       item.ref,
@@ -1312,30 +1290,6 @@ async function updateMiningAchievements(
       }
     );
   }
-
-  const rewards =
-    updates
-      .filter(
-        (item) =>
-          item.reward > 0
-      )
-      .map(
-        (item) => ({
-          achievementId:
-            item.achievementId,
-
-          reward:
-            item.reward,
-
-          newlyUnlocked:
-            item.newlyUnlocked,
-        })
-      );
-
-  return {
-    totalReward,
-    rewards,
-  };
 }
 
 // ============================================================
@@ -2090,6 +2044,34 @@ const claimMining =
             }
 
             // ------------------------------------------------
+            // 🏆 ACHIEVEMENTS - READ PHASE
+            // ------------------------------------------------
+            //
+            // Tämä tehdään ENNEN referral-funktion kirjoituksia.
+            // Referral tarvitsee omat READ-operaationsa ja tekee
+            // niiden jälkeen WRITE-operaatioita.
+            //
+            // ------------------------------------------------
+
+            const achievementResult =
+              await prepareMiningAchievements(
+                transaction,
+                uid,
+                collected,
+                true,
+                now
+              );
+
+            const achievementReward =
+              Math.max(
+                0,
+                number(
+                  achievementResult
+                    .totalReward
+                )
+              );
+
+            // ------------------------------------------------
             // 🔗 REFERRAL REWARD
             // ------------------------------------------------
 
@@ -2110,39 +2092,45 @@ const claimMining =
                   .doc()
                   .id;
 
+              // IMPORTANT:
+              //
+              // referralFunctions.js:n adapterin oikea
+              // argumenttijärjestys on:
+              //
+              // processReferralMiningReward(
+              //   referredUid,
+              //   miningAmount,
+              //   miningTransactionId,
+              //   transaction
+              // )
+              //
               referralResult =
                 await processReferralMiningReward(
-                  transaction,
                   uid,
                   collected,
-                  miningTransactionId
+                  miningTransactionId,
+                  transaction
                 );
             }
 
             // ------------------------------------------------
-            // ACHIEVEMENTS
+            // ACHIEVEMENT WRITE PHASE
+            // ------------------------------------------------
+            //
+            // Kaikki achievement READ-operaatiot tapahtuivat
+            // ennen referral-kirjoituksia.
+            //
+            // Nyt voidaan tehdä achievement-kirjoitukset.
+            //
             // ------------------------------------------------
 
-            const achievementResult =
-              await updateMiningAchievements(
-                transaction,
-                uid,
-                collected,
-                true,
-                now
-              );
-
-            const achievementReward =
-              Math.max(
-                0,
-                number(
-                  achievementResult
-                    .totalReward
-                )
-              );
+            writeMiningAchievements(
+              transaction,
+              achievementResult
+            );
 
             // ------------------------------------------------
-            // 🐱 ADD ACHIEVEMENT REWARDS TO STL BALANCE
+            // ACHIEVEMENT REWARDS
             // ------------------------------------------------
 
             if (
