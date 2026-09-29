@@ -434,8 +434,6 @@ class _HomePageState extends State<HomePage>
       bool boostActive = serverBoostActive;
       int boostRemaining = serverBoostRemaining;
 
-      // Preserve a locally active boost while the
-      // server response catches up.
       if (_boostActive &&
           _boostRemainingMs > 0 &&
           !serverBoostActive &&
@@ -1459,20 +1457,14 @@ class _HomePageState extends State<HomePage>
               letterSpacing: 1.2,
             ),
           ),
-
-          // ======================================================
-          // 📧 STELLURIINI CONTACT EMAIL
-          // ======================================================
-
           const SizedBox(height: 8),
-
           const SelectableText(
             'stelluriini.app@gmail.com',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFFFFB7E8),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+              color: accentColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
             ),
           ),
