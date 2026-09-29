@@ -18,6 +18,9 @@ class AboutPage extends StatelessWidget {
     this.languageCode = 'fi',
   });
 
+  static const String contactEmail =
+      'stelluriini.app@gmail.com';
+
   String _text(
     AppLocalizations localization,
     String key, {
@@ -228,9 +231,11 @@ class AboutPage extends StatelessWidget {
                         color: aboutAccentColor.withValues(
                           alpha: 0.12,
                         ),
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius:
+                            BorderRadius.circular(30),
                         border: Border.all(
-                          color: aboutAccentColor.withValues(
+                          color:
+                              aboutAccentColor.withValues(
                             alpha: 0.3,
                           ),
                         ),
@@ -301,7 +306,8 @@ class AboutPage extends StatelessWidget {
               title: meetStella,
               accentColor: aboutPinkColor,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     stellaIntro,
@@ -319,6 +325,58 @@ class AboutPage extends StatelessWidget {
                       color: Colors.white70,
                       fontSize: 16,
                       height: 1.6,
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ==================================================
+                  // STELLURIINI CONTACT
+                  // ==================================================
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: aboutPinkColor.withValues(
+                        alpha: 0.07,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(14),
+                      border: Border.all(
+                        color:
+                            aboutPinkColor.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Stelluriini',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: aboutPinkColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const SelectableText(
+                          contactEmail,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: aboutAccentColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -480,6 +538,19 @@ class AboutPage extends StatelessWidget {
                 letterSpacing: 1.5,
               ),
             ),
+
+            const SizedBox(height: 8),
+
+            const SelectableText(
+              contactEmail,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: aboutAccentColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
           ],
         ),
       ),
@@ -519,10 +590,12 @@ class _AboutCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment:
+                  CrossAxisAlignment.center,
               children: [
                 Container(
                   width: 44,
