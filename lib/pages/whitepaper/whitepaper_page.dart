@@ -9,6 +9,7 @@ import '../../localization/whitepaper/whitepaper_ja.dart';
 import '../../localization/whitepaper/whitepaper_vi.dart';
 import '../../localization/whitepaper/whitepaper_zh.dart';
 import '../../widgets/cat_avatar.dart';
+import '../../widgets/stelluriini_logo.dart';
 
 import 'whitepaper_paragraph.dart';
 import 'whitepaper_section.dart';
@@ -862,7 +863,7 @@ class WhitePaperPage extends StatelessWidget {
               ),
 
               // ==================================================
-              // 04
+              // 04 — STELLA / STELLURIINI LOGO
               // ==================================================
 
               WhitePaperSection(
@@ -875,55 +876,11 @@ class WhitePaperPage extends StatelessWidget {
                 child: Column(
                   children: [
                     // ==================================================
-                    // 🐱 STELLA — OIKEA VALOKUVA
+                    // STELLURIINI LOGO
                     // ==================================================
 
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color:
-                              whitePaperPinkColor
-                                  .withValues(
-                            alpha: 0.35,
-                          ),
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                whitePaperPinkColor
-                                    .withValues(
-                              alpha: 0.18,
-                            ),
-                            blurRadius: 18,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/stella_real.jpg',
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder:
-                              (
-                            BuildContext context,
-                            Object error,
-                            StackTrace? stackTrace,
-                          ) {
-                            return const Icon(
-                              Icons.pets_rounded,
-                              color:
-                                  whitePaperPinkColor,
-                              size: 48,
-                            );
-                          },
-                        ),
-                      ),
+                    const StelluriiniLogo(
+                      size: 100,
                     ),
 
                     const SizedBox(height: 14),
