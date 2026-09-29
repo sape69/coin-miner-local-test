@@ -6,6 +6,14 @@ on:
     branches:
       - main
 
+# ==========================================================
+# GITHUB ACTIONS PERMISSIONS
+# ==========================================================
+
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   build-and-test:
     name: Analyze, Test and Build APK
@@ -124,7 +132,70 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # 9. GENERATE APP ICON
+      # 9. DOWNLOAD STELLURIINI RELEASE KEYSTORE
+      # ==========================================================
+      #
+      # The release keystore is created by:
+      #
+      # .github/workflows/create-release-keystore.yml
+      #
+      # We download the latest successful keystore workflow
+      # artifact instead of generating a new signing key.
+      #
+      # IMPORTANT:
+      # Never generate a new release key for every APK build.
+      # The same signing key must be preserved for future updates.
+      #
+      # ==========================================================
+
+      - name: Download release keystore
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=================================================="
+          echo "DOWNLOADING STELLURIINI RELEASE KEYSTORE"
+          echo "=================================================="
+
+          mkdir -p android
+
+          RUN_ID="$(
+            gh run list \
+              --workflow create-release-keystore.yml \
+              --branch main \
+              --status success \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId'
+          )"
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: No successful release keystore workflow found."
+            exit 1
+          fi
+
+          echo "Release keystore workflow run:"
+          echo "$RUN_ID"
+
+          gh run download "$RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name stelluriini-release-keystore \
+            --dir android
+
+          if [ ! -f "android/stelluriini-upload-keystore.jks" ]; then
+            echo "ERROR: Release keystore was not downloaded."
+            echo ""
+            echo "Expected:"
+            echo "android/stelluriini-upload-keystore.jks"
+            exit 1
+          fi
+
+          echo ""
+          echo "Release keystore downloaded successfully."
+
+          ls -lh android/stelluriini-upload-keystore.jks
+
+      # ==========================================================
+      # 10. GENERATE APP ICON
       # ==========================================================
 
       - name: Generate app icon
@@ -137,7 +208,7 @@ jobs:
           dart run flutter_launcher_icons
 
       # ==========================================================
-      # 10. FLUTTER ANALYZE
+      # 11. FLUTTER ANALYZE
       # ==========================================================
 
       - name: Flutter analyze
@@ -145,7 +216,7 @@ jobs:
           flutter analyze
 
       # ==========================================================
-      # 11. FLUTTER TEST
+      # 12. FLUTTER TEST
       # ==========================================================
 
       - name: Flutter test
@@ -158,7 +229,33 @@ jobs:
           fi
 
       # ==========================================================
-      # 12. BUILD RELEASE APK
+      # 13. VERIFY RELEASE KEYSTORE
+      # ==========================================================
+
+      - name: Verify release keystore
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
+        run: |
+          echo "=================================================="
+          echo "VERIFYING STELLURIINI RELEASE KEYSTORE"
+          echo "=================================================="
+
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "ERROR: STELLURIINI_KEYSTORE_PASSWORD secret is missing."
+            exit 1
+          fi
+
+          keytool \
+            -list \
+            -keystore android/stelluriini-upload-keystore.jks \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias stelluriini-upload
+
+          echo ""
+          echo "Release keystore verification PASSED."
+
+      # ==========================================================
+      # 14. BUILD RELEASE APK
       # ==========================================================
 
       - name: Build release APK
@@ -170,7 +267,7 @@ jobs:
           flutter build apk --release
 
       # ==========================================================
-      # 13. VERIFY APK
+      # 15. VERIFY APK
       # ==========================================================
 
       - name: Verify APK
@@ -187,7 +284,7 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 14. UPLOAD APK
+      # 16. UPLOAD APK
       # ==========================================================
 
       - name: Upload APK
@@ -198,7 +295,7 @@ jobs:
           if-no-files-found: error
 
       # ==========================================================
-      # 15. BUILD SUMMARY
+      # 17. BUILD SUMMARY
       # ==========================================================
 
       - name: Build summary
@@ -210,6 +307,7 @@ jobs:
           echo ""
           echo "Flutter analyze: PASSED"
           echo "Flutter tests:   PASSED / SKIPPED"
+          echo "Release keystore: VERIFIED"
           echo "APK build:       PASSED"
           echo ""
           echo "APK:"
