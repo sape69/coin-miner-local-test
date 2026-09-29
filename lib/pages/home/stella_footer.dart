@@ -10,6 +10,9 @@ class StellaFooter extends StatelessWidget {
     required this.localization,
   });
 
+  static const String contactEmail =
+      'stelluriini.app@gmail.com';
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -21,9 +24,11 @@ class StellaFooter extends StatelessWidget {
               fontSize: 28,
             ),
           ),
+
           const SizedBox(
             height: 8,
           ),
+
           Text(
             localization.get(
               'footerTagline',
@@ -34,17 +39,35 @@ class StellaFooter extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
           ),
+
           const SizedBox(
             height: 4,
           ),
+
           Text(
             localization.get(
               'footerToken',
             ),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFF5F4D70),
               fontSize: 11,
               letterSpacing: 2,
+            ),
+          ),
+
+          const SizedBox(
+            height: 7,
+          ),
+
+          const SelectableText(
+            contactEmail,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFFB58CFF),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
             ),
           ),
         ],
