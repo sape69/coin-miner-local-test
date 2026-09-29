@@ -138,7 +138,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
 
   late final Animation<double> _boostScale;
   late final Animation<double> _boostRotation;
-  late final Animation<double> _boostGlow;
   late final Animation<double> _boostOpacity;
 
   // ============================================================
@@ -246,44 +245,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
     );
 
-    _boostGlow = TweenSequence<double>(
-      [
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.0,
-            end: 1.0,
-          ),
-          weight: 25,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 1.0,
-            end: 0.35,
-          ),
-          weight: 30,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.35,
-            end: 0.8,
-          ),
-          weight: 15,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.8,
-            end: 0.0,
-          ),
-          weight: 30,
-        ),
-      ],
-    ).animate(
-      CurvedAnimation(
-        parent: _boostAnimationController,
-        curve: Curves.easeOut,
-      ),
-    );
-
     _boostOpacity = TweenSequence<double>(
       [
         TweenSequenceItem(
@@ -326,7 +287,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
     );
 
-    final CurvedAnimation boostLoopCurve = CurvedAnimation(
+    final CurvedAnimation boostLoopCurve =
+        CurvedAnimation(
       parent: _boostLoopController,
       curve: Curves.easeInOut,
     );
@@ -406,7 +368,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
     }
 
     // ----------------------------------------------------------
-    // voimakas käynnistys
+    // VOIMAKAS KÄYNNISTYS
     // ----------------------------------------------------------
 
     _boostAnimationController.forward(
@@ -414,7 +376,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
     );
 
     // ----------------------------------------------------------
-    // jatkuva Boost-liike
+    // JATKUVA BOOST-LIIKE
     // ----------------------------------------------------------
 
     _boostLoopController
@@ -570,6 +532,11 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         double finalRotation = 0.0;
 
         if (widget.boostActive) {
+          // ----------------------------------------------------
+          // Voimakas käynnistysliike yhdistyy jatkuvaan
+          // kevyeen pulssiin.
+          // ----------------------------------------------------
+
           finalScale =
               boostScale *
               loopScale;
@@ -603,7 +570,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                   clipBehavior: Clip.none,
                   children: [
                     // ==================================================
-                    // 🌟 BOOST GLOW
+                    // 🌟 CONTINUOUS BOOST GLOW
                     // ==================================================
 
                     if (widget.boostActive)
