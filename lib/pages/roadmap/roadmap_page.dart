@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../localization/roadmap/roadmap_localization.dart';
+import '../../widgets/stelluriini_logo.dart';
 
 // ============================================================
 // 🐱 STELLURIINI - ROADMAP PAGE
@@ -134,7 +135,18 @@ class _RoadmapPageState extends State<RoadmapPage>
         ),
         icon: Icons.pets_rounded,
         color: pinkColor,
+
+        // 🐱 Stelluriini-logo
+        useStelluriiniLogo: true,
       ),
+
+      // ========================================================
+      // 👥 PHASE 2
+      // ========================================================
+      //
+      // TÄMÄ JÄTETÄÄN RYHMÄKUVAKKEEKSI.
+      //
+
       _RoadmapItem(
         phase: _localization.get(
           'phase2',
@@ -151,6 +163,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         icon: Icons.groups_rounded,
         color: purpleColor,
       ),
+
       _RoadmapItem(
         phase: _localization.get(
           'phase3',
@@ -167,6 +180,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         icon: Icons.balance_rounded,
         color: goldColor,
       ),
+
       _RoadmapItem(
         phase: _localization.get(
           'phase4',
@@ -183,6 +197,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         icon: Icons.science_rounded,
         color: purpleColor,
       ),
+
       _RoadmapItem(
         phase: _localization.get(
           'phase5',
@@ -199,6 +214,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         icon: Icons.science_outlined,
         color: purpleColor,
       ),
+
       _RoadmapItem(
         phase: _localization.get(
           'phase6',
@@ -215,6 +231,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         icon: Icons.lock_open_rounded,
         color: pinkColor,
       ),
+
       _RoadmapItem(
         phase: _localization.get(
           'phase7',
@@ -231,6 +248,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         icon: Icons.rocket_launch_rounded,
         color: goldColor,
       ),
+
       _RoadmapItem(
         phase: _localization.get(
           'phase8',
@@ -385,6 +403,7 @@ class _RoadmapPageState extends State<RoadmapPage>
           _buildAnimatedGlow(
             item.color,
           ),
+
           Container(
             width: 68,
             height: 68,
@@ -407,11 +426,22 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ),
               ],
             ),
-            child: Icon(
-              item.icon,
-              color: item.color,
-              size: 36,
-            ),
+
+            // ==================================================
+            // 🐱 STELLURIINI LOGO
+            // ==================================================
+
+            child: item.useStelluriiniLogo
+                ? const Center(
+                    child: StelluriiniLogo(
+                      size: 52,
+                    ),
+                  )
+                : Icon(
+                    item.icon,
+                    color: item.color,
+                    size: 36,
+                  ),
           ),
         ],
       ),
@@ -514,7 +544,9 @@ class _RoadmapPageState extends State<RoadmapPage>
                   CrossAxisAlignment.start,
               children: [
                 _buildPhaseIcon(item),
+
                 const SizedBox(width: 14),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -536,7 +568,11 @@ class _RoadmapPageState extends State<RoadmapPage>
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+
+                          const SizedBox(
+                            width: 8,
+                          ),
+
                           Flexible(
                             child:
                                 _buildStatusBadge(
@@ -545,11 +581,16 @@ class _RoadmapPageState extends State<RoadmapPage>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
                       Text(
                         item.title,
                         style: const TextStyle(
-                          color: primaryTextColor,
+                          color:
+                              primaryTextColor,
                           fontSize: 25,
                           fontWeight:
                               FontWeight.w800,
@@ -561,11 +602,16 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+
+            const SizedBox(
+              height: 18,
+            ),
+
             Text(
               item.description,
               style: const TextStyle(
-                color: secondaryTextColor,
+                color:
+                    secondaryTextColor,
                 fontSize: 16,
                 height: 1.55,
               ),
@@ -598,7 +644,9 @@ class _RoadmapPageState extends State<RoadmapPage>
             height: 1.55,
           ),
         ),
+
         const SizedBox(height: 22),
+
         _buildInfoRow(
           icon: Icons.bolt_rounded,
           title: _localization.get(
@@ -609,7 +657,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
           color: purpleColor,
         ),
+
         const SizedBox(height: 18),
+
         _buildInfoRow(
           icon: Icons.flash_on_rounded,
           title: _localization.get(
@@ -620,7 +670,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
           color: pinkColor,
         ),
+
         const SizedBox(height: 18),
+
         _buildInfoRow(
           icon: Icons.groups_rounded,
           title: _localization.get(
@@ -654,7 +706,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           color: color,
           size: 25,
         ),
+
         const SizedBox(width: 14),
+
         Expanded(
           child: Column(
             crossAxisAlignment:
@@ -669,11 +723,14 @@ class _RoadmapPageState extends State<RoadmapPage>
                       FontWeight.w800,
                 ),
               ),
+
               const SizedBox(height: 5),
+
               Text(
                 text,
                 style: const TextStyle(
-                  color: secondaryTextColor,
+                  color:
+                      secondaryTextColor,
                   fontSize: 14,
                   height: 1.45,
                 ),
@@ -691,7 +748,8 @@ class _RoadmapPageState extends State<RoadmapPage>
 
   Widget _buildWithdrawalCard() {
     return _buildSimpleSectionCard(
-      icon: Icons.account_balance_wallet_rounded,
+      icon:
+          Icons.account_balance_wallet_rounded,
       iconColor: goldColor,
       title: _localization.get(
         'withdrawalTitle',
@@ -708,10 +766,13 @@ class _RoadmapPageState extends State<RoadmapPage>
             height: 1.5,
           ),
         ),
+
         const SizedBox(height: 16),
+
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(15),
+          padding:
+              const EdgeInsets.all(15),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius:
@@ -728,29 +789,38 @@ class _RoadmapPageState extends State<RoadmapPage>
                 _localization.get(
                   'plannedMinimumWithdrawal',
                 ),
-                textAlign: TextAlign.center,
+                textAlign:
+                    TextAlign.center,
                 style: const TextStyle(
-                  color: secondaryTextColor,
+                  color:
+                      secondaryTextColor,
                   fontSize: 14,
                 ),
               ),
+
               const SizedBox(height: 6),
+
               const Text(
                 '100 STL',
                 style: TextStyle(
                   color: goldColor,
                   fontSize: 25,
-                  fontWeight: FontWeight.w900,
+                  fontWeight:
+                      FontWeight.w900,
                 ),
               ),
+
               const SizedBox(height: 6),
+
               Text(
                 _localization.get(
                   'networkFee',
                 ),
-                textAlign: TextAlign.center,
+                textAlign:
+                    TextAlign.center,
                 style: const TextStyle(
-                  color: secondaryTextColor,
+                  color:
+                      secondaryTextColor,
                   fontSize: 13,
                   height: 1.35,
                 ),
@@ -770,9 +840,16 @@ class _RoadmapPageState extends State<RoadmapPage>
     return _buildSimpleSectionCard(
       icon: Icons.pets_rounded,
       iconColor: pinkColor,
+
+      // 🐱 Stelluriini-logo tassun tilalle
+      customIcon: const StelluriiniLogo(
+        size: 38,
+      ),
+
       title: _localization.get(
         'stellaJourneyTitle',
       ),
+
       children: [
         Text(
           _localization.get(
@@ -811,7 +888,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
           color: purpleColor,
         ),
+
         const SizedBox(height: 20),
+
         _buildInfoRow(
           icon: Icons.security_rounded,
           title: _localization.get(
@@ -822,7 +901,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
           color: purpleColor,
         ),
+
         const SizedBox(height: 20),
+
         _buildInfoRow(
           icon: Icons.shield_rounded,
           title: _localization.get(
@@ -833,7 +914,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
           color: pinkColor,
         ),
+
         const SizedBox(height: 20),
+
         _buildInfoRow(
           icon: Icons.auto_awesome_rounded,
           title: _localization.get(
@@ -844,7 +927,9 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
           color: purpleColor,
         ),
+
         const SizedBox(height: 20),
+
         _buildInfoRow(
           icon: Icons.trending_up_rounded,
           title: _localization.get(
@@ -868,9 +953,12 @@ class _RoadmapPageState extends State<RoadmapPage>
       margin: const EdgeInsets.only(
         bottom: 22,
       ),
-      padding: const EdgeInsets.all(22),
+      padding:
+          const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF211827),
+        color: const Color(
+          0xFF211827,
+        ),
         borderRadius:
             BorderRadius.circular(28),
         border: Border.all(
@@ -886,7 +974,9 @@ class _RoadmapPageState extends State<RoadmapPage>
             color: goldColor,
             size: 42,
           ),
+
           const SizedBox(height: 14),
+
           Text(
             _localization.get(
               'importantNoticeTitle',
@@ -895,17 +985,21 @@ class _RoadmapPageState extends State<RoadmapPage>
             style: const TextStyle(
               color: goldColor,
               fontSize: 23,
-              fontWeight: FontWeight.w800,
+              fontWeight:
+                  FontWeight.w800,
             ),
           ),
+
           const SizedBox(height: 12),
+
           Text(
             _localization.get(
               'importantNoticeDescription',
             ),
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: secondaryTextColor,
+              color:
+                  secondaryTextColor,
               fontSize: 15,
               height: 1.55,
             ),
@@ -924,13 +1018,15 @@ class _RoadmapPageState extends State<RoadmapPage>
     required Color iconColor,
     required String title,
     required List<Widget> children,
+    Widget? customIcon,
   }) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(
         bottom: 22,
       ),
-      padding: const EdgeInsets.all(22),
+      padding:
+          const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius:
@@ -951,24 +1047,34 @@ class _RoadmapPageState extends State<RoadmapPage>
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: iconColor.withValues(
+                  color:
+                      iconColor.withValues(
                     alpha: 0.10,
                   ),
                   borderRadius:
-                      BorderRadius.circular(18),
+                      BorderRadius.circular(
+                    18,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 30,
+
+                child: Center(
+                  child: customIcon ??
+                      Icon(
+                        icon,
+                        color: iconColor,
+                        size: 30,
+                      ),
                 ),
               ),
+
               const SizedBox(width: 14),
+
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    color: primaryTextColor,
+                    color:
+                        primaryTextColor,
                     fontSize: 24,
                     fontWeight:
                         FontWeight.w800,
@@ -978,7 +1084,9 @@ class _RoadmapPageState extends State<RoadmapPage>
               ),
             ],
           ),
+
           const SizedBox(height: 20),
+
           ...children,
         ],
       ),
@@ -994,42 +1102,54 @@ class _RoadmapPageState extends State<RoadmapPage>
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor:
+          backgroundColor,
+
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor:
+            surfaceColor,
         elevation: 0,
         centerTitle: false,
+
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_rounded,
-            color: primaryTextColor,
+            color:
+                primaryTextColor,
             size: 30,
           ),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
+
         title: Text(
           _localization.get(
             'pageTitle',
           ),
           style: const TextStyle(
-            color: primaryTextColor,
+            color:
+                primaryTextColor,
             fontSize: 25,
-            fontWeight: FontWeight.w800,
+            fontWeight:
+                FontWeight.w800,
           ),
         ),
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           physics:
               const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
+
+          padding:
+              const EdgeInsets.fromLTRB(
             20,
             22,
             20,
             40,
           ),
+
           child: Column(
             children: [
               // ==================================================
@@ -1038,20 +1158,33 @@ class _RoadmapPageState extends State<RoadmapPage>
 
               Container(
                 width: double.infinity,
-                margin: const EdgeInsets.only(
+
+                margin:
+                    const EdgeInsets.only(
                   bottom: 22,
                 ),
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
+
+                padding:
+                    const EdgeInsets.all(
+                  22,
+                ),
+
+                decoration:
+                    BoxDecoration(
                   color: cardColor,
                   borderRadius:
-                      BorderRadius.circular(28),
+                      BorderRadius.circular(
+                    28,
+                  ),
                   border: Border.all(
-                    color: purpleColor.withValues(
+                    color:
+                        purpleColor
+                            .withValues(
                       alpha: 0.24,
                     ),
                   ),
                 ),
+
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
@@ -1061,29 +1194,39 @@ class _RoadmapPageState extends State<RoadmapPage>
                         Container(
                           width: 58,
                           height: 58,
-                          decoration: BoxDecoration(
+                          decoration:
+                              BoxDecoration(
                             color:
-                                purpleColor.withValues(
+                                purpleColor
+                                    .withValues(
                               alpha: 0.10,
                             ),
                             borderRadius:
-                                BorderRadius.circular(
+                                BorderRadius
+                                    .circular(
                               18,
                             ),
                           ),
-                          child: const Icon(
+                          child:
+                              const Icon(
                             Icons.map_rounded,
-                            color: purpleColor,
+                            color:
+                                purpleColor,
                             size: 31,
                           ),
                         ),
-                        const SizedBox(width: 14),
+
+                        const SizedBox(
+                          width: 14,
+                        ),
+
                         Expanded(
                           child: Text(
                             _localization.get(
                               'journeyTitle',
                             ),
-                            style: const TextStyle(
+                            style:
+                                const TextStyle(
                               color:
                                   primaryTextColor,
                               fontSize: 24,
@@ -1094,12 +1237,17 @@ class _RoadmapPageState extends State<RoadmapPage>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+
+                    const SizedBox(
+                      height: 18,
+                    ),
+
                     Text(
                       _localization.get(
                         'journeyDescription',
                       ),
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         color:
                             secondaryTextColor,
                         fontSize: 16,
@@ -1154,7 +1302,9 @@ class _RoadmapPageState extends State<RoadmapPage>
 
               _buildImportantNotice(),
 
-              const SizedBox(height: 8),
+              const SizedBox(
+                height: 8,
+              ),
 
               // ==================================================
               // 🐾 FOOTER
@@ -1164,11 +1314,13 @@ class _RoadmapPageState extends State<RoadmapPage>
                 _localization.get(
                   'footer',
                 ),
-                textAlign: TextAlign.center,
+                textAlign:
+                    TextAlign.center,
                 style: const TextStyle(
                   color: pinkColor,
                   fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                  fontWeight:
+                      FontWeight.w800,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -1192,6 +1344,9 @@ class _RoadmapItem {
   final IconData icon;
   final Color color;
 
+  // 🐱 Näytetäänkö Stelluriini-logo kuvakkeena?
+  final bool useStelluriiniLogo;
+
   const _RoadmapItem({
     required this.phase,
     required this.title,
@@ -1199,5 +1354,6 @@ class _RoadmapItem {
     required this.status,
     required this.icon,
     required this.color,
+    this.useStelluriiniLogo = false,
   });
 }
