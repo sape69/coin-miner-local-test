@@ -1459,6 +1459,23 @@ class _HomePageState extends State<HomePage>
               letterSpacing: 1.2,
             ),
           ),
+
+          // ======================================================
+          // 📧 STELLURIINI CONTACT EMAIL
+          // ======================================================
+
+          const SizedBox(height: 8),
+
+          const SelectableText(
+            'stelluriini.app@gmail.com',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFFFFB7E8),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.3,
+            ),
+          ),
         ],
       ),
     );
