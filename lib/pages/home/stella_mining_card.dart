@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import 'mining_progress_card.dart';
@@ -30,23 +28,22 @@ import 'stella_mining_days_card.dart';
 // 3. Muulloin
 //    → stella_sleeping.png
 //
-// Animaatio:
-//
-// 😴 Sleeping
-// - rauhallinen hengitys
-// - pieni jatkuva kellunta
-//
-// ⛏️ Mining
-// - selkeä ylös/alas-liike
-// - pieni sivuttaisliike
-// - kevyt skaalaus
-//
-// ⚡ Boost
+// Boostin aikana:
 // - voimakas käynnistysanimaatio
-// - glow
+// - jatkuva kevyt liike koko Boostin ajan
+// - jatkuva kevyt pulssi
+// - jatkuva pieni heilunta
+// - kultainen boost-hehku
 // - kipinät
-// - lightning
-// - star
+//
+// Mukana:
+// - näkyvä Stellan tilakohtainen animaatio
+// - Boost-animaatio
+// - kultainen boost-hehku
+// - kipinät
+// - STL badge louhinnan aikana
+// - Stella Mining Days
+// - Mining Progress
 //
 // ============================================================
 
@@ -97,8 +94,7 @@ class StellaMiningCard extends StatefulWidget {
   });
 
   @override
-  State<StellaMiningCard> createState() =>
-      _StellaMiningCardState();
+  State<StellaMiningCard> createState() => _StellaMiningCardState();
 }
 
 // ============================================================
@@ -111,20 +107,15 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   // 🎨 STELLA COLORS
   // ============================================================
 
-  static const Color backgroundColor =
-      Color(0xFF120B24);
+  static const Color backgroundColor = Color(0xFF120B24);
 
-  static const Color accentColor =
-      Color(0xFFB58CFF);
+  static const Color accentColor = Color(0xFFB58CFF);
 
-  static const Color pinkColor =
-      Color(0xFFFFB7E8);
+  static const Color pinkColor = Color(0xFFFFB7E8);
 
-  static const Color goldColor =
-      Color(0xFFFFD166);
+  static const Color goldColor = Color(0xFFFFD166);
 
-  static const Color secondaryTextColor =
-      Color(0xFFBFAEDB);
+  static const Color secondaryTextColor = Color(0xFFBFAEDB);
 
   // ============================================================
   // 🖼️ STELLA IMAGE PATHS
@@ -140,15 +131,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       'assets/images/stella_boosting.png';
 
   // ============================================================
-  // 🐱 STELLA MOVEMENT ANIMATION
-  // ============================================================
-
-  late final AnimationController _stellaAnimationController;
-
-  late final Animation<double> _stellaAnimation;
-
-  // ============================================================
-  // ⚡ POWER BOOST ANIMATION
+  // ⚡ BOOST START ANIMATION
   // ============================================================
 
   late final AnimationController _boostAnimationController;
@@ -159,6 +142,16 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   late final Animation<double> _boostOpacity;
 
   // ============================================================
+  // 🔄 CONTINUOUS BOOST ANIMATION
+  // ============================================================
+
+  late final AnimationController _boostLoopController;
+
+  late final Animation<double> _boostLoopScale;
+  late final Animation<double> _boostLoopRotation;
+  late final Animation<double> _boostLoopFloat;
+
+  // ============================================================
   // 🚀 INIT
   // ============================================================
 
@@ -166,31 +159,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   void initState() {
     super.initState();
 
-    // ----------------------------------------------------------
-    // 🐱 CONTINUOUS STELLA ANIMATION
-    // ----------------------------------------------------------
-    //
-    // Tämä animaatio pyörii aina.
-    //
-    // Näin Stella ei ole riippuvainen HomePagen
-    // animaationopeudesta.
-    //
-
-    _stellaAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 1800,
-      ),
-    )..repeat(reverse: true);
-
-    _stellaAnimation = CurvedAnimation(
-      parent: _stellaAnimationController,
-      curve: Curves.easeInOut,
-    );
-
-    // ----------------------------------------------------------
-    // ⚡ BOOST CONTROLLER
-    // ----------------------------------------------------------
+    // ==========================================================
+    // ⚡ BOOST START
+    // ==========================================================
 
     _boostAnimationController = AnimationController(
       vsync: this,
@@ -198,10 +169,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         milliseconds: 1100,
       ),
     );
-
-    // ----------------------------------------------------------
-    // ⚡ BOOST SCALE
-    // ----------------------------------------------------------
 
     _boostScale = TweenSequence<double>(
       [
@@ -241,10 +208,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
     );
 
-    // ----------------------------------------------------------
-    // ⚡ BOOST ROTATION
-    // ----------------------------------------------------------
-
     _boostRotation = TweenSequence<double>(
       [
         TweenSequenceItem(
@@ -282,10 +245,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         curve: Curves.easeOut,
       ),
     );
-
-    // ----------------------------------------------------------
-    // 🌟 BOOST GLOW
-    // ----------------------------------------------------------
 
     _boostGlow = TweenSequence<double>(
       [
@@ -325,10 +284,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
     );
 
-    // ----------------------------------------------------------
-    // ✨ BOOST SPARKLE OPACITY
-    // ----------------------------------------------------------
-
     _boostOpacity = TweenSequence<double>(
       [
         TweenSequenceItem(
@@ -360,15 +315,62 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
     );
 
-    // ----------------------------------------------------------
-    // ⚡ PLAY INITIAL BOOST
-    // ----------------------------------------------------------
+    // ==========================================================
+    // 🔄 CONTINUOUS BOOST MOTION
+    // ==========================================================
+
+    _boostLoopController = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: 1800,
+      ),
+    );
+
+    _boostLoopController.addStatusListener(
+      (AnimationStatus status) {
+        if (status == AnimationStatus.completed &&
+            widget.boostActive) {
+          _boostLoopController.repeat();
+        }
+      },
+    );
+
+    final CurvedAnimation boostLoopCurve =
+        CurvedAnimation(
+      parent: _boostLoopController,
+      curve: Curves.easeInOut,
+    );
+
+    _boostLoopScale = Tween<double>(
+      begin: 0.985,
+      end: 1.035,
+    ).animate(
+      boostLoopCurve,
+    );
+
+    _boostLoopRotation = Tween<double>(
+      begin: -0.025,
+      end: 0.025,
+    ).animate(
+      boostLoopCurve,
+    );
+
+    _boostLoopFloat = Tween<double>(
+      begin: -4.0,
+      end: 4.0,
+    ).animate(
+      boostLoopCurve,
+    );
+
+    // ==========================================================
+    // ⚡ IF BOOST IS ALREADY ACTIVE
+    // ==========================================================
 
     if (widget.boostActive) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) {
           if (mounted) {
-            _playBoostAnimation();
+            _startBoostAnimations();
           }
         },
       );
@@ -385,24 +387,64 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   ) {
     super.didUpdateWidget(oldWidget);
 
+    // ----------------------------------------------------------
+    // ⚡ BOOST STARTED
+    // ----------------------------------------------------------
+
     if (!oldWidget.boostActive &&
         widget.boostActive) {
-      _playBoostAnimation();
+      _startBoostAnimations();
+    }
+
+    // ----------------------------------------------------------
+    // 💤 BOOST ENDED
+    // ----------------------------------------------------------
+
+    if (oldWidget.boostActive &&
+        !widget.boostActive) {
+      _stopBoostAnimations();
     }
   }
 
   // ============================================================
-  // ⚡ PLAY BOOST ANIMATION
+  // ⚡ START BOOST ANIMATIONS
   // ============================================================
 
-  void _playBoostAnimation() {
+  void _startBoostAnimations() {
     if (!mounted) {
       return;
     }
 
+    // ----------------------------------------------------------
+    // voimakas käynnistys
+    // ----------------------------------------------------------
+
     _boostAnimationController.forward(
       from: 0.0,
     );
+
+    // ----------------------------------------------------------
+    // jatkuva Boost-liike
+    // ----------------------------------------------------------
+
+    _boostLoopController
+      ..stop()
+      ..value = 0.0
+      ..repeat(
+        reverse: true,
+      );
+  }
+
+  // ============================================================
+  // 💤 STOP BOOST ANIMATIONS
+  // ============================================================
+
+  void _stopBoostAnimations() {
+    _boostAnimationController.stop();
+
+    _boostLoopController
+      ..stop()
+      ..value = 0.0;
   }
 
   // ============================================================
@@ -411,8 +453,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
 
   @override
   void dispose() {
-    _stellaAnimationController.dispose();
     _boostAnimationController.dispose();
+    _boostLoopController.dispose();
 
     super.dispose();
   }
@@ -451,16 +493,25 @@ class _StellaMiningCardState extends State<StellaMiningCard>
     return AnimatedBuilder(
       animation: Listenable.merge(
         [
-          _stellaAnimationController,
+          widget.catAnimation,
           _boostAnimationController,
+          _boostLoopController,
         ],
       ),
       builder: (
         BuildContext context,
         Widget? child,
       ) {
+        // ======================================================
+        // 📈 NORMAL CAT ANIMATION
+        // ======================================================
+
         final double animationValue =
-            _stellaAnimation.value;
+            widget.catAnimation.value;
+
+        // ======================================================
+        // ⚡ BOOST START ANIMATION
+        // ======================================================
 
         final double boostScale =
             _boostScale.value;
@@ -474,86 +525,86 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         final double sparkleOpacity =
             _boostOpacity.value;
 
-        // ========================================================
-        // 🐱 NORMAL STELLA ANIMATION
-        // ========================================================
+        // ======================================================
+        // 🔄 CONTINUOUS BOOST MOTION
+        // ======================================================
 
-        double normalScale;
-        double floatingOffset;
-        double horizontalOffset;
+        final double loopScale =
+            _boostLoopScale.value;
 
-        // --------------------------------------------------------
-        // 😴 SLEEPING
-        // --------------------------------------------------------
-        //
-        // Rauhallinen mutta selvästi näkyvä hengitys.
-        //
+        final double loopRotation =
+            _boostLoopRotation.value;
+
+        final double loopFloat =
+            _boostLoopFloat.value;
+
+        // ======================================================
+        // 😴 / ⛏️ NORMAL SCALE
+        // ======================================================
+
+        double normalScale = 1.0;
 
         if (!widget.miningActive &&
             !widget.boostActive) {
           normalScale =
-              0.97 +
-              (animationValue * 0.06);
-
-          floatingOffset =
-              -3.0 +
-              (animationValue * 6.0);
-
-          horizontalOffset =
-              math.sin(
-                    animationValue * math.pi,
-                  ) *
-                  1.5;
+              0.985 +
+              (animationValue * 0.030);
         }
 
-        // --------------------------------------------------------
-        // ⛏️ MINING
-        // --------------------------------------------------------
-        //
-        // Louhinnan aikana liike on tarkoituksella
-        // paljon näkyvämpi.
-        //
+        // ======================================================
+        // ⛏️ MINING FLOAT
+        // ======================================================
 
-        else if (widget.miningActive &&
+        double floatingOffset = 0.0;
+
+        if (widget.miningActive &&
+            !widget.boostActive) {
+          floatingOffset =
+              -8.0 * animationValue;
+        }
+
+        // ======================================================
+        // ⛏️ MINING SCALE
+        // ======================================================
+
+        if (widget.miningActive &&
             !widget.boostActive) {
           normalScale =
-              0.98 +
-              (animationValue * 0.04);
+              0.99 +
+              (animationValue * 0.02);
+        }
+
+        // ======================================================
+        // ⚡ BOOST FINAL MOTION
+        // ======================================================
+
+        double finalScale = normalScale;
+
+        double finalRotation = 0.0;
+
+        if (widget.boostActive) {
+          // Alussa voimakas boost-liike.
+          //
+          // Sen lisäksi jatkuva kevyt pulssi.
+          finalScale =
+              boostScale *
+              loopScale;
+
+          finalRotation =
+              boostRotation +
+              loopRotation;
 
           floatingOffset =
-              -12.0 +
-              (animationValue * 24.0);
-
-          horizontalOffset =
-              math.sin(
-                    animationValue * math.pi,
-                  ) *
-                  4.0;
+              loopFloat;
         }
 
-        // --------------------------------------------------------
-        // ⚡ BOOST
-        // --------------------------------------------------------
-
-        else {
-          normalScale = 1.0;
-          floatingOffset = 0.0;
-          horizontalOffset = 0.0;
-        }
-
-        final double finalScale =
-            widget.boostActive
-                ? boostScale
-                : normalScale;
-
-        final double finalRotation =
-            widget.boostActive
-                ? boostRotation
-                : 0.0;
+        // ======================================================
+        // 🐱 TRANSFORM
+        // ======================================================
 
         return Transform.translate(
           offset: Offset(
-            horizontalOffset,
+            0,
             floatingOffset,
           ),
           child: Transform.rotate(
@@ -571,7 +622,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                     // 🌟 BOOST GLOW
                     // ==================================================
 
-                    if (glow > 0)
+                    if (widget.boostActive)
                       Container(
                         width: 138,
                         height: 138,
@@ -582,34 +633,29 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                               color:
                                   goldColor.withValues(
                                 alpha:
-                                    0.55 * glow,
+                                    0.30 +
+                                    (0.15 *
+                                        _boostLoopController
+                                            .value),
                               ),
-                              blurRadius:
-                                  30 * glow,
-                              spreadRadius:
-                                  8 * glow,
+                              blurRadius: 25,
+                              spreadRadius: 6,
                             ),
                             BoxShadow(
                               color:
                                   pinkColor.withValues(
-                                alpha:
-                                    0.35 * glow,
+                                alpha: 0.20,
                               ),
-                              blurRadius:
-                                  48 * glow,
-                              spreadRadius:
-                                  5 * glow,
+                              blurRadius: 42,
+                              spreadRadius: 4,
                             ),
                             BoxShadow(
                               color:
                                   accentColor.withValues(
-                                alpha:
-                                    0.25 * glow,
+                                alpha: 0.18,
                               ),
-                              blurRadius:
-                                  60 * glow,
-                              spreadRadius:
-                                  4 * glow,
+                              blurRadius: 55,
+                              spreadRadius: 3,
                             ),
                           ],
                         ),
@@ -769,8 +815,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                             color:
                                 goldColor,
                             borderRadius:
-                                BorderRadius
-                                    .circular(
+                                BorderRadius.circular(
                               10,
                             ),
                             boxShadow: [
@@ -938,16 +983,14 @@ class _StellaMiningCardState extends State<StellaMiningCard>
           Container(
             width: double.infinity,
             padding:
-                const EdgeInsets
-                    .symmetric(
+                const EdgeInsets.symmetric(
               vertical: 15,
               horizontal: 20,
             ),
             decoration:
                 BoxDecoration(
               color:
-                  backgroundColor
-                      .withValues(
+                  backgroundColor.withValues(
                 alpha: 0.55,
               ),
               borderRadius:
@@ -956,8 +999,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
               ),
               border: Border.all(
                 color:
-                    accentColor
-                        .withValues(
+                    accentColor.withValues(
                   alpha: 0.08,
                 ),
               ),
@@ -988,8 +1030,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                     color:
                         secondaryTextColor,
                     fontSize: 11,
-                    letterSpacing:
-                        1.5,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ],
