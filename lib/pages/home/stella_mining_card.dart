@@ -326,17 +326,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
     );
 
-    _boostLoopController.addStatusListener(
-      (AnimationStatus status) {
-        if (status == AnimationStatus.completed &&
-            widget.boostActive) {
-          _boostLoopController.repeat();
-        }
-      },
-    );
-
-    final CurvedAnimation boostLoopCurve =
-        CurvedAnimation(
+    final CurvedAnimation boostLoopCurve = CurvedAnimation(
       parent: _boostLoopController,
       curve: Curves.easeInOut,
     );
@@ -519,9 +509,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         final double boostRotation =
             _boostRotation.value;
 
-        final double glow =
-            _boostGlow.value;
-
         final double sparkleOpacity =
             _boostOpacity.value;
 
@@ -583,9 +570,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         double finalRotation = 0.0;
 
         if (widget.boostActive) {
-          // Alussa voimakas boost-liike.
-          //
-          // Sen lisäksi jatkuva kevyt pulssi.
           finalScale =
               boostScale *
               loopScale;
@@ -805,8 +789,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                         bottom: 8,
                         child: Container(
                           padding:
-                              const EdgeInsets
-                                  .symmetric(
+                              const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
