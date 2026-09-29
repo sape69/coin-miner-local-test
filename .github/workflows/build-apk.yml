@@ -144,7 +144,6 @@ jobs:
       #
       # IMPORTANT:
       # Never generate a new release key for every APK build.
-      # The same signing key must be preserved for future updates.
       #
       # ==========================================================
 
@@ -259,10 +258,23 @@ jobs:
       # ==========================================================
 
       - name: Build release APK
+        env:
+          STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
+          STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
         run: |
           echo "=================================================="
           echo "BUILDING STELLURIINI RELEASE APK"
           echo "=================================================="
+
+          if [ -z "$STELLURIINI_KEYSTORE_PASSWORD" ]; then
+            echo "ERROR: STELLURIINI_KEYSTORE_PASSWORD secret is missing."
+            exit 1
+          fi
+
+          if [ -z "$STELLURIINI_KEY_PASSWORD" ]; then
+            echo "ERROR: STELLURIINI_KEY_PASSWORD secret is missing."
+            exit 1
+          fi
 
           flutter build apk --release
 
@@ -305,10 +317,11 @@ jobs:
           echo "🐱 STELLURIINI BUILD SUCCESSFUL"
           echo "=================================================="
           echo ""
-          echo "Flutter analyze: PASSED"
-          echo "Flutter tests:   PASSED / SKIPPED"
-          echo "Release keystore: VERIFIED"
-          echo "APK build:       PASSED"
+          echo "Flutter analyze:     PASSED"
+          echo "Flutter tests:       PASSED / SKIPPED"
+          echo "Release keystore:    VERIFIED"
+          echo "Release signing:     ENABLED"
+          echo "APK build:           PASSED"
           echo ""
           echo "APK:"
           echo "build/app/outputs/flutter-apk/app-release.apk"
