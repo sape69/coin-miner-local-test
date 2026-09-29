@@ -54,6 +54,19 @@ class HomeAdManager extends ChangeNotifier {
       Duration(seconds: 3);
 
   // ============================================================
+  // 🔁 AUTOMATIC RETRY
+  // ============================================================
+
+  // Kuinka monta latausyritystä tehdään yhden käyttäjän
+  // painalluksen aikana ennen kuin ilmoitetaan ettei mainosta
+  // ole saatavilla.
+  static const int maxAdLoadAttempts = 3;
+
+  // Pieni tauko epäonnistuneen latauksen jälkeen.
+  static const Duration adRetryDelay =
+      Duration(milliseconds: 700);
+
+  // ============================================================
   // 🔥 FIREBASE AUTH
   // ============================================================
 
@@ -549,6 +562,18 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
   // ⏳ WAIT FOR AD
   // ============================================================
+  //
+  // TÄRKEÄ MUUTOS:
+  //
+  // Jos ensimmäinen AdMob-lataus epäonnistuu,
+  // emme heti ilmoita käyttäjälle "No available".
+  //
+  // Yritämme automaattisesti uudelleen.
+  //
+  // Näin käyttäjän ei tarvitse painaa
+  // ALOITA LOUHINTA -nappia useita kertoja.
+  //
+  // ============================================================
 
   Future<bool> waitForRewardedAd({
     required String purpose,
@@ -577,40 +602,31 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
+    // ----------------------------------------------------------
+    // Jos oikea mainos on jo valmis
+    // ----------------------------------------------------------
+
     if (_isReadyFor(
       purpose,
       user.uid,
     )) {
+      debugPrint(
+        '✅ [ADMOB] Ad already ready: '
+        '$purpose',
+      );
+
       return true;
     }
 
-    if (_rewardedAd != null) {
-      _disposeCurrentAd();
-    }
+    // ----------------------------------------------------------
+    // Yritetään automaattisesti useamman kerran
+    // ----------------------------------------------------------
 
-    if (_adLoading &&
-        _loadingPurpose !=
-            purpose) {
-      _loadRequestId++;
-
-      _adLoading = false;
-
-      _loadingPurpose = '';
-    }
-
-    if (!_adLoading) {
-      await loadRewardedAd(
-        purpose: purpose,
-        notifyOnLoadError: true,
-      );
-    }
-
-    final Stopwatch stopwatch =
-        Stopwatch()..start();
-
-    while (
-        stopwatch.elapsed <
-            adReadyTimeout) {
+    for (
+      int attempt = 1;
+      attempt <= maxAdLoadAttempts;
+      attempt++
+    ) {
       if (_disposed) {
         return false;
       }
@@ -626,19 +642,147 @@ class HomeAdManager extends ChangeNotifier {
         purpose,
         activeUser.uid,
       )) {
+        debugPrint(
+          '✅ [ADMOB] Ad became ready: '
+          '$purpose',
+        );
+
         return true;
       }
 
-      if (!_adLoading ||
+      debugPrint(
+        '🐱 [ADMOB] Ad load attempt '
+        '$attempt/$maxAdLoadAttempts: '
+        '$purpose',
+      );
+
+      // --------------------------------------------------------
+      // Jos toinen purpose latautuu, perutaan vanha lataus
+      // --------------------------------------------------------
+
+      if (_adLoading &&
           _loadingPurpose !=
               purpose) {
-        break;
+        _loadRequestId++;
+
+        _adLoading = false;
+
+        _loadingPurpose = '';
       }
 
-      await Future<void>.delayed(
-        adCheckInterval,
-      );
+      // --------------------------------------------------------
+      // Vanha väärän purpose-mainos pois
+      // --------------------------------------------------------
+
+      if (_rewardedAd != null &&
+          !_isReadyFor(
+            purpose,
+            activeUser.uid,
+          )) {
+        _disposeCurrentAd();
+      }
+
+      // --------------------------------------------------------
+      // Käynnistä lataus
+      // --------------------------------------------------------
+
+      if (!_adLoading) {
+        await loadRewardedAd(
+          purpose: purpose,
+          notifyOnLoadError: true,
+        );
+      }
+
+      // --------------------------------------------------------
+      // Odota tämän latausyrityksen valmistumista
+      // --------------------------------------------------------
+
+      final Stopwatch stopwatch =
+          Stopwatch()..start();
+
+      while (
+          stopwatch.elapsed <
+              adReadyTimeout) {
+        if (_disposed) {
+          return false;
+        }
+
+        final User? currentUser =
+            _auth.currentUser;
+
+        if (currentUser == null) {
+          return false;
+        }
+
+        if (_isReadyFor(
+          purpose,
+          currentUser.uid,
+        )) {
+          debugPrint(
+            '✅ [ADMOB] Ad ready after '
+            'attempt $attempt: '
+            '$purpose',
+          );
+
+          return true;
+        }
+
+        // ------------------------------------------------------
+        // Lataus epäonnistui
+        // ------------------------------------------------------
+
+        if (!_adLoading ||
+            _loadingPurpose !=
+                purpose) {
+          break;
+        }
+
+        await Future<void>.delayed(
+          adCheckInterval,
+        );
+      }
+
+      // --------------------------------------------------------
+      // Tarkista vielä kerran ennen retryä
+      // --------------------------------------------------------
+
+      final User? retryUser =
+          _auth.currentUser;
+
+      if (retryUser != null &&
+          _isReadyFor(
+            purpose,
+            retryUser.uid,
+          )) {
+        return true;
+      }
+
+      if (_disposed) {
+        return false;
+      }
+
+      // --------------------------------------------------------
+      // Ei ollut valmis → uusi yritys
+      // --------------------------------------------------------
+
+      if (attempt <
+          maxAdLoadAttempts) {
+        debugPrint(
+          '⚠️ [ADMOB] Ad not ready. '
+          'Retrying in '
+          '${adRetryDelay.inMilliseconds} ms...',
+        );
+
+        await Future<void>.delayed(
+          adRetryDelay,
+        );
+      }
     }
+
+    debugPrint(
+      '❌ [ADMOB] All ad load attempts failed: '
+      '$purpose',
+    );
 
     return false;
   }
@@ -832,6 +976,10 @@ class HomeAdManager extends ChangeNotifier {
       ),
     );
 
+    // ----------------------------------------------------------
+    // ⏱️ LOAD TIMEOUT
+    // ----------------------------------------------------------
+
     unawaited(
       Future<void>.delayed(
         adLoadTimeout,
@@ -864,6 +1012,10 @@ class HomeAdManager extends ChangeNotifier {
           _adLoadError =
               'LOAD_TIMEOUT | '
               'Purpose: $purpose';
+
+          debugPrint(
+            '⚠️ [ADMOB] $_adLoadError',
+          );
 
           _notify();
         },
@@ -914,11 +1066,7 @@ class HomeAdManager extends ChangeNotifier {
     // 🔐 ADMOB SERVER-SIDE VERIFICATION
     // ==========================================================
     //
-    // customData kulkee AdMob SSV:lle.
-    //
-    // Backend tunnistaa:
-    //
-    // UID : PURPOSE
+    // UID + PURPOSE lähetetään AdMob SSV customData-kenttään.
     //
     // Esimerkiksi:
     //
@@ -1403,7 +1551,8 @@ class HomeAdManager extends ChangeNotifier {
             activeUser.uid,
           )) {
         debugPrint(
-          '❌ [ADMOB] Ad not ready.',
+          '❌ [ADMOB] Ad not ready after '
+          '$maxAdLoadAttempts attempts.',
         );
 
         _setFlowActive(
