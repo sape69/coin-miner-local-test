@@ -25,8 +25,15 @@ import 'package:flutter/material.dart';
 // ============================================================
 
 class RoadmapPage extends StatefulWidget {
+  // ==========================================================
+  // 🌍 LANGUAGE
+  // ==========================================================
+
+  final String languageCode;
+
   const RoadmapPage({
     super.key,
+    this.languageCode = 'en',
   });
 
   @override
