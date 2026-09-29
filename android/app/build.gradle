@@ -6,6 +6,34 @@ plugins {
 
 apply plugin: "com.google.gms.google-services"
 
+// ============================================================
+// 🐱 STELLURIINI - RELEASE SIGNING
+// ============================================================
+//
+// Release-keystore ladataan GitHub Actionsissa ennen buildia.
+//
+// Keystore:
+// android/stelluriini-upload-keystore.jks
+//
+// Alias:
+// stelluriini-upload
+//
+// Salasanat tulevat GitHub Secrets -muuttujista:
+// STELLURIINI_KEYSTORE_PASSWORD
+// STELLURIINI_KEY_PASSWORD
+//
+// Salasanoja EI tallenneta tähän tiedostoon.
+// ============================================================
+
+def stelluriiniKeystoreFile =
+        file("../stelluriini-upload-keystore.jks")
+
+def stelluriiniKeystorePassword =
+        System.getenv("STELLURIINI_KEYSTORE_PASSWORD")
+
+def stelluriiniKeyPassword =
+        System.getenv("STELLURIINI_KEY_PASSWORD")
+
 android {
     namespace = "com.stelluriini.app"
 
@@ -31,9 +59,26 @@ android {
         versionName = flutter.versionName
     }
 
+    // ==========================================================
+    // 🐱 STELLURIINI RELEASE SIGNING
+    // ==========================================================
+
+    signingConfigs {
+        release {
+            storeFile = stelluriiniKeystoreFile
+            storePassword = stelluriiniKeystorePassword
+            keyAlias = "stelluriini-upload"
+            keyPassword = stelluriiniKeyPassword
+        }
+    }
+
+    // ==========================================================
+    // BUILD TYPES
+    // ==========================================================
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
         }
     }
 }
