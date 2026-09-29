@@ -6,29 +6,11 @@ import 'package:flutter/material.dart';
 //
 // Stella • Stelluriini • STL • Solana
 //
-// Roadmap:
-// 1. Foundation & App
-// 2. Community & Referral
-// 3. Mining Economy Balance
-// 4. Solana Testnet Preparation
-// 5. Solana Testnet
-// 6. Long-Term Development
-// 7. Solana Mainnet & STL Withdrawals
-// 8. Exchange & Ecosystem
-//
-// IMPORTANT:
-// - Mainnet is NOT currently active.
-// - Withdrawals are NOT currently active.
-// - 100 STL is a planned minimum withdrawal model.
-// - Roadmap items may change during development.
+// Roadmap tukee HomePagen languageCode-parametria.
 //
 // ============================================================
 
 class RoadmapPage extends StatefulWidget {
-  // ==========================================================
-  // 🌍 LANGUAGE
-  // ==========================================================
-
   final String languageCode;
 
   const RoadmapPage({
@@ -69,6 +51,79 @@ class _RoadmapPageState extends State<RoadmapPage>
 
   static const Color secondaryTextColor =
       Color(0xFFBDB4D1);
+
+  // ==========================================================
+  // 🌍 LANGUAGE
+  // ==========================================================
+
+  bool get _isFinnish {
+    return widget.languageCode.toLowerCase().startsWith('fi');
+  }
+
+  bool get _isGerman {
+    return widget.languageCode.toLowerCase().startsWith('de');
+  }
+
+  bool get _isSpanish {
+    return widget.languageCode.toLowerCase().startsWith('es');
+  }
+
+  bool get _isFrench {
+    return widget.languageCode.toLowerCase().startsWith('fr');
+  }
+
+  bool get _isChinese {
+    return widget.languageCode.toLowerCase().startsWith('zh');
+  }
+
+  bool get _isVietnamese {
+    return widget.languageCode.toLowerCase().startsWith('vi');
+  }
+
+  bool get _isJapanese {
+    return widget.languageCode.toLowerCase().startsWith('ja');
+  }
+
+  String _text({
+    required String en,
+    String? fi,
+    String? de,
+    String? es,
+    String? fr,
+    String? zh,
+    String? vi,
+    String? ja,
+  }) {
+    if (_isFinnish) {
+      return fi ?? en;
+    }
+
+    if (_isGerman) {
+      return de ?? en;
+    }
+
+    if (_isSpanish) {
+      return es ?? en;
+    }
+
+    if (_isFrench) {
+      return fr ?? en;
+    }
+
+    if (_isChinese) {
+      return zh ?? en;
+    }
+
+    if (_isVietnamese) {
+      return vi ?? en;
+    }
+
+    if (_isJapanese) {
+      return ja ?? en;
+    }
+
+    return en;
+  }
 
   // ==========================================================
   // ✨ ANIMATION
@@ -112,80 +167,186 @@ class _RoadmapPageState extends State<RoadmapPage>
   // 🧱 ROADMAP DATA
   // ==========================================================
 
-  final List<_RoadmapItem> _roadmapItems = const [
-    _RoadmapItem(
-      phase: 'Phase 1 – Foundation',
-      title: 'Building Stelluriini',
-      description:
-          'Building the Stelluriini project, STL token and Stella ecosystem.',
-      status: 'In Progress',
-      icon: Icons.pets_rounded,
-      color: pinkColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 2 – App',
-      title: 'Stelluriini App Development',
-      description:
-          'Mining, Stella Power Boost, user progress and transaction history.',
-      status: 'In Progress',
-      icon: Icons.groups_rounded,
-      color: purpleColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 3 – Community',
-      title: 'Growing the Community',
-      description:
-          'Building the community, collecting feedback and developing the Stelluriini brand.',
-      status: 'Planned',
-      icon: Icons.balance_rounded,
-      color: goldColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 4 – Ecosystem',
-      title: 'Expanding the STL Ecosystem',
-      description:
-          'Developing STL token use cases and expanding the Stelluriini ecosystem.',
-      status: 'Planned',
-      icon: Icons.science_rounded,
-      color: purpleColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 5 – Testnet',
-      title: 'Solana Testnet',
-      description:
-          'Testing STL transfers, wallet connections, transactions and withdrawal functionality before Mainnet.',
-      status: 'Testing',
-      icon: Icons.science_outlined,
-      color: purpleColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 6 – Long-Term Development',
-      title: 'The Next Stage of Stelluriini',
-      description:
-          'Continuous development of the Stelluriini ecosystem, new features and responses to community needs.',
-      status: 'Future',
-      icon: Icons.lock_open_rounded,
-      color: pinkColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 7 – Mainnet',
-      title: 'Solana Mainnet & STL Withdrawals',
-      description:
-          'Opening the Stelluriini Solana Mainnet phase and introducing STL withdrawals after testing and security checks.',
-      status: 'Future',
-      icon: Icons.rocket_launch_rounded,
-      color: goldColor,
-    ),
-    _RoadmapItem(
-      phase: 'Phase 8 – Ecosystem',
-      title: 'Exchange & Ecosystem',
-      description:
-          'Exploring DEX and CEX opportunities, liquidity solutions, partnerships and future STL use cases.',
-      status: 'Future',
-      icon: Icons.account_balance_rounded,
-      color: purpleColor,
-    ),
-  ];
+  List<_RoadmapItem> get _roadmapItems {
+    return [
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 1 – Foundation',
+          fi: 'Vaihe 1 – Perusta',
+        ),
+        title: _text(
+          en: 'Building Stelluriini',
+          fi: 'Stelluriinin rakentaminen',
+        ),
+        description: _text(
+          en:
+              'Building the Stelluriini project, STL token and Stella ecosystem.',
+          fi:
+              'Stelluriini-projektin, STL-tokenin ja Stella-ekosysteemin rakentaminen.',
+        ),
+        status: _text(
+          en: 'In Progress',
+          fi: 'Käynnissä',
+        ),
+        icon: Icons.pets_rounded,
+        color: pinkColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 2 – App',
+          fi: 'Vaihe 2 – Sovellus',
+        ),
+        title: _text(
+          en: 'Stelluriini App Development',
+          fi: 'Stelluriini-sovelluksen kehitys',
+        ),
+        description: _text(
+          en:
+              'Mining, Stella Power Boost, user progress and transaction history.',
+          fi:
+              'Louhinta, Stella Power Boost, käyttäjän eteneminen ja tapahtumahistoria.',
+        ),
+        status: _text(
+          en: 'In Progress',
+          fi: 'Käynnissä',
+        ),
+        icon: Icons.groups_rounded,
+        color: purpleColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 3 – Community',
+          fi: 'Vaihe 3 – Yhteisö',
+        ),
+        title: _text(
+          en: 'Growing the Community',
+          fi: 'Yhteisön kasvattaminen',
+        ),
+        description: _text(
+          en:
+              'Building the community, collecting feedback and developing the Stelluriini brand.',
+          fi:
+              'Yhteisön rakentaminen, palautteen kerääminen ja Stelluriini-brändin kehittäminen.',
+        ),
+        status: _text(
+          en: 'Planned',
+          fi: 'Suunniteltu',
+        ),
+        icon: Icons.balance_rounded,
+        color: goldColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 4 – Ecosystem',
+          fi: 'Vaihe 4 – Ekosysteemi',
+        ),
+        title: _text(
+          en: 'Expanding the STL Ecosystem',
+          fi: 'STL-ekosysteemin laajentaminen',
+        ),
+        description: _text(
+          en:
+              'Developing STL token use cases and expanding the Stelluriini ecosystem.',
+          fi:
+              'STL-tokenin käyttötapojen kehittäminen ja Stelluriini-ekosysteemin laajentaminen.',
+        ),
+        status: _text(
+          en: 'Planned',
+          fi: 'Suunniteltu',
+        ),
+        icon: Icons.science_rounded,
+        color: purpleColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 5 – Testnet',
+          fi: 'Vaihe 5 – Testnet',
+        ),
+        title: _text(
+          en: 'Solana Testnet',
+          fi: 'Solana Testnet',
+        ),
+        description: _text(
+          en:
+              'Testing STL transfers, wallet connections, transactions and withdrawal functionality before Mainnet.',
+          fi:
+              'STL-siirtojen, lompakkoyhteyksien, transaktioiden ja nostotoimintojen testaaminen ennen Mainnet-vaihetta.',
+        ),
+        status: _text(
+          en: 'Testing',
+          fi: 'Testauksessa',
+        ),
+        icon: Icons.science_outlined,
+        color: purpleColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 6 – Long-Term Development',
+          fi: 'Vaihe 6 – Pitkän aikavälin kehitys',
+        ),
+        title: _text(
+          en: 'The Next Stage of Stelluriini',
+          fi: 'Stelluriinin seuraava vaihe',
+        ),
+        description: _text(
+          en:
+              'Continuous development of the Stelluriini ecosystem, new features and responses to community needs.',
+          fi:
+              'Stelluriini-ekosysteemin jatkuva kehittäminen, uudet ominaisuudet ja yhteisön tarpeisiin vastaaminen.',
+        ),
+        status: _text(
+          en: 'Future',
+          fi: 'Tulevaisuus',
+        ),
+        icon: Icons.lock_open_rounded,
+        color: pinkColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 7 – Mainnet',
+          fi: 'Vaihe 7 – Mainnet',
+        ),
+        title: _text(
+          en: 'Solana Mainnet & STL Withdrawals',
+          fi: 'Solana Mainnet ja STL-nostot',
+        ),
+        description: _text(
+          en:
+              'Opening the Stelluriini Solana Mainnet phase and introducing STL withdrawals after testing and security checks.',
+          fi:
+              'Stelluriinin Solana Mainnet -vaiheen avaaminen ja STL-nostojen käyttöönotto testauksen ja turvallisuustarkistusten jälkeen.',
+        ),
+        status: _text(
+          en: 'Future',
+          fi: 'Tulevaisuus',
+        ),
+        icon: Icons.rocket_launch_rounded,
+        color: goldColor,
+      ),
+      _RoadmapItem(
+        phase: _text(
+          en: 'Phase 8 – Ecosystem',
+          fi: 'Vaihe 8 – Ekosysteemi',
+        ),
+        title: _text(
+          en: 'Exchange & Ecosystem',
+          fi: 'Pörssi ja ekosysteemi',
+        ),
+        description: _text(
+          en:
+              'Exploring DEX and CEX opportunities, liquidity solutions, partnerships and future STL use cases.',
+          fi:
+              'DEX- ja CEX-mahdollisuuksien, likviditeettiratkaisujen, kumppanuuksien ja STL:n tulevien käyttötapojen tutkiminen.',
+        ),
+        status: _text(
+          en: 'Future',
+          fi: 'Tulevaisuus',
+        ),
+        icon: Icons.account_balance_rounded,
+        color: purpleColor,
+      ),
+    ];
+  }
 
   // ==========================================================
   // 🏷️ STATUS COLOR
@@ -194,22 +355,27 @@ class _RoadmapPageState extends State<RoadmapPage>
   Color _statusColor(
     String status,
   ) {
-    switch (status) {
-      case 'In Progress':
-        return pinkColor;
-
-      case 'Testing':
-        return goldColor;
-
-      case 'Planned':
-        return purpleColor;
-
-      case 'Future':
-        return goldColor;
-
-      default:
-        return purpleColor;
+    if (status == 'In Progress' ||
+        status == 'Käynnissä') {
+      return pinkColor;
     }
+
+    if (status == 'Testing' ||
+        status == 'Testauksessa') {
+      return goldColor;
+    }
+
+    if (status == 'Planned' ||
+        status == 'Suunniteltu') {
+      return purpleColor;
+    }
+
+    if (status == 'Future' ||
+        status == 'Tulevaisuus') {
+      return goldColor;
+    }
+
+    return purpleColor;
   }
 
   // ==========================================================
@@ -219,22 +385,27 @@ class _RoadmapPageState extends State<RoadmapPage>
   IconData _statusIcon(
     String status,
   ) {
-    switch (status) {
-      case 'In Progress':
-        return Icons.play_circle_fill_rounded;
-
-      case 'Testing':
-        return Icons.science_rounded;
-
-      case 'Planned':
-        return Icons.schedule_rounded;
-
-      case 'Future':
-        return Icons.auto_awesome_rounded;
-
-      default:
-        return Icons.circle;
+    if (status == 'In Progress' ||
+        status == 'Käynnissä') {
+      return Icons.play_circle_fill_rounded;
     }
+
+    if (status == 'Testing' ||
+        status == 'Testauksessa') {
+      return Icons.science_rounded;
+    }
+
+    if (status == 'Planned' ||
+        status == 'Suunniteltu') {
+      return Icons.schedule_rounded;
+    }
+
+    if (status == 'Future' ||
+        status == 'Tulevaisuus') {
+      return Icons.auto_awesome_rounded;
+    }
+
+    return Icons.circle;
   }
 
   // ==========================================================
@@ -427,9 +598,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                   CrossAxisAlignment.start,
               children: [
                 _buildPhaseIcon(item),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -461,11 +630,9 @@ class _RoadmapPageState extends State<RoadmapPage>
                           ),
                         ],
                       ),
-
                       const SizedBox(
                         height: 12,
                       ),
-
                       Text(
                         item.title,
                         style:
@@ -483,9 +650,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ),
               ],
             ),
-
             const SizedBox(height: 18),
-
             Text(
               item.description,
               style: const TextStyle(
@@ -495,15 +660,19 @@ class _RoadmapPageState extends State<RoadmapPage>
                 height: 1.55,
               ),
             ),
-
             if (item.phase ==
-                'Phase 7 – Mainnet') ...[
+                    _text(
+                      en: 'Phase 7 – Mainnet',
+                      fi: 'Vaihe 7 – Mainnet',
+                    )) ...[
               const SizedBox(height: 18),
               _buildMainnetNotice(),
             ],
-
             if (item.phase ==
-                'Phase 8 – Ecosystem') ...[
+                    _text(
+                      en: 'Phase 8 – Ecosystem',
+                      fi: 'Vaihe 8 – Ekosysteemi',
+                    )) ...[
               const SizedBox(height: 18),
               _buildEcosystemPoints(),
             ],
@@ -537,7 +706,7 @@ class _RoadmapPageState extends State<RoadmapPage>
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.rocket_launch_rounded,
                 color: goldColor,
                 size: 23,
@@ -545,7 +714,12 @@ class _RoadmapPageState extends State<RoadmapPage>
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Mainnet = tuleva julkaisu • Ei vielä käytössä',
+                  _text(
+                    en:
+                        'Mainnet = future release • Not active yet',
+                    fi:
+                        'Mainnet = tuleva julkaisu • Ei vielä käytössä',
+                  ),
                   style: const TextStyle(
                     color: goldColor,
                     fontSize: 14,
@@ -557,11 +731,14 @@ class _RoadmapPageState extends State<RoadmapPage>
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Ennen käyttöönottoa Solana-integraatio, '
-            'lompakot, STL-siirrot, nostot ja '
-            'turvallisuusratkaisut testataan.',
-            style: TextStyle(
+          Text(
+            _text(
+              en:
+                  'Before launch, Solana integration, wallets, STL transfers, withdrawals and security solutions will be tested.',
+              fi:
+                  'Ennen käyttöönottoa Solana-integraatio, lompakot, STL-siirrot, nostot ja turvallisuusratkaisut testataan.',
+            ),
+            style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 14,
               height: 1.45,
@@ -577,13 +754,31 @@ class _RoadmapPageState extends State<RoadmapPage>
   // ==========================================================
 
   Widget _buildEcosystemPoints() {
-    const List<String> points = [
-      'DEX- ja CEX-mahdollisuuksien tutkiminen',
-      'Likviditeettiratkaisujen valmistelu',
-      'STL-ekosysteemin laajentaminen',
-      'Kumppanuuksien kehittäminen',
-      'Uusien Stella-kokemusten esittely',
-      'STL:n tulevien käyttötapojen tutkiminen',
+    final List<String> points = [
+      _text(
+        en: 'Exploring DEX and CEX opportunities',
+        fi: 'DEX- ja CEX-mahdollisuuksien tutkiminen',
+      ),
+      _text(
+        en: 'Preparing liquidity solutions',
+        fi: 'Likviditeettiratkaisujen valmistelu',
+      ),
+      _text(
+        en: 'Expanding the STL ecosystem',
+        fi: 'STL-ekosysteemin laajentaminen',
+      ),
+      _text(
+        en: 'Developing partnerships',
+        fi: 'Kumppanuuksien kehittäminen',
+      ),
+      _text(
+        en: 'Introducing new Stella experiences',
+        fi: 'Uusien Stella-kokemusten esittely',
+      ),
+      _text(
+        en: 'Exploring future STL use cases',
+        fi: 'STL:n tulevien käyttötapojen tutkiminen',
+      ),
     ];
 
     return Container(
@@ -603,9 +798,12 @@ class _RoadmapPageState extends State<RoadmapPage>
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Pörssi ja ekosysteemi',
-            style: TextStyle(
+          Text(
+            _text(
+              en: 'Exchange & Ecosystem',
+              fi: 'Pörssi ja ekosysteemi',
+            ),
+            style: const TextStyle(
               color: primaryTextColor,
               fontSize: 18,
               fontWeight:
@@ -699,10 +897,13 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Louhintatalouden tasapaino',
-                  style: TextStyle(
+                  _text(
+                    en: 'Mining Economy Balance',
+                    fi: 'Louhintatalouden tasapaino',
+                  ),
+                  style: const TextStyle(
                     color: primaryTextColor,
                     fontSize: 25,
                     fontWeight:
@@ -713,50 +914,54 @@ class _RoadmapPageState extends State<RoadmapPage>
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          const Text(
-            'Louhintajärjestelmän tavoitteena ei ole '
-            'kasvattaa päivittäistä STL-määrää '
-            'rajattomasti. Hash Rate, Power Boost '
-            'ja Referral-bonukset suunnitellaan '
-            'yhdessä niin, että kokonaisuus pysyy '
-            'hallittavana.',
-            style: TextStyle(
+          Text(
+            _text(
+              en:
+                  'The mining system is designed so that daily STL generation does not grow without limits. Hash Rate, Power Boost and Referral bonuses are designed together to keep the system manageable.',
+              fi:
+                  'Louhintajärjestelmän tavoitteena ei ole kasvattaa päivittäistä STL-määrää rajattomasti. Hash Rate, Power Boost ja Referral-bonukset suunnitellaan yhdessä niin, että kokonaisuus pysyy hallittavana.',
+            ),
+            style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 16,
               height: 1.55,
             ),
           ),
-
           const SizedBox(height: 22),
-
           _buildInfoRow(
             icon: Icons.bolt_rounded,
             title: 'Hash Rate',
-            text:
-                'Peruslouhinta muodostaa käyttäjän normaalin Hash Rate -tason.',
+            text: _text(
+              en:
+                  'Base mining determines the user\'s normal Hash Rate level.',
+              fi:
+                  'Peruslouhinta muodostaa käyttäjän normaalin Hash Rate -tason.',
+            ),
             color: purpleColor,
           ),
-
           const SizedBox(height: 18),
-
           _buildInfoRow(
             icon: Icons.flash_on_rounded,
             title: 'Power Boost',
-            text:
-                'Power Boost tarjoaa määräaikaisen lisäyksen käyttäjän louhintatehoon.',
+            text: _text(
+              en:
+                  'Power Boost provides a temporary increase in mining power.',
+              fi:
+                  'Power Boost tarjoaa määräaikaisen lisäyksen käyttäjän louhintatehoon.',
+            ),
             color: pinkColor,
           ),
-
           const SizedBox(height: 18),
-
           _buildInfoRow(
             icon: Icons.groups_rounded,
             title: 'Referral',
-            text:
-                'Referral-bonukset suunnitellaan kasvun mukana tasapainottuviksi.',
+            text: _text(
+              en:
+                  'Referral bonuses are designed to remain balanced as the community grows.',
+              fi:
+                  'Referral-bonukset suunnitellaan kasvun mukana tasapainottuviksi.',
+            ),
             color: goldColor,
           ),
         ],
@@ -842,10 +1047,13 @@ class _RoadmapPageState extends State<RoadmapPage>
             size: 44,
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Potential Future Withdrawals',
+          Text(
+            _text(
+              en: 'Potential Future Withdrawals',
+              fi: 'Mahdolliset tulevat nostot',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: goldColor,
               fontSize: 23,
               fontWeight:
@@ -853,12 +1061,15 @@ class _RoadmapPageState extends State<RoadmapPage>
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'A possible future withdrawal system '
-            'will be designed separately and its '
-            'terms will be announced before implementation.',
+          Text(
+            _text(
+              en:
+                  'A possible future withdrawal system will be designed separately and its terms will be announced before implementation.',
+              fi:
+                  'Mahdollinen tuleva nostojärjestelmä suunnitellaan erikseen ja sen ehdot ilmoitetaan ennen käyttöönottoa.',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 15,
               height: 1.5,
@@ -878,19 +1089,22 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ),
               ),
             ),
-            child: const Column(
+            child: Column(
               children: [
                 Text(
-                  'Planned minimum withdrawal',
+                  _text(
+                    en: 'Planned minimum withdrawal',
+                    fi: 'Suunniteltu vähimmäisnosto',
+                  ),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color:
                         secondaryTextColor,
                     fontSize: 14,
                   ),
                 ),
-                SizedBox(height: 6),
-                Text(
+                const SizedBox(height: 6),
+                const Text(
                   '100 STL',
                   style: TextStyle(
                     color: goldColor,
@@ -899,11 +1113,16 @@ class _RoadmapPageState extends State<RoadmapPage>
                         FontWeight.w900,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  'User pays the Solana network fee.',
+                  _text(
+                    en:
+                        'User pays the Solana network fee.',
+                    fi:
+                        'Käyttäjä maksaa Solana-verkon kulun.',
+                  ),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color:
                         secondaryTextColor,
                     fontSize: 13,
@@ -967,10 +1186,13 @@ class _RoadmapPageState extends State<RoadmapPage>
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Stella’s Journey 🐾',
+          Text(
+            _text(
+              en: 'Stella\'s Journey 🐾',
+              fi: 'Stellan matka 🐾',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: pinkColor,
               fontSize: 25,
               fontWeight:
@@ -978,11 +1200,15 @@ class _RoadmapPageState extends State<RoadmapPage>
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'The Stelluriini ecosystem will be developed '
-            'step by step around the community, app and STL token.',
+          Text(
+            _text(
+              en:
+                  'The Stelluriini ecosystem will be developed step by step around the community, app and STL token.',
+              fi:
+                  'Stelluriini-ekosysteemiä kehitetään askel askeleelta yhteisön, sovelluksen ja STL-tokenin ympärille.',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 16,
               height: 1.55,
@@ -1036,10 +1262,13 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Development Principles',
-                  style: TextStyle(
+                  _text(
+                    en: 'Development Principles',
+                    fi: 'Kehitysperiaatteet',
+                  ),
+                  style: const TextStyle(
                     color: primaryTextColor,
                     fontSize: 24,
                     fontWeight:
@@ -1049,54 +1278,79 @@ class _RoadmapPageState extends State<RoadmapPage>
               ),
             ],
           ),
-
           const SizedBox(height: 24),
-
           _buildInfoRow(
             icon: Icons.groups_rounded,
-            title: 'Community',
-            text:
-                'The community is at the heart of Stelluriini development. Feedback and user ideas help guide future development.',
+            title: _text(
+              en: 'Community',
+              fi: 'Yhteisö',
+            ),
+            text: _text(
+              en:
+                  'The community is at the heart of Stelluriini development. Feedback and user ideas help guide future development.',
+              fi:
+                  'Yhteisö on Stelluriinin kehityksen ytimessä. Palaute ja käyttäjien ideat auttavat ohjaamaan tulevaa kehitystä.',
+            ),
             color: purpleColor,
           ),
-
           const SizedBox(height: 20),
-
           _buildInfoRow(
             icon: Icons.security_rounded,
-            title: 'Security',
-            text:
-                'Security, server infrastructure and application reliability will be continuously improved.',
+            title: _text(
+              en: 'Security',
+              fi: 'Turvallisuus',
+            ),
+            text: _text(
+              en:
+                  'Security, server infrastructure and application reliability will be continuously improved.',
+              fi:
+                  'Turvallisuutta, palvelininfrastruktuuria ja sovelluksen luotettavuutta kehitetään jatkuvasti.',
+            ),
             color: purpleColor,
           ),
-
           const SizedBox(height: 20),
-
           _buildInfoRow(
             icon: Icons.shield_rounded,
-            title: 'Botintorjunta',
-            text:
-                'Järjestelmässä huomioidaan botit, automaatio ja väärinkäytösten tunnistaminen.',
+            title: _text(
+              en: 'Anti-Bot Protection',
+              fi: 'Botintorjunta',
+            ),
+            text: _text(
+              en:
+                  'The system considers bots, automation and abuse detection.',
+              fi:
+                  'Järjestelmässä huomioidaan botit, automaatio ja väärinkäytösten tunnistaminen.',
+            ),
             color: pinkColor,
           ),
-
           const SizedBox(height: 20),
-
           _buildInfoRow(
             icon: Icons.auto_awesome_rounded,
-            title: 'Innovation',
-            text:
-                'New use cases, features and technologies will be explored as the project develops.',
+            title: _text(
+              en: 'Innovation',
+              fi: 'Innovaatio',
+            ),
+            text: _text(
+              en:
+                  'New use cases, features and technologies will be explored as the project develops.',
+              fi:
+                  'Uusia käyttötapoja, ominaisuuksia ja teknologioita tutkitaan projektin kehittyessä.',
+            ),
             color: purpleColor,
           ),
-
           const SizedBox(height: 20),
-
           _buildInfoRow(
             icon: Icons.trending_up_rounded,
-            title: 'Long-Term Growth',
-            text:
-                'The goal is to build a sustainable and gradually evolving Stelluriini ecosystem.',
+            title: _text(
+              en: 'Long-Term Growth',
+              fi: 'Pitkän aikavälin kasvu',
+            ),
+            text: _text(
+              en:
+                  'The goal is to build a sustainable and gradually evolving Stelluriini ecosystem.',
+              fi:
+                  'Tavoitteena on rakentaa kestävä ja asteittain kehittyvä Stelluriini-ekosysteemi.',
+            ),
             color: goldColor,
           ),
         ],
@@ -1132,10 +1386,13 @@ class _RoadmapPageState extends State<RoadmapPage>
             size: 42,
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Important Notice',
+          Text(
+            _text(
+              en: 'Important Notice',
+              fi: 'Tärkeä huomautus',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: goldColor,
               fontSize: 23,
               fontWeight:
@@ -1143,13 +1400,15 @@ class _RoadmapPageState extends State<RoadmapPage>
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'The roadmap describes the planned '
-            'development direction of Stelluriini. '
-            'Phases, features and timelines may '
-            'change during project development.',
+          Text(
+            _text(
+              en:
+                  'The roadmap describes the planned development direction of Stelluriini. Phases, features and timelines may change during project development.',
+              fi:
+                  'Roadmap kuvaa Stelluriinin suunniteltua kehityssuuntaa. Vaiheet, ominaisuudet ja aikataulut voivat muuttua projektin kehityksen aikana.',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 15,
               height: 1.55,
@@ -1171,7 +1430,6 @@ class _RoadmapPageState extends State<RoadmapPage>
     return Scaffold(
       backgroundColor:
           backgroundColor,
-
       appBar: AppBar(
         backgroundColor:
             surfaceColor,
@@ -1187,9 +1445,12 @@ class _RoadmapPageState extends State<RoadmapPage>
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
-          'Stelluriini Roadmap',
-          style: TextStyle(
+        title: Text(
+          _text(
+            en: 'Stelluriini Roadmap',
+            fi: 'Stelluriini Roadmap',
+          ),
+          style: const TextStyle(
             color: primaryTextColor,
             fontSize: 25,
             fontWeight:
@@ -1197,7 +1458,6 @@ class _RoadmapPageState extends State<RoadmapPage>
           ),
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           physics:
@@ -1268,11 +1528,16 @@ class _RoadmapPageState extends State<RoadmapPage>
                         const SizedBox(
                           width: 14,
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'The Stelluriini Journey',
+                            _text(
+                              en:
+                                  'The Stelluriini Journey',
+                              fi:
+                                  'Stelluriinin matka',
+                            ),
                             style:
-                                TextStyle(
+                                const TextStyle(
                               color:
                                   primaryTextColor,
                               fontSize: 24,
@@ -1286,11 +1551,14 @@ class _RoadmapPageState extends State<RoadmapPage>
                     const SizedBox(
                       height: 18,
                     ),
-                    const Text(
-                      'Stelluriini development progresses '
-                      'step by step toward a broader '
-                      'community, ecosystem and new use cases.',
-                      style: TextStyle(
+                    Text(
+                      _text(
+                        en:
+                            'Stelluriini development progresses step by step toward a broader community, ecosystem and new use cases.',
+                        fi:
+                            'Stelluriinin kehitys etenee askel askeleelta kohti laajempaa yhteisöä, ekosysteemiä ja uusia käyttötapoja.',
+                      ),
+                      style: const TextStyle(
                         color:
                             secondaryTextColor,
                         fontSize: 16,
@@ -1306,9 +1574,7 @@ class _RoadmapPageState extends State<RoadmapPage>
               // ==================================================
 
               ..._roadmapItems.map(
-                (
-                  _RoadmapItem item,
-                ) {
+                (_RoadmapItem item) {
                   return _buildRoadmapCard(
                     item,
                   );
@@ -1344,10 +1610,6 @@ class _RoadmapPageState extends State<RoadmapPage>
               // ==================================================
 
               _buildImportantNotice(),
-
-              // ==================================================
-              // 🐾 FOOTER
-              // ==================================================
 
               const SizedBox(height: 8),
 
