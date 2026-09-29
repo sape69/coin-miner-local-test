@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../../localization.dart';
+import '../../localization/achievements/achievements_localization.dart';
 import '../../widgets/cat_avatar.dart';
 import '../../widgets/stelluriini_logo.dart';
 
@@ -50,6 +51,9 @@ class _TransactionHistoryPageState
 
   AppLocalizations get localization =>
       AppLocalizations(widget.languageCode);
+
+  AchievementsLocalization get achievementLocalization =>
+      AchievementsLocalization(widget.languageCode);
 
   String _t(
     String key,
@@ -108,6 +112,16 @@ class _TransactionHistoryPageState
   }
 
   // ==========================================================
+  // 🏆 ACHIEVEMENT TRANSACTION
+  // ==========================================================
+
+  bool _isAchievementTransaction(
+    String type,
+  ) {
+    return type == 'achievement_reward';
+  }
+
+  // ==========================================================
   // TRANSACTION AMOUNT VALUE
   // ==========================================================
 
@@ -151,6 +165,16 @@ class _TransactionHistoryPageState
     }
 
     // --------------------------------------------------------
+    // ACHIEVEMENT STL REWARD
+    // --------------------------------------------------------
+
+    if (type == 'achievement_reward') {
+      return transaction['reward'] ??
+          transaction['amount'] ??
+          0;
+    }
+
+    // --------------------------------------------------------
     // NORMAL STL TRANSACTION
     // --------------------------------------------------------
 
@@ -180,7 +204,8 @@ class _TransactionHistoryPageState
         result.data as Map,
       );
 
-      final rawTransactions = data['transactions'];
+      final rawTransactions =
+          data['transactions'];
 
       final List<Map<String, dynamic>>
           loadedTransactions = [];
@@ -198,7 +223,9 @@ class _TransactionHistoryPageState
               transaction['type']?.toString() ?? '';
 
           final amount =
-              _transactionAmountValue(transaction);
+              _transactionAmountValue(
+            transaction,
+          );
 
           final amountNumber = amount is num
               ? amount.toDouble()
@@ -216,40 +243,47 @@ class _TransactionHistoryPageState
           }
 
           // --------------------------------------------------
-          // Only known transaction types are displayed.
+          // Known transaction types.
           // --------------------------------------------------
 
           if (!_isHashRateTransaction(type) &&
-              !_isMiningTransaction(type)) {
+              !_isMiningTransaction(type) &&
+              !_isAchievementTransaction(type)) {
             continue;
           }
 
-          loadedTransactions.add(transaction);
+          loadedTransactions.add(
+            transaction,
+          );
         }
       }
 
       if (!mounted) return;
 
       setState(() {
-        transactions = loadedTransactions;
+        transactions =
+            loadedTransactions;
         loading = false;
       });
-    } on FirebaseFunctionsException catch (error) {
+    } on FirebaseFunctionsException catch (
+      error
+    ) {
       if (!mounted) return;
 
       setState(() {
         errorMessage =
             error.message ??
             _t('stellaCheckingHistory');
+
         loading = false;
       });
     } catch (_) {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = _t(
-          'stellaCheckingHistory',
-        );
+        errorMessage =
+            _t('stellaCheckingHistory');
+
         loading = false;
       });
     }
@@ -262,35 +296,51 @@ class _TransactionHistoryPageState
   String _formatDate(
     Map<String, dynamic> transaction,
   ) {
-    final createdAt = transaction['createdAt'];
+    final createdAt =
+        transaction['createdAt'];
 
-    if (createdAt is String && createdAt.isNotEmpty) {
-      final date = DateTime.tryParse(createdAt);
+    if (createdAt is String &&
+        createdAt.isNotEmpty) {
+      final date =
+          DateTime.tryParse(createdAt);
 
       if (date != null) {
-        final local = date.toLocal();
+        final local =
+            date.toLocal();
 
         final day =
-            local.day.toString().padLeft(2, '0');
+            local.day
+                .toString()
+                .padLeft(2, '0');
 
         final month =
-            local.month.toString().padLeft(2, '0');
+            local.month
+                .toString()
+                .padLeft(2, '0');
 
-        final year = local.year;
+        final year =
+            local.year;
 
         final hour =
-            local.hour.toString().padLeft(2, '0');
+            local.hour
+                .toString()
+                .padLeft(2, '0');
 
         final minute =
-            local.minute.toString().padLeft(2, '0');
+            local.minute
+                .toString()
+                .padLeft(2, '0');
 
-        return '$day.$month.$year • $hour:$minute';
+        return '$day.$month.$year • '
+            '$hour:$minute';
       }
     }
 
-    final date = transaction['date'];
+    final date =
+        transaction['date'];
 
-    if (date is String && date.isNotEmpty) {
+    if (date is String &&
+        date.isNotEmpty) {
       return date;
     }
 
@@ -311,8 +361,11 @@ class _TransactionHistoryPageState
             ) ??
             0.0;
 
-    if (number == number.roundToDouble()) {
-      return number.toInt().toString();
+    if (number ==
+        number.roundToDouble()) {
+      return number
+          .toInt()
+          .toString();
     }
 
     return number.toStringAsFixed(4);
@@ -332,6 +385,9 @@ class _TransactionHistoryPageState
 
       case 'ad_reward':
         return Icons.play_circle_fill_rounded;
+
+      case 'achievement_reward':
+        return Icons.emoji_events_rounded;
 
       case 'mining':
       case 'mining_reward':
@@ -358,6 +414,9 @@ class _TransactionHistoryPageState
       case 'ad_reward':
         return pinkAccentColor;
 
+      case 'achievement_reward':
+        return goldAccentColor;
+
       case 'mining':
       case 'mining_reward':
       case 'claim_mining':
@@ -378,14 +437,47 @@ class _TransactionHistoryPageState
     final type =
         transaction['type']?.toString() ?? '';
 
+    // --------------------------------------------------------
+    // ACHIEVEMENT
+    // --------------------------------------------------------
+
+    if (_isAchievementTransaction(type)) {
+      final achievementId =
+          transaction['achievementId']
+              ?.toString()
+              .trim();
+
+      if (achievementId != null &&
+          achievementId.isNotEmpty) {
+        return achievementLocalization
+            .achievementTitle(
+          achievementId,
+        );
+      }
+
+      return _t('stlTransaction');
+    }
+
+    // --------------------------------------------------------
+    // DAILY HASH RATE
+    // --------------------------------------------------------
+
     if (type == 'dailyHashRate' ||
         type == 'daily_reward') {
       return _t('dailyStellaBonus');
     }
 
+    // --------------------------------------------------------
+    // AD REWARD
+    // --------------------------------------------------------
+
     if (type == 'ad_reward') {
       return _t('stellaAdReward');
     }
+
+    // --------------------------------------------------------
+    // MINING
+    // --------------------------------------------------------
 
     if (_isMiningTransaction(type)) {
       return _t('stellaMining');
@@ -399,23 +491,59 @@ class _TransactionHistoryPageState
   // ==========================================================
 
   String _transactionDescription(
-    String type,
+    Map<String, dynamic> transaction,
   ) {
+    final type =
+        transaction['type']?.toString() ?? '';
+
+    // --------------------------------------------------------
+    // ACHIEVEMENT
+    // --------------------------------------------------------
+
+    if (_isAchievementTransaction(type)) {
+      final achievementId =
+          transaction['achievementId']
+              ?.toString()
+              .trim();
+
+      if (achievementId != null &&
+          achievementId.isNotEmpty) {
+        return achievementLocalization
+            .achievementDescription(
+          achievementId,
+        );
+      }
+
+      return _t('historyRecorded');
+    }
+
+    // --------------------------------------------------------
+    // DAILY HASH RATE
+    // --------------------------------------------------------
+
     switch (type) {
       case 'dailyHashRate':
       case 'daily_reward':
-        return _t('dailyBonusDescription');
+        return _t(
+          'dailyBonusDescription',
+        );
 
       case 'ad_reward':
-        return _t('adRewardDescription');
+        return _t(
+          'adRewardDescription',
+        );
 
       case 'mining':
       case 'mining_reward':
       case 'claim_mining':
-        return _t('historyRecorded');
+        return _t(
+          'historyRecorded',
+        );
 
       default:
-        return _t('stelluriiniActivity');
+        return _t(
+          'stelluriiniActivity',
+        );
     }
   }
 
@@ -430,6 +558,46 @@ class _TransactionHistoryPageState
     String balanceText,
   ) {
     // --------------------------------------------------------
+    // ACHIEVEMENT REWARD
+    // --------------------------------------------------------
+
+    if (_isAchievementTransaction(type)) {
+      return Row(
+        children: [
+          Icon(
+            Icons.emoji_events_rounded,
+            size: 12,
+            color:
+                goldAccentColor.withValues(
+              alpha: 0.60,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              _tWithParams(
+                'transactionBalance',
+                {
+                  'balance':
+                      balanceText,
+                },
+              ),
+              overflow:
+                  TextOverflow.ellipsis,
+              style: TextStyle(
+                color:
+                    Colors.white.withValues(
+                  alpha: 0.50,
+                ),
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // --------------------------------------------------------
     // DAILY HASH RATE
     // --------------------------------------------------------
 
@@ -440,7 +608,8 @@ class _TransactionHistoryPageState
           Icon(
             Icons.speed_rounded,
             size: 12,
-            color: goldAccentColor.withValues(
+            color:
+                goldAccentColor.withValues(
               alpha: 0.55,
             ),
           ),
@@ -449,9 +618,11 @@ class _TransactionHistoryPageState
             child: Text(
               '${_t('dailyHashRateLabel')}: '
               '$amountText HR',
-              overflow: TextOverflow.ellipsis,
+              overflow:
+                  TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withValues(
+                color:
+                    Colors.white.withValues(
                   alpha: 0.50,
                 ),
                 fontSize: 11,
@@ -472,7 +643,8 @@ class _TransactionHistoryPageState
           Icon(
             Icons.speed_rounded,
             size: 12,
-            color: pinkAccentColor.withValues(
+            color:
+                pinkAccentColor.withValues(
               alpha: 0.55,
             ),
           ),
@@ -481,9 +653,11 @@ class _TransactionHistoryPageState
             child: Text(
               '${_t('hashRateBonus')}: '
               '+$amountText HR',
-              overflow: TextOverflow.ellipsis,
+              overflow:
+                  TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withValues(
+                color:
+                    Colors.white.withValues(
                   alpha: 0.50,
                 ),
                 fontSize: 11,
@@ -503,7 +677,8 @@ class _TransactionHistoryPageState
         Icon(
           Icons.account_balance_wallet_rounded,
           size: 12,
-          color: Colors.white.withValues(
+          color:
+              Colors.white.withValues(
             alpha: 0.38,
           ),
         ),
@@ -513,12 +688,15 @@ class _TransactionHistoryPageState
             _tWithParams(
               'transactionBalance',
               {
-                'balance': balanceText,
+                'balance':
+                    balanceText,
               },
             ),
-            overflow: TextOverflow.ellipsis,
+            overflow:
+                TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.white.withValues(
+              color:
+                  Colors.white.withValues(
                 alpha: 0.50,
               ),
               fontSize: 11,
@@ -542,22 +720,26 @@ class _TransactionHistoryPageState
     final balanceAfter =
         transaction['balanceAfter'];
 
-    final title = _transactionTitle(
+    final title =
+        _transactionTitle(
       transaction,
     );
 
     final description =
-        _transactionDescription(type);
+        _transactionDescription(
+      transaction,
+    );
 
     final color =
         _transactionColor(type);
 
-    final date = _formatDate(
-      transaction,
-    );
+    final date =
+        _formatDate(transaction);
 
     final amount =
-        _transactionAmountValue(transaction);
+        _transactionAmountValue(
+      transaction,
+    );
 
     final amountText =
         _formatAmount(amount);
@@ -568,16 +750,21 @@ class _TransactionHistoryPageState
     final isHashRate =
         _isHashRateTransaction(type);
 
-    final unit = isHashRate ? 'HR' : 'STL';
+    final unit =
+        isHashRate ? 'HR' : 'STL';
 
     return Container(
-      margin: const EdgeInsets.only(
+      margin:
+          const EdgeInsets.only(
         bottom: 12,
       ),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      padding:
+          const EdgeInsets.all(16),
+      decoration:
+          BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color: color.withValues(
             alpha: 0.22,
@@ -585,11 +772,13 @@ class _TransactionHistoryPageState
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
+            color:
+                Colors.black.withValues(
               alpha: 0.20,
             ),
             blurRadius: 14,
-            offset: const Offset(0, 6),
+            offset:
+                const Offset(0, 6),
           ),
         ],
       ),
@@ -604,14 +793,20 @@ class _TransactionHistoryPageState
           Container(
             width: 54,
             height: 54,
-            decoration: BoxDecoration(
-              color: color.withValues(
+            decoration:
+                BoxDecoration(
+              color:
+                  color.withValues(
                 alpha: 0.12,
               ),
               borderRadius:
-                  BorderRadius.circular(17),
-              border: Border.all(
-                color: color.withValues(
+                  BorderRadius.circular(
+                17,
+              ),
+              border:
+                  Border.all(
+                color:
+                    color.withValues(
                   alpha: 0.18,
                 ),
               ),
@@ -639,7 +834,8 @@ class _TransactionHistoryPageState
                   maxLines: 2,
                   overflow:
                       TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight:
@@ -655,8 +851,9 @@ class _TransactionHistoryPageState
                   overflow:
                       TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: pinkAccentColor
-                        .withValues(
+                    color:
+                        pinkAccentColor
+                            .withValues(
                       alpha: 0.72,
                     ),
                     fontSize: 11,
@@ -671,8 +868,9 @@ class _TransactionHistoryPageState
                   Text(
                     date,
                     style: TextStyle(
-                      color: Colors.white
-                          .withValues(
+                      color:
+                          Colors.white
+                              .withValues(
                         alpha: 0.42,
                       ),
                       fontSize: 11,
@@ -716,22 +914,31 @@ class _TransactionHistoryPageState
 
               Text(
                 unit,
-                style: const TextStyle(
-                  color: Colors.white38,
+                style:
+                    const TextStyle(
+                  color:
+                      Colors.white38,
                   fontSize: 10,
                   fontWeight:
                       FontWeight.bold,
-                  letterSpacing: 0.8,
+                  letterSpacing:
+                      0.8,
                 ),
               ),
 
               const SizedBox(height: 8),
 
               Icon(
-                Icons.pets_rounded,
+                _isAchievementTransaction(
+                  type,
+                )
+                    ? Icons
+                        .emoji_events_rounded
+                    : Icons.pets_rounded,
                 size: 14,
-                color: pinkAccentColor
-                    .withValues(
+                color:
+                    pinkAccentColor
+                        .withValues(
                   alpha: 0.55,
                 ),
               ),
@@ -748,33 +955,43 @@ class _TransactionHistoryPageState
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(18),
-      margin: const EdgeInsets.only(
+      padding:
+          const EdgeInsets.all(18),
+      margin:
+          const EdgeInsets.only(
         bottom: 18,
       ),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
+      decoration:
+          BoxDecoration(
+        gradient:
+            const LinearGradient(
           colors: [
             cardColor,
             Color(0xFF281544),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin:
+              Alignment.topLeft,
+          end:
+              Alignment.bottomRight,
         ),
         borderRadius:
             BorderRadius.circular(24),
-        border: Border.all(
-          color: accentColor.withValues(
+        border:
+            Border.all(
+          color:
+              accentColor.withValues(
             alpha: 0.25,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(
+            color:
+                accentColor.withValues(
               alpha: 0.07,
             ),
             blurRadius: 20,
-            offset: const Offset(0, 8),
+            offset:
+                const Offset(0, 8),
           ),
         ],
       ),
@@ -796,10 +1013,13 @@ class _TransactionHistoryPageState
                   CrossAxisAlignment.start,
               children: [
                 Text(
-                  _t('stellaActivity')
-                      .toUpperCase(),
-                  style: const TextStyle(
-                    color: pinkAccentColor,
+                  _t(
+                    'stellaActivity',
+                  ).toUpperCase(),
+                  style:
+                      const TextStyle(
+                    color:
+                        pinkAccentColor,
                     fontSize: 17,
                     fontWeight:
                         FontWeight.bold,
@@ -813,12 +1033,14 @@ class _TransactionHistoryPageState
                   _tWithParams(
                     'latestTransactions',
                     {
-                      'count': transactions.length,
+                      'count':
+                          transactions.length,
                     },
                   ),
                   style: TextStyle(
-                    color: Colors.white
-                        .withValues(
+                    color:
+                        Colors.white
+                            .withValues(
                       alpha: 0.55,
                     ),
                     fontSize: 12,
@@ -840,10 +1062,13 @@ class _TransactionHistoryPageState
                             BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(
+                      width: 6,
+                    ),
                     const Text(
                       'STELLURIINI • SOLANA',
-                      style: TextStyle(
+                      style:
+                          TextStyle(
                         color:
                             goldAccentColor,
                         fontSize: 9,
@@ -877,7 +1102,8 @@ class _TransactionHistoryPageState
     return ListView(
       physics:
           const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
+      padding:
+          const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 80),
 
@@ -888,9 +1114,13 @@ class _TransactionHistoryPageState
         const SizedBox(height: 20),
 
         Text(
-          _t('stellaCheckingHistory'),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
+          _t(
+            'stellaCheckingHistory',
+          ),
+          textAlign:
+              TextAlign.center,
+          style:
+              const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight:
@@ -902,10 +1132,14 @@ class _TransactionHistoryPageState
 
         Text(
           errorMessage ??
-              _t('stellaCheckingHistory'),
-          textAlign: TextAlign.center,
+              _t(
+                'stellaCheckingHistory',
+              ),
+          textAlign:
+              TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+                Colors.white.withValues(
               alpha: 0.55,
             ),
             fontSize: 14,
@@ -916,9 +1150,12 @@ class _TransactionHistoryPageState
         const SizedBox(height: 24),
 
         Center(
-          child: ElevatedButton.icon(
-            onPressed: _loadTransactions,
-            style: ElevatedButton.styleFrom(
+          child:
+              ElevatedButton.icon(
+            onPressed:
+                _loadTransactions,
+            style:
+                ElevatedButton.styleFrom(
               backgroundColor:
                   accentColor,
               foregroundColor:
@@ -941,7 +1178,8 @@ class _TransactionHistoryPageState
             ),
             label: Text(
               _t('tryAgain'),
-              style: const TextStyle(
+              style:
+                  const TextStyle(
                 fontWeight:
                     FontWeight.bold,
               ),
@@ -960,7 +1198,8 @@ class _TransactionHistoryPageState
     return ListView(
       physics:
           const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
+      padding:
+          const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 70),
 
@@ -971,9 +1210,13 @@ class _TransactionHistoryPageState
         const SizedBox(height: 20),
 
         Text(
-          _t('noTransactionsYet'),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
+          _t(
+            'noTransactionsYet',
+          ),
+          textAlign:
+              TextAlign.center,
+          style:
+              const TextStyle(
             color: Colors.white,
             fontSize: 20,
             fontWeight:
@@ -984,10 +1227,14 @@ class _TransactionHistoryPageState
         const SizedBox(height: 9),
 
         Text(
-          _t('rewardsAppearHere'),
-          textAlign: TextAlign.center,
+          _t(
+            'rewardsAppearHere',
+          ),
+          textAlign:
+              TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+                Colors.white.withValues(
               alpha: 0.52,
             ),
             fontSize: 14,
@@ -999,15 +1246,18 @@ class _TransactionHistoryPageState
         Container(
           padding:
               const EdgeInsets.all(18),
-          decoration: BoxDecoration(
+          decoration:
+              BoxDecoration(
             color: cardColor,
             borderRadius:
                 BorderRadius.circular(
               20,
             ),
-            border: Border.all(
-              color: pinkAccentColor
-                  .withValues(
+            border:
+                Border.all(
+              color:
+                  pinkAccentColor
+                      .withValues(
                 alpha: 0.16,
               ),
             ),
@@ -1021,29 +1271,39 @@ class _TransactionHistoryPageState
                 size: 28,
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(
+                height: 10,
+              ),
 
               Text(
-                _t('startMiningWithStella'),
+                _t(
+                  'startMiningWithStella',
+                ),
                 textAlign:
                     TextAlign.center,
                 style:
                     const TextStyle(
-                  color: Colors.white,
+                  color:
+                      Colors.white,
                   fontWeight:
                       FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 5),
+              const SizedBox(
+                height: 5,
+              ),
 
               Text(
-                _t('historyRecorded'),
+                _t(
+                  'historyRecorded',
+                ),
                 textAlign:
                     TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white
-                      .withValues(
+                  color:
+                      Colors.white
+                          .withValues(
                     alpha: 0.48,
                   ),
                   fontSize: 12,
@@ -1092,16 +1352,20 @@ class _TransactionHistoryPageState
         Container(
           padding:
               const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: cardColor.withValues(
+          decoration:
+              BoxDecoration(
+            color:
+                cardColor.withValues(
               alpha: 0.70,
             ),
             borderRadius:
                 BorderRadius.circular(
               20,
             ),
-            border: Border.all(
-              color: accentColor.withValues(
+            border:
+                Border.all(
+              color:
+                  accentColor.withValues(
                 alpha: 0.12,
               ),
             ),
@@ -1119,8 +1383,10 @@ class _TransactionHistoryPageState
 
               const Text(
                 'STELLA • STL',
-                style: TextStyle(
-                  color: accentColor,
+                style:
+                    TextStyle(
+                  color:
+                      accentColor,
                   fontSize: 11,
                   fontWeight:
                       FontWeight.bold,
@@ -1131,12 +1397,15 @@ class _TransactionHistoryPageState
               const SizedBox(height: 5),
 
               Text(
-                _t('everyRewardJourney'),
+                _t(
+                  'everyRewardJourney',
+                ),
                 textAlign:
                     TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white
-                      .withValues(
+                  color:
+                      Colors.white
+                          .withValues(
                     alpha: 0.42,
                   ),
                   fontSize: 11,
@@ -1163,15 +1432,23 @@ class _TransactionHistoryPageState
             const StelluriiniLogo(
               size: 58,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(
+              height: 18,
+            ),
             const CircularProgressIndicator(
               color: accentColor,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
             Text(
-              _t('stellaCheckingHistory'),
-              style: const TextStyle(
-                color: Colors.white60,
+              _t(
+                'stellaCheckingHistory',
+              ),
+              style:
+                  const TextStyle(
+                color:
+                    Colors.white60,
                 fontSize: 12,
               ),
             ),
@@ -1218,11 +1495,13 @@ class _TransactionHistoryPageState
         title: Row(
           children: [
             Text(
-              _t('transactionHistory')
-                  .toUpperCase(),
+              _t(
+                'transactionHistory',
+              ).toUpperCase(),
               style:
                   const TextStyle(
-                color: accentColor,
+                color:
+                    accentColor,
                 fontWeight:
                     FontWeight.bold,
                 letterSpacing: 1.3,
@@ -1234,7 +1513,8 @@ class _TransactionHistoryPageState
 
             const Text(
               '🐾',
-              style: TextStyle(
+              style:
+                  TextStyle(
                 fontSize: 15,
               ),
             ),
@@ -1246,7 +1526,8 @@ class _TransactionHistoryPageState
             onPressed: loading
                 ? null
                 : _loadTransactions,
-            tooltip: _t('refresh'),
+            tooltip:
+                _t('refresh'),
             icon: const Icon(
               Icons.refresh_rounded,
             ),
@@ -1264,7 +1545,8 @@ class _TransactionHistoryPageState
               cardColor,
           onRefresh:
               _loadTransactions,
-          child: _buildBody(),
+          child:
+              _buildBody(),
         ),
       ),
     );
