@@ -8,8 +8,6 @@ import 'package:flutter/services.dart';
 //
 // Stella Referral Community.
 //
-// TÄRKEÄÄ:
-//
 // ACTIVE = käyttäjä louhii parhaillaan.
 //
 // Aktiiviseksi EI lasketa:
@@ -21,23 +19,6 @@ import 'package:flutter/services.dart';
 //
 // Backend callable:
 //   getReferralStatus
-//
-// Odotettu vastaus:
-//
-// {
-//   referralCode: "...",
-//   referralCount: 5,
-//   activeCount: 2,
-//   inactiveCount: 3,
-//   referrals: [
-//     {
-//       uid: "...",
-//       username: "...",
-//       isMining: true,
-//       referralBonus: 12.5
-//     }
-//   ]
-// }
 //
 // ============================================================
 
@@ -101,29 +82,15 @@ class _ReferralsPageState extends State<ReferralsPage> {
   // 🌍 LANGUAGE
   // ==========================================================
 
-  String get _language =>
-      widget.languageCode.toLowerCase();
+  String get _language => widget.languageCode.toLowerCase();
 
-  bool get _isFinnish =>
-      _language.startsWith('fi');
-
-  bool get _isGerman =>
-      _language.startsWith('de');
-
-  bool get _isSpanish =>
-      _language.startsWith('es');
-
-  bool get _isFrench =>
-      _language.startsWith('fr');
-
-  bool get _isChinese =>
-      _language.startsWith('zh');
-
-  bool get _isVietnamese =>
-      _language.startsWith('vi');
-
-  bool get _isJapanese =>
-      _language.startsWith('ja');
+  bool get _isFinnish => _language.startsWith('fi');
+  bool get _isGerman => _language.startsWith('de');
+  bool get _isSpanish => _language.startsWith('es');
+  bool get _isFrench => _language.startsWith('fr');
+  bool get _isChinese => _language.startsWith('zh');
+  bool get _isVietnamese => _language.startsWith('vi');
+  bool get _isJapanese => _language.startsWith('ja');
 
   // ==========================================================
   // 📝 TRANSLATIONS
@@ -246,15 +213,15 @@ class _ReferralsPageState extends State<ReferralsPage> {
   }
 
   String get _referralCodeTitle {
-    if (_isFinnish) return 'Sinun referral-koodisi';
+    if (_isFinnish) return 'Sinun kutsukoodisi';
     if (_isGerman) return 'Dein Empfehlungscode';
-    if (_isSpanish) return 'Tu código de referido';
-    if (_isFrench) return 'Votre code de parrainage';
-    if (_isChinese) return '你的推荐码';
-    if (_isVietnamese) return 'Mã giới thiệu của bạn';
-    if (_isJapanese) return 'あなたの紹介コード';
+    if (_isSpanish) return 'Tu código de invitación';
+    if (_isFrench) return 'Votre code d’invitation';
+    if (_isChinese) return '你的邀请代码';
+    if (_isVietnamese) return 'Mã mời của bạn';
+    if (_isJapanese) return 'あなたの招待コード';
 
-    return 'Your referral code';
+    return 'Your invitation code';
   }
 
   String get _noReferrals {
@@ -326,15 +293,27 @@ class _ReferralsPageState extends State<ReferralsPage> {
   }
 
   String get _copied {
-    if (_isFinnish) return 'Referral-koodi kopioitu';
+    if (_isFinnish) return 'Kutsukoodi kopioitu';
     if (_isGerman) return 'Empfehlungscode kopiert';
-    if (_isSpanish) return 'Código de referido copiado';
-    if (_isFrench) return 'Code de parrainage copié';
-    if (_isChinese) return '推荐码已复制';
-    if (_isVietnamese) return 'Đã sao chép mã giới thiệu';
-    if (_isJapanese) return '紹介コードをコピーしました';
+    if (_isSpanish) return 'Código de invitación copiado';
+    if (_isFrench) return 'Code d’invitation copié';
+    if (_isChinese) return '邀请代码已复制';
+    if (_isVietnamese) return 'Đã sao chép mã mời';
+    if (_isJapanese) return '招待コードをコピーしました';
 
-    return 'Referral code copied';
+    return 'Invitation code copied';
+  }
+
+  String get _copyError {
+    if (_isFinnish) return 'Koodin kopiointi epäonnistui';
+    if (_isGerman) return 'Der Code konnte nicht kopiert werden';
+    if (_isSpanish) return 'No se pudo copiar el código';
+    if (_isFrench) return 'Impossible de copier le code';
+    if (_isChinese) return '无法复制代码';
+    if (_isVietnamese) return 'Không thể sao chép mã';
+    if (_isJapanese) return 'コードをコピーできませんでした';
+
+    return 'Could not copy the code';
   }
 
   String get _invitedUsers {
@@ -351,7 +330,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
 
   String get _loadError {
     if (_isFinnish) {
-      return 'Referral-tietoja ei voitu ladata.';
+      return 'Kutsutietoja ei voitu ladata.';
     }
 
     if (_isGerman) {
@@ -460,8 +439,6 @@ class _ReferralsPageState extends State<ReferralsPage> {
         }
       }
 
-      // Backendin arvot voidaan ottaa vastaan,
-      // mutta lista toimii myös varmistuksena.
       final int calculatedActive =
           loadedReferrals.where(
             (user) => user.isMining,
@@ -567,7 +544,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
   }
 
   // ==========================================================
-  // 📋 COPY REFERRAL CODE
+  // 📋 COPY INVITATION CODE
   // ==========================================================
 
   Future<void> _copyReferralCode() async {
@@ -603,11 +580,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            _isFinnish
-                ? 'Koodin kopiointi epäonnistui'
-                : 'Could not copy the code',
-          ),
+          content: Text(_copyError),
           backgroundColor: cardColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -684,7 +657,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
   }
 
   // ==========================================================
-  // 🔗 REFERRAL CODE CARD
+  // 🔗 INVITATION CODE CARD
   // ==========================================================
 
   Widget _referralCodeCard() {
@@ -796,6 +769,15 @@ class _ReferralsPageState extends State<ReferralsPage> {
   // ==========================================================
   // 👤 REFERRAL USER CARD
   // ==========================================================
+  //
+  // Sama Stella-tyylinen rakenne kuin muissa käyttäjäkortissa:
+  // - pyöreä avatar
+  // - aktiivisuusindikaattori
+  // - nimi
+  // - status-chip
+  // - STL-arvo oikealla
+  //
+  // ==========================================================
 
   Widget _referralUserCard(
     _ReferralUser user,
@@ -814,13 +796,19 @@ class _ReferralsPageState extends State<ReferralsPage> {
             : user.username;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 6,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: statusColor.withValues(alpha: 0.16),
+          color: accentColor.withValues(alpha: 0.14),
         ),
       ),
       child: Row(
@@ -830,42 +818,44 @@ class _ReferralsPageState extends State<ReferralsPage> {
           // ======================================================
 
           Stack(
+            clipBehavior: Clip.none,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 62,
+                height: 62,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      accentColor.withValues(alpha: 0.24),
-                      pinkAccentColor.withValues(alpha: 0.12),
+                      accentColor.withValues(alpha: 0.25),
+                      pinkAccentColor.withValues(alpha: 0.14),
                     ],
                   ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: accentColor.withValues(alpha: 0.22),
+                    color: accentColor.withValues(alpha: 0.24),
+                    width: 1.2,
                   ),
                 ),
                 child: const Icon(
                   Icons.person_rounded,
                   color: pinkAccentColor,
-                  size: 27,
+                  size: 31,
                 ),
               ),
               Positioned(
-                right: 1,
-                bottom: 1,
+                right: -1,
+                bottom: -1,
                 child: Container(
-                  width: 15,
-                  height: 15,
+                  width: 19,
+                  height: 19,
                   decoration: BoxDecoration(
                     color: statusColor,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: cardColor,
-                      width: 2.5,
+                      width: 3,
                     ),
                   ),
                 ),
@@ -873,7 +863,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
             ],
           ),
 
-          const SizedBox(width: 13),
+          const SizedBox(width: 14),
 
           // ======================================================
           // USER INFO
@@ -893,11 +883,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.10),
@@ -907,24 +897,22 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 6,
-                        height: 6,
+                        width: 7,
+                        height: 7,
                         decoration: BoxDecoration(
                           color: statusColor,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          statusText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        statusText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -934,10 +922,10 @@ class _ReferralsPageState extends State<ReferralsPage> {
             ),
           ),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
 
           // ======================================================
-          // BONUS
+          // REFERRAL REWARD
           // ======================================================
 
           Column(
@@ -947,11 +935,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
                 user.referralBonus.toStringAsFixed(2),
                 style: const TextStyle(
                   color: goldAccentColor,
-                  fontSize: 15,
+                  fontSize: 17,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 'STL',
                 style: TextStyle(
@@ -1020,11 +1008,9 @@ class _ReferralsPageState extends State<ReferralsPage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        4,
-        16,
-        20,
+      padding: const EdgeInsets.only(
+        top: 4,
+        bottom: 20,
       ),
       child: Column(
         children: _referrals
@@ -1313,7 +1299,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
                       const SizedBox(height: 18),
 
                       // ==================================================
-                      // REFERRAL CODE
+                      // INVITATION CODE
                       // ==================================================
 
                       _referralCodeCard(),
