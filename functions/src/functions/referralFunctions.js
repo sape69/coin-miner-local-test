@@ -62,6 +62,7 @@ const {
 
 const {
   normalizeReferralCode,
+  isValidReferralCode,
   getReferralData,
 } = require("../utils/referralUtils");
 
@@ -782,13 +783,23 @@ const applyReferralCode =
           );
         }
 
+        // ------------------------------------------------------
+        // Referral-koodin täytyy vastata referralConfig.js:n
+        // määrittelemää rakennetta:
+        //
+        // - täsmälleen 8 merkkiä
+        // - vain sallitut merkit
+        //
+        // ------------------------------------------------------
+
         if (
-          code.length <
-          4
+          !isValidReferralCode(
+            code,
+          )
         ) {
           throw new HttpsError(
             "invalid-argument",
-            "🐱 Referral-koodi on liian lyhyt.",
+            "🐱 Referral-koodi ei ole kelvollinen.",
           );
         }
 
@@ -957,6 +968,26 @@ const applyReferralCode =
           throw new HttpsError(
             "invalid-argument",
             "🐱 Et voi käyttää omaa referral-koodiasi.",
+          );
+        }
+
+        if (
+          error?.message ===
+          "REFERRAL_REFERRER_ALREADY_SET"
+        ) {
+          throw new HttpsError(
+            "already-exists",
+            "🐱 Referral-koodi on jo liitetty tähän käyttäjään.",
+          );
+        }
+
+        if (
+          error?.message ===
+          "REFERRAL_INVALID_CODE"
+        ) {
+          throw new HttpsError(
+            "invalid-argument",
+            "🐱 Referral-koodi ei ole kelvollinen.",
           );
         }
 
