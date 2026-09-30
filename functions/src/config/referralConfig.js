@@ -26,12 +26,21 @@
 // 🎁 DEFAULT REFERRAL BONUS
 // ============================================================
 //
-// Kutsuja saa lähtökohtaisesti 5 % kutsutun käyttäjän
+// Kutsuja saa lähtökohtaisesti 24 % kutsutun käyttäjän
 // hyväksytystä louhintatuotosta.
+//
+// Nykyisellä Day 7+ mining-teholla:
+//
+// 3.5 HR × 0.10 STL × 24 h
+// = 8.4 STL / päivä
+//
+// 8.4 × 24 %
+// = 2.016 STL / päivä
 //
 // ============================================================
 
-const DEFAULT_REFERRAL_BONUS_PERCENT = 5;
+const DEFAULT_REFERRAL_BONUS_PERCENT =
+  24;
 
 
 // ============================================================
@@ -41,19 +50,19 @@ const DEFAULT_REFERRAL_BONUS_PERCENT = 5;
 // Referral-bonus porrastuu järjestelmän käyttäjämäärän mukaan.
 //
 // 0 - 999 käyttäjää
-//     → 5 %
+//     → 24 %
 //
 // 1 000 - 4 999 käyttäjää
-//     → 4 %
+//     → 20 %
 //
 // 5 000 - 9 999 käyttäjää
-//     → 3 %
+//     → 15 %
 //
 // 10 000 - 24 999 käyttäjää
-//     → 2 %
+//     → 10 %
 //
 // 25 000+ käyttäjää
-//     → 1 %
+//     → 5 %
 //
 // Lista pidetään suurimmasta milestone-arvosta
 // pienimpään, jotta oikea taso löytyy heti.
@@ -63,19 +72,19 @@ const DEFAULT_REFERRAL_BONUS_PERCENT = 5;
 const REFERRAL_MILESTONES = [
   {
     minUsers: 25000,
-    bonusPercent: 1,
+    bonusPercent: 5,
   },
   {
     minUsers: 10000,
-    bonusPercent: 2,
+    bonusPercent: 10,
   },
   {
     minUsers: 5000,
-    bonusPercent: 3,
+    bonusPercent: 15,
   },
   {
     minUsers: 1000,
-    bonusPercent: 4,
+    bonusPercent: 20,
   },
 ];
 
@@ -88,17 +97,10 @@ const REFERRAL_MILESTONES = [
 //
 // Kutsujalla ei ole ylärajaa kutsuttujen käyttäjien määrälle.
 //
-// Esimerkiksi:
-//
-// Stella A
-//   ├── Käyttäjä B
-//   ├── Käyttäjä C
-//   ├── Käyttäjä D
-//   └── ...
-//
 // ============================================================
 
-const ONE_REFERRER_PER_USER = true;
+const ONE_REFERRER_PER_USER =
+  true;
 
 
 // ============================================================
@@ -110,7 +112,8 @@ const ONE_REFERRER_PER_USER = true;
 //
 // ============================================================
 
-const ALLOW_REFERRER_CHANGE = false;
+const ALLOW_REFERRER_CHANGE =
+  false;
 
 
 // ============================================================
@@ -121,20 +124,16 @@ const ALLOW_REFERRER_CHANGE = false;
 //
 // ============================================================
 
-const ALLOW_SELF_REFERRAL = false;
+const ALLOW_SELF_REFERRAL =
+  false;
 
 
 // ============================================================
 // 🔗 REFERRAL CODE
 // ============================================================
-//
-// Referral-koodi luodaan käyttäjälle kerran.
-//
-// Koodi on 8 merkkiä pitkä.
-//
-// ============================================================
 
-const REFERRAL_CODE_LENGTH = 8;
+const REFERRAL_CODE_LENGTH =
+  8;
 
 
 // ============================================================
@@ -156,13 +155,9 @@ const REFERRAL_CODE_CHARACTERS =
 // ============================================================
 // 🔁 MAX CODE GENERATION ATTEMPTS
 // ============================================================
-//
-// Kuinka monta kertaa järjestelmä yrittää luoda uuden
-// referral-koodin, jos satunnainen koodi on jo käytössä.
-//
-// ============================================================
 
-const MAX_CODE_GENERATION_ATTEMPTS = 20;
+const MAX_CODE_GENERATION_ATTEMPTS =
+  20;
 
 
 // ============================================================
@@ -171,14 +166,10 @@ const MAX_CODE_GENERATION_ATTEMPTS = 20;
 //
 // 0 tarkoittaa, ettei erillistä STL-määrärajaa aseteta.
 //
-// Varsinaisen referral-bonuksen täytyy kuitenkin olla
-// positiivinen, jotta referral-tapahtuma voidaan kirjata.
-//
-// Tämä EI ole käyttäjän STL-nostoraja.
-//
 // ============================================================
 
-const MIN_REFERRAL_BONUS = 0;
+const MIN_REFERRAL_BONUS =
+  0;
 
 
 // ============================================================
@@ -191,7 +182,8 @@ const MIN_REFERRAL_BONUS = 0;
 //
 // ============================================================
 
-const REFERRAL_BONUS_SOURCE = "mining";
+const REFERRAL_BONUS_SOURCE =
+  "mining";
 
 
 // ============================================================
@@ -209,22 +201,12 @@ const REFERRAL_BONUS_SOURCE = "mining";
 //
 // ============================================================
 
-const REFERRAL_CALCULATION_SERVER_SIDE = true;
+const REFERRAL_CALCULATION_SERVER_SIDE =
+  true;
 
 
 // ============================================================
 // 📜 REFERRAL HISTORY
-// ============================================================
-//
-// Referral-tapahtumien historialle määritellään oma
-// kokoelman nimi.
-//
-// Huom:
-// Nykyinen referralFunctions.js käyttää käyttäjän
-// history-kokoelmaa referral_reward-tapahtumien tallentamiseen.
-// Tämä vakio pidetään mukana tulevaa erillistä referral-historiaa
-// varten eikä sitä käytetä vielä automaattisesti.
-//
 // ============================================================
 
 const REFERRAL_HISTORY_COLLECTION =
@@ -233,19 +215,6 @@ const REFERRAL_HISTORY_COLLECTION =
 
 // ============================================================
 // 👤 USER REFERRAL DATA
-// ============================================================
-//
-// Käyttäjän referral-tiedot voidaan ryhmitellä tämän kentän
-// alle tulevissa rakennepäivityksissä.
-//
-// Nykyinen referralFunctions.js käyttää kuitenkin suoraan
-// kenttiä kuten:
-//
-// - referrerUid
-// - referralCode
-// - referralCodeUsed
-// - referralJoinedAt
-//
 // ============================================================
 
 const REFERRAL_DATA_FIELD =
@@ -327,13 +296,11 @@ function getReferralBonusPercent(
 // 🔄 GET REFERRAL BONUS RATE
 // ============================================================
 //
-// Muuttaa prosenttiluvun desimaalimuotoon.
-//
-// 5 % = 0.05
-// 4 % = 0.04
-// 3 % = 0.03
-// 2 % = 0.02
-// 1 % = 0.01
+// 24 % = 0.24
+// 20 % = 0.20
+// 15 % = 0.15
+// 10 % = 0.10
+// 5 %  = 0.05
 //
 // ============================================================
 
@@ -360,10 +327,13 @@ function getReferralBonusRate(
 //
 // Esimerkki:
 //
-// miningAmount = 100 STL
-// referralPercent = 5
+// Day 7+:
 //
-// bonus = 5 STL
+// miningAmount = 8.4 STL
+// referralPercent = 24
+//
+// bonus = 8.4 × 0.24
+//       = 2.016 STL
 //
 // Tämä funktio EI kirjoita Firestoreen.
 //
