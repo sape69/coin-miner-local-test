@@ -72,7 +72,7 @@ function referralsCollection() {
 
 
 // ============================================================
-// 🔢 NUMBER HELPERS
+// 🧮 NUMBER HELPERS
 // ============================================================
 
 function safeNumber(
@@ -102,13 +102,14 @@ function positiveNumber(value) {
 //
 // referralCodes/{CODE}
 //
-// Yhdistää referral-koodin käyttäjän UID:hen.
+// Dokumentti yhdistää referral-koodin käyttäjän UID:hen.
 //
 // ============================================================
 
 function getReferralCodeRef(referralCode) {
-  const code =
-    normalizeReferralCode(referralCode);
+  const code = normalizeReferralCode(
+    referralCode,
+  );
 
   if (!isValidReferralCode(code)) {
     return null;
@@ -119,13 +120,13 @@ function getReferralCodeRef(referralCode) {
 
 
 // ============================================================
-// 🤝 REFERRAL RELATIONSHIP DOCUMENT
+// 👤 REFERRAL RELATIONSHIP DOCUMENT
 // ============================================================
 //
 // referrals/{referredUid}
 //
-// Yksi käyttäjä voi kuulua vain yhteen
-// referral-suhteeseen.
+// Yksi kutsuttu käyttäjä voi kuulua vain yhteen
+// Referral-suhteeseen.
 //
 // ============================================================
 
@@ -146,28 +147,29 @@ function getReferralRelationshipRef(
 
 
 // ============================================================
-// 📊 TOTAL USERS
+// 📊 USER COUNT
 // ============================================================
 //
 // Referral-milestonet perustuvat käyttäjämäärään.
 //
-// Ensisijaisesti käytetään:
+// Ensisijaisesti käytetään stats/global.totalUsers-arvoa.
 //
-// stats/global.totalUsers
+// Jos sitä ei ole saatavilla, lasketaan users-kokoelman
+// dokumentit.
 //
-// Jos arvoa ei ole saatavilla, users-kokoelma
-// lasketaan fallbackina.
+// Huom:
+//
+// Tätä fallbackia käytetään vain tilanteessa, jossa
+// keskitetty totalUsers-arvo puuttuu.
 //
 // ============================================================
 
 async function getTotalUsers(
   transaction = null,
 ) {
-  const statsRef =
-    db.collection("stats").doc("global");
-
-  const usersCollection =
-    db.collection("users");
+  const statsRef = db
+    .collection("stats")
+    .doc("global");
 
   // ----------------------------------------------------------
   // TRANSACTION READ
@@ -191,9 +193,19 @@ async function getTotalUsers(
       }
     }
 
+    // --------------------------------------------------------
+    // FALLBACK
+    // --------------------------------------------------------
+    //
+    // Tämä pidetään yhteensopivuuden vuoksi.
+    // Varsinaisessa tuotannossa stats/global.totalUsers
+    // pitäisi olla aina ylläpidettynä.
+    //
+    // --------------------------------------------------------
+
     const usersSnapshot =
       await transaction.get(
-        usersCollection,
+        db.collection("users"),
       );
 
     return usersSnapshot.size;
@@ -220,8 +232,14 @@ async function getTotalUsers(
     }
   }
 
+  // ----------------------------------------------------------
+  // FALLBACK
+  // ----------------------------------------------------------
+
   const usersSnapshot =
-    await usersCollection.get();
+    await db
+      .collection("users")
+      .get();
 
   return usersSnapshot.size;
 }
@@ -235,7 +253,9 @@ async function getCurrentReferralBonusPercent(
   transaction = null,
 ) {
   const totalUsers =
-    await getTotalUsers(transaction);
+    await getTotalUsers(
+      transaction,
+    );
 
   return {
     totalUsers,
@@ -270,15 +290,18 @@ async function findReferralCode(
   }
 
   const ref =
-    getReferralCodeRef(normalized);
+    getReferralCodeRef(
+      normalized,
+    );
 
   if (!ref) {
     return null;
   }
 
-  const snapshot = transaction
-    ? await transaction.get(ref)
-    : await ref.get();
+  const snapshot =
+    transaction
+      ? await transaction.get(ref)
+      : await ref.get();
 
   if (!snapshot.exists) {
     return null;
@@ -298,12 +321,8 @@ async function findReferralCode(
 
   return {
     ref,
-
-    code:
-      normalized,
-
+    code: normalized,
     uid,
-
     data,
   };
 }
@@ -315,7 +334,7 @@ async function findReferralCode(
 //
 // Luo käyttäjälle uniikin referral-koodin.
 //
-// Uniikkius varmistetaan transactionin avulla.
+// Uniikkius varmistetaan Firestore-transaktion avulla.
 //
 // ============================================================
 
@@ -350,14 +369,18 @@ async function createReferralCode(
       generateReferralCode();
 
     const codeRef =
-      getReferralCodeRef(code);
+      getReferralCodeRef(
+        code,
+      );
 
     if (!codeRef) {
       continue;
     }
 
     const snapshot =
-      await transaction.get(codeRef);
+      await transaction.get(
+        codeRef,
+      );
 
     if (snapshot.exists) {
       continue;
@@ -378,9 +401,7 @@ async function createReferralCode(
 
     return {
       code,
-
-      ref:
-        codeRef,
+      ref: codeRef,
     };
   }
 
@@ -391,13 +412,14 @@ async function createReferralCode(
 
 
 // ============================================================
-// 👤 ENSURE USER REFERRAL CODE
+// 🔗 ENSURE USER REFERRAL CODE
 // ============================================================
 //
-// Varmistaa, että olemassa olevalla käyttäjällä
-// on validi referral-koodi.
+// Varmistaa, että olemassa oleva käyttäjä saa referral-koodin.
 //
-// Olemassa olevaa validia koodia ei vaihdeta.
+// Jos käyttäjällä on jo validi koodi, sitä ei vaihdeta.
+//
+// Jos käyttäjää ei ole olemassa, toimintoa ei suoriteta.
 //
 // ============================================================
 
@@ -424,14 +446,14 @@ async function ensureReferralCode(
     uid.trim();
 
   const userRef =
-    getUserRef(safeUid);
-
-  // ----------------------------------------------------------
-  // READ
-  // ----------------------------------------------------------
+    getUserRef(
+      safeUid,
+    );
 
   const userSnapshot =
-    await transaction.get(userRef);
+    await transaction.get(
+      userRef,
+    );
 
   if (!userSnapshot.exists) {
     throw new Error(
@@ -443,15 +465,15 @@ async function ensureReferralCode(
     userSnapshot.data() || {};
 
   const existingCode =
-    getReferralCode(userData);
-
-  // ----------------------------------------------------------
-  // EXISTING CODE
-  // ----------------------------------------------------------
+    getReferralCode(
+      userData,
+    );
 
   if (
     existingCode &&
-    isValidReferralCode(existingCode)
+    isValidReferralCode(
+      existingCode,
+    )
   ) {
     const existingCodeRef =
       getReferralCodeRef(
@@ -468,10 +490,6 @@ async function ensureReferralCode(
       await transaction.get(
         existingCodeRef,
       );
-
-    // --------------------------------------------------------
-    // REPAIR MISSING CODE DOCUMENT
-    // --------------------------------------------------------
 
     if (!codeSnapshot.exists) {
       transaction.create(
@@ -530,10 +548,6 @@ async function ensureReferralCode(
     };
   }
 
-  // ----------------------------------------------------------
-  // CREATE NEW CODE
-  // ----------------------------------------------------------
-
   const created =
     await createReferralCode(
       safeUid,
@@ -550,8 +564,7 @@ async function ensureReferralCode(
         FieldValue.serverTimestamp(),
     },
     {
-      merge:
-        true,
+      merge: true,
     },
   );
 
@@ -576,7 +589,11 @@ async function ensureReferralCode(
 //
 // Liittää käyttäjän referral-koodin omistajaan.
 //
-// KAIKKI TRANSACTION-READIT tehdään ennen write-operaatioita.
+// TÄRKEÄÄ:
+//
+// Kaikki transaction-readit tehdään ennen write-operaatioita.
+//
+// Referral-suhdetta ei voi vaihtaa myöhemmin.
 //
 // ============================================================
 
@@ -618,7 +635,9 @@ async function createReferralRelationship(
   }
 
   const userRef =
-    getUserRef(safeUid);
+    getUserRef(
+      safeUid,
+    );
 
   const relationshipRef =
     getReferralRelationshipRef(
@@ -632,21 +651,19 @@ async function createReferralRelationship(
   }
 
   // ----------------------------------------------------------
-  // READ 1: REFERRED USER
+  // READS
   // ----------------------------------------------------------
 
   const userSnapshot =
-    await transaction.get(userRef);
+    await transaction.get(
+      userRef,
+    );
 
   if (!userSnapshot.exists) {
     throw new Error(
       "REFERRAL_USER_NOT_FOUND",
     );
   }
-
-  // ----------------------------------------------------------
-  // READ 2: EXISTING RELATIONSHIP
-  // ----------------------------------------------------------
 
   const relationshipSnapshot =
     await transaction.get(
@@ -664,6 +681,39 @@ async function createReferralRelationship(
     const existing =
       relationshipSnapshot.data() || {};
 
+    const existingReferrerUid =
+      typeof existing.referrerUid === "string"
+        ? existing.referrerUid.trim()
+        : "";
+
+    const existingReferralCode =
+      typeof existing.referralCode === "string"
+        ? normalizeReferralCode(
+            existing.referralCode,
+          )
+        : "";
+
+    // --------------------------------------------------------
+    // Varmistetaan, ettei olemassa oleva suhde ole ristiriidassa
+    // käyttäjän oman referral-datan kanssa.
+    // --------------------------------------------------------
+
+    const userReferrerUid =
+      getReferrerUid(
+        userData,
+      );
+
+    if (
+      userReferrerUid &&
+      existingReferrerUid &&
+      userReferrerUid !==
+        existingReferrerUid
+    ) {
+      throw new Error(
+        "REFERRAL_RELATIONSHIP_MISMATCH",
+      );
+    }
+
     return {
       created:
         false,
@@ -672,23 +722,15 @@ async function createReferralRelationship(
         true,
 
       referrerUid:
-        typeof existing.referrerUid ===
-        "string"
-          ? existing.referrerUid.trim()
-          : "",
+        existingReferrerUid,
 
       referralCode:
-        typeof existing.referralCode ===
-        "string"
-          ? normalizeReferralCode(
-              existing.referralCode,
-            )
-          : "",
+        existingReferralCode,
     };
   }
 
   // ----------------------------------------------------------
-  // READ 3: REFERRAL CODE
+  // FIND REFERRER
   // ----------------------------------------------------------
 
   const referrer =
@@ -704,11 +746,13 @@ async function createReferralRelationship(
   }
 
   // ----------------------------------------------------------
-  // READ 4: REFERRER USER
+  // REFERRER USER MUST EXIST
   // ----------------------------------------------------------
 
   const referrerRef =
-    getUserRef(referrer.uid);
+    getUserRef(
+      referrer.uid,
+    );
 
   const referrerSnapshot =
     await transaction.get(
@@ -722,7 +766,7 @@ async function createReferralRelationship(
   }
 
   // ----------------------------------------------------------
-  // VALIDATE RELATIONSHIP
+  // SELF-REFERRAL / EXISTING REFERRER VALIDATION
   // ----------------------------------------------------------
 
   const validation =
@@ -738,6 +782,10 @@ async function createReferralRelationship(
     );
   }
 
+  // ----------------------------------------------------------
+  // BUILD RELATIONSHIP
+  // ----------------------------------------------------------
+
   const relationship =
     buildReferralRelationship(
       referrer.uid,
@@ -748,7 +796,7 @@ async function createReferralRelationship(
     FieldValue.serverTimestamp();
 
   // ----------------------------------------------------------
-  // WRITE 1: REFERRED USER
+  // USER
   // ----------------------------------------------------------
 
   transaction.set(
@@ -767,13 +815,12 @@ async function createReferralRelationship(
         now,
     },
     {
-      merge:
-        true,
+      merge: true,
     },
   );
 
   // ----------------------------------------------------------
-  // WRITE 2: RELATIONSHIP
+  // RELATIONSHIP
   // ----------------------------------------------------------
 
   transaction.create(
@@ -794,7 +841,7 @@ async function createReferralRelationship(
   );
 
   // ----------------------------------------------------------
-  // WRITE 3: REFERRER COUNT
+  // REFERRER COUNT
   // ----------------------------------------------------------
 
   transaction.set(
@@ -807,8 +854,7 @@ async function createReferralRelationship(
         now,
     },
     {
-      merge:
-        true,
+      merge: true,
     },
   );
 
@@ -845,7 +891,9 @@ async function calculateReferralReward(
   transaction = null,
 ) {
   const amount =
-    positiveNumber(miningAmount);
+    positiveNumber(
+      miningAmount,
+    );
 
   if (amount <= 0) {
     return {
@@ -868,20 +916,11 @@ async function calculateReferralReward(
       transaction,
     );
 
-  const calculatedBonus =
+  const bonus =
     calculateReferralBonus(
       amount,
       rate.totalUsers,
     );
-
-  const bonus =
-    isValidReferralBonus(
-      calculatedBonus,
-    )
-      ? positiveNumber(
-          calculatedBonus,
-        )
-      : 0;
 
   return {
     miningAmount:
@@ -894,13 +933,17 @@ async function calculateReferralReward(
       rate.bonusPercent,
 
     bonus:
-      bonus,
+      isValidReferralBonus(
+        bonus,
+      )
+        ? bonus
+        : 0,
   };
 }
 
 
 // ============================================================
-// 🛡️ CREATE REFERRAL BONUS ID
+// 🛡️ REFERRAL BONUS ID
 // ============================================================
 //
 // Jokainen hyväksytty mining-cycle saa yksilöllisen
@@ -956,20 +999,15 @@ async function referralBonusAlreadyProcessed(
 //
 // Maksaa referral-bonuksen kutsujalle.
 //
-// TRANSACTION:
+// Kaikki tapahtumat tehdään saman transactionin sisällä:
 //
-// READS:
-// 1. idempotency document
-// 2. referred user
-// 3. referrer user
-// 4. stats/global / users fallback
-//
-// WRITES:
-// 1. referrer balance
+// 1. referrer miningBalance
 // 2. referrer referralTotalEarned
-// 3. referral history
-// 4. global referral history
-// 5. idempotency document
+// 3. user history
+// 4. referralHistory
+// 5. idempotency-document
+//
+// Client ei voi määrittää bonusmäärää.
 //
 // ============================================================
 
@@ -1022,27 +1060,16 @@ async function applyReferralMiningReward(
   }
 
   // ----------------------------------------------------------
-  // REFERENCES
+  // READS
   // ----------------------------------------------------------
 
-  const processedRef =
-    referralsCollection().doc(
-      `_bonus_${bonusId}`,
+  const alreadyProcessed =
+    await referralBonusAlreadyProcessed(
+      bonusId,
+      transaction,
     );
 
-  const referredUserRef =
-    getUserRef(safeUid);
-
-  // ----------------------------------------------------------
-  // READ 1: IDEMPOTENCY
-  // ----------------------------------------------------------
-
-  const processedSnapshot =
-    await transaction.get(
-      processedRef,
-    );
-
-  if (processedSnapshot.exists) {
+  if (alreadyProcessed) {
     return {
       applied:
         false,
@@ -1058,9 +1085,10 @@ async function applyReferralMiningReward(
     };
   }
 
-  // ----------------------------------------------------------
-  // READ 2: REFERRED USER
-  // ----------------------------------------------------------
+  const referredUserRef =
+    getUserRef(
+      safeUid,
+    );
 
   const referredSnapshot =
     await transaction.get(
@@ -1114,12 +1142,10 @@ async function applyReferralMiningReward(
     };
   }
 
-  // ----------------------------------------------------------
-  // READ 3: REFERRER
-  // ----------------------------------------------------------
-
   const referrerRef =
-    getUserRef(referrerUid);
+    getUserRef(
+      referrerUid,
+    );
 
   const referrerSnapshot =
     await transaction.get(
@@ -1140,15 +1166,7 @@ async function applyReferralMiningReward(
   }
 
   // ----------------------------------------------------------
-  // READ 4+: BONUS RATE DATA
-  // ----------------------------------------------------------
-  //
-  // calculateReferralReward() käyttää samaa transactionia.
-  // Näin stats/global tai users fallback luetaan osana
-  // samaa transactionia.
-  //
-  // Kaikki tämän funktion transaction-readit tapahtuvat
-  // ennen ensimmäistä transaction.write-operaatiota.
+  // CALCULATE BACKEND BONUS
   // ----------------------------------------------------------
 
   const reward =
@@ -1171,10 +1189,6 @@ async function applyReferralMiningReward(
       ...reward,
     };
   }
-
-  // ----------------------------------------------------------
-  // CURRENT REFERRER DATA
-  // ----------------------------------------------------------
 
   const referrerData =
     referrerSnapshot.data() || {};
@@ -1207,7 +1221,7 @@ async function applyReferralMiningReward(
     FieldValue.serverTimestamp();
 
   // ----------------------------------------------------------
-  // WRITE 1: REFERRER BALANCE
+  // 💰 REFERRER BALANCE
   // ----------------------------------------------------------
 
   transaction.set(
@@ -1223,13 +1237,12 @@ async function applyReferralMiningReward(
         now,
     },
     {
-      merge:
-        true,
+      merge: true,
     },
   );
 
   // ----------------------------------------------------------
-  // WRITE 2: USER HISTORY
+  // 📜 USER HISTORY
   // ----------------------------------------------------------
 
   const historyRef =
@@ -1285,7 +1298,7 @@ async function applyReferralMiningReward(
   );
 
   // ----------------------------------------------------------
-  // WRITE 3: GLOBAL REFERRAL HISTORY
+  // 📜 GLOBAL REFERRAL HISTORY
   // ----------------------------------------------------------
 
   const referralHistoryRef =
@@ -1334,8 +1347,13 @@ async function applyReferralMiningReward(
   );
 
   // ----------------------------------------------------------
-  // WRITE 4: IDEMPOTENCY
+  // 🛡️ IDEMPOTENCY
   // ----------------------------------------------------------
+
+  const processedRef =
+    referralsCollection().doc(
+      `_bonus_${bonusId}`,
+    );
 
   transaction.create(
     processedRef,
@@ -1427,11 +1445,15 @@ async function getReferralSummary(
   }
 
   const userRef =
-    getUserRef(safeUid);
+    getUserRef(
+      safeUid,
+    );
 
   const snapshot =
     transaction
-      ? await transaction.get(userRef)
+      ? await transaction.get(
+          userRef,
+        )
       : await userRef.get();
 
   if (!snapshot.exists) {
@@ -1463,7 +1485,9 @@ async function getReferralSummary(
     snapshot.data() || {};
 
   const referral =
-    getReferralData(data);
+    getReferralData(
+      data,
+    );
 
   return {
     exists:
@@ -1482,7 +1506,9 @@ async function getReferralSummary(
       referral.referralJoinedAt,
 
     referralCount:
-      getReferralCount(data),
+      getReferralCount(
+        data,
+      ),
 
     referralTotalEarned:
       Math.max(
