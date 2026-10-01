@@ -1,4 +1,4 @@
-name: Build and Test Stelluriini APK
+name: Build and Test Stelluriini Release
 
 on:
   workflow_dispatch:
@@ -6,17 +6,13 @@ on:
     branches:
       - main
 
-# ==========================================================
-# GITHUB ACTIONS PERMISSIONS
-# ==========================================================
-
 permissions:
   contents: read
   actions: read
 
 jobs:
   build-and-test:
-    name: Analyze, Test and Build APK
+    name: Analyze, Test and Build Release
     runs-on: ubuntu-latest
 
     env:
@@ -134,18 +130,6 @@ jobs:
       # ==========================================================
       # 9. DOWNLOAD STELLURIINI RELEASE KEYSTORE
       # ==========================================================
-      #
-      # The release keystore is created by:
-      #
-      # .github/workflows/create-release-keystore.yml
-      #
-      # We download the latest successful keystore workflow
-      # artifact instead of generating a new signing key.
-      #
-      # IMPORTANT:
-      # Never generate a new release key for every APK build.
-      #
-      # ==========================================================
 
       - name: Download release keystore
         env:
@@ -254,16 +238,16 @@ jobs:
           echo "Release keystore verification PASSED."
 
       # ==========================================================
-      # 14. BUILD RELEASE APK
+      # 14. BUILD RELEASE APP BUNDLE
       # ==========================================================
 
-      - name: Build release APK
+      - name: Build release App Bundle
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
           STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
         run: |
           echo "=================================================="
-          echo "BUILDING STELLURIINI RELEASE APK"
+          echo "BUILDING STELLURIINI RELEASE APP BUNDLE"
           echo "=================================================="
 
           if [ -z "$STELLURIINI_KEYSTORE_PASSWORD" ]; then
@@ -276,10 +260,42 @@ jobs:
             exit 1
           fi
 
+          flutter build appbundle --release
+
+      # ==========================================================
+      # 15. VERIFY APP BUNDLE
+      # ==========================================================
+
+      - name: Verify App Bundle
+        run: |
+          AAB="build/app/outputs/bundle/release/app-release.aab"
+
+          if [ ! -f "$AAB" ]; then
+            echo "ERROR: App Bundle was not created."
+            exit 1
+          fi
+
+          echo ""
+          echo "App Bundle successfully created:"
+          ls -lh "$AAB"
+
+      # ==========================================================
+      # 16. BUILD RELEASE APK
+      # ==========================================================
+
+      - name: Build release APK
+        env:
+          STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
+          STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
+        run: |
+          echo "=================================================="
+          echo "BUILDING STELLURIINI RELEASE APK"
+          echo "=================================================="
+
           flutter build apk --release
 
       # ==========================================================
-      # 15. VERIFY APK
+      # 17. VERIFY APK
       # ==========================================================
 
       - name: Verify APK
@@ -296,34 +312,40 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 16. UPLOAD APK
+      # 18. UPLOAD RELEASE FILES
       # ==========================================================
 
-      - name: Upload APK
+      - name: Upload release files
         uses: actions/upload-artifact@v4
         with:
-          name: stelluriini-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: stelluriini-release
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
       # ==========================================================
-      # 17. BUILD SUMMARY
+      # 19. BUILD SUMMARY
       # ==========================================================
 
       - name: Build summary
         run: |
           echo ""
           echo "=================================================="
-          echo "🐱 STELLURIINI BUILD SUCCESSFUL"
+          echo "🐱 STELLURIINI RELEASE BUILD SUCCESSFUL"
           echo "=================================================="
           echo ""
           echo "Flutter analyze:     PASSED"
           echo "Flutter tests:       PASSED / SKIPPED"
           echo "Release keystore:    VERIFIED"
           echo "Release signing:     ENABLED"
+          echo "App Bundle:          PASSED"
           echo "APK build:           PASSED"
           echo ""
-          echo "APK:"
+          echo "Google Play Bundle:"
+          echo "build/app/outputs/bundle/release/app-release.aab"
+          echo ""
+          echo "Test APK:"
           echo "build/app/outputs/flutter-apk/app-release.apk"
           echo ""
           echo "=================================================="
