@@ -79,6 +79,31 @@ const {
 
 
 // ============================================================
+// 👤 USER PROFILE
+// ============================================================
+//
+// Stella User Profile.
+//
+// Flutter käyttää tätä uuden Firebase Auth -käyttäjän
+// Firestore-profiilin alustamiseen.
+//
+// TÄRKEÄÄ:
+//
+// Flutter EI kirjoita users/{uid}-dokumenttia suoraan.
+//
+// ensureUserProfile käyttää Firebase Admin SDK:ta
+// Cloud Functions -palvelimella.
+//
+// ============================================================
+
+const {
+  ensureUserProfile,
+} = require(
+  "./src/functions/userFunctions",
+);
+
+
+// ============================================================
 // 🔗 REFERRAL
 // ============================================================
 //
@@ -94,7 +119,6 @@ const {
 // applyReferralCode
 // getReferredUsers
 // getReferralDashboard
-// validateReferralCode
 //
 // processReferralMiningReward
 // ei ole suoraan clientin callable,
@@ -182,10 +206,27 @@ exports.getAchievementsCompleted =
 
 
 // ============================================================
+// 👤 USER PROFILE EXPORT
+// ============================================================
+//
+// Flutter voi kutsua:
+//
+// FirebaseFunctions
+//   .httpsCallable('ensureUserProfile')
+//
+// Käyttäjäprofiili luodaan palvelinpuolella Admin SDK:lla.
+//
+// ============================================================
+
+exports.ensureUserProfile =
+  ensureUserProfile;
+
+
+// ============================================================
 // 🔗 REFERRAL EXPORTS
 // ============================================================
 //
-// Nämä ovat nyt Firebase Cloud Functions -exportteja.
+// Nämä ovat Firebase Cloud Functions -exportteja.
 //
 // Flutter voi kutsua:
 //
@@ -194,6 +235,9 @@ exports.getAchievementsCompleted =
 //
 // FirebaseFunctions
 //   .httpsCallable('validateReferralCode')
+//
+// FirebaseFunctions
+//   .httpsCallable('applyReferralCode')
 //
 // ============================================================
 
