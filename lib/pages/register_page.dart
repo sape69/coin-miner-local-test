@@ -23,6 +23,7 @@ import '../widgets/cat_avatar.dart';
 //    -> tili luodaan normaalisti.
 // 5. Jos koodi on oikea:
 //    -> Firebase Auth luo tilin
+//    -> backend-profiilin valmistumista odotetaan
 //    -> applyReferralCode yhdistää referralin.
 //
 // ============================================================
@@ -73,16 +74,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   // 🌍 CURRENT PAGE LANGUAGE
   // ==========================================================
-  //
-  // Tärkeä:
-  //
-  // RegisterPage voi saada languageCode-arvon parentilta,
-  // mutta sivun pitää pystyä vaihtamaan kielensä välittömästi
-  // myös itse.
-  //
-  // Tämän vuoksi emme käytä localizationissa suoraan
-  // widget.languageCode-arvoa.
-  //
+
   String currentLanguageCode = 'en';
 
   // ==========================================================
@@ -144,11 +136,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   // WIDGET UPDATE
   // ==========================================================
-  //
-  // Jos parent päivittää languageCode-arvon esimerkiksi
-  // sovelluksen yleisen kielenvaihdon kautta, pidetään myös
-  // tämän sivun oma kielitila ajan tasalla.
-  //
+
   @override
   void didUpdateWidget(
     covariant RegisterPage oldWidget,
@@ -555,9 +543,86 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
+  // 🧩 WAIT FOR BACKEND PROFILE
+  // ==========================================================
+  //
+  // Firebase Auth -tili syntyy ensin.
+  //
+  // Backendin users/{uid}-profiili voi syntyä hieman
+  // myöhemmin. Referral-suhdetta ei yritetä yhdistää
+  // ennen kuin backend on saanut mahdollisuuden valmistella
+  // käyttäjän profiilin.
+  //
+  Future<bool> _ensureBackendProfileReady() async {
+    const int maxAttempts = 5;
+
+    const Duration retryDelay =
+        Duration(milliseconds: 600);
+
+    for (int attempt = 1;
+        attempt <= maxAttempts;
+        attempt++) {
+      try {
+        final FirebaseFunctions functions =
+            FirebaseFunctions.instanceFor(
+          region: 'us-central1',
+        );
+
+        final HttpsCallable callable =
+            functions.httpsCallable(
+          'getUserProfile',
+        );
+
+        final HttpsCallableResult<dynamic> result =
+            await callable.call();
+
+        if (result.data is Map) {
+          debugPrint(
+            'Backend profile ready on attempt '
+            '$attempt/$maxAttempts.',
+          );
+
+          return true;
+        }
+
+        debugPrint(
+          'Backend profile returned unexpected '
+          'response on attempt '
+          '$attempt/$maxAttempts: '
+          '${result.data}',
+        );
+      } on FirebaseFunctionsException catch (error) {
+        debugPrint(
+          'Backend profile attempt '
+          '$attempt/$maxAttempts: '
+          '${error.code} - ${error.message}',
+        );
+      } catch (error) {
+        debugPrint(
+          'Backend profile attempt '
+          '$attempt/$maxAttempts unexpected error: '
+          '$error',
+        );
+      }
+
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(
+          retryDelay,
+        );
+      }
+    }
+
+    return false;
+  }
+
+  // ==========================================================
   // 🔗 APPLY REFERRAL CODE
   // ==========================================================
-
+  //
+  // Referralin liittäminen tehdään useamman kerran,
+  // koska Auth-käyttäjän ja backend-profiilin välillä
+  // voi olla pieni ajoitusero.
+  //
   Future<bool> _applyReferralCode(
     String referralCode,
   ) async {
@@ -568,93 +633,147 @@ class _RegisterPageState extends State<RegisterPage> {
       return true;
     }
 
-    try {
-      final FirebaseFunctions functions =
-          FirebaseFunctions.instanceFor(
-        region: 'us-central1',
-      );
+    const int maxAttempts = 4;
 
-      final HttpsCallable callable =
-          functions.httpsCallable(
-        'applyReferralCode',
-      );
+    const Duration retryDelay =
+        Duration(milliseconds: 700);
 
-      final HttpsCallableResult<dynamic> result =
-          await callable.call(
-        <String, dynamic>{
-          'referralCode': code,
-        },
-      );
+    String lastErrorMessage =
+        'The referral code could not be applied.';
 
-      final dynamic data = result.data;
+    for (int attempt = 1;
+        attempt <= maxAttempts;
+        attempt++) {
+      try {
+        final FirebaseFunctions functions =
+            FirebaseFunctions.instanceFor(
+          region: 'us-central1',
+        );
 
-      if (data is Map) {
-        final dynamic success = data['success'];
-        final dynamic applied = data['applied'];
+        final HttpsCallable callable =
+            functions.httpsCallable(
+          'applyReferralCode',
+        );
 
-        if (success == true || applied == true) {
+        final HttpsCallableResult<dynamic> result =
+            await callable.call(
+          <String, dynamic>{
+            'referralCode': code,
+          },
+        );
+
+        final dynamic data = result.data;
+
+        if (data is Map) {
+          final dynamic success = data['success'];
+          final dynamic applied = data['applied'];
+
+          if (success == true || applied == true) {
+            debugPrint(
+              'Referral applied successfully on '
+              'attempt $attempt/$maxAttempts.',
+            );
+
+            return true;
+          }
+        }
+
+        lastErrorMessage =
+            'The referral code could not be applied.';
+
+        debugPrint(
+          'Referral apply returned unexpected '
+          'response on attempt '
+          '$attempt/$maxAttempts: $data',
+        );
+      } on FirebaseFunctionsException catch (error) {
+        debugPrint(
+          'Referral apply attempt '
+          '$attempt/$maxAttempts: '
+          '${error.code} - ${error.message}',
+        );
+
+        // ----------------------------------------------
+        // ALREADY EXISTS
+        // ----------------------------------------------
+        //
+        // Jos referral on jo liitetty tähän tiliin,
+        // lopputulos on käytännössä onnistunut.
+        //
+        if (error.code == 'already-exists') {
+          debugPrint(
+            'Referral already exists. '
+            'Treating as successful.',
+          );
+
           return true;
         }
-      }
 
-      return false;
-    } on FirebaseFunctionsException catch (error) {
-      debugPrint(
-        'Referral apply error: '
-        '${error.code} - ${error.message}',
-      );
+        // ----------------------------------------------
+        // RETRYABLE ERRORS
+        // ----------------------------------------------
 
-      String message;
+        if (error.code == 'not-found' ||
+            error.code == 'unavailable' ||
+            error.code == 'network-error') {
+          lastErrorMessage =
+              error.message ??
+                  'Referral code could not be applied.';
 
-      switch (error.code) {
-        case 'not-found':
-          message =
-              'Referral code was not found.';
+          if (attempt < maxAttempts) {
+            await Future<void>.delayed(
+              retryDelay,
+            );
+
+            continue;
+          }
+
           break;
+        }
 
-        case 'already-exists':
-          message =
-              'A referral code is already connected '
-              'to this account.';
-          break;
+        // ----------------------------------------------
+        // NON-RETRYABLE ERRORS
+        // ----------------------------------------------
 
-        case 'invalid-argument':
-          message =
+        if (error.code == 'invalid-argument') {
+          lastErrorMessage =
               error.message ??
                   'The referral code is not valid.';
-          break;
-
-        case 'unauthenticated':
-          message =
+        } else if (error.code == 'unauthenticated') {
+          lastErrorMessage =
               'Please sign in again and try again.';
-          break;
-
-        case 'network-error':
-        case 'unavailable':
-          message =
-              'Network error. Please try again.';
-          break;
-
-        default:
-          message =
+        } else {
+          lastErrorMessage =
               error.message ??
                   'The referral code could not be applied.';
+        }
+
+        break;
+      } catch (error) {
+        debugPrint(
+          'Referral apply attempt '
+          '$attempt/$maxAttempts unexpected error: '
+          '$error',
+        );
+
+        lastErrorMessage =
+            'The referral code could not be applied.';
+
+        if (attempt < maxAttempts) {
+          await Future<void>.delayed(
+            retryDelay,
+          );
+
+          continue;
+        }
+
+        break;
       }
-
-      _message(message);
-
-      return false;
-    } catch (error) {
-      debugPrint(
-        'Referral apply unexpected error: $error',
-      );
-
-      _message(
-        'The referral code could not be applied.',
-      );
-
-      return false;
     }
+
+    _message(lastErrorMessage);
+
+    return false;
   }
 
   // ==========================================================
@@ -692,6 +811,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('loginFillFields'),
       );
+
       return;
     }
 
@@ -703,6 +823,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         'Username must contain at least 3 characters.',
       );
+
       return;
     }
 
@@ -714,6 +835,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('loginInvalidEmail'),
       );
+
       return;
     }
 
@@ -725,6 +847,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('passwordsDoNotMatch'),
       );
+
       return;
     }
 
@@ -736,6 +859,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         _t('passwordTooShort'),
       );
+
       return;
     }
 
@@ -747,6 +871,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _message(
         'Referral code is too long.',
       );
+
       return;
     }
 
@@ -832,6 +957,19 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       // ======================================================
+      // 🧩 WAIT FOR BACKEND PROFILE
+      // ======================================================
+      //
+      // Auth-käyttäjä syntyy ennen users/{uid}-dokumenttia.
+      //
+      // Odotetaan backendin valmistumista ennen referralin
+      // liittämistä.
+      //
+      if (referralCode.isNotEmpty) {
+        await _ensureBackendProfileReady();
+      }
+
+      // ======================================================
       // 🔗 APPLY VERIFIED REFERRAL
       // ======================================================
 
@@ -842,27 +980,41 @@ class _RegisterPageState extends State<RegisterPage> {
         );
 
         if (!referralApplied) {
+          // --------------------------------------------------
+          // REFERRAL ROLLBACK
+          // --------------------------------------------------
+          //
+          // Referral-koodi validoitiin ennen tilin luomista.
+          //
+          // Jos referralia ei silti onnistuttu yhdistämään
+          // usean yrityksen jälkeen, emme jätä käyttäjälle
+          // puoliksi luotua tiliä.
+          //
+          final User? createdUser =
+              FirebaseAuth.instance.currentUser;
+
+          if (createdUser != null) {
+            try {
+              await createdUser.delete();
+            } catch (deleteError) {
+              debugPrint(
+                'Referral rollback delete error: '
+                '$deleteError',
+              );
+            }
+          }
+
+          await FirebaseAuth.instance.signOut();
+
           if (!mounted) {
             return;
           }
 
           _message(
-            'Your account was created, but the referral '
-            'could not be connected. Please contact support '
-            'if this continues.',
+            'The referral code could not be connected. '
+            'Your account was not created. '
+            'Please try again.',
           );
-
-          await Future<void>.delayed(
-            const Duration(
-              milliseconds: 1200,
-            ),
-          );
-
-          if (!mounted) {
-            return;
-          }
-
-          Navigator.of(context).pop();
 
           return;
         }
@@ -1033,13 +1185,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                   return;
                                 }
 
-                                // --------------------------------
-                                // TÄRKEÄ KORJAUS
-                                // --------------------------------
-                                //
-                                // Päivitetään tämän sivun oma
-                                // kieli heti valinnan jälkeen.
-                                //
                                 setState(() {
                                   currentLanguageCode =
                                       entry.key;
