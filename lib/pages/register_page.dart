@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../localization.dart';
+import '../services/user_service.dart';
 import '../widgets/cat_avatar.dart';
 
 // ============================================================
@@ -23,7 +24,7 @@ import '../widgets/cat_avatar.dart';
 //    -> tili luodaan normaalisti.
 // 5. Jos koodi on oikea:
 //    -> Firebase Auth luo tilin
-//    -> backend-profiilin valmistumista odotetaan
+//    -> users/{uid}-profiili luodaan
 //    -> applyReferralCode yhdistää referralin.
 //
 // ============================================================
@@ -543,16 +544,26 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ==========================================================
-  // 🧩 WAIT FOR BACKEND PROFILE
+  // 🧩 CREATE / ENSURE USER PROFILE
   // ==========================================================
   //
   // Firebase Auth -tili syntyy ensin.
   //
-  // Backendin users/{uid}-profiili voi syntyä hieman
-  // myöhemmin. Referral-suhdetta ei yritetä yhdistää
-  // ennen kuin backend on saanut mahdollisuuden valmistella
-  // käyttäjän profiilin.
+  // Referral-backend tarvitsee kuitenkin:
   //
+  //   users/{uid}
+  //
+  // -dokumentin ennen kuin applyReferralCode voidaan suorittaa.
+  //
+  // Projektissa on tätä varten jo:
+  //
+  //   UserService.createUserIfNeeded()
+  //
+  // Tämä metodi luo käyttäjäprofiilin Firestoreen, jos sitä
+  // ei vielä ole.
+  //
+  // ==========================================================
+
   Future<bool> _ensureBackendProfileReady() async {
     const int maxAttempts = 5;
 
@@ -563,38 +574,36 @@ class _RegisterPageState extends State<RegisterPage> {
         attempt <= maxAttempts;
         attempt++) {
       try {
-        final FirebaseFunctions functions =
-            FirebaseFunctions.instanceFor(
-          region: 'us-central1',
-        );
+        final User? user =
+            FirebaseAuth.instance.currentUser;
 
-        final HttpsCallable callable =
-            functions.httpsCallable(
-          'getUserProfile',
-        );
-
-        final HttpsCallableResult<dynamic> result =
-            await callable.call();
-
-        if (result.data is Map) {
+        if (user == null) {
           debugPrint(
-            'Backend profile ready on attempt '
-            '$attempt/$maxAttempts.',
+            'Backend profile attempt '
+            '$attempt/$maxAttempts failed: '
+            'no authenticated user.',
           );
 
-          return true;
+          return false;
         }
 
+        // ------------------------------------------------------
+        // Luo users/{uid}, jos sitä ei vielä ole.
+        // ------------------------------------------------------
+
+        await UserService.createUserIfNeeded();
+
         debugPrint(
-          'Backend profile returned unexpected '
-          'response on attempt '
-          '$attempt/$maxAttempts: '
-          '${result.data}',
+          'Backend profile ready on attempt '
+          '$attempt/$maxAttempts for UID '
+          '${user.uid}.',
         );
-      } on FirebaseFunctionsException catch (error) {
+
+        return true;
+      } on FirebaseException catch (error) {
         debugPrint(
           'Backend profile attempt '
-          '$attempt/$maxAttempts: '
+          '$attempt/$maxAttempts Firebase error: '
           '${error.code} - ${error.message}',
         );
       } catch (error) {
@@ -620,8 +629,8 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   //
   // Referralin liittäminen tehdään useamman kerran,
-  // koska Auth-käyttäjän ja backend-profiilin välillä
-  // voi olla pieni ajoitusero.
+  // koska Firestore/Auth-yhteydessä voi esiintyä pieni
+  // ajoitusero tai väliaikainen verkkovirhe.
   //
   Future<bool> _applyReferralCode(
     String referralCode,
@@ -957,16 +966,63 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       // ======================================================
-      // 🧩 WAIT FOR BACKEND PROFILE
+      // 🧩 CREATE FIRESTORE USER PROFILE
       // ======================================================
       //
-      // Auth-käyttäjä syntyy ennen users/{uid}-dokumenttia.
+      // TÄMÄ ON TÄRKEÄ KORJAUS.
       //
-      // Odotetaan backendin valmistumista ennen referralin
-      // liittämistä.
+      // applyReferralCode tarvitsee users/{uid}-dokumentin.
+      //
+      // UserService.createUserIfNeeded() luo sen ennen kuin
+      // referral yritetään liittää.
       //
       if (referralCode.isNotEmpty) {
-        await _ensureBackendProfileReady();
+        final bool profileReady =
+            await _ensureBackendProfileReady();
+
+        if (!profileReady) {
+          final User? createdUser =
+              FirebaseAuth.instance.currentUser;
+
+          if (createdUser != null) {
+            try {
+              await createdUser.delete();
+            } catch (deleteError) {
+              debugPrint(
+                'Profile rollback delete error: '
+                '$deleteError',
+              );
+            }
+          }
+
+          await FirebaseAuth.instance.signOut();
+
+          if (!mounted) {
+            return;
+          }
+
+          _message(
+            'Your account profile could not be prepared. '
+            'Your account was not created. '
+            'Please try again.',
+          );
+
+          return;
+        }
+      } else {
+        // ----------------------------------------------------
+        // Ilman referral-koodia käyttäjäprofiili luodaan
+        // myös normaalisti.
+        // ----------------------------------------------------
+
+        try {
+          await UserService.createUserIfNeeded();
+        } catch (error) {
+          debugPrint(
+            'User profile creation without referral '
+            'failed: $error',
+          );
+        }
       }
 
       // ======================================================
