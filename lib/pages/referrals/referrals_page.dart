@@ -421,8 +421,7 @@ class _ReferralsPageState extends State<ReferralsPage> {
       final dynamic rawReferrals =
           data['referrals'];
 
-      final List<_ReferralUser> loadedReferrals =
-          [];
+      final List<_ReferralUser> loadedReferrals = [];
 
       if (rawReferrals is List) {
         for (final dynamic item in rawReferrals) {
@@ -430,11 +429,10 @@ class _ReferralsPageState extends State<ReferralsPage> {
             continue;
           }
 
-          final Map<String, dynamic> referral =
-              Map<String, dynamic>.from(item);
-
           loadedReferrals.add(
-            _ReferralUser.fromMap(referral),
+            _ReferralUser.fromMap(
+              Map<String, dynamic>.from(item),
+            ),
           );
         }
       }
@@ -448,20 +446,17 @@ class _ReferralsPageState extends State<ReferralsPage> {
           loadedReferrals.length -
               calculatedActive;
 
-      final int loadedReferralCount =
-          _readInt(
+      final int loadedReferralCount = _readInt(
         data['referralCount'],
         fallback: loadedReferrals.length,
       );
 
-      final int loadedActiveCount =
-          _readInt(
+      final int loadedActiveCount = _readInt(
         data['activeCount'],
         fallback: calculatedActive,
       );
 
-      final int loadedInactiveCount =
-          _readInt(
+      final int loadedInactiveCount = _readInt(
         data['inactiveCount'],
         fallback: calculatedInactive,
       );
@@ -611,8 +606,19 @@ class _ReferralsPageState extends State<ReferralsPage> {
           color: cardColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: color.withValues(alpha: 0.18),
+            color: color.withValues(
+              alpha: 0.20,
+            ),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(
+                alpha: 0.07,
+              ),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -620,8 +626,18 @@ class _ReferralsPageState extends State<ReferralsPage> {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color.withValues(alpha: 0.16),
+                    color.withValues(alpha: 0.06),
+                  ],
+                ),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: color.withValues(alpha: 0.16),
+                ),
               ),
               child: Icon(
                 icon,
@@ -645,7 +661,9 @@ class _ReferralsPageState extends State<ReferralsPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.60),
+                color: Colors.white.withValues(
+                  alpha: 0.60,
+                ),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -678,18 +696,29 @@ class _ReferralsPageState extends State<ReferralsPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF2D174D),
+            Color(0xFF321B55),
             Color(0xFF1A0E31),
           ],
         ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.30),
+          color: accentColor.withValues(
+            alpha: 0.34,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(alpha: 0.08),
-            blurRadius: 20,
+            color: accentColor.withValues(
+              alpha: 0.10,
+            ),
+            blurRadius: 22,
+            spreadRadius: 1,
+          ),
+          BoxShadow(
+            color: pinkAccentColor.withValues(
+              alpha: 0.05,
+            ),
+            blurRadius: 30,
           ),
         ],
       ),
@@ -702,10 +731,24 @@ class _ReferralsPageState extends State<ReferralsPage> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: referralBlueColor.withValues(
-                    alpha: 0.12,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      referralBlueColor.withValues(
+                        alpha: 0.18,
+                      ),
+                      pinkAccentColor.withValues(
+                        alpha: 0.12,
+                      ),
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: referralBlueColor.withValues(
+                      alpha: 0.20,
+                    ),
+                  ),
                 ),
                 child: const Icon(
                   Icons.link_rounded,
@@ -723,6 +766,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
                   ),
                 ),
               ),
+              const Icon(
+                Icons.auto_awesome_rounded,
+                color: goldAccentColor,
+                size: 19,
+              ),
             ],
           ),
           const SizedBox(height: 15),
@@ -732,8 +780,18 @@ class _ReferralsPageState extends State<ReferralsPage> {
               vertical: 9,
             ),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.18),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withValues(alpha: 0.20),
+                  accentColor.withValues(alpha: 0.06),
+                ],
+              ),
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: accentColor.withValues(
+                  alpha: 0.08,
+                ),
+              ),
             ),
             child: Row(
               children: [
@@ -769,15 +827,6 @@ class _ReferralsPageState extends State<ReferralsPage> {
   // ==========================================================
   // 👤 REFERRAL USER CARD
   // ==========================================================
-  //
-  // Sama Stella-tyylinen rakenne kuin muissa käyttäjäkortissa:
-  // - pyöreä avatar
-  // - aktiivisuusindikaattori
-  // - nimi
-  // - status-chip
-  // - STL-arvo oikealla
-  //
-  // ==========================================================
 
   Widget _referralUserCard(
     _ReferralUser user,
@@ -805,11 +854,37 @@ class _ReferralsPageState extends State<ReferralsPage> {
         vertical: 14,
       ),
       decoration: BoxDecoration(
-        color: cardColor,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cardColor,
+            surfaceColor,
+          ],
+        ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.14),
+          color: active
+              ? activeColor.withValues(
+                  alpha: 0.22,
+                )
+              : accentColor.withValues(
+                  alpha: 0.16,
+                ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: active
+                ? activeColor.withValues(
+                    alpha: 0.06,
+                  )
+                : accentColor.withValues(
+                    alpha: 0.05,
+                  ),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -828,15 +903,33 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      accentColor.withValues(alpha: 0.25),
-                      pinkAccentColor.withValues(alpha: 0.14),
+                      accentColor.withValues(
+                        alpha: 0.30,
+                      ),
+                      pinkAccentColor.withValues(
+                        alpha: 0.15,
+                      ),
                     ],
                   ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: accentColor.withValues(alpha: 0.24),
+                    color: active
+                        ? activeColor.withValues(
+                            alpha: 0.28,
+                          )
+                        : accentColor.withValues(
+                            alpha: 0.24,
+                          ),
                     width: 1.2,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: pinkAccentColor.withValues(
+                        alpha: 0.07,
+                      ),
+                      blurRadius: 14,
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.person_rounded,
@@ -857,6 +950,14 @@ class _ReferralsPageState extends State<ReferralsPage> {
                       color: cardColor,
                       width: 3,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withValues(
+                          alpha: 0.30,
+                        ),
+                        blurRadius: 7,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -871,7 +972,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
 
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   username,
@@ -890,8 +992,15 @@ class _ReferralsPageState extends State<ReferralsPage> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.10),
+                    color: statusColor.withValues(
+                      alpha: 0.10,
+                    ),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: statusColor.withValues(
+                        alpha: 0.10,
+                      ),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -908,7 +1017,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
                       Text(
                         statusText,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow:
+                            TextOverflow.ellipsis,
                         style: TextStyle(
                           color: statusColor,
                           fontSize: 10,
@@ -929,7 +1039,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
           // ======================================================
 
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment:
+                CrossAxisAlignment.end,
             children: [
               Text(
                 user.referralBonus.toStringAsFixed(2),
@@ -943,7 +1054,9 @@ class _ReferralsPageState extends State<ReferralsPage> {
               Text(
                 'STL',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: Colors.white.withValues(
+                    alpha: 0.45,
+                  ),
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
@@ -971,11 +1084,28 @@ class _ReferralsPageState extends State<ReferralsPage> {
         ),
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: cardColor,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              cardColor,
+              surfaceColor,
+            ],
+          ),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: accentColor.withValues(alpha: 0.14),
+            color: accentColor.withValues(
+              alpha: 0.14,
+            ),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withValues(
+                alpha: 0.04,
+              ),
+              blurRadius: 16,
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -983,8 +1113,24 @@ class _ReferralsPageState extends State<ReferralsPage> {
               width: 68,
               height: 68,
               decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.10),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    accentColor.withValues(
+                      alpha: 0.16,
+                    ),
+                    pinkAccentColor.withValues(
+                      alpha: 0.08,
+                    ),
+                  ],
+                ),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: accentColor.withValues(
+                    alpha: 0.16,
+                  ),
+                ),
               ),
               child: const Icon(
                 Icons.people_outline_rounded,
@@ -997,7 +1143,9 @@ class _ReferralsPageState extends State<ReferralsPage> {
               _noReferrals,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: Colors.white.withValues(
+                  alpha: 0.72,
+                ),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -1031,10 +1179,19 @@ class _ReferralsPageState extends State<ReferralsPage> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: cardColor,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                cardColor,
+                surfaceColor,
+              ],
+            ),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: pinkAccentColor.withValues(alpha: 0.16),
+              color: pinkAccentColor.withValues(
+                alpha: 0.16,
+              ),
             ),
           ),
           child: Column(
@@ -1070,7 +1227,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
                   backgroundColor: accentColor,
                   foregroundColor: backgroundColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius:
+                        BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -1108,8 +1266,29 @@ class _ReferralsPageState extends State<ReferralsPage> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF321B55),
+                    Color(0xFF21113B),
+                  ],
+                ),
+                borderRadius:
+                    BorderRadius.circular(12),
+                border: Border.all(
+                  color: accentColor.withValues(
+                    alpha: 0.22,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withValues(
+                      alpha: 0.08,
+                    ),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.people_alt_rounded,
@@ -1168,7 +1347,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
               : RefreshIndicator(
                   color: accentColor,
                   backgroundColor: cardColor,
-                  onRefresh: () => _loadReferralStatus(
+                  onRefresh: () =>
+                      _loadReferralStatus(
                     refresh: true,
                   ),
                   child: ListView(
@@ -1190,63 +1370,140 @@ class _ReferralsPageState extends State<ReferralsPage> {
                           16,
                           18,
                         ),
-                        padding: const EdgeInsets.all(20),
+                        padding:
+                            const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
+                          gradient:
+                              const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Color(0xFF2D174D),
+                              Color(0xFF321B55),
                               Color(0xFF1A0E31),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(22),
+                          borderRadius:
+                              BorderRadius.circular(22),
                           border: Border.all(
-                            color: accentColor.withValues(
-                              alpha: 0.25,
+                            color:
+                                accentColor.withValues(
+                              alpha: 0.30,
                             ),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  accentColor.withValues(
+                                alpha: 0.08,
+                              ),
+                              blurRadius: 20,
+                              spreadRadius: 1,
+                            ),
+                            BoxShadow(
+                              color:
+                                  pinkAccentColor
+                                      .withValues(
+                                alpha: 0.04,
+                              ),
+                              blurRadius: 28,
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 58,
-                              height: 58,
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    accentColor,
-                                    pinkAccentColor,
-                                  ],
+                            // ==================================================
+                            // STELLA COMMUNITY ICON
+                            // ==================================================
+
+                            Stack(
+                              clipBehavior:
+                                  Clip.none,
+                              children: [
+                                Container(
+                                  width: 58,
+                                  height: 58,
+                                  decoration:
+                                      BoxDecoration(
+                                    gradient:
+                                        const LinearGradient(
+                                      begin:
+                                          Alignment.topLeft,
+                                      end: Alignment
+                                          .bottomRight,
+                                      colors: [
+                                        accentColor,
+                                        pinkAccentColor,
+                                      ],
+                                    ),
+                                    shape:
+                                        BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            accentColor
+                                                .withValues(
+                                          alpha: 0.28,
+                                        ),
+                                        blurRadius: 18,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child:
+                                      const Icon(
+                                    Icons
+                                        .groups_rounded,
+                                    color:
+                                        backgroundColor,
+                                    size: 30,
+                                  ),
                                 ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.groups_rounded,
-                                color: backgroundColor,
-                                size: 30,
-                              ),
+                                Positioned(
+                                  top: -4,
+                                  right: -4,
+                                  child: Icon(
+                                    Icons
+                                        .auto_awesome_rounded,
+                                    color:
+                                        goldAccentColor,
+                                    size: 17,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 15),
+
+                            const SizedBox(
+                              width: 15,
+                            ),
+
                             Expanded(
                               child: Column(
                                 crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                    CrossAxisAlignment
+                                        .start,
                                 children: [
                                   Text(
                                     _communityTitle,
-                                    style: const TextStyle(
-                                      color: goldAccentColor,
+                                    style:
+                                        const TextStyle(
+                                      color:
+                                          goldAccentColor,
                                       fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.2,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                      letterSpacing:
+                                          1.2,
                                     ),
                                   ),
-                                  const SizedBox(height: 5),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
                                   Text(
                                     _description,
                                     style: TextStyle(
-                                      color: Colors.white.withValues(
+                                      color: Colors
+                                          .white
+                                          .withValues(
                                         alpha: 0.72,
                                       ),
                                       fontSize: 12,
@@ -1265,38 +1522,54 @@ class _ReferralsPageState extends State<ReferralsPage> {
                       // ==================================================
 
                       Padding(
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                            const EdgeInsets.symmetric(
                           horizontal: 16,
                         ),
                         child: Row(
                           children: [
                             _statCard(
-                              icon: Icons.people_alt_rounded,
-                              value: _referralCount.toString(),
-                              label: _totalInvited,
+                              icon: Icons
+                                  .people_alt_rounded,
+                              value:
+                                  _referralCount
+                                      .toString(),
+                              label:
+                                  _totalInvited,
                               color: accentColor,
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(
+                              width: 10,
+                            ),
                             _statCard(
-                              icon:
-                                  Icons.play_circle_fill_rounded,
-                              value: _activeCount.toString(),
+                              icon: Icons
+                                  .play_circle_fill_rounded,
+                              value:
+                                  _activeCount
+                                      .toString(),
                               label: _miningNow,
                               color: activeColor,
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(
+                              width: 10,
+                            ),
                             _statCard(
-                              icon:
-                                  Icons.pause_circle_filled_rounded,
-                              value: _inactiveCount.toString(),
+                              icon: Icons
+                                  .pause_circle_filled_rounded,
+                              value:
+                                  _inactiveCount
+                                      .toString(),
                               label: _notMining,
-                              color: inactiveColor,
+                              color:
+                                  inactiveColor,
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(
+                        height: 18,
+                      ),
 
                       // ==================================================
                       // INVITATION CODE
@@ -1309,7 +1582,8 @@ class _ReferralsPageState extends State<ReferralsPage> {
                       // ==================================================
 
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(
+                        padding:
+                            const EdgeInsets.fromLTRB(
                           18,
                           2,
                           18,
@@ -1319,21 +1593,56 @@ class _ReferralsPageState extends State<ReferralsPage> {
                           children: [
                             Container(
                               width: 5,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                color: pinkAccentColor,
+                              height: 26,
+                              decoration:
+                                  BoxDecoration(
+                                gradient:
+                                    const LinearGradient(
+                                  begin:
+                                      Alignment.topCenter,
+                                  end: Alignment
+                                      .bottomCenter,
+                                  colors: [
+                                    pinkAccentColor,
+                                    accentColor,
+                                  ],
+                                ),
                                 borderRadius:
-                                    BorderRadius.circular(10),
+                                    BorderRadius
+                                        .circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        pinkAccentColor
+                                            .withValues(
+                                      alpha: 0.25,
+                                    ),
+                                    blurRadius: 8,
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(
+                              width: 10,
+                            ),
                             Text(
                               _invitedUsers,
-                              style: const TextStyle(
+                              style:
+                                  const TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
-                                fontWeight: FontWeight.bold,
+                                fontWeight:
+                                    FontWeight.bold,
                               ),
+                            ),
+                            const SizedBox(
+                              width: 7,
+                            ),
+                            const Icon(
+                              Icons.pets_rounded,
+                              color:
+                                  pinkAccentColor,
+                              size: 17,
                             ),
                           ],
                         ),
@@ -1410,7 +1719,10 @@ class _ReferralUser {
 
     final bool isMining =
         rawActive == true ||
-        rawActive.toString().toLowerCase() == 'true';
+        rawActive
+                .toString()
+                .toLowerCase() ==
+            'true';
 
     return _ReferralUser(
       uid: uid,
