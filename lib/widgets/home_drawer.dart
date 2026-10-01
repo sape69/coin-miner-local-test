@@ -34,10 +34,6 @@ const Color pinkAccentColor = Color(0xFFFFB7E8);
 
 const Color goldAccentColor = Color(0xFFFFD166);
 
-// Stella-teeman aktiivinen väri.
-// Referral käyttää tätä nykyisen vihreän sijaan.
-const Color referralAccentColor = Color(0xFFFFB7E8);
-
 const Color inactiveColor = Color(0xFF8D879F);
 
 const Color logoutColor = Color(0xFFFF8A8A);
@@ -232,198 +228,22 @@ class HomeDrawer extends StatelessWidget {
   // ==========================================================
   // 👥 REFERRAL MENU ITEM
   // ==========================================================
+  //
+  // Referral käyttää nyt täsmälleen samaa rakennetta kuin
+  // muut päävalikon kohdat.
+  //
+  // Ei erillistä korttitaustaa.
+  // Ei alaotsikkoa.
+  // Ei erillistä pyöreää nuolipainiketta.
+  //
+  // Toiminnallisuus säilyy ennallaan.
+  // ==========================================================
 
   Widget _referralItem() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 4,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onReferralPressed,
-          splashColor: referralAccentColor.withValues(
-            alpha: 0.10,
-          ),
-          highlightColor: referralAccentColor.withValues(
-            alpha: 0.045,
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 13,
-            ),
-            decoration: BoxDecoration(
-              // ==================================================
-              // STELLA PURPLE / PINK BACKGROUND
-              // ==================================================
-
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  accentColor.withValues(
-                    alpha: 0.055,
-                  ),
-                  pinkAccentColor.withValues(
-                    alpha: 0.025,
-                  ),
-                ],
-              ),
-
-              borderRadius: BorderRadius.circular(16),
-
-              // ==================================================
-              // STELLA PINK BORDER
-              // ==================================================
-
-              border: Border.all(
-                color: pinkAccentColor.withValues(
-                  alpha: 0.12,
-                ),
-              ),
-
-              // ==================================================
-              // SUBTLE STELLA GLOW
-              // ==================================================
-
-              boxShadow: [
-                BoxShadow(
-                  color: pinkAccentColor.withValues(
-                    alpha: 0.035,
-                  ),
-                  blurRadius: 12,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // ==================================================
-                // REFERRAL ICON
-                // ==================================================
-
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        accentColor.withValues(
-                          alpha: 0.30,
-                        ),
-                        pinkAccentColor.withValues(
-                          alpha: 0.22,
-                        ),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                      color: pinkAccentColor.withValues(
-                        alpha: 0.25,
-                      ),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: pinkAccentColor.withValues(
-                          alpha: 0.08,
-                        ),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.groups_rounded,
-                    color: pinkAccentColor,
-                    size: 23,
-                  ),
-                ),
-
-                const SizedBox(
-                  width: 14,
-                ),
-
-                // ==================================================
-                // REFERRAL TITLE
-                // ==================================================
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _t('referrals'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 3,
-                      ),
-
-                      Text(
-                        _t('referralMiningActivity'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(
-                            alpha: 0.52,
-                          ),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ==================================================
-                // REFERRAL ARROW
-                // ==================================================
-
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        accentColor.withValues(
-                          alpha: 0.16,
-                        ),
-                        pinkAccentColor.withValues(
-                          alpha: 0.10,
-                        ),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: pinkAccentColor.withValues(
-                        alpha: 0.12,
-                      ),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: pinkAccentColor,
-                    size: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return _menuItem(
+      icon: Icons.groups_rounded,
+      title: _t('referrals'),
+      onTap: onReferralPressed,
     );
   }
 
