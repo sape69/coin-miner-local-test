@@ -128,54 +128,36 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # 9. DOWNLOAD STELLURIINI RELEASE KEYSTORE
+      # 9. RESTORE STELLURIINI RELEASE KEYSTORE FROM SECRET
       # ==========================================================
 
-      - name: Download release keystore
+      - name: Restore release keystore
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEYSTORE_BASE64: ${{ secrets.STELLURIINI_UPLOAD_KEYSTORE_BASE64 }}
         run: |
           echo "=================================================="
-          echo "DOWNLOADING STELLURIINI RELEASE KEYSTORE"
+          echo "RESTORING STELLURIINI RELEASE KEYSTORE"
           echo "=================================================="
 
           mkdir -p android
 
-          RUN_ID="$(
-            gh run list \
-              --workflow create-release-keystore.yml \
-              --branch main \
-              --status success \
-              --limit 1 \
-              --json databaseId \
-              --jq '.[0].databaseId'
-          )"
-
-          if [ -z "$RUN_ID" ]; then
-            echo "ERROR: No successful release keystore workflow found."
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ERROR: STELLURIINI_UPLOAD_KEYSTORE_BASE64 secret is missing."
             exit 1
           fi
 
-          echo "Release keystore workflow run:"
-          echo "$RUN_ID"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/stelluriini-upload-keystore.jks
 
-          gh run download "$RUN_ID" \
-            --repo "$GITHUB_REPOSITORY" \
-            --name stelluriini-release-keystore \
-            --dir android
+          chmod 600 android/stelluriini-upload-keystore.jks
 
-          if [ ! -f "android/stelluriini-upload-keystore.jks" ]; then
-            echo "ERROR: Release keystore was not downloaded."
-            echo ""
-            echo "Expected:"
-            echo "android/stelluriini-upload-keystore.jks"
+          if [ ! -s "android/stelluriini-upload-keystore.jks" ]; then
+            echo "ERROR: Release keystore could not be restored."
             exit 1
           fi
 
           echo ""
-          echo "Release keystore downloaded successfully."
-
-          ls -lh android/stelluriini-upload-keystore.jks
+          echo "Release keystore restored successfully."
+          echo "Keystore file is present and ready for signing."
 
       # ==========================================================
       # 10. GENERATE APP ICON
@@ -325,7 +307,17 @@ jobs:
           if-no-files-found: error
 
       # ==========================================================
-      # 19. BUILD SUMMARY
+      # 19. REMOVE TEMPORARY RELEASE KEYSTORE
+      # ==========================================================
+
+      - name: Remove temporary release keystore
+        if: always()
+        run: |
+          rm -f android/stelluriini-upload-keystore.jks
+          echo "Temporary release keystore removed from runner."
+
+      # ==========================================================
+      # 20. BUILD SUMMARY
       # ==========================================================
 
       - name: Build summary
