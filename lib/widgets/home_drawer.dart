@@ -10,13 +10,16 @@ import 'cat_avatar.dart';
 //
 // Sovelluksen päävalikko.
 //
+// Stella-teema:
+// - violetti / pinkki / kulta
+// - pehmeä tähtihehku
+// - Stella-avatar
+// - STELLA-merkintä
+//
 // Referral-osio:
 // - näyttää kutsutut käyttäjät
 // - näyttää aktiiviset / ei-aktiiviset kutsutut
-// - aktiivinen tarkoittaa käyttäjää, joka louhii parhaillaan
-// - avaa erillisen Referral-näkymän callbackin kautta
-//
-// Referral-bonus lasketaan edelleen backendissä.
+// - avaa erillisen Referral-näkymän
 //
 // ============================================================
 
@@ -33,6 +36,8 @@ const Color accentColor = Color(0xFFB58CFF);
 const Color pinkAccentColor = Color(0xFFFFB7E8);
 
 const Color goldAccentColor = Color(0xFFFFD166);
+
+const Color stellaGlowColor = Color(0xFFDCCBFF);
 
 const Color inactiveColor = Color(0xFF8D879F);
 
@@ -87,6 +92,21 @@ class HomeDrawer extends StatelessWidget {
       );
 
   // ==========================================================
+  // ✨ STELLA STAR
+  // ==========================================================
+
+  Widget _stellaStar({
+    double size = 16,
+    Color? color,
+  }) {
+    return Icon(
+      Icons.auto_awesome_rounded,
+      color: color ?? goldAccentColor,
+      size: size,
+    );
+  }
+
+  // ==========================================================
   // 📋 MENU ITEM
   // ==========================================================
 
@@ -109,6 +129,8 @@ class HomeDrawer extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
+          splashColor: accentColor.withValues(alpha: 0.10),
+          highlightColor: pinkAccentColor.withValues(alpha: 0.05),
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -117,10 +139,6 @@ class HomeDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // ==================================================
-                // ICON
-                // ==================================================
-
                 Container(
                   width: 44,
                   height: 44,
@@ -129,20 +147,21 @@ class HomeDrawer extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        accentColor.withValues(
-                          alpha: 0.28,
-                        ),
-                        currentIconColor.withValues(
-                          alpha: 0.16,
-                        ),
+                        accentColor.withValues(alpha: 0.28),
+                        currentIconColor.withValues(alpha: 0.16),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(13),
                     border: Border.all(
-                      color: currentIconColor.withValues(
-                        alpha: 0.20,
-                      ),
+                      color: currentIconColor.withValues(alpha: 0.20),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: currentIconColor.withValues(alpha: 0.08),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                   child: Icon(
                     icon,
@@ -150,15 +169,7 @@ class HomeDrawer extends StatelessWidget {
                     size: 23,
                   ),
                 ),
-
-                const SizedBox(
-                  width: 14,
-                ),
-
-                // ==================================================
-                // TITLE
-                // ==================================================
-
+                const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     title,
@@ -171,25 +182,19 @@ class HomeDrawer extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // ==================================================
-                // OPTIONAL BADGE
-                // ==================================================
-
                 if (badge != null) ...[
-                  const SizedBox(
-                    width: 8,
-                  ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: goldAccentColor.withValues(
-                        alpha: 0.15,
-                      ),
+                      color: goldAccentColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: goldAccentColor.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: Text(
                       badge,
@@ -202,20 +207,10 @@ class HomeDrawer extends StatelessWidget {
                     ),
                   ),
                 ],
-
-                const SizedBox(
-                  width: 4,
-                ),
-
-                // ==================================================
-                // CHEVRON
-                // ==================================================
-
+                const SizedBox(width: 4),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: Colors.white.withValues(
-                    alpha: 0.30,
-                  ),
+                  color: Colors.white.withValues(alpha: 0.30),
                 ),
               ],
             ),
@@ -226,17 +221,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // 👥 REFERRAL MENU ITEM
-  // ==========================================================
-  //
-  // Referral käyttää nyt täsmälleen samaa rakennetta kuin
-  // muut päävalikon kohdat.
-  //
-  // Ei erillistä korttitaustaa.
-  // Ei alaotsikkoa.
-  // Ei erillistä pyöreää nuolipainiketta.
-  //
-  // Toiminnallisuus säilyy ennallaan.
+  // 👥 REFERRAL ITEM
   // ==========================================================
 
   Widget _referralItem() {
@@ -248,7 +233,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // 🚪 LOGOUT MENU ITEM
+  // 🚪 LOGOUT
   // ==========================================================
 
   Widget _logoutItem() {
@@ -262,6 +247,8 @@ class HomeDrawer extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
+          splashColor: logoutColor.withValues(alpha: 0.10),
+          highlightColor: logoutColor.withValues(alpha: 0.05),
           onTap: onLogoutPressed,
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -270,22 +257,14 @@ class HomeDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // ==================================================
-                // LOGOUT ICON
-                // ==================================================
-
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: logoutColor.withValues(
-                      alpha: 0.10,
-                    ),
+                    color: logoutColor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(13),
                     border: Border.all(
-                      color: logoutColor.withValues(
-                        alpha: 0.20,
-                      ),
+                      color: logoutColor.withValues(alpha: 0.20),
                     ),
                   ),
                   child: const Icon(
@@ -294,15 +273,7 @@ class HomeDrawer extends StatelessWidget {
                     size: 23,
                   ),
                 ),
-
-                const SizedBox(
-                  width: 14,
-                ),
-
-                // ==================================================
-                // LOGOUT TITLE
-                // ==================================================
-
+                const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     _t('logout'),
@@ -315,11 +286,7 @@ class HomeDrawer extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                const SizedBox(
-                  width: 4,
-                ),
-
+                const SizedBox(width: 4),
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: Colors.white30,
@@ -333,148 +300,369 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
+  // 🐱 STELLA AVATAR
+  // ==========================================================
+
+  Widget _stellaAvatar() {
+    return Container(
+      width: 116,
+      height: 116,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            pinkAccentColor,
+            accentColor,
+            goldAccentColor,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.28),
+            blurRadius: 26,
+            spreadRadius: 4,
+          ),
+          BoxShadow(
+            color: pinkAccentColor.withValues(alpha: 0.14),
+            blurRadius: 42,
+            spreadRadius: 8,
+          ),
+        ],
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: const BoxDecoration(
+          color: backgroundColor,
+          shape: BoxShape.circle,
+        ),
+        child: const CatAvatar(
+          size: 95,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // ✨ STELLA HEADER
+  // ==========================================================
+
+  Widget _header() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 22,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF321A55),
+            Color(0xFF21113D),
+            Color(0xFF170D2C),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.45),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.16),
+            blurRadius: 28,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: pinkAccentColor.withValues(alpha: 0.07),
+            blurRadius: 40,
+            spreadRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ------------------------------------------------------
+          // ✨ TOP DECORATION
+          // ------------------------------------------------------
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    '🐱',
+                    style: TextStyle(fontSize: 25),
+                  ),
+                  const SizedBox(width: 5),
+                  _stellaStar(
+                    size: 13,
+                    color: goldAccentColor.withValues(alpha: 0.85),
+                  ),
+                ],
+              ),
+              Text(
+                '🐾 STL • SOLANA 🐾',
+                style: TextStyle(
+                  color: pinkAccentColor.withValues(alpha: 0.90),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+              Row(
+                children: [
+                  _stellaStar(
+                    size: 13,
+                    color: goldAccentColor.withValues(alpha: 0.85),
+                  ),
+                  const SizedBox(width: 5),
+                  const Text(
+                    '🐱',
+                    style: TextStyle(fontSize: 25),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // ------------------------------------------------------
+          // ✨ SMALL STELLA STAR
+          // ------------------------------------------------------
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 34,
+                height: 1,
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+              const SizedBox(width: 10),
+              _stellaStar(
+                size: 16,
+                color: goldAccentColor,
+              ),
+              const SizedBox(width: 10),
+              Container(
+                width: 34,
+                height: 1,
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // ------------------------------------------------------
+          // 🐱 STELLA AVATAR
+          // ------------------------------------------------------
+
+          _stellaAvatar(),
+
+          const SizedBox(height: 14),
+
+          // ------------------------------------------------------
+          // 🌟 APP NAME
+          // ------------------------------------------------------
+
+          const Text(
+            'STELLURIINI',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 3,
+            ),
+          ),
+
+          const SizedBox(height: 7),
+
+          // ------------------------------------------------------
+          // 🐾 STELLA LABEL
+          // ------------------------------------------------------
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '🐾',
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'STELLA',
+                style: TextStyle(
+                  color: goldAccentColor.withValues(alpha: 0.95),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                '🐾',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 7),
+
+          Text(
+            _t('stellaCommunity'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: pinkAccentColor.withValues(alpha: 0.85),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 🐾 FOOTER
+  // ==========================================================
+
+  Widget _footer() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(
+        16,
+        4,
+        16,
+        16,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cardColor,
+            cardColor.withValues(alpha: 0.82),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.07),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '🐾',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  _t('footerTagline'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.60),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 7),
+              const Text(
+                '🐾',
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 20,
+                height: 1,
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+              const SizedBox(width: 8),
+              _stellaStar(
+                size: 12,
+                color: goldAccentColor.withValues(alpha: 0.80),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 20,
+                height: 1,
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            _t('footerToken'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: pinkAccentColor.withValues(alpha: 0.72),
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
   // 🏠 BUILD
   // ==========================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: backgroundColor,
+      elevation: 18,
+      shadowColor: accentColor.withValues(alpha: 0.35),
+      surfaceTintColor: Colors.transparent,
       child: SafeArea(
         child: Column(
           children: [
-            // ==================================================
-            // 🐱 STELLA HEADER
-            // ==================================================
+            // ----------------------------------------------------
+            // ✨ STELLA HEADER
+            // ----------------------------------------------------
 
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 22,
-              ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF2D174D),
-                    Color(0xFF1B1033),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: accentColor.withValues(
-                    alpha: 0.45,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withValues(
-                      alpha: 0.14,
-                    ),
-                    blurRadius: 24,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // ==================================================
-                  // HEADER DECORATION
-                  // ==================================================
+            _header(),
 
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '🐱',
-                        style: TextStyle(
-                          fontSize: 28,
-                        ),
-                      ),
-                      Text(
-                        '🐾 STL • SOLANA 🐾',
-                        style: TextStyle(
-                          color: pinkAccentColor.withValues(
-                            alpha: 0.90,
-                          ),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const Text(
-                        '🐱',
-                        style: TextStyle(
-                          fontSize: 28,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 18,
-                  ),
-
-                  // ==================================================
-                  // STELLA AVATAR
-                  // ==================================================
-
-                  const CatAvatar(
-                    size: 105,
-                  ),
-
-                  const SizedBox(
-                    height: 14,
-                  ),
-
-                  // ==================================================
-                  // APP NAME
-                  // ==================================================
-
-                  const Text(
-                    'STELLURIINI',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 3,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 6,
-                  ),
-
-                  // ==================================================
-                  // COMMUNITY TEXT
-                  // ==================================================
-
-                  Text(
-                    _t('stellaCommunity'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: pinkAccentColor.withValues(
-                        alpha: 0.85,
-                      ),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ==================================================
+            // ----------------------------------------------------
             // 📋 MENU
-            // ==================================================
+            // ----------------------------------------------------
 
             Expanded(
               child: ListView(
@@ -483,19 +671,11 @@ class HomeDrawer extends StatelessWidget {
                   bottom: 8,
                 ),
                 children: [
-                  // ------------------------------------------------
-                  // LANGUAGE
-                  // ------------------------------------------------
-
                   _menuItem(
                     icon: Icons.language_rounded,
                     title: _t('language'),
                     onTap: onLanguagePressed,
                   ),
-
-                  // ------------------------------------------------
-                  // ABOUT
-                  // ------------------------------------------------
 
                   _menuItem(
                     icon: Icons.info_outline_rounded,
@@ -503,19 +683,11 @@ class HomeDrawer extends StatelessWidget {
                     onTap: onAboutPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // WHITE PAPER
-                  // ------------------------------------------------
-
                   _menuItem(
                     icon: Icons.description_outlined,
                     title: _t('whitePaper'),
                     onTap: onWhitePaperPressed,
                   ),
-
-                  // ------------------------------------------------
-                  // ROADMAP
-                  // ------------------------------------------------
 
                   _menuItem(
                     icon: Icons.map_outlined,
@@ -523,15 +695,7 @@ class HomeDrawer extends StatelessWidget {
                     onTap: onRoadmapPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // 👥 REFERRALS
-                  // ------------------------------------------------
-
                   _referralItem(),
-
-                  // ------------------------------------------------
-                  // ACHIEVEMENTS
-                  // ------------------------------------------------
 
                   _menuItem(
                     icon: Icons.emoji_events_rounded,
@@ -542,120 +706,22 @@ class HomeDrawer extends StatelessWidget {
                     iconColor: goldAccentColor,
                   ),
 
-                  // ------------------------------------------------
-                  // TRANSACTION HISTORY
-                  // ------------------------------------------------
-
                   _menuItem(
                     icon: Icons.history_rounded,
                     title: _t('transactionHistory'),
                     onTap: onTransactionHistoryPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // LOGOUT
-                  // ------------------------------------------------
-
                   _logoutItem(),
                 ],
               ),
             ),
 
-            // ==================================================
+            // ----------------------------------------------------
             // 🐾 FOOTER
-            // ==================================================
+            // ----------------------------------------------------
 
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(
-                16,
-                4,
-                16,
-                16,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: accentColor.withValues(
-                    alpha: 0.16,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  // ==================================================
-                  // FOOTER TAGLINE
-                  // ==================================================
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        '🐾',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        width: 7,
-                      ),
-
-                      Flexible(
-                        child: Text(
-                          _t('footerTagline'),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withValues(
-                              alpha: 0.60,
-                            ),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(
-                        width: 7,
-                      ),
-
-                      const Text(
-                        '🐾',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 7,
-                  ),
-
-                  // ==================================================
-                  // TOKEN FOOTER
-                  // ==================================================
-
-                  Text(
-                    _t('footerToken'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: pinkAccentColor.withValues(
-                        alpha: 0.72,
-                      ),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _footer(),
           ],
         ),
       ),
