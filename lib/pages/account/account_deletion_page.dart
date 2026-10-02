@@ -67,7 +67,9 @@ try {
   );
 
   if (!launched) {
-    throw Exception('Unable to open account deletion page.');
+    throw Exception(
+      'Unable to open account deletion page.',
+    );
   }
 } catch (error) {
   debugPrint(
@@ -89,12 +91,16 @@ decoration: BoxDecoration(
 shape: BoxShape.circle,
 color: cardColor,
 border: Border.all(
-color: purpleAccentColor.withValues(alpha: 0.55),
+color: purpleAccentColor.withValues(
+alpha: 0.55,
+),
 width: 2,
 ),
 boxShadow: [
 BoxShadow(
-color: purpleAccentColor.withValues(alpha: 0.18),
+color: purpleAccentColor.withValues(
+alpha: 0.18,
+),
 blurRadius: 24,
 spreadRadius: 2,
 ),
@@ -115,7 +121,7 @@ fontSize: 42,
 // 🗑️ DELETE CARD
 // ============================================================
 
-Widget _buildInAppDeleteCard(BuildContext context) {
+Widget _buildInAppDeleteCard() {
 return Container(
 width: double.infinity,
 padding: const EdgeInsets.all(20),
@@ -123,7 +129,9 @@ decoration: BoxDecoration(
 color: cardColor,
 borderRadius: BorderRadius.circular(20),
 border: Border.all(
-color: deleteAccountColor.withValues(alpha: 0.35),
+color: deleteAccountColor.withValues(
+alpha: 0.35,
+),
 ),
 ),
 child: Column(
@@ -135,7 +143,9 @@ Container(
 width: 46,
 height: 46,
 decoration: BoxDecoration(
-color: deleteAccountColor.withValues(alpha: 0.12),
+color: deleteAccountColor.withValues(
+alpha: 0.12,
+),
 borderRadius: BorderRadius.circular(14),
 ),
 child: const Icon(
@@ -157,59 +167,54 @@ fontWeight: FontWeight.w700,
 ),
 ],
 ),
-
-      const SizedBox(height: 16),
-
-      const Text(
-        'You can permanently delete your Stelluriini account '
-        'and associated account data directly from the app.',
-        style: TextStyle(
-          color: secondaryTextColor,
-          fontSize: 14,
-          height: 1.5,
-        ),
-      ),
-
-      const SizedBox(height: 18),
-
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: onDeleteAccountPressed,
-          icon: const Icon(
-            Icons.delete_forever_rounded,
-          ),
-          label: const Text(
-            'Delete Account',
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: deleteAccountColor,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(
-              double.infinity,
-              52,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
+const SizedBox(height: 16),
+const Text(
+'You can permanently delete your Stelluriini account '
+'and associated account data directly from the app.',
+style: TextStyle(
+color: secondaryTextColor,
+fontSize: 14,
+height: 1.5,
+),
+),
+const SizedBox(height: 18),
+SizedBox(
+width: double.infinity,
+child: ElevatedButton.icon(
+onPressed: onDeleteAccountPressed,
+icon: const Icon(
+Icons.delete_forever_rounded,
+),
+label: const Text(
+'Delete Account',
+),
+style: ElevatedButton.styleFrom(
+backgroundColor: deleteAccountColor,
+foregroundColor: Colors.white,
+minimumSize: const Size(
+double.infinity,
+52,
+),
+shape: RoundedRectangleBorder(
+borderRadius: BorderRadius.circular(15),
+),
+textStyle: const TextStyle(
+fontSize: 15,
+fontWeight: FontWeight.w700,
+),
+),
+),
+),
+],
+),
 );
-
 }
 
 // ============================================================
 // 🌐 EXTERNAL REQUEST CARD
 // ============================================================
 
-Widget _buildExternalRequestCard(BuildContext context) {
+Widget _buildExternalRequestCard() {
 return Container(
 width: double.infinity,
 padding: const EdgeInsets.all(20),
@@ -217,7 +222,9 @@ decoration: BoxDecoration(
 color: cardColor,
 borderRadius: BorderRadius.circular(20),
 border: Border.all(
-color: purpleAccentColor.withValues(alpha: 0.28),
+color: purpleAccentColor.withValues(
+alpha: 0.28,
+),
 ),
 ),
 child: Column(
@@ -229,7 +236,9 @@ Container(
 width: 46,
 height: 46,
 decoration: BoxDecoration(
-color: purpleAccentColor.withValues(alpha: 0.12),
+color: purpleAccentColor.withValues(
+alpha: 0.12,
+),
 borderRadius: BorderRadius.circular(14),
 ),
 child: const Icon(
@@ -251,54 +260,51 @@ fontWeight: FontWeight.w700,
 ),
 ],
 ),
-
-      const SizedBox(height: 16),
-
-      const Text(
-        'If you cannot access Stelluriini, you can open our '
-        'external account deletion page and submit a deletion request.',
-        style: TextStyle(
-          color: secondaryTextColor,
-          fontSize: 14,
-          height: 1.5,
-        ),
-      ),
-
-      const SizedBox(height: 18),
-
-      SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: _openExternalDeletionPage,
-          icon: const Icon(
-            Icons.open_in_new_rounded,
-          ),
-          label: const Text(
-            'Open Account Deletion Page',
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: pinkAccentColor,
-            side: BorderSide(
-              color: pinkAccentColor.withValues(alpha: 0.55),
-            ),
-            minimumSize: const Size(
-              double.infinity,
-              52,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
+const SizedBox(height: 16),
+const Text(
+'If you cannot access Stelluriini, you can open our '
+'external account deletion page and submit a deletion request.',
+style: TextStyle(
+color: secondaryTextColor,
+fontSize: 14,
+height: 1.5,
+),
+),
+const SizedBox(height: 18),
+SizedBox(
+width: double.infinity,
+child: OutlinedButton.icon(
+onPressed: _openExternalDeletionPage,
+icon: const Icon(
+Icons.open_in_new_rounded,
+),
+label: const Text(
+'Open Account Deletion Page',
+),
+style: OutlinedButton.styleFrom(
+foregroundColor: pinkAccentColor,
+side: BorderSide(
+color: pinkAccentColor.withValues(
+alpha: 0.55,
+),
+),
+minimumSize: const Size(
+double.infinity,
+52,
+),
+shape: RoundedRectangleBorder(
+borderRadius: BorderRadius.circular(15),
+),
+textStyle: const TextStyle(
+fontSize: 14,
+fontWeight: FontWeight.w700,
+),
+),
+),
+),
+],
+),
 );
-
 }
 
 // ============================================================
@@ -313,7 +319,9 @@ decoration: BoxDecoration(
 color: surfaceColor,
 borderRadius: BorderRadius.circular(18),
 border: Border.all(
-color: goldAccentColor.withValues(alpha: 0.20),
+color: goldAccentColor.withValues(
+alpha: 0.20,
+),
 ),
 ),
 child: const Row(
@@ -372,46 +380,35 @@ padding: const EdgeInsets.fromLTRB(
 child: Column(
 children: [
 _buildStellaHeader(),
-
-          const SizedBox(height: 18),
-
-          const Text(
-            'Stelluriini Account',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: primaryTextColor,
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          const Text(
-            'Manage your account and deletion options',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: secondaryTextColor,
-              fontSize: 14,
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          _buildInAppDeleteCard(context),
-
-          const SizedBox(height: 18),
-
-          _buildExternalRequestCard(context),
-
-          const SizedBox(height: 18),
-
-          _buildInformationCard(),
-        ],
-      ),
-    ),
-  ),
+const SizedBox(height: 18),
+const Text(
+'Stelluriini Account',
+textAlign: TextAlign.center,
+style: TextStyle(
+color: primaryTextColor,
+fontSize: 25,
+fontWeight: FontWeight.w800,
+),
+),
+const SizedBox(height: 8),
+const Text(
+'Manage your account and deletion options',
+textAlign: TextAlign.center,
+style: TextStyle(
+color: secondaryTextColor,
+fontSize: 14,
+),
+),
+const SizedBox(height: 28),
+_buildInAppDeleteCard(),
+const SizedBox(height: 18),
+_buildExternalRequestCard(),
+const SizedBox(height: 18),
+_buildInformationCard(),
+],
+),
+),
+),
 );
-
 }
 }
