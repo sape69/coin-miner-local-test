@@ -125,6 +125,30 @@ const {
 
 
 // ============================================================
+// 🌐 EXTERNAL ACCOUNT DELETION REQUEST
+// ============================================================
+//
+// Ulkoinen Google Play -tilinpoistopyyntö.
+//
+// Tämä endpoint vastaanottaa ulkoiselta
+// Stelluriini Hosting -sivulta tilinpoistopyynnön.
+//
+// TÄRKEÄÄ:
+//
+// Tämä ei vielä poista käyttäjätiliä automaattisesti.
+//
+// Pyyntö tallennetaan Firestoreen käsiteltäväksi.
+//
+// ============================================================
+
+const {
+  requestAccountDeletion,
+} = require(
+  "./src/functions/accountDeletionRequestFunctions",
+);
+
+
+// ============================================================
 // 🔗 REFERRAL
 // ============================================================
 //
@@ -259,6 +283,25 @@ exports.ensureUserProfile =
 
 exports.deleteAccount =
   deleteAccount;
+
+
+// ============================================================
+// 🌐 EXTERNAL ACCOUNT DELETION REQUEST EXPORT
+// ============================================================
+//
+// Google Playn ulkoinen tilinpoistopyyntö.
+//
+// Endpoint vastaanottaa:
+//
+// POST
+//
+// Stelluriini Hosting:
+// https://stelluriini.web.app
+//
+// ============================================================
+
+exports.requestAccountDeletion =
+  requestAccountDeletion;
 
 
 // ============================================================
