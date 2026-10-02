@@ -8,7 +8,7 @@
 //
 // Delete Account:
 // - User must be authenticated.
-// - UID always comes from context.auth.uid.
+// - UID always comes from request.auth.uid.
 // - User Firestore document is deleted.
 // - Firebase Authentication account is deleted.
 //
@@ -17,12 +17,20 @@
 //
 // ============================================================
 
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const {
+  onCall,
+  HttpsError,
+} = require(
+  "firebase-functions/v2/https",
+);
 
 const {
-  admin,
+  auth,
   db,
-} = require("../firebase/firebase");
+} = require(
+  "../firebase/firebase",
+);
+
 
 // ============================================================
 // 🗑️ DELETE ACCOUNT
@@ -33,6 +41,7 @@ const deleteAccount = onCall(
     region: "us-central1",
   },
   async (request) => {
+
     // ----------------------------------------------------------
     // 🔐 AUTHENTICATION CHECK
     // ----------------------------------------------------------
@@ -43,6 +52,7 @@ const deleteAccount = onCall(
         "You must be signed in to delete your account.",
       );
     }
+
 
     // ----------------------------------------------------------
     // 👤 CURRENT USER UID
@@ -55,16 +65,25 @@ const deleteAccount = onCall(
     //
     // ----------------------------------------------------------
 
-    const uid = request.auth.uid;
+    const uid =
+      request.auth.uid;
+
 
     try {
+
       // --------------------------------------------------------
       // 🗑️ DELETE FIRESTORE USER DOCUMENT
       // --------------------------------------------------------
       //
-      // Current Stelluriini user data is stored under:
+      // Current Stelluriini user profile:
       //
       // users/{uid}
+      //
+      // IMPORTANT:
+      // Deleting a Firestore document does NOT automatically
+      // delete possible subcollections.
+      //
+      // Those must be handled separately if they exist.
       //
       // --------------------------------------------------------
 
@@ -73,11 +92,21 @@ const deleteAccount = onCall(
         .doc(uid)
         .delete();
 
+
       // --------------------------------------------------------
       // 🔥 DELETE FIREBASE AUTH ACCOUNT
       // --------------------------------------------------------
+      //
+      // The UID comes directly from the authenticated request.
+      //
+      // The client cannot choose another UID.
+      //
+      // --------------------------------------------------------
 
-      await admin.auth().deleteUser(uid);
+      await auth.deleteUser(
+        uid,
+      );
+
 
       // --------------------------------------------------------
       // ✅ SUCCESS
@@ -85,9 +114,16 @@ const deleteAccount = onCall(
 
       return {
         success: true,
-        message: "Account deleted successfully.",
+        message:
+            "Account deleted successfully.",
       };
+
     } catch (error) {
+
+      // --------------------------------------------------------
+      // ❌ ERROR
+      // --------------------------------------------------------
+
       console.error(
         "deleteAccount failed:",
         error,
@@ -100,6 +136,7 @@ const deleteAccount = onCall(
     }
   },
 );
+
 
 // ============================================================
 // 📤 EXPORT
