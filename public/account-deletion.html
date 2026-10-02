@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -11,7 +12,7 @@
 
   <meta
     name="description"
-    content="Request deletion of your Stelluriini account and associated data."
+    content="Request deletion of your Stelluriini account and associated account data."
   >
 
   <style>
@@ -28,6 +29,8 @@
       --secondary: #BDB4D1;
 
       --danger: #FF6B7A;
+      --success: #8FF0C8;
+
       --border: rgba(181, 140, 255, 0.20);
     }
 
@@ -137,7 +140,7 @@
     }
 
     .section {
-      margin-top: 24px;
+      margin-top: 28px;
     }
 
     .section h2 {
@@ -211,6 +214,152 @@
       font-weight: 700;
     }
 
+    .request-box {
+      margin-top: 20px;
+
+      padding: 20px;
+
+      background: var(--surface);
+
+      border: 1px solid var(--border);
+
+      border-radius: 16px;
+    }
+
+    .form-label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      color: var(--text);
+
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .form-help {
+      margin-bottom: 14px;
+
+      color: var(--secondary);
+
+      font-size: 13px;
+
+      line-height: 1.5;
+    }
+
+    .email-input {
+      width: 100%;
+
+      padding: 14px 16px;
+
+      border: 1px solid rgba(181, 140, 255, 0.35);
+
+      border-radius: 12px;
+
+      outline: none;
+
+      background: var(--card);
+
+      color: var(--text);
+
+      font-size: 16px;
+
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .email-input::placeholder {
+      color: var(--secondary);
+    }
+
+    .email-input:focus {
+      border-color: var(--purple);
+
+      box-shadow:
+        0 0 0 3px rgba(181, 140, 255, 0.12);
+    }
+
+    .request-button {
+      width: 100%;
+
+      margin-top: 14px;
+
+      padding: 14px 18px;
+
+      border: 0;
+
+      border-radius: 12px;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--purple),
+          var(--pink)
+        );
+
+      color: var(--background);
+
+      font-size: 16px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+    }
+
+    .request-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .request-button:active {
+      transform: translateY(0);
+    }
+
+    .request-button:disabled {
+      opacity: 0.55;
+
+      cursor: not-allowed;
+
+      transform: none;
+    }
+
+    .status {
+      display: none;
+
+      margin-top: 14px;
+
+      padding: 14px 16px;
+
+      border-radius: 12px;
+
+      font-size: 14px;
+
+      line-height: 1.5;
+    }
+
+    .status.success {
+      display: block;
+
+      background: rgba(143, 240, 200, 0.08);
+
+      border: 1px solid rgba(143, 240, 200, 0.25);
+
+      color: var(--success);
+    }
+
+    .status.error {
+      display: block;
+
+      background: rgba(255, 107, 122, 0.08);
+
+      border: 1px solid rgba(255, 107, 122, 0.30);
+
+      color: var(--danger);
+    }
+
     .warning {
       margin-top: 24px;
 
@@ -231,46 +380,6 @@
 
     .warning strong {
       color: var(--danger);
-    }
-
-    .email-box {
-      margin-top: 20px;
-
-      padding: 20px;
-
-      background: var(--surface);
-
-      border: 1px solid var(--border);
-
-      border-radius: 16px;
-
-      text-align: center;
-    }
-
-    .email-label {
-      display: block;
-
-      margin-bottom: 8px;
-
-      color: var(--secondary);
-
-      font-size: 14px;
-    }
-
-    .email {
-      color: var(--gold);
-
-      font-size: 18px;
-
-      font-weight: 600;
-
-      text-decoration: none;
-
-      word-break: break-word;
-    }
-
-    .email:hover {
-      text-decoration: underline;
     }
 
     .footer {
@@ -302,6 +411,7 @@
 
       .card {
         padding: 24px 20px;
+
         border-radius: 20px;
       }
 
@@ -312,6 +422,7 @@
       .logo {
         width: 68px;
         height: 68px;
+
         font-size: 34px;
       }
     }
@@ -324,7 +435,10 @@
 
     <section class="card">
 
-      <div class="logo" aria-label="Stella">
+      <div
+        class="logo"
+        aria-label="Stella"
+      >
         🐱
       </div>
 
@@ -333,9 +447,14 @@
       </h1>
 
       <p class="subtitle">
-        Request deletion of your Stelluriini account and
-        associated account data.
+        Request deletion of your Stelluriini account
+        and associated account data.
       </p>
+
+
+      <!-- =====================================================
+           IN-APP DELETION
+           ===================================================== -->
 
       <div class="section">
 
@@ -369,6 +488,11 @@
 
       </div>
 
+
+      <!-- =====================================================
+           EXTERNAL DELETION REQUEST
+           ===================================================== -->
+
       <div class="section">
 
         <h2>
@@ -376,39 +500,78 @@
         </h2>
 
         <p>
-          If you cannot access your Stelluriini account,
-          you can request account deletion by contacting
-          us using the email address below.
+          If you cannot access the Stelluriini app,
+          you can submit an account deletion request
+          below.
         </p>
 
-        <div class="email-box">
+        <div class="request-box">
 
-          <span class="email-label">
-            Account deletion request
-          </span>
+          <form id="deletionForm">
 
-          <a
-            class="email"
-            href="mailto:stelluriini.app@gmail.com?subject=Stelluriini%20Account%20Deletion%20Request"
-          >
-            stelluriini.app@gmail.com
-          </a>
+            <label
+              class="form-label"
+              for="email"
+            >
+              Account email address
+            </label>
+
+            <div class="form-help">
+              Enter the email address associated with
+              your Stelluriini account.
+            </div>
+
+            <input
+              id="email"
+              class="email-input"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            >
+
+            <button
+              id="submitButton"
+              class="request-button"
+              type="submit"
+            >
+              Request Account Deletion
+            </button>
+
+            <div
+              id="status"
+              class="status"
+              role="status"
+              aria-live="polite"
+            ></div>
+
+          </form>
 
         </div>
 
       </div>
+
+
+      <!-- =====================================================
+           IMPORTANT INFORMATION
+           ===================================================== -->
 
       <div class="warning">
 
         <strong>Important:</strong>
 
         Account deletion is permanent and cannot be
-        undone. When an account deletion request is
-        processed, the associated Stelluriini account
-        data is deleted according to the application's
-        data deletion process.
+        undone. Your deletion request will be submitted
+        for processing. Do not submit a request for
+        another person's account.
 
       </div>
+
+
+      <!-- =====================================================
+           FOOTER
+           ===================================================== -->
 
       <div class="footer">
 
@@ -425,6 +588,202 @@
     </section>
 
   </main>
+
+
+  <!-- =========================================================
+       ACCOUNT DELETION REQUEST
+       ========================================================= -->
+
+  <script>
+
+    "use strict";
+
+    // ---------------------------------------------------------
+    // Firebase Cloud Function endpoint
+    // ---------------------------------------------------------
+
+    const DELETE_REQUEST_URL =
+      "https://us-central1-stelluriini.cloudfunctions.net/requestAccountDeletion";
+
+
+    // ---------------------------------------------------------
+    // Elements
+    // ---------------------------------------------------------
+
+    const form =
+      document.getElementById("deletionForm");
+
+    const emailInput =
+      document.getElementById("email");
+
+    const submitButton =
+      document.getElementById("submitButton");
+
+    const statusBox =
+      document.getElementById("status");
+
+
+    // ---------------------------------------------------------
+    // Show status
+    // ---------------------------------------------------------
+
+    function showStatus(message, type) {
+
+      statusBox.textContent = message;
+
+      statusBox.className =
+        "status " + type;
+
+    }
+
+
+    // ---------------------------------------------------------
+    // Submit deletion request
+    // ---------------------------------------------------------
+
+    form.addEventListener(
+      "submit",
+      async function (event) {
+
+        event.preventDefault();
+
+
+        const email =
+          emailInput.value.trim();
+
+
+        // -----------------------------------------------------
+        // Basic validation
+        // -----------------------------------------------------
+
+        if (!email) {
+
+          showStatus(
+            "Please enter your account email address.",
+            "error",
+          );
+
+          return;
+        }
+
+
+        // -----------------------------------------------------
+        // Disable form
+        // -----------------------------------------------------
+
+        submitButton.disabled = true;
+
+        submitButton.textContent =
+          "Submitting Request...";
+
+        statusBox.className =
+          "status";
+
+
+        try {
+
+          // ---------------------------------------------------
+          // Send request to Firebase Cloud Function
+          // ---------------------------------------------------
+
+          const response =
+            await fetch(
+              DELETE_REQUEST_URL,
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify({
+                  email: email,
+                }),
+              },
+            );
+
+
+          // ---------------------------------------------------
+          // Read response
+          // ---------------------------------------------------
+
+          let data = null;
+
+          try {
+
+            data =
+              await response.json();
+
+          } catch (error) {
+
+            data = null;
+          }
+
+
+          // ---------------------------------------------------
+          // Handle failed request
+          // ---------------------------------------------------
+
+          if (!response.ok || !data || !data.success) {
+
+            const message =
+              data && data.message
+                ? data.message
+                : "Unable to submit the deletion request. Please try again later.";
+
+            throw new Error(message);
+          }
+
+
+          // ---------------------------------------------------
+          // Success
+          // ---------------------------------------------------
+
+          showStatus(
+            "Your account deletion request has been received. We will process the request according to our account deletion process.",
+            "success",
+          );
+
+
+          // ---------------------------------------------------
+          // Clear form
+          // ---------------------------------------------------
+
+          emailInput.value = "";
+
+
+        } catch (error) {
+
+          console.error(
+            "Account deletion request failed:",
+            error,
+          );
+
+
+          showStatus(
+            error.message ||
+              "Unable to submit the deletion request. Please try again later.",
+            "error",
+          );
+
+
+        } finally {
+
+          // ---------------------------------------------------
+          // Restore button
+          // ---------------------------------------------------
+
+          submitButton.disabled = false;
+
+          submitButton.textContent =
+            "Request Account Deletion";
+
+        }
+
+      },
+    );
+
+  </script>
 
 </body>
 </html>
