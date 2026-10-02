@@ -1,61 +1,73 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8"><meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-«»
+  <title>Stelluriini - Account Deletion</title>
 
-<meta
-name="description"
-content="Stelluriini account deletion request"
+  <meta
+    name="description"
+    content="Request deletion of your Stelluriini account and associated data."
+  >
 
-«»
-
-  <title>Stelluriini – Account Deletion</title>  <style>
+  <style>
     :root {
       --background: #120B24;
       --surface: #1A0E31;
       --card: #21113B;
+
       --purple: #B58CFF;
       --pink: #FFB7E8;
       --gold: #FFD166;
+
       --text: #F8F4FF;
       --secondary: #BDB4D1;
-      --delete: #FF6B7A;
+
+      --danger: #FF6B7A;
+      --border: rgba(181, 140, 255, 0.20);
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html {
+      min-height: 100%;
+      background: var(--background);
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      padding: 24px;
-
-      background:
-        radial-gradient(
-          circle at top,
-          #2A1550 0%,
-          var(--background) 48%,
-          #0D071A 100%
-        );
-
-      color: var(--text);
 
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         Roboto,
+        Helvetica,
         Arial,
         sans-serif;
+
+      background:
+        radial-gradient(
+          circle at top,
+          rgba(181, 140, 255, 0.16),
+          transparent 42%
+        ),
+        var(--background);
+
+      color: var(--text);
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      padding: 24px;
     }
 
     .container {
@@ -66,24 +78,39 @@ content="Stelluriini account deletion request"
     .card {
       background: var(--card);
 
-      border: 1px solid
-        rgba(181, 140, 255, 0.20);
+      border: 1px solid var(--border);
 
-      border-radius: 28px;
+      border-radius: 24px;
 
-      padding: 36px 30px;
+      padding: 32px;
 
       box-shadow:
-        0 24px 70px
-        rgba(0, 0, 0, 0.40);
+        0 20px 60px rgba(0, 0, 0, 0.35);
     }
 
     .logo {
-      text-align: center;
+      width: 76px;
+      height: 76px;
 
-      font-size: 54px;
+      margin: 0 auto 20px;
 
-      margin-bottom: 8px;
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--purple),
+          var(--pink)
+        );
+
+      font-size: 40px;
+
+      box-shadow:
+        0 10px 30px rgba(181, 140, 255, 0.30);
     }
 
     h1 {
@@ -91,35 +118,39 @@ content="Stelluriini account deletion request"
 
       text-align: center;
 
-      color: var(--text);
-
       font-size: 30px;
-
       line-height: 1.2;
+
+      color: var(--text);
     }
 
     .subtitle {
-      margin: 10px 0 30px;
+      margin: 12px 0 30px;
 
       text-align: center;
 
       color: var(--secondary);
 
-      font-size: 15px;
+      font-size: 16px;
 
       line-height: 1.6;
     }
 
-    h2 {
-      margin: 28px 0 10px;
-
-      color: var(--purple);
-
-      font-size: 19px;
+    .section {
+      margin-top: 24px;
     }
 
-    p,
-    li {
+    .section h2 {
+      margin: 0 0 10px;
+
+      color: var(--pink);
+
+      font-size: 20px;
+    }
+
+    .section p {
+      margin: 0;
+
       color: var(--secondary);
 
       font-size: 15px;
@@ -127,74 +158,141 @@ content="Stelluriini account deletion request"
       line-height: 1.7;
     }
 
-    ul {
-      padding-left: 22px;
+    .steps {
+      margin: 16px 0 0;
+
+      padding: 0;
+
+      list-style: none;
+    }
+
+    .steps li {
+      position: relative;
+
+      margin-bottom: 12px;
+
+      padding: 14px 16px 14px 48px;
+
+      background: var(--surface);
+
+      border: 1px solid var(--border);
+
+      border-radius: 14px;
+
+      color: var(--text);
+
+      line-height: 1.5;
+    }
+
+    .steps li::before {
+      content: attr(data-number);
+
+      position: absolute;
+
+      left: 14px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      width: 24px;
+      height: 24px;
+
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--purple);
+
+      color: var(--background);
+
+      font-size: 13px;
+      font-weight: 700;
     }
 
     .warning {
       margin-top: 24px;
 
-      padding: 18px;
+      padding: 16px;
 
-      border-radius: 18px;
+      border-radius: 14px;
 
-      background:
-        rgba(255, 107, 122, 0.08);
+      background: rgba(255, 107, 122, 0.08);
 
-      border: 1px solid
-        rgba(255, 107, 122, 0.20);
+      border: 1px solid rgba(255, 107, 122, 0.30);
+
+      color: var(--secondary);
+
+      line-height: 1.6;
+
+      font-size: 14px;
     }
 
     .warning strong {
-      color: var(--delete);
+      color: var(--danger);
     }
 
-    .contact {
-      margin-top: 26px;
+    .email-box {
+      margin-top: 20px;
 
       padding: 20px;
 
-      border-radius: 18px;
+      background: var(--surface);
 
-      background:
-        rgba(181, 140, 255, 0.08);
+      border: 1px solid var(--border);
 
-      border: 1px solid
-        rgba(181, 140, 255, 0.18);
+      border-radius: 16px;
 
       text-align: center;
     }
 
-    .contact a {
-      color: var(--pink);
+    .email-label {
+      display: block;
 
-      font-weight: 700;
+      margin-bottom: 8px;
+
+      color: var(--secondary);
+
+      font-size: 14px;
+    }
+
+    .email {
+      color: var(--gold);
+
+      font-size: 18px;
+
+      font-weight: 600;
 
       text-decoration: none;
 
       word-break: break-word;
     }
 
-    .contact a:hover {
+    .email:hover {
       text-decoration: underline;
     }
 
     .footer {
       margin-top: 28px;
 
+      padding-top: 20px;
+
+      border-top: 1px solid var(--border);
+
       text-align: center;
 
       color: var(--secondary);
 
-      font-size: 12px;
+      font-size: 13px;
+
+      line-height: 1.6;
     }
 
     .brand {
-      color: var(--gold);
+      color: var(--purple);
 
       font-weight: 700;
-
-      letter-spacing: 1px;
     }
 
     @media (max-width: 480px) {
@@ -203,9 +301,8 @@ content="Stelluriini account deletion request"
       }
 
       .card {
-        padding: 28px 20px;
-
-        border-radius: 22px;
+        padding: 24px 20px;
+        border-radius: 20px;
       }
 
       h1 {
@@ -213,106 +310,121 @@ content="Stelluriini account deletion request"
       }
 
       .logo {
-        font-size: 46px;
+        width: 68px;
+        height: 68px;
+        font-size: 34px;
       }
     }
-  </style></head><body>  <main class="container"><section class="card">
+  </style>
+</head>
 
-  <div class="logo">
-    🐱💜⛏️
-  </div>
+<body>
 
-  <h1>
-    Stelluriini Account Deletion
-  </h1>
+  <main class="container">
 
-  <p class="subtitle">
-    Request deletion of your Stelluriini account
-    and associated account data.
-  </p>
+    <section class="card">
 
-  <h2>
-    How to delete your account
-  </h2>
+      <div class="logo" aria-label="Stella">
+        🐱
+      </div>
 
-  <p>
-    If you are signed in to the Stelluriini app,
-    you can permanently delete your account directly
-    from the app:
-  </p>
+      <h1>
+        Stelluriini Account Deletion
+      </h1>
 
-  <ul>
-    <li>
-      Open the Stelluriini menu.
-    </li>
+      <p class="subtitle">
+        Request deletion of your Stelluriini account and
+        associated account data.
+      </p>
 
-    <li>
-      Select <strong>Delete Account</strong>.
-    </li>
+      <div class="section">
 
-    <li>
-      Confirm the deletion.
-    </li>
-  </ul>
+        <h2>
+          Delete your account in the app
+        </h2>
 
-  <p>
-    The app sends the authenticated account deletion
-    request to Stelluriini's secure backend.
-  </p>
+        <p>
+          If you can access the Stelluriini app, you can
+          permanently delete your account directly from
+          the application.
+        </p>
 
-  <div class="warning">
-    <strong>Important:</strong>
+        <ol class="steps">
 
-    <p>
-      Account deletion is permanent and cannot be
-      undone. Account data associated with the
-      Stelluriini account is deleted as part of the
-      account deletion process.
-    </p>
-  </div>
+          <li data-number="1">
+            Open the Stelluriini app and sign in.
+          </li>
 
-  <h2>
-    Cannot access the app?
-  </h2>
+          <li data-number="2">
+            Open the menu and select
+            <strong>Delete Account</strong>.
+          </li>
 
-  <p>
-    If you cannot access the Stelluriini app,
-    you can request account deletion by contacting
-    the Stelluriini team.
-  </p>
+          <li data-number="3">
+            Confirm that you want to permanently delete
+            your account.
+          </li>
 
-  <div class="contact">
+        </ol>
 
-    <p>
-      Account deletion requests:
-    </p>
+      </div>
 
-    <a
-      href="mailto:stelluriini.app@gmail.com?subject=Stelluriini%20Account%20Deletion%20Request"
-    >
-      stelluriini.app@gmail.com
-    </a>
+      <div class="section">
 
-    <p>
-      Please send the request from the email address
-      associated with your Stelluriini account.
-    </p>
+        <h2>
+          Cannot access the app?
+        </h2>
 
-  </div>
+        <p>
+          If you cannot access your Stelluriini account,
+          you can request account deletion by contacting
+          us using the email address below.
+        </p>
 
-  <div class="footer">
+        <div class="email-box">
 
-    <span class="brand">
-      STELLURIINI • STL
-    </span>
+          <span class="email-label">
+            Account deletion request
+          </span>
 
-    <br>
+          <a
+            class="email"
+            href="mailto:stelluriini.app@gmail.com?subject=Stelluriini%20Account%20Deletion%20Request"
+          >
+            stelluriini.app@gmail.com
+          </a>
 
-    Stella is mining the future. 🐱
+        </div>
 
-  </div>
+      </div>
 
-</section>
+      <div class="warning">
 
-  </main></body>
+        <strong>Important:</strong>
+
+        Account deletion is permanent and cannot be
+        undone. When an account deletion request is
+        processed, the associated Stelluriini account
+        data is deleted according to the application's
+        data deletion process.
+
+      </div>
+
+      <div class="footer">
+
+        <span class="brand">
+          Stelluriini
+        </span>
+
+        <br>
+
+        Stella-powered virtual mining experience.
+
+      </div>
+
+    </section>
+
+  </main>
+
+</body>
 </html>
