@@ -104,6 +104,27 @@ const {
 
 
 // ============================================================
+// 🗑️ ACCOUNT
+// ============================================================
+//
+// Stella Account Management.
+//
+// deleteAccount poistaa kirjautuneen käyttäjän Firebase
+// Authentication -tilin sekä käyttäjäprofiilin.
+//
+// Käyttäjän UID saadaan callable-functionin
+// request.auth.uid-arvosta.
+//
+// ============================================================
+
+const {
+  deleteAccount,
+} = require(
+  "./src/functions/accountFunctions",
+);
+
+
+// ============================================================
 // 🔗 REFERRAL
 // ============================================================
 //
@@ -220,6 +241,24 @@ exports.getAchievementsCompleted =
 
 exports.ensureUserProfile =
   ensureUserProfile;
+
+
+// ============================================================
+// 🗑️ ACCOUNT EXPORT
+// ============================================================
+//
+// Flutter voi kutsua:
+//
+// FirebaseFunctions
+//   .httpsCallable('deleteAccount')
+//
+// Poisto tehdään aina kirjautuneen käyttäjän
+// authentication UID:n perusteella.
+//
+// ============================================================
+
+exports.deleteAccount =
+  deleteAccount;
 
 
 // ============================================================
