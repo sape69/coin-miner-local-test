@@ -4,151 +4,222 @@
 // 🐱 STELLURIINI - ACCOUNT FUNCTIONS
 // ============================================================
 //
-// Account management.
+// Vastuu:
 //
-// Delete Account:
+// - Käyttäjän oman tilin poistaminen
+// - Firebase Authentication -käyttäjän poistaminen
+// - users/{uid}-dokumentin poistaminen
+// - users/{uid}-alikokoelmien poistaminen
+// - käyttäjän admobRewards-dokumenttien poistaminen
 //
-// - User must be authenticated.
-// - UID always comes from request.auth.uid.
-// - All Firestore data under users/{uid} is deleted recursively.
-// - Firebase Authentication account is deleted.
+// TÄRKEÄÄ:
 //
-// IMPORTANT:
-//
-// The client must NEVER provide a UID for account deletion.
+// UID otetaan aina request.auth.uid-arvosta.
+// Asiakas ei saa itse määrittää poistettavaa UID:tä.
 //
 // ============================================================
 
 const {
-  onCall,
-  HttpsError,
-} = require(
-  "firebase-functions/v2/https",
-);
+onCall,
+HttpsError,
+} = require("firebase-functions/v2/https");
 
 const {
-  auth,
-  db,
-} = require(
-  "../firebase/firebase",
-);
-
+auth,
+db,
+} = require("../firebase/firebase");
 
 // ============================================================
-// 🗑️ DELETE ACCOUNT
+// DELETE ACCOUNT
 // ============================================================
 
-const deleteAccount = onCall(
-  {
-    region: "us-central1",
-    timeoutSeconds: 540,
-  },
+const deleteAccount =
+onCall(
+{
+region:
+"us-central1",
 
-  async (request) => {
+  timeoutSeconds:
+    540,
+},
+async (
+  request,
+) => {
+  // ======================================================
+  // AUTHENTICATION
+  // ======================================================
 
-    // ----------------------------------------------------------
-    // 🔐 AUTHENTICATION CHECK
-    // ----------------------------------------------------------
+  if (
+    !request.auth ||
+    !request.auth.uid
+  ) {
+    throw new HttpsError(
+      "unauthenticated",
+      "You must be signed in to delete your account.",
+    );
+  }
 
-    if (!request.auth) {
-      throw new HttpsError(
-        "unauthenticated",
-        "You must be signed in to delete your account.",
+  // ======================================================
+  // AUTHORITATIVE UID
+  // ======================================================
+
+  const uid =
+    request.auth.uid;
+
+  try {
+    // ====================================================
+    // USER DOCUMENT
+    // ====================================================
+
+    const userRef =
+      db
+        .collection("users")
+        .doc(uid);
+
+    // ====================================================
+    // ADMOB REWARD DOCUMENTS
+    // ====================================================
+    //
+    // admobRewards/{transactionId} ei sijaitse
+    // users/{uid}-puussa.
+    //
+    // Siksi recursiveDelete(userRef) ei löydä niitä.
+    //
+    // adMobFunctions.js tallentaa UID:n reward-dokumenttiin:
+    //
+    // admobRewards/{transactionId}
+    //   uid: uid
+    //
+    // Haetaan käyttäjän kaikki AdMob rewardit ennen
+    // niiden poistamista.
+    //
+    // ====================================================
+
+    const adMobRewardsSnapshot =
+      await db
+        .collection("admobRewards")
+        .where(
+          "uid",
+          "==",
+          uid,
+        )
+        .get();
+
+    // ====================================================
+    // DELETE ADMOB REWARDS
+    // ====================================================
+    //
+    // Käytetään recursiveDeletea myös reward-dokumenteille,
+    // jotta mahdolliset tulevat alikokoelmat eivät jää
+    // vahingossa poistamatta.
+    //
+    // ====================================================
+
+    if (
+      !adMobRewardsSnapshot.empty
+    ) {
+      await Promise.all(
+        adMobRewardsSnapshot.docs.map(
+          async (
+            rewardDoc,
+          ) => {
+            await db.recursiveDelete(
+              rewardDoc.ref,
+            );
+          },
+        ),
       );
     }
 
-
-    // ----------------------------------------------------------
-    // 👤 CURRENT USER UID
-    // ----------------------------------------------------------
+    // ====================================================
+    // DELETE USER TREE
+    // ====================================================
     //
-    // NEVER accept a UID from request.data.
+    // Poistaa:
     //
-    // The authenticated Firebase user is the only account
-    // that this function is allowed to delete.
+    // users/{uid}
+    // users/{uid}/transactions/*
+    // sekä mahdolliset tulevat users/{uid}-alikokoelmat.
     //
-    // ----------------------------------------------------------
+    // ====================================================
 
-    const uid =
-      request.auth.uid;
+    await db.recursiveDelete(
+      userRef,
+    );
 
+    // ====================================================
+    // DELETE FIREBASE AUTH USER
+    // ====================================================
 
-    try {
+    await auth.deleteUser(
+      uid,
+    );
 
-      // --------------------------------------------------------
-      // 🗑️ DELETE USER FIRESTORE TREE
-      // --------------------------------------------------------
-      //
-      // Current Stelluriini structure:
-      //
-      // users/{uid}
-      // users/{uid}/transactions/{transactionId}
-      //
-      // recursiveDelete() removes the user document together
-      // with all documents in its subcollections.
-      //
-      // --------------------------------------------------------
+    // ====================================================
+    // SUCCESS
+    // ====================================================
 
-      const userRef =
-        db
-          .collection("users")
-          .doc(uid);
-
-      await db.recursiveDelete(
-        userRef,
-      );
-
-
-      // --------------------------------------------------------
-      // 🔥 DELETE FIREBASE AUTH ACCOUNT
-      // --------------------------------------------------------
-      //
-      // The UID comes directly from the authenticated request.
-      //
-      // The client cannot choose another UID.
-      //
-      // --------------------------------------------------------
-
-      await auth.deleteUser(
+    console.log(
+      "🐱 Stelluriini account deleted successfully.",
+      {
         uid,
-      );
+        deletedAdMobRewards:
+          adMobRewardsSnapshot.size,
+      },
+    );
 
+    return {
+      success:
+        true,
 
-      // --------------------------------------------------------
-      // ✅ SUCCESS
-      // --------------------------------------------------------
+      message:
+        "Account deleted successfully.",
+    };
+  } catch (
+    error
+  ) {
+    // ====================================================
+    // ERROR LOG
+    // ====================================================
 
-      return {
-        success: true,
+    console.error(
+      "❌ Stelluriini account deletion failed.",
+      {
+        uid,
+        error:
+          error?.message ||
+          String(error),
+      },
+    );
 
-        message:
-          "Account deleted successfully.",
-      };
+    // ====================================================
+    // PRESERVE EXPECTED HTTPS ERRORS
+    // ====================================================
 
-    } catch (error) {
-
-      // --------------------------------------------------------
-      // ❌ ERROR
-      // --------------------------------------------------------
-
-      console.error(
-        "deleteAccount failed:",
-        error,
-      );
-
-      throw new HttpsError(
-        "internal",
-        "Account deletion failed. Please try again.",
-      );
+    if (
+      error instanceof
+      HttpsError
+    ) {
+      throw error;
     }
-  },
+
+    // ====================================================
+    // GENERIC ERROR
+    // ====================================================
+
+    throw new HttpsError(
+      "internal",
+      "Account deletion failed. Please try again.",
+    );
+  }
+},
+
 );
 
-
 // ============================================================
-// 📤 EXPORT
+// EXPORTS
 // ============================================================
 
 module.exports = {
-  deleteAccount,
+deleteAccount,
 };
