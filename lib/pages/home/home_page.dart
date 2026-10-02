@@ -45,6 +45,9 @@ class _HomePageState extends State<HomePage>
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
+  static const Color pinkAccentColor = Color(0xFFFFB7E8);
+  static const Color goldAccentColor = Color(0xFFFFD166);
+  static const Color deleteAccountColor = Color(0xFFFF6B7A);
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
@@ -997,6 +1000,180 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 🗑️ DELETE ACCOUNT CONFIRMATION
+  // ============================================================
+  //
+  // TÄRKEÄÄ:
+  //
+  // Tämä dialogi ei vielä poista käyttäjätiliä.
+  //
+  // Se varmistaa, että käyttäjä todella haluaa jatkaa.
+  // Varsinainen Firebase / Firestore -poisto yhdistetään
+  // seuraavassa vaiheessa.
+  //
+  // ============================================================
+
+  Future<void> _showDeleteAccountConfirmation() async {
+    if (!mounted) {
+      return;
+    }
+
+    final bool? confirmed =
+        await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: cardColor,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color:
+                  deleteAccountColor.withValues(
+                alpha: 0.30,
+              ),
+            ),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            8,
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(
+            24,
+            8,
+            24,
+            8,
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16,
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color:
+                      deleteAccountColor.withValues(
+                    alpha: 0.12,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(14),
+                  border: Border.all(
+                    color:
+                        deleteAccountColor.withValues(
+                      alpha: 0.22,
+                    ),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.delete_forever_rounded,
+                  color: deleteAccountColor,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Delete Account?',
+                  style: TextStyle(
+                    color: primaryTextColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Are you sure you want to permanently delete '
+            'your Stelluriini account and associated data?\n\n'
+            'This action cannot be undone.',
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(false);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: accentColor,
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(true);
+              },
+              icon: const Icon(
+                Icons.delete_forever_rounded,
+                size: 19,
+              ),
+              label: const Text(
+                'Delete Account',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    deleteAccountColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // Tällä hetkellä vain ilmoitus.
+    //
+    // Varsinainen Firebase / Firestore -poisto tehdään
+    // erillisessä vaiheessa.
+    // ----------------------------------------------------------
+
+    _showMessage(
+      '🐱 Account deletion will be connected next.',
+    );
+  }
+
+  // ============================================================
   // 🚪 LOGOUT
   // ============================================================
 
@@ -1491,6 +1668,14 @@ class _HomePageState extends State<HomePage>
         onTransactionHistoryPressed:
             _openTransactionHistory,
         onReferralPressed: _openReferrals,
+
+        // ------------------------------------------------------
+        // 🗑️ DELETE ACCOUNT
+        // ------------------------------------------------------
+
+        onDeleteAccountPressed:
+            _showDeleteAccountConfirmation,
+
         onLogoutPressed: _logout,
       ),
       body: SafeArea(
