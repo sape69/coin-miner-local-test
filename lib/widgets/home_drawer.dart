@@ -22,8 +22,8 @@ import 'cat_avatar.dart';
 // - avaa erillisen Referral-näkymän
 //
 // Account:
-// - Delete Account
-// - avaa tilin poistamisen vahvistuksen
+// - Account Deletion
+// - avaa erillisen tilin poistamisen näkymän
 //
 // ============================================================
 
@@ -63,7 +63,18 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onReferralPressed;
-  final VoidCallback onDeleteAccountPressed;
+
+  // ----------------------------------------------------------
+  // 🗑️ ACCOUNT DELETION
+  //
+  // Tämä callback avaa AccountDeletionPage.
+  //
+  // Varsinainen tilin poistaminen tapahtuu vasta
+  // AccountDeletionPage -> HomePage -> Firebase Function.
+  // ----------------------------------------------------------
+
+  final VoidCallback onAccountDeletionPressed;
+
   final VoidCallback onLogoutPressed;
 
   const HomeDrawer({
@@ -76,7 +87,7 @@ class HomeDrawer extends StatelessWidget {
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onReferralPressed,
-    required this.onDeleteAccountPressed,
+    required this.onAccountDeletionPressed,
     required this.onLogoutPressed,
   });
 
@@ -241,10 +252,19 @@ class HomeDrawer extends StatelessWidget {
   }
 
   // ==========================================================
-  // 🗑️ DELETE ACCOUNT
+  // 🗑️ ACCOUNT DELETION ITEM
+  // ==========================================================
+  //
+  // Tämä EI enää käynnistä poistamista suoraan.
+  //
+  // Se avaa AccountDeletionPage-sivun, jossa käyttäjä voi:
+  //
+  // 1. Poistaa tilin suoraan sovelluksesta
+  // 2. Pyytää poistoa sähköpostilla, jos sovellukseen ei pääse
+  //
   // ==========================================================
 
-  Widget _deleteAccountItem() {
+  Widget _accountDeletionItem() {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
@@ -257,7 +277,7 @@ class HomeDrawer extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           splashColor: deleteAccountColor.withValues(alpha: 0.12),
           highlightColor: deleteAccountColor.withValues(alpha: 0.05),
-          onTap: onDeleteAccountPressed,
+          onTap: onAccountDeletionPressed,
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 14,
@@ -753,10 +773,10 @@ class HomeDrawer extends StatelessWidget {
                   ),
 
                   // ------------------------------------------------
-                  // 🗑️ DELETE ACCOUNT
+                  // 🗑️ ACCOUNT DELETION
                   // ------------------------------------------------
 
-                  _deleteAccountItem(),
+                  _accountDeletionItem(),
 
                   // ------------------------------------------------
                   // 🚪 LOGOUT
