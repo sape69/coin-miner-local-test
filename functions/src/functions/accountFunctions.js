@@ -7,12 +7,14 @@
 // Account management.
 //
 // Delete Account:
+//
 // - User must be authenticated.
 // - UID always comes from request.auth.uid.
-// - User Firestore document is deleted.
+// - All Firestore data under users/{uid} is deleted recursively.
 // - Firebase Authentication account is deleted.
 //
 // IMPORTANT:
+//
 // The client must NEVER provide a UID for account deletion.
 //
 // ============================================================
@@ -39,7 +41,9 @@ const {
 const deleteAccount = onCall(
   {
     region: "us-central1",
+    timeoutSeconds: 540,
   },
+
   async (request) => {
 
     // ----------------------------------------------------------
@@ -72,25 +76,27 @@ const deleteAccount = onCall(
     try {
 
       // --------------------------------------------------------
-      // 🗑️ DELETE FIRESTORE USER DOCUMENT
+      // 🗑️ DELETE USER FIRESTORE TREE
       // --------------------------------------------------------
       //
-      // Current Stelluriini user profile:
+      // Current Stelluriini structure:
       //
       // users/{uid}
+      // users/{uid}/transactions/{transactionId}
       //
-      // IMPORTANT:
-      // Deleting a Firestore document does NOT automatically
-      // delete possible subcollections.
-      //
-      // Those must be handled separately if they exist.
+      // recursiveDelete() removes the user document together
+      // with all documents in its subcollections.
       //
       // --------------------------------------------------------
 
-      await db
-        .collection("users")
-        .doc(uid)
-        .delete();
+      const userRef =
+        db
+          .collection("users")
+          .doc(uid);
+
+      await db.recursiveDelete(
+        userRef,
+      );
 
 
       // --------------------------------------------------------
@@ -114,8 +120,9 @@ const deleteAccount = onCall(
 
       return {
         success: true,
+
         message:
-            "Account deleted successfully.",
+          "Account deleted successfully.",
       };
 
     } catch (error) {
