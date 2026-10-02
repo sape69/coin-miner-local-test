@@ -21,6 +21,10 @@ import 'cat_avatar.dart';
 // - näyttää aktiiviset / ei-aktiiviset kutsutut
 // - avaa erillisen Referral-näkymän
 //
+// Account:
+// - Delete Account
+// - avaa tilin poistamisen vahvistuksen
+//
 // ============================================================
 
 // ============================================================
@@ -43,6 +47,8 @@ const Color inactiveColor = Color(0xFF8D879F);
 
 const Color logoutColor = Color(0xFFFF8A8A);
 
+const Color deleteAccountColor = Color(0xFFFF6B7A);
+
 // ============================================================
 // 🐱 HOME DRAWER
 // ============================================================
@@ -57,6 +63,7 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onReferralPressed;
+  final VoidCallback onDeleteAccountPressed;
   final VoidCallback onLogoutPressed;
 
   const HomeDrawer({
@@ -69,6 +76,7 @@ class HomeDrawer extends StatelessWidget {
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onReferralPressed,
+    required this.onDeleteAccountPressed,
     required this.onLogoutPressed,
   });
 
@@ -229,6 +237,80 @@ class HomeDrawer extends StatelessWidget {
       icon: Icons.groups_rounded,
       title: _t('referrals'),
       onTap: onReferralPressed,
+    );
+  }
+
+  // ==========================================================
+  // 🗑️ DELETE ACCOUNT
+  // ==========================================================
+
+  Widget _deleteAccountItem() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 4,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          splashColor: deleteAccountColor.withValues(alpha: 0.12),
+          highlightColor: deleteAccountColor.withValues(alpha: 0.05),
+          onTap: onDeleteAccountPressed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: deleteAccountColor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: deleteAccountColor.withValues(alpha: 0.22),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: deleteAccountColor.withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.delete_forever_rounded,
+                    color: deleteAccountColor,
+                    size: 23,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    _t('deleteAccount'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: deleteAccountColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: deleteAccountColor.withValues(alpha: 0.45),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -711,6 +793,16 @@ class HomeDrawer extends StatelessWidget {
                     title: _t('transactionHistory'),
                     onTap: onTransactionHistoryPressed,
                   ),
+
+                  // ------------------------------------------------
+                  // 🗑️ DELETE ACCOUNT
+                  // ------------------------------------------------
+
+                  _deleteAccountItem(),
+
+                  // ------------------------------------------------
+                  // 🚪 LOGOUT
+                  // ------------------------------------------------
 
                   _logoutItem(),
                 ],
