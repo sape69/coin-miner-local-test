@@ -468,10 +468,6 @@ class HomeDrawer extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ------------------------------------------------------
-          // ✨ TOP DECORATION
-          // ------------------------------------------------------
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -512,13 +508,7 @@ class HomeDrawer extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // ------------------------------------------------------
-          // ✨ SMALL STELLA STAR
-          // ------------------------------------------------------
-
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -540,21 +530,9 @@ class HomeDrawer extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 14),
-
-          // ------------------------------------------------------
-          // 🐱 STELLA AVATAR
-          // ------------------------------------------------------
-
           _stellaAvatar(),
-
           const SizedBox(height: 14),
-
-          // ------------------------------------------------------
-          // 🌟 APP NAME
-          // ------------------------------------------------------
-
           const Text(
             'STELLURIINI',
             textAlign: TextAlign.center,
@@ -565,13 +543,7 @@ class HomeDrawer extends StatelessWidget {
               letterSpacing: 3,
             ),
           ),
-
           const SizedBox(height: 7),
-
-          // ------------------------------------------------------
-          // 🐾 STELLA LABEL
-          // ------------------------------------------------------
-
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -596,9 +568,7 @@ class HomeDrawer extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 7),
-
           Text(
             _t('stellaCommunity'),
             textAlign: TextAlign.center,
@@ -680,9 +650,7 @@ class HomeDrawer extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -704,9 +672,7 @@ class HomeDrawer extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
           Text(
             _t('footerToken'),
             textAlign: TextAlign.center,
@@ -736,15 +702,7 @@ class HomeDrawer extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // ----------------------------------------------------
-            // ✨ STELLA HEADER
-            // ----------------------------------------------------
-
             _header(),
-
-            // ----------------------------------------------------
-            // 📋 MENU
-            // ----------------------------------------------------
 
             Expanded(
               child: ListView(
@@ -808,10 +766,6 @@ class HomeDrawer extends StatelessWidget {
                 ],
               ),
             ),
-
-            // ----------------------------------------------------
-            // 🐾 FOOTER
-            // ----------------------------------------------------
 
             _footer(),
           ],
