@@ -173,7 +173,7 @@ const Map<String, String> fiTranslations = {
   // ============================================================
 
   'powerBoost':
-      'Stella Power Boost',
+      'Stellan Power Boost',
 
   'powerBoostOffer':
       'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi. 🐱⚡',
@@ -206,7 +206,7 @@ const Map<String, String> fiTranslations = {
       'Päivittäinen mainosraja on saavutettu.',
 
   'powerBoostReward':
-      'Stella Power Boost: +{amount} HR',
+      'Stellan Power Boost: +{amount} HR',
 
   'adRewardDuplicate':
       'Tämä mainospalkinto on jo käsitelty.',
@@ -251,10 +251,10 @@ const Map<String, String> fiTranslations = {
       'Stellan kissafakta',
 
   'stellaPower':
-      'Stella Power',
+      'Stellan voima',
 
   'stellaMining':
-      'Stella Mining',
+      'Stellan louhinta',
 
   'stellaWelcome':
       'Stella on täällä auttamassa sinua. 🐱💜',
@@ -1097,5 +1097,36 @@ const Map<String, String> fiTranslations = {
 
   'accountDeletionFailed':
       'Tilin poistaminen epäonnistui. Yritä uudelleen.',
+
+  // ============================================================
+  // 🌟 ADDITIONAL LOCALIZATION
+  // ============================================================
+
+  'accountDeletionAppTitle':
+      'Stelluriini-tilin poistaminen',
+
+  'dailyMiningPowerBoost':
+      'Päivittäinen louhintavoiman tehostus',
+
+  'dailyMiningPowerBoostShort':
+      'Louhintavoiman tehostus',
+
+  'done':
+      '✓ VALMIS',
+
+  'claiming':
+      'KERÄTÄÄN...',
+
+  'claimHashRate':
+      'KERÄÄ +1 HASH RATE',
+
+  'comeBackTomorrow':
+      'Palaa huomenna hakemaan lisää Hash Ratea 🐱',
+
+  'claimDailyBonusInfo':
+      'Kerää päivittäinen bonus kasvattaaksesi louhintavoimaa',
+
+  'footerMiningFuture':
+      'Stella louhii tulevaisuutta.',
 
 };
