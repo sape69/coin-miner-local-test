@@ -26,6 +26,11 @@ const Map<String, String> deTranslations = {
   'comingSoon': 'Demnächst verfügbar',
   'information': 'Information',
 
+  'loading': 'Wird geladen...',
+  'active': 'Aktiv',
+  'welcome': 'Willkommen',
+  'stellaWelcome': 'Stella ist hier, um dir zu helfen. 🐱💜',
+
   // ============================================================
   // 💰 BALANCE / MINING
   // ============================================================
@@ -42,15 +47,36 @@ const Map<String, String> deTranslations = {
   'dailyHashRateMaximum': 'Maximum: {rate} HR',
   'dailyHashRateSuccess': 'Hashrate an Tag {day}: {rate} HR',
 
-  'stellaMiningProgress': 'Stellas Mining-Fortschritt',
-  'miningProgress': 'Mining-Fortschritt',
-  'miningProgressStella': 'Stellas Mining-Fortschritt',
+  // ============================================================
+  // 🐱 STELLA MINING
+  // ============================================================
 
-  'stlPerHour': 'STL pro Stunde',
-  'hashRateBonus': 'Hashrate-Bonus',
+  'stellaMiningTitle':
+      'Stellas Mining',
 
-  'startMining': 'MINING STARTEN',
-  'claimMining': 'STL EINSAMMELN',
+  'stellaMiningSubtitle':
+      'Stella arbeitet für dich. 🐱⛏️',
+
+  'stellaMiningProgress':
+      'Stellas Mining-Fortschritt',
+
+  'miningProgress':
+      'Mining-Fortschritt',
+
+  'miningProgressStella':
+      'Stellas Mining-Fortschritt',
+
+  'stlPerHour':
+      'STL pro Stunde',
+
+  'hashRateBonus':
+      'Hashrate-Bonus',
+
+  'startMining':
+      'MINING STARTEN',
+
+  'claimMining':
+      'STL EINSAMMELN',
 
   'watchAdStartMining':
       'WERBUNG ANSEHEN & MINING STARTEN',
@@ -58,54 +84,128 @@ const Map<String, String> deTranslations = {
   'watchAdCollectReward':
       'WERBUNG ANSEHEN & BELOHNUNG SAMMELN',
 
-  'miningActive': 'Mining aktiv',
-  'miningComplete': 'Mining-Zyklus abgeschlossen',
-  'miningFinished': 'Mining beendet',
+  'miningActive':
+      'Mining aktiv',
 
-  'timeRemaining': 'Verbleibende Zeit',
-  'timeRemainingLabel': 'Verbleibende Zeit',
-  'remaining': 'Verbleibende Zeit: {time}',
-  'timeRemainingText': 'Verbleibende Zeit: {time}',
-  'miningTimeRemaining': 'Verbleibende Zeit: {time}',
+  'miningComplete':
+      'Mining-Zyklus abgeschlossen',
 
-  'waitingForStella': 'Warte auf Stella 🐱💜',
+  'miningFinished':
+      'Mining beendet',
 
-  'streak': 'Tages-Serie',
-  'days': 'Tage',
+  'timeRemaining':
+      'Verbleibende Zeit',
+
+  'timeRemainingLabel':
+      'Verbleibende Zeit',
+
+  'remaining':
+      'Verbleibende Zeit: {time}',
+
+  'timeRemainingText':
+      'Verbleibende Zeit: {time}',
+
+  'miningTimeRemaining':
+      'Verbleibende Zeit: {time}',
+
+  'waitingForStella':
+      'Warte auf Stella 🐱💜',
+
+  'streak':
+      'Tages-Serie',
+
+  'days':
+      'Tage',
+
+  'day':
+      'Tag',
 
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
 
-  'dailyBonus': 'Täglicher Bonus',
-  'dailyClaim': 'Täglichen Bonus sammeln',
-  'dailyReward': 'Tägliche Belohnung',
-  'claimedToday': 'Heute gesammelt',
+  'dailyBonus':
+      'Täglicher Bonus',
+
+  'dailyClaim':
+      'Täglichen Bonus sammeln',
+
+  'dailyReward':
+      'Tägliche Belohnung',
+
+  'claimedToday':
+      'Heute gesammelt',
 
   'alreadyClaimed':
       'Du hast die heutige Belohnung bereits gesammelt.',
+
+  'dailyMiningPowerBoost':
+      'Täglicher Mining-Power-Boost',
+
+  'dailyMiningPowerBoostShort':
+      'Mining-Power-Boost',
+
+  'done':
+      '✓ FERTIG',
+
+  'claiming':
+      'WIRD GESAMMELT...',
+
+  'claimHashRate':
+      '+1 HASH RATE SAMMELN',
+
+  'comeBackTomorrow':
+      'Komm morgen wieder, um einen weiteren Hashrate-Boost zu erhalten 🐱',
+
+  'claimDailyBonusInfo':
+      'Sammle deinen täglichen Bonus, um deine Mining-Power zu erhöhen',
 
   // ============================================================
   // 📺 ADS
   // ============================================================
 
-  'watchAd': 'WERBUNG ANSEHEN',
-  'watchAndEarn': 'ANSEHEN & VERDIENEN',
-  'loadingAd': 'WERBUNG WIRD GELADEN...',
-  'adLoading': 'WERBUNG WIRD GELADEN...',
-  'prepareAd': 'Werbung wird vorbereitet...',
-  'adReward': '+{amount} HR',
+  'watchAd':
+      'WERBUNG ANSEHEN',
+
+  'watchAndEarn':
+      'ANSEHEN & VERDIENEN',
+
+  'watchAdSubtitle':
+      'Sieh dir eine Werbung an und gib Stella einen Power Boost. 🐱⚡',
+
+  'loadingAd':
+      'WERBUNG WIRD GELADEN...',
+
+  'adLoading':
+      'WERBUNG WIRD GELADEN...',
+
+  'prepareAd':
+      'Werbung wird vorbereitet...',
+
+  'adReward':
+      '+{amount} HR',
+
+  'adNotAvailable':
+      'Die Werbung ist derzeit nicht verfügbar.',
+
+  'adLoadError':
+      'Die Werbung konnte nicht geladen werden.',
+
+  'adShowError':
+      'Die Werbung konnte nicht angezeigt werden.',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
-  'powerBoost': 'Stella Power Boost',
+  'powerBoost':
+      'Stella Power Boost',
 
   'powerBoostOffer':
-      'Werbung ansehen und +{amount} HR Stella Power Boost für 4 Stunden aktivieren. 🐱⚡',
+      'Sieh dir eine Werbung an und aktiviere +{amount} HR Stella Power Boost für 4 Stunden. 🐱⚡',
 
-  'powerBoostActive': 'Power Boost aktiv',
+  'powerBoostActive':
+      'Power Boost aktiv',
 
   'powerBoostActiveTitle':
       'Stella Power Boost ist aktiv! 🐱💜',
@@ -123,7 +223,7 @@ const Map<String, String> deTranslations = {
       'Die nächste Werbung ist nach Ende des Boosts verfügbar.',
 
   'maxBoostsInfo':
-      'Du kannst bis zu {count} Power Boosts pro Tag aktivieren.',
+      'Das tägliche Power-Boost-Limit wurde erreicht.',
 
   'adsToday':
       'Werbung heute: {current}/{max}',
@@ -154,17 +254,24 @@ const Map<String, String> deTranslations = {
   // 👤 GENERAL UI
   // ============================================================
 
-  'profile': 'Profil',
+  'profile':
+      'Profil',
 
   // ============================================================
   // 🐱 STELLA
   // ============================================================
 
-  'catFact': 'Stellas Katzenfakt',
-  'stellaFacts': 'Stellas Katzenfakt',
+  'catFact':
+      'Stellas Katzenfakt',
 
-  'stellaPower': 'Stella Power',
-  'stellaMining': 'Stella Mining',
+  'stellaFacts':
+      'Stellas Katzenfakt',
+
+  'stellaPower':
+      'Stellas Kraft',
+
+  'stellaMining':
+      'Stellas Mining',
 
   'stellaIsMining':
       'Stella miniert',
@@ -219,14 +326,20 @@ const Map<String, String> deTranslations = {
   // 💎 TRANSACTIONS
   // ============================================================
 
-  'transactions': 'Transaktionen',
+  'transactions':
+      'Transaktionen',
 
   'noTransactions':
       'Noch keine Transaktionen.',
 
-  'totalStl': 'STL insgesamt',
-  'points': 'Punkte',
-  'pointsAdded': 'Punkte hinzugefügt',
+  'totalStl':
+      'STL insgesamt',
+
+  'points':
+      'Punkte',
+
+  'pointsAdded':
+      'Punkte hinzugefügt',
 
   // ============================================================
   // 🔄 TEST ACCOUNT
@@ -238,18 +351,27 @@ const Map<String, String> deTranslations = {
   'resetConfirm':
       'Möchtest du das Testkonto wirklich zurücksetzen?',
 
-  'reset': 'Zurücksetzen',
+  'reset':
+      'Zurücksetzen',
 
   // ============================================================
   // 🔐 LOGIN
   // ============================================================
 
-  'email': 'E-Mail',
-  'password': 'Passwort',
-  'forgotPassword': 'Passwort vergessen?',
+  'email':
+      'E-Mail',
 
-  'login': 'ANMELDEN',
-  'loggingIn': 'ANMELDUNG...',
+  'password':
+      'Passwort',
+
+  'forgotPassword':
+      'Passwort vergessen?',
+
+  'login':
+      'ANMELDEN',
+
+  'loggingIn':
+      'ANMELDUNG...',
 
   'createAccount':
       'Noch kein Konto? Neues Konto erstellen',
@@ -870,209 +992,70 @@ const Map<String, String> deTranslations = {
   'footerToken':
       'STL • STELLURIINI',
 
+  'footerMiningFuture':
+      'Stella miniert die Zukunft.',
+
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'loading':
-      'Wird geladen...',
 
   // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'active':
-      'Aktiv',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'welcome':
-      'Willkommen',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaWelcome':
-      'Stella ist hier, um dir zu helfen. 🐱💜',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningTitle':
-      'Stella Mining',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningSubtitle':
-      'Stella arbeitet für dich. 🐱⛏️',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'day':
-      'Tag',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'watchAdSubtitle':
-      'Sieh dir eine Werbung an und gib Stella einen Power Boost. 🐱⚡',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adNotAvailable':
-      'Die Werbung ist derzeit nicht verfügbar.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adLoadError':
-      'Die Werbung konnte nicht geladen werden.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adShowError':
-      'Die Werbung konnte nicht angezeigt werden.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
+  // 👤 ACCOUNT / UI
   // ============================================================
 
   'referrals':
       'Empfehlungen',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccount':
       'Konto löschen',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletion':
       'Kontolöschung',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'accountDeletionAppTitle':
+      'Stelluriini-Kontolöschung',
 
   'accountDeletionTitle':
-      'Konto löschen',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+      'Dein Konto löschen',
 
   'accountDeletionSubtitle':
       'Du kannst dein Stelluriini-Konto und die zugehörigen Daten dauerhaft löschen.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteYourAccount':
       'Dein Konto löschen',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteAccountDescription':
       'Dadurch werden dein Konto und die zugehörigen Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccountButton':
       'KONTO LÖSCHEN',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'cannotAccessApp':
       'Kein Zugriff auf die App?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessAppDescription':
       'Wenn du keinen Zugriff auf die App hast, kannst du über unsere öffentliche Löschseite eine Anfrage zur Kontolöschung senden.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'openAccountDeletionPage':
       'KONTOLÖSCHSEITE ÖFFNEN',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionPermanent':
       'Die Kontolöschung ist dauerhaft und kann nicht rückgängig gemacht werden.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionDialogTitle':
       'Konto löschen?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionDialogMessage':
       'Möchtest du dein Konto und die zugehörigen Daten wirklich dauerhaft löschen?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionCancel':
       'Abbrechen',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionConfirm':
       'Konto löschen',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionSuccess':
       'Dein Konto wurde erfolgreich gelöscht.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionFailed':
       'Die Kontolöschung ist fehlgeschlagen. Bitte versuche es erneut.',
-
 };
