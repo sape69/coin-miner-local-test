@@ -12,7 +12,7 @@ const Map<String, String> esTranslations = {
   'token': 'Token STL',
   'tokenomics': 'Tokenómica',
   'whitepaper': 'Whitepaper',
-  'whitePaper': 'White Paper',
+  'whitePaper': 'Whitepaper',
   'language': 'Idioma',
   'selectLanguage': 'Seleccionar idioma',
   'logout': 'Cerrar sesión',
@@ -26,6 +26,13 @@ const Map<String, String> esTranslations = {
   'comingSoon': 'Próximamente',
   'information': 'Información',
 
+  'loading': 'Cargando...',
+  'active': 'Activo',
+  'welcome': 'Bienvenido',
+
+  'stellaWelcome':
+      'Stella está aquí para ayudarte. 🐱💜',
+
   // ============================================================
   // 💰 BALANCE / MINING
   // ============================================================
@@ -37,12 +44,28 @@ const Map<String, String> esTranslations = {
   'effectiveHashRate': 'Tasa de hash efectiva',
   'effectiveHashRateLabel': 'Tasa de hash efectiva',
 
-  'dailyHashRateLabel': 'Tasa de hash diaria',
-  'dailyHashRateDay': 'Día {day}',
-  'dailyHashRateMaximum': 'Máximo: {rate} HR',
-  'dailyHashRateSuccess': 'Tasa de hash del día {day}: {rate} HR',
+  'dailyHashRateLabel':
+      'Tasa de hash diaria',
 
-  // 🐱 Stella Mining
+  'dailyHashRateDay':
+      'Día {day}',
+
+  'dailyHashRateMaximum':
+      'Máximo: {rate} HR',
+
+  'dailyHashRateSuccess':
+      'Tasa de hash del día {day}: {rate} HR',
+
+  // ============================================================
+  // 🐱 STELLA MINING
+  // ============================================================
+
+  'stellaMiningTitle':
+      'Minería de Stella',
+
+  'stellaMiningSubtitle':
+      'Stella está trabajando para ti. 🐱⛏️',
+
   'stellaMiningProgress':
       'Progreso de minería de Stella',
 
@@ -103,6 +126,9 @@ const Map<String, String> esTranslations = {
   'days':
       'días',
 
+  'day':
+      'Día',
+
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
@@ -122,6 +148,27 @@ const Map<String, String> esTranslations = {
   'alreadyClaimed':
       'Ya has reclamado la recompensa de hoy.',
 
+  'dailyMiningPowerBoost':
+      'Impulso diario de potencia de minería',
+
+  'dailyMiningPowerBoostShort':
+      'Impulso de potencia de minería',
+
+  'done':
+      '✓ LISTO',
+
+  'claiming':
+      'RECLAMANDO...',
+
+  'claimHashRate':
+      'RECLAMAR +1 HASH RATE',
+
+  'comeBackTomorrow':
+      'Vuelve mañana para obtener otro impulso de tasa de hash 🐱',
+
+  'claimDailyBonusInfo':
+      'Reclama tu bono diario para aumentar tu potencia de minería',
+
   // ============================================================
   // 📺 ADS
   // ============================================================
@@ -131,6 +178,9 @@ const Map<String, String> esTranslations = {
 
   'watchAndEarn':
       'VER Y GANAR',
+
+  'watchAdSubtitle':
+      'Mira un anuncio y dale a Stella un Power Boost. 🐱⚡',
 
   'loadingAd':
       'CARGANDO ANUNCIO...',
@@ -143,6 +193,15 @@ const Map<String, String> esTranslations = {
 
   'adReward':
       '+{amount} HR',
+
+  'adNotAvailable':
+      'El anuncio no está disponible en este momento.',
+
+  'adLoadError':
+      'No se pudo cargar el anuncio.',
+
+  'adShowError':
+      'No se pudo mostrar el anuncio.',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
@@ -207,6 +266,12 @@ const Map<String, String> esTranslations = {
   'profile':
       'Perfil',
 
+  'referrals':
+      'Referidos',
+
+  'deleteAccount':
+      'Eliminar cuenta',
+
   // ============================================================
   // 🐱 STELLA
   // ============================================================
@@ -218,10 +283,10 @@ const Map<String, String> esTranslations = {
       'Dato gatuno de Stella',
 
   'stellaPower':
-      'Stella Power',
+      'Potencia de Stella',
 
   'stellaMining':
-      'Stella Mining',
+      'Minería de Stella',
 
   'stellaIsMining':
       'Stella está minando',
@@ -586,6 +651,15 @@ const Map<String, String> esTranslations = {
   'roadmapFuture':
       'Futuro',
 
+  'roadmapStatusCompleted':
+      'Completado',
+
+  'roadmapStatusCurrent':
+      'En desarrollo',
+
+  'roadmapStatusPlanned':
+      'Planificado',
+
   'futureWithdrawalsTitle':
       'Posibles retiros futuros',
 
@@ -596,6 +670,9 @@ const Map<String, String> esTranslations = {
       'Un posible modelo de retiros se definirá por separado antes de implementar la función.',
 
   'developmentPrinciples':
+      'Principios de desarrollo',
+
+  'roadmapDevelopmentPrinciples':
       'Principios de desarrollo',
 
   'roadmapCommunity':
@@ -711,10 +788,10 @@ const Map<String, String> esTranslations = {
       'Dirección Mint copiada.',
 
   'copyMintAddress':
-      'Copiar dirección Mint',
+      'COPIAR DIRECCIÓN MINT',
 
   'viewOnSolscan':
-      'Ver en Solscan',
+      'VER EN SOLSCAN',
 
   'couldNotOpenSolscan':
       'No se pudo abrir Solscan.',
@@ -930,209 +1007,64 @@ const Map<String, String> esTranslations = {
   'footerToken':
       'STL • STELLURIINI',
 
+  'footerMiningFuture':
+      'Stella está minando el futuro.',
+
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'loading':
-      'Cargando...',
 
   // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'active':
-      'Activo',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'welcome':
-      'Bienvenido',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaWelcome':
-      'Stella está aquí para ayudarte. 🐱💜',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningTitle':
-      'Minería de Stella',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningSubtitle':
-      'Stella está trabajando para ti. 🐱⛏️',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'day':
-      'Día',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'watchAdSubtitle':
-      'Mira un anuncio y dale a Stella un Power Boost. 🐱⚡',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adNotAvailable':
-      'El anuncio no está disponible en este momento.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adLoadError':
-      'No se pudo cargar el anuncio.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adShowError':
-      'No se pudo mostrar el anuncio.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'referrals':
-      'Referidos',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'deleteAccount':
-      'Eliminar cuenta',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
+  // 🔐 ACCOUNT DELETION
   // ============================================================
 
   'accountDeletion':
       'Eliminación de cuenta',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'accountDeletionAppTitle':
+      'Eliminación de cuenta de Stelluriini',
 
   'accountDeletionTitle':
       'Eliminar tu cuenta',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSubtitle':
       'Puedes eliminar permanentemente tu cuenta de Stelluriini y los datos asociados.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteYourAccount':
       'Eliminar tu cuenta',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccountDescription':
       'Esto eliminará permanentemente tu cuenta y los datos asociados. Esta acción no se puede deshacer.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteAccountButton':
       'ELIMINAR CUENTA',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessApp':
       '¿No puedes acceder a la aplicación?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'cannotAccessAppDescription':
       'Si no puedes acceder a la aplicación, puedes enviar una solicitud de eliminación de cuenta desde nuestra página pública.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'openAccountDeletionPage':
       'ABRIR PÁGINA DE ELIMINACIÓN',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionPermanent':
       'La eliminación de la cuenta es permanente y no se puede deshacer.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionDialogTitle':
       '¿Eliminar cuenta?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionDialogMessage':
       '¿Seguro que quieres eliminar permanentemente tu cuenta y los datos asociados?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionCancel':
       'Cancelar',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionConfirm':
       'Eliminar cuenta',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSuccess':
       'Tu cuenta se ha eliminado correctamente.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionFailed':
       'No se pudo eliminar la cuenta. Inténtalo de nuevo.',
-
 };
