@@ -11,205 +11,213 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Apply localization fixes
-        shell: python
         run: |
+          python3 <<'PY'
           from pathlib import Path
           import re
 
-          root = Path("lib")
-          lang_dir = root / "localization" / "languages"
+          ROOT = Path("lib")
+          LANG_DIR = ROOT / "localization" / "languages"
+
+          # ============================================================
+          # TRANSLATIONS
+          # ============================================================
 
           translations = {
-            "en": {
-              "accountDeletion": "Account Deletion",
-              "accountDeletionAppTitle": "Stelluriini Account",
-              "accountDeletionSubtitle": "Manage your account and deletion options",
-              "deleteYourAccount": "Delete your account",
-              "deleteAccountDescription": "You can permanently delete your Stelluriini account and associated account data directly from the app.",
-              "deleteAccountButton": "Delete Account",
-              "cannotAccessApp": "Cannot access the app?",
-              "cannotAccessAppDescription": "If you cannot access Stelluriini, you can open our external account deletion page and submit a deletion request.",
-              "openAccountDeletionPage": "Open Account Deletion Page",
-              "accountDeletionPermanent": "Account deletion is permanent. Your Stelluriini account and associated data cannot be restored after deletion.",
-              "footerMiningFuture": "Stella is mining the future.",
-              "dailyMiningPowerBoost": "Boost Stella's mining power 🐱⛏️",
-              "dailyMiningPowerBoostShort": "Daily mining power boost",
-              "done": "DONE",
-              "claiming": "CLAIMING...",
-              "claimedToday": "CLAIMED TODAY",
-              "claimHashRate": "CLAIM +1 HASH RATE",
-              "comeBackTomorrow": "Come back tomorrow for another Hash Rate boost 🐱",
-              "claimDailyBonusInfo": "Claim your daily bonus to increase mining power",
-            },
+              "en": {
+                  "accountDeletion": "Account Deletion",
+                  "accountDeletionAppTitle": "Stelluriini Account",
+                  "accountDeletionSubtitle": "Manage your account and deletion options",
+                  "deleteYourAccount": "Delete your account",
+                  "deleteAccountDescription": "You can permanently delete your Stelluriini account and associated account data directly from the app.",
+                  "deleteAccountButton": "Delete Account",
+                  "cannotAccessApp": "Cannot access the app?",
+                  "cannotAccessAppDescription": "If you cannot access Stelluriini, you can open our external account deletion page and submit a deletion request.",
+                  "openAccountDeletionPage": "Open Account Deletion Page",
+                  "accountDeletionPermanent": "Account deletion is permanent. Your Stelluriini account and associated data cannot be restored after deletion.",
+                  "footerMiningFuture": "Stella is mining the future.",
+                  "dailyMiningPowerBoost": "Boost Stella's mining power 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "Daily mining power boost",
+                  "done": "DONE",
+                  "claiming": "CLAIMING...",
+                  "claimedToday": "CLAIMED TODAY",
+                  "claimHashRate": "CLAIM +1 HASH RATE",
+                  "comeBackTomorrow": "Come back tomorrow for another Hash Rate boost 🐱",
+                  "claimDailyBonusInfo": "Claim your daily bonus to increase mining power",
+              },
 
-            "fi": {
-              "accountDeletion": "Tilin poistaminen",
-              "accountDeletionAppTitle": "Stelluriini-tili",
-              "accountDeletionSubtitle": "Hallitse tiliäsi ja tilin poistamisen asetuksia",
-              "deleteYourAccount": "Poista tilisi",
-              "deleteAccountDescription": "Voit poistaa Stelluriini-tilisi ja siihen liittyvät tilitiedot pysyvästi suoraan sovelluksesta.",
-              "deleteAccountButton": "Poista tili",
-              "cannotAccessApp": "Etkö pääse sovellukseen?",
-              "cannotAccessAppDescription": "Jos et pääse Stelluriiniin, voit avata ulkoisen tilinpoistosivun ja lähettää poistopyynnön.",
-              "openAccountDeletionPage": "Avaa tilinpoistosivu",
-              "accountDeletionPermanent": "Tilin poistaminen on pysyvää. Stelluriini-tiliäsi ja siihen liittyviä tietoja ei voi palauttaa poistamisen jälkeen.",
-              "footerMiningFuture": "Stella louhii tulevaisuutta.",
-              "dailyMiningPowerBoost": "Tehosta Stellan louhintatehoa 🐱⛏️",
-              "dailyMiningPowerBoostShort": "Päivittäinen louhintatehon lisäys",
-              "done": "VALMIS",
-              "claiming": "KERÄTÄÄN...",
-              "claimedToday": "KERÄTTY TÄNÄÄN",
-              "claimHashRate": "KERÄÄ +1 HASH RATE",
-              "comeBackTomorrow": "Palaa huomenna hakemaan uusi Hash Rate -lisäys 🐱",
-              "claimDailyBonusInfo": "Kerää päivittäinen bonus kasvattaaksesi louhintatehoa",
-            },
+              "fi": {
+                  "accountDeletion": "Tilin poistaminen",
+                  "accountDeletionAppTitle": "Stelluriini-tili",
+                  "accountDeletionSubtitle": "Hallitse tiliäsi ja tilin poistamisen asetuksia",
+                  "deleteYourAccount": "Poista tilisi",
+                  "deleteAccountDescription": "Voit poistaa Stelluriini-tilisi ja siihen liittyvät tilitiedot pysyvästi suoraan sovelluksesta.",
+                  "deleteAccountButton": "Poista tili",
+                  "cannotAccessApp": "Etkö pääse sovellukseen?",
+                  "cannotAccessAppDescription": "Jos et pääse Stelluriiniin, voit avata ulkoisen tilinpoistosivun ja lähettää poistopyynnön.",
+                  "openAccountDeletionPage": "Avaa tilinpoistosivu",
+                  "accountDeletionPermanent": "Tilin poistaminen on pysyvää. Stelluriini-tiliäsi ja siihen liittyviä tietoja ei voi palauttaa poistamisen jälkeen.",
+                  "footerMiningFuture": "Stella louhii tulevaisuutta.",
+                  "dailyMiningPowerBoost": "Tehosta Stellan louhintatehoa 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "Päivittäinen louhintatehon lisäys",
+                  "done": "VALMIS",
+                  "claiming": "KERÄTÄÄN...",
+                  "claimedToday": "KERÄTTY TÄNÄÄN",
+                  "claimHashRate": "KERÄÄ +1 HASH RATE",
+                  "comeBackTomorrow": "Palaa huomenna hakemaan uusi Hash Rate -lisäys 🐱",
+                  "claimDailyBonusInfo": "Kerää päivittäinen bonus kasvattaaksesi louhintatehoa",
+              },
 
-            "de": {
-              "accountDeletion": "Konto löschen",
-              "accountDeletionAppTitle": "Stelluriini-Konto",
-              "accountDeletionSubtitle": "Verwalte dein Konto und die Löschoptionen",
-              "deleteYourAccount": "Dein Konto löschen",
-              "deleteAccountDescription": "Du kannst dein Stelluriini-Konto und die zugehörigen Kontodaten dauerhaft direkt in der App löschen.",
-              "deleteAccountButton": "Konto löschen",
-              "cannotAccessApp": "Kein Zugriff auf die App?",
-              "cannotAccessAppDescription": "Wenn du keinen Zugriff auf Stelluriini hast, kannst du unsere externe Seite zur Kontolöschung öffnen und eine Löschanfrage senden.",
-              "openAccountDeletionPage": "Kontolöschseite öffnen",
-              "accountDeletionPermanent": "Die Kontolöschung ist dauerhaft. Dein Stelluriini-Konto und die zugehörigen Daten können danach nicht wiederhergestellt werden.",
-              "footerMiningFuture": "Stella schürft die Zukunft.",
-              "dailyMiningPowerBoost": "Stellas Mining-Leistung erhöhen 🐱⛏️",
-              "dailyMiningPowerBoostShort": "Tägliche Mining-Leistungssteigerung",
-              "done": "FERTIG",
-              "claiming": "WIRD GESAMMELT...",
-              "claimedToday": "HEUTE ABGEHOLT",
-              "claimHashRate": "+1 HASH RATE SAMMELN",
-              "comeBackTomorrow": "Komm morgen für eine weitere Hash-Rate-Steigerung zurück 🐱",
-              "claimDailyBonusInfo": "Sammle deinen täglichen Bonus, um die Mining-Leistung zu erhöhen",
-            },
+              "de": {
+                  "accountDeletion": "Konto löschen",
+                  "accountDeletionAppTitle": "Stelluriini-Konto",
+                  "accountDeletionSubtitle": "Verwalte dein Konto und die Löschoptionen",
+                  "deleteYourAccount": "Dein Konto löschen",
+                  "deleteAccountDescription": "Du kannst dein Stelluriini-Konto und die zugehörigen Kontodaten dauerhaft direkt in der App löschen.",
+                  "deleteAccountButton": "Konto löschen",
+                  "cannotAccessApp": "Kein Zugriff auf die App?",
+                  "cannotAccessAppDescription": "Wenn du keinen Zugriff auf Stelluriini hast, kannst du unsere externe Seite zur Kontolöschung öffnen und eine Löschanfrage senden.",
+                  "openAccountDeletionPage": "Kontolöschseite öffnen",
+                  "accountDeletionPermanent": "Die Kontolöschung ist dauerhaft. Dein Stelluriini-Konto und die zugehörigen Daten können danach nicht wiederhergestellt werden.",
+                  "footerMiningFuture": "Stella schürft die Zukunft.",
+                  "dailyMiningPowerBoost": "Stellas Mining-Leistung erhöhen 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "Tägliche Mining-Leistungssteigerung",
+                  "done": "FERTIG",
+                  "claiming": "WIRD GESAMMELT...",
+                  "claimedToday": "HEUTE ABGEHOLT",
+                  "claimHashRate": "+1 HASH RATE SAMMELN",
+                  "comeBackTomorrow": "Komm morgen für eine weitere Hash-Rate-Steigerung zurück 🐱",
+                  "claimDailyBonusInfo": "Sammle deinen täglichen Bonus, um die Mining-Leistung zu erhöhen",
+              },
 
-            "es": {
-              "accountDeletion": "Eliminar cuenta",
-              "accountDeletionAppTitle": "Cuenta de Stelluriini",
-              "accountDeletionSubtitle": "Gestiona tu cuenta y las opciones de eliminación",
-              "deleteYourAccount": "Eliminar tu cuenta",
-              "deleteAccountDescription": "Puedes eliminar permanentemente tu cuenta de Stelluriini y los datos asociados directamente desde la aplicación.",
-              "deleteAccountButton": "Eliminar cuenta",
-              "cannotAccessApp": "¿No puedes acceder a la aplicación?",
-              "cannotAccessAppDescription": "Si no puedes acceder a Stelluriini, puedes abrir nuestra página externa de eliminación de cuenta y enviar una solicitud.",
-              "openAccountDeletionPage": "Abrir página de eliminación",
-              "accountDeletionPermanent": "La eliminación de la cuenta es permanente. Tu cuenta de Stelluriini y los datos asociados no se pueden restaurar después de la eliminación.",
-              "footerMiningFuture": "Stella está minando el futuro.",
-              "dailyMiningPowerBoost": "Aumenta el poder de minería de Stella 🐱⛏️",
-              "dailyMiningPowerBoostShort": "Aumento diario del poder de minería",
-              "done": "LISTO",
-              "claiming": "RECOGIENDO...",
-              "claimedToday": "RECLAMADO HOY",
-              "claimHashRate": "RECLAMAR +1 HASH RATE",
-              "comeBackTomorrow": "Vuelve mañana para obtener otro aumento de Hash Rate 🐱",
-              "claimDailyBonusInfo": "Reclama tu bonificación diaria para aumentar el poder de minería",
-            },
+              "es": {
+                  "accountDeletion": "Eliminar cuenta",
+                  "accountDeletionAppTitle": "Cuenta de Stelluriini",
+                  "accountDeletionSubtitle": "Gestiona tu cuenta y las opciones de eliminación",
+                  "deleteYourAccount": "Eliminar tu cuenta",
+                  "deleteAccountDescription": "Puedes eliminar permanentemente tu cuenta de Stelluriini y los datos asociados directamente desde la aplicación.",
+                  "deleteAccountButton": "Eliminar cuenta",
+                  "cannotAccessApp": "¿No puedes acceder a la aplicación?",
+                  "cannotAccessAppDescription": "Si no puedes acceder a Stelluriini, puedes abrir nuestra página externa de eliminación de cuenta y enviar una solicitud.",
+                  "openAccountDeletionPage": "Abrir página de eliminación",
+                  "accountDeletionPermanent": "La eliminación de la cuenta es permanente. Tu cuenta de Stelluriini y los datos asociados no se pueden restaurar después de la eliminación.",
+                  "footerMiningFuture": "Stella está minando el futuro.",
+                  "dailyMiningPowerBoost": "Aumenta el poder de minería de Stella 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "Aumento diario del poder de minería",
+                  "done": "LISTO",
+                  "claiming": "RECOGIENDO...",
+                  "claimedToday": "RECLAMADO HOY",
+                  "claimHashRate": "RECLAMAR +1 HASH RATE",
+                  "comeBackTomorrow": "Vuelve mañana para obtener otro aumento de Hash Rate 🐱",
+                  "claimDailyBonusInfo": "Reclama tu bonificación diaria para aumentar el poder de minería",
+              },
 
-            "fr": {
-              "accountDeletion": "Suppression du compte",
-              "accountDeletionAppTitle": "Compte Stelluriini",
-              "accountDeletionSubtitle": "Gérez votre compte et les options de suppression",
-              "deleteYourAccount": "Supprimer votre compte",
-              "deleteAccountDescription": "Vous pouvez supprimer définitivement votre compte Stelluriini et les données associées directement depuis l’application.",
-              "deleteAccountButton": "Supprimer le compte",
-              "cannotAccessApp": "Vous ne pouvez pas accéder à l’application ?",
-              "cannotAccessAppDescription": "Si vous ne pouvez pas accéder à Stelluriini, vous pouvez ouvrir notre page externe de suppression du compte et envoyer une demande.",
-              "openAccountDeletionPage": "Ouvrir la page de suppression du compte",
-              "accountDeletionPermanent": "La suppression du compte est définitive. Votre compte Stelluriini et les données associées ne peuvent pas être restaurés après la suppression.",
-              "footerMiningFuture": "Stella mine l’avenir.",
-              "dailyMiningPowerBoost": "Augmentez la puissance de minage de Stella 🐱⛏️",
-              "dailyMiningPowerBoostShort": "Augmentation quotidienne de la puissance de minage",
-              "done": "TERMINÉ",
-              "claiming": "RÉCUPÉRATION...",
-              "claimedToday": "RÉCUPÉRÉ AUJOURD’HUI",
-              "claimHashRate": "RÉCUPÉRER +1 HASH RATE",
-              "comeBackTomorrow": "Revenez demain pour un nouveau bonus de Hash Rate 🐱",
-              "claimDailyBonusInfo": "Récupérez votre bonus quotidien pour augmenter la puissance de minage",
-            },
+              "fr": {
+                  "accountDeletion": "Suppression du compte",
+                  "accountDeletionAppTitle": "Compte Stelluriini",
+                  "accountDeletionSubtitle": "Gérez votre compte et les options de suppression",
+                  "deleteYourAccount": "Supprimer votre compte",
+                  "deleteAccountDescription": "Vous pouvez supprimer définitivement votre compte Stelluriini et les données associées directement depuis l’application.",
+                  "deleteAccountButton": "Supprimer le compte",
+                  "cannotAccessApp": "Vous ne pouvez pas accéder à l’application ?",
+                  "cannotAccessAppDescription": "Si vous ne pouvez pas accéder à Stelluriini, vous pouvez ouvrir notre page externe de suppression du compte et envoyer une demande.",
+                  "openAccountDeletionPage": "Ouvrir la page de suppression du compte",
+                  "accountDeletionPermanent": "La suppression du compte est définitive. Votre compte Stelluriini et les données associées ne peuvent pas être restaurés après la suppression.",
+                  "footerMiningFuture": "Stella mine l’avenir.",
+                  "dailyMiningPowerBoost": "Augmentez la puissance de minage de Stella 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "Augmentation quotidienne de la puissance de minage",
+                  "done": "TERMINÉ",
+                  "claiming": "RÉCUPÉRATION...",
+                  "claimedToday": "RÉCUPÉRÉ AUJOURD’HUI",
+                  "claimHashRate": "RÉCUPÉRER +1 HASH RATE",
+                  "comeBackTomorrow": "Revenez demain pour un nouveau bonus de Hash Rate 🐱",
+                  "claimDailyBonusInfo": "Récupérez votre bonus quotidien pour augmenter la puissance de minage",
+              },
 
-            "zh": {
-              "accountDeletion": "删除账户",
-              "accountDeletionAppTitle": "Stelluriini 账户",
-              "accountDeletionSubtitle": "管理你的账户和删除选项",
-              "deleteYourAccount": "删除你的账户",
-              "deleteAccountDescription": "你可以直接在应用中永久删除 Stelluriini 账户及相关账户数据。",
-              "deleteAccountButton": "删除账户",
-              "cannotAccessApp": "无法访问应用？",
-              "cannotAccessAppDescription": "如果你无法访问 Stelluriini，可以打开我们的外部账户删除页面并提交删除请求。",
-              "openAccountDeletionPage": "打开账户删除页面",
-              "accountDeletionPermanent": "账户删除是永久性的。删除后无法恢复 Stelluriini 账户及相关数据。",
-              "footerMiningFuture": "Stella 正在挖掘未来。",
-              "dailyMiningPowerBoost": "提升 Stella 的挖矿能力 🐱⛏️",
-              "dailyMiningPowerBoostShort": "每日挖矿能力提升",
-              "done": "完成",
-              "claiming": "领取中...",
-              "claimedToday": "今日已领取",
-              "claimHashRate": "领取 +1 HASH RATE",
-              "comeBackTomorrow": "明天再来领取新的 Hash Rate 加成 🐱",
-              "claimDailyBonusInfo": "领取每日奖励以提升挖矿能力",
-            },
+              "zh": {
+                  "accountDeletion": "删除账户",
+                  "accountDeletionAppTitle": "Stelluriini 账户",
+                  "accountDeletionSubtitle": "管理你的账户和删除选项",
+                  "deleteYourAccount": "删除你的账户",
+                  "deleteAccountDescription": "你可以直接在应用中永久删除 Stelluriini 账户及相关账户数据。",
+                  "deleteAccountButton": "删除账户",
+                  "cannotAccessApp": "无法访问应用？",
+                  "cannotAccessAppDescription": "如果你无法访问 Stelluriini，可以打开我们的外部账户删除页面并提交删除请求。",
+                  "openAccountDeletionPage": "打开账户删除页面",
+                  "accountDeletionPermanent": "账户删除是永久性的。删除后无法恢复 Stelluriini 账户及相关数据。",
+                  "footerMiningFuture": "Stella 正在挖掘未来。",
+                  "dailyMiningPowerBoost": "提升 Stella 的挖矿能力 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "每日挖矿能力提升",
+                  "done": "完成",
+                  "claiming": "领取中...",
+                  "claimedToday": "今日已领取",
+                  "claimHashRate": "领取 +1 HASH RATE",
+                  "comeBackTomorrow": "明天再来领取新的 Hash Rate 加成 🐱",
+                  "claimDailyBonusInfo": "领取每日奖励以提升挖矿能力",
+              },
 
-            "vi": {
-              "accountDeletion": "Xóa tài khoản",
-              "accountDeletionAppTitle": "Tài khoản Stelluriini",
-              "accountDeletionSubtitle": "Quản lý tài khoản và tùy chọn xóa",
-              "deleteYourAccount": "Xóa tài khoản của bạn",
-              "deleteAccountDescription": "Bạn có thể xóa vĩnh viễn tài khoản Stelluriini và dữ liệu liên quan trực tiếp trong ứng dụng.",
-              "deleteAccountButton": "Xóa tài khoản",
-              "cannotAccessApp": "Không thể truy cập ứng dụng?",
-              "cannotAccessAppDescription": "Nếu bạn không thể truy cập Stelluriini, bạn có thể mở trang xóa tài khoản bên ngoài và gửi yêu cầu xóa.",
-              "openAccountDeletionPage": "Mở trang xóa tài khoản",
-              "accountDeletionPermanent": "Việc xóa tài khoản là vĩnh viễn. Tài khoản Stelluriini và dữ liệu liên quan không thể khôi phục sau khi xóa.",
-              "footerMiningFuture": "Stella đang đào tương lai.",
-              "dailyMiningPowerBoost": "Tăng sức mạnh đào của Stella 🐱⛏️",
-              "dailyMiningPowerBoostShort": "Tăng sức mạnh đào hàng ngày",
-              "done": "XONG",
-              "claiming": "ĐANG NHẬN...",
-              "claimedToday": "ĐÃ NHẬN HÔM NAY",
-              "claimHashRate": "NHẬN +1 HASH RATE",
-              "comeBackTomorrow": "Quay lại vào ngày mai để nhận thêm Hash Rate 🐱",
-              "claimDailyBonusInfo": "Nhận phần thưởng hàng ngày để tăng sức mạnh đào",
-            },
+              "vi": {
+                  "accountDeletion": "Xóa tài khoản",
+                  "accountDeletionAppTitle": "Tài khoản Stelluriini",
+                  "accountDeletionSubtitle": "Quản lý tài khoản và tùy chọn xóa",
+                  "deleteYourAccount": "Xóa tài khoản của bạn",
+                  "deleteAccountDescription": "Bạn có thể xóa vĩnh viễn tài khoản Stelluriini và dữ liệu liên quan trực tiếp trong ứng dụng.",
+                  "deleteAccountButton": "Xóa tài khoản",
+                  "cannotAccessApp": "Không thể truy cập ứng dụng?",
+                  "cannotAccessAppDescription": "Nếu bạn không thể truy cập Stelluriini, bạn có thể mở trang xóa tài khoản bên ngoài và gửi yêu cầu xóa.",
+                  "openAccountDeletionPage": "Mở trang xóa tài khoản",
+                  "accountDeletionPermanent": "Việc xóa tài khoản là vĩnh viễn. Tài khoản Stelluriini và dữ liệu liên quan không thể khôi phục sau khi xóa.",
+                  "footerMiningFuture": "Stella đang đào tương lai.",
+                  "dailyMiningPowerBoost": "Tăng sức mạnh đào của Stella 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "Tăng sức mạnh đào hàng ngày",
+                  "done": "XONG",
+                  "claiming": "ĐANG NHẬN...",
+                  "claimedToday": "ĐÃ NHẬN HÔM NAY",
+                  "claimHashRate": "NHẬN +1 HASH RATE",
+                  "comeBackTomorrow": "Quay lại vào ngày mai để nhận thêm Hash Rate 🐱",
+                  "claimDailyBonusInfo": "Nhận phần thưởng hàng ngày để tăng sức mạnh đào",
+              },
 
-            "ja": {
-              "accountDeletion": "アカウント削除",
-              "accountDeletionAppTitle": "Stelluriiniアカウント",
-              "accountDeletionSubtitle": "アカウントと削除オプションを管理",
-              "deleteYourAccount": "アカウントを削除",
-              "deleteAccountDescription": "アプリからStelluriiniアカウントと関連データを完全に削除できます。",
-              "deleteAccountButton": "アカウントを削除",
-              "cannotAccessApp": "アプリにアクセスできませんか？",
-              "cannotAccessAppDescription": "Stelluriiniにアクセスできない場合は、外部のアカウント削除ページを開いて削除リクエストを送信できます。",
-              "openAccountDeletionPage": "アカウント削除ページを開く",
-              "accountDeletionPermanent": "アカウントの削除は永久的です。削除後にStelluriiniアカウントと関連データを復元することはできません。",
-              "footerMiningFuture": "Stellaが未来をマイニングしています。",
-              "dailyMiningPowerBoost": "Stellaのマイニングパワーを強化 🐱⛏️",
-              "dailyMiningPowerBoostShort": "毎日のマイニングパワー強化",
-              "done": "完了",
-              "claiming": "取得中...",
-              "claimedToday": "本日取得済み",
-              "claimHashRate": "+1 HASH RATEを取得",
-              "comeBackTomorrow": "明日また来て新しいHash Rateボーナスを受け取りましょう 🐱",
-              "claimDailyBonusInfo": "毎日のボーナスを受け取ってマイニングパワーを増やしましょう",
-            },
+              "ja": {
+                  "accountDeletion": "アカウント削除",
+                  "accountDeletionAppTitle": "Stelluriiniアカウント",
+                  "accountDeletionSubtitle": "アカウントと削除オプションを管理",
+                  "deleteYourAccount": "アカウントを削除",
+                  "deleteAccountDescription": "アプリからStelluriiniアカウントと関連データを完全に削除できます。",
+                  "deleteAccountButton": "アカウントを削除",
+                  "cannotAccessApp": "アプリにアクセスできませんか？",
+                  "cannotAccessAppDescription": "Stelluriiniにアクセスできない場合は、外部のアカウント削除ページを開いて削除リクエストを送信できます。",
+                  "openAccountDeletionPage": "アカウント削除ページを開く",
+                  "accountDeletionPermanent": "アカウントの削除は永久的です。削除後にStelluriiniアカウントと関連データを復元することはできません。",
+                  "footerMiningFuture": "Stellaが未来をマイニングしています。",
+                  "dailyMiningPowerBoost": "Stellaのマイニングパワーを強化 🐱⛏️",
+                  "dailyMiningPowerBoostShort": "毎日のマイニングパワー強化",
+                  "done": "完了",
+                  "claiming": "取得中...",
+                  "claimedToday": "本日取得済み",
+                  "claimHashRate": "+1 HASH RATEを取得",
+                  "comeBackTomorrow": "明日また来て新しいHash Rateボーナスを受け取りましょう 🐱",
+                  "claimDailyBonusInfo": "毎日のボーナスを受け取ってマイニングパワーを増やしましょう",
+              },
           }
 
-          def add_keys(path, values):
+          # ============================================================
+          # ADD MISSING TRANSLATION KEYS
+          # ============================================================
+
+          def add_translation_keys(path, values):
               content = path.read_text(encoding="utf-8")
+
               additions = []
 
               for key, value in values.items():
-                  if re.search(
-                      r"['\"]" + re.escape(key) + r"['\"]\s*:",
-                      content,
-                  ):
+                  pattern = r"['\"]" + re.escape(key) + r"['\"]\s*:"
+
+                  if re.search(pattern, content):
                       continue
 
                   escaped = (
@@ -225,17 +233,20 @@ jobs:
               if not additions:
                   return
 
-              marker = "\n};"
+              matches = list(re.finditer(r"\n\};\s*$", content))
 
-              if marker not in content:
+              if not matches:
                   raise RuntimeError(
                       f"Translation map end not found: {path}"
                   )
 
-              content = content.replace(
-                  marker,
-                  "\n" + "\n".join(additions) + marker,
-                  1,
+              position = matches[-1].start()
+
+              content = (
+                  content[:position]
+                  + "\n"
+                  + "\n".join(additions)
+                  + content[position:]
               )
 
               path.write_text(
@@ -244,141 +255,175 @@ jobs:
               )
 
           for language, values in translations.items():
-              path = lang_dir / f"{language}.dart"
+              path = LANG_DIR / f"{language}.dart"
 
               if not path.exists():
                   raise RuntimeError(
                       f"Missing language file: {path}"
                   )
 
-              add_keys(path, values)
+              add_translation_keys(
+                  path,
+                  values,
+              )
 
           # ============================================================
           # ACCOUNT DELETION PAGE
           # ============================================================
 
-          path = root / "pages/account/account_deletion_page.dart"
+          path = ROOT / "pages/account/account_deletion_page.dart"
           content = path.read_text(encoding="utf-8")
 
           if "import '../../localization.dart';" not in content:
               content = content.replace(
                   "import 'package:url_launcher/url_launcher.dart';",
-                  "import 'package:url_launcher/url_launcher.dart';\n\nimport '../../localization.dart';",
+                  "import 'package:url_launcher/url_launcher.dart';\n"
+                  "\n"
+                  "import '../../localization.dart';",
                   1,
               )
 
           if "final String languageCode;" not in content:
-              content = content.replace(
-                  "class AccountDeletionPage extends StatelessWidget {",
-                  "class AccountDeletionPage extends StatelessWidget {\n"
-                  "  final String languageCode;",
-                  1,
+              content = re.sub(
+                  r"(class AccountDeletionPage extends StatelessWidget \{\s*)",
+                  r"\1  final String languageCode;\n\n",
+                  content,
+                  count=1,
               )
 
+          constructor_pattern = (
+              r"const AccountDeletionPage\(\{\s*"
+              r"super\.key,\s*"
+              r"required this\.onDeleteAccountPressed,\s*"
+              r"\}\);"
+          )
+
+          constructor_replacement = """const AccountDeletionPage({
+    super.key,
+    required this.languageCode,
+    required this.onDeleteAccountPressed,
+  });"""
+
+          content, constructor_count = re.subn(
+              constructor_pattern,
+              constructor_replacement,
+              content,
+              count=1,
+          )
+
+          if constructor_count == 0:
+              # Already localized constructor is acceptable.
+              if "required this.languageCode" not in content:
+                  raise RuntimeError(
+                      "AccountDeletionPage constructor not found."
+                  )
+
           content = content.replace(
-              "required this.onDeleteAccountPressed,\n});",
-              "required this.languageCode,\n"
-              "    required this.onDeleteAccountPressed,\n"
-              "  });",
+              "Widget _buildInAppDeleteCard()",
+              "Widget _buildInAppDeleteCard(AppLocalizations l)",
               1,
           )
 
           content = content.replace(
-              "Widget _buildInAppDeleteCard() {",
-              "Widget _buildInAppDeleteCard(AppLocalizations l) {",
+              "Widget _buildExternalRequestCard()",
+              "Widget _buildExternalRequestCard(AppLocalizations l)",
               1,
           )
 
           content = content.replace(
-              "Widget _buildExternalRequestCard() {",
-              "Widget _buildExternalRequestCard(AppLocalizations l) {",
-              1,
-          )
-
-          content = content.replace(
-              "Widget _buildInformationCard() {",
-              "Widget _buildInformationCard(AppLocalizations l) {",
+              "Widget _buildInformationCard()",
+              "Widget _buildInformationCard(AppLocalizations l)",
               1,
           )
 
           replacements = {
               "'Delete your account'":
                   "l.get('deleteYourAccount')",
+
               "'Delete Account'":
                   "l.get('deleteAccountButton')",
+
               "'Cannot access the app?'":
                   "l.get('cannotAccessApp')",
+
               "'Open Account Deletion Page'":
                   "l.get('openAccountDeletionPage')",
+
               "'Account Deletion'":
                   "l.get('accountDeletion')",
+
               "'Stelluriini Account'":
                   "l.get('accountDeletionAppTitle')",
+
               "'Manage your account and deletion options'":
                   "l.get('accountDeletionSubtitle')",
           }
 
           for old, new in replacements.items():
-              content = content.replace(old, new)
+              content = content.replace(
+                  old,
+                  new,
+              )
 
-          content = content.replace(
-              "'You can permanently delete your Stelluriini account '\n"
-              "'and associated account data directly from the app.'",
+          content = re.sub(
+              r"'You can permanently delete your Stelluriini account\s*'"
+              r"\s*'and associated account data directly from the app\.'",
               "l.get('deleteAccountDescription')",
-              1,
+              content,
+              count=1,
           )
 
-          content = content.replace(
-              "'If you cannot access Stelluriini, you can open our '\n"
-              "'external account deletion page and submit a deletion request.'",
+          content = re.sub(
+              r"'If you cannot access Stelluriini, you can open our\s*'"
+              r"\s*'external account deletion page and submit a deletion request\.'",
               "l.get('cannotAccessAppDescription')",
-              1,
+              content,
+              count=1,
           )
 
-          content = content.replace(
-              "const Text(\n"
-              "          'Account deletion is permanent. Your Stelluriini '\n"
-              "          'account and associated data cannot be restored after deletion.',",
+          content = re.sub(
+              r"const Text\(\s*"
+              r"'Account deletion is permanent\. Your Stelluriini\s*'"
+              r"\s*'account and associated data cannot be restored after deletion\.',",
               "Text(\n"
               "          l.get('accountDeletionPermanent'),",
-              1,
+              content,
+              count=1,
           )
 
-          marker = "@override\n  Widget build(BuildContext context) {"
+          build_pattern = (
+              r"(@override\s+"
+              r"(?:const\s+)?Widget\s+build\(BuildContext context\)\s*\{)"
+          )
 
-          if marker not in content:
-              marker = "@override\nWidget build(BuildContext context) {"
-
-          if marker not in content:
-              raise RuntimeError(
-                  "AccountDeletionPage build method not found."
+          if "AppLocalizations(languageCode)" not in content:
+              content, build_count = re.subn(
+                  build_pattern,
+                  r"\1\n"
+                  r"    final AppLocalizations l = "
+                  r"AppLocalizations(languageCode);",
+                  content,
+                  count=1,
               )
 
-          if "final AppLocalizations l = AppLocalizations(languageCode);" not in content:
-              content = content.replace(
-                  marker,
-                  marker + "\n"
-                  "    final AppLocalizations l = "
-                  "AppLocalizations(languageCode);",
-                  1,
-              )
+              if build_count == 0:
+                  raise RuntimeError(
+                      "AccountDeletionPage build method not found."
+                  )
 
           content = content.replace(
               "_buildInAppDeleteCard(),",
               "_buildInAppDeleteCard(l),",
-              1,
           )
 
           content = content.replace(
               "_buildExternalRequestCard(),",
               "_buildExternalRequestCard(l),",
-              1,
           )
 
           content = content.replace(
               "_buildInformationCard(),",
               "_buildInformationCard(l),",
-              1,
           )
 
           path.write_text(
@@ -386,11 +431,15 @@ jobs:
               encoding="utf-8",
           )
 
+          print(
+              "AccountDeletionPage localization applied."
+          )
+
           # ============================================================
           # HOME PAGE
           # ============================================================
 
-          path = root / "pages/home/home_page.dart"
+          path = ROOT / "pages/home/home_page.dart"
           content = path.read_text(encoding="utf-8")
 
           account_pattern = (
@@ -401,11 +450,11 @@ jobs:
           )
 
           account_replacement = """AccountDeletionPage(
-          languageCode:
-              widget.languageCode,
-          onDeleteAccountPressed:
-              _showDeleteAccountConfirmation,
-        )"""
+            languageCode:
+                widget.languageCode,
+            onDeleteAccountPressed:
+                _showDeleteAccountConfirmation,
+          )"""
 
           content, account_count = re.subn(
               account_pattern,
@@ -414,14 +463,19 @@ jobs:
               count=1,
           )
 
-          if account_count != 1:
-              raise RuntimeError(
-                  "HomePage AccountDeletionPage call not found."
-              )
+          if account_count == 0:
+              if "languageCode:" not in content or "AccountDeletionPage(" not in content:
+                  raise RuntimeError(
+                      "HomePage AccountDeletionPage call not found."
+                  )
 
-          old = "timerLabel: _t('miningTimeRemaining'),"
+          timer_pattern = (
+              r"timerLabel:\s*_t\(\s*"
+              r"['\"]miningTimeRemaining['\"]\s*"
+              r"\),"
+          )
 
-          new = """timerLabel:
+          timer_replacement = """timerLabel:
               _localization.getWithParams(
             'miningTimeRemaining',
             params: {
@@ -431,20 +485,22 @@ jobs:
             },
           ),"""
 
-          if old not in content:
-              raise RuntimeError(
-                  "HomePage miningTimeRemaining call not found."
-              )
-
-          content = content.replace(
-              old,
-              new,
-              1,
+          content, timer_count = re.subn(
+              timer_pattern,
+              timer_replacement,
+              content,
+              count=1,
           )
 
+          if timer_count == 0:
+              if "_localization.getWithParams" not in content or "miningTimeRemaining" not in content:
+                  raise RuntimeError(
+                      "HomePage miningTimeRemaining call not found."
+                  )
+
           footer_pattern = (
-              r"const Text\(\s*"
-              r"'Stella is mining the future\.',\s*"
+              r"const\s+Text\(\s*"
+              r"['\"]Stella is mining the future\.['\"],\s*"
               r"textAlign:\s*TextAlign\.center,\s*"
               r"style:\s*TextStyle\(\s*"
               r"color:\s*secondaryTextColor,\s*"
@@ -471,49 +527,46 @@ jobs:
               count=1,
           )
 
-          if footer_count != 1:
-              raise RuntimeError(
-                  "HomePage footer not found."
-              )
+          if footer_count == 0:
+              if "footerMiningFuture" not in content:
+                  raise RuntimeError(
+                      "HomePage footer not found."
+                  )
 
           path.write_text(
               content,
               encoding="utf-8",
           )
 
+          print(
+              "HomePage localization applied."
+          )
+
           # ============================================================
           # STELLA MINING DAYS
           # ============================================================
 
-          path = root / "pages/home/stella_mining_days_card.dart"
+          path = ROOT / "pages/home/stella_mining_days_card.dart"
           content = path.read_text(encoding="utf-8")
 
-          if "'STELLA MINING DAYS'" in content:
-              content = content.replace(
-                  "'STELLA MINING DAYS'",
-                  "'STELLAのマイニング日数'",
-                  1,
-              )
+          content = content.replace(
+              "'STELLA MINING DAYS'",
+              "'STELLAのマイニング日数'",
+          )
 
-          dollar = chr(36)
-
-          old = "DAY " + dollar + "currentDay"
-          new = dollar + "{_dayLabel(language)} " + dollar + "currentDay"
-
-          if old in content:
-              content = content.replace(
-                  old,
-                  new,
-                  1,
-              )
+          content = content.replace(
+              "DAY $currentDay",
+              "${_dayLabel(language)} $currentDay",
+          )
 
           if "String _dayLabel(" not in content:
               marker = "  String _currentLabel("
+
               index = content.find(marker)
 
-              if index < 0:
+              if index == -1:
                   raise RuntimeError(
-                      "Stella Mining Days _currentLabel not found."
+                      "Stella Mining Days _currentLabel method not found."
                   )
 
               method = """  String _dayLabel(
@@ -553,11 +606,15 @@ jobs:
               encoding="utf-8",
           )
 
+          print(
+              "Stella Mining Days localization applied."
+          )
+
           # ============================================================
           # DAILY REWARD CARD
           # ============================================================
 
-          path = root / "pages/home/daily_reward_card.dart"
+          path = ROOT / "pages/home/daily_reward_card.dart"
           content = path.read_text(encoding="utf-8")
 
           if "import '../../localization.dart';" not in content:
@@ -586,7 +643,7 @@ jobs:
                   1,
               )
 
-          if "final AppLocalizations l = AppLocalizations(languageCode);" not in content:
+          if "AppLocalizations(languageCode)" not in content:
               content = content.replace(
                   "Widget build(BuildContext context) {",
                   "Widget build(BuildContext context) {\n"
@@ -596,51 +653,48 @@ jobs:
               )
 
           content = content.replace(
-              "Text(\n"
-              "                      'Boost Stella’s mining power 🐱⛏️',",
-              "Text(\n"
-              "                      l.get('dailyMiningPowerBoost'),",
-              1,
+              "'Boost Stella’s mining power 🐱⛏️'",
+              "l.get('dailyMiningPowerBoost')",
           )
 
           content = content.replace(
-              "Text(\n"
-              "                        'Daily mining power boost',",
-              "Text(\n"
-              "                        l.get('dailyMiningPowerBoostShort'),",
-              1,
+              "'Boost Stella's mining power 🐱⛏️'",
+              "l.get('dailyMiningPowerBoost')",
           )
 
           content = content.replace(
-              "child: const Text(\n"
-              "                    '✓ DONE',",
-              "child: Text(\n"
-              "                    '✓ ${l.get('done')}',",
-              1,
+              "'Daily mining power boost'",
+              "l.get('dailyMiningPowerBoostShort')",
           )
 
           content = content.replace(
-              """dailyLoading
-                    ? 'CLAIMING...'
-                    : dailyClaimed
-                        ? 'CLAIMED TODAY'
-                        : 'CLAIM +1 HASH RATE'""",
-              """dailyLoading
-                    ? l.get('claiming')
-                    : dailyClaimed
-                        ? l.get('claimedToday')
-                        : l.get('claimHashRate')""",
-              1,
+              "'✓ DONE'",
+              "'✓ ${l.get('done')}'",
           )
 
           content = content.replace(
-              """dailyClaimed
-                      ? 'Come back tomorrow for another Hash Rate boost 🐱'
-                      : 'Claim your daily bonus to increase mining power'""",
-              """dailyClaimed
-                      ? l.get('comeBackTomorrow')
-                      : l.get('claimDailyBonusInfo')""",
-              1,
+              "'CLAIMING...'",
+              "l.get('claiming')",
+          )
+
+          content = content.replace(
+              "'CLAIMED TODAY'",
+              "l.get('claimedToday')",
+          )
+
+          content = content.replace(
+              "'CLAIM +1 HASH RATE'",
+              "l.get('claimHashRate')",
+          )
+
+          content = content.replace(
+              "'Come back tomorrow for another Hash Rate boost 🐱'",
+              "l.get('comeBackTomorrow')",
+          )
+
+          content = content.replace(
+              "'Claim your daily bonus to increase mining power'",
+              "l.get('claimDailyBonusInfo')",
           )
 
           path.write_text(
@@ -648,7 +702,14 @@ jobs:
               encoding="utf-8",
           )
 
-          print("Localization source changes prepared.")
+          print(
+              "DailyRewardCard localization applied."
+          )
+
+          print(
+              "All localization source changes completed."
+          )
+          PY
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -663,60 +724,81 @@ jobs:
       - name: Flutter analyze
         run: flutter analyze
 
-      - name: Verify hard-coded English
-        shell: python
+      - name: Verify localization changes
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
-          checks = {
-              "lib/pages/account/account_deletion_page.dart": [
-                  "Delete your account",
-                  "Delete Account",
-                  "Cannot access the app?",
-                  "Open Account Deletion Page",
-                  "Account Deletion",
-                  "Manage your account and deletion options",
-              ],
-              "lib/pages/home/home_page.dart": [
-                  "Stella is mining the future.",
-                  "timerLabel: _t('miningTimeRemaining'),",
-              ],
-              "lib/pages/home/stella_mining_days_card.dart": [
-                  "DAY $currentDay",
-                  "'STELLA MINING DAYS'",
-              ],
-              "lib/pages/home/daily_reward_card.dart": [
-                  "Boost Stella’s mining power",
-                  "Daily mining power boost",
-                  "CLAIMING...",
-                  "CLAIMED TODAY",
-                  "CLAIM +1 HASH RATE",
-                  "Come back tomorrow for another Hash Rate boost",
-                  "Claim your daily bonus to increase mining power",
-              ],
+          files = [
+              Path("lib/pages/account/account_deletion_page.dart"),
+              Path("lib/pages/home/home_page.dart"),
+              Path("lib/pages/home/stella_mining_days_card.dart"),
+              Path("lib/pages/home/daily_reward_card.dart"),
+          ]
+
+          for path in files:
+              if not path.exists():
+                  raise SystemExit(
+                      f"Missing file: {path}"
+                  )
+
+          account = Path(
+              "lib/pages/account/account_deletion_page.dart"
+          ).read_text(encoding="utf-8")
+
+          home = Path(
+              "lib/pages/home/home_page.dart"
+          ).read_text(encoding="utf-8")
+
+          mining_days = Path(
+              "lib/pages/home/stella_mining_days_card.dart"
+          ).read_text(encoding="utf-8")
+
+          daily = Path(
+              "lib/pages/home/daily_reward_card.dart"
+          ).read_text(encoding="utf-8")
+
+          required_checks = {
+              "AccountDeletionPage languageCode":
+                  "final String languageCode;" in account,
+
+              "AccountDeletionPage localization":
+                  "AppLocalizations(languageCode)" in account,
+
+              "HomePage AccountDeletion language":
+                  "languageCode:" in home and
+                  "AccountDeletionPage(" in home,
+
+              "HomePage mining timer":
+                  "getWithParams(" in home and
+                  "miningTimeRemaining" in home,
+
+              "HomePage footer localization":
+                  "footerMiningFuture" in home,
+
+              "Mining Days localization":
+                  "_dayLabel(language)" in mining_days,
+
+              "DailyRewardCard localization":
+                  "AppLocalizations(languageCode)" in daily,
           }
 
-          errors = []
+          failed = [
+              name
+              for name, result in required_checks.items()
+              if not result
+          ]
 
-          for filename, values in checks.items():
-              content = Path(filename).read_text(
-                  encoding="utf-8"
-              )
-
-              for value in values:
-                  if value in content:
-                      errors.append(
-                          filename + ": " + value
-                      )
-
-          if errors:
-              print("Hard-coded English strings remain:")
-              print("\n".join(errors))
+          if failed:
+              print("Verification failed:")
+              for item in failed:
+                  print(f" - {item}")
               raise SystemExit(1)
 
           print(
-              "Known hard-coded English strings are gone."
+              "Localization verification passed."
           )
+          PY
 
       - name: Commit changes
         run: |
