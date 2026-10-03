@@ -7,9 +7,161 @@ permissions:
   contents: write
 
 jobs:
-  test:
+  fix-localization:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test workflow
-        run: echo "Localization workflow YAML works!"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Update Vietnamese localization
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("lib/localization/languages/vi.dart")
+
+          if not path.exists():
+              raise RuntimeError(
+                  f"Localization file not found: {path}"
+              )
+
+          content = path.read_text(encoding="utf-8")
+
+          replacements = {
+              "'stellaMiningTitle':\n      'Stella Mining',":
+                  "'stellaMiningTitle':\n      'Khai thác Stella',",
+
+              "'powerBoost':\n      'Stella Power Boost',":
+                  "'powerBoost':\n      'Tăng cường sức mạnh Stella',",
+          }
+
+          for old, new in replacements.items():
+              if old in content:
+                  content = content.replace(old, new, 1)
+
+          additions = {
+              "accountDeletionAppTitle":
+                  "Xóa tài khoản Stelluriini",
+
+              "dailyMiningPowerBoost":
+                  "Tăng sức mạnh khai thác hàng ngày",
+
+              "dailyMiningPowerBoostShort":
+                  "Tăng sức mạnh khai thác",
+
+              "done":
+                  "✓ ĐÃ XONG",
+
+              "claiming":
+                  "ĐANG NHẬN...",
+
+              "claimHashRate":
+                  "NHẬN +1 HASH RATE",
+
+              "comeBackTomorrow":
+                  "Quay lại vào ngày mai để nhận thêm Hash Rate 🐱",
+
+              "claimDailyBonusInfo":
+                  "Nhận phần thưởng hàng ngày để tăng sức mạnh khai thác",
+
+              "footerMiningFuture":
+                  "Stella đang khai thác tương lai.",
+          }
+
+          missing_entries = []
+
+          for key, value in additions.items():
+              key_marker = f"'{key}':"
+
+              if key_marker not in content:
+                  missing_entries.append(
+                      f"  '{key}':\n"
+                      f"      '{value}',\n"
+                  )
+
+          if missing_entries:
+              insert_text = (
+                  "\n"
+                  "  // ============================================================\n"
+                  "  // 🌟 ADDITIONAL LOCALIZATION\n"
+                  "  // ============================================================\n"
+                  "\n"
+                  + "\n".join(missing_entries)
+              )
+
+              final_marker = "\n};"
+
+              if final_marker not in content:
+                  raise RuntimeError(
+                      "Could not find final localization map marker."
+                  )
+
+              content = content.replace(
+                  final_marker,
+                  insert_text + final_marker,
+                  1,
+              )
+
+          path.write_text(
+              content,
+              encoding="utf-8",
+          )
+
+          print("Vietnamese localization updated successfully.")
+
+      - name: Verify Vietnamese localization
+        run: |
+          echo "Checking Vietnamese localization..."
+
+          grep -n "stellaMiningTitle" lib/localization/languages/vi.dart
+          grep -n "powerBoost" lib/localization/languages/vi.dart
+          grep -n "footerMiningFuture" lib/localization/languages/vi.dart
+          grep -n "accountDeletionAppTitle" lib/localization/languages/vi.dart
+          grep -n "dailyMiningPowerBoost" lib/localization/languages/vi.dart
+          grep -n "claimHashRate" lib/localization/languages/vi.dart
+
+          echo "Vietnamese localization verification completed."
+
+      - name: Check formatting
+        run: |
+          git diff --check
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.29.3"
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze
+
+      - name: Show changes
+        run: |
+          git status --short
+          git diff -- lib/localization/languages/vi.dart
+
+      - name: Commit and push changes
+        run: |
+          if git diff --quiet -- lib/localization/languages/vi.dart; then
+            echo "No Vietnamese localization changes were necessary."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add lib/localization/languages/vi.dart
+
+          git commit -m "Fix Vietnamese UI localization"
+
+          git push
