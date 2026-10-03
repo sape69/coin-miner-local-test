@@ -197,6 +197,45 @@ class StelluriiniAchievements {
   );
 
   // ==========================================================
+  // 🐾 FIRST INVITATION
+  // ==========================================================
+
+  static const Achievement firstInvitation = Achievement(
+    id: 'first_invitation',
+    icon: '🐾',
+    title: 'First Invitation',
+    description: 'Invite your first user.',
+    target: 1,
+    reward: 5,
+  );
+
+  // ==========================================================
+  // 👥 FRIEND CIRCLE
+  // ==========================================================
+
+  static const Achievement friendCircle = Achievement(
+    id: 'friend_circle',
+    icon: '👥',
+    title: 'Friend Circle',
+    description: 'Invite 5 users.',
+    target: 5,
+    reward: 10,
+  );
+
+  // ==========================================================
+  // 👑 STELLA'S COMMUNITY
+  // ==========================================================
+
+  static const Achievement stellasCommunity = Achievement(
+    id: 'stellas_community',
+    icon: '👑',
+    title: "Stella's Community",
+    description: 'Invite 10 users.',
+    target: 10,
+    reward: 20,
+  );
+
+  // ==========================================================
   // 📋 ALL ACHIEVEMENTS
   // ==========================================================
 
@@ -214,5 +253,8 @@ class StelluriiniAchievements {
     stellaLegend,
     powerPaws,
     superPaws,
+    firstInvitation,
+    friendCircle,
+    stellasCommunity,
   ];
 }
