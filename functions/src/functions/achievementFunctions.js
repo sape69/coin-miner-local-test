@@ -54,6 +54,50 @@
 //    Target: 10
 //    Reward: 30 STL
 //
+// growing_miner
+//    Target: 25
+//    Reward: 8 STL
+//
+// stl_collector
+//    Target: 500
+//    Reward: 25 STL
+//
+// stl_master
+//    Target: 1000
+//    Reward: 50 STL
+//
+// dedicated_miner
+//    Target: 25
+//    Reward: 30 STL
+//
+// stella_on_fire
+//    Target: 14
+//    Reward: 50 STL
+//
+// stella_legend
+//    Target: 30
+//    Reward: 100 STL
+//
+// power_paws
+//    Target: 5
+//    Reward: 20 STL
+//
+// super_paws
+//    Target: 25
+//    Reward: 75 STL
+//
+// first_invitation
+//    Target: 1
+//    Reward: 5 STL
+//
+// friend_circle
+//    Target: 5
+//    Reward: 10 STL
+//
+// stellas_community
+//    Target: 10
+//    Reward: 20 STL
+//
 // ============================================================
 
 const {
@@ -66,14 +110,12 @@ const {
   FieldValue,
 } = require("firebase-admin/firestore");
 
-
 // ============================================================
 // 🔥 FIRESTORE
 // ============================================================
 
 const db =
   getFirestore();
-
 
 // ============================================================
 // 🏆 ACHIEVEMENT DEFINITIONS
@@ -83,9 +125,16 @@ const db =
 //
 // ÄLÄ kopioi näitä arvoja muihin tiedostoihin.
 //
+// Serveri on achievementien target- ja reward-arvojen
+// lopullinen auktoriteetti.
+//
 // ============================================================
 
 const achievements = Object.freeze([
+  // ==========================================================
+  // 🐾 MINING
+  // ==========================================================
+
   Object.freeze({
     id: "first_paw",
     target: 1,
@@ -105,18 +154,99 @@ const achievements = Object.freeze([
   }),
 
   Object.freeze({
+    id: "growing_miner",
+    target: 25,
+    reward: 8,
+  }),
+
+  Object.freeze({
+    id: "stl_collector",
+    target: 500,
+    reward: 25,
+  }),
+
+  Object.freeze({
+    id: "stl_master",
+    target: 1000,
+    reward: 50,
+  }),
+
+  Object.freeze({
+    id: "dedicated_miner",
+    target: 25,
+    reward: 30,
+  }),
+
+  // ==========================================================
+  // 🔥 STREAK
+  // ==========================================================
+
+  Object.freeze({
     id: "hot_streak",
     target: 7,
     reward: 50,
   }),
 
   Object.freeze({
+    id: "stella_on_fire",
+    target: 14,
+    reward: 50,
+  }),
+
+  Object.freeze({
+    id: "stella_legend",
+    target: 30,
+    reward: 100,
+  }),
+
+  // ==========================================================
+  // 🐱 DAILY
+  // ==========================================================
+
+  Object.freeze({
     id: "stellas_friend",
     target: 10,
     reward: 30,
   }),
-]);
 
+  // ==========================================================
+  // ⚡ POWER BOOST
+  // ==========================================================
+
+  Object.freeze({
+    id: "power_paws",
+    target: 5,
+    reward: 20,
+  }),
+
+  Object.freeze({
+    id: "super_paws",
+    target: 25,
+    reward: 75,
+  }),
+
+  // ==========================================================
+  // 👥 INVITATIONS
+  // ==========================================================
+
+  Object.freeze({
+    id: "first_invitation",
+    target: 1,
+    reward: 5,
+  }),
+
+  Object.freeze({
+    id: "friend_circle",
+    target: 5,
+    reward: 10,
+  }),
+
+  Object.freeze({
+    id: "stellas_community",
+    target: 10,
+    reward: 20,
+  }),
+]);
 
 // ============================================================
 // 🔎 ACHIEVEMENT DEFINITION LOOKUP
@@ -147,7 +277,6 @@ function getAchievementDefinition(
   );
 }
 
-
 // ============================================================
 // 📋 GET ACHIEVEMENT DEFINITIONS
 // ============================================================
@@ -163,7 +292,6 @@ function getAchievementDefinitions() {
     })
   );
 }
-
 
 // ============================================================
 // 👤 USER VALIDATION
@@ -183,7 +311,6 @@ function requireUser(request) {
   return uid;
 }
 
-
 // ============================================================
 // 📁 ACHIEVEMENT COLLECTION
 // ============================================================
@@ -197,7 +324,6 @@ function getAchievementCollection(
     .collection("achievements");
 }
 
-
 // ============================================================
 // 👤 USER REFERENCE
 // ============================================================
@@ -207,7 +333,6 @@ function getUserRef(uid) {
     .collection("users")
     .doc(uid);
 }
-
 
 // ============================================================
 // 🔢 SAFE INTEGER
@@ -229,7 +354,6 @@ function getSafeInteger(
   return Math.floor(parsed);
 }
 
-
 // ============================================================
 // 💰 SAFE NON-NEGATIVE NUMBER
 // ============================================================
@@ -249,7 +373,6 @@ function getSafeBalance(
 
   return parsed;
 }
-
 
 // ============================================================
 // 📊 NORMALIZE ACHIEVEMENT
@@ -337,7 +460,6 @@ function normalizeAchievement(
   };
 }
 
-
 // ============================================================
 // 📝 BUILD INITIAL ACHIEVEMENT
 // ============================================================
@@ -370,7 +492,6 @@ function buildInitialAchievement(
       now,
   };
 }
-
 
 // ============================================================
 // 🔧 BUILD SERVER NORMALIZED UPDATE
@@ -428,7 +549,6 @@ function buildNormalizedUpdate(
 
   return update;
 }
-
 
 // ============================================================
 // 🎁 ACHIEVEMENT REWARD CALCULATION
@@ -551,7 +671,6 @@ function calculateAchievementReward(
   };
 }
 
-
 // ============================================================
 // 🎁 BUILD ACHIEVEMENT REWARD UPDATE
 // ============================================================
@@ -595,7 +714,6 @@ function buildAchievementRewardUpdate(
   };
 }
 
-
 // ============================================================
 // 💰 BUILD USER BALANCE UPDATE
 // ============================================================
@@ -638,7 +756,6 @@ function buildAchievementBalanceUpdate(
       now,
   };
 }
-
 
 // ============================================================
 // 🐱 APPLY ACHIEVEMENT PROGRESS
@@ -728,7 +845,6 @@ function applyAchievementProgress(
 
   return calculation;
 }
-
 
 // ============================================================
 // 📖 GET ACHIEVEMENTS
@@ -923,7 +1039,6 @@ exports.getAchievements =
     }
   );
 
-
 // ============================================================
 // 📊 GET ACHIEVEMENT COMPLETION COUNT
 // ============================================================
@@ -1008,7 +1123,6 @@ exports.getAchievementsCompleted =
       }
     }
   );
-
 
 // ============================================================
 // 📦 SERVER-SIDE EXPORTS
