@@ -386,16 +386,16 @@ jobs:
           content = path.read_text(encoding="utf-8")
 
           old = """AccountDeletionPage(
-  onDeleteAccountPressed:
-      _showDeleteAccountConfirmation,
-)"""
+          onDeleteAccountPressed:
+              _showDeleteAccountConfirmation,
+          )"""
 
           new = """AccountDeletionPage(
-  languageCode:
-      widget.languageCode,
-  onDeleteAccountPressed:
-      _showDeleteAccountConfirmation,
-)"""
+          languageCode:
+              widget.languageCode,
+          onDeleteAccountPressed:
+              _showDeleteAccountConfirmation,
+          )"""
 
           if old not in content:
               raise RuntimeError(
@@ -411,14 +411,14 @@ jobs:
           old = "timerLabel: _t('miningTimeRemaining'),"
 
           new = """timerLabel:
-    _localization.getWithParams(
-  'miningTimeRemaining',
-  params: {
-    'time': _formatDuration(
-      _miningRemainingMs,
-    ),
-  },
-),"""
+          _localization.getWithParams(
+          'miningTimeRemaining',
+          params: {
+            'time': _formatDuration(
+              _miningRemainingMs,
+            ),
+          },
+          ),"""
 
           if old not in content:
               raise RuntimeError(
@@ -432,24 +432,24 @@ jobs:
           )
 
           old = """const Text(
-  'Stella is mining the future.',
-  textAlign: TextAlign.center,
-  style: TextStyle(
-    color: secondaryTextColor,
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-  ),
-),"""
+          'Stella is mining the future.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: secondaryTextColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+          )"""
 
           new = """Text(
-  _t('footerMiningFuture'),
-  textAlign: TextAlign.center,
-  style: const TextStyle(
-    color: secondaryTextColor,
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-  ),
-),"""
+          _t('footerMiningFuture'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: secondaryTextColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+          )"""
 
           if old not in content:
               raise RuntimeError(
@@ -501,31 +501,31 @@ jobs:
                       "Stella Mining Days _currentLabel not found."
                   )
 
-              method = """  String _dayLabel(
-    String language,
-  ) {
-    switch (language) {
-      case 'fi':
-        return 'PÄIVÄ';
-      case 'de':
-        return 'TAG';
-      case 'es':
-        return 'DÍA';
-      case 'fr':
-        return 'JOUR';
-      case 'zh':
-        return '天';
-      case 'vi':
-        return 'NGÀY';
-      case 'ja':
-        return '日';
-      case 'en':
-      default:
-        return 'DAY';
-    }
-  }
+              method = """          String _dayLabel(
+            String language,
+          ) {
+            switch (language) {
+              case 'fi':
+                return 'PÄIVÄ';
+              case 'de':
+                return 'TAG';
+              case 'es':
+                return 'DÍA';
+              case 'fr':
+                return 'JOUR';
+              case 'zh':
+                return '天';
+              case 'vi':
+                return 'NGÀY';
+              case 'ja':
+                return '日';
+              case 'en':
+              default:
+                return 'DAY';
+            }
+          }
 
-"""
+          """
 
               content = (
                   content[:index]
