@@ -46,8 +46,7 @@ const Map<String, String> fiTranslations = {
   // 🐱 STELLA MINING
   // ============================================================
 
-  'stellaMiningTitle':
-      'Stellan louhinta',
+  'stellaMiningTitle': 'Stellan louhinta',
 
   'stellaMiningSubtitle':
       'Stella työskentelee puolestasi. 🐱⛏️',
@@ -1008,12 +1007,6 @@ const Map<String, String> fiTranslations = {
   // ============================================================
   // 🌍 ACCOUNT / UI
   // ============================================================
-
-  'roadmapPhase6':
-      'Vaihe 6 – Pitkän aikavälin kehitys',
-
-  'roadmapDevelopmentPrinciples':
-      'Kehityksen periaatteet',
 
   'referrals':
       'Suositukset',
