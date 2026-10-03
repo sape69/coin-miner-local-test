@@ -149,7 +149,7 @@ const Map<String, String> viTranslations = {
   // ============================================================
 
   'powerBoost':
-      'Stella Power Boost',
+      'Tăng cường sức mạnh Stella',
 
   'powerBoostOffer':
       'Xem quảng cáo để kích hoạt Stella Power Boost +{amount} HR trong 4 giờ. 🐱⚡',
@@ -977,7 +977,7 @@ const Map<String, String> viTranslations = {
   // ============================================================
 
   'stellaMiningTitle':
-      'Stella Mining',
+      'Khai thác Stella',
 
   // ============================================================
   // 🌍 ACCOUNT / UI ADDITIONS
@@ -1146,5 +1146,36 @@ const Map<String, String> viTranslations = {
 
   'accountDeletionFailed':
       'Không thể xóa tài khoản. Vui lòng thử lại.',
+
+  // ============================================================
+  // 🌟 ADDITIONAL LOCALIZATION
+  // ============================================================
+
+  'accountDeletionAppTitle':
+      'Xóa tài khoản Stelluriini',
+
+  'dailyMiningPowerBoost':
+      'Tăng sức mạnh khai thác hàng ngày',
+
+  'dailyMiningPowerBoostShort':
+      'Tăng sức mạnh khai thác',
+
+  'done':
+      '✓ ĐÃ XONG',
+
+  'claiming':
+      'ĐANG NHẬN...',
+
+  'claimHashRate':
+      'NHẬN +1 HASH RATE',
+
+  'comeBackTomorrow':
+      'Quay lại vào ngày mai để nhận thêm Hash Rate 🐱',
+
+  'claimDailyBonusInfo':
+      'Nhận phần thưởng hàng ngày để tăng sức mạnh khai thác',
+
+  'footerMiningFuture':
+      'Stella đang khai thác tương lai.',
 
 };
