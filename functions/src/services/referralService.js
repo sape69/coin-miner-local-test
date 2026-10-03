@@ -22,8 +22,12 @@
 // - bonusmäärän
 // - bonus-historian
 // - referralTotalEarned-arvon
+// - referral-saavutukset
 //
 // Referral-bonus syntyy vain hyväksytystä mining-tuotosta.
+//
+// Referral-achievementit syntyvät vain hyväksytystä
+// referral-suhteen luomisesta.
 //
 // ============================================================
 
@@ -57,6 +61,19 @@ const {
   buildReferralRelationship,
 } = require("../utils/referralUtils");
 
+// ============================================================
+// 🏆 ACHIEVEMENT HELPERS
+// ============================================================
+//
+// Referral-saavutukset käsitellään serverillä.
+//
+// Client ei voi päättää achievement-progressia.
+//
+// ============================================================
+
+const {
+  applyAchievementProgress,
+} = require("../functions/achievementFunctions");
 
 // ============================================================
 // 📁 COLLECTION HELPERS
@@ -584,6 +601,91 @@ async function ensureReferralCode(
 
 
 // ============================================================
+// 🏆 APPLY REFERRAL ACHIEVEMENTS
+// ============================================================
+//
+// Päivittää kutsujan kolme referral-saavutusta:
+//
+// first_invitation
+// friend_circle
+// stellas_community
+//
+// Progress perustuu todelliseen referralCount-arvoon.
+//
+// Tärkeää:
+//
+// - referralCount lasketaan serverillä
+// - achievementit päivitetään samassa Firestore-transaktiossa
+// - palkinto maksetaan vain kerran
+// - client ei voi lähettää progress-arvoa
+//
+// ============================================================
+
+async function applyReferralAchievements(
+  referrerUid,
+  referralCount,
+  achievementData,
+  transaction,
+) {
+  const safeUid =
+    typeof referrerUid === "string"
+      ? referrerUid.trim()
+      : "";
+
+  const safeCount =
+    Math.max(
+      0,
+      Math.floor(
+        safeNumber(
+          referralCount,
+          0,
+        ),
+      ),
+    );
+
+  if (
+    !safeUid ||
+    !transaction
+  ) {
+    return [];
+  }
+
+  const achievementIds = [
+    "first_invitation",
+    "friend_circle",
+    "stellas_community",
+  ];
+
+  const results = [];
+
+  for (
+    const achievementId of
+      achievementIds
+  ) {
+    const existingData =
+      achievementData[achievementId] ||
+      {};
+
+    const result =
+      applyAchievementProgress(
+        transaction,
+        safeUid,
+        achievementId,
+        existingData,
+        safeCount,
+        new Date(),
+      );
+
+    results.push(
+      result,
+    );
+  }
+
+  return results;
+}
+
+
+// ============================================================
 // 🤝 CREATE REFERRAL RELATIONSHIP
 // ============================================================
 //
@@ -783,6 +885,63 @@ async function createReferralRelationship(
   }
 
   // ----------------------------------------------------------
+  // REFERRER ACHIEVEMENT READS
+  // ----------------------------------------------------------
+  //
+  // Nämä kaikki luetaan ennen ensimmäistä transaction.writeä.
+  //
+  // Tämä on tärkeää Firestore-transaktion kannalta.
+  //
+  // ----------------------------------------------------------
+
+  const achievementIds = [
+    "first_invitation",
+    "friend_circle",
+    "stellas_community",
+  ];
+
+  const achievementData = {};
+
+  for (
+    const achievementId of
+      achievementIds
+  ) {
+    const achievementRef =
+      referrerRef
+        .collection("achievements")
+        .doc(
+          achievementId,
+        );
+
+    const achievementSnapshot =
+      await transaction.get(
+        achievementRef,
+      );
+
+    achievementData[
+      achievementId
+    ] =
+      achievementSnapshot.exists
+        ? achievementSnapshot.data() || {}
+        : {};
+  }
+
+  // ----------------------------------------------------------
+  // CURRENT REFERRAL COUNT
+  // ----------------------------------------------------------
+
+  const referrerData =
+    referrerSnapshot.data() || {};
+
+  const oldReferralCount =
+    getReferralCount(
+      referrerData,
+    );
+
+  const newReferralCount =
+    oldReferralCount + 1;
+
+  // ----------------------------------------------------------
   // BUILD RELATIONSHIP
   // ----------------------------------------------------------
 
@@ -858,6 +1017,25 @@ async function createReferralRelationship(
     },
   );
 
+  // ----------------------------------------------------------
+  // 🏆 REFERRAL ACHIEVEMENTS
+  // ----------------------------------------------------------
+  //
+  // Progress perustuu serverillä laskettuun uuteen
+  // referralCount-arvoon.
+  //
+  // Palkinnot maksetaan achievementFunctions.js:n kautta.
+  //
+  // ----------------------------------------------------------
+
+  const achievementResults =
+    await applyReferralAchievements(
+      referrer.uid,
+      newReferralCount,
+      achievementData,
+      transaction,
+    );
+
   return {
     created:
       true,
@@ -870,6 +1048,32 @@ async function createReferralRelationship(
 
     referralCode:
       normalizedCode,
+
+    referralCount:
+      newReferralCount,
+
+    achievements:
+      achievementResults.map(
+        (achievement) => ({
+          id:
+            achievement.achievementId,
+
+          progress:
+            achievement.progress,
+
+          target:
+            achievement.target,
+
+          unlocked:
+            achievement.unlocked,
+
+          newlyUnlocked:
+            achievement.newlyUnlocked,
+
+          reward:
+            achievement.rewardToCredit,
+        }),
+      ),
   };
 }
 
