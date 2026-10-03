@@ -26,6 +26,11 @@ const Map<String, String> viTranslations = {
   'comingSoon': 'Sắp ra mắt',
   'information': 'Thông tin',
 
+  'loading': 'Đang tải...',
+  'active': 'Đang hoạt động',
+  'welcome': 'Chào mừng',
+  'stellaWelcome': 'Stella ở đây để giúp bạn. 🐱💜',
+
   // ============================================================
   // 💰 BALANCE / MINING
   // ============================================================
@@ -37,14 +42,30 @@ const Map<String, String> viTranslations = {
   'effectiveHashRate': 'Tốc độ băm hiệu dụng',
   'effectiveHashRateLabel': 'Tốc độ băm hiệu dụng',
 
-  'dailyHashRateLabel': 'Tốc độ băm hàng ngày',
-  'dailyHashRateDay': 'Ngày {day}',
-  'dailyHashRateMaximum': 'Tối đa: {rate} HR',
+  'dailyHashRateLabel':
+      'Tốc độ băm hàng ngày',
+
+  'dailyHashRateDay':
+      'Ngày {day}',
+
+  'dailyHashRateMaximum':
+      'Tối đa: {rate} HR',
+
   'dailyHashRateSuccess':
       'Tốc độ băm ngày {day}: {rate} HR',
 
+  // ============================================================
+  // 🐱 STELLA MINING
+  // ============================================================
+
+  'stellaMiningTitle':
+      'Khai thác Stella',
+
+  'stellaMiningSubtitle':
+      'Stella đang làm việc cho bạn. 🐱⛏️',
+
   'stellaMiningProgress':
-      'Tiến trình khai thác Stella',
+      'Tiến trình khai thác của Stella',
 
   'miningProgress':
       'Tiến trình khai thác',
@@ -103,6 +124,9 @@ const Map<String, String> viTranslations = {
   'days':
       'ngày',
 
+  'day':
+      'Ngày',
+
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
@@ -122,6 +146,27 @@ const Map<String, String> viTranslations = {
   'alreadyClaimed':
       'Bạn đã nhận phần thưởng hôm nay.',
 
+  'dailyMiningPowerBoost':
+      'Tăng sức mạnh khai thác hàng ngày',
+
+  'dailyMiningPowerBoostShort':
+      'Tăng sức mạnh khai thác',
+
+  'done':
+      '✓ ĐÃ XONG',
+
+  'claiming':
+      'ĐANG NHẬN...',
+
+  'claimHashRate':
+      'NHẬN +1 HASH RATE',
+
+  'comeBackTomorrow':
+      'Quay lại vào ngày mai để nhận thêm Hash Rate 🐱',
+
+  'claimDailyBonusInfo':
+      'Nhận phần thưởng hàng ngày để tăng sức mạnh khai thác',
+
   // ============================================================
   // 📺 ADS
   // ============================================================
@@ -131,6 +176,9 @@ const Map<String, String> viTranslations = {
 
   'watchAndEarn':
       'XEM VÀ NHẬN THƯỞNG',
+
+  'watchAdSubtitle':
+      'Xem quảng cáo để tăng Power Boost cho Stella. 🐱⚡',
 
   'loadingAd':
       'ĐANG TẢI QUẢNG CÁO...',
@@ -144,12 +192,21 @@ const Map<String, String> viTranslations = {
   'adReward':
       '+{amount} HR',
 
+  'adNotAvailable':
+      'Quảng cáo hiện không khả dụng.',
+
+  'adLoadError':
+      'Không thể tải quảng cáo.',
+
+  'adShowError':
+      'Không thể hiển thị quảng cáo.',
+
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
   'powerBoost':
-      'Tăng cường sức mạnh Stella',
+      'Tăng sức mạnh Stella',
 
   'powerBoostOffer':
       'Xem quảng cáo để kích hoạt Stella Power Boost +{amount} HR trong 4 giờ. 🐱⚡',
@@ -182,7 +239,7 @@ const Map<String, String> viTranslations = {
       'Đã đạt giới hạn quảng cáo hàng ngày.',
 
   'powerBoostReward':
-      'Stella Power Boost: +{amount} HR',
+      'Tăng sức mạnh Stella: +{amount} HR',
 
   'adRewardDuplicate':
       'Phần thưởng quảng cáo này đã được xử lý.',
@@ -207,6 +264,12 @@ const Map<String, String> viTranslations = {
   'profile':
       'Hồ sơ',
 
+  'referrals':
+      'Giới thiệu',
+
+  'deleteAccount':
+      'Xóa tài khoản',
+
   // ============================================================
   // 🐱 STELLA
   // ============================================================
@@ -218,22 +281,22 @@ const Map<String, String> viTranslations = {
       'Kiến thức thú vị về mèo của Stella',
 
   'stellaPower':
-      'Stella Power',
+      'Sức mạnh của Stella',
 
   'stellaMining':
-      'Stella Mining',
+      'Khai thác cùng Stella',
 
   'stellaIsMining':
       'Stella đang khai thác',
 
   'stellaMiningNow':
-      'Stella đang khai thác ngay lúc này 🐱⛏️',
+      'Stella đang khai thác ngay lúc này. 🐱⛏️',
 
   'stellaIsResting':
-      'Stella đang nghỉ ngơi 🐱💜',
+      'Stella đang nghỉ ngơi. 🐱💜',
 
   'stellaWaiting':
-      'Stella đang chờ chu kỳ khai thác tiếp theo',
+      'Stella đang chờ chu kỳ khai thác tiếp theo.',
 
   'stlReadyToCollect':
       'STL đã sẵn sàng để nhận',
@@ -450,7 +513,7 @@ const Map<String, String> viTranslations = {
       'Phần thưởng STL của bạn sẽ xuất hiện tại đây. 🐱💜',
 
   'startMiningWithStella':
-      'Bắt đầu khai thác cùng Stella 🐱⛏️',
+      'Bắt đầu khai thác cùng Stella. 🐱⛏️',
 
   'historyRecorded':
       'Hoạt động khai thác, phần thưởng hàng ngày và phần thưởng quảng cáo của bạn sẽ được ghi lại tại đây.',
@@ -942,240 +1005,64 @@ const Map<String, String> viTranslations = {
   'footerToken':
       'STL • STELLURIINI',
 
+  'footerMiningFuture':
+      'Stella đang khai thác tương lai.',
+
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'loading':
-      'Đang tải...',
 
   // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'active':
-      'Đang hoạt động',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'welcome':
-      'Chào mừng',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaWelcome':
-      'Stella ở đây để giúp bạn. 🐱💜',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningTitle':
-      'Khai thác Stella',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningSubtitle':
-      'Stella đang làm việc cho bạn. 🐱⛏️',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'day':
-      'Ngày',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'watchAdSubtitle':
-      'Xem quảng cáo để tăng Power Boost cho Stella. 🐱⚡',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adNotAvailable':
-      'Quảng cáo hiện không khả dụng.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adLoadError':
-      'Không thể tải quảng cáo.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adShowError':
-      'Không thể hiển thị quảng cáo.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'referrals':
-      'Giới thiệu',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'deleteAccount':
-      'Xóa tài khoản',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
+  // 🔐 ACCOUNT DELETION
   // ============================================================
 
   'accountDeletion':
       'Xóa tài khoản',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'accountDeletionAppTitle':
+      'Xóa tài khoản Stelluriini',
 
   'accountDeletionTitle':
       'Xóa tài khoản của bạn',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSubtitle':
       'Bạn có thể xóa vĩnh viễn tài khoản Stelluriini và dữ liệu liên quan.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteYourAccount':
       'Xóa tài khoản của bạn',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccountDescription':
       'Thao tác này sẽ xóa vĩnh viễn tài khoản và dữ liệu liên quan. Không thể hoàn tác.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteAccountButton':
       'XÓA TÀI KHOẢN',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessApp':
       'Không thể truy cập ứng dụng?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessAppDescription':
-      'Nếu bạn không thể truy cập ứng dụng, bạn có thể gửi yêu cầu xóa tài khoản qua trang xóa công khai của chúng tôi.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+      'Nếu bạn không thể truy cập ứng dụng, bạn có thể gửi yêu cầu xóa tài khoản qua trang xóa tài khoản công khai của chúng tôi.',
 
   'openAccountDeletionPage':
       'MỞ TRANG XÓA TÀI KHOẢN',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionPermanent':
       'Việc xóa tài khoản là vĩnh viễn và không thể hoàn tác.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionDialogTitle':
       'Xóa tài khoản?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionDialogMessage':
       'Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản và dữ liệu liên quan không?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionCancel':
       'Hủy',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionConfirm':
       'Xóa tài khoản',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionSuccess':
       'Tài khoản của bạn đã được xóa thành công.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionFailed':
       'Không thể xóa tài khoản. Vui lòng thử lại.',
-
-  // ============================================================
-  // 🌟 ADDITIONAL LOCALIZATION
-  // ============================================================
-
-  'accountDeletionAppTitle':
-      'Xóa tài khoản Stelluriini',
-
-  'dailyMiningPowerBoost':
-      'Tăng sức mạnh khai thác hàng ngày',
-
-  'dailyMiningPowerBoostShort':
-      'Tăng sức mạnh khai thác',
-
-  'done':
-      '✓ ĐÃ XONG',
-
-  'claiming':
-      'ĐANG NHẬN...',
-
-  'claimHashRate':
-      'NHẬN +1 HASH RATE',
-
-  'comeBackTomorrow':
-      'Quay lại vào ngày mai để nhận thêm Hash Rate 🐱',
-
-  'claimDailyBonusInfo':
-      'Nhận phần thưởng hàng ngày để tăng sức mạnh khai thác',
-
-  'footerMiningFuture':
-      'Stella đang khai thác tương lai.',
-
 };
