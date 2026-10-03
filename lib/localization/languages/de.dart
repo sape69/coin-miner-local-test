@@ -872,4 +872,207 @@ const Map<String, String> deTranslations = {
 
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'loading':
+      'Wird geladen...',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'active':
+      'Aktiv',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'welcome':
+      'Willkommen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'stellaWelcome':
+      'Stella ist hier, um dir zu helfen. 🐱💜',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'stellaMiningTitle':
+      'Stella Mining',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'stellaMiningSubtitle':
+      'Stella arbeitet für dich. 🐱⛏️',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'day':
+      'Tag',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'watchAdSubtitle':
+      'Sieh dir eine Werbung an und gib Stella einen Power Boost. 🐱⚡',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'adNotAvailable':
+      'Die Werbung ist derzeit nicht verfügbar.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'adLoadError':
+      'Die Werbung konnte nicht geladen werden.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'adShowError':
+      'Die Werbung konnte nicht angezeigt werden.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'referrals':
+      'Empfehlungen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccount':
+      'Konto löschen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletion':
+      'Kontolöschung',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionTitle':
+      'Konto löschen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSubtitle':
+      'Du kannst dein Stelluriini-Konto und die zugehörigen Daten dauerhaft löschen.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteYourAccount':
+      'Dein Konto löschen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountDescription':
+      'Dadurch werden dein Konto und die zugehörigen Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountButton':
+      'KONTO LÖSCHEN',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessApp':
+      'Kein Zugriff auf die App?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessAppDescription':
+      'Wenn du keinen Zugriff auf die App hast, kannst du über unsere öffentliche Löschseite eine Anfrage zur Kontolöschung senden.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'openAccountDeletionPage':
+      'KONTOLÖSCHSEITE ÖFFNEN',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionPermanent':
+      'Die Kontolöschung ist dauerhaft und kann nicht rückgängig gemacht werden.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogTitle':
+      'Konto löschen?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogMessage':
+      'Möchtest du dein Konto und die zugehörigen Daten wirklich dauerhaft löschen?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionCancel':
+      'Abbrechen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionConfirm':
+      'Konto löschen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSuccess':
+      'Dein Konto wurde erfolgreich gelöscht.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionFailed':
+      'Die Kontolöschung ist fehlgeschlagen. Bitte versuche es erneut.',
+
 };

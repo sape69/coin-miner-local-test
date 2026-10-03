@@ -965,4 +965,137 @@ const Map<String, String> fiTranslations = {
 
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'roadmapPhase6':
+      'Vaihe 6 – Pitkän aikavälin kehitys',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'referrals':
+      'Suositukset',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccount':
+      'Poista tili',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletion':
+      'Tilin poistaminen',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionTitle':
+      'Poista tilisi',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSubtitle':
+      'Voit poistaa Stelluriini-tilisi ja siihen liittyvät tiedot pysyvästi.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteYourAccount':
+      'Poista tilisi',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountDescription':
+      'Tämä poistaa tilisi ja siihen liittyvät tiedot pysyvästi. Tätä toimintoa ei voi peruuttaa.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountButton':
+      'POISTA TILI',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessApp':
+      'Etkö pääse sovellukseen?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessAppDescription':
+      'Jos et pääse sovellukseen, voit lähettää tilin poistopyynnön julkisen poistamissivun kautta.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'openAccountDeletionPage':
+      'AVAA TILIN POISTAMISSIVU',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionPermanent':
+      'Tilin poistaminen on pysyvä eikä sitä voi peruuttaa.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogTitle':
+      'Poistetaanko tili?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogMessage':
+      'Haluatko varmasti poistaa tilisi ja siihen liittyvät tiedot pysyvästi?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionCancel':
+      'Peruuta',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionConfirm':
+      'Poista tili',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSuccess':
+      'Tilisi on poistettu onnistuneesti.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionFailed':
+      'Tilin poistaminen epäonnistui. Yritä uudelleen.',
+
 };

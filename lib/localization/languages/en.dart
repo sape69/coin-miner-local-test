@@ -958,4 +958,130 @@ const Map<String, String> enTranslations = {
 
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'referrals':
+      'Referrals',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccount':
+      'Delete Account',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletion':
+      'Account Deletion',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionTitle':
+      'Delete Your Account',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSubtitle':
+      'You can permanently delete your Stelluriini account and its associated data.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteYourAccount':
+      'Delete your account',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountDescription':
+      'This permanently deletes your account and associated data. This action cannot be undone.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountButton':
+      'DELETE ACCOUNT',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessApp':
+      'Cannot access the app?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessAppDescription':
+      'If you cannot access the app, you can submit an account deletion request through our public deletion page.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'openAccountDeletionPage':
+      'OPEN ACCOUNT DELETION PAGE',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionPermanent':
+      'Account deletion is permanent and cannot be undone.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogTitle':
+      'Delete Account?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogMessage':
+      'Are you sure you want to permanently delete your account and its associated data?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionCancel':
+      'Cancel',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionConfirm':
+      'Delete Account',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSuccess':
+      'Your account has been deleted successfully.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionFailed':
+      'Account deletion failed. Please try again.',
+
 };

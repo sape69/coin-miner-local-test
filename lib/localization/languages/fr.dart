@@ -945,4 +945,207 @@ const Map<String, String> frTranslations = {
 
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'loading':
+      'Chargement...',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'active':
+      'Actif',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'welcome':
+      'Bienvenue',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'stellaWelcome':
+      'Stella est là pour vous aider. 🐱💜',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'stellaMiningTitle':
+      'Minage de Stella',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'stellaMiningSubtitle':
+      'Stella travaille pour vous. 🐱⛏️',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'day':
+      'Jour',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'watchAdSubtitle':
+      'Regardez une publicité et donnez à Stella un Power Boost. 🐱⚡',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'adNotAvailable':
+      'La publicité n\'est pas disponible actuellement.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'adLoadError':
+      'Impossible de charger la publicité.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'adShowError':
+      'Impossible d\'afficher la publicité.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'referrals':
+      'Parrainages',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccount':
+      'Supprimer le compte',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletion':
+      'Suppression du compte',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionTitle':
+      'Supprimer votre compte',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSubtitle':
+      'Vous pouvez supprimer définitivement votre compte Stelluriini et les données associées.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteYourAccount':
+      'Supprimer votre compte',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountDescription':
+      'Cette action supprime définitivement votre compte et les données associées. Elle est irréversible.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'deleteAccountButton':
+      'SUPPRIMER LE COMPTE',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessApp':
+      'Vous ne pouvez pas accéder à l\'application ?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'cannotAccessAppDescription':
+      'Si vous ne pouvez pas accéder à l\'application, vous pouvez envoyer une demande de suppression via notre page publique.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'openAccountDeletionPage':
+      'OUVRIR LA PAGE DE SUPPRESSION',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionPermanent':
+      'La suppression du compte est définitive et irréversible.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogTitle':
+      'Supprimer le compte ?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionDialogMessage':
+      'Voulez-vous vraiment supprimer définitivement votre compte et les données associées ?',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionCancel':
+      'Annuler',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionConfirm':
+      'Supprimer le compte',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionSuccess':
+      'Votre compte a été supprimé avec succès.',
+
+  // ============================================================
+  // 🌍 ACCOUNT / UI ADDITIONS
+  // ============================================================
+
+  'accountDeletionFailed':
+      'La suppression du compte a échoué. Veuillez réessayer.',
+
 };
