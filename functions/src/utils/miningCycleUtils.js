@@ -214,6 +214,30 @@ function getDailyStreak(
 // ============================================================
 // 🎁 DAILY STATUS
 // ============================================================
+//
+// TÄRKEÄÄ:
+//
+// getDailyStatus() EI saa kasvattaa streakiä etukäteen.
+//
+// Esimerkki:
+//
+// Firestore:
+//   dailyStreak = 2
+//   lastDailyDate = eilinen
+//
+// Tänään ennen Daily Check-Iniä:
+//
+//   claimedToday = false
+//   streak = 2
+//
+// Daily Check-In kasvattaa streakin myöhemmin:
+//
+//   2 → 3
+//
+// Näin UI ei näytä Day 3 ennen kuin käyttäjä on
+// oikeasti tehnyt päivän 3 Daily Check-Inin.
+//
+// ============================================================
 
 function getDailyStatus(
   data,
@@ -236,6 +260,15 @@ function getDailyStatus(
       safeData
     );
 
+  // ----------------------------------------------------------
+  // 🎁 TODAY ALREADY CLAIMED
+  // ----------------------------------------------------------
+  //
+  // Jos tämän päivän Daily Check-In on jo tehty,
+  // Firestoressa oleva streak on tämän päivän todellinen päivä.
+  //
+  // ----------------------------------------------------------
+
   if (
     lastDailyDate === today
   ) {
@@ -247,7 +280,9 @@ function getDailyStatus(
 
     return {
       claimedToday: true,
+
       streak,
+
       dailyHashRate:
         calculateDailyHashRate(
           streak
@@ -255,37 +290,35 @@ function getDailyStatus(
     };
   }
 
-  let yesterdayString = "";
-
-  if (
-    typeof today === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(today)
-  ) {
-    const yesterday =
-      new Date(
-        `${today}T00:00:00.000Z`
-      );
-
-    yesterday.setUTCDate(
-      yesterday.getUTCDate() - 1
-    );
-
-    yesterdayString =
-      yesterday
-        .toISOString()
-        .slice(0, 10);
-  }
+  // ----------------------------------------------------------
+  // 🎁 TODAY NOT CLAIMED
+  // ----------------------------------------------------------
+  //
+  // TÄRKEÄÄ:
+  //
+  // Jos eilinen Daily Check-In oli esimerkiksi Day 2,
+  // tämän päivän tila on edelleen Day 2 siihen asti,
+  // kunnes käyttäjä suorittaa uuden Daily Check-Inin.
+  //
+  // Emme tee tässä:
+  //
+  // currentStreak + 1
+  //
+  // Se tehdään ainoastaan dailyCheckIn()-funktiossa.
+  //
+  // ----------------------------------------------------------
 
   const streak =
-    lastDailyDate ===
-      yesterdayString &&
-    currentStreak > 0
-      ? currentStreak + 1
-      : 1;
+    Math.max(
+      1,
+      currentStreak
+    );
 
   return {
     claimedToday: false,
+
     streak,
+
     dailyHashRate:
       calculateDailyHashRate(
         streak
