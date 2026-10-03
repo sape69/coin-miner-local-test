@@ -267,15 +267,19 @@ jobs:
                   1,
               )
 
-          content = content.replace(
-              "class AccountDeletionPage extends StatelessWidget {",
-              "class AccountDeletionPage extends StatelessWidget {\nfinal String languageCode;",
-              1,
-          )
+          if "final String languageCode;" not in content:
+              content = content.replace(
+                  "class AccountDeletionPage extends StatelessWidget {",
+                  "class AccountDeletionPage extends StatelessWidget {\n"
+                  "  final String languageCode;",
+                  1,
+              )
 
           content = content.replace(
               "required this.onDeleteAccountPressed,\n});",
-              "required this.languageCode,\nrequired this.onDeleteAccountPressed,\n});",
+              "required this.languageCode,\n"
+              "    required this.onDeleteAccountPressed,\n"
+              "  });",
               1,
           )
 
@@ -333,27 +337,31 @@ jobs:
 
           content = content.replace(
               "const Text(\n"
-              "'Account deletion is permanent. Your Stelluriini '\n"
-              "'account and associated data cannot be restored after deletion.',",
+              "          'Account deletion is permanent. Your Stelluriini '\n"
+              "          'account and associated data cannot be restored after deletion.',",
               "Text(\n"
-              "l.get('accountDeletionPermanent'),",
+              "          l.get('accountDeletionPermanent'),",
               1,
           )
 
-          marker = "@override\nWidget build(BuildContext context) {"
+          marker = "@override\n  Widget build(BuildContext context) {"
+
+          if marker not in content:
+              marker = "@override\nWidget build(BuildContext context) {"
 
           if marker not in content:
               raise RuntimeError(
                   "AccountDeletionPage build method not found."
               )
 
-          content = content.replace(
-              marker,
-              marker + "\n"
-              "final AppLocalizations l = "
-              "AppLocalizations(languageCode);",
-              1,
-          )
+          if "final AppLocalizations l = AppLocalizations(languageCode);" not in content:
+              content = content.replace(
+                  marker,
+                  marker + "\n"
+                  "    final AppLocalizations l = "
+                  "AppLocalizations(languageCode);",
+                  1,
+              )
 
           content = content.replace(
               "_buildInAppDeleteCard(),",
@@ -385,39 +393,42 @@ jobs:
           path = root / "pages/home/home_page.dart"
           content = path.read_text(encoding="utf-8")
 
-          old = """AccountDeletionPage(
-          onDeleteAccountPressed:
-              _showDeleteAccountConfirmation,
-          )"""
+          account_pattern = (
+              r"AccountDeletionPage\(\s*"
+              r"onDeleteAccountPressed:\s*"
+              r"_showDeleteAccountConfirmation,\s*"
+              r"\)"
+          )
 
-          new = """AccountDeletionPage(
+          account_replacement = """AccountDeletionPage(
           languageCode:
               widget.languageCode,
           onDeleteAccountPressed:
               _showDeleteAccountConfirmation,
-          )"""
+        )"""
 
-          if old not in content:
+          content, account_count = re.subn(
+              account_pattern,
+              account_replacement,
+              content,
+              count=1,
+          )
+
+          if account_count != 1:
               raise RuntimeError(
                   "HomePage AccountDeletionPage call not found."
               )
 
-          content = content.replace(
-              old,
-              new,
-              1,
-          )
-
           old = "timerLabel: _t('miningTimeRemaining'),"
 
           new = """timerLabel:
-          _localization.getWithParams(
-          'miningTimeRemaining',
-          params: {
-            'time': _formatDuration(
-              _miningRemainingMs,
-            ),
-          },
+              _localization.getWithParams(
+            'miningTimeRemaining',
+            params: {
+              'time': _formatDuration(
+                _miningRemainingMs,
+              ),
+            },
           ),"""
 
           if old not in content:
@@ -431,17 +442,19 @@ jobs:
               1,
           )
 
-          old = """const Text(
-          'Stella is mining the future.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: secondaryTextColor,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-          )"""
+          footer_pattern = (
+              r"const Text\(\s*"
+              r"'Stella is mining the future\.',\s*"
+              r"textAlign:\s*TextAlign\.center,\s*"
+              r"style:\s*TextStyle\(\s*"
+              r"color:\s*secondaryTextColor,\s*"
+              r"fontSize:\s*13,\s*"
+              r"fontWeight:\s*FontWeight\.w500,\s*"
+              r"\),\s*"
+              r"\)"
+          )
 
-          new = """Text(
+          footer_replacement = """Text(
           _t('footerMiningFuture'),
           textAlign: TextAlign.center,
           style: const TextStyle(
@@ -449,18 +462,19 @@ jobs:
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          )"""
+        )"""
 
-          if old not in content:
+          content, footer_count = re.subn(
+              footer_pattern,
+              footer_replacement,
+              content,
+              count=1,
+          )
+
+          if footer_count != 1:
               raise RuntimeError(
                   "HomePage footer not found."
               )
-
-          content = content.replace(
-              old,
-              new,
-              1,
-          )
 
           path.write_text(
               content,
@@ -474,11 +488,12 @@ jobs:
           path = root / "pages/home/stella_mining_days_card.dart"
           content = path.read_text(encoding="utf-8")
 
-          content = content.replace(
-              "'STELLA MINING DAYS'",
-              "'STELLAのマイニング日数'",
-              1,
-          )
+          if "'STELLA MINING DAYS'" in content:
+              content = content.replace(
+                  "'STELLA MINING DAYS'",
+                  "'STELLAのマイニング日数'",
+                  1,
+              )
 
           dollar = chr(36)
 
@@ -501,31 +516,31 @@ jobs:
                       "Stella Mining Days _currentLabel not found."
                   )
 
-              method = """          String _dayLabel(
-            String language,
-          ) {
-            switch (language) {
-              case 'fi':
-                return 'PÄIVÄ';
-              case 'de':
-                return 'TAG';
-              case 'es':
-                return 'DÍA';
-              case 'fr':
-                return 'JOUR';
-              case 'zh':
-                return '天';
-              case 'vi':
-                return 'NGÀY';
-              case 'ja':
-                return '日';
-              case 'en':
-              default:
-                return 'DAY';
-            }
-          }
+              method = """  String _dayLabel(
+    String language,
+  ) {
+    switch (language) {
+      case 'fi':
+        return 'PÄIVÄ';
+      case 'de':
+        return 'TAG';
+      case 'es':
+        return 'DÍA';
+      case 'fr':
+        return 'JOUR';
+      case 'zh':
+        return '天';
+      case 'vi':
+        return 'NGÀY';
+      case 'ja':
+        return '日';
+      case 'en':
+      default:
+        return 'DAY';
+    }
+  }
 
-          """
+"""
 
               content = (
                   content[:index]
@@ -553,29 +568,32 @@ jobs:
                   1,
               )
 
-          content = content.replace(
-              "final bool dailyClaimed;",
-              "final bool dailyClaimed;\n"
-              "  final String languageCode;",
-              1,
-          )
+          if "final String languageCode;" not in content:
+              content = content.replace(
+                  "final bool dailyClaimed;",
+                  "final bool dailyClaimed;\n"
+                  "  final String languageCode;",
+                  1,
+              )
 
-          content = content.replace(
-              "required this.dailyClaimed,\n"
-              "    required this.onPressed,",
-              "required this.dailyClaimed,\n"
-              "    this.languageCode = 'en',\n"
-              "    required this.onPressed,",
-              1,
-          )
+          if "this.languageCode = 'en'," not in content:
+              content = content.replace(
+                  "required this.dailyClaimed,\n"
+                  "    required this.onPressed,",
+                  "required this.dailyClaimed,\n"
+                  "    this.languageCode = 'en',\n"
+                  "    required this.onPressed,",
+                  1,
+              )
 
-          content = content.replace(
-              "Widget build(BuildContext context) {",
-              "Widget build(BuildContext context) {\n"
-              "final AppLocalizations l = "
-              "AppLocalizations(languageCode);",
-              1,
-          )
+          if "final AppLocalizations l = AppLocalizations(languageCode);" not in content:
+              content = content.replace(
+                  "Widget build(BuildContext context) {",
+                  "Widget build(BuildContext context) {\n"
+                  "    final AppLocalizations l = "
+                  "AppLocalizations(languageCode);",
+                  1,
+              )
 
           content = content.replace(
               "Text(\n"
@@ -597,7 +615,7 @@ jobs:
               "child: const Text(\n"
               "                    '✓ DONE',",
               "child: Text(\n"
-              "                    l.get('done'),",
+              "                    '✓ ${l.get('done')}',",
               1,
           )
 
