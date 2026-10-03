@@ -101,7 +101,7 @@ const Map<String, String> fiTranslations = {
       'Aikaa jäljellä: {time}',
 
   'miningTimeRemaining':
-      'Aikaa jäljellä',
+      'Aikaa jäljellä: {time}',
 
   'waitingForStella':
       'Odotetaan Stellaa 🐱💜',
@@ -133,6 +133,27 @@ const Map<String, String> fiTranslations = {
 
   'alreadyClaimed':
       'Olet jo kerännyt tämän päivän palkinnon.',
+
+  'dailyMiningPowerBoost':
+      'Päivittäinen louhintavoiman tehostus',
+
+  'dailyMiningPowerBoostShort':
+      'Louhintavoiman tehostus',
+
+  'done':
+      '✓ VALMIS',
+
+  'claiming':
+      'KERÄTÄÄN...',
+
+  'claimHashRate':
+      'KERÄÄ +1 HASH RATE',
+
+  'comeBackTomorrow':
+      'Palaa huomenna hakemaan lisää Hash Ratea 🐱',
+
+  'claimDailyBonusInfo':
+      'Kerää päivittäinen bonus kasvattaaksesi louhintavoimaa',
 
   // ============================================================
   // 📺 ADS
@@ -176,13 +197,13 @@ const Map<String, String> fiTranslations = {
       'Stellan Power Boost',
 
   'powerBoostOffer':
-      'Katso mainos ja aktivoi +{amount} HR Stella Power Boost 4 tunniksi. 🐱⚡',
+      'Katso mainos ja aktivoi +{amount} HR Stellan Power Boost 4 tunniksi. 🐱⚡',
 
   'powerBoostActive':
       'Power Boost aktiivinen',
 
   'powerBoostActiveTitle':
-      'Stella Power Boost on aktiivinen! 🐱💜',
+      'Stellan Power Boost on aktiivinen! 🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HR on käytössä louhintajakson aikana.',
@@ -604,6 +625,9 @@ const Map<String, String> fiTranslations = {
   'roadmapPhase5Description':
       'Uusien ominaisuuksien, mahdollisten kumppanuuksien ja yhteisön ideoiden tutkiminen.',
 
+  'roadmapPhase6':
+      'Vaihe 6 – Pitkän aikavälin kehitys',
+
   'roadmapPhase6Title':
       'Vaihe 6 – Pitkän aikavälin kehitys',
 
@@ -619,6 +643,15 @@ const Map<String, String> fiTranslations = {
   'roadmapFuture':
       'Tulevaisuus',
 
+  'roadmapStatusCompleted':
+      'Valmis',
+
+  'roadmapStatusCurrent':
+      'Käynnissä',
+
+  'roadmapStatusPlanned':
+      'Suunniteltu',
+
   'futureWithdrawalsTitle':
       'Mahdolliset tulevat nostot',
 
@@ -629,6 +662,9 @@ const Map<String, String> fiTranslations = {
       'Mahdollinen nostomalli määritellään erikseen ennen ominaisuuden käyttöönottoa.',
 
   'developmentPrinciples':
+      'Kehityksen periaatteet',
+
+  'roadmapDevelopmentPrinciples':
       'Kehityksen periaatteet',
 
   'roadmapCommunity':
@@ -963,170 +999,76 @@ const Map<String, String> fiTranslations = {
   'footerToken':
       'STL • STELLURIINI',
 
+  'footerMiningFuture':
+      'Stella louhii tulevaisuutta.',
+
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
+
   // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
+  // 🌍 ACCOUNT / UI
   // ============================================================
 
   'roadmapPhase6':
       'Vaihe 6 – Pitkän aikavälin kehitys',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'roadmapDevelopmentPrinciples':
+      'Kehityksen periaatteet',
 
   'referrals':
       'Suositukset',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccount':
       'Poista tili',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletion':
       'Tilin poistaminen',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'accountDeletionAppTitle':
+      'Stelluriini-tilin poistaminen',
 
   'accountDeletionTitle':
       'Poista tilisi',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSubtitle':
       'Voit poistaa Stelluriini-tilisi ja siihen liittyvät tiedot pysyvästi.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteYourAccount':
       'Poista tilisi',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccountDescription':
       'Tämä poistaa tilisi ja siihen liittyvät tiedot pysyvästi. Tätä toimintoa ei voi peruuttaa.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteAccountButton':
       'POISTA TILI',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessApp':
       'Etkö pääse sovellukseen?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'cannotAccessAppDescription':
       'Jos et pääse sovellukseen, voit lähettää tilin poistopyynnön julkisen poistamissivun kautta.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'openAccountDeletionPage':
       'AVAA TILIN POISTAMISSIVU',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionPermanent':
       'Tilin poistaminen on pysyvä eikä sitä voi peruuttaa.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionDialogTitle':
       'Poistetaanko tili?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionDialogMessage':
       'Haluatko varmasti poistaa tilisi ja siihen liittyvät tiedot pysyvästi?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionCancel':
       'Peruuta',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionConfirm':
       'Poista tili',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSuccess':
       'Tilisi on poistettu onnistuneesti.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionFailed':
       'Tilin poistaminen epäonnistui. Yritä uudelleen.',
-
-  // ============================================================
-  // 🌟 ADDITIONAL LOCALIZATION
-  // ============================================================
-
-  'accountDeletionAppTitle':
-      'Stelluriini-tilin poistaminen',
-
-  'dailyMiningPowerBoost':
-      'Päivittäinen louhintavoiman tehostus',
-
-  'dailyMiningPowerBoostShort':
-      'Louhintavoiman tehostus',
-
-  'done':
-      '✓ VALMIS',
-
-  'claiming':
-      'KERÄTÄÄN...',
-
-  'claimHashRate':
-      'KERÄÄ +1 HASH RATE',
-
-  'comeBackTomorrow':
-      'Palaa huomenna hakemaan lisää Hash Ratea 🐱',
-
-  'claimDailyBonusInfo':
-      'Kerää päivittäinen bonus kasvattaaksesi louhintavoimaa',
-
-  'footerMiningFuture':
-      'Stella louhii tulevaisuutta.',
-
 };
