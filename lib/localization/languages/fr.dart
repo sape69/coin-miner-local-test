@@ -12,7 +12,7 @@ const Map<String, String> frTranslations = {
   'token': 'Token STL',
   'tokenomics': 'Tokenomics',
   'whitepaper': 'Whitepaper',
-  'whitePaper': 'White Paper',
+  'whitePaper': 'Whitepaper',
   'language': 'Langue',
   'selectLanguage': 'Sélectionner la langue',
   'logout': 'Se déconnecter',
@@ -26,6 +26,11 @@ const Map<String, String> frTranslations = {
   'comingSoon': 'Bientôt disponible',
   'information': 'Informations',
 
+  'loading': 'Chargement...',
+  'active': 'Actif',
+  'welcome': 'Bienvenue',
+  'stellaWelcome': 'Stella est là pour vous aider. 🐱💜',
+
   // ============================================================
   // 💰 BALANCE / MINING
   // ============================================================
@@ -37,13 +42,28 @@ const Map<String, String> frTranslations = {
   'effectiveHashRate': 'Taux de hachage effectif',
   'effectiveHashRateLabel': 'Taux de hachage effectif',
 
-  'dailyHashRateLabel': 'Taux de hachage quotidien',
-  'dailyHashRateDay': 'Jour {day}',
-  'dailyHashRateMaximum': 'Maximum : {rate} HR',
+  'dailyHashRateLabel':
+      'Taux de hachage quotidien',
+
+  'dailyHashRateDay':
+      'Jour {day}',
+
+  'dailyHashRateMaximum':
+      'Maximum : {rate} HR',
+
   'dailyHashRateSuccess':
       'Taux de hachage du jour {day} : {rate} HR',
 
-  // 🐱 Stella Mining
+  // ============================================================
+  // 🐱 STELLA MINING
+  // ============================================================
+
+  'stellaMiningTitle':
+      'Minage de Stella',
+
+  'stellaMiningSubtitle':
+      'Stella travaille pour vous. 🐱⛏️',
+
   'stellaMiningProgress':
       'Progression du minage de Stella',
 
@@ -104,6 +124,9 @@ const Map<String, String> frTranslations = {
   'days':
       'jours',
 
+  'day':
+      'Jour',
+
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
@@ -123,6 +146,27 @@ const Map<String, String> frTranslations = {
   'alreadyClaimed':
       'Vous avez déjà réclamé la récompense du jour.',
 
+  'dailyMiningPowerBoost':
+      'Boost quotidien de puissance de minage',
+
+  'dailyMiningPowerBoostShort':
+      'Boost de puissance de minage',
+
+  'done':
+      '✓ TERMINÉ',
+
+  'claiming':
+      'RÉCUPÉRATION...',
+
+  'claimHashRate':
+      'RÉCLAMER +1 HASH RATE',
+
+  'comeBackTomorrow':
+      'Revenez demain pour obtenir un nouveau boost de taux de hachage 🐱',
+
+  'claimDailyBonusInfo':
+      'Réclamez votre bonus quotidien pour augmenter votre puissance de minage',
+
   // ============================================================
   // 📺 ADS
   // ============================================================
@@ -132,6 +176,9 @@ const Map<String, String> frTranslations = {
 
   'watchAndEarn':
       'REGARDER & GAGNER',
+
+  'watchAdSubtitle':
+      'Regardez une publicité et donnez à Stella un Power Boost. 🐱⚡',
 
   'loadingAd':
       'CHARGEMENT DE LA PUB...',
@@ -144,6 +191,15 @@ const Map<String, String> frTranslations = {
 
   'adReward':
       '+{amount} HR',
+
+  'adNotAvailable':
+      'La publicité n’est pas disponible actuellement.',
+
+  'adLoadError':
+      'Impossible de charger la publicité.',
+
+  'adShowError':
+      'Impossible d’afficher la publicité.',
 
   // ============================================================
   // ⚡ STELLA POWER BOOST
@@ -208,6 +264,12 @@ const Map<String, String> frTranslations = {
   'profile':
       'Profil',
 
+  'referrals':
+      'Parrainages',
+
+  'deleteAccount':
+      'Supprimer le compte',
+
   // ============================================================
   // 🐱 STELLA
   // ============================================================
@@ -219,10 +281,10 @@ const Map<String, String> frTranslations = {
       'Fait amusant sur les chats de Stella',
 
   'stellaPower':
-      'Stella Power',
+      'Puissance de Stella',
 
   'stellaMining':
-      'Stella Mining',
+      'Minage de Stella',
 
   'stellaIsMining':
       'Stella mine',
@@ -570,22 +632,13 @@ const Map<String, String> frTranslations = {
       'Explorer de nouvelles fonctionnalités, des partenariats potentiels et les idées de la communauté.',
 
   'roadmapPhase6':
-      'Phase 6 – Expansion',
+      'Phase 6 – Développement à long terme',
 
   'roadmapPhase6Title':
-      'Étendre Stelluriini',
+      'Développement à long terme de Stelluriini',
 
   'roadmapPhase6Description':
-      'Développer davantage l’écosystème Stelluriini, les intégrations, les utilités du token et les possibilités offertes à la communauté.',
-
-  'roadmapStatusCompleted':
-      'Terminé',
-
-  'roadmapStatusCurrent':
-      'En cours',
-
-  'roadmapStatusPlanned':
-      'Prévu',
+      'Développement continu de l’écosystème Stelluriini, nouvelles fonctionnalités et adaptation aux besoins de la communauté.',
 
   'roadmapInProgress':
       'En cours',
@@ -596,6 +649,15 @@ const Map<String, String> frTranslations = {
   'roadmapFuture':
       'Avenir',
 
+  'roadmapStatusCompleted':
+      'Terminé',
+
+  'roadmapStatusCurrent':
+      'En développement',
+
+  'roadmapStatusPlanned':
+      'Prévu',
+
   'futureWithdrawalsTitle':
       'Éventuels retraits futurs',
 
@@ -603,7 +665,7 @@ const Map<String, String> frTranslations = {
       'Un éventuel futur système de retrait sera conçu séparément et ses conditions seront annoncées avant sa mise en œuvre.',
 
   'plannedWithdrawalModel':
-      'Un éventuel futur modèle de retrait sera conçu séparément et annoncé de manière transparente avant toute mise en œuvre.',
+      'Un éventuel futur modèle de retrait sera défini séparément avant toute mise en œuvre.',
 
   'developmentPrinciples':
       'Principes de développement',
@@ -718,7 +780,7 @@ const Map<String, String> frTranslations = {
       'Adresse Mint officielle',
 
   'officialMintDescription':
-      'Cette adresse identifie le token STL officiel sur la blockchain Solana.',
+      'Cette adresse identifie le token STL officiel de Stelluriini.',
 
   'mintAddressCopied':
       'Adresse Mint copiée.',
@@ -943,209 +1005,64 @@ const Map<String, String> frTranslations = {
   'footerToken':
       'STL • STELLURIINI',
 
+  'footerMiningFuture':
+      'Stella mine l’avenir.',
+
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'loading':
-      'Chargement...',
 
   // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'active':
-      'Actif',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'welcome':
-      'Bienvenue',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaWelcome':
-      'Stella est là pour vous aider. 🐱💜',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningTitle':
-      'Minage de Stella',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningSubtitle':
-      'Stella travaille pour vous. 🐱⛏️',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'day':
-      'Jour',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'watchAdSubtitle':
-      'Regardez une publicité et donnez à Stella un Power Boost. 🐱⚡',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adNotAvailable':
-      'La publicité n\'est pas disponible actuellement.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adLoadError':
-      'Impossible de charger la publicité.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adShowError':
-      'Impossible d\'afficher la publicité.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'referrals':
-      'Parrainages',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'deleteAccount':
-      'Supprimer le compte',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
+  // 🔐 ACCOUNT DELETION
   // ============================================================
 
   'accountDeletion':
       'Suppression du compte',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'accountDeletionAppTitle':
+      'Suppression du compte Stelluriini',
 
   'accountDeletionTitle':
       'Supprimer votre compte',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSubtitle':
       'Vous pouvez supprimer définitivement votre compte Stelluriini et les données associées.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteYourAccount':
       'Supprimer votre compte',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccountDescription':
       'Cette action supprime définitivement votre compte et les données associées. Elle est irréversible.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteAccountButton':
       'SUPPRIMER LE COMPTE',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessApp':
-      'Vous ne pouvez pas accéder à l\'application ?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+      'Vous ne pouvez pas accéder à l’application ?',
 
   'cannotAccessAppDescription':
-      'Si vous ne pouvez pas accéder à l\'application, vous pouvez envoyer une demande de suppression via notre page publique.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+      'Si vous ne pouvez pas accéder à l’application, vous pouvez envoyer une demande de suppression via notre page publique.',
 
   'openAccountDeletionPage':
       'OUVRIR LA PAGE DE SUPPRESSION',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionPermanent':
       'La suppression du compte est définitive et irréversible.',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionDialogTitle':
       'Supprimer le compte ?',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionDialogMessage':
       'Voulez-vous vraiment supprimer définitivement votre compte et les données associées ?',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionCancel':
       'Annuler',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionConfirm':
       'Supprimer le compte',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionSuccess':
       'Votre compte a été supprimé avec succès.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionFailed':
       'La suppression du compte a échoué. Veuillez réessayer.',
-
 };
