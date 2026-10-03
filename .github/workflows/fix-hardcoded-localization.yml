@@ -19,12 +19,12 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Update Vietnamese localization
+      - name: Update Finnish localization
         shell: python
         run: |
           from pathlib import Path
 
-          path = Path("lib/localization/languages/vi.dart")
+          path = Path("lib/localization/languages/fi.dart")
 
           if not path.exists():
               raise RuntimeError(
@@ -34,44 +34,53 @@ jobs:
           content = path.read_text(encoding="utf-8")
 
           replacements = {
-              "'stellaMiningTitle':\n      'Stella Mining',":
-                  "'stellaMiningTitle':\n      'Khai thác Stella',",
+              "'stellaPower':\n      'Stella Power',":
+                  "'stellaPower':\n      'Stellan voima',",
+
+              "'stellaMining':\n      'Stella Mining',":
+                  "'stellaMining':\n      'Stellan louhinta',",
 
               "'powerBoost':\n      'Stella Power Boost',":
-                  "'powerBoost':\n      'Tăng cường sức mạnh Stella',",
+                  "'powerBoost':\n      'Stellan Power Boost',",
+
+              "'powerBoostReward':\n      'Stella Power Boost: +{amount} HR',":
+                  "'powerBoostReward':\n      'Stellan Power Boost: +{amount} HR',",
           }
+
+          changed = False
 
           for old, new in replacements.items():
               if old in content:
                   content = content.replace(old, new, 1)
+                  changed = True
 
           additions = {
               "accountDeletionAppTitle":
-                  "Xóa tài khoản Stelluriini",
+                  "Stelluriini-tilin poistaminen",
 
               "dailyMiningPowerBoost":
-                  "Tăng sức mạnh khai thác hàng ngày",
+                  "Päivittäinen louhintavoiman tehostus",
 
               "dailyMiningPowerBoostShort":
-                  "Tăng sức mạnh khai thác",
+                  "Louhintavoiman tehostus",
 
               "done":
-                  "✓ ĐÃ XONG",
+                  "✓ VALMIS",
 
               "claiming":
-                  "ĐANG NHẬN...",
+                  "KERÄTÄÄN...",
 
               "claimHashRate":
-                  "NHẬN +1 HASH RATE",
+                  "KERÄÄ +1 HASH RATE",
 
               "comeBackTomorrow":
-                  "Quay lại vào ngày mai để nhận thêm Hash Rate 🐱",
+                  "Palaa huomenna hakemaan lisää Hash Ratea 🐱",
 
               "claimDailyBonusInfo":
-                  "Nhận phần thưởng hàng ngày để tăng sức mạnh khai thác",
+                  "Kerää päivittäinen bonus kasvattaaksesi louhintavoimaa",
 
               "footerMiningFuture":
-                  "Stella đang khai thác tương lai.",
+                  "Stella louhii tulevaisuutta.",
           }
 
           missing_entries = []
@@ -108,25 +117,29 @@ jobs:
                   1,
               )
 
+              changed = True
+
           path.write_text(
               content,
               encoding="utf-8",
           )
 
-          print("Vietnamese localization updated successfully.")
+          print("Finnish localization updated successfully.")
+          print(f"Changes made: {changed}")
 
-      - name: Verify Vietnamese localization
+      - name: Verify Finnish localization
         run: |
-          echo "Checking Vietnamese localization..."
+          echo "Checking Finnish localization..."
 
-          grep -n "stellaMiningTitle" lib/localization/languages/vi.dart
-          grep -n "powerBoost" lib/localization/languages/vi.dart
-          grep -n "footerMiningFuture" lib/localization/languages/vi.dart
-          grep -n "accountDeletionAppTitle" lib/localization/languages/vi.dart
-          grep -n "dailyMiningPowerBoost" lib/localization/languages/vi.dart
-          grep -n "claimHashRate" lib/localization/languages/vi.dart
+          grep -n "stellaPower" lib/localization/languages/fi.dart
+          grep -n "stellaMining" lib/localization/languages/fi.dart
+          grep -n "powerBoost" lib/localization/languages/fi.dart
+          grep -n "footerMiningFuture" lib/localization/languages/fi.dart
+          grep -n "accountDeletionAppTitle" lib/localization/languages/fi.dart
+          grep -n "dailyMiningPowerBoost" lib/localization/languages/fi.dart
+          grep -n "claimHashRate" lib/localization/languages/fi.dart
 
-          echo "Vietnamese localization verification completed."
+          echo "Finnish localization verification completed."
 
       - name: Check formatting
         run: |
@@ -148,20 +161,20 @@ jobs:
       - name: Show changes
         run: |
           git status --short
-          git diff -- lib/localization/languages/vi.dart
+          git diff -- lib/localization/languages/fi.dart
 
       - name: Commit and push changes
         run: |
-          if git diff --quiet -- lib/localization/languages/vi.dart; then
-            echo "No Vietnamese localization changes were necessary."
+          if git diff --quiet -- lib/localization/languages/fi.dart; then
+            echo "No Finnish localization changes were necessary."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add lib/localization/languages/vi.dart
+          git add lib/localization/languages/fi.dart
 
-          git commit -m "Fix Vietnamese UI localization"
+          git commit -m "Fix Finnish UI localization"
 
           git push
