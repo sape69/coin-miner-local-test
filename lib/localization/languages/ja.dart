@@ -26,6 +26,11 @@ const Map<String, String> jaTranslations = {
   'comingSoon': '近日公開',
   'information': '情報',
 
+  'loading': '読み込み中...',
+  'active': '有効',
+  'welcome': 'ようこそ',
+  'stellaWelcome': 'Stellaがお手伝いします。🐱💜',
+
   // ============================================================
   // 💰 BALANCE / MINING
   // ============================================================
@@ -37,21 +42,30 @@ const Map<String, String> jaTranslations = {
   'effectiveHashRate': '実効ハッシュレート',
   'effectiveHashRateLabel': '実効ハッシュレート',
 
-  'dailyHashRateLabel': 'デイリーハッシュレート',
-  'dailyHashRateDay': '{day}日目',
-  'dailyHashRateMaximum': '最大: {rate} HR',
+  'dailyHashRateLabel':
+      'デイリーハッシュレート',
+
+  'dailyHashRateDay':
+      '{day}日目',
+
+  'dailyHashRateMaximum':
+      '最大: {rate} HR',
+
   'dailyHashRateSuccess':
       '{day}日目のハッシュレート: {rate} HR',
 
-  // 🐱 Stella Mining
+  // ============================================================
+  // 🐱 STELLA MINING
+  // ============================================================
+
   'stellaMiningProgress':
-      'Stellaマイニング進捗',
+      'Stellaのマイニング進捗',
 
   'miningProgress':
       'マイニング進捗',
 
   'miningProgressStella':
-      'Stellaマイニング進捗',
+      'Stellaのマイニング進捗',
 
   'stlPerHour':
       '1時間あたりのSTL',
@@ -66,7 +80,7 @@ const Map<String, String> jaTranslations = {
       'STLを受け取る',
 
   'watchAdStartMining':
-      '広告を見てマイニング開始',
+      '広告を見てマイニングを開始',
 
   'watchAdCollectReward':
       '広告を見て報酬を受け取る',
@@ -104,6 +118,9 @@ const Map<String, String> jaTranslations = {
   'days':
       '日',
 
+  'day':
+      '日',
+
   // ============================================================
   // 🎁 DAILY BONUS
   // ============================================================
@@ -123,6 +140,27 @@ const Map<String, String> jaTranslations = {
   'alreadyClaimed':
       '本日の報酬はすでに受け取っています。',
 
+  'dailyMiningPowerBoost':
+      '毎日のマイニングパワーブースト',
+
+  'dailyMiningPowerBoostShort':
+      'マイニングパワーブースト',
+
+  'done':
+      '✓ 完了',
+
+  'claiming':
+      '受け取り中...',
+
+  'claimHashRate':
+      '+1 ハッシュレートを受け取る',
+
+  'comeBackTomorrow':
+      '明日また戻ってきて、さらにハッシュレートを受け取りましょう 🐱',
+
+  'claimDailyBonusInfo':
+      'デイリーボーナスを受け取ってマイニングパワーを高めましょう',
+
   // ============================================================
   // 📺 ADS
   // ============================================================
@@ -132,6 +170,9 @@ const Map<String, String> jaTranslations = {
 
   'watchAndEarn':
       '広告を見て獲得',
+
+  'watchAdSubtitle':
+      '広告を見てStellaのパワーブーストを増やしましょう。🐱⚡',
 
   'loadingAd':
       '広告を読み込み中...',
@@ -145,36 +186,45 @@ const Map<String, String> jaTranslations = {
   'adReward':
       '+{amount} HR',
 
+  'adNotAvailable':
+      '現在、広告を利用できません。',
+
+  'adLoadError':
+      '広告の読み込みに失敗しました。',
+
+  'adShowError':
+      '広告の表示に失敗しました。',
+
   // ============================================================
   // ⚡ STELLA POWER BOOST
   // ============================================================
 
   'powerBoost':
-      'Stella Power Boost',
+      'Stellaパワーブースト',
 
   'powerBoostOffer':
-      '広告を見て、4時間の間Stella Power Boost +{amount} HRを有効にします。 🐱⚡',
+      '広告を見て、4時間Stellaパワーブースト +{amount} HRを有効にします。🐱⚡',
 
   'powerBoostActive':
-      'Power Boost有効中',
+      'パワーブースト有効中',
 
   'powerBoostActiveTitle':
-      'Stella Power Boostが有効になりました！ 🐱💜',
+      'Stellaパワーブーストが有効になりました！🐱💜',
 
   'powerBoostActiveMessage':
       '+{amount} HRがマイニングサイクルに適用されます。',
 
   'powerBoostAlreadyActive':
-      'Power Boostはすでに有効です。',
+      'パワーブーストはすでに有効です。',
 
   'nextPowerBoostMessage':
-      '現在のBoostが終了すると、次のPower Boostを使用できます。',
+      '現在のブーストが終了すると、次のパワーブーストを使用できます。',
 
   'nextAdAfterBoost':
-      'Boost終了後に次の広告を見ることができます。',
+      'ブースト終了後に次の広告を見ることができます。',
 
   'maxBoostsInfo':
-      'Power Boostは1日最大{count}回まで有効にできます。',
+      'パワーブーストは1日最大{count}回まで有効にできます。',
 
   'adsToday':
       '本日の広告: {current}/{max}',
@@ -183,13 +233,13 @@ const Map<String, String> jaTranslations = {
       '本日の広告上限に達しました。',
 
   'powerBoostReward':
-      'Stella Power Boost: +{amount} HR',
+      'Stellaパワーブースト: +{amount} HR',
 
   'adRewardDuplicate':
       'この広告報酬はすでに処理されています。',
 
   'powerBoostFailed':
-      'Power Boostを有効にできませんでした。',
+      'パワーブーストを有効にできませんでした。',
 
   'testAdRewardFailed':
       '広告報酬を処理できませんでした。',
@@ -208,6 +258,12 @@ const Map<String, String> jaTranslations = {
   'profile':
       'プロフィール',
 
+  'referrals':
+      '紹介',
+
+  'deleteAccount':
+      'アカウントを削除',
+
   // ============================================================
   // 🐱 STELLA
   // ============================================================
@@ -219,19 +275,19 @@ const Map<String, String> jaTranslations = {
       'Stellaの猫豆知識',
 
   'stellaPower':
-      'Stella Power',
+      'Stellaのパワー',
 
   'stellaMining':
-      'Stella Mining',
+      'Stellaのマイニング',
 
   'stellaIsMining':
       'Stellaがマイニング中',
 
   'stellaMiningNow':
-      'Stellaは現在マイニング中です。 🐱⛏️',
+      'Stellaは現在マイニング中です。🐱⛏️',
 
   'stellaIsResting':
-      'Stellaは休憩中です。 🐱💜',
+      'Stellaは休憩中です。🐱💜',
 
   'stellaWaiting':
       'Stellaは次のマイニングサイクルを待っています。',
@@ -243,13 +299,13 @@ const Map<String, String> jaTranslations = {
       'マイニングしたSTL',
 
   'stellaIsWorking':
-      'STELLA 作業中です... 🐱⛏️',
+      'STELLA 作業中... 🐱⛏️',
 
   'stellaIsMiningButton':
       'マイニング中',
 
   'stellaAlreadyMining':
-      'Stellaはすでにマイニング中です。 🐱💜',
+      'Stellaはすでにマイニング中です。🐱💜',
 
   // ============================================================
   // ⛏️ MINING MESSAGES
@@ -262,16 +318,16 @@ const Map<String, String> jaTranslations = {
       'マイニングを開始できませんでした。',
 
   'miningStarted':
-      'Stellaがマイニングを開始しました！ 🐱⛏️',
+      'Stellaがマイニングを開始しました！🐱⛏️',
 
   'miningCycleStarted':
-      'Stellaの新しいマイニングサイクルが開始されました。 🐱💜',
+      'Stellaの新しいマイニングサイクルが開始されました。🐱💜',
 
   'miningCycleComplete':
-      'Stellaのマイニングサイクルが完了しました！ ✨',
+      'Stellaのマイニングサイクルが完了しました！✨',
 
   'miningReady':
-      'Stellaのマイニング報酬を受け取る準備ができました。 🐾',
+      'Stellaのマイニング報酬を受け取る準備ができました。🐾',
 
   // ============================================================
   // 💎 TRANSACTIONS
@@ -448,10 +504,10 @@ const Map<String, String> jaTranslations = {
       'まだ取引はありません',
 
   'rewardsAppearHere':
-      'あなたのSTL報酬はここに表示されます。 🐱💜',
+      'あなたのSTL報酬はここに表示されます。🐱💜',
 
   'startMiningWithStella':
-      'Stellaと一緒にマイニングを始めましょう。 🐱⛏️',
+      'Stellaと一緒にマイニングを始めましょう。🐱⛏️',
 
   'historyRecorded':
       'マイニング、デイリーボーナス、広告報酬の履歴がここに記録されます。',
@@ -460,7 +516,7 @@ const Map<String, String> jaTranslations = {
       'Stellaが履歴を確認しています... 🐱🔎',
 
   'everyRewardJourney':
-      'すべての報酬がStelluriiniの旅の一部です。 🐾💜',
+      'すべての報酬がStelluriiniの旅の一部です。🐾💜',
 
   // ============================================================
   // ℹ️ ABOUT
@@ -540,7 +596,7 @@ const Map<String, String> jaTranslations = {
       'Stelluriiniアプリの開発',
 
   'roadmapPhase2Description':
-      'マイニング、デイリーボーナス、Stella Power Boost、取引履歴を実装します。',
+      'マイニング、デイリーボーナス、Stellaパワーブースト、取引履歴を実装します。',
 
   'roadmapPhase3':
       'フェーズ3 – コミュニティ',
@@ -839,7 +895,7 @@ const Map<String, String> jaTranslations = {
       'コミュニティを最優先',
 
   'communityFirstDescription':
-      '計画されている供給量の大部分は、コミュニティ活動とコミュニティ報酬のために確保されています。',
+      '計画されている供給量の一部は、コミュニティ活動とコミュニティ報酬のために確保されています。',
 
   'longTermGrowth':
       '長期的な成長',
@@ -869,7 +925,7 @@ const Map<String, String> jaTranslations = {
       'STELLA • STELLURIINI • STL • SOLANA',
 
   'tokenomicsImportant':
-      '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されるべきです。',
+      '具体的なトークン配分は、プロジェクトの開発に伴って更新される場合があります。変更がある場合は、コミュニティに対して透明性を持って公開されます。',
 
   // ============================================================
   // 📄 WHITEPAPER
@@ -938,214 +994,69 @@ const Map<String, String> jaTranslations = {
   // ============================================================
 
   'footerTagline':
-      'Stellaと一緒にマイニングし、Stelluriiniの未来を築きましょう。 🐱💜',
+      'Stellaと一緒にマイニングし、Stelluriiniの未来を築きましょう。🐱💜',
 
   'footerToken':
       'STL • STELLURIINI',
 
+  'footerMiningFuture':
+      'Stellaが未来をマイニングしています。',
+
   'stelluriiniStlSolanaFooter':
       'STELLA • STELLURIINI • STL • SOLANA',
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'loading':
-      '読み込み中...',
 
   // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'active':
-      '有効',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'welcome':
-      'ようこそ',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaWelcome':
-      'Stellaがお手伝いします。🐱💜',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningTitle':
-      'Stellaマイニング',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'stellaMiningSubtitle':
-      'Stellaがあなたのために働いています。🐱⛏️',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'day':
-      '日',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'watchAdSubtitle':
-      '広告を見てStellaにPower Boostを与えましょう。🐱⚡',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adNotAvailable':
-      '現在、広告を利用できません。',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adLoadError':
-      '広告の読み込みに失敗しました。',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'adShowError':
-      '広告の表示に失敗しました。',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'referrals':
-      '紹介',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
-  'deleteAccount':
-      'アカウントを削除',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
+  // 🔐 ACCOUNT DELETION
   // ============================================================
 
   'accountDeletion':
       'アカウント削除',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
+  'accountDeletionAppTitle':
+      'Stelluriiniアカウントを削除',
 
   'accountDeletionTitle':
       'アカウントを削除',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSubtitle':
       'Stelluriiniアカウントと関連データを完全に削除できます。',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteYourAccount':
       'アカウントを削除',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'deleteAccountDescription':
       'アカウントと関連データが完全に削除されます。この操作は元に戻せません。',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'deleteAccountButton':
       'アカウントを削除',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'cannotAccessApp':
       'アプリにアクセスできませんか？',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'cannotAccessAppDescription':
       'アプリにアクセスできない場合は、公開アカウント削除ページから削除リクエストを送信できます。',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'openAccountDeletionPage':
       'アカウント削除ページを開く',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionPermanent':
       'アカウントの削除は永久的で、元に戻せません。',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionDialogTitle':
       'アカウントを削除しますか？',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionDialogMessage':
       'アカウントと関連データを完全に削除してもよろしいですか？',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionCancel':
       'キャンセル',
-
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
 
   'accountDeletionConfirm':
       'アカウントを削除',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionSuccess':
       'アカウントが正常に削除されました。',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI ADDITIONS
-  // ============================================================
-
   'accountDeletionFailed':
       'アカウントの削除に失敗しました。もう一度お試しください。',
-
 };
