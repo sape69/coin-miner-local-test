@@ -82,6 +82,9 @@ const Map<String, String> viTranslations = {
   'startMining':
       'BẮT ĐẦU KHAI THÁC',
 
+  'startMiningFirst':
+      'Vui lòng bắt đầu khai thác trước.',
+
   'claimMining':
       'NHẬN STL',
 
@@ -412,6 +415,9 @@ const Map<String, String> viTranslations = {
 
   'loginFailed':
       'Đăng nhập thất bại',
+
+  'loginRequired':
+      'Vui lòng đăng nhập để tiếp tục.',
 
   // ============================================================
   // 📝 REGISTER
@@ -1065,4 +1071,16 @@ const Map<String, String> viTranslations = {
 
   'accountDeletionFailed':
       'Không thể xóa tài khoản. Vui lòng thử lại.',
+
+  'accountDeletionSessionExpired':
+      'Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.',
+
+  'accountDeletionPermissionDenied':
+      'Bạn không có quyền cần thiết để xóa tài khoản.',
+
+  'accountDeletionUnavailable':
+      'Dịch vụ xóa tài khoản hiện không khả dụng.',
+
+  'accountDeletionTimeout':
+      'Việc xóa tài khoản mất quá nhiều thời gian. Vui lòng thử lại.',
 };
