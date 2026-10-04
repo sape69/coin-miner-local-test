@@ -423,6 +423,12 @@ const Map<String, String> viTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      'Tên người dùng',
+
+  'usernameHint':
+      'Ví dụ Stella',
+
   'confirmPassword':
       'Xác nhận mật khẩu',
 
@@ -449,6 +455,45 @@ const Map<String, String> viTranslations = {
 
   'registrationFailed':
       'Đăng ký tài khoản thất bại.',
+
+  'referralCode':
+      'Mã giới thiệu',
+
+  'referralCodeOptional':
+      'Tùy chọn',
+
+  'enterReferralCode':
+      'Nhập mã giới thiệu',
+
+  'referralCodeHint':
+      'Nếu ai đó đã mời bạn đến Stelluriini, hãy nhập mã của họ tại đây.',
+
+  'referralCodeNotFoundTitle':
+      'Không tìm thấy mã giới thiệu',
+
+  'referralCodeNotFoundMessage':
+      'Mã giới thiệu bạn đã nhập không hợp lệ.\n\nBạn có muốn tiếp tục tạo tài khoản Stelluriini mà không có mã giới thiệu không?',
+
+  'changeReferralCode':
+      'Thay đổi mã giới thiệu',
+
+  'continueWithoutReferral':
+      'Tiếp tục không có mã giới thiệu',
+
+  'referralCodeValidationFailed':
+      'Không thể xác minh mã giới thiệu.',
+
+  'referralCodeNetworkError':
+      'Lỗi mạng. Vui lòng kiểm tra kết nối và thử lại.',
+
+  'referralCodeInvalid':
+      'Mã giới thiệu không hợp lệ.',
+
+  'referralCodeApplied':
+      'Đã áp dụng mã giới thiệu thành công.',
+
+  'referralCodeApplyFailed':
+      'Không thể áp dụng mã giới thiệu.',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
