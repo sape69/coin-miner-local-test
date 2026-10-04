@@ -410,6 +410,12 @@ const Map<String, String> enTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      'Username',
+
+  'usernameHint':
+      'For example Stella',
+
   'confirmPassword':
       'Confirm password',
 
@@ -436,6 +442,49 @@ const Map<String, String> enTranslations = {
 
   'registrationFailed':
       'Failed to create the account.',
+
+  // ============================================================
+  // 👥 REFERRAL
+  // ============================================================
+
+  'referralCode':
+      'Referral Code',
+
+  'referralCodeOptional':
+      'Optional',
+
+  'enterReferralCode':
+      'Enter referral code',
+
+  'referralCodeHint':
+      'If someone invited you to Stelluriini, enter their code here.',
+
+  'referralCodeNotFoundTitle':
+      'Referral Code Not Found',
+
+  'referralCodeNotFoundMessage':
+      'The referral code you entered is not valid.\n\nWould you like to continue creating your Stelluriini account without a referral code?',
+
+  'changeReferralCode':
+      'Change Referral Code',
+
+  'continueWithoutReferral':
+      'Continue Without Referral',
+
+  'referralCodeValidationFailed':
+      'The referral code could not be verified.',
+
+  'referralCodeNetworkError':
+      'Network error. Check your connection and try again.',
+
+  'referralCodeInvalid':
+      'The referral code is not valid.',
+
+  'referralCodeApplied':
+      'Referral code applied successfully.',
+
+  'referralCodeApplyFailed':
+      'Failed to apply the referral code.',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
