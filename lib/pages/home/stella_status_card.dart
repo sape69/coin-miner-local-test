@@ -67,6 +67,24 @@ class _StellaStatusCardState
       Color(0xFFBDB4D1);
 
   // ==========================================================
+  // ⏱️ ANIMATION SPEED
+  // ==========================================================
+  //
+  // Kaikki kolme Stella-tilaa käyttävät samaa controlleria.
+  //
+  // Näin:
+  //
+  // ⛏️ Mining
+  // 😴 Sleeping
+  // ⚡ Boosting
+  //
+  // liikkuvat aina täsmälleen samalla nopeudella.
+  //
+
+  static const Duration stellaAnimationDuration =
+      Duration(milliseconds: 2600);
+
+  // ==========================================================
   // ✨ ANIMATION
   // ==========================================================
 
@@ -88,9 +106,7 @@ class _StellaStatusCardState
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        milliseconds: 2600,
-      ),
+      duration: stellaAnimationDuration,
     )..repeat();
 
     // ----------------------------------------------------------
@@ -129,9 +145,6 @@ class _StellaStatusCardState
     // ----------------------------------------------------------
     // 💫 SCALE
     // ----------------------------------------------------------
-    //
-    // Kevyt "hengitys".
-    //
 
     _scaleAnimation = Tween<double>(
       begin: 0.94,
@@ -284,6 +297,249 @@ class _StellaStatusCardState
       case StellaStatus.boosting:
         return Icons.bolt_rounded;
     }
+  }
+
+  // ==========================================================
+  // 💤 ZZZ ANIMATION
+  // ==========================================================
+  //
+  // Näytetään vain silloin kun Stella nukkuu.
+  //
+  // Z-kirjaimet:
+  //
+  //  • liikkuvat ylöspäin
+  //  • liikkuvat hieman sivusuunnassa
+  //  • kasvavat hieman
+  //  • muuttuvat läpinäkyviksi
+  //
+  // Kaikki perustuu samaan animation controlleriin kuin Stella.
+  //
+
+  Widget _buildSleepingZzz() {
+    if (widget.status != StellaStatus.sleeping) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      right: 22,
+      top: 24,
+      child: SizedBox(
+        width: 90,
+        height: 125,
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (
+            BuildContext context,
+            Widget? child,
+          ) {
+            final double value =
+                _animationController.value;
+
+            // --------------------------------------------------
+            // Z #1
+            // --------------------------------------------------
+
+            final double z1Phase =
+                value % 1.0;
+
+            final double z1Progress =
+                Curves.easeOut.transform(
+              z1Phase,
+            );
+
+            final double z1Opacity =
+                math.sin(
+                      z1Phase * math.pi,
+                    ) *
+                    0.95;
+
+            final double z1Y =
+                -z1Progress * 42.0;
+
+            final double z1X =
+                math.sin(
+                      z1Phase * math.pi * 2,
+                    ) *
+                    5.0;
+
+            // --------------------------------------------------
+            // Z #2
+            // --------------------------------------------------
+
+            final double z2Phase =
+                (value + 0.32) % 1.0;
+
+            final double z2Progress =
+                Curves.easeOut.transform(
+              z2Phase,
+            );
+
+            final double z2Opacity =
+                math.sin(
+                      z2Phase * math.pi,
+                    ) *
+                    0.85;
+
+            final double z2Y =
+                8.0 -
+                    (z2Progress * 45.0);
+
+            final double z2X =
+                math.sin(
+                      z2Phase * math.pi * 2,
+                    ) *
+                    5.0;
+
+            // --------------------------------------------------
+            // Z #3
+            // --------------------------------------------------
+
+            final double z3Phase =
+                (value + 0.64) % 1.0;
+
+            final double z3Progress =
+                Curves.easeOut.transform(
+              z3Phase,
+            );
+
+            final double z3Opacity =
+                math.sin(
+                      z3Phase * math.pi,
+                    ) *
+                    0.75;
+
+            final double z3Y =
+                18.0 -
+                    (z3Progress * 43.0);
+
+            final double z3X =
+                math.sin(
+                      z3Phase * math.pi * 2,
+                    ) *
+                    5.0;
+
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // ------------------------------------------------
+                // Z #1
+                // ------------------------------------------------
+
+                Positioned(
+                  right: 10,
+                  bottom: 8,
+                  child: Opacity(
+                    opacity:
+                        z1Opacity.clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    child: Transform.translate(
+                      offset: Offset(
+                        z1X,
+                        z1Y,
+                      ),
+                      child: Transform.scale(
+                        scale:
+                            0.82 +
+                                (z1Progress *
+                                    0.22),
+                        child: const Text(
+                          'Z',
+                          style: TextStyle(
+                            color:
+                                accentColor,
+                            fontSize: 28,
+                            fontWeight:
+                                FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ------------------------------------------------
+                // Z #2
+                // ------------------------------------------------
+
+                Positioned(
+                  right: 28,
+                  bottom: 12,
+                  child: Opacity(
+                    opacity:
+                        z2Opacity.clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    child: Transform.translate(
+                      offset: Offset(
+                        z2X,
+                        z2Y,
+                      ),
+                      child: Transform.scale(
+                        scale:
+                            0.72 +
+                                (z2Progress *
+                                    0.25),
+                        child: const Text(
+                          'Z',
+                          style: TextStyle(
+                            color:
+                                pinkColor,
+                            fontSize: 22,
+                            fontWeight:
+                                FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ------------------------------------------------
+                // Z #3
+                // ------------------------------------------------
+
+                Positioned(
+                  right: 48,
+                  bottom: 20,
+                  child: Opacity(
+                    opacity:
+                        z3Opacity.clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    child: Transform.translate(
+                      offset: Offset(
+                        z3X,
+                        z3Y,
+                      ),
+                      child: Transform.scale(
+                        scale:
+                            0.65 +
+                                (z3Progress *
+                                    0.28),
+                        child: const Text(
+                          'Z',
+                          style: TextStyle(
+                            color:
+                                goldColor,
+                            fontSize: 18,
+                            fontWeight:
+                                FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 
   // ==========================================================
@@ -626,6 +882,12 @@ class _StellaStatusCardState
                   color: _statusColor,
                   phase: math.pi * 1.5,
                 ),
+
+                // ------------------------------------------------
+                // 💤 ZZZ
+                // ------------------------------------------------
+
+                _buildSleepingZzz(),
 
                 // ------------------------------------------------
                 // 🐱 STELLA
