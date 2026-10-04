@@ -69,6 +69,9 @@ const Map<String, String> fiTranslations = {
   'startMining':
       'ALOITA LOUHINTA',
 
+  'startMiningFirst':
+      'Aloita louhinta ensin.',
+
   'claimMining':
       'KERÄÄ STL',
 
@@ -259,6 +262,9 @@ const Map<String, String> fiTranslations = {
 
   'welcome':
       'Tervetuloa',
+
+  'loginRequired':
+      'Kirjaudu sisään jatkaaksesi.',
 
   // ============================================================
   // 🐱 STELLA
@@ -1064,4 +1070,16 @@ const Map<String, String> fiTranslations = {
 
   'accountDeletionFailed':
       'Tilin poistaminen epäonnistui. Yritä uudelleen.',
+
+  'accountDeletionSessionExpired':
+      'Kirjautumisistunto on vanhentunut. Kirjaudu uudelleen.',
+
+  'accountDeletionPermissionDenied':
+      'Tilin poistamiseen ei ole tarvittavia oikeuksia.',
+
+  'accountDeletionUnavailable':
+      'Tilin poistopalvelu ei ole tällä hetkellä saatavilla.',
+
+  'accountDeletionTimeout':
+      'Tilin poistaminen kesti liian kauan. Yritä uudelleen.',
 };
