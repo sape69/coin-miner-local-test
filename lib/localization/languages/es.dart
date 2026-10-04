@@ -425,6 +425,12 @@ const Map<String, String> esTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      'Nombre de usuario',
+
+  'usernameHint':
+      'Por ejemplo Stella',
+
   'confirmPassword':
       'Confirmar contraseña',
 
@@ -451,6 +457,49 @@ const Map<String, String> esTranslations = {
 
   'registrationFailed':
       'No se pudo crear la cuenta.',
+
+  // ============================================================
+  // 👥 REFERRAL
+  // ============================================================
+
+  'referralCode':
+      'Código de referido',
+
+  'referralCodeOptional':
+      'Opcional',
+
+  'enterReferralCode':
+      'Introduce el código de referido',
+
+  'referralCodeHint':
+      'Si alguien te invitó a Stelluriini, introduce aquí su código.',
+
+  'referralCodeNotFoundTitle':
+      'Código de referido no encontrado',
+
+  'referralCodeNotFoundMessage':
+      'El código de referido que has introducido no es válido.\n\n¿Quieres continuar creando tu cuenta de Stelluriini sin un código de referido?',
+
+  'changeReferralCode':
+      'Cambiar código de referido',
+
+  'continueWithoutReferral':
+      'Continuar sin código de referido',
+
+  'referralCodeValidationFailed':
+      'No se pudo verificar el código de referido.',
+
+  'referralCodeNetworkError':
+      'Error de red. Comprueba tu conexión e inténtalo de nuevo.',
+
+  'referralCodeInvalid':
+      'El código de referido no es válido.',
+
+  'referralCodeApplied':
+      'Código de referido aplicado correctamente.',
+
+  'referralCodeApplyFailed':
+      'No se pudo aplicar el código de referido.',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
