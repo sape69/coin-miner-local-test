@@ -416,6 +416,12 @@ const Map<String, String> zhTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      '用户名',
+
+  'usernameHint':
+      '例如 Stella',
+
   'confirmPassword':
       '确认密码',
 
@@ -442,6 +448,45 @@ const Map<String, String> zhTranslations = {
 
   'registrationFailed':
       '账户创建失败。',
+
+  'referralCode':
+      '推荐码',
+
+  'referralCodeOptional':
+      '可选',
+
+  'enterReferralCode':
+      '输入推荐码',
+
+  'referralCodeHint':
+      '如果有人邀请你加入 Stelluriini，请在此输入他们的推荐码。',
+
+  'referralCodeNotFoundTitle':
+      '未找到推荐码',
+
+  'referralCodeNotFoundMessage':
+      '你输入的推荐码无效。\n\n是否要在没有推荐码的情况下继续创建 Stelluriini 账户？',
+
+  'changeReferralCode':
+      '更改推荐码',
+
+  'continueWithoutReferral':
+      '不使用推荐码继续',
+
+  'referralCodeValidationFailed':
+      '无法验证推荐码。',
+
+  'referralCodeNetworkError':
+      '网络错误。请检查网络连接后重试。',
+
+  'referralCodeInvalid':
+      '推荐码无效。',
+
+  'referralCodeApplied':
+      '推荐码已成功应用。',
+
+  'referralCodeApplyFailed':
+      '无法应用推荐码。',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
