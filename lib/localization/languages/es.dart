@@ -84,6 +84,9 @@ const Map<String, String> esTranslations = {
   'startMining':
       'INICIAR MINERÍA',
 
+  'startMiningFirst':
+      'Inicia la minería primero.',
+
   'claimMining':
       'RECLAMAR STL',
 
@@ -414,6 +417,9 @@ const Map<String, String> esTranslations = {
 
   'loginFailed':
       'Error al iniciar sesión',
+
+  'loginRequired':
+      'Inicia sesión para continuar.',
 
   // ============================================================
   // 📝 REGISTER
@@ -1067,4 +1073,16 @@ const Map<String, String> esTranslations = {
 
   'accountDeletionFailed':
       'No se pudo eliminar la cuenta. Inténtalo de nuevo.',
+
+  'accountDeletionSessionExpired':
+      'Tu sesión ha expirado. Inicia sesión de nuevo.',
+
+  'accountDeletionPermissionDenied':
+      'No tienes los permisos necesarios para eliminar la cuenta.',
+
+  'accountDeletionUnavailable':
+      'El servicio de eliminación de cuentas no está disponible actualmente.',
+
+  'accountDeletionTimeout':
+      'La eliminación de la cuenta tardó demasiado. Inténtalo de nuevo.',
 };
