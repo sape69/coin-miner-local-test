@@ -84,20 +84,23 @@ const {
 //
 // Stella User Profile.
 //
-// Flutter käyttää tätä uuden Firebase Auth -käyttäjän
-// Firestore-profiilin alustamiseen.
+// Flutter käyttää näitä toimintoja:
+//
+// ensureUserProfile
+// getUserProfile
 //
 // TÄRKEÄÄ:
 //
 // Flutter EI kirjoita users/{uid}-dokumenttia suoraan.
 //
-// ensureUserProfile käyttää Firebase Admin SDK:ta
-// Cloud Functions -palvelimella.
+// Käyttäjäprofiilin luonti ja lukeminen tapahtuvat
+// Cloud Functions -palvelimella Firebase Admin SDK:n kautta.
 //
 // ============================================================
 
 const {
   ensureUserProfile,
+  getUserProfile,
 } = require(
   "./src/functions/userFunctions",
 );
@@ -251,7 +254,7 @@ exports.getAchievementsCompleted =
 
 
 // ============================================================
-// 👤 USER PROFILE EXPORT
+// 👤 USER PROFILE EXPORTS
 // ============================================================
 //
 // Flutter voi kutsua:
@@ -259,12 +262,19 @@ exports.getAchievementsCompleted =
 // FirebaseFunctions
 //   .httpsCallable('ensureUserProfile')
 //
-// Käyttäjäprofiili luodaan palvelinpuolella Admin SDK:lla.
+// FirebaseFunctions
+//   .httpsCallable('getUserProfile')
+//
+// Käyttäjäprofiili käsitellään aina palvelinpuolella
+// Admin SDK:n kautta.
 //
 // ============================================================
 
 exports.ensureUserProfile =
   ensureUserProfile;
+
+exports.getUserProfile =
+  getUserProfile;
 
 
 // ============================================================
