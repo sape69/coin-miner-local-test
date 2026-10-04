@@ -423,6 +423,12 @@ const Map<String, String> frTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      'Nom d’utilisateur',
+
+  'usernameHint':
+      'Par exemple Stella',
+
   'confirmPassword':
       'Confirmer le mot de passe',
 
@@ -449,6 +455,45 @@ const Map<String, String> frTranslations = {
 
   'registrationFailed':
       'Impossible de créer le compte.',
+
+  'referralCode':
+      'Code de parrainage',
+
+  'referralCodeOptional':
+      'Facultatif',
+
+  'enterReferralCode':
+      'Entrez le code de parrainage',
+
+  'referralCodeHint':
+      'Si quelqu’un vous a invité à Stelluriini, saisissez son code ici.',
+
+  'referralCodeNotFoundTitle':
+      'Code de parrainage introuvable',
+
+  'referralCodeNotFoundMessage':
+      'Le code de parrainage que vous avez saisi n’est pas valide.\n\nVoulez-vous continuer à créer votre compte Stelluriini sans code de parrainage ?',
+
+  'changeReferralCode':
+      'Modifier le code de parrainage',
+
+  'continueWithoutReferral':
+      'Continuer sans code de parrainage',
+
+  'referralCodeValidationFailed':
+      'Le code de parrainage n’a pas pu être vérifié.',
+
+  'referralCodeNetworkError':
+      'Erreur réseau. Vérifiez votre connexion et réessayez.',
+
+  'referralCodeInvalid':
+      'Le code de parrainage n’est pas valide.',
+
+  'referralCodeApplied':
+      'Code de parrainage appliqué avec succès.',
+
+  'referralCodeApplyFailed':
+      'Impossible d’appliquer le code de parrainage.',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
