@@ -58,6 +58,12 @@ const Map<String, String> jaTranslations = {
   // 🐱 STELLA MINING
   // ============================================================
 
+  'stellaMiningTitle':
+      'Stellaのマイニング',
+
+  'stellaMiningSubtitle':
+      'Stellaがあなたのために働いています。🐱⛏️',
+
   'stellaMiningProgress':
       'Stellaのマイニング進捗',
 
@@ -75,6 +81,9 @@ const Map<String, String> jaTranslations = {
 
   'startMining':
       'マイニング開始',
+
+  'startMiningFirst':
+      '先にマイニングを開始してください。',
 
   'claimMining':
       'STLを受け取る',
@@ -406,6 +415,9 @@ const Map<String, String> jaTranslations = {
 
   'loginFailed':
       'ログインに失敗しました',
+
+  'loginRequired':
+      '続行するにはログインしてください。',
 
   // ============================================================
   // 📝 REGISTER
@@ -1059,4 +1071,16 @@ const Map<String, String> jaTranslations = {
 
   'accountDeletionFailed':
       'アカウントの削除に失敗しました。もう一度お試しください。',
+
+  'accountDeletionSessionExpired':
+      'ログインセッションの有効期限が切れました。もう一度ログインしてください。',
+
+  'accountDeletionPermissionDenied':
+      'アカウントを削除するために必要な権限がありません。',
+
+  'accountDeletionUnavailable':
+      'アカウント削除サービスは現在利用できません。',
+
+  'accountDeletionTimeout':
+      'アカウントの削除に時間がかかりすぎました。もう一度お試しください。',
 };
