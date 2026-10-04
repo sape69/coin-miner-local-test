@@ -75,6 +75,9 @@ const Map<String, String> enTranslations = {
   'startMining':
       'START MINING',
 
+  'startMiningFirst':
+      'Start mining first.',
+
   'claimMining':
       'CLAIM STL',
 
@@ -399,6 +402,9 @@ const Map<String, String> enTranslations = {
 
   'loginFailed':
       'Login failed',
+
+  'loginRequired':
+      'Log in to continue.',
 
   // ============================================================
   // 📝 REGISTER
@@ -1058,4 +1064,16 @@ const Map<String, String> enTranslations = {
 
   'accountDeletionFailed':
       'Account deletion failed. Please try again.',
+
+  'accountDeletionSessionExpired':
+      'Your login session has expired. Please log in again.',
+
+  'accountDeletionPermissionDenied':
+      'You do not have the required permission to delete the account.',
+
+  'accountDeletionUnavailable':
+      'The account deletion service is currently unavailable.',
+
+  'accountDeletionTimeout':
+      'Account deletion took too long. Please try again.',
 };
