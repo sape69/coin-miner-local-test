@@ -337,8 +337,35 @@ class _HomePageState extends State<HomePage>
         final Map<String, dynamic> data =
             Map<String, dynamic>.from(raw);
 
-        final String username =
-            data['username']?.toString().trim() ?? '';
+        String username = '';
+
+        // getUserProfile palauttaa käyttäjäprofiilin
+        // profile-kentän sisällä.
+        final dynamic rawProfile =
+            data['profile'];
+
+        if (rawProfile is Map) {
+          final Map<String, dynamic> profile =
+              Map<String, dynamic>.from(
+            rawProfile,
+          );
+
+          username =
+              profile['username']
+                      ?.toString()
+                      .trim() ??
+                  '';
+        }
+
+        // Fallback mahdollisia vanhempia backend-vastauksia
+        // varten.
+        if (username.isEmpty) {
+          username =
+              data['username']
+                      ?.toString()
+                      .trim() ??
+                  '';
+        }
 
         if (mounted && username.isNotEmpty) {
           setState(() {
@@ -525,20 +552,27 @@ class _HomePageState extends State<HomePage>
               : defaultAdHashRateBonus;
 
       final int safeRemaining =
-          remaining
-              .clamp(
-                0,
-                safeDuration,
-              )
-              .toInt();
+          remaining.clamp(
+        0,
+        safeDuration,
+      ).toInt();
 
       final int safeCooldownRemaining =
-          cooldownRemaining
-              .clamp(
-                0,
-                defaultAdCooldownMs,
-              )
-              .toInt();
+          cooldownRemaining.clamp(
+        0,
+        defaultAdCooldownMs,
+      ).toInt();
+
+      // Daily Streak:
+      //
+      // Älä rajoita streak-arvoa 1–7:ään.
+      // Backend saa päättää todellisen streakin.
+      //
+      // Pidetään kuitenkin vähintään arvo 1,
+      // jos backend palauttaa virheellisen nollan
+      // tai negatiivisen arvon.
+      final int safeStreak =
+          streak > 0 ? streak : 1;
 
       if (!mounted) {
         return;
@@ -559,18 +593,15 @@ class _HomePageState extends State<HomePage>
         _miningRemainingMs =
             safeRemaining;
 
-        _streak =
-            streak.clamp(1, 7).toInt();
+        _streak = safeStreak;
 
         _maxAdsPerDay =
             safeMaxAds;
 
-        _adsToday = adsToday
-            .clamp(
-              0,
-              safeMaxAds,
-            )
-            .toInt();
+        _adsToday = adsToday.clamp(
+          0,
+          safeMaxAds,
+        ).toInt();
 
         _adHashRateBonus =
             safeAdBonus;
@@ -585,12 +616,10 @@ class _HomePageState extends State<HomePage>
             boostActive;
 
         _boostRemainingMs =
-            boostRemaining
-                .clamp(
-                  0,
-                  safeDuration,
-                )
-                .toInt();
+            boostRemaining.clamp(
+          0,
+          safeDuration,
+        ).toInt();
       });
 
       _startMiningTimer();
@@ -789,10 +818,12 @@ class _HomePageState extends State<HomePage>
             _asInt(data['dailyStreak']) ??
                 _streak;
 
+        final int safeStreak =
+            streak > 0 ? streak : 1;
+
         setState(() {
           _miningActive = true;
-          _streak =
-              streak.clamp(1, 7).toInt();
+          _streak = safeStreak;
         });
       }
 
@@ -945,12 +976,10 @@ class _HomePageState extends State<HomePage>
         _boostRemainingMs = remaining;
 
         if (ads != null) {
-          _adsToday = ads
-              .clamp(
-                0,
-                _maxAdsPerDay,
-              )
-              .toInt();
+          _adsToday = ads.clamp(
+            0,
+            _maxAdsPerDay,
+          ).toInt();
         }
 
         if (bonus != null &&
@@ -1093,8 +1122,7 @@ class _HomePageState extends State<HomePage>
                 BorderRadius.circular(24),
             side: BorderSide(
               color:
-                  deleteAccountColor
-                      .withValues(
+                  deleteAccountColor.withValues(
                 alpha: 0.30,
               ),
             ),
@@ -1127,8 +1155,7 @@ class _HomePageState extends State<HomePage>
                 height: 46,
                 decoration: BoxDecoration(
                   color:
-                      deleteAccountColor
-                          .withValues(
+                      deleteAccountColor.withValues(
                     alpha: 0.12,
                   ),
                   borderRadius:
@@ -1137,15 +1164,13 @@ class _HomePageState extends State<HomePage>
                   ),
                   border: Border.all(
                     color:
-                        deleteAccountColor
-                            .withValues(
+                        deleteAccountColor.withValues(
                       alpha: 0.22,
                     ),
                   ),
                 ),
                 child: const Icon(
-                  Icons
-                      .delete_forever_rounded,
+                  Icons.delete_forever_rounded,
                   color:
                       deleteAccountColor,
                   size: 25,
@@ -1191,8 +1216,7 @@ class _HomePageState extends State<HomePage>
                 foregroundColor:
                     accentColor,
                 padding:
-                    const EdgeInsets
-                        .symmetric(
+                    const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 12,
                 ),
@@ -1215,8 +1239,7 @@ class _HomePageState extends State<HomePage>
                 ).pop(true);
               },
               icon: const Icon(
-                Icons
-                    .delete_forever_rounded,
+                Icons.delete_forever_rounded,
                 size: 19,
               ),
               label: Text(
@@ -1232,8 +1255,7 @@ class _HomePageState extends State<HomePage>
                     Colors.white,
                 elevation: 0,
                 padding:
-                    const EdgeInsets
-                        .symmetric(
+                    const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
@@ -1384,9 +1406,25 @@ class _HomePageState extends State<HomePage>
   ) {
     switch (error.code) {
       case 'unauthenticated':
+        return _t(
+          'accountDeletionSessionExpired',
+        );
+
       case 'permission-denied':
+        return _t(
+          'accountDeletionPermissionDenied',
+        );
+
       case 'unavailable':
+        return _t(
+          'accountDeletionUnavailable',
+        );
+
       case 'deadline-exceeded':
+        return _t(
+          'accountDeletionTimeout',
+        );
+
       case 'internal':
       default:
         return _t(
