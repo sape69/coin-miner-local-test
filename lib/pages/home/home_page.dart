@@ -814,7 +814,7 @@ class _HomePageState extends State<HomePage>
     if (!_miningActive ||
         _miningRemainingMs <= 0) {
       _showMessage(
-        '🐱 ${_t('startMiningFirst')}',
+        '🐱 ${_t('startMining')}',
       );
       return;
     }
@@ -1267,7 +1267,7 @@ class _HomePageState extends State<HomePage>
 
     if (currentUser == null) {
       _showMessage(
-        '⚠️ ${_t('loginRequired')}',
+        '⚠️ ${_t('accountDeletionFailed')}',
       );
       return;
     }
@@ -1367,25 +1367,9 @@ class _HomePageState extends State<HomePage>
   ) {
     switch (error.code) {
       case 'unauthenticated':
-        return _t(
-          'accountDeletionSessionExpired',
-        );
-
       case 'permission-denied':
-        return _t(
-          'accountDeletionPermissionDenied',
-        );
-
       case 'unavailable':
-        return _t(
-          'accountDeletionUnavailable',
-        );
-
       case 'deadline-exceeded':
-        return _t(
-          'accountDeletionTimeout',
-        );
-
       case 'internal':
       default:
         return _t(
