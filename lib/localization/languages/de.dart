@@ -410,6 +410,12 @@ const Map<String, String> deTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      'Benutzername',
+
+  'usernameHint':
+      'Zum Beispiel Stella',
+
   'confirmPassword':
       'Passwort bestätigen',
 
@@ -436,6 +442,49 @@ const Map<String, String> deTranslations = {
 
   'registrationFailed':
       'Das Konto konnte nicht erstellt werden.',
+
+  // ============================================================
+  // 👥 REFERRAL
+  // ============================================================
+
+  'referralCode':
+      'Empfehlungscode',
+
+  'referralCodeOptional':
+      'Optional',
+
+  'enterReferralCode':
+      'Empfehlungscode eingeben',
+
+  'referralCodeHint':
+      'Wenn dich jemand zu Stelluriini eingeladen hat, gib hier seinen Code ein.',
+
+  'referralCodeNotFoundTitle':
+      'Empfehlungscode nicht gefunden',
+
+  'referralCodeNotFoundMessage':
+      'Der eingegebene Empfehlungscode ist nicht gültig.\n\nMöchtest du dein Stelluriini-Konto ohne Empfehlungscode erstellen?',
+
+  'changeReferralCode':
+      'Empfehlungscode ändern',
+
+  'continueWithoutReferral':
+      'Ohne Empfehlung fortfahren',
+
+  'referralCodeValidationFailed':
+      'Der Empfehlungscode konnte nicht überprüft werden.',
+
+  'referralCodeNetworkError':
+      'Netzwerkfehler. Überprüfe deine Verbindung und versuche es erneut.',
+
+  'referralCodeInvalid':
+      'Der Empfehlungscode ist nicht gültig.',
+
+  'referralCodeApplied':
+      'Empfehlungscode erfolgreich angewendet.',
+
+  'referralCodeApplyFailed':
+      'Der Empfehlungscode konnte nicht angewendet werden.',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
