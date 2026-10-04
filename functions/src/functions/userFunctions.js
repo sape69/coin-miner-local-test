@@ -14,6 +14,14 @@
 //    ↓
 // users/{uid}
 //
+// Flutter
+//    ↓
+// getUserProfile()
+//    ↓
+// Firebase Admin SDK
+//    ↓
+// users/{uid}
+//
 // TÄRKEÄÄ:
 //
 // Flutter EI kirjoita users-kokoelmaan suoraan.
@@ -22,26 +30,24 @@
 //
 //    allow write: if false;
 //
-// Siksi uuden käyttäjän perusprofiili luodaan tämän
-// Cloud Functionin kautta Admin SDK:lla.
+// Siksi käyttäjäprofiili luodaan ja luetaan
+// Cloud Functionien kautta Admin SDK:lla.
 //
 // ============================================================
 
-
 const {
-  onCall,
-  HttpsError,
+onCall,
+HttpsError,
 } = require("firebase-functions/v2/https");
 
 const {
-  db,
-  FieldValue,
+db,
+FieldValue,
 } = require("../firebase/firebase");
 
 const {
-  getUserRef,
+getUserRef,
 } = require("../utils/userUtils");
-
 
 // ============================================================
 // 🔢 DEFAULT USER PROFILE
@@ -55,129 +61,129 @@ const {
 // ============================================================
 
 function buildDefaultUserProfile(
-  request,
+request,
 ) {
-  const email =
-    typeof request.auth.token?.email === "string"
-      ? request.auth.token.email
-      : "";
+const email =
+typeof request.auth.token?.email === "string"
+? request.auth.token.email
+: "";
 
-  const displayName =
-    typeof request.auth.token?.name === "string"
-      ? request.auth.token.name
-      : "";
+const displayName =
+typeof request.auth.token?.name === "string"
+? request.auth.token.name
+: "";
 
-  return {
-    // ----------------------------------------------------------
-    // 👤 BASIC USER
-    // ----------------------------------------------------------
+return {
+// ----------------------------------------------------------
+// 👤 BASIC USER
+// ----------------------------------------------------------
 
-    email,
+email,
 
-    displayName,
+displayName,
 
-    username:
-      displayName,
+username:
+  displayName,
 
-    // ----------------------------------------------------------
-    // 💰 LEGACY / BASIC BALANCE
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// 💰 LEGACY / BASIC BALANCE
+// ----------------------------------------------------------
 
-    stlBalance:
-      0,
+stlBalance:
+  0,
 
-    // ----------------------------------------------------------
-    // ⛏️ MINING
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// ⛏️ MINING
+// ----------------------------------------------------------
 
-    miningBalance:
-      0,
+miningBalance:
+  0,
 
-    miningHashRate:
-      0,
+miningHashRate:
+  0,
 
-    miningStartedAt:
-      null,
+miningStartedAt:
+  null,
 
-    miningEndsAt:
-      null,
+miningEndsAt:
+  null,
 
-    // ----------------------------------------------------------
-    // ⚡ POWER BOOST
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// ⚡ POWER BOOST
+// ----------------------------------------------------------
 
-    adBoostHashRate:
-      0,
+adBoostHashRate:
+  0,
 
-    adBoostStartedAt:
-      null,
+adBoostStartedAt:
+  null,
 
-    adBoostEndsAt:
-      null,
+adBoostEndsAt:
+  null,
 
-    // ----------------------------------------------------------
-    // 🎁 DAILY
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// 🎁 DAILY
+// ----------------------------------------------------------
 
-    dailyHashRate:
-      0,
+dailyHashRate:
+  0,
 
-    dailyStreak:
-      0,
+dailyStreak:
+  0,
 
-    streak:
-      0,
+streak:
+  0,
 
-    lastDailyDate:
-      "",
+lastDailyDate:
+  "",
 
-    // ----------------------------------------------------------
-    // 📺 ADS
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// 📺 ADS
+// ----------------------------------------------------------
 
-    adsToday:
-      0,
+adsToday:
+  0,
 
-    adDate:
-      "",
+adDate:
+  "",
 
-    lastAdTime:
-      null,
+lastAdTime:
+  null,
 
-    // ----------------------------------------------------------
-    // 🔗 REFERRAL
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// 🔗 REFERRAL
+// ----------------------------------------------------------
 
-    referralCode:
-      "",
+referralCode:
+  "",
 
-    referrerUid:
-      "",
+referrerUid:
+  "",
 
-    referralCodeUsed:
-      "",
+referralCodeUsed:
+  "",
 
-    referralJoinedAt:
-      null,
+referralJoinedAt:
+  null,
 
-    referralCount:
-      0,
+referralCount:
+  0,
 
-    referralTotalEarned:
-      0,
+referralTotalEarned:
+  0,
 
-    // ----------------------------------------------------------
-    // 🕐 TIMESTAMPS
-    // ----------------------------------------------------------
+// ----------------------------------------------------------
+// 🕐 TIMESTAMPS
+// ----------------------------------------------------------
 
-    createdAt:
-      FieldValue.serverTimestamp(),
+createdAt:
+  FieldValue.serverTimestamp(),
 
-    updatedAt:
-      FieldValue.serverTimestamp(),
-  };
+updatedAt:
+  FieldValue.serverTimestamp(),
+
+};
 }
-
 
 // ============================================================
 // 🔗 ENSURE USER PROFILE
@@ -202,184 +208,324 @@ function buildDefaultUserProfile(
 // ============================================================
 
 const ensureUserProfile =
-  onCall(
-    {
-      region:
-        "us-central1",
-    },
+onCall(
+{
+region:
+"us-central1",
+},
 
-    async (
-      request,
-    ) => {
-      try {
-        // ======================================================
-        // 🔐 AUTHENTICATION
-        // ======================================================
+async (
+  request,
+) => {
+  try {
+    // ======================================================
+    // 🔐 AUTHENTICATION
+    // ======================================================
 
-        if (!request.auth) {
-          throw new HttpsError(
-            "unauthenticated",
-            "🐱 Kirjautuminen vaaditaan.",
-          );
-        }
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "🐱 Kirjautuminen vaaditaan.",
+      );
+    }
 
-        const uid =
-          request.auth.uid;
+    const uid =
+      request.auth.uid;
 
-        if (
-          typeof uid !== "string" ||
-          !uid.trim()
-        ) {
-          throw new HttpsError(
-            "invalid-argument",
-            "🐱 Käyttäjän UID puuttuu.",
-          );
-        }
+    if (
+      typeof uid !== "string" ||
+      !uid.trim()
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "🐱 Käyttäjän UID puuttuu.",
+      );
+    }
 
-        // ======================================================
-        // 👤 USER REFERENCE
-        // ======================================================
+    // ======================================================
+    // 👤 USER REFERENCE
+    // ======================================================
 
-        const userRef =
-          getUserRef(
-            uid,
-          );
+    const userRef =
+      getUserRef(
+        uid,
+      );
 
-        // ======================================================
-        // 🔍 CHECK EXISTING PROFILE
-        // ======================================================
+    // ======================================================
+    // 🔍 CHECK EXISTING PROFILE
+    // ======================================================
 
-        const snapshot =
-          await userRef.get();
+    const snapshot =
+      await userRef.get();
 
-        // ------------------------------------------------------
-        // PROFILE ALREADY EXISTS
-        // ------------------------------------------------------
+    // ------------------------------------------------------
+    // PROFILE ALREADY EXISTS
+    // ------------------------------------------------------
 
-        if (snapshot.exists) {
-          return {
-            success:
-              true,
+    if (snapshot.exists) {
+      return {
+        success:
+          true,
 
-            created:
-              false,
+        created:
+          false,
 
-            exists:
-              true,
+        exists:
+          true,
 
-            uid,
+        uid,
 
-            message:
-              "🐱 Stella-käyttäjäprofiili on jo olemassa.",
-          };
-        }
+        message:
+          "🐱 Stella-käyttäjäprofiili on jo olemassa.",
+      };
+    }
 
-        // ======================================================
-        // 🆕 CREATE PROFILE
-        // ======================================================
+    // ======================================================
+    // 🆕 CREATE PROFILE
+    // ======================================================
 
-        const profile =
-          buildDefaultUserProfile(
-            request,
-          );
+    const profile =
+      buildDefaultUserProfile(
+        request,
+      );
 
-        await userRef.create(
-          profile,
-        );
+    await userRef.create(
+      profile,
+    );
 
-        // ======================================================
-        // ✅ SUCCESS
-        // ======================================================
+    // ======================================================
+    // ✅ SUCCESS
+    // ======================================================
 
-        return {
-          success:
-            true,
+    return {
+      success:
+        true,
 
-          created:
-            true,
+      created:
+        true,
 
-          exists:
-            true,
+      exists:
+        true,
 
-          uid,
+      uid,
 
-          message:
-            "🐱✨ Stella-käyttäjäprofiili luotiin onnistuneesti.",
-        };
-      } catch (
-        error
-      ) {
-        // ======================================================
-        // ❌ ERROR LOG
-        // ======================================================
+      message:
+        "🐱✨ Stella-käyttäjäprofiili luotiin onnistuneesti.",
+    };
+  } catch (
+    error
+  ) {
+    // ======================================================
+    // ❌ ERROR LOG
+    // ======================================================
 
-        console.error(
-          "ensureUserProfile error:",
-          error,
-        );
+    console.error(
+      "ensureUserProfile error:",
+      error,
+    );
 
-        // ------------------------------------------------------
-        // PRESERVE HttpsError
-        // ------------------------------------------------------
+    // ------------------------------------------------------
+    // PRESERVE HttpsError
+    // ------------------------------------------------------
 
-        if (
-          error instanceof
-          HttpsError
-        ) {
-          throw error;
-        }
+    if (
+      error instanceof
+      HttpsError
+    ) {
+      throw error;
+    }
 
-        // ------------------------------------------------------
-        // FIRESTORE ALREADY EXISTS
-        // ------------------------------------------------------
-        //
-        // create() voi teoriassa saada ALREADY_EXISTS-tilanteen,
-        // jos kaksi kutsua osuu samaan käyttäjään samanaikaisesti.
-        //
-        // Tässä tapauksessa profiili on kuitenkin olemassa,
-        // joten sitä voidaan käsitellä onnistuneena tilanteena.
-        //
-        // ------------------------------------------------------
+    // ------------------------------------------------------
+    // FIRESTORE ALREADY EXISTS
+    // ------------------------------------------------------
+    //
+    // create() voi teoriassa saada ALREADY_EXISTS-tilanteen,
+    // jos kaksi kutsua osuu samaan käyttäjään samanaikaisesti.
+    //
+    // Tässä tapauksessa profiili on kuitenkin olemassa,
+    // joten sitä voidaan käsitellä onnistuneena tilanteena.
+    //
+    // ------------------------------------------------------
 
-        if (
-          error?.code ===
-          6
-        ) {
-          return {
-            success:
-              true,
+    if (
+      error?.code ===
+      6
+    ) {
+      return {
+        success:
+          true,
 
-            created:
-              false,
+        created:
+          false,
 
-            exists:
-              true,
+        exists:
+          true,
 
-            uid:
-              request.auth.uid,
+        uid:
+          request.auth.uid,
 
-            message:
-              "🐱 Stella-käyttäjäprofiili on jo olemassa.",
-          };
-        }
+        message:
+          "🐱 Stella-käyttäjäprofiili on jo olemassa.",
+      };
+    }
 
-        // ------------------------------------------------------
-        // GENERIC ERROR
-        // ------------------------------------------------------
+    // ------------------------------------------------------
+    // GENERIC ERROR
+    // ------------------------------------------------------
 
-        throw new HttpsError(
-          "internal",
-          "🐱 Stella-käyttäjäprofiilin luominen epäonnistui.",
-        );
-      }
-    },
-  );
+    throw new HttpsError(
+      "internal",
+      "🐱 Stella-käyttäjäprofiilin luominen epäonnistui.",
+    );
+  }
+},
 
+);
+
+// ============================================================
+// 👤 GET USER PROFILE
+// ============================================================
+//
+// Hakee kirjautuneen käyttäjän oman users/{uid}-profiilin.
+//
+// Flutter
+//    ↓
+// getUserProfile()
+//    ↓
+// Firebase Admin SDK
+//    ↓
+// users/{uid}
+//
+// Asiakas ei lue Firestore users -kokoelmaa suoraan.
+//
+// ============================================================
+
+const getUserProfile =
+onCall(
+{
+region:
+"us-central1",
+},
+
+async (
+  request,
+) => {
+  try {
+    // ======================================================
+    // 🔐 AUTHENTICATION
+    // ======================================================
+
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "🐱 Kirjautuminen vaaditaan.",
+      );
+    }
+
+    const uid =
+      request.auth.uid;
+
+    if (
+      typeof uid !== "string" ||
+      !uid.trim()
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "🐱 Käyttäjän UID puuttuu.",
+      );
+    }
+
+    // ======================================================
+    // 👤 USER REFERENCE
+    // ======================================================
+
+    const userRef =
+      getUserRef(
+        uid,
+      );
+
+    // ======================================================
+    // 🔍 READ PROFILE
+    // ======================================================
+
+    const snapshot =
+      await userRef.get();
+
+    // ======================================================
+    // ❌ PROFILE DOES NOT EXIST
+    // ======================================================
+
+    if (!snapshot.exists) {
+      throw new HttpsError(
+        "not-found",
+        "🐱 Stella-käyttäjäprofiilia ei löytynyt.",
+      );
+    }
+
+    // ======================================================
+    // 📦 PROFILE DATA
+    // ======================================================
+
+    const data =
+      snapshot.data() || {};
+
+    // ======================================================
+    // ✅ SUCCESS
+    // ======================================================
+
+    return {
+      success:
+        true,
+
+      exists:
+        true,
+
+      uid,
+
+      profile:
+        data,
+    };
+  } catch (
+    error
+  ) {
+    // ======================================================
+    // ❌ ERROR LOG
+    // ======================================================
+
+    console.error(
+      "getUserProfile error:",
+      error,
+    );
+
+    // ------------------------------------------------------
+    // PRESERVE HttpsError
+    // ------------------------------------------------------
+
+    if (
+      error instanceof
+      HttpsError
+    ) {
+      throw error;
+    }
+
+    // ------------------------------------------------------
+    // GENERIC ERROR
+    // ------------------------------------------------------
+
+    throw new HttpsError(
+      "internal",
+      "🐱 Stella-käyttäjäprofiilin hakeminen epäonnistui.",
+    );
+  }
+},
+
+);
 
 // ============================================================
 // 📦 EXPORTS
 // ============================================================
 
 module.exports = {
-  ensureUserProfile,
+ensureUserProfile,
+getUserProfile,
 };
