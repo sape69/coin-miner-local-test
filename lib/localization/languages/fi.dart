@@ -416,6 +416,12 @@ const Map<String, String> fiTranslations = {
   // 📝 REGISTER
   // ============================================================
 
+  'username':
+      'Käyttäjänimi',
+
+  'usernameHint':
+      'Esimerkiksi Stella',
+
   'confirmPassword':
       'Vahvista salasana',
 
@@ -442,6 +448,49 @@ const Map<String, String> fiTranslations = {
 
   'registrationFailed':
       'Tilin luominen epäonnistui.',
+
+  // ============================================================
+  // 🔗 REFERRAL REGISTRATION
+  // ============================================================
+
+  'referralCode':
+      'Referral-koodi',
+
+  'referralCodeOptional':
+      'Valinnainen',
+
+  'enterReferralCode':
+      'Syötä referral-koodi',
+
+  'referralCodeHint':
+      'Jos joku kutsui sinut Stelluriiniin, syötä hänen koodinsa tähän.',
+
+  'referralCodeNotFoundTitle':
+      'Referral-koodia ei löytynyt',
+
+  'referralCodeNotFoundMessage':
+      'Syöttämäsi referral-koodi ei ole voimassa.\n\nHaluatko jatkaa Stelluriini-tilin luomista ilman referral-koodia?',
+
+  'changeReferralCode':
+      'Vaihda referral-koodi',
+
+  'continueWithoutReferral':
+      'Jatka ilman referral-koodia',
+
+  'referralCodeValidationFailed':
+      'Referral-koodia ei voitu tarkistaa.',
+
+  'referralCodeNetworkError':
+      'Verkkovirhe. Tarkista yhteytesi ja yritä uudelleen.',
+
+  'referralCodeInvalid':
+      'Referral-koodi ei ole voimassa.',
+
+  'referralCodeApplied':
+      'Referral-koodi yhdistettiin onnistuneesti.',
+
+  'referralCodeApplyFailed':
+      'Referral-koodin yhdistäminen epäonnistui.',
 
   // ============================================================
   // 🔑 FORGOT PASSWORD
