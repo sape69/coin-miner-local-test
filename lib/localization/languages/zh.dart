@@ -75,6 +75,9 @@ const Map<String, String> zhTranslations = {
   'startMining':
       '开始挖矿',
 
+  'startMiningFirst':
+      '请先开始挖矿。',
+
   'claimMining':
       '领取 STL',
 
@@ -405,6 +408,9 @@ const Map<String, String> zhTranslations = {
 
   'loginFailed':
       '登录失败',
+
+  'loginRequired':
+      '请登录后继续。',
 
   // ============================================================
   // 📝 REGISTER
@@ -1058,4 +1064,16 @@ const Map<String, String> zhTranslations = {
 
   'accountDeletionFailed':
       '账户删除失败，请重试。',
+
+  'accountDeletionSessionExpired':
+      '登录会话已过期。请重新登录。',
+
+  'accountDeletionPermissionDenied':
+      '您没有删除账户所需的权限。',
+
+  'accountDeletionUnavailable':
+      '账户删除服务目前不可用。',
+
+  'accountDeletionTimeout':
+      '账户删除耗时过长。请重试。',
 };
