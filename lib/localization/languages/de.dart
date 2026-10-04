@@ -75,6 +75,9 @@ const Map<String, String> deTranslations = {
   'startMining':
       'MINING STARTEN',
 
+  'startMiningFirst':
+      'Starte zuerst das Mining.',
+
   'claimMining':
       'STL EINSAMMELN',
 
@@ -399,6 +402,9 @@ const Map<String, String> deTranslations = {
 
   'loginFailed':
       'Anmeldung fehlgeschlagen',
+
+  'loginRequired':
+      'Bitte melde dich an, um fortzufahren.',
 
   // ============================================================
   // 📝 REGISTER
@@ -1058,4 +1064,16 @@ const Map<String, String> deTranslations = {
 
   'accountDeletionFailed':
       'Die Kontolöschung ist fehlgeschlagen. Bitte versuche es erneut.',
+
+  'accountDeletionSessionExpired':
+      'Deine Anmeldesitzung ist abgelaufen. Bitte melde dich erneut an.',
+
+  'accountDeletionPermissionDenied':
+      'Du hast nicht die erforderliche Berechtigung, um das Konto zu löschen.',
+
+  'accountDeletionUnavailable':
+      'Der Kontolöschdienst ist derzeit nicht verfügbar.',
+
+  'accountDeletionTimeout':
+      'Das Löschen des Kontos hat zu lange gedauert. Bitte versuche es erneut.',
 };
