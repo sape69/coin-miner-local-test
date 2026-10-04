@@ -388,23 +388,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
         case 'unauthenticated':
           _message(
-            'Referral code validation requires '
-            'a valid connection.',
+            _t('loginRequired'),
           );
           return null;
 
         case 'network-error':
         case 'unavailable':
           _message(
-            'Network error. '
-            'Please check your connection and try again.',
+            _t('referralCodeNetworkError'),
           );
           return null;
 
         default:
           _message(
-            error.message ??
-                'The referral code could not be checked.',
+            _t('referralCodeValidationFailed'),
           );
           return null;
       }
@@ -414,7 +411,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       _message(
-        'The referral code could not be checked.',
+        _t('referralCodeValidationFailed'),
       );
 
       return null;
@@ -441,18 +438,18 @@ class _RegisterPageState extends State<RegisterPage> {
             borderRadius:
                 BorderRadius.circular(24),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.link_off_rounded,
                 color: pinkColor,
                 size: 28,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Referral code not found',
-                  style: TextStyle(
+                  _t('referralCodeNotFoundTitle'),
+                  style: const TextStyle(
                     color: primaryTextColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 19,
@@ -461,11 +458,9 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ],
           ),
-          content: const Text(
-            'The referral code you entered is not valid.\n\n'
-            'Would you like to continue creating your '
-            'Stelluriini account without a referral code?',
-            style: TextStyle(
+          content: Text(
+            _t('referralCodeNotFoundMessage'),
+            style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 15,
               height: 1.5,
@@ -503,9 +498,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Change referral code',
-                  style: TextStyle(
+                child: Text(
+                  _t('changeReferralCode'),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -534,9 +529,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Continue without referral',
-                  style: TextStyle(
+                child: Text(
+                  _t('continueWithoutReferral'),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -673,7 +668,7 @@ class _RegisterPageState extends State<RegisterPage> {
         Duration(milliseconds: 700);
 
     String lastErrorMessage =
-        'The referral code could not be applied.';
+        _t('referralCodeApplyFailed');
 
     for (int attempt = 1;
         attempt <= maxAttempts;
@@ -713,7 +708,7 @@ class _RegisterPageState extends State<RegisterPage> {
         }
 
         lastErrorMessage =
-            'The referral code could not be applied.';
+            _t('referralCodeApplyFailed');
 
         debugPrint(
           'Referral apply returned unexpected '
@@ -748,8 +743,7 @@ class _RegisterPageState extends State<RegisterPage> {
             error.code == 'unavailable' ||
             error.code == 'network-error') {
           lastErrorMessage =
-              error.message ??
-                  'Referral code could not be applied.';
+              _t('referralCodeNetworkError');
 
           if (attempt < maxAttempts) {
             await Future<void>.delayed(
@@ -768,15 +762,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (error.code == 'invalid-argument') {
           lastErrorMessage =
-              error.message ??
-                  'The referral code is not valid.';
+              _t('referralCodeInvalid');
         } else if (error.code == 'unauthenticated') {
           lastErrorMessage =
-              'Please sign in again and try again.';
+              _t('loginRequired');
         } else {
           lastErrorMessage =
-              error.message ??
-                  'The referral code could not be applied.';
+              _t('referralCodeApplyFailed');
         }
 
         break;
@@ -788,7 +780,7 @@ class _RegisterPageState extends State<RegisterPage> {
         );
 
         lastErrorMessage =
-            'The referral code could not be applied.';
+            _t('referralCodeApplyFailed');
 
         if (attempt < maxAttempts) {
           await Future<void>.delayed(
@@ -852,7 +844,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (username.length < 3) {
       _message(
-        'Username must contain at least 3 characters.',
+        _t('registrationFailed'),
       );
 
       return;
@@ -900,7 +892,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (referralCode.length > 64) {
       _message(
-        'Referral code is too long.',
+        _t('referralCodeInvalid'),
       );
 
       return;
@@ -1033,9 +1025,7 @@ class _RegisterPageState extends State<RegisterPage> {
         }
 
         _message(
-          'Your account profile could not be prepared. '
-          'Your account was not created. '
-          'Please try again.',
+          _t('registrationFailed'),
         );
 
         return;
@@ -1077,9 +1067,7 @@ class _RegisterPageState extends State<RegisterPage> {
           }
 
           _message(
-            'The referral code could not be connected. '
-            'Your account was not created. '
-            'Please try again.',
+            _t('referralCodeApplyFailed'),
           );
 
           return;
@@ -1156,9 +1144,9 @@ class _RegisterPageState extends State<RegisterPage> {
           break;
 
         default:
-          message =
-              '${_t('registrationFailed')}: '
-              '${error.message ?? error.code}';
+          message = _t(
+            'registrationFailed',
+          );
       }
 
       _message(message);
@@ -1485,12 +1473,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       decoration:
                           _inputDecoration(
-                        label: 'Username',
+                        label: _t('username'),
                         icon:
                             Icons.person_outline_rounded,
                       ).copyWith(
                         hintText:
-                            'For example Stella',
+                            _t('usernameHint'),
                         counterText: '',
                       ),
                     ),
@@ -1679,10 +1667,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                       CrossAxisAlignment
                                           .start,
                                   children: [
-                                    const Text(
-                                      'Referral Code',
+                                    Text(
+                                      _t('referralCode'),
                                       style:
-                                          TextStyle(
+                                          const TextStyle(
                                         color:
                                             primaryTextColor,
                                         fontSize: 15,
@@ -1694,7 +1682,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                       height: 2,
                                     ),
                                     Text(
-                                      'Optional',
+                                      _t(
+                                        'referralCodeOptional',
+                                      ),
                                       style:
                                           TextStyle(
                                         color:
@@ -1742,7 +1732,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             decoration:
                                 _inputDecoration(
                               label:
-                                  'Referral Code',
+                                  _t('referralCode'),
                               icon:
                                   Icons
                                       .confirmation_number_outlined,
@@ -1750,7 +1740,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                   referralColor,
                             ).copyWith(
                               hintText:
-                                  'Enter referral code',
+                                  _t(
+                                'enterReferralCode',
+                              ),
                               counterText: '',
                             ),
                           ),
@@ -1779,8 +1771,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               Expanded(
                                 child: Text(
-                                  'If someone invited you to '
-                                  'Stelluriini, enter their code here.',
+                                  _t(
+                                    'referralCodeHint',
+                                  ),
                                   style:
                                       TextStyle(
                                     color:
