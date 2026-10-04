@@ -53,17 +53,34 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // ⛏️ DEFAULT MINING CONFIG
   // ============================================================
+  //
+  // Nämä fallback-arvot vastaavat backendin
+  // functions/src/config/miningConfig.js
+  // -asetuksia.
+  //
+  // Backend on aina varsinainen auktoriteetti.
+  // Näitä käytetään vain silloin, kun palvelin ei palauta
+  // kyseistä arvoa.
+  //
+  // Backend:
+  //
+  // DAILY_HASH_RATE_START = 0.5
+  // AD_HASH_RATE_BONUS    = 0.5833
+  // MAX_ADS_PER_DAY       = 6
+  // AD_COOLDOWN            = 4 tuntia
+  //
+  // ============================================================
 
-  static const double defaultAdHashRateBonus = 5.0;
-  static const int defaultMaxAdsPerDay = 5;
-  static const double defaultDailyHashRate = 1.0;
+  static const double defaultAdHashRateBonus = 0.5833;
+  static const int defaultMaxAdsPerDay = 6;
+  static const double defaultDailyHashRate = 0.5;
   static const double miningPerHashPerHour = 0.10;
 
   static const int defaultMiningDurationMs =
       24 * 60 * 60 * 1000;
 
   static const int defaultAdCooldownMs =
-      60 * 60 * 1000;
+      4 * 60 * 60 * 1000;
 
   // ============================================================
   // 🔥 FIREBASE
