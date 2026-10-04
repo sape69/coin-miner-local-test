@@ -82,6 +82,9 @@ const Map<String, String> frTranslations = {
   'startMining':
       'DÉMARRER LE MINAGE',
 
+  'startMiningFirst':
+      'Démarrez d’abord le minage.',
+
   'claimMining':
       'RÉCLAMER STL',
 
@@ -412,6 +415,9 @@ const Map<String, String> frTranslations = {
 
   'loginFailed':
       'Échec de la connexion',
+
+  'loginRequired':
+      'Connectez-vous pour continuer.',
 
   // ============================================================
   // 📝 REGISTER
@@ -1065,4 +1071,16 @@ const Map<String, String> frTranslations = {
 
   'accountDeletionFailed':
       'La suppression du compte a échoué. Veuillez réessayer.',
+
+  'accountDeletionSessionExpired':
+      'Votre session de connexion a expiré. Veuillez vous reconnecter.',
+
+  'accountDeletionPermissionDenied':
+      'Vous ne disposez pas des autorisations nécessaires pour supprimer le compte.',
+
+  'accountDeletionUnavailable':
+      'Le service de suppression de compte est actuellement indisponible.',
+
+  'accountDeletionTimeout':
+      'La suppression du compte a pris trop de temps. Veuillez réessayer.',
 };
