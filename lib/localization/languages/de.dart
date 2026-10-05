@@ -382,6 +382,9 @@ const Map<String, String> deTranslations = {
   'loginFillFields':
       'E-Mail und Passwort eingeben.',
 
+  'registrationFillFields':
+      'Bitte fülle alle Pflichtfelder aus.',
+
   'loginInvalidEmail':
       'Die E-Mail-Adresse ist ungültig.',
 
@@ -1083,15 +1086,6 @@ const Map<String, String> deTranslations = {
 
   'deleteAccountButton':
       'KONTO LÖSCHEN',
-
-  'cannotAccessApp':
-      'Kein Zugriff auf die App?',
-
-  'cannotAccessAppDescription':
-      'Wenn du keinen Zugriff auf die App hast, kannst du über unsere öffentliche Löschseite eine Anfrage zur Kontolöschung senden.',
-
-  'openAccountDeletionPage':
-      'KONTOLÖSCHSEITE ÖFFNEN',
 
   'accountDeletionPermanent':
       'Die Kontolöschung ist dauerhaft und kann nicht rückgängig gemacht werden.',
