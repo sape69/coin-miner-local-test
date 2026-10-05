@@ -391,6 +391,9 @@ const Map<String, String> fiTranslations = {
   'loginFillFields':
       'Anna sähköposti ja salasana.',
 
+  'registrationFillFields':
+      'Täytä kaikki pakolliset kentät.',
+
   'loginInvalidEmail':
       'Sähköpostiosoite ei ole kelvollinen.',
 
@@ -1089,15 +1092,6 @@ const Map<String, String> fiTranslations = {
 
   'deleteAccountButton':
       'POISTA TILI',
-
-  'cannotAccessApp':
-      'Etkö pääse sovellukseen?',
-
-  'cannotAccessAppDescription':
-      'Jos et pääse sovellukseen, voit lähettää tilin poistopyynnön julkisen poistamissivun kautta.',
-
-  'openAccountDeletionPage':
-      'AVAA TILIN POISTAMISSIVU',
 
   'accountDeletionPermanent':
       'Tilin poistaminen on pysyvä eikä sitä voi peruuttaa.',
