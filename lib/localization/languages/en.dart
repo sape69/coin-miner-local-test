@@ -382,6 +382,9 @@ const Map<String, String> enTranslations = {
   'loginFillFields':
       'Enter your email and password.',
 
+  'registrationFillFields':
+      'Please fill in all required fields.',
+
   'loginInvalidEmail':
       'The email address is not valid.',
 
@@ -1083,15 +1086,6 @@ const Map<String, String> enTranslations = {
 
   'deleteAccountButton':
       'DELETE ACCOUNT',
-
-  'cannotAccessApp':
-      'Cannot access the app?',
-
-  'cannotAccessAppDescription':
-      'If you cannot access the app, you can submit an account deletion request through our public deletion page.',
-
-  'openAccountDeletionPage':
-      'OPEN ACCOUNT DELETION PAGE',
 
   'accountDeletionPermanent':
       'Account deletion is permanent and cannot be undone.',
