@@ -832,7 +832,7 @@ class _RegisterPageState extends State<RegisterPage> {
         password.isEmpty ||
         confirmPassword.isEmpty) {
       _message(
-        _t('loginFillFields'),
+        _t('registrationFillFields'),
       );
 
       return;
