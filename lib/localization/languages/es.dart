@@ -397,6 +397,9 @@ const Map<String, String> esTranslations = {
   'loginFillFields':
       'Introduce tu correo electrónico y contraseña.',
 
+  'registrationFillFields':
+      'Completa todos los campos obligatorios.',
+
   'loginInvalidEmail':
       'La dirección de correo electrónico no es válida.',
 
@@ -1092,15 +1095,6 @@ const Map<String, String> esTranslations = {
 
   'deleteAccountButton':
       'ELIMINAR CUENTA',
-
-  'cannotAccessApp':
-      '¿No puedes acceder a la aplicación?',
-
-  'cannotAccessAppDescription':
-      'Si no puedes acceder a la aplicación, puedes enviar una solicitud de eliminación de cuenta desde nuestra página pública.',
-
-  'openAccountDeletionPage':
-      'ABRIR PÁGINA DE ELIMINACIÓN',
 
   'accountDeletionPermanent':
       'La eliminación de la cuenta es permanente y no se puede deshacer.',
