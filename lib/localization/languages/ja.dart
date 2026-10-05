@@ -456,6 +456,9 @@ const Map<String, String> jaTranslations = {
   'registrationFailed':
       'アカウントの登録に失敗しました。',
 
+  'registrationFillFields':
+      '必須項目をすべて入力してください。',
+
   // ============================================================
   // 🔗 REFERRAL REGISTRATION
   // ============================================================
@@ -1090,15 +1093,6 @@ const Map<String, String> jaTranslations = {
 
   'deleteAccountButton':
       'アカウントを削除',
-
-  'cannotAccessApp':
-      'アプリにアクセスできませんか？',
-
-  'cannotAccessAppDescription':
-      'アプリにアクセスできない場合は、公開アカウント削除ページから削除リクエストを送信できます。',
-
-  'openAccountDeletionPage':
-      'アカウント削除ページを開く',
 
   'accountDeletionPermanent':
       'アカウントの削除は永久的で、元に戻せません。',
