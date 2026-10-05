@@ -456,6 +456,9 @@ const Map<String, String> frTranslations = {
   'registrationFailed':
       'Impossible de créer le compte.',
 
+  'registrationFillFields':
+      'Remplissez tous les champs obligatoires.',
+
   'referralCode':
       'Code de parrainage',
 
@@ -1086,15 +1089,6 @@ const Map<String, String> frTranslations = {
 
   'deleteAccountButton':
       'SUPPRIMER LE COMPTE',
-
-  'cannotAccessApp':
-      'Vous ne pouvez pas accéder à l’application ?',
-
-  'cannotAccessAppDescription':
-      'Si vous ne pouvez pas accéder à l’application, vous pouvez envoyer une demande de suppression via notre page publique.',
-
-  'openAccountDeletionPage':
-      'OUVRIR LA PAGE DE SUPPRESSION',
 
   'accountDeletionPermanent':
       'La suppression du compte est définitive et irréversible.',
