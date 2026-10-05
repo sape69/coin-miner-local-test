@@ -456,6 +456,9 @@ const Map<String, String> viTranslations = {
   'registrationFailed':
       'Đăng ký tài khoản thất bại.',
 
+  'registrationFillFields':
+      'Vui lòng điền đầy đủ các trường bắt buộc.',
+
   'referralCode':
       'Mã giới thiệu',
 
@@ -1086,15 +1089,6 @@ const Map<String, String> viTranslations = {
 
   'deleteAccountButton':
       'XÓA TÀI KHOẢN',
-
-  'cannotAccessApp':
-      'Không thể truy cập ứng dụng?',
-
-  'cannotAccessAppDescription':
-      'Nếu bạn không thể truy cập ứng dụng, bạn có thể gửi yêu cầu xóa tài khoản qua trang xóa tài khoản công khai của chúng tôi.',
-
-  'openAccountDeletionPage':
-      'MỞ TRANG XÓA TÀI KHOẢN',
 
   'accountDeletionPermanent':
       'Việc xóa tài khoản là vĩnh viễn và không thể hoàn tác.',
