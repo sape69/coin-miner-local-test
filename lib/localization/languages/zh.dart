@@ -449,6 +449,9 @@ const Map<String, String> zhTranslations = {
   'registrationFailed':
       '账户创建失败。',
 
+  'registrationFillFields':
+      '请填写所有必填字段。',
+
   'referralCode':
       '推荐码',
 
@@ -1079,15 +1082,6 @@ const Map<String, String> zhTranslations = {
 
   'deleteAccountButton':
       '删除账户',
-
-  'cannotAccessApp':
-      '无法访问应用？',
-
-  'cannotAccessAppDescription':
-      '如果你无法访问应用，可以通过我们的公开账户删除页面提交删除请求。',
-
-  'openAccountDeletionPage':
-      '打开账户删除页面',
 
   'accountDeletionPermanent':
       '账户删除是永久性的，无法撤销。',
