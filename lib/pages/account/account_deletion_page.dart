@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../localization.dart';
 
@@ -7,15 +6,13 @@ import '../../localization.dart';
 // 🐱 STELLURIINI - ACCOUNT DELETION PAGE
 // ============================================================
 //
-// Account deletion options.
+// Account deletion page.
 //
-// Provides:
-// - In-app account deletion
-// - External account deletion request page
+// Account deletion is available only to authenticated users
+// inside the Stelluriini application.
 //
-// IMPORTANT:
 // The actual Firebase account deletion is handled by HomePage.
-// This page only presents the account deletion options.
+// This page only presents the account deletion action.
 //
 // ============================================================
 
@@ -36,13 +33,6 @@ class AccountDeletionPage extends StatelessWidget {
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
   static const Color deleteAccountColor = Color(0xFFFF6B7A);
-
-  // ============================================================
-  // 🔗 EXTERNAL DELETION PAGE
-  // ============================================================
-
-  static const String externalDeletionUrl =
-      'https://stelluriini.web.app/account-deletion.html';
 
   // ============================================================
   // 🌐 LANGUAGE
@@ -71,33 +61,6 @@ class AccountDeletionPage extends StatelessWidget {
 
   String _t(String key) {
     return _localization.get(key);
-  }
-
-  // ============================================================
-  // 🌐 OPEN EXTERNAL DELETION PAGE
-  // ============================================================
-
-  Future<void> _openExternalDeletionPage() async {
-    final Uri uri = Uri.parse(
-      externalDeletionUrl,
-    );
-
-    try {
-      final bool launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!launched) {
-        throw Exception(
-          'Unable to open account deletion page.',
-        );
-      }
-    } catch (error) {
-      debugPrint(
-        'Account deletion page could not be opened: $error',
-      );
-    }
   }
 
   // ============================================================
@@ -231,102 +194,6 @@ class AccountDeletionPage extends StatelessWidget {
   }
 
   // ============================================================
-  // 🌐 EXTERNAL REQUEST CARD
-  // ============================================================
-
-  Widget _buildExternalRequestCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: purpleAccentColor.withValues(
-            alpha: 0.28,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: purpleAccentColor.withValues(
-                    alpha: 0.12,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.language_rounded,
-                  color: purpleAccentColor,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  _t('cannotAccessApp'),
-                  style: const TextStyle(
-                    color: primaryTextColor,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _t('cannotAccessAppDescription'),
-            style: const TextStyle(
-              color: secondaryTextColor,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _openExternalDeletionPage,
-              icon: const Icon(
-                Icons.open_in_new_rounded,
-              ),
-              label: Text(
-                _t('openAccountDeletionPage'),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: pinkAccentColor,
-                side: BorderSide(
-                  color: pinkAccentColor.withValues(
-                    alpha: 0.55,
-                  ),
-                ),
-                minimumSize: const Size(
-                  double.infinity,
-                  52,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
   // ⚠️ INFORMATION CARD
   // ============================================================
 
@@ -419,8 +286,6 @@ class AccountDeletionPage extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               _buildInAppDeleteCard(),
-              const SizedBox(height: 18),
-              _buildExternalRequestCard(),
               const SizedBox(height: 18),
               _buildInformationCard(),
             ],
