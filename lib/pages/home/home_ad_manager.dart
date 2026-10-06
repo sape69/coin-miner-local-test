@@ -57,12 +57,8 @@ class HomeAdManager extends ChangeNotifier {
   // 🔁 AUTOMATIC RETRY
   // ============================================================
 
-  // Kuinka monta latausyritystä tehdään yhden käyttäjän
-  // painalluksen aikana ennen kuin ilmoitetaan ettei mainosta
-  // ole saatavilla.
   static const int maxAdLoadAttempts = 3;
 
-  // Pieni tauko epäonnistuneen latauksen jälkeen.
   static const Duration adRetryDelay =
       Duration(milliseconds: 700);
 
@@ -124,6 +120,12 @@ class HomeAdManager extends ChangeNotifier {
   bool _consentCheckCompleted = false;
 
   Future<bool>? _consentCheckFuture;
+
+  // ============================================================
+  // 🔒 UMP PRIVACY OPTIONS
+  // ============================================================
+
+  bool _privacyOptionsRequired = false;
 
   // ============================================================
   // 🔒 FLOW PROTECTION
@@ -198,6 +200,9 @@ class HomeAdManager extends ChangeNotifier {
 
   bool get consentCheckCompleted =>
       _consentCheckCompleted;
+
+  bool get privacyOptionsRequired =>
+      _privacyOptionsRequired;
 
   // ============================================================
   // 🔔 NOTIFY
@@ -282,6 +287,29 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
+      // ========================================================
+      // 🔒 PRIVACY OPTIONS REQUIREMENT
+      // ========================================================
+
+      final PrivacyOptionsRequirementStatus
+          privacyOptionsStatus =
+          await ConsentInformation
+              .instance
+              .getPrivacyOptionsRequirementStatus();
+
+      _privacyOptionsRequired =
+          privacyOptionsStatus ==
+              PrivacyOptionsRequirementStatus.required;
+
+      debugPrint(
+        '🐱 [ADMOB] Privacy options required: '
+        '$_privacyOptionsRequired',
+      );
+
+      // ========================================================
+      // 📋 SHOW REQUIRED CONSENT FORM
+      // ========================================================
+
       final Completer<FormError?>
           formCompleter =
           Completer<FormError?>();
@@ -346,6 +374,9 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
+      _privacyOptionsRequired =
+          false;
+
       try {
         final bool canRequest =
             await ConsentInformation
@@ -360,6 +391,7 @@ class HomeAdManager extends ChangeNotifier {
 
         if (canRequest) {
           _notify();
+
           return true;
         }
       } catch (fallbackError) {
@@ -383,12 +415,123 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
+  // 🔒 SHOW PRIVACY OPTIONS
+  // ============================================================
+
+  void showPrivacyOptionsForm() {
+    if (_disposed) {
+      return;
+    }
+
+    if (!_privacyOptionsRequired) {
+      debugPrint(
+        '🐱 [ADMOB] Privacy options form is not required.',
+      );
+
+      return;
+    }
+
+    debugPrint(
+      '🐱 [ADMOB] Opening privacy options form.',
+    );
+
+    unawaited(
+      ConsentForm.showPrivacyOptionsForm(
+        (
+          FormError? formError,
+        ) {
+          if (formError != null) {
+            debugPrint(
+              '❌ [ADMOB] Privacy options form error: '
+              '${formError.errorCode} '
+              '${formError.message}',
+            );
+          } else {
+            debugPrint(
+              '✅ [ADMOB] Privacy options form dismissed.',
+            );
+          }
+
+          if (!_disposed) {
+            unawaited(
+              _refreshConsentAfterPrivacyOptions(),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  // ============================================================
+  // 🔄 REFRESH CONSENT AFTER PRIVACY OPTIONS
+  // ============================================================
+
+  Future<void> _refreshConsentAfterPrivacyOptions() async {
+    if (_disposed) {
+      return;
+    }
+
+    try {
+      final bool canRequest =
+          await ConsentInformation
+              .instance
+              .canRequestAds();
+
+      if (_disposed) {
+        return;
+      }
+
+      final PrivacyOptionsRequirementStatus
+          privacyOptionsStatus =
+          await ConsentInformation
+              .instance
+              .getPrivacyOptionsRequirementStatus();
+
+      _canRequestAds =
+          canRequest;
+
+      _privacyOptionsRequired =
+          privacyOptionsStatus ==
+              PrivacyOptionsRequirementStatus.required;
+
+      _consentCheckCompleted =
+          true;
+
+      // Vanha mainos ei saa jäädä käyttöön,
+      // jos käyttäjän consent-asetus muuttui.
+      _disposeCurrentAd();
+
+      _notify();
+
+      if (canRequest) {
+        final User? user =
+            _auth.currentUser;
+
+        if (user != null &&
+            !_disposed) {
+          await loadRewardedAd(
+            purpose:
+                miningStartPurpose,
+            notifyOnLoadError: false,
+          );
+        }
+      }
+    } catch (error) {
+      debugPrint(
+        '❌ [ADMOB] Consent refresh after privacy options failed: '
+        '$error',
+      );
+    }
+  }
+
+  // ============================================================
   // 📺 INITIALIZE ADMOB
   // ============================================================
 
   Future<void> _initializeAdMob() async {
     if (_mobileAdsInitialization != null) {
       await _mobileAdsInitialization;
+
       return;
     }
 
@@ -562,18 +705,6 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
   // ⏳ WAIT FOR AD
   // ============================================================
-  //
-  // TÄRKEÄ MUUTOS:
-  //
-  // Jos ensimmäinen AdMob-lataus epäonnistuu,
-  // emme heti ilmoita käyttäjälle "No available".
-  //
-  // Yritämme automaattisesti uudelleen.
-  //
-  // Näin käyttäjän ei tarvitse painaa
-  // ALOITA LOUHINTA -nappia useita kertoja.
-  //
-  // ============================================================
 
   Future<bool> waitForRewardedAd({
     required String purpose,
@@ -602,10 +733,6 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    // ----------------------------------------------------------
-    // Jos oikea mainos on jo valmis
-    // ----------------------------------------------------------
-
     if (_isReadyFor(
       purpose,
       user.uid,
@@ -617,10 +744,6 @@ class HomeAdManager extends ChangeNotifier {
 
       return true;
     }
-
-    // ----------------------------------------------------------
-    // Yritetään automaattisesti useamman kerran
-    // ----------------------------------------------------------
 
     for (
       int attempt = 1;
@@ -656,10 +779,6 @@ class HomeAdManager extends ChangeNotifier {
         '$purpose',
       );
 
-      // --------------------------------------------------------
-      // Jos toinen purpose latautuu, perutaan vanha lataus
-      // --------------------------------------------------------
-
       if (_adLoading &&
           _loadingPurpose !=
               purpose) {
@@ -670,10 +789,6 @@ class HomeAdManager extends ChangeNotifier {
         _loadingPurpose = '';
       }
 
-      // --------------------------------------------------------
-      // Vanha väärän purpose-mainos pois
-      // --------------------------------------------------------
-
       if (_rewardedAd != null &&
           !_isReadyFor(
             purpose,
@@ -682,20 +797,12 @@ class HomeAdManager extends ChangeNotifier {
         _disposeCurrentAd();
       }
 
-      // --------------------------------------------------------
-      // Käynnistä lataus
-      // --------------------------------------------------------
-
       if (!_adLoading) {
         await loadRewardedAd(
           purpose: purpose,
           notifyOnLoadError: true,
         );
       }
-
-      // --------------------------------------------------------
-      // Odota tämän latausyrityksen valmistumista
-      // --------------------------------------------------------
 
       final Stopwatch stopwatch =
           Stopwatch()..start();
@@ -727,10 +834,6 @@ class HomeAdManager extends ChangeNotifier {
           return true;
         }
 
-        // ------------------------------------------------------
-        // Lataus epäonnistui
-        // ------------------------------------------------------
-
         if (!_adLoading ||
             _loadingPurpose !=
                 purpose) {
@@ -741,10 +844,6 @@ class HomeAdManager extends ChangeNotifier {
           adCheckInterval,
         );
       }
-
-      // --------------------------------------------------------
-      // Tarkista vielä kerran ennen retryä
-      // --------------------------------------------------------
 
       final User? retryUser =
           _auth.currentUser;
@@ -760,10 +859,6 @@ class HomeAdManager extends ChangeNotifier {
       if (_disposed) {
         return false;
       }
-
-      // --------------------------------------------------------
-      // Ei ollut valmis → uusi yritys
-      // --------------------------------------------------------
 
       if (attempt <
           maxAdLoadAttempts) {
@@ -976,10 +1071,6 @@ class HomeAdManager extends ChangeNotifier {
       ),
     );
 
-    // ----------------------------------------------------------
-    // ⏱️ LOAD TIMEOUT
-    // ----------------------------------------------------------
-
     unawaited(
       Future<void>.delayed(
         adLoadTimeout,
@@ -1037,6 +1128,7 @@ class HomeAdManager extends ChangeNotifier {
         requestId !=
             _loadRequestId) {
       ad.dispose();
+
       return;
     }
 
@@ -1064,18 +1156,6 @@ class HomeAdManager extends ChangeNotifier {
 
     // ==========================================================
     // 🔐 ADMOB SERVER-SIDE VERIFICATION
-    // ==========================================================
-    //
-    // UID + PURPOSE lähetetään AdMob SSV customData-kenttään.
-    //
-    // Esimerkiksi:
-    //
-    // abc123:mining_start
-    //
-    // tai:
-    //
-    // abc123:power_boost
-    //
     // ==========================================================
 
     try {
@@ -1113,6 +1193,7 @@ class HomeAdManager extends ChangeNotifier {
         requestId !=
             _loadRequestId) {
       ad.dispose();
+
       return;
     }
 
@@ -1475,10 +1556,6 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    // ==========================================================
-    // 🔒 PREVENT DUPLICATE FLOWS
-    // ==========================================================
-
     if (purpose ==
             miningStartPurpose &&
         _miningAdFlowActive) {
@@ -1527,10 +1604,6 @@ class HomeAdManager extends ChangeNotifier {
     RewardedAd? ad;
 
     try {
-      // --------------------------------------------------------
-      // STEP 1
-      // --------------------------------------------------------
-
       final bool ready =
           await waitForRewardedAd(
         purpose:
@@ -1565,10 +1638,6 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
-      // --------------------------------------------------------
-      // STEP 2
-      // --------------------------------------------------------
-
       ad = _rewardedAd;
 
       if (ad == null) {
@@ -1580,20 +1649,11 @@ class HomeAdManager extends ChangeNotifier {
         return false;
       }
 
-      // --------------------------------------------------------
-      // MOVE AD OWNERSHIP
-      // --------------------------------------------------------
-
       _clearAdState();
 
       _notify();
 
       bool rewardEarned = false;
-
-      // --------------------------------------------------------
-      // STEP 3
-      // SHOW
-      // --------------------------------------------------------
 
       ad.show(
         onUserEarnedReward:
@@ -1727,6 +1787,9 @@ class HomeAdManager extends ChangeNotifier {
     _rewardedAdPurpose = '';
 
     _rewardedAdUserUid = '';
+
+    _privacyOptionsRequired =
+        false;
 
     try {
       ad?.dispose();
