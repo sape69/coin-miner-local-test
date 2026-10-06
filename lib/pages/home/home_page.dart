@@ -2045,9 +2045,81 @@ class _HomePageState extends State<HomePage>
               letterSpacing: 0.3,
             ),
           ),
+          if (_adManager.privacyOptionsRequired) ...[
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: _showPrivacyOptions,
+              icon: const Icon(
+                Icons.privacy_tip_outlined,
+                size: 18,
+              ),
+              label: Text(
+                _privacyOptionsLabel(),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: accentColor,
+                side: BorderSide(
+                  color: accentColor.withValues(
+                    alpha: 0.45,
+                  ),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 11,
+                ),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  // ============================================================
+  // 🔐 PRIVACY OPTIONS
+  // ============================================================
+
+  void _showPrivacyOptions() {
+    if (!_adManager.privacyOptionsRequired) {
+      return;
+    }
+
+    _adManager.showPrivacyOptionsForm();
+  }
+
+  String _privacyOptionsLabel() {
+    switch (widget.languageCode) {
+      case 'fi':
+        return 'Tietosuoja-asetukset';
+
+      case 'de':
+        return 'Datenschutzeinstellungen';
+
+      case 'es':
+        return 'Opciones de privacidad';
+
+      case 'fr':
+        return 'Options de confidentialité';
+
+      case 'zh':
+        return '隐私选项';
+
+      case 'vi':
+        return 'Tùy chọn quyền riêng tư';
+
+      case 'ja':
+        return 'プライバシー設定';
+
+      case 'en':
+      default:
+        return 'Privacy options';
+    }
   }
 
   // ============================================================
