@@ -116,8 +116,8 @@ async function sendDeletionRequestEmail(email, requestId) {
       "IMPORTANT:",
       "Your account has NOT been deleted by this request.",
       "",
-      "If you did not make this request, you can safely ignore",
-      "this email.",
+      "The account will be deleted manually after this request",
+      "has been reviewed.",
       "",
       "Stelluriini",
     ].join("\n"),
@@ -194,8 +194,8 @@ async function sendDeletionRequestEmail(email, requestId) {
           </p>
 
           <p style="color:#BDB4D1;">
-            If you did not make this request, you can safely ignore
-            this email.
+            The account will be deleted manually after this request
+            has been reviewed.
           </p>
 
           <p
