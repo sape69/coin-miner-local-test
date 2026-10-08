@@ -1,1128 +1,1131 @@
 const Map<String, String> fiTranslations = {
-  // ============================================================
-  // 🌍 GENERAL
-  // ============================================================
-
-  'appTitle': 'STELLURIINI',
-  'home': 'Etusivu',
-  'about': 'Tietoa',
-  'aboutStelluriini': 'Tietoa Stelluriinista',
-  'history': 'Tapahtumahistoria',
-  'roadmap': 'Tiekartta',
-  'token': 'STL Token',
-  'tokenomics': 'Tokenomiikka',
-  'whitepaper': 'Whitepaper',
-  'whitePaper': 'White Paper',
-  'language': 'Kieli',
-  'selectLanguage': 'Valitse kieli',
-  'logout': 'Kirjaudu ulos',
-  'menu': 'Valikko',
-  'refresh': 'Päivitä',
-  'ready': 'Valmis',
-  'close': 'Sulje',
-  'cancel': 'Peruuta',
-  'error': 'Virhe',
-  'success': 'Onnistui',
-  'comingSoon': 'Tulossa pian',
-  'information': 'Tietoa',
+// ============================================================
+// 🌍 GENERAL
+// ============================================================
+
+'appTitle': 'STELLURIINI',
+'home': 'Etusivu',
+'about': 'Tietoa',
+'aboutStelluriini': 'Tietoa Stelluriinista',
+'history': 'Tapahtumahistoria',
+'roadmap': 'Tiekartta',
+'token': 'STL Token',
+'tokenomics': 'Tokenomiikka',
+'whitepaper': 'Whitepaper',
+'whitePaper': 'White Paper',
+'language': 'Kieli',
+'selectLanguage': 'Valitse kieli',
+'logout': 'Kirjaudu ulos',
+'menu': 'Valikko',
+'refresh': 'Päivitä',
+'ready': 'Valmis',
+'close': 'Sulje',
+'cancel': 'Peruuta',
+'error': 'Virhe',
+'success': 'Onnistui',
+'comingSoon': 'Tulossa pian',
+'information': 'Tietoa',
 
-  // ============================================================
-  // 💰 BALANCE / MINING
-  // ============================================================
+// ============================================================
+// 💰 BALANCE / MINING
+// ============================================================
 
-  'balance': 'Saldo',
-  'mining': 'Louhinta',
-  'miningRate': 'Louhintanopeus',
-  'hashRate': 'Hash Rate',
-  'effectiveHashRate': 'Tehokas Hash Rate',
-  'effectiveHashRateLabel': 'Tehokas Hash Rate',
+'balance': 'Saldo',
+'mining': 'Louhinta',
+'miningRate': 'Louhintanopeus',
+'hashRate': 'Hash Rate',
+'effectiveHashRate': 'Tehokas Hash Rate',
+'effectiveHashRateLabel': 'Tehokas Hash Rate',
 
-  'dailyHashRateLabel': 'Päivittäinen Hash Rate',
-  'dailyHashRateDay': 'Päivä {day}',
-  'dailyHashRateMaximum': 'Maksimi: {rate} HR',
-  'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
+'dailyHashRateLabel': 'Päivittäinen Hash Rate',
+'dailyHashRateDay': 'Päivä {day}',
+'dailyHashRateMaximum': 'Maksimi: {rate} HR',
+'dailyHashRateSuccess': 'Päivän {day} Hash Rate: {rate} HR',
 
-  // ============================================================
-  // 🐱 STELLA MINING
-  // ============================================================
+// ============================================================
+// 🐱 STELLA MINING
+// ============================================================
 
-  'stellaMiningTitle': 'Stellan louhinta',
+'stellaMiningTitle': 'Stellan louhinta',
 
-  'stellaMiningSubtitle':
-      'Stella työskentelee puolestasi. 🐱⛏️',
+'stellaMiningSubtitle':
+'Stella työskentelee puolestasi. 🐱⛏️',
 
-  'stellaMiningProgress':
-      'Stellan louhinnan edistyminen',
+'stellaMiningProgress':
+'Stellan louhinnan edistyminen',
 
-  'miningProgress':
-      'Louhinnan edistyminen',
+'miningProgress':
+'Louhinnan edistyminen',
 
-  'miningProgressStella':
-      'Stellan louhinnan edistyminen',
+'miningProgressStella':
+'Stellan louhinnan edistyminen',
 
-  'stlPerHour':
-      'STL tunnissa',
+'stlPerHour':
+'STL tunnissa',
 
-  'hashRateBonus':
-      'Hash Rate -bonus',
+'hashRateBonus':
+'Hash Rate -bonus',
 
-  'startMining':
-      'ALOITA LOUHINTA',
+'startMining':
+'ALOITA LOUHINTA',
 
-  'startMiningFirst':
-      'Aloita louhinta ensin.',
+'startMiningFirst':
+'Aloita louhinta ensin.',
 
-  'claimMining':
-      'KERÄÄ STL',
+'claimMining':
+'KERÄÄ STL',
 
-  'watchAdStartMining':
-      'KATSO MAINOS JA ALOITA LOUHINTA',
+'watchAdStartMining':
+'KATSO MAINOS JA ALOITA LOUHINTA',
 
-  'watchAdCollectReward':
-      'KATSO MAINOS JA KERÄÄ PALKINTO',
+'watchAdCollectReward':
+'KATSO MAINOS JA KERÄÄ PALKINTO',
 
-  'miningActive':
-      'Louhinta käynnissä',
+'miningActive':
+'Louhinta käynnissä',
 
-  'miningComplete':
-      'Louhintajakso valmis',
+'miningComplete':
+'Louhintajakso valmis',
 
-  'miningFinished':
-      'Louhinta valmis',
+'miningFinished':
+'Louhinta valmis',
 
-  'timeRemaining':
-      'Aikaa jäljellä',
+'timeRemaining':
+'Aikaa jäljellä',
 
-  'timeRemainingLabel':
-      'Aikaa jäljellä',
+'timeRemainingLabel':
+'Aikaa jäljellä',
 
-  'remaining':
-      'Aikaa jäljellä: {time}',
+'remaining':
+'Aikaa jäljellä: {time}',
 
-  'timeRemainingText':
-      'Aikaa jäljellä: {time}',
+'timeRemainingText':
+'Aikaa jäljellä: {time}',
 
-  'miningTimeRemaining':
-      'Aikaa jäljellä: {time}',
+'miningTimeRemaining':
+'Aikaa jäljellä: {time}',
 
-  'waitingForStella':
-      'Odotetaan Stellaa 🐱💜',
+'waitingForStella':
+'Odotetaan Stellaa 🐱💜',
 
-  'streak':
-      'Päiväputki',
+'streak':
+'Päiväputki',
 
-  'days':
-      'päivää',
+'days':
+'päivää',
 
-  'day':
-      'Päivä',
+'day':
+'Päivä',
 
-  // ============================================================
-  // 🎁 DAILY BONUS
-  // ============================================================
+// ============================================================
+// 🎁 DAILY BONUS
+// ============================================================
 
-  'dailyBonus':
-      'Päivittäinen bonus',
+'dailyBonus':
+'Päivittäinen bonus',
 
-  'dailyClaim':
-      'Kerää päivittäinen bonus',
+'dailyClaim':
+'Kerää päivittäinen bonus',
 
-  'dailyReward':
-      'Päivittäinen palkinto',
+'dailyReward':
+'Päivittäinen palkinto',
 
-  'claimedToday':
-      'Kerätty tänään',
+'claimedToday':
+'Kerätty tänään',
 
-  'alreadyClaimed':
-      'Olet jo kerännyt tämän päivän palkinnon.',
+'alreadyClaimed':
+'Olet jo kerännyt tämän päivän palkinnon.',
 
-  'dailyMiningPowerBoost':
-      'Päivittäinen louhintavoiman tehostus',
+'dailyMiningPowerBoost':
+'Päivittäinen louhintavoiman tehostus',
 
-  'dailyMiningPowerBoostShort':
-      'Louhintavoiman tehostus',
+'dailyMiningPowerBoostShort':
+'Louhintavoiman tehostus',
 
-  'done':
-      '✓ VALMIS',
+'done':
+'✓ VALMIS',
 
-  'claiming':
-      'KERÄTÄÄN...',
+'claiming':
+'KERÄTÄÄN...',
 
-  'claimHashRate':
-      'KERÄÄ +1 HASH RATE',
+'claimHashRate':
+'KERÄÄ +1 HASH RATE',
 
-  'comeBackTomorrow':
-      'Palaa huomenna hakemaan lisää Hash Ratea 🐱',
+'comeBackTomorrow':
+'Palaa huomenna hakemaan lisää Hash Ratea 🐱',
 
-  'claimDailyBonusInfo':
-      'Kerää päivittäinen bonus kasvattaaksesi louhintavoimaa',
+'claimDailyBonusInfo':
+'Kerää päivittäinen bonus kasvattaaksesi louhintavoimaa',
 
-  // ============================================================
-  // 📺 ADS
-  // ============================================================
+// ============================================================
+// 📺 ADS
+// ============================================================
 
-  'watchAd':
-      'KATSO MAINOS',
+'watchAd':
+'KATSO MAINOS',
 
-  'watchAndEarn':
-      'KATSO & ANSAITSE',
+'watchAndEarn':
+'KATSO & ANSAITSE',
 
-  'watchAdSubtitle':
-      'Katso mainos ja anna Stellalle Power Boost. 🐱⚡',
+'watchAdSubtitle':
+'Katso mainos ja anna Stellalle Power Boost. 🐱⚡',
 
-  'loadingAd':
-      'LADATAAN MAINOSTA...',
+'loadingAd':
+'LADATAAN MAINOSTA...',
 
-  'adLoading':
-      'LADATAAN MAINOSTA...',
+'adLoading':
+'LADATAAN MAINOSTA...',
 
-  'prepareAd':
-      'Valmistellaan mainosta...',
+'prepareAd':
+'Valmistellaan mainosta...',
 
-  'adNotAvailable':
-      'Mainos ei ole tällä hetkellä saatavilla.',
+'adNotAvailable':
+'Mainos ei ole tällä hetkellä saatavilla.',
 
-  'adLoadError':
-      'Mainoksen lataaminen epäonnistui.',
+'adLoadError':
+'Mainoksen lataaminen epäonnistui.',
 
-  'adShowError':
-      'Mainoksen näyttäminen epäonnistui.',
+'adShowError':
+'Mainoksen näyttäminen epäonnistui.',
 
-  'adReward':
-      '+{amount} HR',
+'adReward':
+'+{amount} HR',
 
-  // ============================================================
-  // ⚡ STELLA POWER BOOST
-  // ============================================================
+// ============================================================
+// ⚡ STELLA POWER BOOST
+// ============================================================
 
-  'powerBoost':
-      'Stellan Power Boost',
+'powerBoost':
+'Stellan Power Boost',
 
-  'powerBoostOffer':
-      'Katso mainos ja aktivoi +{amount} HR Stellan Power Boost 4 tunniksi. 🐱⚡',
+'powerBoostOffer':
+'Katso mainos ja aktivoi +{amount} HR Stellan Power Boost 4 tunniksi. 🐱⚡',
 
-  'powerBoostActive':
-      'Power Boost aktiivinen',
+'powerBoostActive':
+'Power Boost aktiivinen',
 
-  'powerBoostActiveTitle':
-      'Stellan Power Boost on aktiivinen! 🐱💜',
+'powerBoostActiveTitle':
+'Stellan Power Boost on aktiivinen! 🐱💜',
 
-  'powerBoostActiveMessage':
-      '+{amount} HR on käytössä louhintajakson aikana.',
+'powerBoostActiveMessage':
+'+{amount} HR on käytössä louhintajakson aikana.',
 
-  'powerBoostAlreadyActive':
-      'Power Boost on jo aktiivinen.',
+'powerBoostAlreadyActive':
+'Power Boost on jo aktiivinen.',
 
-  'nextPowerBoostMessage':
-      'Seuraava Power Boost on saatavilla, kun nykyinen boost päättyy.',
+'nextPowerBoostMessage':
+'Seuraava Power Boost on saatavilla, kun nykyinen boost päättyy.',
 
-  'nextAdAfterBoost':
-      'Seuraava mainos on saatavilla boostin päätyttyä.',
+'nextAdAfterBoost':
+'Seuraava mainos on saatavilla boostin päätyttyä.',
 
-  'maxBoostsInfo':
-      'Power Boostien päivittäinen enimmäismäärä on saavutettu.',
+'maxBoostsInfo':
+'Power Boostien päivittäinen enimmäismäärä on saavutettu.',
 
-  'adsToday':
-      'Mainoksia tänään: {current}/{max}',
+'adsToday':
+'Mainoksia tänään: {current}/{max}',
 
-  'dailyLimitReached':
-      'Päivittäinen mainosraja on saavutettu.',
+'dailyLimitReached':
+'Päivittäinen mainosraja on saavutettu.',
 
-  'powerBoostReward':
-      'Stellan Power Boost: +{amount} HR',
+'powerBoostReward':
+'Stellan Power Boost: +{amount} HR',
 
-  'adRewardDuplicate':
-      'Tämä mainospalkinto on jo käsitelty.',
+'adRewardDuplicate':
+'Tämä mainospalkinto on jo käsitelty.',
 
-  'powerBoostFailed':
-      'Power Boostin aktivointi epäonnistui.',
+'powerBoostFailed':
+'Power Boostin aktivointi epäonnistui.',
 
-  'testAdRewardFailed':
-      'Mainospalkinnon käsittely epäonnistui.',
+'testAdRewardFailed':
+'Mainospalkinnon käsittely epäonnistui.',
 
-  // ============================================================
-  // 🌐 SERVER
-  // ============================================================
+// ============================================================
+// 🌐 SERVER
+// ============================================================
 
-  'serverConnectionFailed':
-      'Palvelinyhteys epäonnistui.',
+'serverConnectionFailed':
+'Palvelinyhteys epäonnistui.',
 
-  // ============================================================
-  // 👤 GENERAL UI
-  // ============================================================
+// ============================================================
+// 👤 GENERAL UI
+// ============================================================
 
-  'profile':
-      'Profiili',
+'profile':
+'Profiili',
 
-  'loading':
-      'Ladataan...',
+'loading':
+'Ladataan...',
 
-  'active':
-      'Aktiivinen',
+'active':
+'Aktiivinen',
 
-  'welcome':
-      'Tervetuloa',
+'welcome':
+'Tervetuloa',
 
-  'loginRequired':
-      'Kirjaudu sisään jatkaaksesi.',
+'loginRequired':
+'Kirjaudu sisään jatkaaksesi.',
 
-  // ============================================================
-  // 🐱 STELLA
-  // ============================================================
+// ============================================================
+// 🐱 STELLA
+// ============================================================
 
-  'catFact':
-      'Stellan kissafakta',
+'catFact':
+'Stellan kissafakta',
 
-  'stellaFacts':
-      'Stellan kissafakta',
+'stellaFacts':
+'Stellan kissafakta',
 
-  'stellaPower':
-      'Stellan voima',
+'stellaPower':
+'Stellan voima',
 
-  'stellaMining':
-      'Stellan louhinta',
+'stellaMining':
+'Stellan louhinta',
 
-  'stellaWelcome':
-      'Stella on täällä auttamassa sinua. 🐱💜',
+'stellaWelcome':
+'Stella on täällä auttamassa sinua. 🐱💜',
 
-  'stellaIsMining':
-      'Stella louhii',
+'stellaIsMining':
+'Stella louhii',
 
-  'stellaMiningNow':
-      'Stella louhii juuri nyt 🐱⛏️',
+'stellaMiningNow':
+'Stella louhii juuri nyt 🐱⛏️',
 
-  'stellaIsResting':
-      'Stella lepää 🐱💜',
+'stellaIsResting':
+'Stella lepää 🐱💜',
 
-  'stellaWaiting':
-      'Stella odottaa seuraavaa louhintajaksoa',
+'stellaWaiting':
+'Stella odottaa seuraavaa louhintajaksoa',
 
-  'stlReadyToCollect':
-      'STL on valmis kerättäväksi',
+'stlReadyToCollect':
+'STL on valmis kerättäväksi',
 
-  'stlMined':
-      'LOUHITTU STL',
+'stlMined':
+'LOUHITTU STL',
 
-  'stellaIsWorking':
-      'STELLA TYÖSKENTELEE... 🐱⛏️',
+'stellaIsWorking':
+'STELLA TYÖSKENTELEE... 🐱⛏️',
 
-  'stellaIsMiningButton':
-      'LOUHINTA KÄYNNISSÄ',
+'stellaIsMiningButton':
+'LOUHINTA KÄYNNISSÄ',
 
-  'stellaAlreadyMining':
-      'Stella louhii jo. 🐱💜',
+'stellaAlreadyMining':
+'Stella louhii jo. 🐱💜',
 
-  // ============================================================
-  // ⛏️ MINING MESSAGES
-  // ============================================================
+// ============================================================
+// ⛏️ MINING MESSAGES
+// ============================================================
 
-  'miningCollected':
-      'Kerätty {amount} STL',
+'miningCollected':
+'Kerätty {amount} STL',
 
-  'miningStartFailed':
-      'Louhinnan aloittaminen epäonnistui.',
+'miningStartFailed':
+'Louhinnan aloittaminen epäonnistui.',
 
-  'miningStarted':
-      'Stellan louhinta alkoi! 🐱⛏️',
+'miningStarted':
+'Stellan louhinta alkoi! 🐱⛏️',
 
-  'miningCycleStarted':
-      'Stellan uusi louhintajakso alkoi. 🐱💜',
+'miningCycleStarted':
+'Stellan uusi louhintajakso alkoi. 🐱💜',
 
-  'miningCycleComplete':
-      'Stellan louhintajakso on valmis! ✨',
+'miningCycleComplete':
+'Stellan louhintajakso on valmis! ✨',
 
-  'miningReady':
-      'Stellan louhinta on valmis kerättäväksi. 🐾',
+'miningReady':
+'Stellan louhinta on valmis kerättäväksi. 🐾',
 
-  // ============================================================
-  // 💎 TRANSACTIONS
-  // ============================================================
+// ============================================================
+// 💎 TRANSACTIONS
+// ============================================================
 
-  'transactions':
-      'Tapahtumat',
+'transactions':
+'Tapahtumat',
 
-  'noTransactions':
-      'Ei tapahtumia vielä.',
+'noTransactions':
+'Ei tapahtumia vielä.',
 
-  'totalStl':
-      'STL yhteensä',
+'totalStl':
+'STL yhteensä',
 
-  'points':
-      'pistettä',
+'points':
+'pistettä',
 
-  'pointsAdded':
-      'Pisteitä lisätty',
+'pointsAdded':
+'Pisteitä lisätty',
 
-  // ============================================================
-  // 🔄 TEST ACCOUNT
-  // ============================================================
+// ============================================================
+// 🔄 TEST ACCOUNT
+// ============================================================
 
-  'resetAccount':
-      'Nollaa testitili',
+'resetAccount':
+'Nollaa testitili',
 
-  'resetConfirm':
-      'Haluatko varmasti nollata testitilin?',
+'resetConfirm':
+'Haluatko varmasti nollata testitilin?',
 
-  'reset':
-      'Nollaa',
+'reset':
+'Nollaa',
 
-  // ============================================================
-  // 🔐 LOGIN
-  // ============================================================
+// ============================================================
+// 🔐 LOGIN
+// ============================================================
 
-  'email':
-      'Sähköposti',
+'email':
+'Sähköposti',
 
-  'password':
-      'Salasana',
+'password':
+'Salasana',
 
-  'forgotPassword':
-      'Unohditko salasanan?',
+'passwordHint':
+'Vähintään 6 merkkiä',
 
-  'login':
-      'KIRJAUDU SISÄÄN',
+'forgotPassword':
+'Unohditko salasanan?',
 
-  'loggingIn':
-      'KIRJAUDUTAAN...',
+'login':
+'KIRJAUDU SISÄÄN',
 
-  'createAccount':
-      'Ei vielä tiliä? Luo uusi tili',
+'loggingIn':
+'KIRJAUDUTAAN...',
 
-  'loginFillFields':
-      'Anna sähköposti ja salasana.',
+'createAccount':
+'Ei vielä tiliä? Luo uusi tili',
 
-  'registrationFillFields':
-      'Täytä kaikki pakolliset kentät.',
+'loginFillFields':
+'Anna sähköposti ja salasana.',
 
-  'loginInvalidEmail':
-      'Sähköpostiosoite ei ole kelvollinen.',
+'registrationFillFields':
+'Täytä kaikki pakolliset kentät.',
 
-  'loginUserNotFound':
-      'Käyttäjää ei löytynyt.',
+'loginInvalidEmail':
+'Sähköpostiosoite ei ole kelvollinen.',
 
-  'loginInvalidCredentials':
-      'Sähköposti tai salasana on väärä.',
+'loginUserNotFound':
+'Käyttäjää ei löytynyt.',
 
-  'loginUserDisabled':
-      'Tämä käyttäjätili on poistettu käytöstä.',
+'loginInvalidCredentials':
+'Sähköposti tai salasana on väärä.',
 
-  'loginTooManyRequests':
-      'Liian monta yritystä. Yritä myöhemmin uudelleen.',
+'loginUserDisabled':
+'Tämä käyttäjätili on poistettu käytöstä.',
 
-  'loginNetworkError':
-      'Verkkoyhteys epäonnistui.',
+'loginTooManyRequests':
+'Liian monta yritystä. Yritä myöhemmin uudelleen.',
 
-  'loginFailed':
-      'Kirjautuminen epäonnistui',
+'loginNetworkError':
+'Verkkoyhteys epäonnistui.',
 
-  // ============================================================
-  // 📝 REGISTER
-  // ============================================================
+'loginFailed':
+'Kirjautuminen epäonnistui',
 
-  'username':
-      'Käyttäjänimi',
+// ============================================================
+// 📝 REGISTER
+// ============================================================
 
-  'usernameHint':
-      'Esimerkiksi Stella',
+'username':
+'Käyttäjänimi',
 
-  'confirmPassword':
-      'Vahvista salasana',
+'usernameHint':
+'Esimerkiksi Stella – vähintään 3 merkkiä',
 
-  'passwordsDoNotMatch':
-      'Salasanat eivät täsmää.',
+'confirmPassword':
+'Vahvista salasana',
 
-  'passwordTooShort':
-      'Salasanan täytyy sisältää vähintään 6 merkkiä.',
+'passwordsDoNotMatch':
+'Salasanat eivät täsmää.',
 
-  'creatingAccount':
-      'LUODAAN TILI...',
+'passwordTooShort':
+'Salasanan täytyy sisältää vähintään 6 merkkiä.',
 
-  'accountCreated':
-      'Tili luotiin onnistuneesti.',
+'creatingAccount':
+'LUODAAN TILI...',
 
-  'emailAlreadyInUse':
-      'Tämä sähköpostiosoite on jo käytössä.',
+'accountCreated':
+'Tili luotiin onnistuneesti.',
 
-  'passwordTooWeak':
-      'Salasana on liian heikko.',
+'emailAlreadyInUse':
+'Tämä sähköpostiosoite on jo käytössä.',
 
-  'registrationNotAllowed':
-      'Rekisteröityminen ei ole tällä hetkellä sallittua.',
+'passwordTooWeak':
+'Salasana on liian heikko.',
 
-  'registrationFailed':
-      'Tilin luominen epäonnistui.',
+'registrationNotAllowed':
+'Rekisteröityminen ei ole tällä hetkellä sallittua.',
 
-  // ============================================================
-  // 🔗 REFERRAL REGISTRATION
-  // ============================================================
+'registrationFailed':
+'Tilin luominen epäonnistui.',
 
-  'referralCode':
-      'Referral-koodi',
+// ============================================================
+// 🔗 REFERRAL REGISTRATION
+// ============================================================
 
-  'referralCodeOptional':
-      'Valinnainen',
+'referralCode':
+'Referral-koodi',
 
-  'enterReferralCode':
-      'Syötä referral-koodi',
+'referralCodeOptional':
+'Valinnainen',
 
-  'referralCodeHint':
-      'Jos joku kutsui sinut Stelluriiniin, syötä hänen koodinsa tähän.',
+'enterReferralCode':
+'Syötä referral-koodi',
 
-  'referralCodeNotFoundTitle':
-      'Referral-koodia ei löytynyt',
+'referralCodeHint':
+'Jos joku kutsui sinut Stelluriiniin, syötä hänen koodinsa tähän.',
 
-  'referralCodeNotFoundMessage':
-      'Syöttämäsi referral-koodi ei ole voimassa.\n\nHaluatko jatkaa Stelluriini-tilin luomista ilman referral-koodia?',
+'referralCodeNotFoundTitle':
+'Referral-koodia ei löytynyt',
 
-  'changeReferralCode':
-      'Vaihda referral-koodi',
+'referralCodeNotFoundMessage':
+'Syöttämäsi referral-koodi ei ole voimassa.\n\nHaluatko jatkaa Stelluriini-tilin luomista ilman referral-koodia?',
 
-  'continueWithoutReferral':
-      'Jatka ilman referral-koodia',
+'changeReferralCode':
+'Vaihda referral-koodi',
 
-  'referralCodeValidationFailed':
-      'Referral-koodia ei voitu tarkistaa.',
+'continueWithoutReferral':
+'Jatka ilman referral-koodia',
 
-  'referralCodeNetworkError':
-      'Verkkovirhe. Tarkista yhteytesi ja yritä uudelleen.',
+'referralCodeValidationFailed':
+'Referral-koodia ei voitu tarkistaa.',
 
-  'referralCodeInvalid':
-      'Referral-koodi ei ole voimassa.',
+'referralCodeNetworkError':
+'Verkkovirhe. Tarkista yhteytesi ja yritä uudelleen.',
 
-  'referralCodeApplied':
-      'Referral-koodi yhdistettiin onnistuneesti.',
+'referralCodeInvalid':
+'Referral-koodi ei ole voimassa.',
 
-  'referralCodeApplyFailed':
-      'Referral-koodin yhdistäminen epäonnistui.',
+'referralCodeApplied':
+'Referral-koodi yhdistettiin onnistuneesti.',
 
-  // ============================================================
-  // 🔑 FORGOT PASSWORD
-  // ============================================================
+'referralCodeApplyFailed':
+'Referral-koodin yhdistäminen epäonnistui.',
 
-  'passwordResetSent':
-      'Salasanan palautuslinkki lähetettiin sähköpostiisi.',
+// ============================================================
+// 🔑 FORGOT PASSWORD
+// ============================================================
 
-  'passwordResetUserNotFound':
-      'Tälle sähköpostiosoitteelle ei löytynyt käyttäjätiliä.',
+'passwordResetSent':
+'Salasanan palautuslinkki lähetettiin sähköpostiisi.',
 
-  'passwordResetNotAllowed':
-      'Salasanan palautus ei ole tällä hetkellä sallittua.',
+'passwordResetUserNotFound':
+'Tälle sähköpostiosoitteelle ei löytynyt käyttäjätiliä.',
 
-  'passwordResetFailed':
-      'Salasanan palautus epäonnistui.',
+'passwordResetNotAllowed':
+'Salasanan palautus ei ole tällä hetkellä sallittua.',
 
-  'passwordResetDescription':
-      'Anna tilisi sähköpostiosoite, niin lähetämme sinulle salasanan palautuslinkin.',
+'passwordResetFailed':
+'Salasanan palautus epäonnistui.',
 
-  'sending':
-      'LÄHETETÄÄN...',
+'passwordResetDescription':
+'Anna tilisi sähköpostiosoite, niin lähetämme sinulle salasanan palautuslinkin.',
 
-  'sendPasswordReset':
-      'LÄHETÄ PALAUTUSLINKKI',
+'sending':
+'LÄHETETÄÄN...',
 
-  // ============================================================
-  // 📜 TRANSACTION HISTORY
-  // ============================================================
+'sendPasswordReset':
+'LÄHETÄ PALAUTUSLINKKI',
 
-  'transactionHistory':
-      'Tapahtumahistoria',
+// ============================================================
+// 📜 TRANSACTION HISTORY
+// ============================================================
 
-  'stellaActivity':
-      'STELLAN AKTIIVISUUS',
+'transactionHistory':
+'Tapahtumahistoria',
 
-  'latestTransactions':
-      '{count} viimeisintä tapahtumaa',
+'stellaActivity':
+'STELLAN AKTIIVISUUS',
 
-  'dailyStellaBonus':
-      'Stellan päivittäinen bonus',
+'latestTransactions':
+'{count} viimeisintä tapahtumaa',
 
-  'dailyBonusDescription':
-      'Päivittäinen bonus Stellalta',
+'dailyStellaBonus':
+'Stellan päivittäinen bonus',
 
-  'stellaAdReward':
-      'Stellan mainospalkinto',
+'dailyBonusDescription':
+'Päivittäinen bonus Stellalta',
 
-  'adRewardDescription':
-      'Palkinto katsotusta mainoksesta',
+'stellaAdReward':
+'Stellan mainospalkinto',
 
-  'stlTransaction':
-      'STL-tapahtuma',
+'adRewardDescription':
+'Palkinto katsotusta mainoksesta',
 
-  'stelluriiniActivity':
-      'Stelluriini-aktiviteetti',
+'stlTransaction':
+'STL-tapahtuma',
 
-  'transactionBalance':
-      'Saldo: {balance} STL',
+'stelluriiniActivity':
+'Stelluriini-aktiviteetti',
 
-  'tryAgain':
-      'Yritä uudelleen',
+'transactionBalance':
+'Saldo: {balance} STL',
 
-  'noTransactionsYet':
-      'Ei tapahtumia vielä',
+'tryAgain':
+'Yritä uudelleen',
 
-  'rewardsAppearHere':
-      'STL-palkintosi näkyvät täällä. 🐱💜',
+'noTransactionsYet':
+'Ei tapahtumia vielä',
 
-  'startMiningWithStella':
-      'Aloita louhinta Stellan kanssa 🐱⛏️',
+'rewardsAppearHere':
+'STL-palkintosi näkyvät täällä. 🐱💜',
 
-  'historyRecorded':
-      'Louhinta, päivittäiset bonukset ja mainospalkinnot tallennetaan tänne.',
+'startMiningWithStella':
+'Aloita louhinta Stellan kanssa 🐱⛏️',
 
-  'stellaCheckingHistory':
-      'Stella tarkistaa historiaasi... 🐱🔎',
+'historyRecorded':
+'Louhinta, päivittäiset bonukset ja mainospalkinnot tallennetaan tänne.',
 
-  'everyRewardJourney':
-      'Jokainen palkinto on osa Stelluriini-matkaasi. 🐾💜',
+'stellaCheckingHistory':
+'Stella tarkistaa historiaasi... 🐱🔎',
 
-  // ============================================================
-  // ℹ️ ABOUT
-  // ============================================================
+'everyRewardJourney':
+'Jokainen palkinto on osa Stelluriini-matkaasi. 🐾💜',
 
-  'aboutWelcome':
-      'Tervetuloa Stelluriiniin',
+// ============================================================
+// ℹ️ ABOUT
+// ============================================================
 
-  'aboutWelcomeDescription':
-      'Stelluriini on yhteisölähtöinen Solana-projekti, jossa Stella-kissa toimii projektin maskottina ja oppaana.',
+'aboutWelcome':
+'Tervetuloa Stelluriiniin',
 
-  'aboutDescription':
-      'Stelluriini yhdistää yhteisön, digitaalisen tokenin ja Stellan ympärille rakennetun sovelluskokemuksen.',
+'aboutWelcomeDescription':
+'Stelluriini on yhteisölähtöinen Solana-projekti, jossa Stella-kissa toimii projektin maskottina ja oppaana.',
 
-  'meetStella':
-      'Tapaa Stella 🐱💜',
+'aboutDescription':
+'Stelluriini yhdistää yhteisön, digitaalisen tokenin ja Stellan ympärille rakennetun sovelluskokemuksen.',
 
-  'aboutStellaIntro':
-      'Stella on Stelluriinin sydän ja projektin rakastettava kissamaskotti.',
+'meetStella':
+'Tapaa Stella 🐱💜',
 
-  'aboutStellaDescription':
-      'Stella kulkee käyttäjien mukana louhinnassa, palkinnoissa ja Stelluriini-ekosysteemissä.',
+'aboutStellaIntro':
+'Stella on Stelluriinin sydän ja projektin rakastettava kissamaskotti.',
 
-  'community':
-      'Yhteisö',
+'aboutStellaDescription':
+'Stella kulkee käyttäjien mukana louhinnassa, palkinnoissa ja Stelluriini-ekosysteemissä.',
 
-  'stellaCommunity':
-      'Stella • Stelluriini-yhteisö',
+'community':
+'Yhteisö',
 
-  'aboutCommunityDescription':
-      'Stelluriini rakentuu yhteisön ympärille. Tavoitteena on luoda avoin, hauska ja helposti lähestyttävä ekosysteemi.',
+'stellaCommunity':
+'Stella • Stelluriini-yhteisö',
 
-  'builtOnSolana':
-      'Rakennettu Solanalle',
+'aboutCommunityDescription':
+'Stelluriini rakentuu yhteisön ympärille. Tavoitteena on luoda avoin, hauska ja helposti lähestyttävä ekosysteemi.',
 
-  'aboutSolanaDescription':
-      'Stelluriini käyttää Solana-lohkoketjua, joka tarjoaa nopean ja kustannustehokkaan ympäristön STL-tokenille.',
+'builtOnSolana':
+'Rakennettu Solanalle',
 
-  'stlToken':
-      'STL Token',
+'aboutSolanaDescription':
+'Stelluriini käyttää Solana-lohkoketjua, joka tarjoaa nopean ja kustannustehokkaan ympäristön STL-tokenille.',
 
-  'importantInformation':
-      'Tärkeää tietoa',
+'stlToken':
+'STL Token',
 
-  'aboutImportantDescription':
-      'Sovelluksessa tällä hetkellä näkyvä STL-saldo edustaa virtuaalisia sovelluksen sisäisiä pisteitä. Saldo ei ole automaattisesti nostettavissa olevaa kryptovaluuttaa.',
+'importantInformation':
+'Tärkeää tietoa',
 
-  // ============================================================
-  // 🗺️ ROADMAP
-  // ============================================================
+'aboutImportantDescription':
+'Sovelluksessa tällä hetkellä näkyvä STL-saldo edustaa virtuaalisia sovelluksen sisäisiä pisteitä. Saldo ei ole automaattisesti nostettavissa olevaa kryptovaluuttaa.',
 
-  'roadmapTitle':
-      'Stelluriinin tiekartta',
+// ============================================================
+// 🗺️ ROADMAP
+// ============================================================
 
-  'roadmapSubtitle':
-      'Stelluriinin matka vaihe vaiheelta.',
+'roadmapTitle':
+'Stelluriinin tiekartta',
 
-  'roadmapJourney':
-      'Stelluriinin matka',
+'roadmapSubtitle':
+'Stelluriinin matka vaihe vaiheelta.',
 
-  'roadmapJourneyDescription':
-      'Stelluriinin kehitys etenee vaiheittain kohti laajempaa yhteisöä, ekosysteemiä ja uusia käyttötapoja.',
+'roadmapJourney':
+'Stelluriinin matka',
 
-  'roadmapPhase1':
-      'Vaihe 1 – Perusta',
+'roadmapJourneyDescription':
+'Stelluriinin kehitys etenee vaiheittain kohti laajempaa yhteisöä, ekosysteemiä ja uusia käyttötapoja.',
 
-  'roadmapPhase1Title':
-      'Stelluriinin perustaminen',
+'roadmapPhase1':
+'Vaihe 1 – Perusta',
 
-  'roadmapPhase1Description':
-      'Stelluriini-projektin, STL-tokenin ja Stella-maskotin perustaminen.',
+'roadmapPhase1Title':
+'Stelluriinin perustaminen',
 
-  'roadmapPhase2':
-      'Vaihe 2 – Sovellus',
+'roadmapPhase1Description':
+'Stelluriini-projektin, STL-tokenin ja Stella-maskotin perustaminen.',
 
-  'roadmapPhase2Title':
-      'Stelluriini-sovelluksen kehitys',
+'roadmapPhase2':
+'Vaihe 2 – Sovellus',
 
-  'roadmapPhase2Description':
-      'Louhinta, päivittäiset palkinnot, Stella Power Boost ja tapahtumahistoria.',
+'roadmapPhase2Title':
+'Stelluriini-sovelluksen kehitys',
 
-  'roadmapPhase3':
-      'Vaihe 3 – Yhteisö',
+'roadmapPhase2Description':
+'Louhinta, päivittäiset palkinnot, Stella Power Boost ja tapahtumahistoria.',
 
-  'roadmapPhase3Title':
-      'Yhteisön kasvattaminen',
+'roadmapPhase3':
+'Vaihe 3 – Yhteisö',
 
-  'roadmapPhase3Description':
-      'Yhteisön rakentaminen, palautteen kerääminen ja Stelluriini-brändin kehittäminen.',
+'roadmapPhase3Title':
+'Yhteisön kasvattaminen',
 
-  'roadmapPhase4':
-      'Vaihe 4 – Ekosysteemi',
+'roadmapPhase3Description':
+'Yhteisön rakentaminen, palautteen kerääminen ja Stelluriini-brändin kehittäminen.',
 
-  'roadmapPhase4Title':
-      'STL-ekosysteemin laajentaminen',
+'roadmapPhase4':
+'Vaihe 4 – Ekosysteemi',
 
-  'roadmapPhase4Description':
-      'STL-tokenin käyttötapojen ja Stelluriini-ekosysteemin kehittäminen.',
+'roadmapPhase4Title':
+'STL-ekosysteemin laajentaminen',
 
-  'roadmapPhase5':
-      'Vaihe 5 – Tulevaisuus',
+'roadmapPhase4Description':
+'STL-tokenin käyttötapojen ja Stelluriini-ekosysteemin kehittäminen.',
 
-  'roadmapPhase5Title':
-      'Stelluriinin seuraava vaihe',
+'roadmapPhase5':
+'Vaihe 5 – Tulevaisuus',
 
-  'roadmapPhase5Description':
-      'Uusien ominaisuuksien, mahdollisten kumppanuuksien ja yhteisön ideoiden tutkiminen.',
+'roadmapPhase5Title':
+'Stelluriinin seuraava vaihe',
 
-  'roadmapPhase6':
-      'Vaihe 6 – Pitkän aikavälin kehitys',
+'roadmapPhase5Description':
+'Uusien ominaisuuksien, mahdollisten kumppanuuksien ja yhteisön ideoiden tutkiminen.',
 
-  'roadmapPhase6Title':
-      'Vaihe 6 – Pitkän aikavälin kehitys',
+'roadmapPhase6':
+'Vaihe 6 – Pitkän aikavälin kehitys',
 
-  'roadmapPhase6Description':
-      'Stelluriini-ekosysteemin jatkuva kehittäminen, uudet ominaisuudet ja yhteisön tarpeisiin vastaaminen.',
+'roadmapPhase6Title':
+'Vaihe 6 – Pitkän aikavälin kehitys',
 
-  'roadmapInProgress':
-      'Käynnissä',
+'roadmapPhase6Description':
+'Stelluriini-ekosysteemin jatkuva kehittäminen, uudet ominaisuudet ja yhteisön tarpeisiin vastaaminen.',
 
-  'roadmapPlanned':
-      'Suunniteltu',
+'roadmapInProgress':
+'Käynnissä',
 
-  'roadmapFuture':
-      'Tulevaisuus',
+'roadmapPlanned':
+'Suunniteltu',
 
-  'roadmapStatusCompleted':
-      'Valmis',
+'roadmapFuture':
+'Tulevaisuus',
 
-  'roadmapStatusCurrent':
-      'Käynnissä',
+'roadmapStatusCompleted':
+'Valmis',
 
-  'roadmapStatusPlanned':
-      'Suunniteltu',
+'roadmapStatusCurrent':
+'Käynnissä',
 
-  'futureWithdrawalsTitle':
-      'Mahdolliset tulevat nostot',
+'roadmapStatusPlanned':
+'Suunniteltu',
 
-  'futureWithdrawals':
-      'Mahdollinen tuleva nostojärjestelmä suunnitellaan erikseen ja sen ehdot ilmoitetaan ennen käyttöönottoa.',
+'futureWithdrawalsTitle':
+'Mahdolliset tulevat nostot',
 
-  'plannedWithdrawalModel':
-      'Mahdollinen nostomalli määritellään erikseen ennen ominaisuuden käyttöönottoa.',
+'futureWithdrawals':
+'Mahdollinen tuleva nostojärjestelmä suunnitellaan erikseen ja sen ehdot ilmoitetaan ennen käyttöönottoa.',
 
-  'developmentPrinciples':
-      'Kehityksen periaatteet',
+'plannedWithdrawalModel':
+'Mahdollinen nostomalli määritellään erikseen ennen ominaisuuden käyttöönottoa.',
 
-  'roadmapDevelopmentPrinciples':
-      'Kehityksen periaatteet',
+'developmentPrinciples':
+'Kehityksen periaatteet',
 
-  'roadmapCommunity':
-      'Yhteisö',
+'roadmapDevelopmentPrinciples':
+'Kehityksen periaatteet',
 
-  'roadmapCommunityDescription':
-      'Yhteisö on Stelluriinin kehityksen keskiössä. Palaute ja käyttäjien ideat auttavat ohjaamaan tulevaa kehitystä.',
+'roadmapCommunity':
+'Yhteisö',
 
-  'roadmapStella':
-      'Stella 🐱💜',
+'roadmapCommunityDescription':
+'Yhteisö on Stelluriinin kehityksen keskiössä. Palaute ja käyttäjien ideat auttavat ohjaamaan tulevaa kehitystä.',
 
-  'roadmapStellaDescription':
-      'Stella säilyy Stelluriinin visuaalisena maskottina ja osana käyttäjäkokemusta.',
+'roadmapStella':
+'Stella 🐱💜',
 
-  'roadmapSecurity':
-      'Turvallisuus',
+'roadmapStellaDescription':
+'Stella säilyy Stelluriinin visuaalisena maskottina ja osana käyttäjäkokemusta.',
 
-  'roadmapSecurityDescription':
-      'Turvallisuutta, palvelininfrastruktuuria ja sovelluksen luotettavuutta kehitetään jatkuvasti.',
+'roadmapSecurity':
+'Turvallisuus',
 
-  'roadmapInnovation':
-      'Innovaatio',
+'roadmapSecurityDescription':
+'Turvallisuutta, palvelininfrastruktuuria ja sovelluksen luotettavuutta kehitetään jatkuvasti.',
 
-  'roadmapInnovationDescription':
-      'Uusia käyttötapoja, ominaisuuksia ja teknologioita tutkitaan projektin kehittyessä.',
+'roadmapInnovation':
+'Innovaatio',
 
-  'roadmapLongTermGrowth':
-      'Pitkän aikavälin kasvu',
+'roadmapInnovationDescription':
+'Uusia käyttötapoja, ominaisuuksia ja teknologioita tutkitaan projektin kehittyessä.',
 
-  'roadmapLongTermGrowthDescription':
-      'Tavoitteena on rakentaa Stelluriinille kestävä ja vaiheittain kehittyvä ekosysteemi.',
+'roadmapLongTermGrowth':
+'Pitkän aikavälin kasvu',
 
-  'roadmapNotice':
-      'Tärkeä huomautus',
+'roadmapLongTermGrowthDescription':
+'Tavoitteena on rakentaa Stelluriinille kestävä ja vaiheittain kehittyvä ekosysteemi.',
 
-  'roadmapNoticeDescription':
-      'Tiekartta kuvaa Stelluriinin suunniteltua kehityssuuntaa. Vaiheet, ominaisuudet ja aikataulut voivat muuttua projektin kehityksen aikana.',
+'roadmapNotice':
+'Tärkeä huomautus',
 
-  'roadmapStellaJourney':
-      'Stellan matka 🐾',
+'roadmapNoticeDescription':
+'Tiekartta kuvaa Stelluriinin suunniteltua kehityssuuntaa. Vaiheet, ominaisuudet ja aikataulut voivat muuttua projektin kehityksen aikana.',
 
-  'roadmapEcosystemDescription':
-      'Stelluriini-ekosysteemiä kehitetään vaiheittain yhteisön, sovelluksen ja STL-tokenin ympärille.',
+'roadmapStellaJourney':
+'Stellan matka 🐾',
 
-  'roadmapStellaIntro':
-      'Stella kulkee mukana Stelluriinin jokaisessa kehitysvaiheessa.',
+'roadmapEcosystemDescription':
+'Stelluriini-ekosysteemiä kehitetään vaiheittain yhteisön, sovelluksen ja STL-tokenin ympärille.',
 
-  'roadmapFooter':
-      'STELLA • STELLURIINI • STL • SOLANA',
+'roadmapStellaIntro':
+'Stella kulkee mukana Stelluriinin jokaisessa kehitysvaiheessa.',
 
-  // ============================================================
-  // 🪙 TOKEN
-  // ============================================================
+'roadmapFooter':
+'STELLA • STELLURIINI • STL • SOLANA',
 
-  'tokenTitle':
-      'Stelluriini STL',
+// ============================================================
+// 🪙 TOKEN
+// ============================================================
 
-  'tokenSubtitle':
-      'Stelluriinin virallinen token Solana-verkossa.',
+'tokenTitle':
+'Stelluriini STL',
 
-  'tokenName':
-      'Nimi',
+'tokenSubtitle':
+'Stelluriinin virallinen token Solana-verkossa.',
 
-  'tokenSymbol':
-      'Symboli',
+'tokenName':
+'Nimi',
 
-  'tokenBlockchain':
-      'Lohkoketju',
+'tokenSymbol':
+'Symboli',
 
-  'tokenSupply':
-      'Kokonaistarjonta',
+'tokenBlockchain':
+'Lohkoketju',
 
-  'tokenMint':
-      'Mint-osoite',
+'tokenSupply':
+'Kokonaistarjonta',
 
-  'tokenDescription':
-      'Stelluriini on yhteisölähtöinen token Solana-lohkoketjussa.',
+'tokenMint':
+'Mint-osoite',
 
-  'solana':
-      'Solana',
+'tokenDescription':
+'Stelluriini on yhteisölähtöinen token Solana-lohkoketjussa.',
 
-  'copyAddress':
-      'Kopioi osoite',
+'solana':
+'Solana',
 
-  'addressCopied':
-      'Osoite kopioitu.',
+'copyAddress':
+'Kopioi osoite',
 
-  'solanaCommunityToken':
-      'Yhteisölähtöinen Solana-token',
+'addressCopied':
+'Osoite kopioitu.',
 
-  'tokenInformation':
-      'Tokenin tiedot',
+'solanaCommunityToken':
+'Yhteisölähtöinen Solana-token',
 
-  'name':
-      'Nimi',
+'tokenInformation':
+'Tokenin tiedot',
 
-  'symbol':
-      'Symboli',
+'name':
+'Nimi',
 
-  'blockchain':
-      'Lohkoketju',
+'symbol':
+'Symboli',
 
-  'decimals':
-      'Desimaalit',
+'blockchain':
+'Lohkoketju',
 
-  'officialMintAddress':
-      'Virallinen Mint-osoite',
+'decimals':
+'Desimaalit',
 
-  'officialMintDescription':
-      'Tämä on Stelluriini (STL) -tokenin virallinen Solana Mint-osoite.',
+'officialMintAddress':
+'Virallinen Mint-osoite',
 
-  'mintAddressCopied':
-      'Mint-osoite kopioitu.',
+'officialMintDescription':
+'Tämä on Stelluriini (STL) -tokenin virallinen Solana Mint-osoite.',
 
-  'copyMintAddress':
-      'Kopioi Mint-osoite',
+'mintAddressCopied':
+'Mint-osoite kopioitu.',
 
-  'viewOnSolscan':
-      'Näytä Solscanissa',
+'copyMintAddress':
+'Kopioi Mint-osoite',
 
-  'couldNotOpenSolscan':
-      'Solscanin avaaminen epäonnistui.',
+'viewOnSolscan':
+'Näytä Solscanissa',
 
-  'communityCuriositySolana':
-      'Yhteisö • Uteliaisuus • Solana',
+'couldNotOpenSolscan':
+'Solscanin avaaminen epäonnistui.',
 
-  // ============================================================
-  // 📊 TOKENOMICS
-  // ============================================================
+'communityCuriositySolana':
+'Yhteisö • Uteliaisuus • Solana',
 
-  'tokenomicsTitle':
-      'STL Tokenomiikka',
+// ============================================================
+// 📊 TOKENOMICS
+// ============================================================
 
-  'tokenomicsSubtitle':
-      'Stelluriini STL-tokenin perustiedot ja taloudellinen rakenne.',
+'tokenomicsTitle':
+'STL Tokenomiikka',
 
-  'tokenomicsOverview':
-      'Tokenomiikan yleiskatsaus',
+'tokenomicsSubtitle':
+'Stelluriini STL-tokenin perustiedot ja taloudellinen rakenne.',
 
-  'tokenomicsOverviewDescription':
-      'Stelluriinin tokenomiikan rakenne kuvaa STL:n kokonaistarjonnan suunniteltua jakoa yhteisöpalkkioihin, likviditeettiin, ekosysteemin kasvuun, kehitykseen ja markkinointiin.',
+'tokenomicsOverview':
+'Tokenomiikan yleiskatsaus',
 
-  'officialStlTokenomics':
-      'STL:n virallinen tokenomiikka',
+'tokenomicsOverviewDescription':
+'Stelluriinin tokenomiikan rakenne kuvaa STL:n kokonaistarjonnan suunniteltua jakoa yhteisöpalkkioihin, likviditeettiin, ekosysteemin kasvuun, kehitykseen ja markkinointiin.',
 
-  'tokenomicsTotalSupply':
-      'KOKONAISTARJONTA',
+'officialStlTokenomics':
+'STL:n virallinen tokenomiikka',
 
-  'totalSupply':
-      'Kokonaistarjonta',
+'tokenomicsTotalSupply':
+'KOKONAISTARJONTA',
 
-  'tokenDistribution':
-      'Tokenien jako',
+'totalSupply':
+'Kokonaistarjonta',
 
-  'tokenAllocation':
-      'Tokenien jako',
+'tokenDistribution':
+'Tokenien jako',
 
-  'communityRewards':
-      'Yhteisö ja palkkiot',
+'tokenAllocation':
+'Tokenien jako',
 
-  'liquidity':
-      'Likviditeetti',
+'communityRewards':
+'Yhteisö ja palkkiot',
 
-  'ecosystem':
-      'Ekosysteemi',
+'liquidity':
+'Likviditeetti',
 
-  'development':
-      'Kehitys',
+'ecosystem':
+'Ekosysteemi',
 
-  'marketing':
-      'Markkinointi',
+'development':
+'Kehitys',
 
-  'stlTokens':
-      'STL-TOKENIT',
+'marketing':
+'Markkinointi',
 
-  'communityAllocation':
-      'Yhteisö',
+'stlTokens':
+'STL-TOKENIT',
 
-  'ecosystemAllocation':
-      'Ekosysteemi',
+'communityAllocation':
+'Yhteisö',
 
-  'developmentAllocation':
-      'Kehitys',
+'ecosystemAllocation':
+'Ekosysteemi',
 
-  'liquidityAllocation':
-      'Likviditeetti',
+'developmentAllocation':
+'Kehitys',
 
-  'marketingAllocation':
-      'Markkinointi',
+'liquidityAllocation':
+'Likviditeetti',
 
-  'totalSupplyDescription':
-      'Stelluriinin kokonaistarjonta on 17 602 539 062 STL. Alla esitetty jako edustaa koko suunniteltua tokenien kokonaistarjontaa.',
+'marketingAllocation':
+'Markkinointi',
 
-  'communityRewardsDescription':
-      'Varattu yhteisöaloitteisiin, käyttäjäpalkkioihin, osallistumisohjelmiin ja tuleviin yhteisölähtöisiin toimintoihin.',
+'totalSupplyDescription':
+'Stelluriinin kokonaistarjonta on 17 602 539 062 STL. Alla esitetty jako edustaa koko suunniteltua tokenien kokonaistarjontaa.',
 
-  'liquidityDescription':
-      'Varattu likviditeetin tukemiseen ja terveemmän sekä helpommin saavutettavan markkinaympäristön rakentamiseen STL:lle.',
+'communityRewardsDescription':
+'Varattu yhteisöaloitteisiin, käyttäjäpalkkioihin, osallistumisohjelmiin ja tuleviin yhteisölähtöisiin toimintoihin.',
 
-  'ecosystemDescription':
-      'Varattu ekosysteemin tulevaan kasvuun, sovelluksiin, peleihin, integraatioihin ja uusiin digitaalisiin kokemuksiin.',
+'liquidityDescription':
+'Varattu likviditeetin tukemiseen ja terveemmän sekä helpommin saavutettavan markkinaympäristön rakentamiseen STL:lle.',
 
-  'developmentDescription':
-      'Varattu tekniseen kehitykseen, sovelluskehitykseen, infrastruktuuriin ja tuleviin parannuksiin.',
+'ecosystemDescription':
+'Varattu ekosysteemin tulevaan kasvuun, sovelluksiin, peleihin, integraatioihin ja uusiin digitaalisiin kokemuksiin.',
 
-  'marketingDescription':
-      'Varattu markkinointiin, projektin tunnettuuden kasvattamiseen, yhteisön kasvattamiseen ja markkinointitoimintoihin.',
+'developmentDescription':
+'Varattu tekniseen kehitykseen, sovelluskehitykseen, infrastruktuuriin ja tuleviin parannuksiin.',
 
-  'allocationVerification':
-      'Tokenien jaon tarkistus',
+'marketingDescription':
+'Varattu markkinointiin, projektin tunnettuuden kasvattamiseen, yhteisön kasvattamiseen ja markkinointitoimintoihin.',
 
-  'totalAllocated':
-      'Yhteensä jaettu',
+'allocationVerification':
+'Tokenien jaon tarkistus',
 
-  'allocationVerified':
-      'Jako vahvistettu: jaettu kokonaismäärä vastaa koko STL-kokonaistarjontaa.',
+'totalAllocated':
+'Yhteensä jaettu',
 
-  'allocationRequiresVerification':
-      'Tokenien jako vaatii tarkistuksen.',
+'allocationVerified':
+'Jako vahvistettu: jaettu kokonaismäärä vastaa koko STL-kokonaistarjontaa.',
 
-  'allocationPrinciples':
-      'Jaon periaatteet',
+'allocationRequiresVerification':
+'Tokenien jako vaatii tarkistuksen.',
 
-  'allocationPrinciplesDescription':
-      'Tokenien jako on suunniteltu tukemaan yhteisöä, ekosysteemin kasvua ja Stelluriinin pitkäaikaista kehitystä.',
+'allocationPrinciples':
+'Jaon periaatteet',
 
-  'communityFirst':
-      'Yhteisö ensin',
+'allocationPrinciplesDescription':
+'Tokenien jako on suunniteltu tukemaan yhteisöä, ekosysteemin kasvua ja Stelluriinin pitkäaikaista kehitystä.',
 
-  'communityFirstDescription':
-      'Merkittävä osa suunnitellusta tarjonnasta on varattu yhteisöaloitteisiin ja yhteisöpalkkioihin.',
+'communityFirst':
+'Yhteisö ensin',
 
-  'longTermGrowth':
-      'Pitkän aikavälin kasvu',
+'communityFirstDescription':
+'Merkittävä osa suunnitellusta tarjonnasta on varattu yhteisöaloitteisiin ja yhteisöpalkkioihin.',
 
-  'longTermGrowthDescription':
-      'Ekosysteemille ja kehitykselle varatut osuudet on tarkoitettu tukemaan tulevaa laajentumista ja uusia projekteja.',
+'longTermGrowth':
+'Pitkän aikavälin kasvu',
 
-  'accessibility':
-      'Saavutettavuus',
+'longTermGrowthDescription':
+'Ekosysteemille ja kehitykselle varatut osuudet on tarkoitettu tukemaan tulevaa laajentumista ja uusia projekteja.',
 
-  'accessibilityDescription':
-      'Likviditeettiin varatun osuuden tavoitteena on tukea STL-tokenin saavutettavuutta ja markkinaosallistumista.',
+'accessibility':
+'Saavutettavuus',
 
-  'stellaStlCommunity':
-      'Stella ja STL-yhteisö',
+'accessibilityDescription':
+'Likviditeettiin varatun osuuden tavoitteena on tukea STL-tokenin saavutettavuutta ja markkinaosallistumista.',
 
-  'communityCuriosityDevelopmentSolana':
-      'Yhteisö • Uteliaisuus • Kehitys • Solana',
+'stellaStlCommunity':
+'Stella ja STL-yhteisö',
 
-  'importantNotice':
-      'Tärkeä huomautus',
+'communityCuriosityDevelopmentSolana':
+'Yhteisö • Uteliaisuus • Kehitys • Solana',
 
-  'tokenomicsImportantNotice':
-      'Tokenien jako kuvaa Stelluriini-ekosysteemin suunniteltua mallia. Mitään tämän sivun tietoa ei tule pitää taloudellisena, sijoitus- tai oikeudellisena neuvona.',
+'importantNotice':
+'Tärkeä huomautus',
 
-  'stellaStelluriiniStlSolana':
-      'STELLA • STELLURIINI • STL • SOLANA',
+'tokenomicsImportantNotice':
+'Tokenien jako kuvaa Stelluriini-ekosysteemin suunniteltua mallia. Mitään tämän sivun tietoa ei tule pitää taloudellisena, sijoitus- tai oikeudellisena neuvona.',
 
-  'tokenomicsImportant':
-      'Tokenomiikan tarkat allokaatiot voidaan päivittää projektin kehityksen aikana. Kaikki muutokset tulee ilmoittaa yhteisölle avoimesti.',
+'stellaStelluriiniStlSolana':
+'STELLA • STELLURIINI • STL • SOLANA',
 
-  // ============================================================
-  // 📄 WHITEPAPER
-  // ============================================================
+'tokenomicsImportant':
+'Tokenomiikan tarkat allokaatiot voidaan päivittää projektin kehityksen aikana. Kaikki muutokset tulee ilmoittaa yhteisölle avoimesti.',
 
-  'whitepaperTitle':
-      'Stelluriini Whitepaper',
+// ============================================================
+// 📄 WHITEPAPER
+// ============================================================
 
-  'whitepaperSubtitle':
-      'Stelluriini-projektin visio, teknologia ja tulevaisuuden suunta.',
+'whitepaperTitle':
+'Stelluriini Whitepaper',
 
-  'whitepaperIntroduction':
-      'Johdanto',
+'whitepaperSubtitle':
+'Stelluriini-projektin visio, teknologia ja tulevaisuuden suunta.',
 
-  'whitepaperVision':
-      'Visio',
+'whitepaperIntroduction':
+'Johdanto',
 
-  'whitepaperMission':
-      'Missio',
+'whitepaperVision':
+'Visio',
 
-  'whitepaperTechnology':
-      'Teknologia',
+'whitepaperMission':
+'Missio',
 
-  'whitepaperMining':
-      'Louhintajärjestelmä',
+'whitepaperTechnology':
+'Teknologia',
 
-  'whitepaperStella':
-      'Stella',
+'whitepaperMining':
+'Louhintajärjestelmä',
 
-  'whitepaperToken':
-      'STL Token',
+'whitepaperStella':
+'Stella',
 
-  'whitepaperTokenomics':
-      'Tokenomiikka',
+'whitepaperToken':
+'STL Token',
 
-  'whitepaperCommunity':
-      'Yhteisö',
+'whitepaperTokenomics':
+'Tokenomiikka',
 
-  'whitepaperRoadmap':
-      'Tiekartta',
+'whitepaperCommunity':
+'Yhteisö',
 
-  'whitepaperSecurity':
-      'Turvallisuus',
+'whitepaperRoadmap':
+'Tiekartta',
 
-  'whitepaperFuture':
-      'Tulevaisuus',
+'whitepaperSecurity':
+'Turvallisuus',
 
-  'whitepaperDisclaimer':
-      'Tämä whitepaper on informatiivinen kuvaus Stelluriini-projektista. Projektin ominaisuudet ja suunnitelmat voivat muuttua kehityksen aikana.',
+'whitepaperFuture':
+'Tulevaisuus',
 
-  // ============================================================
-  // ⚠️ IMPORTANT INFORMATION
-  // ============================================================
+'whitepaperDisclaimer':
+'Tämä whitepaper on informatiivinen kuvaus Stelluriini-projektista. Projektin ominaisuudet ja suunnitelmat voivat muuttua kehityksen aikana.',
 
-  'virtualPointsNotice':
-      'Sovelluksessa näkyvät STL-palkinnot ovat tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä.',
+// ============================================================
+// ⚠️ IMPORTANT INFORMATION
+// ============================================================
 
-  'virtualPointsInformation':
-      'Sovelluksessa näkyvä STL-saldo edustaa tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä. Se ei ole automaattisesti nostettavissa olevaa kryptovaluuttaa.',
+'virtualPointsNotice':
+'Sovelluksessa näkyvät STL-palkinnot ovat tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä.',
 
-  'withdrawalsDisabled':
-      'Nostot eivät ole tällä hetkellä käytössä.',
+'virtualPointsInformation':
+'Sovelluksessa näkyvä STL-saldo edustaa tällä hetkellä virtuaalisia sovelluksen sisäisiä pisteitä. Se ei ole automaattisesti nostettavissa olevaa kryptovaluuttaa.',
 
-  // ============================================================
-  // 🐾 FOOTER
-  // ============================================================
+'withdrawalsDisabled':
+'Nostot eivät ole tällä hetkellä käytössä.',
 
-  'footerTagline':
-      'Louhitaan yhdessä Stelluriinin tulevaisuutta. 🐱💜',
+// ============================================================
+// 🐾 FOOTER
+// ============================================================
 
-  'footerToken':
-      'STL • STELLURIINI',
+'footerTagline':
+'Louhitaan yhdessä Stelluriinin tulevaisuutta. 🐱💜',
 
-  'footerMiningFuture':
-      'Stella louhii tulevaisuutta.',
+'footerToken':
+'STL • STELLURIINI',
 
-  'stelluriiniStlSolanaFooter':
-      'STELLA • STELLURIINI • STL • SOLANA',
+'footerMiningFuture':
+'Stella louhii tulevaisuutta.',
 
-  // ============================================================
-  // 🌍 ACCOUNT / UI
-  // ============================================================
+'stelluriiniStlSolanaFooter':
+'STELLA • STELLURIINI • STL • SOLANA',
 
-  'referrals':
-      'Suositukset',
+// ============================================================
+// 🌍 ACCOUNT / UI
+// ============================================================
 
-  'deleteAccount':
-      'Poista tili',
+'referrals':
+'Suositukset',
 
-  'accountDeletion':
-      'Tilin poistaminen',
+'deleteAccount':
+'Poista tili',
 
-  'accountDeletionAppTitle':
-      'Stelluriini-tilin poistaminen',
+'accountDeletion':
+'Tilin poistaminen',
 
-  'accountDeletionTitle':
-      'Poista tilisi',
+'accountDeletionAppTitle':
+'Stelluriini-tilin poistaminen',
 
-  'accountDeletionSubtitle':
-      'Voit poistaa Stelluriini-tilisi ja siihen liittyvät tiedot pysyvästi.',
+'accountDeletionTitle':
+'Poista tilisi',
 
-  'deleteYourAccount':
-      'Poista tilisi',
+'accountDeletionSubtitle':
+'Voit poistaa Stelluriini-tilisi ja siihen liittyvät tiedot pysyvästi.',
 
-  'deleteAccountDescription':
-      'Tämä poistaa tilisi ja siihen liittyvät tiedot pysyvästi. Tätä toimintoa ei voi peruuttaa.',
+'deleteYourAccount':
+'Poista tilisi',
 
-  'deleteAccountButton':
-      'POISTA TILI',
+'deleteAccountDescription':
+'Tämä poistaa tilisi ja siihen liittyvät tiedot pysyvästi. Tätä toimintoa ei voi peruuttaa.',
 
-  'accountDeletionPermanent':
-      'Tilin poistaminen on pysyvä eikä sitä voi peruuttaa.',
+'deleteAccountButton':
+'POISTA TILI',
 
-  'accountDeletionDialogTitle':
-      'Poistetaanko tili?',
+'accountDeletionPermanent':
+'Tilin poistaminen on pysyvä eikä sitä voi peruuttaa.',
 
-  'accountDeletionDialogMessage':
-      'Haluatko varmasti poistaa tilisi ja siihen liittyvät tiedot pysyvästi?',
+'accountDeletionDialogTitle':
+'Poistetaanko tili?',
 
-  'accountDeletionCancel':
-      'Peruuta',
+'accountDeletionDialogMessage':
+'Haluatko varmasti poistaa tilisi ja siihen liittyvät tiedot pysyvästi?',
 
-  'accountDeletionConfirm':
-      'Poista tili',
+'accountDeletionCancel':
+'Peruuta',
 
-  'accountDeletionSuccess':
-      'Tilisi on poistettu onnistuneesti.',
+'accountDeletionConfirm':
+'Poista tili',
 
-  'accountDeletionFailed':
-      'Tilin poistaminen epäonnistui. Yritä uudelleen.',
+'accountDeletionSuccess':
+'Tilisi on poistettu onnistuneesti.',
 
-  'accountDeletionSessionExpired':
-      'Kirjautumisistunto on vanhentunut. Kirjaudu uudelleen.',
+'accountDeletionFailed':
+'Tilin poistaminen epäonnistui. Yritä uudelleen.',
 
-  'accountDeletionPermissionDenied':
-      'Tilin poistamiseen ei ole tarvittavia oikeuksia.',
+'accountDeletionSessionExpired':
+'Kirjautumisistunto on vanhentunut. Kirjaudu uudelleen.',
 
-  'accountDeletionUnavailable':
-      'Tilin poistopalvelu ei ole tällä hetkellä saatavilla.',
+'accountDeletionPermissionDenied':
+'Tilin poistamiseen ei ole tarvittavia oikeuksia.',
 
-  'accountDeletionTimeout':
-      'Tilin poistaminen kesti liian kauan. Yritä uudelleen.',
+'accountDeletionUnavailable':
+'Tilin poistopalvelu ei ole tällä hetkellä saatavilla.',
+
+'accountDeletionTimeout':
+'Tilin poistaminen kesti liian kauan. Yritä uudelleen.',
 };
