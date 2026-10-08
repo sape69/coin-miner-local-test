@@ -373,6 +373,9 @@ const Map<String, String> zhTranslations = {
   'password':
       '密码',
 
+  'passwordHint':
+      '至少 6 个字符',
+
   'forgotPassword':
       '忘记密码？',
 
@@ -420,7 +423,7 @@ const Map<String, String> zhTranslations = {
       '用户名',
 
   'usernameHint':
-      '例如 Stella',
+      '例如 Stella – 至少 3 个字符',
 
   'confirmPassword':
       '确认密码',
