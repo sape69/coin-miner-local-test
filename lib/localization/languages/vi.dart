@@ -380,6 +380,9 @@ const Map<String, String> viTranslations = {
   'password':
       'Mật khẩu',
 
+  'passwordHint':
+      'Ít nhất 6 ký tự',
+
   'forgotPassword':
       'Quên mật khẩu?',
 
@@ -427,7 +430,7 @@ const Map<String, String> viTranslations = {
       'Tên người dùng',
 
   'usernameHint':
-      'Ví dụ Stella',
+      'Ví dụ Stella – ít nhất 3 ký tự',
 
   'confirmPassword':
       'Xác nhận mật khẩu',
