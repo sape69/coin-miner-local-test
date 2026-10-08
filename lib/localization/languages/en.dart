@@ -368,7 +368,7 @@ const Map<String, String> enTranslations = {
       'Password',
 
   'passwordHint':
-      'At least 6 characters',
+      '6+ characters',
 
   'forgotPassword':
       'Forgot password?',
@@ -420,7 +420,7 @@ const Map<String, String> enTranslations = {
       'Username',
 
   'usernameHint':
-      'For example Stella – at least 3 characters',
+      'e.g. Stella (3+ characters)',
 
   'confirmPassword':
       'Confirm password',
