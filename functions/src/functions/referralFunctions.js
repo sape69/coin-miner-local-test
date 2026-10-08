@@ -407,6 +407,21 @@ async function getReferredRelationshipDocuments(
 // ============================================================
 // BUILD REFERRAL USER LIST
 // ============================================================
+//
+// TÄRKEÄÄ:
+//
+// Firestoressa voi olla vanhoista testeistä jääneitä referral-
+// dokumentteja, jotka viittaavat samaan referredUid-arvoon.
+//
+// Yksi oikea käyttäjä saa kuitenkin näkyä käyttöliittymässä
+// vain kerran.
+//
+// Siksi tässä tehdään server-side UID-deduplikointi.
+//
+// Tämä ei muuta referral-bonuksia eikä Firestore-dataa.
+// Se estää vain saman käyttäjän näyttämisen useita kertoja.
+//
+// ============================================================
 
 async function buildReferralUsers(
   uid,
@@ -427,6 +442,20 @@ async function buildReferralUsers(
 
   const users = [];
 
+  // ----------------------------------------------------------
+  // 🔐 UNIQUE REFERRED USERS
+  // ----------------------------------------------------------
+  //
+  // Sama referredUid saa esiintyä tuloksessa vain kerran.
+  //
+  // Tämä suojaa erityisesti vanhoilta testidatoilta ja
+  // mahdollisilta duplicate referral -dokumenteilta.
+  //
+  // ----------------------------------------------------------
+
+  const seenReferredUids =
+    new Set();
+
   for (
     const relationshipDocument
       of relationshipDocuments
@@ -444,6 +473,27 @@ async function buildReferralUsers(
     if (!referredUid) {
       continue;
     }
+
+    // --------------------------------------------------------
+    // 🛡️ DUPLICATE USER PROTECTION
+    // --------------------------------------------------------
+    //
+    // Jos sama käyttäjä löytyy useammasta referral-dokumentista,
+    // käsitellään hänet vain kerran.
+    //
+    // --------------------------------------------------------
+
+    if (
+      seenReferredUids.has(
+        referredUid,
+      )
+    ) {
+      continue;
+    }
+
+    seenReferredUids.add(
+      referredUid,
+    );
 
     const userSnapshot =
       await getUserRef(
