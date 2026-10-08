@@ -382,6 +382,9 @@ const Map<String, String> esTranslations = {
   'password':
       'Contraseña',
 
+  'passwordHint':
+      'Mínimo 6 caracteres',
+
   'forgotPassword':
       '¿Olvidaste tu contraseña?',
 
@@ -432,7 +435,7 @@ const Map<String, String> esTranslations = {
       'Nombre de usuario',
 
   'usernameHint':
-      'Por ejemplo Stella',
+      'Por ejemplo Stella – mínimo 3 caracteres',
 
   'confirmPassword':
       'Confirmar contraseña',
