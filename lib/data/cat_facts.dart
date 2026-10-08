@@ -22,7 +22,7 @@ class CatFacts {
   static const List<String> fi = [
     'Kissan viikset ovat tärkeitä tuntoaistille.',
     'Viiksien tyvessä on runsaasti hermopäätteitä.',
-    'Kissa voi käyttää viiksiään ilman liikkeiden havaitsemiseen.',
+    'Kissa voi aistia lähistöllä olevan ilman liikkeen viiksiensä avulla.',
     'Viikset auttavat kissaa arvioimaan ympäristöään lähietäisyydeltä.',
     'Kissan nenä on tärkeä osa ympäristön tutkimista.',
     'Kissoilla on ihmistä herkempi hajuaisti.',
@@ -102,7 +102,7 @@ class CatFacts {
     'Kissa voi hieroa päätään tuttua ihmistä tai esinettä vasten.',
     'Poskien hierominen voi liittyä hajumerkkien jättämiseen.',
     'Kissa voi tervehtiä tuttua ihmistä tulemalla lähelle.',
-    'Kissa voi osoittaa kiintymystä olemalla samassa huoneessa.',
+    'Kissa voi osoittaa kiintymystä olemällä samassa huoneessa.',
     'Kaikki kissat eivät pidä sylissä olemisesta.',
     'Kissan persoonallisuus vaikuttaa sen sosiaaliseen käyttäytymiseen.',
     'Jotkut kissat hakeutuvat mielellään ihmisen viereen lepäämään.',
@@ -168,12 +168,14 @@ class CatFacts {
     'Stella voi osoittaa tyytyväisyyttä rentoutumalla lähellä.',
     'Stellan jokainen päivä voi sisältää uuden pienen tutkimusretken.',
     'Stelluriinissa Stella muistuttaa, että uteliaisuus on kissan supervoima.',
+    'Kissan viikset auttavat sitä arvioimaan, kuinka ahtaasta kohdasta se voi kulkea.',
+    'Kissa voi käyttää viiksiään lähellä olevien esineiden havaitsemiseen myös hämärässä.',
   ];
 
   static const List<String> en = [
     'A cat’s whiskers are important sensory tools.',
     'Whisker roots contain many sensitive nerve endings.',
-    'Cats can use their whiskers to detect nearby air movement.',
+    'A cat can use its whiskers to sense nearby air movement.',
     'Whiskers help cats gather information about close surroundings.',
     'A cat’s nose is an important tool for exploring its environment.',
     'Cats have a much stronger sense of smell than humans.',
@@ -319,6 +321,8 @@ class CatFacts {
     'Stella may show contentment by relaxing nearby.',
     'Every day can bring Stella a new little investigation.',
     'In Stelluriini, Stella reminds us that curiosity is a cat superpower.',
+    'A cat’s whiskers can help it judge whether it can fit through a narrow space.',
+    'Cats can use their whiskers to detect nearby objects even in dim light.',
   ];
 
   // ============================================================
@@ -474,6 +478,8 @@ class CatFacts {
     'Stella kann Zufriedenheit zeigen, indem sie entspannt in der Nähe bleibt.',
     'Jeder Tag kann Stella eine kleine neue Entdeckung bringen.',
     'In Stelluriini erinnert Stella daran, dass Neugier eine Superkraft der Katzen ist.',
+    'Die Schnurrhaare können einer Katze helfen einzuschätzen, ob sie durch eine enge Stelle passt.',
+    'Katzen können ihre Schnurrhaare nutzen, um nahe Objekte auch bei wenig Licht wahrzunehmen.',
   ];
 
   // ============================================================
@@ -629,6 +635,8 @@ class CatFacts {
     'Stella puede mostrar satisfacción relajándose cerca.',
     'Cada día puede traerle a Stella una pequeña nueva exploración.',
     'En Stelluriini, Stella nos recuerda que la curiosidad es un superpoder felino.',
+    'Los bigotes pueden ayudar a un gato a calcular si puede pasar por un espacio estrecho.',
+    'Los gatos pueden usar sus bigotes para detectar objetos cercanos incluso con poca luz.',
   ];
 
   // ============================================================
@@ -784,6 +792,8 @@ class CatFacts {
     'Stella peut montrer son contentement en se détendant à proximité.',
     'Chaque jour peut apporter à Stella une petite nouvelle découverte.',
     'Dans Stelluriini, Stella nous rappelle que la curiosité est un superpouvoir félin.',
+    'Les moustaches peuvent aider un chat à évaluer s’il peut passer dans un espace étroit.',
+    'Les chats peuvent utiliser leurs moustaches pour détecter des objets proches même dans une faible lumière.',
   ];
 
   // ============================================================
@@ -939,6 +949,8 @@ class CatFacts {
     'Stella 可能通过放松地待在附近表达满足。',
     '每一天都可能给 Stella 带来一次小小的新探索。',
     '在 Stelluriini 中，Stella 提醒我们：好奇心是猫咪的超能力。',
+    '猫咪的胡须可以帮助它判断自己能否通过狭窄的空间。',
+    '即使光线较暗，猫咪也能利用胡须感知附近的物体。',
   ];
 
   // ============================================================
@@ -1094,6 +1106,8 @@ class CatFacts {
     'Stella có thể thể hiện sự hài lòng bằng cách thư giãn ở gần.',
     'Mỗi ngày có thể mang đến cho Stella một khám phá nhỏ mới.',
     'Trong Stelluriini, Stella nhắc chúng ta rằng tò mò là một siêu năng lực của mèo.',
+    'Râu có thể giúp mèo ước lượng xem nó có thể đi qua một khoảng hẹp hay không.',
+    'Mèo có thể dùng râu để phát hiện những vật ở gần ngay cả khi ánh sáng yếu.',
   ];
 
   // ============================================================
@@ -1249,6 +1263,8 @@ class CatFacts {
     'Stellaは近くでリラックスすることで満足感を示すことがあります。',
     '毎日、Stellaには新しい小さな発見があります。',
     'StelluriiniでStellaは、好奇心は猫のスーパーパワーだと教えてくれます。',
+    '猫のひげは、狭い場所を通り抜けられるか判断するのに役立ちます。',
+    '猫は暗い場所でもひげを使って近くの物を感じ取ることができます。',
   ];
 
   // ============================================================
