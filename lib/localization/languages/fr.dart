@@ -381,7 +381,7 @@ const Map<String, String> frTranslations = {
       'Mot de passe',
 
   'passwordHint':
-      'Au moins 6 caractères',
+      '6+ caractères',
 
   'forgotPassword':
       'Mot de passe oublié ?',
@@ -430,7 +430,7 @@ const Map<String, String> frTranslations = {
       'Nom d’utilisateur',
 
   'usernameHint':
-      'Par exemple Stella – au moins 3 caractères',
+      'p. ex. Stella (3+ caractères)',
 
   'confirmPassword':
       'Confirmer le mot de passe',
