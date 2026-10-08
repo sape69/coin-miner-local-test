@@ -548,23 +548,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   // 🧩 ENSURE USER PROFILE
   // ==========================================================
-  //
-  // Firebase Auth -tili syntyy ensin.
-  //
-  // Firestore Security Rules estävät Flutteria kirjoittamasta
-  // users/{uid}-dokumenttia suoraan.
-  //
-  // Siksi profiili luodaan palvelinpuolella:
-  //
-  // Firebase Auth
-  //      ↓
-  // ensureUserProfile
-  //      ↓
-  // users/{uid}
-  //
-  // Tämä metodi odottaa, että Cloud Function onnistuu.
-  //
-  // ==========================================================
 
   Future<bool> _ensureBackendProfileReady() async {
     const int maxAttempts = 5;
@@ -647,11 +630,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // ==========================================================
   // 🔗 APPLY REFERRAL CODE
   // ==========================================================
-  //
-  // Referralin liittäminen tehdään useamman kerran,
-  // koska Firebase-yhteydessä voi esiintyä pieni
-  // ajoitusero tai väliaikainen verkkovirhe.
-  //
+
   Future<bool> _applyReferralCode(
     String referralCode,
   ) async {
@@ -722,10 +701,6 @@ class _RegisterPageState extends State<RegisterPage> {
           '${error.code} - ${error.message}',
         );
 
-        // ----------------------------------------------
-        // ALREADY EXISTS
-        // ----------------------------------------------
-
         if (error.code == 'already-exists') {
           debugPrint(
             'Referral already exists. '
@@ -734,10 +709,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
           return true;
         }
-
-        // ----------------------------------------------
-        // RETRYABLE ERRORS
-        // ----------------------------------------------
 
         if (error.code == 'not-found' ||
             error.code == 'unavailable' ||
@@ -755,10 +726,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
           break;
         }
-
-        // ----------------------------------------------
-        // NON-RETRYABLE ERRORS
-        // ----------------------------------------------
 
         if (error.code == 'invalid-argument') {
           lastErrorMessage =
@@ -982,28 +949,11 @@ class _RegisterPageState extends State<RegisterPage> {
       // ======================================================
       // 🧩 CREATE USER PROFILE
       // ======================================================
-      //
-      // TÄRKEÄ:
-      //
-      // UserService.createUserIfNeeded()
-      // EI enää käytetä.
-      //
-      // Firestore Rules estävät client-side write-operaation.
-      //
-      // Profiili luodaan Cloud Functionilla:
-      //
-      // ensureUserProfile
-      //
-      // ======================================================
 
       final bool profileReady =
           await _ensureBackendProfileReady();
 
       if (!profileReady) {
-        // ----------------------------------------------------
-        // PROFILE CREATION FAILED
-        // ----------------------------------------------------
-
         final User? createdUser =
             FirebaseAuth.instance.currentUser;
 
@@ -1042,10 +992,6 @@ class _RegisterPageState extends State<RegisterPage> {
         );
 
         if (!referralApplied) {
-          // --------------------------------------------------
-          // REFERRAL ROLLBACK
-          // --------------------------------------------------
-
           final User? createdUser =
               FirebaseAuth.instance.currentUser;
 
@@ -1547,6 +1493,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                   });
                                 },
                         ),
+                      ).copyWith(
+                        hintText:
+                            _t('passwordHint'),
                       ),
                     ),
 
