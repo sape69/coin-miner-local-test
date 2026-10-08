@@ -430,7 +430,7 @@ const Map<String, String> jaTranslations = {
       'ユーザー名',
 
   'usernameHint':
-      '例: Stella – 3文字以上',
+      '例: Stella（3文字以上）',
 
   'confirmPassword':
       'パスワードを確認',
