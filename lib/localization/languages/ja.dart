@@ -380,6 +380,9 @@ const Map<String, String> jaTranslations = {
   'password':
       'パスワード',
 
+  'passwordHint':
+      '6文字以上',
+
   'forgotPassword':
       'パスワードをお忘れですか？',
 
@@ -427,7 +430,7 @@ const Map<String, String> jaTranslations = {
       'ユーザー名',
 
   'usernameHint':
-      '例: Stella',
+      '例: Stella – 3文字以上',
 
   'confirmPassword':
       'パスワードを確認',
@@ -458,10 +461,6 @@ const Map<String, String> jaTranslations = {
 
   'registrationFillFields':
       '必須項目をすべて入力してください。',
-
-  // ============================================================
-  // 🔗 REFERRAL REGISTRATION
-  // ============================================================
 
   'referralCode':
       '紹介コード',
