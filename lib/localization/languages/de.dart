@@ -368,7 +368,7 @@ const Map<String, String> deTranslations = {
       'Passwort',
 
   'passwordHint':
-      'Mindestens 6 Zeichen',
+      '6+ Zeichen',
 
   'forgotPassword':
       'Passwort vergessen?',
@@ -420,7 +420,7 @@ const Map<String, String> deTranslations = {
       'Benutzername',
 
   'usernameHint':
-      'Zum Beispiel Stella – mindestens 3 Zeichen',
+      'z. B. Stella (3+ Zeichen)',
 
   'confirmPassword':
       'Passwort bestätigen',
