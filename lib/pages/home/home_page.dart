@@ -1688,58 +1688,57 @@ widget.languageCode,
 // ============================================================
 
 Widget _buildStellaMiningCard() {
-return StellaMiningCard(
-languageCode:
-widget.languageCode,
-unclaimedMining:
-_unclaimedMining,
-miningTitle:
-_t('stellaMiningTitle'),
-miningSubtitle:
-_t('stellaMiningSubtitle'),
-timerText:
-_formatDuration(
-_miningRemainingMs,
-),
-timerLabel:
-_tp(
-'miningTimeRemaining',
-params: {
-'time':
-_formatDuration(
-_miningRemainingMs,
-),
-},
-),
-catAnimation:
-_catAnimation,
-miningActive:
-_miningActive,
-miningRemainingMs:
-_miningRemainingMs,
-miningDurationMs:
-_miningDurationMs,
-miningProgressTitle:
-_t('miningProgress'),
-stlPerHourText:
-'${_formatNumber(
-_effectiveHashRate *
-miningPerHashPerHour,
-)} STL/h',
-dailyHashRateText:
-'${_formatNumber(
-_effectiveHashRate,
-)} H/s',
-dailyHashRateDayText:
-'${_t('day')} $_streak',
-dailyStreak: _streak,
-boostActive:
-_boostActive,
-miningButton:
-_buildMiningButton(),
-);
-}
+  // Louhintapäivä määräytyy perushash raten mukaan.
+  // Power Boostin bonus ei vaikuta päivän numeroon.
+  //
+  // 0.5 H/s = päivä 1
+  // 1.0 H/s = päivä 2
+  // 1.5 H/s = päivä 3
+  //
+  // Päivä rajataan vähintään yhteen.
+  // Streak-arvoa ei muuteta.
 
+  final double safeBaseHashRate =
+      _hashRate.isFinite && _hashRate >= 0
+          ? _hashRate
+          : defaultDailyHashRate;
+
+  final int miningDay =
+      ((safeBaseHashRate / defaultDailyHashRate)
+                  .round())
+              .clamp(1, 365)
+          .toInt();
+
+  return StellaMiningCard(
+    languageCode: widget.languageCode,
+    unclaimedMining: _unclaimedMining,
+    miningTitle: _t('stellaMiningTitle'),
+    miningSubtitle: _t('stellaMiningSubtitle'),
+    timerText: _formatDuration(_miningRemainingMs),
+    timerLabel: _tp(
+      'miningTimeRemaining',
+      params: {
+        'time': _formatDuration(_miningRemainingMs),
+      },
+    ),
+    catAnimation: _catAnimation,
+    miningActive: _miningActive,
+    miningRemainingMs: _miningRemainingMs,
+    miningDurationMs: _miningDurationMs,
+    miningProgressTitle: _t('miningProgress'),
+    stlPerHourText:
+        '${_formatNumber(
+      _effectiveHashRate * miningPerHashPerHour,
+    )} STL/h',
+    dailyHashRateText:
+        '${_formatNumber(_effectiveHashRate)} H/s',
+    dailyHashRateDayText:
+        '${_t('day')} ${_miningActive ? miningDay : _streak}',
+    dailyStreak: _streak,
+    boostActive: _boostActive,
+    miningButton: _buildMiningButton(),
+  );
+}
 // ============================================================
 // 📊 STATS
 // ============================================================
