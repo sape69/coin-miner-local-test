@@ -1658,11 +1658,29 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
+   // ============================================================
   // ⛏️ STELLA MINING CARD
   // ============================================================
 
   Widget _buildStellaMiningCard() {
+    // Aktiivisen louhintajakson perus-Hash Rate
+    // määrittää näytettävän louhintapäivän.
+    //
+    // Päivä 1 = 0.5 H/s
+    // Päivä 2 = 1.0 H/s
+    // Päivä 3 = 1.5 H/s
+    // Päivä 4 = 2.0 H/s
+    // Päivä 5 = 2.5 H/s
+    // Päivä 6 = 3.0 H/s
+    // Päivä 7 = 3.5 H/s
+    //
+    // Power Boostin bonus ei vaikuta louhintapäivään.
+
+    final int displayedMiningDay = _miningActive
+        ? (((_hashRate - 0.5) / 0.5).round() + 1)
+            .clamp(1, 7)
+        : _streak.clamp(1, 7);
+
     return StellaMiningCard(
       languageCode:
           widget.languageCode,
@@ -1706,15 +1724,15 @@ class _HomePageState extends State<HomePage>
         _effectiveHashRate,
       )} H/s',
       dailyHashRateDayText:
-          '${_t('day')} $_streak',
-      dailyStreak: _streak,
+          '${_t('day')} $displayedMiningDay',
+      dailyStreak:
+          displayedMiningDay,
       boostActive:
           _boostActive,
       miningButton:
           _buildMiningButton(),
     );
   }
-
   // ============================================================
   // 📊 STATS
   // ============================================================
