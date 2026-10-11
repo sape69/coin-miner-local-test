@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -12,64 +13,74 @@ import 'auth_gate.dart';
 // APP STARTUP
 //
 // 1. Firebase
-// 2. Google Mobile Ads
-// 3. Stelluriini app
+// 2. Google Analytics
+// 3. Google Mobile Ads
+// 4. Stelluriini app
+//
+// ANALYTICS
+//
+// - Google Analytics alustetaan sovelluksen käynnistyessä.
+// - Ruudunäkymien seuranta on käytössä NavigatorObserverilla.
+// - Analytics kerää käyttötilastoja raportointia varten.
 //
 // LANGUAGE
 //
 // Ensimmäisellä asennuksella oletuskieli on englanti.
-//
-// Jos käyttäjä vaihtaa kieltä:
-//
-//    ↓
-//
-// valinta tallennetaan SharedPreferencesiin.
-//
-// Seuraavalla käynnistyksellä:
-//
-//    ↓
-//
-// viimeksi valittu kieli ladataan.
+// Käyttäjän kielivalinta tallennetaan SharedPreferencesiin.
 //
 // ============================================================
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+WidgetsFlutterBinding.ensureInitialized();
 
-  // ==========================================================
-  // FIREBASE
-  // ==========================================================
+// ==========================================================
+// FIREBASE
+// ==========================================================
 
-  await Firebase.initializeApp();
+await Firebase.initializeApp();
 
-  // ==========================================================
-  // GOOGLE MOBILE ADS
-  // ==========================================================
-  //
-  // Alustetaan Google Mobile Ads SDK ennen ensimmäistä
-  // RewardedAd.load() -kutsua.
-  //
-  // ==========================================================
+// ==========================================================
+// GOOGLE ANALYTICS
+// ==========================================================
 
-  try {
-    await MobileAds.instance.initialize();
+try {
+await FirebaseAnalytics.instance
+.setAnalyticsCollectionEnabled(true);
 
-    debugPrint(
-      '🐱 Stelluriini: Google Mobile Ads SDK initialized.',
-    );
-  } catch (error) {
-    debugPrint(
-      '🐱 Stelluriini: Google Mobile Ads initialization error: $error',
-    );
-  }
+debugPrint(
+  '🐱 Stelluriini: Google Analytics initialized.',
+);
 
-  // ==========================================================
-  // APP
-  // ==========================================================
+} catch (error) {
+debugPrint(
+'🐱 Stelluriini: Google Analytics initialization error: $error',
+);
+}
 
-  runApp(
-    const StelluriiniApp(),
-  );
+// ==========================================================
+// GOOGLE MOBILE ADS
+// ==========================================================
+
+try {
+await MobileAds.instance.initialize();
+
+debugPrint(
+  '🐱 Stelluriini: Google Mobile Ads SDK initialized.',
+);
+
+} catch (error) {
+debugPrint(
+'🐱 Stelluriini: Google Mobile Ads initialization error: $error',
+);
+}
+
+// ==========================================================
+// APP
+// ==========================================================
+
+runApp(
+const StelluriiniApp(),
+);
 }
 
 // ============================================================
@@ -77,140 +88,142 @@ Future<void> main() async {
 // ============================================================
 
 class StelluriiniApp extends StatefulWidget {
-  const StelluriiniApp({
-    super.key,
-  });
+const StelluriiniApp({
+super.key,
+});
 
-  @override
-  State<StelluriiniApp> createState() =>
-      _StelluriiniAppState();
+@override
+State<StelluriiniApp> createState() =>
+_StelluriiniAppState();
 }
 
-class _StelluriiniAppState extends State<StelluriiniApp> {
-  // ==========================================================
-  // LANGUAGE
-  // ==========================================================
+class _StelluriiniAppState
+extends State<StelluriiniApp> {
+// ==========================================================
+// LANGUAGE
+// ==========================================================
 
-  // Ensimmäisellä asennuksella englanti.
-  String _languageCode = 'en';
+String _languageCode = 'en';
 
-  // Käytetään samaa avainta aina kielen tallennukseen.
-  static const String _languageKey =
-      'stelluriini_language';
+static const String _languageKey =
+'stelluriini_language';
 
-  // ==========================================================
-  // INIT
-  // ==========================================================
+// ==========================================================
+// ANALYTICS
+// ==========================================================
 
-  @override
-  void initState() {
-    super.initState();
+final FirebaseAnalyticsObserver _analyticsObserver =
+FirebaseAnalyticsObserver(
+analytics: FirebaseAnalytics.instance,
+);
 
-    _loadLanguage();
+// ==========================================================
+// INIT
+// ==========================================================
+
+@override
+void initState() {
+super.initState();
+
+_loadLanguage();
+
+}
+
+// ==========================================================
+// LOAD LANGUAGE
+// ==========================================================
+
+Future<void> _loadLanguage() async {
+try {
+final SharedPreferences preferences =
+await SharedPreferences.getInstance();
+
+  final String savedLanguage =
+      preferences.getString(_languageKey) ?? 'en';
+
+  if (!mounted) {
+    return;
   }
 
-  // ==========================================================
-  // LOAD LANGUAGE
-  // ==========================================================
+  setState(() {
+    _languageCode = savedLanguage;
+  });
+} catch (error) {
+  debugPrint(
+    '🐱 Stelluriini: Language load error: $error',
+  );
+}
 
-  Future<void> _loadLanguage() async {
-    try {
-      final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
+}
 
-      final String savedLanguage =
-          preferences.getString(_languageKey) ?? 'en';
+// ==========================================================
+// CHANGE LANGUAGE
+// ==========================================================
 
-      if (!mounted) {
-        return;
-      }
+Future<void> _changeLanguage(
+String language,
+) async {
+try {
+final SharedPreferences preferences =
+await SharedPreferences.getInstance();
 
-      setState(() {
-        _languageCode = savedLanguage;
-      });
-    } catch (error) {
-      debugPrint(
-        '🐱 Stelluriini: Language load error: $error',
-      );
-    }
+  await preferences.setString(
+    _languageKey,
+    language,
+  );
+
+  if (!mounted) {
+    return;
   }
 
-  // ==========================================================
-  // CHANGE LANGUAGE
-  // ==========================================================
+  setState(() {
+    _languageCode = language;
+  });
+} catch (error) {
+  debugPrint(
+    '🐱 Stelluriini: Language save error: $error',
+  );
+}
 
-  Future<void> _changeLanguage(
-    String language,
-  ) async {
-    try {
-      final SharedPreferences preferences =
-          await SharedPreferences.getInstance();
+}
 
-      await preferences.setString(
-        _languageKey,
-        language,
-      );
+// ==========================================================
+// BUILD
+// ==========================================================
 
-      if (!mounted) {
-        return;
-      }
+@override
+Widget build(BuildContext context) {
+return MaterialApp(
+navigatorObservers: <NavigatorObserver>[
+_analyticsObserver,
+],
 
-      setState(() {
-        _languageCode = language;
-      });
-    } catch (error) {
-      debugPrint(
-        '🐱 Stelluriini: Language save error: $error',
-      );
-    }
-  }
+  debugShowCheckedModeBanner: false,
 
-  // ==========================================================
-  // BUILD
-  // ==========================================================
+  title: 'Stelluriini',
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
+  theme: ThemeData(
+    brightness: Brightness.dark,
+    useMaterial3: true,
+    scaffoldBackgroundColor:
+        const Color(0xFF120B24),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFFB58CFF),
+      brightness: Brightness.dark,
+      primary: const Color(0xFFB58CFF),
+      secondary: const Color(0xFFFFB7E8),
+    ),
+  ),
 
-      title: 'Stelluriini',
+  // ========================================================
+  // AUTH GATE
+  // ========================================================
 
-      theme: ThemeData(
-        brightness: Brightness.dark,
+  home: AuthGate(
+    languageCode: _languageCode,
+    changeLanguage: _changeLanguage,
+  ),
+);
 
-        useMaterial3: true,
-
-        scaffoldBackgroundColor:
-            const Color(0xFF120B24),
-
-        colorScheme:
-            ColorScheme.fromSeed(
-          seedColor:
-              const Color(0xFFB58CFF),
-
-          brightness:
-              Brightness.dark,
-
-          primary:
-              const Color(0xFFB58CFF),
-
-          secondary:
-              const Color(0xFFFFB7E8),
-        ),
-      ),
-
-      // ========================================================
-      // AUTH GATE
-      // ========================================================
-
-      home: AuthGate(
-        languageCode:
-            _languageCode,
-
-        changeLanguage:
-            _changeLanguage,
-      ),
-    );
-  }
+}
 }
