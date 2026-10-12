@@ -5,10 +5,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#120B24">
+
   <meta name="description" content="Meet Stelluriini (STL), a Stella-inspired virtual mining experience on Android, with a token on Solana.">
+
   <meta name="robots" content="index,follow">
+
+  <meta name="google-site-verification" content="0d9WdZx0MbYJkNDqyPFp3g1qUHeBmIWcd6KPbBWOdh4">
+
   <link rel="canonical" href="https://stelluriini.web.app/">
+
   <title>Stelluriini (STL) — Stella's Virtual Mining Universe</title>
+
   <style>
     :root {
       --background: #120B24;
@@ -22,7 +29,9 @@
       --border: rgba(181, 140, 255, .24);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html {
       scroll-behavior: smooth;
@@ -39,7 +48,15 @@
       line-height: 1.65;
     }
 
-    a { color: var(--pink); }
+    a {
+      color: var(--pink);
+    }
+
+    a:focus-visible,
+    .button:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 4px;
+    }
 
     .wrap {
       width: min(1100px, calc(100% - 36px));
@@ -66,7 +83,9 @@
       letter-spacing: .04em;
     }
 
-    .brand span { color: var(--purple); }
+    .brand span {
+      color: var(--purple);
+    }
 
     nav {
       display: flex;
@@ -80,7 +99,9 @@
       font-size: .95rem;
     }
 
-    nav a:hover { color: var(--pink); }
+    nav a:hover {
+      color: var(--pink);
+    }
 
     .hero {
       text-align: center;
@@ -160,7 +181,9 @@
       background: rgba(33,17,59,.72);
     }
 
-    section { padding: 42px 0; }
+    section {
+      padding: 42px 0;
+    }
 
     .section-title {
       text-align: center;
@@ -188,9 +211,14 @@
       background: linear-gradient(160deg, rgba(33,17,59,.96), rgba(26,14,49,.96));
     }
 
-    .card .icon { font-size: 1.8rem; }
+    .card .icon {
+      font-size: 1.8rem;
+    }
 
-    h2, h3 { line-height: 1.25; }
+    h2,
+    h3 {
+      line-height: 1.25;
+    }
 
     .card h3 {
       margin: 12px 0 8px;
@@ -216,9 +244,13 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .token-row:last-of-type { border-bottom: 0; }
+    .token-row:last-of-type {
+      border-bottom: 0;
+    }
 
-    .token-label { color: var(--secondary); }
+    .token-label {
+      color: var(--secondary);
+    }
 
     .address {
       overflow-wrap: anywhere;
@@ -237,7 +269,9 @@
       padding: 34px;
       border-radius: 26px;
       border: 1px solid var(--border);
-      background: radial-gradient(ellipse at top, rgba(181,140,255,.15), transparent 70%), var(--surface);
+      background:
+        radial-gradient(ellipse at top, rgba(181,140,255,.15), transparent 70%),
+        var(--surface);
     }
 
     footer {
@@ -249,17 +283,33 @@
       text-align: center;
     }
 
-    footer a { margin: 0 8px; }
+    footer a {
+      margin: 0 8px;
+    }
 
     @media (max-width: 760px) {
-      .grid { grid-template-columns: 1fr; }
-      .hero { padding-top: 58px; }
-      .card { padding: 21px; }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 58px;
+      }
+
+      .card {
+        padding: 21px;
+      }
     }
 
     @media (max-width: 440px) {
-      .token-row { grid-template-columns: 1fr; gap: 2px; }
-      nav { gap: 12px; }
+      .token-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
+
+      nav {
+        gap: 12px;
+      }
     }
   </style>
 </head>
@@ -267,7 +317,10 @@
 <body>
   <header>
     <div class="wrap nav">
-      <a class="brand" href="/" aria-label="Stelluriini home">✦ <span>STELLURIINI</span></a>
+      <a class="brand" href="/" aria-label="Stelluriini home">
+        ✦ <span>STELLURIINI</span>
+      </a>
+
       <nav aria-label="Main navigation">
         <a href="#about">About</a>
         <a href="#token">STL token</a>
@@ -279,8 +332,11 @@
   <main>
     <section class="hero wrap">
       <div class="mascot" role="img" aria-label="Cat mascot">🐱</div>
+
       <div class="eyebrow">A Stella-inspired project</div>
+
       <h1>Welcome to <span>Stelluriini</span></h1>
+
       <p class="lead">
         A cat-themed virtual mining experience built around curiosity,
         progress, and the Stelluriini community. Meet Stella, explore
@@ -288,14 +344,21 @@
       </p>
 
       <div class="actions">
-        <a class="button primary"
-           href="https://play.google.com/store/apps/details?id=com.stelluriini.app"
-           target="_blank" rel="noopener noreferrer">
+        <a
+          class="button primary"
+          href="https://play.google.com/store/apps/details?id=com.stelluriini.app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Get the Android app
         </a>
-        <a class="button secondary-button"
-           href="https://solscan.io/token/AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas"
-           target="_blank" rel="noopener noreferrer">
+
+        <a
+          class="button secondary-button"
+          href="https://solscan.io/token/AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           View STL on Solscan
         </a>
       </div>
@@ -303,6 +366,7 @@
 
     <section id="about" class="wrap">
       <h2 class="section-title">A little curiosity goes a long way</h2>
+
       <p class="section-intro">
         Stelluriini takes inspiration from Stella, a curious cat,
         and brings that spirit into a mobile virtual mining experience.
@@ -312,28 +376,35 @@
         <article class="card">
           <div class="icon" aria-hidden="true">🐾</div>
           <h3>Made with Stella in mind</h3>
-          <p>A friendly cat-inspired identity, with a purple, pink,
-             and starlight-gold visual theme.</p>
+          <p>
+            A friendly cat-inspired identity, with a purple, pink,
+            and starlight-gold visual theme.
+          </p>
         </article>
 
         <article class="card">
           <div class="icon" aria-hidden="true">⛏️</div>
           <h3>Virtual mining experience</h3>
-          <p>Explore mining progress and hash-rate mechanics inside
-             the Stelluriini Android app.</p>
+          <p>
+            Explore mining progress and hash-rate mechanics inside
+            the Stelluriini Android app.
+          </p>
         </article>
 
         <article class="card">
           <div class="icon" aria-hidden="true">🌌</div>
           <h3>Built on Solana</h3>
-          <p>The STL token has a public Solana mint address that can
-             be checked on a blockchain explorer.</p>
+          <p>
+            The STL token has a public Solana mint address that can
+            be checked on a blockchain explorer.
+          </p>
         </article>
       </div>
     </section>
 
     <section id="token" class="wrap">
       <h2 class="section-title">STL token information</h2>
+
       <p class="section-intro">
         Use the mint address below to identify the existing Stelluriini
         token. Always verify the full address before interacting with any token.
@@ -344,18 +415,24 @@
           <div class="token-label">Token name</div>
           <strong>Stelluriini</strong>
         </div>
+
         <div class="token-row">
           <div class="token-label">Symbol</div>
           <strong>STL</strong>
         </div>
+
         <div class="token-row">
           <div class="token-label">Network</div>
           <strong>Solana</strong>
         </div>
+
         <div class="token-row">
           <div class="token-label">Mint address</div>
-          <div class="address">AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas</div>
+          <div class="address">
+            AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas
+          </div>
         </div>
+
         <div class="token-row">
           <div class="token-label">Token supply</div>
           <strong>17,602,539,062 STL (project-reported)</strong>
@@ -370,9 +447,12 @@
         </p>
 
         <div class="actions">
-          <a class="button secondary-button"
-             href="https://solscan.io/token/AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas"
-             target="_blank" rel="noopener noreferrer">
+          <a
+            class="button secondary-button"
+            href="https://solscan.io/token/AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Check token details
           </a>
         </div>
@@ -382,12 +462,17 @@
     <section id="app" class="wrap">
       <div class="cta">
         <h2 class="section-title">Explore Stelluriini on Android</h2>
+
         <p class="section-intro">
           Visit the Google Play listing for app details and availability.
         </p>
-        <a class="button primary"
-           href="https://play.google.com/store/apps/details?id=com.stelluriini.app"
-           target="_blank" rel="noopener noreferrer">
+
+        <a
+          class="button primary"
+          href="https://play.google.com/store/apps/details?id=com.stelluriini.app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Open Google Play
         </a>
       </div>
@@ -396,13 +481,28 @@
 
   <footer>
     <div class="wrap">
-      <p><strong>Stelluriini</strong> · A Stella-inspired virtual mining project</p>
       <p>
-        <a href="https://play.google.com/store/apps/details?id=com.stelluriini.app">Google Play</a>
-        <a href="https://solscan.io/token/AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas">Solscan</a>
-        <a href="/account-deletion">Account deletion</a>
+        <strong>Stelluriini</strong> · A Stella-inspired virtual mining project
       </p>
-      <p>STL is not presented as an investment. No market price or trading liquidity is currently represented on this site.</p>
+
+      <p>
+        <a href="https://play.google.com/store/apps/details?id=com.stelluriini.app">
+          Google Play
+        </a>
+
+        <a href="https://solscan.io/token/AyZun5s9tEJDeHTNPrVbaYpqjWdSKHx25M3kfVFjbdas">
+          Solscan
+        </a>
+
+        <a href="/account-deletion">
+          Account deletion
+        </a>
+      </p>
+
+      <p>
+        STL is not presented as an investment. No market price or trading
+        liquidity is currently represented on this site.
+      </p>
     </div>
   </footer>
 </body>
