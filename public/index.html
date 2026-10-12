@@ -134,13 +134,21 @@
     .mascot {
       display: grid;
       place-items: center;
-      width: 104px;
-      height: 104px;
+      width: 124px;
+      height: 124px;
       margin: 0 auto 22px;
       border-radius: 32px;
       background: linear-gradient(135deg, var(--purple), var(--pink));
       box-shadow: 0 14px 48px rgba(181,140,255,.22);
-      font-size: 58px;
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .mascot img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .eyebrow {
@@ -287,16 +295,6 @@
       margin-top: 18px;
     }
 
-    .cta {
-      text-align: center;
-      padding: 34px;
-      border-radius: 26px;
-      border: 1px solid var(--border);
-      background:
-        radial-gradient(ellipse at top, rgba(181,140,255,.15), transparent 70%),
-        var(--surface);
-    }
-
     footer {
       margin-top: 40px;
       padding: 28px 0 40px;
@@ -347,14 +345,20 @@
       <nav aria-label="Main navigation">
         <a href="#about">About</a>
         <a href="#token">STL token</a>
-        <a href="#app">Android app</a>
       </nav>
     </div>
   </header>
 
   <main>
     <section class="hero wrap">
-      <div class="mascot" role="img" aria-label="Cat mascot">🐱</div>
+      <div class="mascot">
+        <img
+          src="https://raw.githubusercontent.com/sape69/coin-miner-local-test/main/assets/images/stelluriini_logo.png"
+          alt="Stelluriini logo"
+          width="96"
+          height="96"
+        >
+      </div>
 
       <div class="eyebrow">A Stella-inspired project</div>
 
@@ -484,26 +488,6 @@
             Check STL token details
           </a>
         </div>
-      </div>
-    </section>
-
-    <section id="app" class="wrap">
-      <div class="cta">
-        <h2 class="section-title">Stelluriini Android app</h2>
-
-        <p class="section-intro">
-          Visit the official Google Play listing for app details
-          and availability.
-        </p>
-
-        <a
-          class="button primary"
-          href="https://play.google.com/store/apps/details?id=com.stelluriini.app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Open Google Play
-        </a>
       </div>
     </section>
   </main>
