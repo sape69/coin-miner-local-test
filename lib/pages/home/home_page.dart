@@ -1426,30 +1426,18 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
+    // ============================================================
   // ⛏️ STELLA MINING CARD
   // ============================================================
 
   Widget _buildStellaMiningCard() {
-    // Louhintapäivä määräytyy perushash raten mukaan.
-    // Power Boostin bonus ei vaikuta päivän numeroon.
+    // Daily Streak määrää näytettävän päivänumeron.
     //
-    // 0.5 H/s = päivä 1
-    // 1.0 H/s = päivä 2
-    // 1.5 H/s = päivä 3
-    //
-    // Päivä rajataan vähintään yhteen.
-    // Streak-arvoa ei muuteta.
+    // Näytettävä päivä on aina välillä 1–7.
+    // Backendin todellista streak-arvoa ei muuteta.
+    // Power Boost ei vaikuta päivänumeroon.
 
-    final double safeBaseHashRate =
-        _hashRate.isFinite && _hashRate >= 0
-            ? _hashRate
-            : defaultDailyHashRate;
-
-    final int miningDay =
-        ((safeBaseHashRate / defaultDailyHashRate).round())
-            .clamp(1, 365)
-            .toInt();
+    final int displayStreak = _streak.clamp(1, 7).toInt();
 
     return StellaMiningCard(
       languageCode: widget.languageCode,
@@ -1470,10 +1458,11 @@ class _HomePageState extends State<HomePage>
       miningProgressTitle: _t('miningProgress'),
       stlPerHourText:
           '${_formatNumber(_effectiveHashRate * miningPerHashPerHour)} STL/h',
-      dailyHashRateText: '${_formatNumber(_effectiveHashRate)} H/s',
+      dailyHashRateText:
+          '${_formatNumber(_effectiveHashRate)} H/s',
       dailyHashRateDayText:
-          '${_t('day')} ${_miningActive ? miningDay : _streak}',
-      dailyStreak: _streak,
+          '${_t('day')} $displayStreak',
+      dailyStreak: displayStreak,
       boostActive: _boostActive,
       miningButton: _buildMiningButton(),
     );
