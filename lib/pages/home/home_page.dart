@@ -1691,13 +1691,13 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // Automaattisesti pubspec.yaml-tiedostosta haettu versio.
+                    // Sovellusversio ja build-numero lokalisoidulla tekstillä.
           if (_appVersion.isNotEmpty) ...[
             const SizedBox(height: 5),
             Text(
               _buildNumber.isNotEmpty
-                  ? 'Versio $_appVersion (build $_buildNumber)'
-                  : 'Versio $_appVersion',
+                  ? '${_t('appVersion')} $_appVersion (build $_buildNumber)'
+                  : '${_t('appVersion')} $_appVersion',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: secondaryTextColor,
@@ -1706,46 +1706,6 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ],
-
-          const SizedBox(height: 8),
-          const SelectableText(
-            'stelluriini.app@gmail.com',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: accentColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-          ),
-          if (_adManager.privacyOptionsRequired) ...[
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              onPressed: _showPrivacyOptions,
-              icon: const Icon(
-                Icons.privacy_tip_outlined,
-                size: 18,
-              ),
-              label: Text(_privacyOptionsLabel()),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: accentColor,
-                side: BorderSide(
-                  color: accentColor.withValues(alpha: 0.45),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 11,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   // ============================================================
   // 🔐 PRIVACY OPTIONS
