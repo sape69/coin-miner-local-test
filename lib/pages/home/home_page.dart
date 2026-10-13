@@ -11,6 +11,7 @@ import '../../data/cat_facts.dart';
 import '../../localization.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_logo.dart';
+import '../../widgets/stelluriini_space_background.dart';
 import '../about/about_page.dart';
 import '../account/account_deletion_page.dart';
 import '../achievements/achievements_page.dart';
@@ -1426,7 +1427,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-    // ============================================================
+  // ============================================================
   // ⛏️ STELLA MINING CARD
   // ============================================================
 
@@ -1705,7 +1706,6 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ],
-
           const SizedBox(height: 8),
           const SelectableText(
             'stelluriini.app@gmail.com',
@@ -1807,55 +1807,58 @@ class _HomePageState extends State<HomePage>
         onAccountDeletionPressed: _openAccountDeletion,
         onLogoutPressed: _logout,
       ),
-      body: SafeArea(
-        child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(
+      body: StelluriiniSpaceBackground(
+        overlayOpacity: 0.48,
+        child: SafeArea(
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: accentColor,
+                  ),
+                )
+              : RefreshIndicator(
                   color: accentColor,
+                  backgroundColor: cardColor,
+                  onRefresh: _loadMiningStatus,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    children: [
+                      _buildHeader(),
+                      _buildGreeting(),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: _buildStellaMiningCard(),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: _buildStatsRow(),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: _buildAdButton(),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: _buildDailyCatFact(),
+                      ),
+                      _buildStellaFooter(),
+                    ],
+                  ),
                 ),
-              )
-            : RefreshIndicator(
-                color: accentColor,
-                backgroundColor: cardColor,
-                onRefresh: _loadMiningStatus,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-                  children: [
-                    _buildHeader(),
-                    _buildGreeting(),
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                      ),
-                      child: _buildStellaMiningCard(),
-                    ),
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                      ),
-                      child: _buildStatsRow(),
-                    ),
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                      ),
-                      child: _buildAdButton(),
-                    ),
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                      ),
-                      child: _buildDailyCatFact(),
-                    ),
-                    _buildStellaFooter(),
-                  ],
-                ),
-              ),
+        ),
       ),
     );
   }
