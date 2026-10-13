@@ -1,49 +1,24 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'mining_progress_card.dart';
 import 'stella_mining_days_card.dart';
 
 // ============================================================
-// 🐱 STELLURIINI STELLA MINING CARD
+// 🐱 STELLURIINI — STELLA MINING CARD
 // ============================================================
 //
-// Stella Mining Card.
+// Tilat:
+// 😴 Sleeping  -> stella_sleeping.png
+// ⛏️ Mining    -> stella_mining.png
+// ⚡ Boost     -> stella_boosting.png
 //
-// Stella käyttää aktiivisen tilan mukaista oikeaa kuvaa:
-//
-// 😴 stella_sleeping.png
-// ⛏️ stella_mining.png
-// ⚡ stella_boosting.png
-//
-// VAIN YKSI STELLA-KUVA NÄKYY KERRALLA.
-//
-// Tilajärjestys:
-//
-// 1. Power Boost aktiivinen
-//    → stella_boosting.png
-//
-// 2. Louhinta aktiivinen
-//    → stella_mining.png
-//
-// 3. Muulloin
-//    → stella_sleeping.png
-//
-// Boostin aikana:
-// - voimakas käynnistysanimaatio
-// - jatkuva kevyt liike koko Boostin ajan
-// - jatkuva kevyt pulssi
-// - jatkuva pieni heilunta
-// - kultainen boost-hehku
-// - kipinät
-//
-// Mukana:
-// - näkyvä Stellan tilakohtainen animaatio
-// - Boost-animaatio
-// - kultainen boost-hehku
-// - kipinät
-// - STL badge louhinnan aikana
-// - Stella Mining Days
-// - Mining Progress
+// Animaatiot:
+// - Nukkuminen: rauhallinen hengityksen kaltainen liike.
+// - Louhinta: kevyt luonnollinen pystysuuntainen liike.
+// - Boost: käynnistysanimaatio, hillitty pulssi ja hehku.
+// - Vain yksi Stella-kuva näkyy kerrallaan.
 //
 // ============================================================
 
@@ -54,22 +29,16 @@ class StellaMiningCard extends StatefulWidget {
   final String timerText;
   final String timerLabel;
   final Animation<double> catAnimation;
-
   final String languageCode;
-
   final bool miningActive;
   final int miningRemainingMs;
   final int miningDurationMs;
-
   final String miningProgressTitle;
   final String stlPerHourText;
   final String dailyHashRateText;
   final String dailyHashRateDayText;
-
   final int dailyStreak;
-
   final bool boostActive;
-
   final Widget miningButton;
 
   const StellaMiningCard({
@@ -97,28 +66,20 @@ class StellaMiningCard extends StatefulWidget {
   State<StellaMiningCard> createState() => _StellaMiningCardState();
 }
 
-// ============================================================
-// 🐱 STELLA MINING CARD STATE
-// ============================================================
-
 class _StellaMiningCardState extends State<StellaMiningCard>
     with TickerProviderStateMixin {
   // ============================================================
-  // 🎨 STELLA COLORS
+  // 🎨 COLORS
   // ============================================================
 
   static const Color backgroundColor = Color(0xFF120B24);
-
   static const Color accentColor = Color(0xFFB58CFF);
-
   static const Color pinkColor = Color(0xFFFFB7E8);
-
   static const Color goldColor = Color(0xFFFFD166);
-
   static const Color secondaryTextColor = Color(0xFFBFAEDB);
 
   // ============================================================
-  // 🖼️ STELLA IMAGE PATHS
+  // 🖼️ IMAGE PATHS
   // ============================================================
 
   static const String _sleepingImage =
@@ -135,7 +96,6 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   // ============================================================
 
   late final AnimationController _boostAnimationController;
-
   late final Animation<double> _boostScale;
   late final Animation<double> _boostRotation;
   late final Animation<double> _boostOpacity;
@@ -145,419 +105,219 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   // ============================================================
 
   late final AnimationController _boostLoopController;
-
   late final Animation<double> _boostLoopScale;
   late final Animation<double> _boostLoopRotation;
   late final Animation<double> _boostLoopFloat;
-
-  // ============================================================
-  // 🚀 INIT
-  // ============================================================
 
   @override
   void initState() {
     super.initState();
 
-    // ==========================================================
-    // ⚡ BOOST START
-    // ==========================================================
-
     _boostAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        milliseconds: 1100,
-      ),
+      duration: const Duration(milliseconds: 1100),
     );
 
-    _boostScale = TweenSequence<double>(
-      [
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 1.0,
-            end: 1.18,
-          ),
-          weight: 25,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 1.18,
-            end: 0.94,
-          ),
-          weight: 20,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.94,
-            end: 1.08,
-          ),
-          weight: 20,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 1.08,
-            end: 1.0,
-          ),
-          weight: 35,
-        ),
-      ],
-    ).animate(
+    _boostScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.10),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.10, end: 0.97),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.97, end: 1.035),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.035, end: 1.0),
+        weight: 35,
+      ),
+    ]).animate(
       CurvedAnimation(
         parent: _boostAnimationController,
         curve: Curves.easeOut,
       ),
     );
 
-    _boostRotation = TweenSequence<double>(
-      [
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.0,
-            end: -0.08,
-          ),
-          weight: 20,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: -0.08,
-            end: 0.08,
-          ),
-          weight: 25,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.08,
-            end: -0.035,
-          ),
-          weight: 20,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: -0.035,
-            end: 0.0,
-          ),
-          weight: 35,
-        ),
-      ],
-    ).animate(
+    _boostRotation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: -0.035),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: -0.035, end: 0.035),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.035, end: -0.015),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: -0.015, end: 0.0),
+        weight: 35,
+      ),
+    ]).animate(
       CurvedAnimation(
         parent: _boostAnimationController,
         curve: Curves.easeOut,
       ),
     );
 
-    _boostOpacity = TweenSequence<double>(
-      [
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 0.0,
-            end: 1.0,
-          ),
-          weight: 20,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 1.0,
-            end: 1.0,
-          ),
-          weight: 25,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(
-            begin: 1.0,
-            end: 0.0,
-          ),
-          weight: 55,
-        ),
-      ],
-    ).animate(
+    _boostOpacity = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 0.0),
+        weight: 55,
+      ),
+    ]).animate(
       CurvedAnimation(
         parent: _boostAnimationController,
         curve: Curves.easeOut,
       ),
     );
-
-    // ==========================================================
-    // 🔄 CONTINUOUS BOOST MOTION
-    // ==========================================================
 
     _boostLoopController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        milliseconds: 1800,
-      ),
+      duration: const Duration(milliseconds: 2400),
     );
 
-    final CurvedAnimation boostLoopCurve =
-        CurvedAnimation(
+    final CurvedAnimation loopCurve = CurvedAnimation(
       parent: _boostLoopController,
       curve: Curves.easeInOut,
     );
 
     _boostLoopScale = Tween<double>(
-      begin: 0.985,
-      end: 1.035,
-    ).animate(
-      boostLoopCurve,
-    );
+      begin: 0.995,
+      end: 1.015,
+    ).animate(loopCurve);
 
     _boostLoopRotation = Tween<double>(
-      begin: -0.025,
-      end: 0.025,
-    ).animate(
-      boostLoopCurve,
-    );
+      begin: -0.008,
+      end: 0.008,
+    ).animate(loopCurve);
 
     _boostLoopFloat = Tween<double>(
-      begin: -4.0,
-      end: 4.0,
-    ).animate(
-      boostLoopCurve,
-    );
-
-    // ==========================================================
-    // ⚡ IF BOOST IS ALREADY ACTIVE
-    // ==========================================================
+      begin: -1.5,
+      end: 1.5,
+    ).animate(loopCurve);
 
     if (widget.boostActive) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) {
-          if (mounted) {
-            _startBoostAnimations();
-          }
-        },
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _startBoostAnimations();
+        }
+      });
     }
   }
 
-  // ============================================================
-  // 🔄 WIDGET UPDATE
-  // ============================================================
-
   @override
-  void didUpdateWidget(
-    covariant StellaMiningCard oldWidget,
-  ) {
+  void didUpdateWidget(covariant StellaMiningCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // ----------------------------------------------------------
-    // ⚡ BOOST STARTED
-    // ----------------------------------------------------------
-
-    if (!oldWidget.boostActive &&
-        widget.boostActive) {
+    if (!oldWidget.boostActive && widget.boostActive) {
       _startBoostAnimations();
     }
 
-    // ----------------------------------------------------------
-    // 💤 BOOST ENDED
-    // ----------------------------------------------------------
-
-    if (oldWidget.boostActive &&
-        !widget.boostActive) {
+    if (oldWidget.boostActive && !widget.boostActive) {
       _stopBoostAnimations();
     }
   }
 
-  // ============================================================
-  // ⚡ START BOOST ANIMATIONS
-  // ============================================================
-
   void _startBoostAnimations() {
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
-    // ----------------------------------------------------------
-    // VOIMAKAS KÄYNNISTYS
-    // ----------------------------------------------------------
-
-    _boostAnimationController.forward(
-      from: 0.0,
-    );
-
-    // ----------------------------------------------------------
-    // JATKUVA BOOST-LIIKE
-    // ----------------------------------------------------------
+    _boostAnimationController.forward(from: 0.0);
 
     _boostLoopController
       ..stop()
       ..value = 0.0
-      ..repeat(
-        reverse: true,
-      );
+      ..repeat(reverse: true);
   }
 
-  // ============================================================
-  // 💤 STOP BOOST ANIMATIONS
-  // ============================================================
-
   void _stopBoostAnimations() {
-    _boostAnimationController.stop();
+    _boostAnimationController
+      ..stop()
+      ..value = 0.0;
 
     _boostLoopController
       ..stop()
       ..value = 0.0;
   }
 
-  // ============================================================
-  // 🧹 DISPOSE
-  // ============================================================
-
   @override
   void dispose() {
     _boostAnimationController.dispose();
     _boostLoopController.dispose();
-
     super.dispose();
   }
 
-  // ============================================================
-  // 🔢 FORMAT STL
-  // ============================================================
-
-  String _formatStl(
-    double value,
-  ) {
+  String _formatStl(double value) {
     return value.toStringAsFixed(4);
   }
 
-  // ============================================================
-  // 🖼️ ACTIVE STELLA IMAGE
-  // ============================================================
-
   String get _activeStellaImage {
-    if (widget.boostActive) {
-      return _boostingImage;
-    }
-
-    if (widget.miningActive) {
-      return _miningImage;
-    }
-
+    if (widget.boostActive) return _boostingImage;
+    if (widget.miningActive) return _miningImage;
     return _sleepingImage;
   }
 
   // ============================================================
-  // 🐱 STELLA IMAGE + ANIMATION
+  // 🐱 STELLA IMAGE AND ANIMATION
   // ============================================================
 
   Widget _buildStellaImage() {
     return AnimatedBuilder(
-      animation: Listenable.merge(
-        [
-          widget.catAnimation,
-          _boostAnimationController,
-          _boostLoopController,
-        ],
-      ),
-      builder: (
-        BuildContext context,
-        Widget? child,
-      ) {
-        // ======================================================
-        // 📈 NORMAL CAT ANIMATION
-        // ======================================================
+      animation: Listenable.merge([
+        widget.catAnimation,
+        _boostAnimationController,
+        _boostLoopController,
+      ]),
+      builder: (BuildContext context, Widget? child) {
+        final double animationValue = widget.catAnimation.value;
 
-        final double animationValue =
-            widget.catAnimation.value;
+        // Pieni, keskitetty hengitysliike.
+        final double breathingScale =
+            1.0 + (math.sin(animationValue * math.pi) * 0.012);
 
-        // ======================================================
-        // ⚡ BOOST START ANIMATION
-        // ======================================================
+        // Louhinnan liike pysyy maltillisena eikä vedä Stellaa
+        // jatkuvasti vain yhteen suuntaan.
+        final double miningFloat =
+            math.sin(animationValue * math.pi * 2) * 2.0;
 
-        final double boostScale =
-            _boostScale.value;
-
-        final double boostRotation =
-            _boostRotation.value;
-
-        final double sparkleOpacity =
-            _boostOpacity.value;
-
-        // ======================================================
-        // 🔄 CONTINUOUS BOOST MOTION
-        // ======================================================
-
-        final double loopScale =
-            _boostLoopScale.value;
-
-        final double loopRotation =
-            _boostLoopRotation.value;
-
-        final double loopFloat =
-            _boostLoopFloat.value;
-
-        // ======================================================
-        // 😴 / ⛏️ NORMAL SCALE
-        // ======================================================
-
-        double normalScale = 1.0;
-
-        if (!widget.miningActive &&
-            !widget.boostActive) {
-          normalScale =
-              0.985 +
-              (animationValue * 0.030);
-        }
-
-        // ======================================================
-        // ⛏️ MINING FLOAT
-        // ======================================================
-
+        double finalScale = 1.0;
+        double finalRotation = 0.0;
         double floatingOffset = 0.0;
 
-        if (widget.miningActive &&
-            !widget.boostActive) {
-          floatingOffset =
-              -8.0 * animationValue;
+        if (!widget.miningActive && !widget.boostActive) {
+          finalScale = breathingScale;
+        } else if (widget.miningActive && !widget.boostActive) {
+          finalScale = 1.0 + (math.sin(animationValue * math.pi) * 0.008);
+          floatingOffset = miningFloat;
         }
 
-        // ======================================================
-        // ⛏️ MINING SCALE
-        // ======================================================
-
-        if (widget.miningActive &&
-            !widget.boostActive) {
-          normalScale =
-              0.99 +
-              (animationValue * 0.02);
-        }
-
-        // ======================================================
-        // ⚡ BOOST FINAL MOTION
-        // ======================================================
-
-        double finalScale = normalScale;
-
-        double finalRotation = 0.0;
+        final double boostScale = _boostScale.value;
+        final double boostRotation = _boostRotation.value;
+        final double sparkleOpacity = _boostOpacity.value;
 
         if (widget.boostActive) {
-          // ----------------------------------------------------
-          // Voimakas käynnistysliike yhdistyy jatkuvaan
-          // kevyeen pulssiin.
-          // ----------------------------------------------------
-
-          finalScale =
-              boostScale *
-              loopScale;
-
+          finalScale = boostScale * _boostLoopScale.value;
           finalRotation =
-              boostRotation +
-              loopRotation;
-
-          floatingOffset =
-              loopFloat;
+              boostRotation + _boostLoopRotation.value;
+          floatingOffset = _boostLoopFloat.value;
         }
 
-        // ======================================================
-        // 🐱 TRANSFORM
-        // ======================================================
-
         return Transform.translate(
-          offset: Offset(
-            0,
-            floatingOffset,
-          ),
+          offset: Offset(0, floatingOffset),
           child: Transform.rotate(
             angle: finalRotation,
             child: Transform.scale(
@@ -569,10 +329,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                   alignment: Alignment.center,
                   clipBehavior: Clip.none,
                   children: [
-                    // ==================================================
-                    // 🌟 CONTINUOUS BOOST GLOW
-                    // ==================================================
-
+                    // ✨ BOOST GLOW
                     if (widget.boostActive)
                       Container(
                         width: 138,
@@ -581,66 +338,47 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  goldColor.withValues(
-                                alpha:
-                                    0.30 +
-                                    (0.15 *
-                                        _boostLoopController
-                                            .value),
+                              color: goldColor.withValues(
+                                alpha: 0.25 +
+                                    (0.12 *
+                                        _boostLoopController.value),
                               ),
                               blurRadius: 25,
-                              spreadRadius: 6,
+                              spreadRadius: 5,
                             ),
                             BoxShadow(
-                              color:
-                                  pinkColor.withValues(
-                                alpha: 0.20,
-                              ),
-                              blurRadius: 42,
-                              spreadRadius: 4,
-                            ),
-                            BoxShadow(
-                              color:
-                                  accentColor.withValues(
-                                alpha: 0.18,
-                              ),
-                              blurRadius: 55,
+                              color: pinkColor.withValues(alpha: 0.18),
+                              blurRadius: 38,
                               spreadRadius: 3,
+                            ),
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.16),
+                              blurRadius: 48,
+                              spreadRadius: 2,
                             ),
                           ],
                         ),
                       ),
 
-                    // ==================================================
                     // 💜 STELLA BACKGROUND
-                    // ==================================================
-
                     Container(
                       width: 126,
                       height: 126,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient:
-                            const RadialGradient(
+                        gradient: const RadialGradient(
                           colors: [
                             Color(0xFF43266B),
                             Color(0xFF281544),
                           ],
                         ),
                         border: Border.all(
-                          color:
-                              accentColor.withValues(
-                            alpha: 0.35,
-                          ),
+                          color: accentColor.withValues(alpha: 0.35),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                accentColor.withValues(
-                              alpha: 0.16,
-                            ),
+                            color: accentColor.withValues(alpha: 0.16),
                             blurRadius: 18,
                             spreadRadius: 2,
                           ),
@@ -648,10 +386,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                       ),
                     ),
 
-                    // ==================================================
                     // 🐱 ACTIVE STELLA IMAGE
-                    // ==================================================
-
                     Container(
                       width: 112,
                       height: 112,
@@ -659,16 +394,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                Colors.black.withValues(
-                              alpha: 0.28,
-                            ),
+                            color: Colors.black.withValues(alpha: 0.28),
                             blurRadius: 14,
-                            offset:
-                                const Offset(
-                              0,
-                              5,
-                            ),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -683,98 +411,64 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                       ),
                     ),
 
-                    // ==================================================
                     // ✨ BOOST SPARKLE
-                    // ==================================================
-
-                    if (widget.boostActive &&
-                        sparkleOpacity > 0)
+                    if (widget.boostActive && sparkleOpacity > 0)
                       Positioned(
                         top: -8,
                         right: 0,
                         child: Opacity(
-                          opacity:
-                              sparkleOpacity,
+                          opacity: sparkleOpacity,
                           child: const Text(
                             '✨',
-                            style: TextStyle(
-                              fontSize: 30,
-                            ),
+                            style: TextStyle(fontSize: 30),
                           ),
                         ),
                       ),
 
-                    // ==================================================
                     // ⚡ BOOST LIGHTNING
-                    // ==================================================
-
-                    if (widget.boostActive &&
-                        sparkleOpacity > 0)
+                    if (widget.boostActive && sparkleOpacity > 0)
                       Positioned(
                         bottom: -3,
                         left: -4,
                         child: Opacity(
-                          opacity:
-                              sparkleOpacity,
+                          opacity: sparkleOpacity,
                           child: const Text(
                             '⚡',
-                            style: TextStyle(
-                              fontSize: 27,
-                            ),
+                            style: TextStyle(fontSize: 27),
                           ),
                         ),
                       ),
 
-                    // ==================================================
                     // 💫 BOOST STAR
-                    // ==================================================
-
-                    if (widget.boostActive &&
-                        sparkleOpacity > 0)
+                    if (widget.boostActive && sparkleOpacity > 0)
                       Positioned(
                         top: 13,
                         left: -5,
                         child: Opacity(
-                          opacity:
-                              sparkleOpacity,
+                          opacity: sparkleOpacity,
                           child: const Text(
                             '💫',
-                            style: TextStyle(
-                              fontSize: 24,
-                            ),
+                            style: TextStyle(fontSize: 24),
                           ),
                         ),
                       ),
 
-                    // ==================================================
                     // 🪙 STL BADGE
-                    // ==================================================
-
                     if (widget.miningActive)
                       Positioned(
                         left: -8,
                         bottom: 8,
                         child: Container(
-                          padding:
-                              const EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
-                          decoration:
-                              BoxDecoration(
-                            color:
-                                goldColor,
-                            borderRadius:
-                                BorderRadius.circular(
-                              10,
-                            ),
+                          decoration: BoxDecoration(
+                            color: goldColor,
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    goldColor
-                                        .withValues(
-                                  alpha: 0.30,
-                                ),
+                                color: goldColor.withValues(alpha: 0.30),
                                 blurRadius: 8,
                               ),
                             ],
@@ -782,11 +476,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                           child: const Text(
                             'STL',
                             style: TextStyle(
-                              color:
-                                  backgroundColor,
+                              color: backgroundColor,
                               fontSize: 10,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                               letterSpacing: 1,
                             ),
                           ),
@@ -807,16 +499,12 @@ class _StellaMiningCardState extends State<StellaMiningCard>
   // ============================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(30),
-        gradient:
-            const LinearGradient(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -825,10 +513,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
           ],
         ),
         border: Border.all(
-          color:
-              accentColor.withValues(
-            alpha: 0.40,
-          ),
+          color: accentColor.withValues(alpha: 0.40),
         ),
         boxShadow: const [
           BoxShadow(
@@ -840,19 +525,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       ),
       child: Column(
         children: [
-          // ----------------------------------------------------
-          // 🐱 STELLA
-          // ----------------------------------------------------
-
           _buildStellaImage(),
 
-          const SizedBox(
-            height: 18,
-          ),
-
-          // ----------------------------------------------------
-          // ⛏️ MINING TITLE
-          // ----------------------------------------------------
+          const SizedBox(height: 18),
 
           Text(
             widget.miningTitle,
@@ -860,125 +535,79 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
               letterSpacing: 1,
             ),
           ),
 
-          const SizedBox(
-            height: 8,
-          ),
-
-          // ----------------------------------------------------
-          // SUBTITLE
-          // ----------------------------------------------------
+          const SizedBox(height: 8),
 
           Text(
             widget.miningSubtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color:
-                  secondaryTextColor,
+              color: secondaryTextColor,
               fontSize: 14,
             ),
           ),
 
-          const SizedBox(
-            height: 24,
-          ),
-
-          // ----------------------------------------------------
-          // STL
-          // ----------------------------------------------------
+          const SizedBox(height: 24),
 
           Text(
-            _formatStl(
-              widget.unclaimedMining,
-            ),
-            textAlign:
-                TextAlign.center,
+            _formatStl(widget.unclaimedMining),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: goldColor,
               fontSize: 38,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(
-            height: 4,
-          ),
+          const SizedBox(height: 4),
 
           const Text(
             'STL',
             style: TextStyle(
-              color:
-                  secondaryTextColor,
+              color: secondaryTextColor,
               letterSpacing: 2,
               fontSize: 12,
-              fontWeight:
-                  FontWeight.w600,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
-          const SizedBox(
-            height: 24,
-          ),
+          const SizedBox(height: 24),
 
-          // ----------------------------------------------------
           // ⏱️ MINING TIME
-          // ----------------------------------------------------
-
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               vertical: 15,
               horizontal: 20,
             ),
-            decoration:
-                BoxDecoration(
-              color:
-                  backgroundColor.withValues(
-                alpha: 0.55,
-              ),
-              borderRadius:
-                  BorderRadius.circular(
-                18,
-              ),
+            decoration: BoxDecoration(
+              color: backgroundColor.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color:
-                    accentColor.withValues(
-                  alpha: 0.08,
-                ),
+                color: accentColor.withValues(alpha: 0.08),
               ),
             ),
             child: Column(
               children: [
                 Text(
                   widget.timerText,
-                  textAlign:
-                      TextAlign.center,
-                  style:
-                      const TextStyle(
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(
-                  height: 5,
-                ),
+                const SizedBox(height: 5),
                 Text(
                   widget.timerLabel,
-                  textAlign:
-                      TextAlign.center,
-                  style:
-                      const TextStyle(
-                    color:
-                        secondaryTextColor,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: secondaryTextColor,
                     fontSize: 11,
                     letterSpacing: 1.5,
                   ),
@@ -987,54 +616,27 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             ),
           ),
 
-          const SizedBox(
-            height: 14,
-          ),
-
-          // ----------------------------------------------------
-          // ⛏️ MINING BUTTON
-          // ----------------------------------------------------
+          const SizedBox(height: 14),
 
           widget.miningButton,
 
-          const SizedBox(
-            height: 20,
-          ),
-
-          // ----------------------------------------------------
-          // 🐾 STELLA MINING DAYS
-          // ----------------------------------------------------
+          const SizedBox(height: 20),
 
           StellaMiningDaysCard(
-            languageCode:
-                widget.languageCode,
-            dailyStreak:
-                widget.dailyStreak,
+            languageCode: widget.languageCode,
+            dailyStreak: widget.dailyStreak,
           ),
 
-          const SizedBox(
-            height: 20,
-          ),
-
-          // ----------------------------------------------------
-          // 📊 MINING PROGRESS
-          // ----------------------------------------------------
+          const SizedBox(height: 20),
 
           MiningProgressCard(
-            miningActive:
-                widget.miningActive,
-            miningRemainingMs:
-                widget.miningRemainingMs,
-            miningDurationMs:
-                widget.miningDurationMs,
-            title:
-                widget.miningProgressTitle,
-            stlPerHourText:
-                widget.stlPerHourText,
-            dailyHashRateText:
-                widget.dailyHashRateText,
-            dailyHashRateDayText:
-                widget.dailyHashRateDayText,
+            miningActive: widget.miningActive,
+            miningRemainingMs: widget.miningRemainingMs,
+            miningDurationMs: widget.miningDurationMs,
+            title: widget.miningProgressTitle,
+            stlPerHourText: widget.stlPerHourText,
+            dailyHashRateText: widget.dailyHashRateText,
+            dailyHashRateDayText: widget.dailyHashRateDayText,
           ),
         ],
       ),
