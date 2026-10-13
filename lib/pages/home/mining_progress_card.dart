@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 //
 // IMPORTANT:
 // - Keeps the existing constructor API.
-// - Does not change mining calculations on the server.
-// - Shows progress based on the supplied remaining time.
+// - Uses localized text supplied by the parent widget.
+// - Does not change Firebase or mining calculations.
 // ============================================================
 
 class MiningProgressCard extends StatelessWidget {
@@ -71,6 +71,7 @@ class MiningProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double progress = _calculateProgress();
+
     final String progressText =
         '${(progress * 100).toStringAsFixed(1)}%';
 
@@ -161,31 +162,6 @@ class MiningProgressCard extends StatelessWidget {
                     progressColor,
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 9),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    miningActive ? 'Louhinta käynnissä' : 'Louhinta ei käynnissä',
-                    style: TextStyle(
-                      color: miningActive
-                          ? accentColor
-                          : mutedTextColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Text(
-                    'Stella Mining',
-                    style: TextStyle(
-                      color: mutedTextColor,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
               ),
 
               const SizedBox(height: 16),
