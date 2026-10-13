@@ -4,6 +4,7 @@ const Map<String, String> viTranslations = {
   // ============================================================
 
   'appTitle': 'STELLURIINI',
+  'appVersion': 'Phiên bản',
   'home': 'Trang chủ',
   'about': 'Giới thiệu',
   'aboutStelluriini': 'Giới thiệu về Stelluriini',
