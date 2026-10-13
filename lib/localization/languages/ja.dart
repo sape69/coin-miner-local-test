@@ -4,6 +4,7 @@ const Map<String, String> jaTranslations = {
   // ============================================================
 
   'appTitle': 'STELLURIINI',
+  'appVersion': 'バージョン',
   'home': 'ホーム',
   'about': '概要',
   'aboutStelluriini': 'Stelluriiniについて',
