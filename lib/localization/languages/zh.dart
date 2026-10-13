@@ -4,6 +4,7 @@ const Map<String, String> zhTranslations = {
   // ============================================================
 
   'appTitle': 'STELLURIINI',
+  'appVersion': '版本',
   'home': '首页',
   'about': '关于',
   'aboutStelluriini': '关于 Stelluriini',
