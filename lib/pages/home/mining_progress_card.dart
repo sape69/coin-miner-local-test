@@ -3,6 +3,14 @@ import 'package:flutter/material.dart';
 // ============================================================
 // ⛏️ STELLURIINI MINING PROGRESS CARD
 // ============================================================
+//
+// Responsive mining progress card.
+//
+// IMPORTANT:
+// - Keeps the existing constructor API.
+// - Does not change mining calculations on the server.
+// - Shows progress based on the supplied remaining time.
+// ============================================================
 
 class MiningProgressCard extends StatelessWidget {
   final bool miningActive;
@@ -18,26 +26,13 @@ class MiningProgressCard extends StatelessWidget {
   // 🎨 STELLA COLORS
   // ============================================================
 
-  static const Color backgroundColor =
-      Color(0xFF120B24);
-
-  static const Color cardColor =
-      Color(0xFF21113B);
-
-  static const Color accentColor =
-      Color(0xFFB58CFF);
-
-  static const Color pinkColor =
-      Color(0xFFFFB7E8);
-
-  static const Color goldColor =
-      Color(0xFFFFD166);
-
-  static const Color secondaryTextColor =
-      Color(0xFFBFAEDB);
-
-  static const Color mutedTextColor =
-      Color(0xFF9F8CB8);
+  static const Color backgroundColor = Color(0xFF120B24);
+  static const Color cardColor = Color(0xFF21113B);
+  static const Color accentColor = Color(0xFFB58CFF);
+  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color goldColor = Color(0xFFFFD166);
+  static const Color secondaryTextColor = Color(0xFFBFAEDB);
+  static const Color mutedTextColor = Color(0xFF9F8CB8);
 
   // ============================================================
   // CONSTRUCTOR
@@ -59,22 +54,14 @@ class MiningProgressCard extends StatelessWidget {
   // ============================================================
 
   double _calculateProgress() {
-    if (!miningActive ||
-        miningDurationMs <= 0) {
+    if (!miningActive || miningDurationMs <= 0) {
       return 0.0;
     }
 
     final double progress =
-        1.0 -
-        (miningRemainingMs /
-            miningDurationMs);
+        1.0 - (miningRemainingMs / miningDurationMs);
 
-    return progress
-        .clamp(
-          0.0,
-          1.0,
-        )
-        .toDouble();
+    return progress.clamp(0.0, 1.0).toDouble();
   }
 
   // ============================================================
@@ -83,214 +70,219 @@ class MiningProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double progress =
-        _calculateProgress();
-
+    final double progress = _calculateProgress();
     final String progressText =
         '${(progress * 100).toStringAsFixed(1)}%';
 
-    return Container(
-      padding:
-          const EdgeInsets.all(20),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
-        borderRadius:
-            BorderRadius.circular(22),
-        border:
-            Border.all(
-          color:
-              accentColor.withValues(
-            alpha: 0.10,
-          ),
-        ),
-      ),
-      child:
-          Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          // ====================================================
-          // HEADER
-          // ====================================================
+    final Color progressColor =
+        miningActive ? accentColor : mutedTextColor;
 
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double padding =
+            constraints.maxWidth < 340 ? 14 : 20;
+
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: accentColor.withValues(alpha: 0.14),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child:
-                    Text(
-                  title,
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-                    fontSize:
-                        15,
-                    fontWeight:
-                        FontWeight.bold,
+              // HEADER
+
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      miningActive
+                          ? Icons.auto_awesome_rounded
+                          : Icons.nightlight_round,
+                      color: progressColor,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    progressText,
+                    style: const TextStyle(
+                      color: goldColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+
+              // MINING PROGRESS
+
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 12,
+                  backgroundColor: backgroundColor,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progressColor,
                   ),
                 ),
               ),
 
-              const SizedBox(
-                width: 10,
+              const SizedBox(height: 9),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    miningActive ? 'Louhinta käynnissä' : 'Louhinta ei käynnissä',
+                    style: TextStyle(
+                      color: miningActive
+                          ? accentColor
+                          : mutedTextColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Text(
+                    'Stella Mining',
+                    style: TextStyle(
+                      color: mutedTextColor,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
 
-              Text(
-                progressText,
-                style:
-                    const TextStyle(
-                  color:
-                      goldColor,
-                  fontSize:
-                      13,
-                  fontWeight:
-                      FontWeight.bold,
+              const SizedBox(height: 16),
+
+              // STL PER HOUR
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: backgroundColor.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(
-            height: 14,
-          ),
-
-          // ====================================================
-          // MINING PROGRESS
-          // ====================================================
-
-          ClipRRect(
-            borderRadius:
-                BorderRadius.circular(
-              20,
-            ),
-            child:
-                LinearProgressIndicator(
-              value:
-                  progress,
-              minHeight:
-                  12,
-              backgroundColor:
-                  backgroundColor,
-              valueColor:
-                  const AlwaysStoppedAnimation<
-                      Color>(
-                accentColor,
-              ),
-            ),
-          ),
-
-          const SizedBox(
-            height: 12,
-          ),
-
-          // ====================================================
-          // STL PER HOUR
-          // ====================================================
-
-          Text(
-            stlPerHourText,
-            style:
-                const TextStyle(
-              color:
-                  secondaryTextColor,
-              fontSize:
-                  13,
-              fontWeight:
-                  FontWeight.w500,
-            ),
-          ),
-
-          const SizedBox(
-            height: 12,
-          ),
-
-          // ====================================================
-          // DAILY HASH RATE
-          // ====================================================
-
-          Container(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            decoration:
-                BoxDecoration(
-              color:
-                  backgroundColor.withValues(
-                alpha: 0.45,
-              ),
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              border:
-                  Border.all(
-                color:
-                    pinkColor.withValues(
-                  alpha: 0.08,
-                ),
-              ),
-            ),
-            child:
-                Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Row(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '🎁',
-                      style:
-                          TextStyle(
-                        fontSize:
-                            15,
-                      ),
+                    const Icon(
+                      Icons.bolt_rounded,
+                      color: goldColor,
+                      size: 20,
                     ),
-
-                    const SizedBox(
-                      width: 7,
-                    ),
-
+                    const SizedBox(width: 9),
                     Expanded(
-                      child:
-                          Text(
-                        dailyHashRateText,
-                        style:
-                            const TextStyle(
-                          color:
-                              pinkColor,
-                          fontSize:
-                              12,
-                          fontWeight:
-                              FontWeight.w600,
+                      child: Text(
+                        stlPerHourText,
+                        style: const TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
                         ),
                       ),
                     ),
                   ],
                 ),
+              ),
 
-                const SizedBox(
-                  height: 5,
+              const SizedBox(height: 12),
+
+              // DAILY HASH RATE BONUS
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
                 ),
-
-                Text(
-                  dailyHashRateDayText,
-                  style:
-                      const TextStyle(
-                    color:
-                        mutedTextColor,
-                    fontSize:
-                        11,
+                decoration: BoxDecoration(
+                  color: backgroundColor.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: pinkColor.withValues(alpha: 0.12),
                   ),
                 ),
-              ],
-            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '🎁',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            dailyHashRateText,
+                            style: const TextStyle(
+                              color: pinkColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 23),
+                      child: Text(
+                        dailyHashRateDayText,
+                        style: const TextStyle(
+                          color: mutedTextColor,
+                          fontSize: 11,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
