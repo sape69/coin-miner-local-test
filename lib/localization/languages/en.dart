@@ -4,6 +4,7 @@ const Map<String, String> enTranslations = {
   // ============================================================
 
   'appTitle': 'STELLURIINI',
+  'appVersion': 'Version',
   'home': 'Home',
   'about': 'About',
   'aboutStelluriini': 'About Stelluriini',
@@ -469,7 +470,7 @@ const Map<String, String> enTranslations = {
       'Referral Code Not Found',
 
   'referralCodeNotFoundMessage':
-      'The referral code you entered is not valid.\n\nWould you like to continue creating your Stelluriini account without a referral code?',
+      'The referral code you entered is not valid.\\n\\nWould you like to continue creating your Stelluriini account without a referral code?',
 
   'changeReferralCode':
       'Change Referral Code',
