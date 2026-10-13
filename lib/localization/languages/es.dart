@@ -4,6 +4,7 @@ const Map<String, String> esTranslations = {
   // ============================================================
 
   'appTitle': 'STELLURIINI',
+  'appVersion': 'Versión',
   'home': 'Inicio',
   'about': 'Acerca de',
   'aboutStelluriini': 'Acerca de Stelluriini',
