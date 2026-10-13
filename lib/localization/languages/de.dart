@@ -4,6 +4,7 @@ const Map<String, String> deTranslations = {
   // ============================================================
 
   'appTitle': 'STELLURIINI',
+  'appVersion': 'Version',
   'home': 'Startseite',
   'about': 'Über uns',
   'aboutStelluriini': 'Über Stelluriini',
@@ -469,7 +470,7 @@ const Map<String, String> deTranslations = {
       'Empfehlungscode nicht gefunden',
 
   'referralCodeNotFoundMessage':
-      'Der eingegebene Empfehlungscode ist nicht gültig.\n\nMöchtest du dein Stelluriini-Konto ohne Empfehlungscode erstellen?',
+      'Der eingegebene Empfehlungscode ist nicht gültig.\\n\\nMöchtest du dein Stelluriini-Konto ohne Empfehlungscode erstellen?',
 
   'changeReferralCode':
       'Empfehlungscode ändern',
@@ -1060,7 +1061,7 @@ const Map<String, String> deTranslations = {
       'STELLA • STELLURIINI • STL • SOLANA',
 
   // ============================================================
-  // 👤 ACCOUNT / UI
+  // 🌍 ACCOUNT / UI
   // ============================================================
 
   'referrals':
