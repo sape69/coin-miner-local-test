@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 // ============================================================
@@ -32,29 +33,14 @@ class PowerBoostCard extends StatelessWidget {
   // 🎨 STELLA COLORS
   // ============================================================
 
-  static const Color backgroundColor =
-      Color(0xFF120B24);
-
-  static const Color cardColor =
-      Color(0xFF21113B);
-
-  static const Color accentColor =
-      Color(0xFFB58CFF);
-
-  static const Color pinkColor =
-      Color(0xFFFFB7E8);
-
-  static const Color goldColor =
-      Color(0xFFFFD166);
-
-  static const Color secondaryTextColor =
-      Color(0xFFBFAEDB);
-
-  static const Color mutedTextColor =
-      Color(0xFF8D7BA8);
-
-  static const Color veryMutedTextColor =
-      Color(0xFF6F5C84);
+  static const Color backgroundColor = Color(0xFF120B24);
+  static const Color cardColor = Color(0xFF21113B);
+  static const Color accentColor = Color(0xFFB58CFF);
+  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color goldColor = Color(0xFFFFD166);
+  static const Color secondaryTextColor = Color(0xFFBFAEDB);
+  static const Color mutedTextColor = Color(0xFF8D7BA8);
+  static const Color veryMutedTextColor = Color(0xFF6F5C84);
 
   // ============================================================
   // CONSTRUCTOR
@@ -88,36 +74,23 @@ class PowerBoostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasActiveBoost =
-        boostActive &&
-        boostRemainingMs > 0;
+        boostActive && boostRemainingMs > 0;
 
     final bool dailyLimitReached =
-        maxAdsPerDay > 0 &&
-        adsToday >= maxAdsPerDay;
+        maxAdsPerDay > 0 && adsToday >= maxAdsPerDay;
 
     return Container(
-      padding:
-          const EdgeInsets.all(18),
-      decoration:
-          BoxDecoration(
-        color:
-            cardColor,
-        borderRadius:
-            BorderRadius.circular(22),
-        border:
-            Border.all(
-          color:
-              hasActiveBoost
-                  ? goldColor.withValues(
-                      alpha: 0.40,
-                    )
-                  : pinkColor.withValues(
-                      alpha: 0.30,
-                    ),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: hasActiveBoost
+              ? goldColor.withValues(alpha: 0.40)
+              : pinkColor.withValues(alpha: 0.30),
         ),
       ),
-      child:
-          Column(
+      child: Column(
         children: [
           // ====================================================
           // HEADER
@@ -126,57 +99,30 @@ class PowerBoostCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                hasActiveBoost
-                    ? '⚡'
-                    : '📺',
-                style:
-                    const TextStyle(
-                  fontSize:
-                      28,
-                ),
+                hasActiveBoost ? '⚡' : '📺',
+                style: const TextStyle(fontSize: 28),
               ),
-
-              const SizedBox(
-                width: 12,
-              ),
-
+              const SizedBox(width: 12),
               Expanded(
-                child:
-                    Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.white,
-                        fontSize:
-                            15,
-                        fontWeight:
-                            FontWeight.bold,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-
-                    const SizedBox(
-                      height: 3,
-                    ),
-
+                    const SizedBox(height: 3),
                     Text(
-                      hasActiveBoost
-                          ? activeText
-                          : subtitle,
-                      maxLines:
-                          2,
-                      overflow:
-                          TextOverflow.ellipsis,
-                      style:
-                          const TextStyle(
-                        color:
-                            secondaryTextColor,
-                        fontSize:
-                            12,
+                      hasActiveBoost ? activeText : subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: secondaryTextColor,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -185,9 +131,7 @@ class PowerBoostCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(
-            height: 16,
-          ),
+          const SizedBox(height: 16),
 
           // ====================================================
           // ACTIVE BOOST / WATCH BUTTON
@@ -198,9 +142,7 @@ class PowerBoostCard extends StatelessWidget {
           else
             _buildWatchButton(),
 
-          const SizedBox(
-            height: 10,
-          ),
+          const SizedBox(height: 10),
 
           // ====================================================
           // DAILY AD COUNT
@@ -208,37 +150,25 @@ class PowerBoostCard extends StatelessWidget {
 
           Text(
             adsTodayText,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  mutedTextColor,
-              fontSize:
-                  11,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: mutedTextColor,
+              fontSize: 11,
             ),
           ),
 
           // ====================================================
           // DAILY LIMIT INFORMATION
-          // Only shown when the actual daily limit is reached.
-          // This prevents duplicate "1/6" text.
           // ====================================================
 
           if (dailyLimitReached) ...[
-            const SizedBox(
-              height: 4,
-            ),
+            const SizedBox(height: 4),
             Text(
               maxBoostsInfoText,
-              textAlign:
-                  TextAlign.center,
-              style:
-                  const TextStyle(
-                color:
-                    veryMutedTextColor,
-                fontSize:
-                    10,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: veryMutedTextColor,
+                fontSize: 10,
               ),
             ),
           ],
@@ -253,137 +183,68 @@ class PowerBoostCard extends StatelessWidget {
 
   Widget _buildActiveBoost() {
     return Container(
-      width:
-          double.infinity,
-      padding:
-          const EdgeInsets.all(14),
-      decoration:
-          BoxDecoration(
-        color:
-            goldColor.withValues(
-          alpha: 0.08,
-        ),
-        borderRadius:
-            BorderRadius.circular(16),
-        border:
-            Border.all(
-          color:
-              goldColor.withValues(
-            alpha: 0.25,
-          ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: goldColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: goldColor.withValues(alpha: 0.25),
         ),
       ),
-      child:
-          Column(
+      child: Column(
         children: [
-          // ----------------------------------------------------
           // ACTIVE TITLE
-          // ----------------------------------------------------
 
           Text(
             activeTitle,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  goldColor,
-              fontSize:
-                  12,
-              fontWeight:
-                  FontWeight.bold,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: goldColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(
-            height: 7,
-          ),
+          const SizedBox(height: 7),
 
-          // ----------------------------------------------------
           // REMAINING TIME
-          // ----------------------------------------------------
 
           Text(
             remainingText,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  Colors.white,
-              fontSize:
-                  18,
-              fontWeight:
-                  FontWeight.bold,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(
-            height: 6,
-          ),
+          const SizedBox(height: 6),
 
-          // ----------------------------------------------------
           // HASH RATE BONUS
-          // ----------------------------------------------------
+          // Näytetään vain boostin lisäys, ei kokonaisnopeutta.
 
           Text(
             hashRateBonusText,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  pinkColor,
-              fontSize:
-                  13,
-              fontWeight:
-                  FontWeight.w700,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: pinkColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
             ),
           ),
 
-          const SizedBox(
-            height: 6,
-          ),
+          const SizedBox(height: 6),
 
-          // ----------------------------------------------------
-          // EFFECTIVE HASH RATE
-          // ----------------------------------------------------
-
-          Text(
-            effectiveHashRateText,
-            textAlign:
-                TextAlign.center,
-            style:
-                const TextStyle(
-              color:
-                  goldColor,
-              fontSize:
-                  13,
-              fontWeight:
-                  FontWeight.w700,
-            ),
-          ),
-
-          const SizedBox(
-            height: 6,
-          ),
-
-          // ----------------------------------------------------
           // NEXT AD INFORMATION
-          // ----------------------------------------------------
 
           Text(
             nextAdAfterBoostText,
-            textAlign:
-                TextAlign.center,
-            style:
-                TextStyle(
-              color:
-                  Colors.white.withValues(
-                alpha: 0.50,
-              ),
-              fontSize:
-                  11,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.50),
+              fontSize: 11,
             ),
           ),
         ],
@@ -397,76 +258,42 @@ class PowerBoostCard extends StatelessWidget {
 
   Widget _buildWatchButton() {
     return SizedBox(
-      width:
-          double.infinity,
-      child:
-          OutlinedButton(
-        onPressed:
-            canUse
-                ? onPressed
-                : null,
-        style:
-            OutlinedButton.styleFrom(
-          foregroundColor:
-              pinkColor,
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: canUse ? onPressed : null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: pinkColor,
           disabledForegroundColor:
-              Colors.white.withValues(
-            alpha: 0.35,
+              Colors.white.withValues(alpha: 0.35),
+          side: BorderSide(
+            color: canUse
+                ? pinkColor
+                : pinkColor.withValues(alpha: 0.25),
           ),
-          side:
-              BorderSide(
-            color:
-                canUse
-                    ? pinkColor
-                    : pinkColor.withValues(
-                        alpha: 0.25,
-                      ),
-          ),
-          padding:
-              const EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             vertical: 15,
             horizontal: 12,
           ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              16,
-            ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child:
-            Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
               '📺',
-              style:
-                  TextStyle(
-                fontSize:
-                    16,
-              ),
+              style: TextStyle(fontSize: 16),
             ),
-
-            const SizedBox(
-              width: 8,
-            ),
-
+            const SizedBox(width: 8),
             Flexible(
-              child:
-                  Text(
+              child: Text(
                 watchAdText,
-                textAlign:
-                    TextAlign.center,
-                maxLines:
-                    2,
-                overflow:
-                    TextOverflow.ellipsis,
-                style:
-                    const TextStyle(
-                  fontWeight:
-                      FontWeight.w600,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
