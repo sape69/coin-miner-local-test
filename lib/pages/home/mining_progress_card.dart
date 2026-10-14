@@ -1,15 +1,15 @@
+
 import 'package:flutter/material.dart';
 
 // ============================================================
 // ⛏️ STELLURIINI MINING PROGRESS CARD
 // ============================================================
 //
-// Responsive mining progress card.
-//
-// IMPORTANT:
-// - Keeps the existing constructor API.
-// - Uses localized text supplied by the parent widget.
-// - Does not change Firebase or mining calculations.
+// - Näyttää louhinnan edistymisen.
+// - Näyttää STL/h-tiedon.
+// - Päivittäinen Hash Rate -bonus näytetään muualla.
+// - Säilyttää nykyisen konstruktorin rajapinnan.
+// - Ei muuta Firebasea tai louhinnan laskentaa.
 // ============================================================
 
 class MiningProgressCard extends StatelessWidget {
@@ -29,7 +29,6 @@ class MiningProgressCard extends StatelessWidget {
   static const Color backgroundColor = Color(0xFF120B24);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
-  static const Color pinkColor = Color(0xFFFFB7E8);
   static const Color goldColor = Color(0xFFFFD166);
   static const Color secondaryTextColor = Color(0xFFBFAEDB);
   static const Color mutedTextColor = Color(0xFF9F8CB8);
@@ -158,9 +157,8 @@ class MiningProgressCard extends StatelessWidget {
                   value: progress,
                   minHeight: 12,
                   backgroundColor: backgroundColor,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    progressColor,
-                  ),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(progressColor),
                 ),
               ),
 
@@ -192,63 +190,6 @@ class MiningProgressCard extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // DAILY HASH RATE BONUS
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: backgroundColor.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: pinkColor.withValues(alpha: 0.12),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '🎁',
-                          style: TextStyle(fontSize: 15),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            dailyHashRateText,
-                            style: const TextStyle(
-                              color: pinkColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              height: 1.35,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 23),
-                      child: Text(
-                        dailyHashRateDayText,
-                        style: const TextStyle(
-                          color: mutedTextColor,
-                          fontSize: 11,
-                          height: 1.35,
                         ),
                       ),
                     ),
