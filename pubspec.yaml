@@ -1,10 +1,9 @@
-
 name: stelluriini
 description: STELLURIINI Android app
 
 publish_to: "none"
 
-version: 1.0.4+5
+version: 1.0.5+6
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
