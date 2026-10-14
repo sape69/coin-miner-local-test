@@ -1,3 +1,4 @@
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -14,8 +15,9 @@ import 'stella_mining_days_card.dart';
 // ⛏️ Mining   -> stella_mining.png
 // ⚡ Boost    -> stella_boosting.png
 //
-// Stella näytetään kokonaisena, ilman pyöreää kuvarajausta.
-// Läpinäkyvä PNG-tausta säilyttää hahmon ääriviivat.
+// Stella näytetään kokonaisena ilman pyöreää kuvarajausta.
+// Animaatiot on rauhoitettu.
+// Louhinnan laskentaan tai ajastimiin ei kosketa.
 //
 // ============================================================
 
@@ -60,8 +62,7 @@ class StellaMiningCard extends StatefulWidget {
   });
 
   @override
-  State<StellaMiningCard> createState() =>
-      _StellaMiningCardState();
+  State<StellaMiningCard> createState() => _StellaMiningCardState();
 }
 
 class _StellaMiningCardState extends State<StellaMiningCard>
@@ -194,19 +195,22 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       curve: Curves.easeInOut,
     );
 
+    // Hillitty jatkuva suurennus.
     _boostLoopScale = Tween<double>(
-      begin: 0.995,
-      end: 1.015,
+      begin: 0.998,
+      end: 1.005,
     ).animate(loopCurve);
 
+    // Hillitty kierto.
     _boostLoopRotation = Tween<double>(
-      begin: -0.008,
-      end: 0.008,
+      begin: -0.003,
+      end: 0.003,
     ).animate(loopCurve);
 
+    // Erittäin pieni pystysuuntainen liike.
     _boostLoopFloat = Tween<double>(
-      begin: -1.5,
-      end: 1.5,
+      begin: -0.5,
+      end: 0.5,
     ).animate(loopCurve);
 
     if (widget.boostActive) {
@@ -216,7 +220,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         }
       });
     }
-  }  @override
+  }
+
+  @override
   void didUpdateWidget(covariant StellaMiningCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
@@ -281,11 +287,13 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       builder: (BuildContext context, Widget? child) {
         final double animationValue = widget.catAnimation.value;
 
+        // Rauhallinen hengitys nukkuessa.
         final double breathingScale =
             1.0 + (math.sin(animationValue * math.pi) * 0.012);
 
+        // Pienennetty louhintaliike: enintään 0,6 pikseliä.
         final double miningFloat =
-            math.sin(animationValue * math.pi * 2) * 2.0;
+            math.sin(animationValue * math.pi * 2) * 0.6;
 
         double finalScale = 1.0;
         double finalRotation = 0.0;
@@ -294,8 +302,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         if (!widget.miningActive && !widget.boostActive) {
           finalScale = breathingScale;
         } else if (widget.miningActive && !widget.boostActive) {
+          // Pienennetty skaalaus louhinnan aikana.
           finalScale =
-              1.0 + (math.sin(animationValue * math.pi) * 0.008);
+              1.0 + (math.sin(animationValue * math.pi) * 0.003);
           floatingOffset = miningFloat;
         }
 
@@ -484,7 +493,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         );
       },
     );
-  }  // ============================================================
+  }
+
+  // ============================================================
   // 🖥️ BUILD
   // ============================================================
 
