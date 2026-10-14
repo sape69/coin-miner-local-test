@@ -10,15 +10,12 @@ import 'stella_mining_days_card.dart';
 // ============================================================
 //
 // Tilat:
-// 😴 Sleeping  -> stella_sleeping.png
-// ⛏️ Mining    -> stella_mining.png
-// ⚡ Boost     -> stella_boosting.png
+// 😴 Sleeping -> stella_sleeping.png
+// ⛏️ Mining   -> stella_mining.png
+// ⚡ Boost    -> stella_boosting.png
 //
-// Animaatiot:
-// - Nukkuminen: rauhallinen hengityksen kaltainen liike.
-// - Louhinta: kevyt luonnollinen pystysuuntainen liike.
-// - Boost: käynnistysanimaatio, hillitty pulssi ja hehku.
-// - Vain yksi Stella-kuva näkyy kerrallaan.
+// Stella näytetään kokonaisena, ilman pyöreää kuvarajausta.
+// Läpinäkyvä PNG-tausta säilyttää hahmon ääriviivat.
 //
 // ============================================================
 
@@ -63,7 +60,8 @@ class StellaMiningCard extends StatefulWidget {
   });
 
   @override
-  State<StellaMiningCard> createState() => _StellaMiningCardState();
+  State<StellaMiningCard> createState() =>
+      _StellaMiningCardState();
 }
 
 class _StellaMiningCardState extends State<StellaMiningCard>
@@ -218,9 +216,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         }
       });
     }
-  }
-
-  @override
+  }  @override
   void didUpdateWidget(covariant StellaMiningCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
@@ -285,12 +281,9 @@ class _StellaMiningCardState extends State<StellaMiningCard>
       builder: (BuildContext context, Widget? child) {
         final double animationValue = widget.catAnimation.value;
 
-        // Pieni, keskitetty hengitysliike.
         final double breathingScale =
             1.0 + (math.sin(animationValue * math.pi) * 0.012);
 
-        // Louhinnan liike pysyy maltillisena eikä vedä Stellaa
-        // jatkuvasti vain yhteen suuntaan.
         final double miningFloat =
             math.sin(animationValue * math.pi * 2) * 2.0;
 
@@ -301,7 +294,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         if (!widget.miningActive && !widget.boostActive) {
           finalScale = breathingScale;
         } else if (widget.miningActive && !widget.boostActive) {
-          finalScale = 1.0 + (math.sin(animationValue * math.pi) * 0.008);
+          finalScale =
+              1.0 + (math.sin(animationValue * math.pi) * 0.008);
           floatingOffset = miningFloat;
         }
 
@@ -311,8 +305,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
 
         if (widget.boostActive) {
           finalScale = boostScale * _boostLoopScale.value;
-          finalRotation =
-              boostRotation + _boostLoopRotation.value;
+          finalRotation = boostRotation + _boostLoopRotation.value;
           floatingOffset = _boostLoopFloat.value;
         }
 
@@ -323,8 +316,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
             child: Transform.scale(
               scale: finalScale,
               child: SizedBox(
-                width: 150,
-                height: 150,
+                width: 190,
+                height: 190,
                 child: Stack(
                   alignment: Alignment.center,
                   clipBehavior: Clip.none,
@@ -332,8 +325,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                     // ✨ BOOST GLOW
                     if (widget.boostActive)
                       Container(
-                        width: 138,
-                        height: 138,
+                        width: 160,
+                        height: 160,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           boxShadow: [
@@ -360,10 +353,10 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                         ),
                       ),
 
-                    // 💜 STELLA BACKGROUND
+                    // 💜 HILLITTY VIOLETTI TAUSTAHEHKU
                     Container(
-                      width: 126,
-                      height: 126,
+                      width: 158,
+                      height: 158,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const RadialGradient(
@@ -386,36 +379,35 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                       ),
                     ),
 
-                    // 🐱 ACTIVE STELLA IMAGE
-                    Container(
-                      width: 112,
-                      height: 112,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.28),
-                            blurRadius: 14,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          _activeStellaImage,
-                          width: 112,
-                          height: 112,
-                          fit: BoxFit.cover,
-                          gaplessPlayback: true,
-                        ),
+                    // 🐱 KOKO STELLA — EI PYÖREÄÄ RAJAUSTA
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Image.asset(
+                        _activeStellaImage,
+                        width: 174,
+                        height: 174,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
+                        gaplessPlayback: true,
+                        errorBuilder: (
+                          BuildContext context,
+                          Object error,
+                          StackTrace? stackTrace,
+                        ) {
+                          return const Icon(
+                            Icons.pets_rounded,
+                            size: 86,
+                            color: accentColor,
+                          );
+                        },
                       ),
                     ),
 
                     // ✨ BOOST SPARKLE
                     if (widget.boostActive && sparkleOpacity > 0)
                       Positioned(
-                        top: -8,
-                        right: 0,
+                        top: 0,
+                        right: 3,
                         child: Opacity(
                           opacity: sparkleOpacity,
                           child: const Text(
@@ -428,8 +420,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                     // ⚡ BOOST LIGHTNING
                     if (widget.boostActive && sparkleOpacity > 0)
                       Positioned(
-                        bottom: -3,
-                        left: -4,
+                        bottom: 5,
+                        left: 0,
                         child: Opacity(
                           opacity: sparkleOpacity,
                           child: const Text(
@@ -442,8 +434,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                     // 💫 BOOST STAR
                     if (widget.boostActive && sparkleOpacity > 0)
                       Positioned(
-                        top: 13,
-                        left: -5,
+                        top: 25,
+                        left: 0,
                         child: Opacity(
                           opacity: sparkleOpacity,
                           child: const Text(
@@ -456,8 +448,8 @@ class _StellaMiningCardState extends State<StellaMiningCard>
                     // 🪙 STL BADGE
                     if (widget.miningActive)
                       Positioned(
-                        left: -8,
-                        bottom: 8,
+                        left: 0,
+                        bottom: 12,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -492,9 +484,7 @@ class _StellaMiningCardState extends State<StellaMiningCard>
         );
       },
     );
-  }
-
-  // ============================================================
+  }  // ============================================================
   // 🖥️ BUILD
   // ============================================================
 
