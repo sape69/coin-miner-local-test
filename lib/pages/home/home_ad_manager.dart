@@ -511,7 +511,8 @@ class HomeAdManager extends ChangeNotifier {
           await loadRewardedAd(
             purpose:
                 miningStartPurpose,
-            notifyOnLoadError: false,
+            uid:
+                user.uid,
           );
         }
       }
@@ -563,7 +564,9 @@ class HomeAdManager extends ChangeNotifier {
 
       rethrow;
     }
-  }  // ============================================================
+  }
+
+  // ============================================================
   // 🚀 INITIALIZE + PRELOAD
   // ============================================================
 
@@ -867,6 +870,141 @@ class HomeAdManager extends ChangeNotifier {
               return;
             }
 
+            ad.fullScreenContentCallback =
+                FullScreenContentCallback<RewardedAd>(
+              onAdShowedFullScreenContent:
+                  (
+                RewardedAd ad,
+              ) {
+                debugPrint(
+                  '✅ [ADMOB] Ad shown: '
+                  '$purpose',
+                );
+
+                // 🔒 Varmistetaan Androidin immersive fullscreen.
+                unawaited(
+                  SystemChrome.setEnabledSystemUIMode(
+                    SystemUiMode.immersive,
+                  ),
+                );
+              },
+              onAdImpression:
+                  (
+                RewardedAd ad,
+              ) {
+                debugPrint(
+                  '🐱 [ADMOB] Impression: '
+                  '$purpose',
+                );
+              },
+              onAdClicked:
+                  (
+                RewardedAd ad,
+              ) {
+                debugPrint(
+                  '🐱 [ADMOB] Clicked: '
+                  '$purpose',
+                );
+              },
+              onAdDismissedFullScreenContent:
+                  (
+                RewardedAd ad,
+              ) {
+                debugPrint(
+                  '🐱 [ADMOB] Ad dismissed: '
+                  '$purpose',
+                );
+
+                // 🔓 Palautetaan sovelluksen normaali
+                // edge-to-edge-näyttö mainoksen jälkeen.
+                unawaited(
+                  SystemChrome.setEnabledSystemUIMode(
+                    SystemUiMode.edgeToEdge,
+                  ),
+                );
+
+                try {
+                  ad.dispose();
+                } catch (_) {}
+
+                _clearAdState();
+
+                _setFlowActive(
+                  purpose,
+                  false,
+                );
+
+                _notify();
+
+                onAdDismissed?.call(
+                  purpose,
+                );
+
+                if (!_disposed) {
+                  unawaited(
+                    _reloadAfterDismiss(
+                      purpose,
+                    ),
+                  );
+                }
+              },
+              onAdFailedToShowFullScreenContent:
+                  (
+                RewardedAd ad,
+                AdError error,
+              ) {
+                debugPrint(
+                  '❌ [ADMOB] Failed to show: '
+                  '$purpose | '
+                  '${error.message}',
+                );
+
+                // 🔓 Palautetaan normaali näyttötila,
+                // jos fullscreen-mainos epäonnistui.
+                unawaited(
+                  SystemChrome.setEnabledSystemUIMode(
+                    SystemUiMode.edgeToEdge,
+                  ),
+                );
+
+                try {
+                  ad.dispose();
+                } catch (_) {}
+
+                _clearAdState();
+
+                _setFlowActive(
+                  purpose,
+                  false,
+                );
+
+                _resetRewardCallbackState(
+                  purpose,
+                );
+
+                _adLoadError =
+                    'SHOW_FAILED | '
+                    'Purpose: $purpose | '
+                    'Code: ${error.code} | '
+                    'Message: ${error.message}';
+
+                _notify();
+
+                onAdShowError?.call(
+                  purpose,
+                  error,
+                );
+
+                if (!_disposed) {
+                  unawaited(
+                    _reloadAfterDismiss(
+                      purpose,
+                    ),
+                  );
+                }
+              },
+            );
+
             _rewardedAd = ad;
             _rewardedAdPurpose =
                 purpose;
@@ -942,157 +1080,104 @@ class HomeAdManager extends ChangeNotifier {
 
       _notify();
     }
-  }    ad.fullScreenContentCallback =
-        FullScreenContentCallback<RewardedAd>(
-      onAdShowedFullScreenContent:
-          (
-        RewardedAd ad,
-      ) async {
-        debugPrint(
-          '✅ [ADMOB] Ad shown: '
-          '$purpose',
-        );
+  }
 
-        // 🔒 Varmistetaan Androidin immersive fullscreen.
-        try {
-          await SystemChrome.setEnabledSystemUIMode(
-            SystemUiMode.immersive,
-          );
-        } catch (error) {
-          debugPrint(
-            '⚠️ [ADMOB] Immersive mode failed: '
-            '$error',
-          );
-        }
-      },
-      onAdImpression:
-          (
-        RewardedAd ad,
-      ) {
-        debugPrint(
-          '🐱 [ADMOB] Impression: '
-          '$purpose',
-        );
-      },
-      onAdClicked:
-          (
-        RewardedAd ad,
-      ) {
-        debugPrint(
-          '🐱 [ADMOB] Clicked: '
-          '$purpose',
-        );
-      },
-      onAdDismissedFullScreenContent:
-          (
-        RewardedAd ad,
-      ) async {
-        debugPrint(
-          '🐱 [ADMOB] Ad dismissed: '
-          '$purpose',
-        );
+  // ============================================================
+  // 🎁 REWARD CALLBACK
+  // ============================================================
 
-        // 🔓 Palautetaan sovelluksen normaali
-        // edge-to-edge-näyttö mainoksen jälkeen.
-        try {
-          await SystemChrome.setEnabledSystemUIMode(
-            SystemUiMode.edgeToEdge,
-          );
-        } catch (error) {
-          debugPrint(
-            '⚠️ [ADMOB] Failed to restore '
-            'edge-to-edge mode: '
-            '$error',
-          );
-        }
+  void _handleRewardEarned(
+    String purpose,
+  ) {
+    if (_disposed) {
+      return;
+    }
 
-        try {
-          ad.dispose();
-        } catch (_) {}
+    if (purpose == miningStartPurpose) {
+      if (_miningRewardCallbackStarted) {
+        return;
+      }
 
-        _clearAdState();
+      _miningRewardCallbackStarted = true;
+    }
 
-        _setFlowActive(
-          purpose,
-          false,
-        );
+    if (purpose == powerBoostPurpose) {
+      if (_powerBoostRewardCallbackStarted) {
+        return;
+      }
 
-        _notify();
+      _powerBoostRewardCallbackStarted = true;
+    }
 
-        onAdDismissed?.call(
-          purpose,
-        );
+    debugPrint(
+      '🎁 [ADMOB] Reward earned: $purpose',
+    );
 
-        if (!_disposed) {
-          unawaited(
-            _reloadAfterDismiss(
-              purpose,
-            ),
-          );
-        }
-      },
-      onAdFailedToShowFullScreenContent:
-          (
-        RewardedAd ad,
-        AdError error,
-      ) async {
-        debugPrint(
-          '❌ [ADMOB] Failed to show: '
-          '$purpose | '
-          '${error.message}',
-        );
+    unawaited(
+      _executeRewardCallback(
+        purpose,
+      ),
+    );
+  }
 
-        // 🔓 Palautetaan normaali näyttötila,
-        // jos fullscreen-mainos epäonnistui.
-        try {
-          await SystemChrome.setEnabledSystemUIMode(
-            SystemUiMode.edgeToEdge,
-          );
-        } catch (restoreError) {
-          debugPrint(
-            '⚠️ [ADMOB] Failed to restore '
-            'edge-to-edge mode: '
-            '$restoreError',
-          );
-        }
-
-        try {
-          ad.dispose();
-        } catch (_) {}
-
-        _clearAdState();
-
-        _setFlowActive(
-          purpose,
-          false,
-        );
-
+  Future<void> _executeRewardCallback(
+    String purpose,
+  ) async {
+    try {
+      if (purpose == miningStartPurpose) {
+        await onMiningStartReward?.call();
+      } else if (purpose == powerBoostPurpose) {
+        await onPowerBoostReward?.call();
+      }
+    } catch (error) {
+      debugPrint(
+        '❌ [ADMOB] Reward callback failed: '
+        '$purpose | $error',
+      );
+    } finally {
+      if (!_disposed) {
         _resetRewardCallbackState(
           purpose,
         );
+      }
+    }
+  }
 
-        _adLoadError =
-            'SHOW_FAILED | '
-            'Purpose: $purpose | '
-            'Code: ${error.code} | '
-            'Message: ${error.message}';
+  // ============================================================
+  // 🔄 RELOAD AFTER DISMISS
+  // ============================================================
 
-        _notify();
+  Future<void> _reloadAfterDismiss(
+    String purpose,
+  ) async {
+    if (_disposed) {
+      return;
+    }
 
-        onAdShowError?.call(
+    await Future<void>.delayed(
+      reloadDelay,
+    );
+
+    if (_disposed) {
+      return;
+    }
+
+    final User? user =
+        _auth.currentUser;
+
+    if (user == null) {
+      return;
+    }
+
+    await loadRewardedAd(
+      purpose:
           purpose,
-          error,
-        );
+      uid:
+          user.uid,
+    );
+  }
 
-        if (!_disposed) {
-          unawaited(
-            _reloadAfterDismiss(
-              purpose,
-            ),
-          );
-        }
-      },
-    );  // ============================================================
+  // ============================================================
   // ▶️ SHOW MINING START AD
   // ============================================================
 
