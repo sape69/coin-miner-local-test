@@ -4,34 +4,13 @@
 // 🐱 STELLURIINI - USER FUNCTIONS
 // ============================================================
 //
-// Stella User Profile.
-//
 // Flutter
 //    ↓
 // ensureUserProfile()
 //    ↓
-// Firebase Admin SDK
+// Firebase Admin Authentication + Firestore
 //    ↓
 // users/{uid}
-//
-// Flutter
-//    ↓
-// getUserProfile()
-//    ↓
-// Firebase Admin SDK
-//    ↓
-// users/{uid}
-//
-// TÄRKEÄÄ:
-//
-// Flutter EI kirjoita users-kokoelmaan suoraan.
-//
-// Firestore Security Rules sallivat asiakkaalle:
-//
-//    allow write: if false;
-//
-// Siksi käyttäjäprofiili luodaan ja luetaan
-// Cloud Functionien kautta Admin SDK:lla.
 //
 // ============================================================
 
@@ -42,6 +21,7 @@ HttpsError,
 
 const {
 db,
+auth,
 FieldValue,
 } = require("../firebase/firebase");
 
@@ -50,137 +30,108 @@ getUserRef,
 } = require("../utils/userUtils");
 
 // ============================================================
-// 🔢 DEFAULT USER PROFILE
+// 👤 GET TRUSTED AUTH USER DATA
 // ============================================================
-//
-// Nämä ovat vain uuden käyttäjän turvalliset lähtöarvot.
-//
-// Referral-, mining-, Daily Hash Rate- ja Power Boost
-// -tiedot voidaan lisätä myöhemmin omissa backend-toiminnoissaan.
-//
+
+async function getTrustedUserData(uid) {
+try {
+const userRecord = await auth.getUser(uid);
+
+const displayName =
+  typeof userRecord.displayName === "string"
+    ? userRecord.displayName.trim()
+    : "";
+
+const email =
+  typeof userRecord.email === "string"
+    ? userRecord.email.trim()
+    : "";
+
+return {
+  displayName,
+  email,
+};
+
+} catch (error) {
+console.error(
+"Failed to read Firebase Auth user:",
+error,
+);
+
+throw new HttpsError(
+  "internal",
+  "Käyttäjän tietojen hakeminen epäonnistui.",
+);
+
+}
+}
+
+// ============================================================
+// 🔢 DEFAULT USER PROFILE
 // ============================================================
 
 function buildDefaultUserProfile(
 request,
+trustedUser,
 ) {
-const email =
+const tokenEmail =
 typeof request.auth.token?.email === "string"
 ? request.auth.token.email
 : "";
 
-const displayName =
+const tokenName =
 typeof request.auth.token?.name === "string"
-? request.auth.token.name
+? request.auth.token.name.trim()
 : "";
 
+const displayName =
+trustedUser.displayName || tokenName;
+
+const email =
+trustedUser.email || tokenEmail;
+
 return {
-// ----------------------------------------------------------
 // 👤 BASIC USER
-// ----------------------------------------------------------
-
 email,
-
 displayName,
+username: displayName,
 
-username:
-  displayName,
+// 💰 BALANCE
+stlBalance: 0,
 
-// ----------------------------------------------------------
-// 💰 LEGACY / BASIC BALANCE
-// ----------------------------------------------------------
-
-stlBalance:
-  0,
-
-// ----------------------------------------------------------
 // ⛏️ MINING
-// ----------------------------------------------------------
+miningBalance: 0,
+miningHashRate: 0,
+miningStartedAt: null,
+miningEndsAt: null,
 
-miningBalance:
-  0,
-
-miningHashRate:
-  0,
-
-miningStartedAt:
-  null,
-
-miningEndsAt:
-  null,
-
-// ----------------------------------------------------------
 // ⚡ POWER BOOST
-// ----------------------------------------------------------
+adBoostHashRate: 0,
+adBoostStartedAt: null,
+adBoostEndsAt: null,
 
-adBoostHashRate:
-  0,
-
-adBoostStartedAt:
-  null,
-
-adBoostEndsAt:
-  null,
-
-// ----------------------------------------------------------
 // 🎁 DAILY
-// ----------------------------------------------------------
+dailyHashRate: 0,
+dailyStreak: 0,
+streak: 0,
+lastDailyDate: "",
 
-dailyHashRate:
-  0,
-
-dailyStreak:
-  0,
-
-streak:
-  0,
-
-lastDailyDate:
-  "",
-
-// ----------------------------------------------------------
 // 📺 ADS
-// ----------------------------------------------------------
+adsToday: 0,
+adDate: "",
+lastAdTime: null,
 
-adsToday:
-  0,
-
-adDate:
-  "",
-
-lastAdTime:
-  null,
-
-// ----------------------------------------------------------
 // 🔗 REFERRAL
-// ----------------------------------------------------------
+referralCode: "",
+referrerUid: "",
+referralCodeUsed: "",
+referralJoinedAt: null,
+referralCount: 0,
+referralTotalEarned: 0,
 
-referralCode:
-  "",
-
-referrerUid:
-  "",
-
-referralCodeUsed:
-  "",
-
-referralJoinedAt:
-  null,
-
-referralCount:
-  0,
-
-referralTotalEarned:
-  0,
-
-// ----------------------------------------------------------
 // 🕐 TIMESTAMPS
-// ----------------------------------------------------------
-
-createdAt:
-  FieldValue.serverTimestamp(),
-
-updatedAt:
-  FieldValue.serverTimestamp(),
+createdAt: FieldValue.serverTimestamp(),
+updatedAt: FieldValue.serverTimestamp(),
 
 };
 }
@@ -189,336 +140,235 @@ updatedAt:
 // 🔗 ENSURE USER PROFILE
 // ============================================================
 //
-// Luo users/{uid}-dokumentin vain jos sitä ei vielä ole.
+// Luo uuden käyttäjäprofiilin tai täydentää vain puuttuvat
+// nimikentät olemassa olevasta profiilista.
 //
-// Jos dokumentti on jo olemassa:
-//
-//    EI ylikirjoiteta mitään.
-//
-// Tämä on tärkeää referral-rekisteröinnissä:
-//
-// Firebase Auth
-//      ↓
-// ensureUserProfile
-//      ↓
-// users/{uid}
-//      ↓
-// applyReferralCode
+// Olemassa olevia saldoja, louhintatietoja, kutsukoodeja
+// tai referral-palkkioita ei nollata.
 //
 // ============================================================
 
-const ensureUserProfile =
-onCall(
+const ensureUserProfile = onCall(
 {
-region:
-"us-central1",
+region: "us-central1",
 },
+async (request) => {
+try {
+// 🔐 AUTHENTICATION
+if (!request.auth) {
+throw new HttpsError(
+"unauthenticated",
+"Kirjautuminen vaaditaan.",
+);
+}
 
-async (
-  request,
-) => {
-  try {
-    // ======================================================
-    // 🔐 AUTHENTICATION
-    // ======================================================
+  const uid = request.auth.uid;
 
-    if (!request.auth) {
-      throw new HttpsError(
-        "unauthenticated",
-        "🐱 Kirjautuminen vaaditaan.",
-      );
-    }
-
-    const uid =
-      request.auth.uid;
-
-    if (
-      typeof uid !== "string" ||
-      !uid.trim()
-    ) {
-      throw new HttpsError(
-        "invalid-argument",
-        "🐱 Käyttäjän UID puuttuu.",
-      );
-    }
-
-    // ======================================================
-    // 👤 USER REFERENCE
-    // ======================================================
-
-    const userRef =
-      getUserRef(
-        uid,
-      );
-
-    // ======================================================
-    // 🔍 CHECK EXISTING PROFILE
-    // ======================================================
-
-    const snapshot =
-      await userRef.get();
-
-    // ------------------------------------------------------
-    // PROFILE ALREADY EXISTS
-    // ------------------------------------------------------
-
-    if (snapshot.exists) {
-      return {
-        success:
-          true,
-
-        created:
-          false,
-
-        exists:
-          true,
-
-        uid,
-
-        message:
-          "🐱 Stella-käyttäjäprofiili on jo olemassa.",
-      };
-    }
-
-    // ======================================================
-    // 🆕 CREATE PROFILE
-    // ======================================================
-
-    const profile =
-      buildDefaultUserProfile(
-        request,
-      );
-
-    await userRef.create(
-      profile,
-    );
-
-    // ======================================================
-    // ✅ SUCCESS
-    // ======================================================
-
-    return {
-      success:
-        true,
-
-      created:
-        true,
-
-      exists:
-        true,
-
-      uid,
-
-      message:
-        "🐱✨ Stella-käyttäjäprofiili luotiin onnistuneesti.",
-    };
-  } catch (
-    error
+  if (
+    typeof uid !== "string" ||
+    !uid.trim()
   ) {
-    // ======================================================
-    // ❌ ERROR LOG
-    // ======================================================
-
-    console.error(
-      "ensureUserProfile error:",
-      error,
-    );
-
-    // ------------------------------------------------------
-    // PRESERVE HttpsError
-    // ------------------------------------------------------
-
-    if (
-      error instanceof
-      HttpsError
-    ) {
-      throw error;
-    }
-
-    // ------------------------------------------------------
-    // FIRESTORE ALREADY EXISTS
-    // ------------------------------------------------------
-    //
-    // create() voi teoriassa saada ALREADY_EXISTS-tilanteen,
-    // jos kaksi kutsua osuu samaan käyttäjään samanaikaisesti.
-    //
-    // Tässä tapauksessa profiili on kuitenkin olemassa,
-    // joten sitä voidaan käsitellä onnistuneena tilanteena.
-    //
-    // ------------------------------------------------------
-
-    if (
-      error?.code ===
-      6
-    ) {
-      return {
-        success:
-          true,
-
-        created:
-          false,
-
-        exists:
-          true,
-
-        uid:
-          request.auth.uid,
-
-        message:
-          "🐱 Stella-käyttäjäprofiili on jo olemassa.",
-      };
-    }
-
-    // ------------------------------------------------------
-    // GENERIC ERROR
-    // ------------------------------------------------------
-
     throw new HttpsError(
-      "internal",
-      "🐱 Stella-käyttäjäprofiilin luominen epäonnistui.",
+      "invalid-argument",
+      "Käyttäjän UID puuttuu.",
     );
   }
-},
 
+  // 👤 READ TRUSTED AUTH USER
+  const trustedUser =
+    await getTrustedUserData(uid);
+
+  const userRef = getUserRef(uid);
+
+  // 🔍 CHECK EXISTING PROFILE
+  const snapshot = await userRef.get();
+
+  if (snapshot.exists) {
+    const existingData =
+      snapshot.data() || {};
+
+    const updates = {};
+
+    const existingUsername =
+      typeof existingData.username === "string"
+        ? existingData.username.trim()
+        : "";
+
+    const existingDisplayName =
+      typeof existingData.displayName === "string"
+        ? existingData.displayName.trim()
+        : "";
+
+    // Täydennä username vain, jos se puuttuu.
+    if (
+      !existingUsername &&
+      trustedUser.displayName
+    ) {
+      updates.username =
+        trustedUser.displayName;
+    }
+
+    // Täydennä displayName vain, jos se puuttuu.
+    if (
+      !existingDisplayName &&
+      trustedUser.displayName
+    ) {
+      updates.displayName =
+        trustedUser.displayName;
+    }
+
+    // Täydennä sähköposti vain, jos se puuttuu.
+    const existingEmail =
+      typeof existingData.email === "string"
+        ? existingData.email.trim()
+        : "";
+
+    if (
+      !existingEmail &&
+      trustedUser.email
+    ) {
+      updates.email =
+        trustedUser.email;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updates.updatedAt =
+        FieldValue.serverTimestamp();
+
+      await userRef.update(updates);
+    }
+
+    return {
+      success: true,
+      created: false,
+      exists: true,
+      usernameUpdated:
+        Object.prototype.hasOwnProperty.call(
+          updates,
+          "username",
+        ),
+      uid,
+      message:
+        "Käyttäjäprofiili tarkistettu.",
+    };
+  }
+
+  // 🆕 CREATE PROFILE
+  const profile =
+    buildDefaultUserProfile(
+      request,
+      trustedUser,
+    );
+
+  await userRef.create(profile);
+
+  return {
+    success: true,
+    created: true,
+    exists: true,
+    uid,
+    message:
+      "Käyttäjäprofiili luotu onnistuneesti.",
+  };
+} catch (error) {
+  console.error(
+    "ensureUserProfile error:",
+    error,
+  );
+
+  if (error instanceof HttpsError) {
+    throw error;
+  }
+
+  // Firestore ALREADY_EXISTS
+  if (error?.code === 6) {
+    return {
+      success: true,
+      created: false,
+      exists: true,
+      uid: request.auth.uid,
+      message:
+        "Käyttäjäprofiili on jo olemassa.",
+    };
+  }
+
+  throw new HttpsError(
+    "internal",
+    "Käyttäjäprofiilin luominen epäonnistui.",
+  );
+}
+
+},
 );
 
 // ============================================================
 // 👤 GET USER PROFILE
 // ============================================================
-//
-// Hakee kirjautuneen käyttäjän oman users/{uid}-profiilin.
-//
-// Flutter
-//    ↓
-// getUserProfile()
-//    ↓
-// Firebase Admin SDK
-//    ↓
-// users/{uid}
-//
-// Asiakas ei lue Firestore users -kokoelmaa suoraan.
-//
-// ============================================================
 
-const getUserProfile =
-onCall(
+const getUserProfile = onCall(
 {
-region:
-"us-central1",
+region: "us-central1",
 },
+async (request) => {
+try {
+// 🔐 AUTHENTICATION
+if (!request.auth) {
+throw new HttpsError(
+"unauthenticated",
+"Kirjautuminen vaaditaan.",
+);
+}
 
-async (
-  request,
-) => {
-  try {
-    // ======================================================
-    // 🔐 AUTHENTICATION
-    // ======================================================
+  const uid = request.auth.uid;
 
-    if (!request.auth) {
-      throw new HttpsError(
-        "unauthenticated",
-        "🐱 Kirjautuminen vaaditaan.",
-      );
-    }
-
-    const uid =
-      request.auth.uid;
-
-    if (
-      typeof uid !== "string" ||
-      !uid.trim()
-    ) {
-      throw new HttpsError(
-        "invalid-argument",
-        "🐱 Käyttäjän UID puuttuu.",
-      );
-    }
-
-    // ======================================================
-    // 👤 USER REFERENCE
-    // ======================================================
-
-    const userRef =
-      getUserRef(
-        uid,
-      );
-
-    // ======================================================
-    // 🔍 READ PROFILE
-    // ======================================================
-
-    const snapshot =
-      await userRef.get();
-
-    // ======================================================
-    // ❌ PROFILE DOES NOT EXIST
-    // ======================================================
-
-    if (!snapshot.exists) {
-      throw new HttpsError(
-        "not-found",
-        "🐱 Stella-käyttäjäprofiilia ei löytynyt.",
-      );
-    }
-
-    // ======================================================
-    // 📦 PROFILE DATA
-    // ======================================================
-
-    const data =
-      snapshot.data() || {};
-
-    // ======================================================
-    // ✅ SUCCESS
-    // ======================================================
-
-    return {
-      success:
-        true,
-
-      exists:
-        true,
-
-      uid,
-
-      profile:
-        data,
-    };
-  } catch (
-    error
+  if (
+    typeof uid !== "string" ||
+    !uid.trim()
   ) {
-    // ======================================================
-    // ❌ ERROR LOG
-    // ======================================================
-
-    console.error(
-      "getUserProfile error:",
-      error,
-    );
-
-    // ------------------------------------------------------
-    // PRESERVE HttpsError
-    // ------------------------------------------------------
-
-    if (
-      error instanceof
-      HttpsError
-    ) {
-      throw error;
-    }
-
-    // ------------------------------------------------------
-    // GENERIC ERROR
-    // ------------------------------------------------------
-
     throw new HttpsError(
-      "internal",
-      "🐱 Stella-käyttäjäprofiilin hakeminen epäonnistui.",
+      "invalid-argument",
+      "Käyttäjän UID puuttuu.",
     );
   }
-},
 
+  // 👤 USER REFERENCE
+  const userRef = getUserRef(uid);
+
+  // 🔍 READ PROFILE
+  const snapshot = await userRef.get();
+
+  if (!snapshot.exists) {
+    throw new HttpsError(
+      "not-found",
+      "Käyttäjäprofiilia ei löytynyt.",
+    );
+  }
+
+  const data = snapshot.data() || {};
+
+  return {
+    success: true,
+    exists: true,
+    uid,
+    profile: data,
+  };
+} catch (error) {
+  console.error(
+    "getUserProfile error:",
+    error,
+  );
+
+  if (error instanceof HttpsError) {
+    throw error;
+  }
+
+  throw new HttpsError(
+    "internal",
+    "Käyttäjäprofiilin hakeminen epäonnistui.",
+  );
+}
+
+},
 );
 
 // ============================================================
