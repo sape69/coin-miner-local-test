@@ -613,12 +613,23 @@ class HomeAdManager extends ChangeNotifier {
   // 📱 AD UNIT ID
   // ============================================================
 
-  String get _rewardedAdUnitId {
+  String _rewardedAdUnitIdForPurpose(
+    String purpose,
+  ) {
+    // Google test rewarded ID for debug builds.
     if (kDebugMode) {
       return 'ca-app-pub-3940256099942544/5224354917';
     }
 
-    return 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+    if (purpose == miningStartPurpose) {
+      return miningRewardedAdUnitId;
+    }
+
+    if (purpose == powerBoostPurpose) {
+      return powerBoostRewardedAdUnitId;
+    }
+
+    return miningRewardedAdUnitId;
   }
 
   // ============================================================
@@ -812,7 +823,9 @@ class HomeAdManager extends ChangeNotifier {
     try {
       await RewardedAd.load(
         adUnitId:
-            _rewardedAdUnitId,
+            _rewardedAdUnitIdForPurpose(
+          purpose,
+        ),
         request:
             const AdRequest(),
         rewardedAdLoadCallback:
