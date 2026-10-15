@@ -1655,6 +1655,7 @@ class HomeAdManager extends ChangeNotifier {
 
       bool rewardEarned = false;
 
+      await ad.setImmersiveMode(true);
       ad.show(
         onUserEarnedReward:
             (
