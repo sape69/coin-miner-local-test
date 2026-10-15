@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeAdManager extends ChangeNotifier {
@@ -564,9 +565,7 @@ class HomeAdManager extends ChangeNotifier {
 
       rethrow;
     }
-  }
-
-  // ============================================================
+  }  // ============================================================
   // 🚀 INITIALIZE + PRELOAD
   // ============================================================
 
@@ -670,8 +669,7 @@ class HomeAdManager extends ChangeNotifier {
         _adReady &&
         _rewardedAdPurpose ==
             purpose &&
-        _rewardedAdUserUid ==
-            uid;
+        _rewardedAdUserUid == uid;
   }
 
   // ============================================================
@@ -880,10 +878,8 @@ class HomeAdManager extends ChangeNotifier {
     );
 
     return false;
-  }
-
-  // ============================================================
-  // 📺 LOAD REWARDED AD
+  }  // ============================================================
+  // 📥 LOAD REWARDED AD
   // ============================================================
 
   Future<void> loadRewardedAd({
@@ -894,59 +890,48 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    final bool allowed =
-        _consentCheckCompleted
-            ? _canRequestAds
-            : await _checkAdConsent();
-
-    if (!allowed) {
-      _adLoading = false;
-
-      _loadingPurpose = '';
-
-      _clearAdState();
-
-      _adLoadError =
-          'CONSENT_NOT_GRANTED | '
-          'Purpose: $purpose';
-
-      _notify();
-
-      return;
-    }
-
-    try {
-      await _initializeAdMob();
-    } catch (error) {
-      _adLoading = false;
-
-      _loadingPurpose = '';
-
-      _clearAdState();
-
-      _adLoadError =
-          'ADMOB_INITIALIZATION_FAILED | '
-          '$error';
-
-      _notify();
-
-      return;
-    }
-
     final User? user =
         _auth.currentUser;
 
     if (user == null) {
-      _adLoading = false;
+      debugPrint(
+        '⚠️ [ADMOB] Load skipped: '
+        'no authenticated user.',
+      );
 
-      _loadingPurpose = '';
+      return;
+    }
 
-      _clearAdState();
+    if (!_consentCheckCompleted) {
+      final bool allowed =
+          await _checkAdConsent();
 
-      _adLoadError =
-          'NO_AUTH_USER';
+      if (!allowed) {
+        debugPrint(
+          '⚠️ [ADMOB] Load skipped: '
+          'consent not available.',
+        );
 
-      _notify();
+        return;
+      }
+    }
+
+    if (!_canRequestAds) {
+      debugPrint(
+        '⚠️ [ADMOB] Load skipped: '
+        'ad requests are not allowed.',
+      );
+
+      return;
+    }
+
+    if (_adLoading &&
+        _loadingPurpose ==
+            purpose) {
+      debugPrint(
+        'ℹ️ [ADMOB] Load already in progress: '
+        '$purpose',
+      );
 
       return;
     }
@@ -955,218 +940,92 @@ class HomeAdManager extends ChangeNotifier {
       purpose,
       user.uid,
     )) {
+      debugPrint(
+        '✅ [ADMOB] Existing ad is ready: '
+        '$purpose',
+      );
+
       return;
-    }
-
-    if (_adLoading) {
-      if (_loadingPurpose ==
-          purpose) {
-        return;
-      }
-
-      _loadRequestId++;
-
-      _adLoading = false;
-
-      _loadingPurpose = '';
     }
 
     if (_rewardedAd != null) {
       _disposeCurrentAd();
     }
 
+    final String adUnitId =
+        _getAdUnitId(purpose);
+
     final int requestId =
         ++_loadRequestId;
 
-    final String loadingUid =
-        user.uid;
-
-    final String adUnitId =
-        _getAdUnitId(
-      purpose,
-    );
-
     _adLoading = true;
-
-    _loadingPurpose =
-        purpose;
-
-    _adReady = false;
-
-    _rewardedAdPurpose = '';
-
-    _rewardedAdUserUid = '';
-
-    _adLoadError = '';
+    _loadingPurpose = purpose;
+    _adLoadError = null;
 
     _notify();
 
-    bool callbackReceived =
-        false;
-
     debugPrint(
-      '🐱 [ADMOB] Loading rewarded ad: '
-      '$purpose',
+      '📺 [ADMOB] Loading rewarded ad: '
+      'purpose=$purpose, '
+      'unit=$adUnitId, '
+      'request=$requestId',
     );
-
-    RewardedAd.load(
-      adUnitId: adUnitId,
-      request:
-          const AdRequest(),
-      rewardedAdLoadCallback:
-          RewardedAdLoadCallback(
-        onAdLoaded: (
-          RewardedAd ad,
-        ) {
-          callbackReceived = true;
-
-          unawaited(
-            _finishAdLoad(
-              ad: ad,
-              purpose: purpose,
-              loadingUid:
-                  loadingUid,
-              requestId:
-                  requestId,
-            ),
-          );
-        },
-        onAdFailedToLoad: (
-          LoadAdError error,
-        ) {
-          callbackReceived = true;
-
-          if (_disposed ||
-              requestId !=
-                  _loadRequestId) {
-            return;
-          }
-
-          _adLoading = false;
-
-          _loadingPurpose = '';
-
-          _clearAdState();
-
-          _adLoadError =
-              'LOAD_FAILED | '
-              'Purpose: $purpose | '
-              'Code: ${error.code} | '
-              'Domain: ${error.domain} | '
-              'Message: ${error.message}';
-
-          debugPrint(
-            '❌ [ADMOB] $_adLoadError',
-          );
-
-          _notify();
-
-          if (notifyOnLoadError) {
-            onAdLoadError?.call(
-              purpose,
-              error,
-            );
-          }
-        },
-      ),
-    );
-
-    unawaited(
-      Future<void>.delayed(
-        adLoadTimeout,
-      ).then(
-        (_) {
-          if (_disposed ||
-              requestId !=
-                  _loadRequestId) {
-            return;
-          }
-
-          if (callbackReceived) {
-            return;
-          }
-
-          if (!_adLoading ||
-              _loadingPurpose !=
-                  purpose) {
-            return;
-          }
-
-          _loadRequestId++;
-
-          _adLoading = false;
-
-          _loadingPurpose = '';
-
-          _clearAdState();
-
-          _adLoadError =
-              'LOAD_TIMEOUT | '
-              'Purpose: $purpose';
-
-          debugPrint(
-            '⚠️ [ADMOB] $_adLoadError',
-          );
-
-          _notify();
-        },
-      ),
-    );
-  }
-
-  // ============================================================
-  // 🔐 FINISH AD LOAD + SSV
-  // ============================================================
-
-  Future<void> _finishAdLoad({
-    required RewardedAd ad,
-    required String purpose,
-    required String loadingUid,
-    required int requestId,
-  }) async {
-    if (_disposed ||
-        requestId !=
-            _loadRequestId) {
-      ad.dispose();
-
-      return;
-    }
-
-    final User? activeUser =
-        _auth.currentUser;
-
-    if (activeUser == null ||
-        activeUser.uid !=
-            loadingUid) {
-      ad.dispose();
-
-      _adLoading = false;
-
-      _loadingPurpose = '';
-
-      _clearAdState();
-
-      _adLoadError =
-          'AUTH_USER_CHANGED';
-
-      _notify();
-
-      return;
-    }
-
-    // ==========================================================
-    // 🔐 ADMOB SERVER-SIDE VERIFICATION
-    // ==========================================================
 
     try {
-      await ad.setServerSideOptions(
-        ServerSideVerificationOptions(
-          customData:
-              '$loadingUid:$purpose',
+      await RewardedAd.load(
+        adUnitId: adUnitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback:
+            RewardedAdLoadCallback(
+          onAdLoaded:
+              (RewardedAd ad) {
+            _finishAdLoad(
+              requestId: requestId,
+              purpose: purpose,
+              uid: user.uid,
+              ad: ad,
+            );
+          },
+          onAdFailedToLoad:
+              (LoadAdError error) {
+            debugPrint(
+              '❌ [ADMOB] Rewarded ad failed '
+              'to load: '
+              '$error',
+            );
+
+            if (_disposed ||
+                requestId !=
+                    _loadRequestId) {
+              try {
+                // No state belongs to this
+                // obsolete request anymore.
+                //
+                // The ad object is not available
+                // in onAdFailedToLoad.
+              } catch (_) {}
+              return;
+            }
+
+            _adLoading = false;
+            _loadingPurpose = '';
+
+            _adLoadError =
+                'REWARDED_AD_LOAD_FAILED | '
+                '${error.code} | '
+                '${error.message}';
+
+            if (notifyOnLoadError) {
+              _notify();
+            }
+          },
         ),
       );
     } catch (error) {
-      ad.dispose();
+      debugPrint(
+        '❌ [ADMOB] RewardedAd.load exception: '
+        '$error',
+      );
 
       if (_disposed ||
           requestId !=
@@ -1175,198 +1034,210 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       _adLoading = false;
-
       _loadingPurpose = '';
 
-      _clearAdState();
-
       _adLoadError =
-          'SSV_SETUP_FAILED | '
+          'REWARDED_AD_LOAD_EXCEPTION | '
           '$error';
 
-      _notify();
-
-      return;
+      if (notifyOnLoadError) {
+        _notify();
+      }
     }
+  }
 
+  // ============================================================
+  // ✅ FINISH AD LOAD
+  // ============================================================
+
+  void _finishAdLoad({
+    required int requestId,
+    required String purpose,
+    required String uid,
+    required RewardedAd ad,
+  }) {
     if (_disposed ||
         requestId !=
             _loadRequestId) {
-      ad.dispose();
+      debugPrint(
+        '⚠️ [ADMOB] Ignoring obsolete '
+        'rewarded ad load.',
+      );
+
+      try {
+        ad.dispose();
+      } catch (_) {}
 
       return;
     }
 
-    final User? verifiedUser =
+    final User? currentUser =
         _auth.currentUser;
 
-    if (verifiedUser == null ||
-        verifiedUser.uid !=
-            loadingUid) {
-      ad.dispose();
+    if (currentUser == null ||
+        currentUser.uid != uid) {
+      debugPrint(
+        '⚠️ [ADMOB] Ignoring rewarded ad '
+        'for inactive user.',
+      );
+
+      try {
+        ad.dispose();
+      } catch (_) {}
 
       _adLoading = false;
-
       _loadingPurpose = '';
-
-      _clearAdState();
 
       return;
     }
 
-    // ==========================================================
-    // 📺 FULLSCREEN CALLBACKS
-    // ==========================================================
-
-    ad.fullScreenContentCallback =
-        FullScreenContentCallback<RewardedAd>(
-      onAdShowedFullScreenContent:
-          (
-        RewardedAd ad,
-      ) {
-        debugPrint(
-          '✅ [ADMOB] Ad shown: '
-          '$purpose',
-        );
-      },
-      onAdImpression:
-          (
-        RewardedAd ad,
-      ) {
-        debugPrint(
-          '🐱 [ADMOB] Impression: '
-          '$purpose',
-        );
-      },
-      onAdClicked:
-          (
-        RewardedAd ad,
-      ) {
-        debugPrint(
-          '🐱 [ADMOB] Clicked: '
-          '$purpose',
-        );
-      },
-      onAdDismissedFullScreenContent:
-          (
-        RewardedAd ad,
-      ) {
-        debugPrint(
-          '🐱 [ADMOB] Ad dismissed: '
-          '$purpose',
-        );
-
-        try {
-          ad.dispose();
-        } catch (_) {}
-
-        _clearAdState();
-
-        _setFlowActive(
-          purpose,
-          false,
-        );
-
-        _notify();
-
-        onAdDismissed?.call(
-          purpose,
-        );
-
-        if (!_disposed) {
-          unawaited(
-            _reloadAfterDismiss(
-              purpose,
-            ),
-          );
-        }
-      },
-      onAdFailedToShowFullScreenContent:
-          (
-        RewardedAd ad,
-        AdError error,
-      ) {
-        debugPrint(
-          '❌ [ADMOB] Failed to show: '
-          '$purpose | '
-          '${error.message}',
-        );
-
-        try {
-          ad.dispose();
-        } catch (_) {}
-
-        _clearAdState();
-
-        _setFlowActive(
-          purpose,
-          false,
-        );
-
-        _resetRewardCallbackState(
-          purpose,
-        );
-
-        _adLoadError =
-            'SHOW_FAILED | '
-            'Purpose: $purpose | '
-            'Code: ${error.code} | '
-            'Message: ${error.message}';
-
-        _notify();
-
-        onAdShowError?.call(
-          purpose,
-          error,
-        );
-
-        if (!_disposed) {
-          unawaited(
-            _reloadAfterDismiss(
-              purpose,
-            ),
-          );
-        }
-      },
-    );
-
-    // ==========================================================
-    // ✅ STORE READY AD
-    // ==========================================================
-
     _rewardedAd = ad;
+
+    _adReady = true;
 
     _rewardedAdPurpose =
         purpose;
 
     _rewardedAdUserUid =
-        loadingUid;
-
-    _adReady = true;
+        uid;
 
     _adLoading = false;
 
     _loadingPurpose = '';
 
-    _adLoadError = '';
-
-    _notify();
+    _adLoadError = null;
 
     debugPrint(
-      '✅ [ADMOB] REWARDED AD READY: '
+      '✅ [ADMOB] Rewarded ad loaded: '
       '$purpose',
     );
-  }
 
-  // ============================================================
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdShowedFullScreenContent:
+          (RewardedAd ad) {
+        debugPrint(
+          '📺 [ADMOB] Rewarded ad '
+          'shown: $purpose',
+        );
+      },
+
+      onAdImpression:
+          (RewardedAd ad) {
+        debugPrint(
+          '👀 [ADMOB] Rewarded ad '
+          'impression: $purpose',
+        );
+      },
+
+      onAdClicked:
+          (RewardedAd ad) {
+        debugPrint(
+          '👆 [ADMOB] Rewarded ad '
+          'clicked: $purpose',
+        );
+      },
+
+      onAdDismissedFullScreenContent:
+          (RewardedAd ad) async {
+        debugPrint(
+          '❎ [ADMOB] Rewarded ad '
+          'dismissed: $purpose',
+        );
+
+        await SystemChrome
+            .setEnabledSystemUIMode(
+          SystemUiMode.edgeToEdge,
+        );
+
+        try {
+          ad.dispose();
+        } catch (error) {
+          debugPrint(
+            '⚠️ [ADMOB] Dispose after '
+            'dismiss failed: '
+            '$error',
+          );
+        }
+
+        if (_rewardedAd == ad) {
+          _clearAdState();
+        }
+
+        _adShowing = false;
+
+        _activeAdPurpose = '';
+
+        _notify();
+
+        await _reloadAfterDismiss(
+          purpose,
+        );
+      },
+
+      onAdFailedToShowFullScreenContent:
+          (
+        RewardedAd ad,
+        AdError error,
+      ) async {
+        debugPrint(
+          '❌ [ADMOB] Rewarded ad '
+          'failed to show: '
+          '$error',
+        );
+
+        await SystemChrome
+            .setEnabledSystemUIMode(
+          SystemUiMode.edgeToEdge,
+        );
+
+        try {
+          ad.dispose();
+        } catch (disposeError) {
+          debugPrint(
+            '⚠️ [ADMOB] Dispose after '
+            'show failure failed: '
+            '$disposeError',
+          );
+        }
+
+        if (_rewardedAd == ad) {
+          _clearAdState();
+        }
+
+        _adShowing = false;
+
+        _activeAdPurpose = '';
+
+        _rewardedAdRewardEarned = false;
+
+        _adLoadError =
+            'REWARDED_AD_SHOW_FAILED | '
+            '${error.code} | '
+            '${error.message}';
+
+        _notify();
+
+        await _reloadAfterDismiss(
+          purpose,
+        );
+      },
+    );
+
+    _notify();
+  }  // ============================================================
   // 🔄 RELOAD AFTER DISMISS
   // ============================================================
 
   Future<void> _reloadAfterDismiss(
     String purpose,
   ) async {
+    if (_disposed) {
+      return;
+    }
+
     await Future<void>.delayed(
-      reloadDelay,
+      const Duration(milliseconds: 500),
     );
 
     if (_disposed) {
@@ -1377,17 +1248,6 @@ class HomeAdManager extends ChangeNotifier {
         _auth.currentUser;
 
     if (user == null) {
-      return;
-    }
-
-    if (_adLoading) {
-      return;
-    }
-
-    if (_isReadyFor(
-      purpose,
-      user.uid,
-    )) {
       return;
     }
 
@@ -1398,135 +1258,47 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // 🎁 REWARD EARNED
+  // 🎁 REWARD HANDLER
   // ============================================================
 
-  void _handleRewardEarned(
+  void _handleReward(
     String purpose,
+    RewardItem reward,
   ) {
     if (_disposed) {
       return;
     }
 
-    if (purpose ==
-        miningStartPurpose) {
-      if (_miningRewardCallbackStarted) {
-        return;
-      }
-
-      _miningRewardCallbackStarted =
-          true;
-    }
-
-    if (purpose ==
-        powerBoostPurpose) {
-      if (_powerBoostRewardCallbackStarted) {
-        return;
-      }
-
-      _powerBoostRewardCallbackStarted =
-          true;
-    }
+    _rewardedAdRewardEarned = true;
 
     debugPrint(
-      '🎁 [ADMOB] Reward earned: '
-      '$purpose',
+      '🎁 [ADMOB] Reward received: '
+      'purpose=$purpose, '
+      'amount=${reward.amount}, '
+      'type=${reward.type}',
     );
 
-    unawaited(
-      _executeRewardCallback(
+    final RewardCallback?
+        callback =
+        _rewardCallback;
+
+    if (callback != null) {
+      callback(
         purpose,
-      ),
-    );
-  }
-
-  // ============================================================
-  // 🔥 BACKEND CALLBACK
-  // ============================================================
-
-  Future<void> _executeRewardCallback(
-    String purpose,
-  ) async {
-    try {
-      if (_disposed) {
-        return;
-      }
-
-      if (purpose ==
-          miningStartPurpose) {
-        final callback =
-            onMiningStartReward;
-
-        if (callback == null) {
-          throw Exception(
-            'Mining reward callback is null.',
-          );
-        }
-
-        await callback();
-      } else if (purpose ==
-          powerBoostPurpose) {
-        final callback =
-            onPowerBoostReward;
-
-        if (callback == null) {
-          throw Exception(
-            'Power Boost callback is null.',
-          );
-        }
-
-        await callback();
-      } else {
-        throw Exception(
-          'Unknown reward purpose: '
-          '$purpose',
-        );
-      }
-
-      debugPrint(
-        '✅ [ADMOB] Backend callback completed: '
-        '$purpose',
-      );
-    } catch (error) {
-      debugPrint(
-        '❌ [ADMOB] Backend callback failed: '
-        '$purpose | $error',
-      );
-    } finally {
-      _resetRewardCallbackState(
-        purpose,
+        reward,
       );
     }
-  }
 
-  // ============================================================
-  // ⛏️ SHOW MINING START AD
-  // ============================================================
-
-  Future<bool> showMiningStartAd() async {
-    return _showRewardedAd(
-      purpose:
-          miningStartPurpose,
-    );
-  }
-
-  // ============================================================
-  // ⚡ SHOW POWER BOOST AD
-  // ============================================================
-
-  Future<bool> showPowerBoostAd() async {
-    return _showRewardedAd(
-      purpose:
-          powerBoostPurpose,
-    );
+    _notify();
   }
 
   // ============================================================
   // 📺 SHOW REWARDED AD
   // ============================================================
 
-  Future<bool> _showRewardedAd({
+  Future<bool> showRewardedAd({
     required String purpose,
+    RewardCallback? onReward,
   }) async {
     if (_disposed) {
       return false;
@@ -1537,227 +1309,230 @@ class HomeAdManager extends ChangeNotifier {
 
     if (user == null) {
       debugPrint(
-        '❌ [ADMOB] No authenticated user.',
+        '⚠️ [ADMOB] Show skipped: '
+        'no authenticated user.',
       );
 
       return false;
     }
 
-    final bool allowed =
-        _consentCheckCompleted
-            ? _canRequestAds
-            : await _checkAdConsent();
-
-    if (!allowed) {
+    if (_adShowing) {
       debugPrint(
-        '⚠️ [ADMOB] Ad request not allowed.',
+        '⚠️ [ADMOB] Show skipped: '
+        'another ad is already showing.',
       );
 
       return false;
     }
 
-    if (purpose ==
-            miningStartPurpose &&
-        _miningAdFlowActive) {
-      return false;
-    }
-
-    if (purpose ==
-            powerBoostPurpose &&
-        _powerBoostAdFlowActive) {
-      return false;
-    }
-
-    if (purpose ==
-            miningStartPurpose &&
-        _powerBoostAdFlowActive) {
-      return false;
-    }
-
-    if (purpose ==
-            powerBoostPurpose &&
-        _miningAdFlowActive) {
-      return false;
-    }
-
-    if (purpose ==
-            miningStartPurpose &&
-        _miningRewardCallbackStarted) {
-      return false;
-    }
-
-    if (purpose ==
-            powerBoostPurpose &&
-        _powerBoostRewardCallbackStarted) {
-      return false;
-    }
-
-    _setFlowActive(
-      purpose,
-      true,
+    final bool ready =
+        await waitForRewardedAd(
+      purpose: purpose,
     );
 
-    _adLoadError = '';
+    if (!ready) {
+      debugPrint(
+        '❌ [ADMOB] Rewarded ad not ready: '
+        '$purpose',
+      );
+
+      return false;
+    }
+
+    if (_disposed) {
+      return false;
+    }
+
+    final RewardedAd? ad =
+        _rewardedAd;
+
+    if (ad == null) {
+      debugPrint(
+        '❌ [ADMOB] Rewarded ad became null '
+        'before show.',
+      );
+
+      return false;
+    }
+
+    if (!_isReadyFor(
+      purpose,
+      user.uid,
+    )) {
+      debugPrint(
+        '❌ [ADMOB] Rewarded ad state '
+        'changed before show.',
+      );
+
+      return false;
+    }
+
+    return _showRewardedAd(
+      ad: ad,
+      purpose: purpose,
+      onReward: onReward,
+    );
+  }
+
+  // ============================================================
+  // 📺 SHOW CURRENT REWARDED AD
+  // ============================================================
+
+  Future<bool> _showRewardedAd({
+    required RewardedAd ad,
+    required String purpose,
+    RewardCallback? onReward,
+  }) async {
+    if (_disposed) {
+      return false;
+    }
+
+    _adShowing = true;
+
+    _activeAdPurpose =
+        purpose;
+
+    _rewardedAdRewardEarned =
+        false;
+
+    _rewardCallback =
+        onReward;
+
+    _adReady = false;
 
     _notify();
 
-    RewardedAd? ad;
-
     try {
-      final bool ready =
-          await waitForRewardedAd(
-        purpose:
-            purpose,
+      // Android 15 / targetSdk 35+ uses
+      // edge-to-edge by default.
+      //
+      // Force immersive mode before showing
+      // the rewarded ad so the ad can occupy
+      // the complete screen area.
+      await SystemChrome
+          .setEnabledSystemUIMode(
+        SystemUiMode.immersive,
       );
 
-      if (_disposed) {
-        return false;
-      }
+      await ad.setImmersiveMode(
+        true,
+      );
 
-      final User? activeUser =
-          _auth.currentUser;
-
-      if (!ready ||
-          activeUser == null ||
-          !_isReadyFor(
-            purpose,
-            activeUser.uid,
-          )) {
-        debugPrint(
-          '❌ [ADMOB] Ad not ready after '
-          '$maxAdLoadAttempts attempts.',
-        );
-
-        _setFlowActive(
-          purpose,
-          false,
-        );
-
-        _notify();
-
-        return false;
-      }
-
-      ad = _rewardedAd;
-
-      if (ad == null) {
-        _setFlowActive(
-          purpose,
-          false,
-        );
-
-        return false;
-      }
-
-      _clearAdState();
-
-      _notify();
-
-      bool rewardEarned = false;
-
-      await ad.setImmersiveMode(true);
       ad.show(
         onUserEarnedReward:
             (
-          AdWithoutView adWithoutView,
+          AdWithoutView ad,
           RewardItem reward,
         ) {
-          if (rewardEarned) {
-            return;
-          }
-
-          rewardEarned = true;
-
-          debugPrint(
-            '🎁 [ADMOB] Reward received.'
-            ' Purpose=$purpose '
-            'Amount=${reward.amount} '
-            'Type=${reward.type}',
-          );
-
-          _handleRewardEarned(
+          _handleReward(
             purpose,
+            reward,
           );
         },
       );
 
       debugPrint(
-        '✅ [ADMOB] Ad.show() called: '
-        '$purpose',
+        '📺 [ADMOB] Rewarded ad '
+        'show requested: $purpose',
       );
 
       return true;
     } catch (error) {
       debugPrint(
-        '❌ [ADMOB] Show exception: '
-        '$purpose | $error',
+        '❌ [ADMOB] Failed to show '
+        'rewarded ad: '
+        '$error',
+      );
+
+      await SystemChrome
+          .setEnabledSystemUIMode(
+        SystemUiMode.edgeToEdge,
       );
 
       try {
-        ad?.dispose();
-      } catch (_) {}
+        ad.dispose();
+      } catch (disposeError) {
+        debugPrint(
+          '⚠️ [ADMOB] Dispose after '
+          'show exception failed: '
+          '$disposeError',
+        );
+      }
 
-      _clearAdState();
+      if (_rewardedAd == ad) {
+        _clearAdState();
+      }
 
-      _setFlowActive(
-        purpose,
-        false,
-      );
+      _adShowing = false;
 
-      _resetRewardCallbackState(
-        purpose,
-      );
+      _activeAdPurpose = '';
+
+      _rewardedAdRewardEarned =
+          false;
+
+      _rewardCallback = null;
 
       _adLoadError =
-          'SHOW_EXCEPTION | '
-          'Purpose: $purpose | '
-          'Error: $error';
+          'REWARDED_AD_SHOW_EXCEPTION | '
+          '$error';
 
       _notify();
+
+      await _reloadAfterDismiss(
+        purpose,
+      );
 
       return false;
     }
   }
 
   // ============================================================
-  // 🔒 FLOW STATE
+  // 🐱 MINING AD
   // ============================================================
 
-  void _setFlowActive(
-    String purpose,
-    bool active,
-  ) {
-    if (purpose ==
-        miningStartPurpose) {
-      _miningAdFlowActive =
-          active;
-    }
-
-    if (purpose ==
-        powerBoostPurpose) {
-      _powerBoostAdFlowActive =
-          active;
-    }
+  Future<bool> showMiningAd({
+    RewardCallback? onReward,
+  }) async {
+    return showRewardedAd(
+      purpose:
+          miningStartPurpose,
+      onReward: onReward,
+    );
   }
 
   // ============================================================
-  // 🔄 RESET CALLBACK STATE
+  // ⚡ POWER BOOST AD
   // ============================================================
 
-  void _resetRewardCallbackState(
-    String purpose,
-  ) {
-    if (purpose ==
-        miningStartPurpose) {
-      _miningRewardCallbackStarted =
-          false;
+  Future<bool> showPowerBoostAd({
+    RewardCallback? onReward,
+  }) async {
+    return showRewardedAd(
+      purpose:
+          powerBoostPurpose,
+      onReward: onReward,
+    );
+  }
+
+  // ============================================================
+  // 🔄 RESET AD STATE
+  // ============================================================
+
+  void resetAdState() {
+    if (_disposed) {
+      return;
     }
 
-    if (purpose ==
-        powerBoostPurpose) {
-      _powerBoostRewardCallbackStarted =
-          false;
-    }
+    _adShowing = false;
+
+    _activeAdPurpose = '';
+
+    _rewardedAdRewardEarned =
+        false;
+
+    _rewardCallback = null;
+
+    _notify();
   }
 
   // ============================================================
@@ -1766,35 +1541,21 @@ class HomeAdManager extends ChangeNotifier {
 
   @override
   void dispose() {
-    debugPrint(
-      '🐱 [ADMOB] HomeAdManager disposed.',
-    );
-
     _disposed = true;
 
     _loadRequestId++;
-
-    final RewardedAd? ad =
-        _rewardedAd;
-
-    _rewardedAd = null;
-
-    _adReady = false;
 
     _adLoading = false;
 
     _loadingPurpose = '';
 
-    _rewardedAdPurpose = '';
+    _adShowing = false;
 
-    _rewardedAdUserUid = '';
+    _activeAdPurpose = '';
 
-    _privacyOptionsRequired =
-        false;
+    _rewardCallback = null;
 
-    try {
-      ad?.dispose();
-    } catch (_) {}
+    _disposeCurrentAd();
 
     super.dispose();
   }
