@@ -98,6 +98,48 @@
 //    Target: 10
 //    Reward: 20 STL
 //
+// LONG-TERM ACHIEVEMENTS:
+//
+// seasoned_miner
+//    Target: 50
+//    Reward: 40 STL
+//
+// veteran_miner
+//    Target: 100
+//    Reward: 75 STL
+//
+// stl_hoarder
+//    Target: 2500
+//    Reward: 40 STL
+//
+// stl_tycoon
+//    Target: 5000
+//    Reward: 75 STL
+//
+// power_hunter
+//    Target: 50
+//    Reward: 50 STL
+//
+// power_master
+//    Target: 100
+//    Reward: 100 STL
+//
+// stella_companion
+//    Target: 30
+//    Reward: 50 STL
+//
+// stella_devotee
+//    Target: 60
+//    Reward: 100 STL
+//
+// stella_eternal
+//    Target: 60
+//    Reward: 100 STL
+//
+// stella_beyond
+//    Target: 90
+//    Reward: 200 STL
+//
 // ============================================================
 
 const {
@@ -245,6 +287,86 @@ const achievements = Object.freeze([
     id: "stellas_community",
     target: 10,
     reward: 20,
+  }),
+
+  // ==========================================================
+  // ⛏️ LONG-TERM MINING
+  // ==========================================================
+
+  Object.freeze({
+    id: "seasoned_miner",
+    target: 50,
+    reward: 40,
+  }),
+
+  Object.freeze({
+    id: "veteran_miner",
+    target: 100,
+    reward: 75,
+  }),
+
+  // ==========================================================
+  // 💎 LONG-TERM STL
+  // ==========================================================
+
+  Object.freeze({
+    id: "stl_hoarder",
+    target: 2500,
+    reward: 40,
+  }),
+
+  Object.freeze({
+    id: "stl_tycoon",
+    target: 5000,
+    reward: 75,
+  }),
+
+  // ==========================================================
+  // ⚡ LONG-TERM POWER BOOST
+  // ==========================================================
+
+  Object.freeze({
+    id: "power_hunter",
+    target: 50,
+    reward: 50,
+  }),
+
+  Object.freeze({
+    id: "power_master",
+    target: 100,
+    reward: 100,
+  }),
+
+  // ==========================================================
+  // 🐾 LONG-TERM DAILY
+  // ==========================================================
+
+  Object.freeze({
+    id: "stella_companion",
+    target: 30,
+    reward: 50,
+  }),
+
+  Object.freeze({
+    id: "stella_devotee",
+    target: 60,
+    reward: 100,
+  }),
+
+  // ==========================================================
+  // 🔥 LONG-TERM STREAK
+  // ==========================================================
+
+  Object.freeze({
+    id: "stella_eternal",
+    target: 60,
+    reward: 100,
+  }),
+
+  Object.freeze({
+    id: "stella_beyond",
+    target: 90,
+    reward: 200,
   }),
 ]);
 
