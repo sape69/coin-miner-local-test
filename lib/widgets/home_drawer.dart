@@ -178,6 +178,51 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   // ==========================================================
+  // ⭐ STELLA LEVEL NAME LOCALIZATION
+  // ==========================================================
+
+  String _stellaLevelName(StellaLevelInfo level) {
+    switch (level.level) {
+      case 6:
+        return _t('stellaLevelLegend');
+
+      case 5:
+        return _t('stellaLevelMaster');
+
+      case 4:
+        return _t('stellaLevelPower');
+
+      case 3:
+        return _t('stellaLevelMining');
+
+      case 2:
+        return _t('stellaLevelCurious');
+
+      default:
+        return _t('stellaLevelLittle');
+    }
+  }
+
+  // ==========================================================
+  // 🏆 STELLA LEVEL PROGRESS TEXT
+  // ==========================================================
+
+  String _stellaLevelProgressText(
+    StellaLevelInfo level,
+  ) {
+    if (level.isMaxLevel) {
+      return _t('stellaMaxLevel');
+    }
+
+    return _t(
+      'stellaAchievementsToNextLevel',
+    ).replaceAll(
+      '{count}',
+      level.achievementsToNextLevel.toString(),
+    );
+  }
+
+  // ==========================================================
   // 🏆 ACHIEVEMENTS LOCALIZATION
   // ==========================================================
 
@@ -429,7 +474,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       Row(
                         children: [
                           Text(
-                            'STELLA LEVEL',
+                            _t('stellaLevel'),
                             style: TextStyle(
                               color: goldAccentColor
                                   .withValues(alpha: 0.95),
@@ -448,8 +493,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       const SizedBox(height: 3),
                       Text(
                         _loadingStellaLevel
-                            ? 'Loading...'
-                            : level.name,
+                            ? _t('stellaLevelLoading')
+                            : _stellaLevelName(level),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -522,7 +567,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Loading Stella...',
+                    _t('stellaLoading'),
                     style: TextStyle(
                       color:
                           Colors.white.withValues(alpha: 0.60),
@@ -547,7 +592,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       ),
                       const SizedBox(width: 7),
                       Text(
-                        'Achievements',
+                        _t('stellaAchievements'),
                         style: TextStyle(
                           color:
                               Colors.white.withValues(alpha: 0.72),
@@ -590,18 +635,21 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 mainAxisAlignment:
                     MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    level.isMaxLevel
-                        ? 'MAX LEVEL'
-                        : '${level.achievementsToNextLevel} achievements to next level',
-                    style: TextStyle(
-                      color:
-                          pinkAccentColor.withValues(alpha: 0.72),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      _stellaLevelProgressText(level),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color:
+                            pinkAccentColor.withValues(alpha: 0.72),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  if (!level.isMaxLevel)
+                  if (!level.isMaxLevel) ...[
+                    const SizedBox(width: 8),
                     Text(
                       '${level.currentLevelRequirement} / ${level.nextLevelRequirement}',
                       style: TextStyle(
@@ -610,6 +658,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                         fontSize: 10,
                       ),
                     ),
+                  ],
                 ],
               ),
             ],
