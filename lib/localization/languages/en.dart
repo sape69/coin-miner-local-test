@@ -327,6 +327,16 @@ const Map<String, String> enTranslations = {
       'Stella’s mining is ready to collect. 🐾',
 
   // ============================================================
+  // 🔔 MINING NOTIFICATIONS
+  // ============================================================
+
+  'miningNotificationTitle':
+      '🐱 Stella wants you back mining!',
+
+  'miningNotificationBody':
+      'Mining is complete. Come back and start a new mining session. 💜',
+
+  // ============================================================
   // 💎 TRANSACTIONS
   // ============================================================
 
@@ -470,7 +480,7 @@ const Map<String, String> enTranslations = {
       'Referral Code Not Found',
 
   'referralCodeNotFoundMessage':
-      'The referral code you entered is not valid.\\n\\nWould you like to continue creating your Stelluriini account without a referral code?',
+      'The referral code you entered is not valid.\n\nWould you like to continue creating your Stelluriini account without a referral code?',
 
   'changeReferralCode':
       'Change Referral Code',
