@@ -318,6 +318,46 @@ const Map<String, String> jaTranslations = {
       'Stellaはすでにマイニング中です。🐱💜',
 
   // ============================================================
+  // ⭐ STELLA LEVEL
+  // ============================================================
+
+  'stellaLevel':
+      'STELLAレベル',
+
+  'stellaLevelLoading':
+      '読み込み中...',
+
+  'stellaLoading':
+      'Stellaを読み込み中...',
+
+  'stellaAchievements':
+      '実績',
+
+  'stellaMaxLevel':
+      '最大レベル',
+
+  'stellaAchievementsToNextLevel':
+      '次のレベルまであと{count}個の実績',
+
+  'stellaLevelLittle':
+      '小さなStella',
+
+  'stellaLevelCurious':
+      '好奇心旺盛なStella',
+
+  'stellaLevelMining':
+      'マイニングStella',
+
+  'stellaLevelPower':
+      'パワーStella',
+
+  'stellaLevelMaster':
+      'マスターStella',
+
+  'stellaLevelLegend':
+      'Stellaレジェンド',
+
+  // ============================================================
   // ⛏️ MINING MESSAGES
   // ============================================================
 
