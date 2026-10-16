@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -9,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../data/cat_facts.dart';
 import '../../localization.dart';
+import '../../services/mining_notification_service.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_logo.dart';
 import '../../widgets/stelluriini_space_background.dart';
@@ -94,6 +94,13 @@ class _HomePageState extends State<HomePage>
       FirebaseFunctions.instanceFor(
     region: 'us-central1',
   );
+
+  // ============================================================
+  // 🔔 MINING NOTIFICATIONS
+  // ============================================================
+
+  final MiningNotificationService _miningNotificationService =
+      MiningNotificationService.instance;
 
   // ============================================================
   // 🎬 ANIMATION / ADS
@@ -353,8 +360,6 @@ class _HomePageState extends State<HomePage>
 
         String username = '';
 
-        // getUserProfile palauttaa käyttäjäprofiilin
-        // profile-kentän sisällä.
         final dynamic rawProfile = data['profile'];
 
         if (rawProfile is Map) {
@@ -364,7 +369,6 @@ class _HomePageState extends State<HomePage>
           username = profile['username']?.toString().trim() ?? '';
         }
 
-        // Fallback mahdollisia vanhempia backend-vastauksia varten.
         if (username.isEmpty) {
           username = data['username']?.toString().trim() ?? '';
         }
@@ -399,6 +403,7 @@ class _HomePageState extends State<HomePage>
     final User? user = _auth.currentUser;
 
     if (user == null) {
+      await _miningNotificationService.cancelMiningCompletion();
       return;
     }
 
@@ -545,22 +550,17 @@ class _HomePageState extends State<HomePage>
           .clamp(0, defaultAdCooldownMs)
           .toInt();
 
-      // Daily Streak:
-      //
-      // Älä rajoita streak-arvoa 1–7:ään.
-      // Backend saa päättää todellisen streakin.
-      //
-      // Pidetään kuitenkin vähintään arvo 1,
-      // jos backend palauttaa virheellisen nollan
-      // tai negatiivisen arvon.
       final int safeStreak = streak > 0 ? streak : 1;
+
+      final bool safeMiningActive =
+          miningActive && safeRemaining > 0;
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _miningActive = miningActive && safeRemaining > 0;
+        _miningActive = safeMiningActive;
 
         _hashRate = safeHashRate;
         _unclaimedMining = safeUnclaimed;
@@ -587,6 +587,28 @@ class _HomePageState extends State<HomePage>
             .clamp(0, safeDuration)
             .toInt();
       });
+
+      // ========================================================
+      // 🔔 MINING COMPLETION NOTIFICATION
+      // ========================================================
+      //
+      // The server is the authority for the remaining time.
+      //
+      // If mining is active, schedule the notification using
+      // the exact remaining duration returned by Firebase.
+      //
+      // If mining is not active, remove any old notification.
+      // ========================================================
+
+      if (safeMiningActive && safeRemaining > 0) {
+        await _miningNotificationService
+            .scheduleMiningCompletion(
+          Duration(milliseconds: safeRemaining),
+        );
+      } else {
+        await _miningNotificationService
+            .cancelMiningCompletion();
+      }
 
       _startMiningTimer();
       _startBoostTimer();
@@ -642,6 +664,10 @@ class _HomePageState extends State<HomePage>
           });
 
           _miningTimer?.cancel();
+
+          // Louhinta on valmistunut sovelluksen ollessa auki.
+          // Tällöin emme enää tarvitse valmistumisilmoitusta.
+          _miningNotificationService.cancelMiningCompletion();
 
           _loadMiningStatus();
 
@@ -776,6 +802,10 @@ class _HomePageState extends State<HomePage>
         });
       }
 
+      // getMiningStatus palauttaa palvelimen varsinaisen
+      // jäljellä olevan louhinta-ajan.
+      //
+      // Tämän kutsun yhteydessä myös ilmoitus ajastetaan.
       await _loadMiningStatus();
 
       if (mounted) {
@@ -1124,15 +1154,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // 🗑️ DELETE ACCOUNT
   // ============================================================
-  //
-  // Backend:
-  //
-  // deleteAccount
-  //
-  // The backend determines the UID from request.auth.uid.
-  // The client does NOT send a UID.
-  //
-  // ============================================================
 
   Future<void> _deleteAccount() async {
     if (_deletingAccount) {
@@ -1156,6 +1177,10 @@ class _HomePageState extends State<HomePage>
     _miningTimer?.cancel();
     _boostTimer?.cancel();
     _refreshTimer?.cancel();
+
+    // Tilin poistamisen jälkeen käyttäjälle ei pidä jäädä
+    // vanhaa louhinnan valmistumisilmoitusta.
+    await _miningNotificationService.cancelMiningCompletion();
 
     try {
       final HttpsCallable callable =
@@ -1250,6 +1275,8 @@ class _HomePageState extends State<HomePage>
 
     try {
       await _auth.signOut();
+
+      await _miningNotificationService.cancelMiningCompletion();
     } catch (e) {
       if (mounted) {
         _showMessage('⚠️ ${_errorText(e)}');
@@ -1432,12 +1459,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStellaMiningCard() {
-    // Daily Streak määrää näytettävän päivänumeron.
-    //
-    // Näytettävä päivä on aina välillä 1–7.
-    // Backendin todellista streak-arvoa ei muuteta.
-    // Power Boost ei vaikuta päivänumeroon.
-
     final int displayStreak = _streak.clamp(1, 7).toInt();
 
     return StellaMiningCard(
@@ -1691,7 +1712,6 @@ class _HomePageState extends State<HomePage>
               letterSpacing: 1.2,
             ),
           ),
-          // Sovellusversio ja build-numero lokalisoidulla tekstillä.
           if (_appVersion.isNotEmpty) ...[
             const SizedBox(height: 5),
             Text(
