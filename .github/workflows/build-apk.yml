@@ -128,7 +128,18 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # 9. RESTORE STELLURIINI RELEASE KEYSTORE FROM SECRET
+      # 9. SAVE GENERATED PUBSPEC LOCK
+      # ==========================================================
+
+      - name: Save generated pubspec.lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: stelluriini-pubspec-lock
+          path: pubspec.lock
+          if-no-files-found: error
+
+      # ==========================================================
+      # 10. RESTORE STELLURIINI RELEASE KEYSTORE FROM SECRET
       # ==========================================================
 
       - name: Restore release keystore
@@ -160,7 +171,7 @@ jobs:
           echo "Keystore file is present and ready for signing."
 
       # ==========================================================
-      # 10. GENERATE APP ICON
+      # 11. GENERATE APP ICON
       # ==========================================================
 
       - name: Generate app icon
@@ -173,7 +184,7 @@ jobs:
           dart run flutter_launcher_icons
 
       # ==========================================================
-      # 11. FLUTTER ANALYZE
+      # 12. FLUTTER ANALYZE
       # ==========================================================
 
       - name: Flutter analyze
@@ -181,7 +192,7 @@ jobs:
           flutter analyze
 
       # ==========================================================
-      # 12. FLUTTER TEST
+      # 13. FLUTTER TEST
       # ==========================================================
 
       - name: Flutter test
@@ -194,7 +205,7 @@ jobs:
           fi
 
       # ==========================================================
-      # 13. VERIFY RELEASE KEYSTORE
+      # 14. VERIFY RELEASE KEYSTORE
       # ==========================================================
 
       - name: Verify release keystore
@@ -220,7 +231,7 @@ jobs:
           echo "Release keystore verification PASSED."
 
       # ==========================================================
-      # 14. BUILD RELEASE APP BUNDLE
+      # 15. BUILD RELEASE APP BUNDLE
       # ==========================================================
 
       - name: Build release App Bundle
@@ -245,7 +256,7 @@ jobs:
           flutter build appbundle --release
 
       # ==========================================================
-      # 15. VERIFY APP BUNDLE
+      # 16. VERIFY APP BUNDLE
       # ==========================================================
 
       - name: Verify App Bundle
@@ -262,7 +273,7 @@ jobs:
           ls -lh "$AAB"
 
       # ==========================================================
-      # 16. BUILD RELEASE APK
+      # 17. BUILD RELEASE APK
       # ==========================================================
 
       - name: Build release APK
@@ -277,7 +288,7 @@ jobs:
           flutter build apk --release
 
       # ==========================================================
-      # 17. VERIFY APK
+      # 18. VERIFY APK
       # ==========================================================
 
       - name: Verify APK
@@ -294,7 +305,7 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 18. UPLOAD RELEASE FILES
+      # 19. UPLOAD RELEASE FILES
       # ==========================================================
 
       - name: Upload release files
@@ -307,7 +318,7 @@ jobs:
           if-no-files-found: error
 
       # ==========================================================
-      # 19. REMOVE TEMPORARY RELEASE KEYSTORE
+      # 20. REMOVE TEMPORARY RELEASE KEYSTORE
       # ==========================================================
 
       - name: Remove temporary release keystore
@@ -317,7 +328,7 @@ jobs:
           echo "Temporary release keystore removed from runner."
 
       # ==========================================================
-      # 20. BUILD SUMMARY
+      # 21. BUILD SUMMARY
       # ==========================================================
 
       - name: Build summary
