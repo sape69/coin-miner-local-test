@@ -168,7 +168,8 @@ const Map<String, String> fiTranslations = {
 'stellaLoading': 'Ladataan Stellaa...',
 'stellaAchievements': 'Saavutukset',
 'stellaMaxLevel': 'MAKSIMITASO',
-'stellaAchievementsToNextLevel': '{count} saavutusta seuraavaan tasoon',
+'stellaAchievementsToNextLevel':
+    '{count} saavutusta seuraavaan tasoon',
 
 'stellaLevelLittle': 'Pieni Stella',
 'stellaLevelCurious': 'Utelias Stella',
