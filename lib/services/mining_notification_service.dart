@@ -1,23 +1,18 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// ============================================================
-/// 🐱 STELLURIINI - MINING NOTIFICATION SERVICE
-/// ============================================================
-///
-/// Hoitaa Stelluriini-louhinnan valmistumisilmoitukset.
-///
-/// Kun louhinta alkaa:
-///   scheduleMiningCompleteNotification()
-///
-/// Kun uusi louhinta alkaa:
-///   vanha ilmoitus perutaan ja uusi ajastetaan.
-///
-/// Kun ilmoitusta ei enää tarvita:
-///   cancelMiningCompleteNotification()
-///
-/// ============================================================
+// ============================================================
+// 🐱 STELLURIINI - MINING NOTIFICATION SERVICE
+// ============================================================
+//
+// Handles the local Android notification shown when the
+// 24-hour Stelluriini mining session is finished.
+//
+// The notification is scheduled locally on the device, so it
+// can appear even when the app is closed.
+//
+// ============================================================
 
 class MiningNotificationService {
   MiningNotificationService._();
@@ -25,17 +20,43 @@ class MiningNotificationService {
   static final MiningNotificationService instance =
       MiningNotificationService._();
 
+  // ------------------------------------------------------------
+  // Notification plugin
+  // ------------------------------------------------------------
+
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  static const int _miningCompleteNotificationId = 1001;
+  // ------------------------------------------------------------
+  // Notification ID
+  // ------------------------------------------------------------
+
+  // One fixed ID is used so a new mining session replaces the
+  // previous scheduled mining-completion notification.
+  static const int _miningCompletionNotificationId = 1001;
+
+  // ------------------------------------------------------------
+  // Notification channel
+  // ------------------------------------------------------------
 
   static const String _channelId = 'stelluriini_mining';
-
-  static const String _channelName = 'Stelluriini Mining';
-
+  static const String _channelName = 'Stelluriini louhinta';
   static const String _channelDescription =
-      'Ilmoitukset Stelluriini-louhinnan valmistumisesta.';
+      'Ilmoitus, kun Stelluriini-louhinta on valmis.';
+
+  // ------------------------------------------------------------
+  // Notification text
+  // ------------------------------------------------------------
+
+  static const String _notificationTitle =
+      '🐱 Stella kaipaa sinua louhimaan!';
+
+  static const String _notificationBody =
+      'Louhinta on valmis. Tule käynnistämään uusi louhinta. 💜';
+
+  // ------------------------------------------------------------
+  // Initialization state
+  // ------------------------------------------------------------
 
   bool _initialized = false;
 
@@ -48,77 +69,88 @@ class MiningNotificationService {
       return;
     }
 
-    // Alustetaan timezone-tietokanta.
+    // Initialize timezone database.
+    //
+    // We schedule notifications using a duration from "now",
+    // rather than a fixed clock time, so the device's actual
+    // timezone does not need to be manually selected here.
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings settings = InitializationSettings(
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
       android: androidSettings,
     );
 
     await _notifications.initialize(
-      settings,
+      initializationSettings,
+      onDidReceiveNotificationResponse: _onNotificationResponse,
+    );
+
+    // Create the Android notification channel.
+    const AndroidNotificationChannel channel =
+        AndroidNotificationChannel(
+      _channelId,
+      _channelName,
+      description: _channelDescription,
+      importance: Importance.high,
+      playSound: true,
     );
 
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
         _notifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _channelId,
-        _channelName,
-        description: _channelDescription,
-        importance: Importance.high,
-        playSound: true,
-      ),
-    );
+    await androidPlugin?.createNotificationChannel(channel);
 
     _initialized = true;
   }
 
   // ============================================================
-  // REQUEST NOTIFICATION PERMISSION
+  // REQUEST PERMISSION
   // ============================================================
 
-  Future<bool> requestPermission() async {
+  Future<void> requestPermission() async {
     await initialize();
 
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
         _notifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    if (androidPlugin == null) {
-      return false;
-    }
-
-    final bool? granted =
-        await androidPlugin.requestNotificationsPermission();
-
-    return granted ?? false;
+    await androidPlugin?.requestNotificationsPermission();
   }
 
   // ============================================================
-  // SCHEDULE MINING COMPLETE NOTIFICATION
+  // SCHEDULE MINING COMPLETION
+  // ============================================================
+  //
+  // Schedules the notification after the supplied duration.
+  //
+  // Example:
+  //
+  //   scheduleMiningCompletion(
+  //     const Duration(hours: 24),
+  //   );
+  //
+  // The existing notification is cancelled first so that
+  // multiple mining sessions cannot create duplicate alerts.
   // ============================================================
 
-  Future<void> scheduleMiningCompleteNotification({
-    required Duration duration,
-  }) async {
+  Future<void> scheduleMiningCompletion(Duration remaining) async {
     await initialize();
 
-    // Perutaan mahdollinen vanha ilmoitus.
-    await cancelMiningCompleteNotification();
+    // Always remove an older mining notification first.
+    await cancelMiningCompletion();
 
-    // Jos aika on jo kulunut, ei ajasteta ilmoitusta.
-    if (duration <= Duration.zero) {
+    // Do not schedule notifications for zero/negative durations.
+    if (remaining <= Duration.zero) {
       return;
     }
 
-    final tz.TZDateTime scheduledTime =
-        tz.TZDateTime.now(tz.local).add(duration);
+    final tz.TZDateTime scheduledDate =
+        tz.TZDateTime.now(tz.local).add(remaining);
 
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
@@ -128,6 +160,7 @@ class MiningNotificationService {
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
+      enableVibration: true,
       icon: '@mipmap/ic_launcher',
     );
 
@@ -137,36 +170,52 @@ class MiningNotificationService {
     );
 
     await _notifications.zonedSchedule(
-      _miningCompleteNotificationId,
-      '🐱 Stella kaipaa sinua!',
-      'Louhinta on valmis. Tule käynnistämään uusi louhinta. 💜',
-      scheduledTime,
+      _miningCompletionNotificationId,
+      _notificationTitle,
+      _notificationBody,
+      scheduledDate,
       notificationDetails,
-      androidScheduleMode:
-          AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: 'mining_complete',
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 
   // ============================================================
-  // CANCEL MINING COMPLETE NOTIFICATION
+  // CANCEL MINING COMPLETION
   // ============================================================
 
-  Future<void> cancelMiningCompleteNotification() async {
-    await initialize();
-
+  Future<void> cancelMiningCompletion() async {
     await _notifications.cancel(
-      _miningCompleteNotificationId,
+      _miningCompletionNotificationId,
     );
   }
 
   // ============================================================
-  // CANCEL ALL NOTIFICATIONS
+  // CHECK PENDING NOTIFICATION
   // ============================================================
 
-  Future<void> cancelAllNotifications() async {
+  Future<bool> hasPendingMiningCompletion() async {
     await initialize();
 
-    await _notifications.cancelAll();
+    final List<PendingNotificationRequest> pending =
+        await _notifications.pendingNotificationRequests();
+
+    return pending.any(
+      (PendingNotificationRequest notification) =>
+          notification.id == _miningCompletionNotificationId,
+    );
+  }
+
+  // ============================================================
+  // NOTIFICATION TAP
+  // ============================================================
+
+  void _onNotificationResponse(
+    NotificationResponse response,
+  ) {
+    // The notification currently only needs to open the app
+    // through the normal Android notification behaviour.
+    //
+    // Navigation can be added here later if we want the
+    // notification to open a specific Stelluriini page.
   }
 }
