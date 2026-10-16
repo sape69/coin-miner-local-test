@@ -171,6 +171,13 @@ const Map<String, String> fiTranslations = {
 'miningReady': 'Stellan louhinta on valmis kerättäväksi. 🐾',
 
 // ============================================================
+// 🔔 MINING NOTIFICATIONS
+// ============================================================
+
+'miningNotificationTitle': '🐱 Stella kaipaa sinua louhimaan!',
+'miningNotificationBody': 'Louhinta on valmis. Tule käynnistämään uusi louhinta. 💜',
+
+// ============================================================
 // 💎 TRANSACTIONS
 // ============================================================
 
