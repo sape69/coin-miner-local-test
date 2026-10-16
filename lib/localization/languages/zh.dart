@@ -311,6 +311,46 @@ const Map<String, String> zhTranslations = {
       'Stella 已经在挖矿。🐱💜',
 
   // ============================================================
+  // ⭐ STELLA LEVEL
+  // ============================================================
+
+  'stellaLevel':
+      'STELLA 等级',
+
+  'stellaLevelLoading':
+      '正在加载...',
+
+  'stellaLoading':
+      '正在加载 Stella...',
+
+  'stellaAchievements':
+      '成就',
+
+  'stellaMaxLevel':
+      '最高等级',
+
+  'stellaAchievementsToNextLevel':
+      '距离下一等级还需 {count} 个成就',
+
+  'stellaLevelLittle':
+      '小 Stella',
+
+  'stellaLevelCurious':
+      '好奇 Stella',
+
+  'stellaLevelMining':
+      '挖矿 Stella',
+
+  'stellaLevelPower':
+      '力量 Stella',
+
+  'stellaLevelMaster':
+      '大师 Stella',
+
+  'stellaLevelLegend':
+      '传奇 Stella',
+
+  // ============================================================
   // ⛏️ MINING MESSAGES
   // ============================================================
 
