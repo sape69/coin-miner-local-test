@@ -31,6 +31,10 @@ dependencies:
   cloud_functions: ^6.3.6
   firebase_analytics: ^12.0.0
 
+  # Local notifications
+  # Used for the 24-hour mining completion reminder.
+  flutter_local_notifications: ^19.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
