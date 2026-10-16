@@ -295,6 +295,13 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _initialize() async {
     try {
+      // 🔔 Request Android notification permission.
+      //
+      // This must happen before the mining status is loaded so
+      // the scheduled mining-completion notification can work
+      // immediately after mining starts.
+      await _miningNotificationService.requestPermission();
+
       await _loadAppVersion();
       await _loadUsername();
       await _loadMiningStatus();
