@@ -327,6 +327,16 @@ const Map<String, String> deTranslations = {
       'Stellas Mining ist bereit zum Einsammeln. 🐾',
 
   // ============================================================
+  // 🔔 MINING NOTIFICATIONS
+  // ============================================================
+
+  'miningNotificationTitle':
+      '🐱 Stella wartet auf dich zum Schürfen!',
+
+  'miningNotificationBody':
+      'Das Mining ist abgeschlossen. Komm zurück und starte ein neues Mining. 💜',
+
+  // ============================================================
   // 💎 TRANSACTIONS
   // ============================================================
 
@@ -917,7 +927,7 @@ const Map<String, String> deTranslations = {
       'Vorgesehen für Community-Initiativen, Nutzerbelohnungen, Engagement-Programme und zukünftige Aktivitäten mit Community-Fokus.',
 
   'liquidityDescription':
-      'Reserviert zur Unterstützung der Liquidität und zur Schaffung eines gesünderen und leichter zugänglichen Marktumfelds für STL.',
+      'Reserviert zur Unterstützung der Liquidität und zur Schaffung eines gesünderen und leicht zugänglichen Marktumfelds für STL.',
 
   'ecosystemDescription':
       'Reserviert für zukünftiges Ökosystem-Wachstum, Anwendungen, Spiele, Integrationen und neue digitale Erlebnisse.',
