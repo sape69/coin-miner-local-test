@@ -1,19 +1,21 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 /// ============================================================
 /// 🐱 STELLURIINI - MINING NOTIFICATION SERVICE
 /// ============================================================
 ///
-/// Hoitaa louhinnan valmistumisesta ilmoittamisen.
+/// Hoitaa Stelluriini-louhinnan valmistumisilmoitukset.
 ///
 /// Kun louhinta alkaa:
-///   → scheduleMiningCompleteNotification()
+///   scheduleMiningCompleteNotification()
 ///
 /// Kun uusi louhinta alkaa:
-///   → vanha ilmoitus perutaan ja uusi ajastetaan.
+///   vanha ilmoitus perutaan ja uusi ajastetaan.
 ///
 /// Kun ilmoitusta ei enää tarvita:
-///   → cancelMiningCompleteNotification()
+///   cancelMiningCompleteNotification()
 ///
 /// ============================================================
 
@@ -29,7 +31,9 @@ class MiningNotificationService {
   static const int _miningCompleteNotificationId = 1001;
 
   static const String _channelId = 'stelluriini_mining';
+
   static const String _channelName = 'Stelluriini Mining';
+
   static const String _channelDescription =
       'Ilmoitukset Stelluriini-louhinnan valmistumisesta.';
 
@@ -43,6 +47,9 @@ class MiningNotificationService {
     if (_initialized) {
       return;
     }
+
+    // Alustetaan timezone-tietokanta.
+    tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -73,7 +80,7 @@ class MiningNotificationService {
   }
 
   // ============================================================
-  // REQUEST PERMISSION
+  // REQUEST NOTIFICATION PERMISSION
   // ============================================================
 
   Future<bool> requestPermission() async {
@@ -94,7 +101,7 @@ class MiningNotificationService {
   }
 
   // ============================================================
-  // SCHEDULE MINING COMPLETE
+  // SCHEDULE MINING COMPLETE NOTIFICATION
   // ============================================================
 
   Future<void> scheduleMiningCompleteNotification({
@@ -102,16 +109,18 @@ class MiningNotificationService {
   }) async {
     await initialize();
 
-    // Varmistetaan, ettei vanha ilmoitus jää voimaan.
+    // Perutaan mahdollinen vanha ilmoitus.
     await cancelMiningCompleteNotification();
 
+    // Jos aika on jo kulunut, ei ajasteta ilmoitusta.
     if (duration <= Duration.zero) {
       return;
     }
 
-    final DateTime scheduledTime = DateTime.now().add(duration);
+    final tz.TZDateTime scheduledTime =
+        tz.TZDateTime.now(tz.local).add(duration);
 
-    final AndroidNotificationDetails androidDetails =
+    const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       _channelId,
       _channelName,
@@ -122,7 +131,8 @@ class MiningNotificationService {
       icon: '@mipmap/ic_launcher',
     );
 
-    final NotificationDetails notificationDetails = NotificationDetails(
+    const NotificationDetails notificationDetails =
+        NotificationDetails(
       android: androidDetails,
     );
 
@@ -130,15 +140,16 @@ class MiningNotificationService {
       _miningCompleteNotificationId,
       '🐱 Stella kaipaa sinua!',
       'Louhinta on valmis. Tule käynnistämään uusi louhinta. 💜',
-      _convertToTzDateTime(scheduledTime),
+      scheduledTime,
       notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode:
+          AndroidScheduleMode.inexactAllowWhileIdle,
       payload: 'mining_complete',
     );
   }
 
   // ============================================================
-  // CANCEL
+  // CANCEL MINING COMPLETE NOTIFICATION
   // ============================================================
 
   Future<void> cancelMiningCompleteNotification() async {
@@ -150,35 +161,12 @@ class MiningNotificationService {
   }
 
   // ============================================================
-  // CANCEL ALL
+  // CANCEL ALL NOTIFICATIONS
   // ============================================================
 
   Future<void> cancelAllNotifications() async {
     await initialize();
 
     await _notifications.cancelAll();
-  }
-
-  // ============================================================
-  // TIMEZONE CONVERSION
-  // ============================================================
-  //
-  // flutter_local_notifications käyttää tz-pakettia
-  // zonedSchedule()-ajastuksessa.
-  //
-  // Tämän vuoksi käytetään TZDateTime.utc + paikallinen offset.
-  //
-  // ============================================================
-
-  dynamic _convertToTzDateTime(DateTime dateTime) {
-    // Tämä korvataan seuraavassa vaiheessa varsinaisella
-    // timezone-alustuksella, kun notification-palvelu
-    // yhdistetään main.dartiin.
-    //
-    // Jätetään tämä tarkoituksella tähän vaiheeseen, jotta
-    // rakennamme notification-järjestelmän yksi tiedosto
-    // kerrallaan.
-
-    return dateTime;
   }
 }
