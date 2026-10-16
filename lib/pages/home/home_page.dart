@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../data/cat_facts.dart';
 import '../../localization.dart';
+import '../../services/app_update_service.dart';
 import '../../services/mining_notification_service.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_logo.dart';
@@ -56,22 +57,6 @@ class _HomePageState extends State<HomePage>
   // ============================================================
   // ⛏️ DEFAULT MINING CONFIG
   // ============================================================
-  //
-  // Nämä fallback-arvot vastaavat backendin
-  // functions/src/config/miningConfig.js -asetuksia.
-  //
-  // Backend on aina varsinainen auktoriteetti.
-  // Näitä käytetään vain silloin, kun palvelin ei palauta
-  // kyseistä arvoa.
-  //
-  // Backend:
-  //
-  // DAILY_HASH_RATE_START = 0.5
-  // AD_HASH_RATE_BONUS    = 0.5833
-  // MAX_ADS_PER_DAY       = 6
-  // AD_COOLDOWN            = 4 tuntia
-  //
-  // ============================================================
 
   static const double defaultAdHashRateBonus = 0.5833;
   static const int defaultMaxAdsPerDay = 6;
@@ -101,6 +86,15 @@ class _HomePageState extends State<HomePage>
 
   final MiningNotificationService _miningNotificationService =
       MiningNotificationService.instance;
+
+  // ============================================================
+  // 📱 APP UPDATE
+  // ============================================================
+
+  final AppUpdateService _appUpdateService =
+      AppUpdateService.instance;
+
+  bool _updateDialogShown = false;
 
   // ============================================================
   // 🎬 ANIMATION / ADS
@@ -273,6 +267,26 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
+  // 🔄 LANGUAGE CHANGE
+  // ============================================================
+
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.languageCode != widget.languageCode &&
+        _miningActive &&
+        _miningRemainingMs > 0) {
+      unawaited(
+        _miningNotificationService.scheduleMiningCompletion(
+          Duration(milliseconds: _miningRemainingMs),
+          languageCode: widget.languageCode,
+        ),
+      );
+    }
+  }
+
+  // ============================================================
   // 🧹 DISPOSE
   // ============================================================
 
@@ -295,11 +309,6 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _initialize() async {
     try {
-      // 🔔 Request Android notification permission.
-      //
-      // This must happen before the mining status is loaded so
-      // the scheduled mining-completion notification can work
-      // immediately after mining starts.
       await _miningNotificationService.requestPermission();
 
       await _loadAppVersion();
@@ -318,6 +327,12 @@ class _HomePageState extends State<HomePage>
     }
 
     _startRefreshTimer();
+
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForAppUpdate();
+      });
+    }
   }
 
   // ============================================================
@@ -326,7 +341,8 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _loadAppVersion() async {
     try {
-      final PackageInfo info = await PackageInfo.fromPlatform();
+      final PackageInfo info =
+          await PackageInfo.fromPlatform();
 
       if (!mounted) {
         return;
@@ -338,6 +354,280 @@ class _HomePageState extends State<HomePage>
       });
     } catch (_) {
       // Versionumero ei estä sovelluksen käyttöä.
+    }
+  }
+
+  // ============================================================
+  // 🔄 CHECK FOR APP UPDATE
+  // ============================================================
+
+  Future<void> _checkForAppUpdate() async {
+    if (!mounted || _updateDialogShown) {
+      return;
+    }
+
+    final AppUpdateInfo? updateInfo =
+        await _appUpdateService.checkForUpdate();
+
+    if (!mounted ||
+        updateInfo == null ||
+        _updateDialogShown) {
+      return;
+    }
+
+    _updateDialogShown = true;
+
+    final Map<String, String> texts =
+        _appUpdateTexts(updateInfo.latestVersion);
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: cardColor,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: accentColor.withValues(alpha: 0.35),
+            ),
+          ),
+          titlePadding:
+              const EdgeInsets.fromLTRB(24, 24, 24, 8),
+          contentPadding:
+              const EdgeInsets.fromLTRB(24, 8, 24, 8),
+          actionsPadding:
+              const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color:
+                      accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color:
+                        accentColor.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.system_update_rounded,
+                  color: accentColor,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  texts['title']!,
+                  style: const TextStyle(
+                    color: primaryTextColor,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            texts['message']!,
+            style: const TextStyle(
+              color: secondaryTextColor,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: secondaryTextColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              child: Text(
+                texts['later']!,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final bool opened =
+                    await _appUpdateService.openUpdateUrl(
+                  updateInfo.updateUrl,
+                );
+
+                if (!mounted) {
+                  return;
+                }
+
+                if (opened) {
+                  Navigator.of(dialogContext).pop();
+                } else {
+                  _showMessage(
+                    texts['openError']!,
+                  );
+                }
+              },
+              icon: const Icon(
+                Icons.download_rounded,
+                size: 19,
+              ),
+              label: Text(
+                texts['update']!,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accentColor,
+                foregroundColor: backgroundColor,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // 🌐 APP UPDATE TEXTS
+  // ============================================================
+
+  Map<String, String> _appUpdateTexts(
+    String latestVersion,
+  ) {
+    final String code =
+        AppLocalizations.normalizeLanguageCode(
+      widget.languageCode,
+    );
+
+    switch (code) {
+      case 'fi':
+        return {
+          'title': '🐱 Stelluriinista on uusi versio!',
+          'message':
+              'Uusi versio $latestVersion on saatavilla. '
+              'Päivitä Stelluriini Google Playsta, jotta saat '
+              'uusimmat ominaisuudet ja korjaukset.',
+          'update': 'Päivitä nyt',
+          'later': 'Myöhemmin',
+          'openError':
+              'Google Playta ei voitu avata.',
+        };
+
+      case 'de':
+        return {
+          'title':
+              '🐱 Eine neue Stelluriini-Version ist verfügbar!',
+          'message':
+              'Die neue Version $latestVersion ist verfügbar. '
+              'Aktualisiere Stelluriini über Google Play, '
+              'um die neuesten Funktionen und Verbesserungen '
+              'zu erhalten.',
+          'update': 'Jetzt aktualisieren',
+          'later': 'Später',
+          'openError':
+              'Google Play konnte nicht geöffnet werden.',
+        };
+
+      case 'es':
+        return {
+          'title':
+              '🐱 ¡Hay una nueva versión de Stelluriini!',
+          'message':
+              'La nueva versión $latestVersion ya está disponible. '
+              'Actualiza Stelluriini desde Google Play para '
+              'obtener las últimas funciones y mejoras.',
+          'update': 'Actualizar ahora',
+          'later': 'Más tarde',
+          'openError':
+              'No se pudo abrir Google Play.',
+        };
+
+      case 'fr':
+        return {
+          'title':
+              '🐱 Une nouvelle version de Stelluriini est disponible !',
+          'message':
+              'La version $latestVersion est disponible. '
+              'Mettez à jour Stelluriini depuis Google Play '
+              'pour profiter des dernières fonctionnalités '
+              'et améliorations.',
+          'update': 'Mettre à jour',
+          'later': 'Plus tard',
+          'openError':
+              'Impossible d’ouvrir Google Play.',
+        };
+
+      case 'zh':
+        return {
+          'title': '🐱 Stelluriini 有新版本！',
+          'message':
+              '新版本 $latestVersion 已经发布。'
+              '请通过 Google Play 更新 Stelluriini，'
+              '以获得最新功能和改进。',
+          'update': '立即更新',
+          'later': '稍后',
+          'openError': '无法打开 Google Play。',
+        };
+
+      case 'vi':
+        return {
+          'title':
+              '🐱 Stelluriini có phiên bản mới!',
+          'message':
+              'Phiên bản $latestVersion đã có sẵn. '
+              'Hãy cập nhật Stelluriini từ Google Play '
+              'để nhận các tính năng và cải tiến mới nhất.',
+          'update': 'Cập nhật ngay',
+          'later': 'Để sau',
+          'openError':
+              'Không thể mở Google Play.',
+        };
+
+      case 'ja':
+        return {
+          'title':
+              '🐱 Stelluriiniの新しいバージョンがあります！',
+          'message':
+              '新しいバージョン $latestVersion が利用可能です。'
+              '最新の機能と改善を利用するには、'
+              'Google PlayからStelluriiniを更新してください。',
+          'update': '今すぐ更新',
+          'later': '後で',
+          'openError':
+              'Google Playを開けませんでした。',
+        };
+
+      case 'en':
+      default:
+        return {
+          'title':
+              '🐱 A new version of Stelluriini is available!',
+          'message':
+              'Version $latestVersion is now available. '
+              'Update Stelluriini from Google Play to get '
+              'the latest features and improvements.',
+          'update': 'Update now',
+          'later': 'Later',
+          'openError':
+              'Google Play could not be opened.',
+        };
     }
   }
 
@@ -367,17 +657,20 @@ class _HomePageState extends State<HomePage>
 
         String username = '';
 
-        final dynamic rawProfile = data['profile'];
+        final dynamic rawProfile =
+            data['profile'];
 
         if (rawProfile is Map) {
           final Map<String, dynamic> profile =
               Map<String, dynamic>.from(rawProfile);
 
-          username = profile['username']?.toString().trim() ?? '';
+          username =
+              profile['username']?.toString().trim() ?? '';
         }
 
         if (username.isEmpty) {
-          username = data['username']?.toString().trim() ?? '';
+          username =
+              data['username']?.toString().trim() ?? '';
         }
 
         if (mounted && username.isNotEmpty) {
@@ -390,10 +683,10 @@ class _HomePageState extends State<HomePage>
       }
     } catch (_) {
       // Firebase profile is optional.
-      // Fall back to Firebase Auth below.
     }
 
-    final String displayName = user.displayName?.trim() ?? '';
+    final String displayName =
+        user.displayName?.trim() ?? '';
 
     if (mounted && displayName.isNotEmpty) {
       setState(() {
@@ -410,7 +703,8 @@ class _HomePageState extends State<HomePage>
     final User? user = _auth.currentUser;
 
     if (user == null) {
-      await _miningNotificationService.cancelMiningCompletion();
+      await _miningNotificationService
+          .cancelMiningCompletion();
       return;
     }
 
@@ -499,9 +793,10 @@ class _HomePageState extends State<HomePage>
               _asInt(data['remainingBoostMs']) ??
               0;
 
-      final int safeDuration = duration > 0
-          ? duration
-          : defaultMiningDurationMs;
+      final int safeDuration =
+          duration > 0
+              ? duration
+              : defaultMiningDurationMs;
 
       bool boostActive = serverBoostActive;
       int boostRemaining = serverBoostRemaining;
@@ -540,24 +835,26 @@ class _HomePageState extends State<HomePage>
               ? total
               : 0.0;
 
-      final int safeMaxAds = maxAds > 0
-          ? maxAds
-          : defaultMaxAdsPerDay;
+      final int safeMaxAds =
+          maxAds > 0
+              ? maxAds
+              : defaultMaxAdsPerDay;
 
       final double safeAdBonus =
           adBonus.isFinite && adBonus >= 0
               ? adBonus
               : defaultAdHashRateBonus;
 
-      final int safeRemaining = remaining
-          .clamp(0, safeDuration)
-          .toInt();
+      final int safeRemaining =
+          remaining.clamp(0, safeDuration).toInt();
 
-      final int safeCooldownRemaining = cooldownRemaining
-          .clamp(0, defaultAdCooldownMs)
-          .toInt();
+      final int safeCooldownRemaining =
+          cooldownRemaining
+              .clamp(0, defaultAdCooldownMs)
+              .toInt();
 
-      final int safeStreak = streak > 0 ? streak : 1;
+      final int safeStreak =
+          streak > 0 ? streak : 1;
 
       final bool safeMiningActive =
           miningActive && safeRemaining > 0;
@@ -580,32 +877,23 @@ class _HomePageState extends State<HomePage>
 
         _maxAdsPerDay = safeMaxAds;
 
-        _adsToday = adsToday.clamp(0, safeMaxAds).toInt();
+        _adsToday =
+            adsToday.clamp(0, safeMaxAds).toInt();
 
         _adHashRateBonus = safeAdBonus;
 
-        _cooldownRemainingMs = safeCooldownRemaining;
+        _cooldownRemainingMs =
+            safeCooldownRemaining;
 
         _serverCanWatchAd = serverCanWatchAd;
 
         _boostActive = boostActive;
 
-        _boostRemainingMs = boostRemaining
-            .clamp(0, safeDuration)
-            .toInt();
+        _boostRemainingMs =
+            boostRemaining
+                .clamp(0, safeDuration)
+                .toInt();
       });
-
-      // ========================================================
-      // 🔔 MINING COMPLETION NOTIFICATION
-      // ========================================================
-      //
-      // The server is the authority for the remaining time.
-      //
-      // If mining is active, schedule the notification using
-      // the exact remaining duration returned by Firebase.
-      //
-      // If mining is not active, remove any old notification.
-      // ========================================================
 
       if (safeMiningActive && safeRemaining > 0) {
         await _miningNotificationService
@@ -654,7 +942,8 @@ class _HomePageState extends State<HomePage>
   void _startMiningTimer() {
     _miningTimer?.cancel();
 
-    if (!_miningActive || _miningRemainingMs <= 0) {
+    if (!_miningActive ||
+        _miningRemainingMs <= 0) {
       return;
     }
 
@@ -673,9 +962,8 @@ class _HomePageState extends State<HomePage>
 
           _miningTimer?.cancel();
 
-          // Louhinta on valmistunut sovelluksen ollessa auki.
-          // Tällöin emme enää tarvitse valmistumisilmoitusta.
-          _miningNotificationService.cancelMiningCompletion();
+          _miningNotificationService
+              .cancelMiningCompletion();
 
           _loadMiningStatus();
 
@@ -696,7 +984,8 @@ class _HomePageState extends State<HomePage>
   void _startBoostTimer() {
     _boostTimer?.cancel();
 
-    if (!_boostActive || _boostRemainingMs <= 0) {
+    if (!_boostActive ||
+        _boostRemainingMs <= 0) {
       return;
     }
 
@@ -744,14 +1033,17 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final bool shown = await _adManager.showMiningStartAd();
+      final bool shown =
+          await _adManager.showMiningStartAd();
 
       if (!shown && mounted) {
         setState(() {
           _actionLoading = false;
         });
 
-        _showMessage('⚠️ ${_t('prepareAd')}');
+        _showMessage(
+          '⚠️ ${_t('prepareAd')}',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -759,7 +1051,9 @@ class _HomePageState extends State<HomePage>
           _actionLoading = false;
         });
 
-        _showMessage('⚠️ ${_errorText(e)}');
+        _showMessage(
+          '⚠️ ${_errorText(e)}',
+        );
       }
     }
   }
@@ -783,7 +1077,9 @@ class _HomePageState extends State<HomePage>
       final dynamic raw = result.data;
 
       if (raw is! Map) {
-        throw Exception('Invalid mining response.');
+        throw Exception(
+          'Invalid mining response.',
+        );
       }
 
       final Map<String, dynamic> data =
@@ -795,14 +1091,18 @@ class _HomePageState extends State<HomePage>
               false;
 
       if (!started) {
-        throw Exception('Mining could not be started.');
+        throw Exception(
+          'Mining could not be started.',
+        );
       }
 
       if (mounted) {
         final int streak =
-            _asInt(data['dailyStreak']) ?? _streak;
+            _asInt(data['dailyStreak']) ??
+                _streak;
 
-        final int safeStreak = streak > 0 ? streak : 1;
+        final int safeStreak =
+            streak > 0 ? streak : 1;
 
         setState(() {
           _miningActive = true;
@@ -810,18 +1110,18 @@ class _HomePageState extends State<HomePage>
         });
       }
 
-      // getMiningStatus palauttaa palvelimen varsinaisen
-      // jäljellä olevan louhinta-ajan.
-      //
-      // Tämän kutsun yhteydessä myös ilmoitus ajastetaan.
       await _loadMiningStatus();
 
       if (mounted) {
-        _showMessage('🐱 ${_t('miningStarted')}');
+        _showMessage(
+          '🐱 ${_t('miningStarted')}',
+        );
       }
     } catch (e) {
       if (mounted) {
-        _showMessage('⚠️ ${_errorText(e)}');
+        _showMessage(
+          '⚠️ ${_errorText(e)}',
+        );
       }
     } finally {
       if (mounted) {
@@ -837,17 +1137,23 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _watchAd() async {
-    if (_actionLoading || _deletingAccount) {
+    if (_actionLoading ||
+        _deletingAccount) {
       return;
     }
 
-    if (!_miningActive || _miningRemainingMs <= 0) {
-      _showMessage('🐱 ${_t('startMining')}');
+    if (!_miningActive ||
+        _miningRemainingMs <= 0) {
+      _showMessage(
+        '🐱 ${_t('startMining')}',
+      );
       return;
     }
 
     if (!_canUseBoost) {
-      _showMessage('🐱 ${_t('maxBoostsInfo')}');
+      _showMessage(
+        '🐱 ${_t('maxBoostsInfo')}',
+      );
       return;
     }
 
@@ -856,14 +1162,17 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
-      final bool shown = await _adManager.showPowerBoostAd();
+      final bool shown =
+          await _adManager.showPowerBoostAd();
 
       if (!shown && mounted) {
         setState(() {
           _actionLoading = false;
         });
 
-        _showMessage('⚠️ ${_t('adNotAvailable')}');
+        _showMessage(
+          '⚠️ ${_t('adNotAvailable')}',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -871,7 +1180,9 @@ class _HomePageState extends State<HomePage>
           _actionLoading = false;
         });
 
-        _showMessage('⚠️ ${_errorText(e)}');
+        _showMessage(
+          '⚠️ ${_errorText(e)}',
+        );
       }
     }
   }
@@ -891,7 +1202,9 @@ class _HomePageState extends State<HomePage>
       final dynamic raw = result.data;
 
       if (raw is! Map) {
-        throw Exception('Invalid Power Boost response.');
+        throw Exception(
+          'Invalid Power Boost response.',
+        );
       }
 
       final Map<String, dynamic> data =
@@ -908,12 +1221,15 @@ class _HomePageState extends State<HomePage>
               _asInt(data['adBoostRemainingMs']) ??
               0;
 
-      final int? ads = _asInt(data['adsToday']);
+      final int? ads =
+          _asInt(data['adsToday']);
 
       final double? bonus =
           _asDouble(data['adHashRateBonus']) ??
               _asDouble(data['hashRateBonus']) ??
-              _asDouble(data['boostHashRateBonus']);
+              _asDouble(
+                data['boostHashRateBonus'],
+              );
 
       if (!active || remaining <= 0) {
         throw Exception(
@@ -931,10 +1247,13 @@ class _HomePageState extends State<HomePage>
         _boostRemainingMs = remaining;
 
         if (ads != null) {
-          _adsToday = ads.clamp(0, _maxAdsPerDay).toInt();
+          _adsToday =
+              ads.clamp(0, _maxAdsPerDay).toInt();
         }
 
-        if (bonus != null && bonus.isFinite && bonus > 0) {
+        if (bonus != null &&
+            bonus.isFinite &&
+            bonus > 0) {
           _adHashRateBonus = bonus;
         }
 
@@ -954,7 +1273,9 @@ class _HomePageState extends State<HomePage>
       }
     } catch (e) {
       if (mounted) {
-        _showMessage('⚠️ ${_errorText(e)}');
+        _showMessage(
+          '⚠️ ${_errorText(e)}',
+        );
       }
     } finally {
       if (mounted) {
@@ -1034,8 +1355,10 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    if (purpose == HomeAdManager.powerBoostPurpose ||
-        purpose == HomeAdManager.miningStartPurpose) {
+    if (purpose ==
+            HomeAdManager.powerBoostPurpose ||
+        purpose ==
+            HomeAdManager.miningStartPurpose) {
       setState(() {
         _actionLoading = false;
       });
@@ -1051,7 +1374,8 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final bool? confirmed = await showDialog<bool>(
+    final bool? confirmed =
+        await showDialog<bool>(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
@@ -1061,22 +1385,44 @@ class _HomePageState extends State<HomePage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
             side: BorderSide(
-              color: deleteAccountColor.withValues(alpha: 0.30),
+              color: deleteAccountColor
+                  .withValues(alpha: 0.30),
             ),
           ),
-          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-          contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          titlePadding:
+              const EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            8,
+          ),
+          contentPadding:
+              const EdgeInsets.fromLTRB(
+            24,
+            8,
+            24,
+            8,
+          ),
+          actionsPadding:
+              const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16,
+          ),
           title: Row(
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: deleteAccountColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  color: deleteAccountColor
+                      .withValues(alpha: 0.12),
+                  borderRadius:
+                      BorderRadius.circular(14),
                   border: Border.all(
-                    color: deleteAccountColor.withValues(alpha: 0.22),
+                    color: deleteAccountColor
+                        .withValues(alpha: 0.22),
                   ),
                 ),
                 child: const Icon(
@@ -1088,7 +1434,9 @@ class _HomePageState extends State<HomePage>
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  _t('accountDeletionDialogTitle'),
+                  _t(
+                    'accountDeletionDialogTitle',
+                  ),
                   style: const TextStyle(
                     color: primaryTextColor,
                     fontSize: 20,
@@ -1099,7 +1447,9 @@ class _HomePageState extends State<HomePage>
             ],
           ),
           content: Text(
-            _t('accountDeletionDialogMessage'),
+            _t(
+              'accountDeletionDialogMessage',
+            ),
             style: const TextStyle(
               color: secondaryTextColor,
               fontSize: 14,
@@ -1109,11 +1459,14 @@ class _HomePageState extends State<HomePage>
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(false);
+                Navigator.of(
+                  dialogContext,
+                ).pop(false);
               },
               style: TextButton.styleFrom(
                 foregroundColor: accentColor,
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 12,
                 ),
@@ -1127,23 +1480,30 @@ class _HomePageState extends State<HomePage>
             ),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(dialogContext).pop(true);
+                Navigator.of(
+                  dialogContext,
+                ).pop(true);
               },
               icon: const Icon(
                 Icons.delete_forever_rounded,
                 size: 19,
               ),
-              label: Text(_t('accountDeletionConfirm')),
+              label: Text(
+                _t('accountDeletionConfirm'),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: deleteAccountColor,
+                backgroundColor:
+                    deleteAccountColor,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(14),
                 ),
               ),
             ),
@@ -1168,10 +1528,13 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final User? currentUser = _auth.currentUser;
+    final User? currentUser =
+        _auth.currentUser;
 
     if (currentUser == null) {
-      _showMessage('⚠️ ${_t('accountDeletionFailed')}');
+      _showMessage(
+        '⚠️ ${_t('accountDeletionFailed')}',
+      );
       return;
     }
 
@@ -1186,13 +1549,14 @@ class _HomePageState extends State<HomePage>
     _boostTimer?.cancel();
     _refreshTimer?.cancel();
 
-    // Tilin poistamisen jälkeen käyttäjälle ei pidä jäädä
-    // vanhaa louhinnan valmistumisilmoitusta.
-    await _miningNotificationService.cancelMiningCompletion();
+    await _miningNotificationService
+        .cancelMiningCompletion();
 
     try {
       final HttpsCallable callable =
-          _functions.httpsCallable('deleteAccount');
+          _functions.httpsCallable(
+        'deleteAccount',
+      );
 
       final HttpsCallableResult<dynamic> result =
           await callable.call();
@@ -1205,13 +1569,15 @@ class _HomePageState extends State<HomePage>
         final Map<String, dynamic> data =
             Map<String, dynamic>.from(raw);
 
-        success = _asBool(data['success']) ?? false;
+        success =
+            _asBool(data['success']) ?? false;
       }
 
       if (!success) {
         throw FirebaseFunctionsException(
           code: 'internal',
-          message: _t('accountDeletionFailed'),
+          message:
+              _t('accountDeletionFailed'),
         );
       }
 
@@ -1221,8 +1587,12 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      _showMessage('🐱 ${_t('accountDeletionSuccess')}');
-    } on FirebaseFunctionsException catch (error) {
+      _showMessage(
+        '🐱 ${_t('accountDeletionSuccess')}',
+      );
+    } on FirebaseFunctionsException catch (
+      error
+    ) {
       if (!mounted) {
         return;
       }
@@ -1235,7 +1605,9 @@ class _HomePageState extends State<HomePage>
         return;
       }
 
-      _showMessage('⚠️ ${_errorText(e)}');
+      _showMessage(
+        '⚠️ ${_errorText(e)}',
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -1255,20 +1627,30 @@ class _HomePageState extends State<HomePage>
   ) {
     switch (error.code) {
       case 'unauthenticated':
-        return _t('accountDeletionSessionExpired');
+        return _t(
+          'accountDeletionSessionExpired',
+        );
 
       case 'permission-denied':
-        return _t('accountDeletionPermissionDenied');
+        return _t(
+          'accountDeletionPermissionDenied',
+        );
 
       case 'unavailable':
-        return _t('accountDeletionUnavailable');
+        return _t(
+          'accountDeletionUnavailable',
+        );
 
       case 'deadline-exceeded':
-        return _t('accountDeletionTimeout');
+        return _t(
+          'accountDeletionTimeout',
+        );
 
       case 'internal':
       default:
-        return _t('accountDeletionFailed');
+        return _t(
+          'accountDeletionFailed',
+        );
     }
   }
 
@@ -1284,10 +1666,13 @@ class _HomePageState extends State<HomePage>
     try {
       await _auth.signOut();
 
-      await _miningNotificationService.cancelMiningCompletion();
+      await _miningNotificationService
+          .cancelMiningCompletion();
     } catch (e) {
       if (mounted) {
-        _showMessage('⚠️ ${_errorText(e)}');
+        _showMessage(
+          '⚠️ ${_errorText(e)}',
+        );
       }
     }
   }
@@ -1307,7 +1692,8 @@ class _HomePageState extends State<HomePage>
       MaterialPageRoute<void>(
         builder: (_) => AccountDeletionPage(
           languageCode: widget.languageCode,
-          onDeleteAccountPressed: _showDeleteAccountConfirmation,
+          onDeleteAccountPressed:
+              _showDeleteAccountConfirmation,
         ),
       ),
     );
@@ -1377,10 +1763,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ============================================================
-  // 👥 OPEN REFERRALS
-  // ============================================================
-
   void _openReferrals() {
     _openPage(
       ReferralsPage(
@@ -1418,7 +1800,8 @@ class _HomePageState extends State<HomePage>
                 final String code =
                     languages.keys.elementAt(index);
 
-                final String name = languages[code] ?? code;
+                final String name =
+                    languages[code] ?? code;
 
                 return ListTile(
                   title: Text(
@@ -1427,16 +1810,20 @@ class _HomePageState extends State<HomePage>
                       color: primaryTextColor,
                     ),
                   ),
-                  trailing: code == widget.languageCode
-                      ? const Icon(
-                          Icons.check,
-                          color: accentColor,
-                        )
-                      : null,
+                  trailing:
+                      code == widget.languageCode
+                          ? const Icon(
+                              Icons.check,
+                              color: accentColor,
+                            )
+                          : null,
                   onTap: () {
-                    Navigator.of(dialogContext).pop();
+                    Navigator.of(
+                      dialogContext,
+                    ).pop();
 
-                    if (code != widget.languageCode) {
+                    if (code !=
+                        widget.languageCode) {
                       widget.changeLanguage(code);
                     }
                   },
@@ -1467,29 +1854,42 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildStellaMiningCard() {
-    final int displayStreak = _streak.clamp(1, 7).toInt();
+    final int displayStreak =
+        _streak.clamp(1, 7).toInt();
 
     return StellaMiningCard(
       languageCode: widget.languageCode,
       unclaimedMining: _unclaimedMining,
-      miningTitle: _t('stellaMiningTitle'),
-      miningSubtitle: _t('stellaMiningSubtitle'),
-      timerText: _formatDuration(_miningRemainingMs),
+      miningTitle:
+          _t('stellaMiningTitle'),
+      miningSubtitle:
+          _t('stellaMiningSubtitle'),
+      timerText:
+          _formatDuration(_miningRemainingMs),
       timerLabel: _tp(
         'miningTimeRemaining',
         params: {
-          'time': _formatDuration(_miningRemainingMs),
+          'time':
+              _formatDuration(_miningRemainingMs),
         },
       ),
       catAnimation: _catAnimation,
       miningActive: _miningActive,
-      miningRemainingMs: _miningRemainingMs,
-      miningDurationMs: _miningDurationMs,
-      miningProgressTitle: _t('miningProgress'),
+      miningRemainingMs:
+          _miningRemainingMs,
+      miningDurationMs:
+          _miningDurationMs,
+      miningProgressTitle:
+          _t('miningProgress'),
       stlPerHourText:
-          '${_formatNumber(_effectiveHashRate * miningPerHashPerHour)} STL/h',
+          '${_formatNumber(
+            _effectiveHashRate *
+                miningPerHashPerHour,
+          )} STL/h',
       dailyHashRateText:
-          '${_formatNumber(_effectiveHashRate)} H/s',
+          '${_formatNumber(
+            _effectiveHashRate,
+          )} H/s',
       dailyHashRateDayText:
           '${_t('day')} $displayStreak',
       dailyStreak: displayStreak,
@@ -1505,9 +1905,15 @@ class _HomePageState extends State<HomePage>
   Widget _buildStatsRow() {
     return HomeStatsCard(
       hashRateTitle: _t('hashRate'),
-      hashRateValue: '${_formatNumber(_effectiveHashRate)} H/s',
+      hashRateValue:
+          '${_formatNumber(
+            _effectiveHashRate,
+          )} H/s',
       totalStlTitle: _t('totalStl'),
-      totalStlValue: '${_formatNumber(_estimatedTotal)} STL',
+      totalStlValue:
+          '${_formatNumber(
+            _estimatedTotal,
+          )} STL',
     );
   }
 
@@ -1521,24 +1927,31 @@ class _HomePageState extends State<HomePage>
             _deletingAccount ||
             _adManager.miningAdFlowActive;
 
-    final bool enabled = !_miningActive && !busy;
+    final bool enabled =
+        !_miningActive && !busy;
 
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: enabled ? _startMining : null,
+        onPressed:
+            enabled ? _startMining : null,
         icon: busy
             ? const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(
+                child:
+                    CircularProgressIndicator(
                   strokeWidth: 2,
                   color: primaryTextColor,
                 ),
               )
-            : const Icon(Icons.play_arrow_rounded),
+            : const Icon(
+                Icons.play_arrow_rounded,
+              ),
         label: Text(
-          _miningActive ? _t('miningActive') : _t('startMining'),
+          _miningActive
+              ? _t('miningActive')
+              : _t('startMining'),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -1546,11 +1959,15 @@ class _HomePageState extends State<HomePage>
         style: ElevatedButton.styleFrom(
           backgroundColor: accentColor,
           foregroundColor: backgroundColor,
-          disabledBackgroundColor: surfaceColor,
-          disabledForegroundColor: secondaryTextColor,
-          minimumSize: const Size(double.infinity, 52),
+          disabledBackgroundColor:
+              surfaceColor,
+          disabledForegroundColor:
+              secondaryTextColor,
+          minimumSize:
+              const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(16),
           ),
         ),
       ),
@@ -1562,47 +1979,68 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildAdButton() {
-    final bool canUse = _canUseBoost;
+    final bool canUse =
+        _canUseBoost;
 
-    final String adsTodayLabel = _tp(
+    final String adsTodayLabel =
+        _tp(
       'adsToday',
       params: {
-        'current': _adsToday.toString(),
-        'max': _maxAdsPerDay.toString(),
+        'current':
+            _adsToday.toString(),
+        'max':
+            _maxAdsPerDay.toString(),
       },
     );
 
-    final String subtitle = _boostActive
-        ? _t('powerBoostActive')
-        : _t('watchAdSubtitle');
+    final String subtitle =
+        _boostActive
+            ? _t('powerBoostActive')
+            : _t('watchAdSubtitle');
 
-    final String remainingText = _tp(
+    final String remainingText =
+        _tp(
       'remaining',
       params: {
-        'time': _formatDuration(_boostRemainingMs),
+        'time': _formatDuration(
+          _boostRemainingMs,
+        ),
       },
     );
 
     return PowerBoostCard(
       boostActive: _boostActive,
-      boostRemainingMs: _boostRemainingMs,
+      boostRemainingMs:
+          _boostRemainingMs,
       adsToday: _adsToday,
-      maxAdsPerDay: _maxAdsPerDay,
+      maxAdsPerDay:
+          _maxAdsPerDay,
       canUse: canUse,
       subtitle: subtitle,
       title: _t('powerBoost'),
       activeText: _t('active'),
-      activeTitle: _t('powerBoostActive'),
-      remainingText: remainingText,
+      activeTitle:
+          _t('powerBoostActive'),
+      remainingText:
+          remainingText,
       hashRateBonusText:
-          '+${_formatNumber(_adHashRateBonus)} H/s',
+          '+${_formatNumber(
+            _adHashRateBonus,
+          )} H/s',
       effectiveHashRateText:
-          '${_formatNumber(_effectiveHashRate)} H/s',
-      nextAdAfterBoostText: _t('nextAdAfterBoost'),
-      watchAdText: _t('watchAd'),
-      adsTodayText: adsTodayLabel,
-      maxBoostsInfoText: '$_adsToday/$_maxAdsPerDay',
-      onPressed: canUse ? _watchAd : null,
+          '${_formatNumber(
+            _effectiveHashRate,
+          )} H/s',
+      nextAdAfterBoostText:
+          _t('nextAdAfterBoost'),
+      watchAdText:
+          _t('watchAd'),
+      adsTodayText:
+          adsTodayLabel,
+      maxBoostsInfoText:
+          '$_adsToday/$_maxAdsPerDay',
+      onPressed:
+          canUse ? _watchAd : null,
     );
   }
 
@@ -1612,14 +2050,21 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+      padding:
+          const EdgeInsets.fromLTRB(
+        12,
+        12,
+        12,
+        6,
+      ),
       child: Row(
         children: [
           Builder(
             builder: (context) {
               return IconButton(
                 onPressed: () {
-                  Scaffold.of(context).openDrawer();
+                  Scaffold.of(context)
+                      .openDrawer();
                 },
                 icon: const Icon(
                   Icons.menu_rounded,
@@ -1632,7 +2077,8 @@ class _HomePageState extends State<HomePage>
           const SizedBox(width: 8),
           const Expanded(
             child: Center(
-              child: StelluriiniLogo(size: 48),
+              child:
+                  StelluriiniLogo(size: 48),
             ),
           ),
           const SizedBox(width: 54),
@@ -1646,22 +2092,26 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Widget _buildGreeting() {
-    final String greeting = _username.isEmpty
-        ? _t('welcome')
-        : '${_t('welcome')}, $_username';
+    final String greeting =
+        _username.isEmpty
+            ? _t('welcome')
+            : '${_t('welcome')}, $_username';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 22,
         vertical: 6,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Text(
             greeting,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            overflow:
+                TextOverflow.ellipsis,
             style: const TextStyle(
               color: primaryTextColor,
               fontSize: 23,
@@ -1688,7 +2138,8 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildStellaFooter() {
     return Padding(
-      padding: const EdgeInsets.only(
+      padding:
+          const EdgeInsets.only(
         top: 20,
         bottom: 18,
       ),
@@ -1724,8 +2175,11 @@ class _HomePageState extends State<HomePage>
             const SizedBox(height: 5),
             Text(
               _buildNumber.isNotEmpty
-                  ? '${_t('appVersion')} $_appVersion (build $_buildNumber)'
-                  : '${_t('appVersion')} $_appVersion',
+                  ? '${_t('appVersion')} '
+                    '$_appVersion '
+                    '(build $_buildNumber)'
+                  : '${_t('appVersion')} '
+                    '$_appVersion',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: secondaryTextColor,
@@ -1745,26 +2199,38 @@ class _HomePageState extends State<HomePage>
               letterSpacing: 0.3,
             ),
           ),
-          if (_adManager.privacyOptionsRequired) ...[
+          if (_adManager
+              .privacyOptionsRequired) ...[
             const SizedBox(height: 14),
             OutlinedButton.icon(
-              onPressed: _showPrivacyOptions,
+              onPressed:
+                  _showPrivacyOptions,
               icon: const Icon(
                 Icons.privacy_tip_outlined,
                 size: 18,
               ),
-              label: Text(_privacyOptionsLabel()),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: accentColor,
+              label: Text(
+                _privacyOptionsLabel(),
+              ),
+              style:
+                  OutlinedButton.styleFrom(
+                foregroundColor:
+                    accentColor,
                 side: BorderSide(
-                  color: accentColor.withValues(alpha: 0.45),
+                  color: accentColor
+                      .withValues(
+                    alpha: 0.45,
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 11,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(14),
                 ),
               ),
             ),
@@ -1779,11 +2245,13 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   void _showPrivacyOptions() {
-    if (!_adManager.privacyOptionsRequired) {
+    if (!_adManager
+        .privacyOptionsRequired) {
       return;
     }
 
-    _adManager.showPrivacyOptionsForm();
+    _adManager
+        .showPrivacyOptionsForm();
   }
 
   String _privacyOptionsLabel() {
@@ -1822,65 +2290,103 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor:
+          backgroundColor,
       drawer: HomeDrawer(
-        languageCode: widget.languageCode,
-        onLanguagePressed: _showLanguageDialog,
-        onAboutPressed: _openAbout,
-        onWhitePaperPressed: _openWhitePaper,
-        onRoadmapPressed: _openRoadmap,
-        onAchievementsPressed: _openAchievements,
-        onTransactionHistoryPressed: _openTransactionHistory,
-        onReferralPressed: _openReferrals,
-        onAccountDeletionPressed: _openAccountDeletion,
-        onLogoutPressed: _logout,
+        languageCode:
+            widget.languageCode,
+        onLanguagePressed:
+            _showLanguageDialog,
+        onAboutPressed:
+            _openAbout,
+        onWhitePaperPressed:
+            _openWhitePaper,
+        onRoadmapPressed:
+            _openRoadmap,
+        onAchievementsPressed:
+            _openAchievements,
+        onTransactionHistoryPressed:
+            _openTransactionHistory,
+        onReferralPressed:
+            _openReferrals,
+        onAccountDeletionPressed:
+            _openAccountDeletion,
+        onLogoutPressed:
+            _logout,
       ),
-      body: StelluriiniSpaceBackground(
+      body:
+          StelluriiniSpaceBackground(
         overlayOpacity: 0.48,
         child: SafeArea(
           child: _loading
               ? const Center(
-                  child: CircularProgressIndicator(
+                  child:
+                      CircularProgressIndicator(
                     color: accentColor,
                   ),
                 )
               : RefreshIndicator(
                   color: accentColor,
-                  backgroundColor: cardColor,
-                  onRefresh: _loadMiningStatus,
+                  backgroundColor:
+                      cardColor,
+                  onRefresh:
+                      _loadMiningStatus,
                   child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    physics:
+                        const AlwaysScrollableScrollPhysics(),
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      0,
+                      0,
+                      0,
+                      12,
+                    ),
                     children: [
                       _buildHeader(),
                       _buildGreeting(),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        child: _buildStellaMiningCard(),
+                      const SizedBox(
+                        height: 10,
                       ),
-                      const SizedBox(height: 12),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                            const EdgeInsets.symmetric(
                           horizontal: 16,
                         ),
-                        child: _buildStatsRow(),
+                        child:
+                            _buildStellaMiningCard(),
                       ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        child: _buildAdButton(),
+                      const SizedBox(
+                        height: 12,
                       ),
-                      const SizedBox(height: 12),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                            const EdgeInsets.symmetric(
                           horizontal: 16,
                         ),
-                        child: _buildDailyCatFact(),
+                        child:
+                            _buildStatsRow(),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child:
+                            _buildAdButton(),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child:
+                            _buildDailyCatFact(),
                       ),
                       _buildStellaFooter(),
                     ],
@@ -1901,15 +2407,22 @@ class _HomePageState extends State<HomePage>
     }
 
     if (value is num) {
-      final double result = value.toDouble();
+      final double result =
+          value.toDouble();
 
-      return result.isFinite ? result : null;
+      return result.isFinite
+          ? result
+          : null;
     }
 
     if (value is String) {
-      final double? result = double.tryParse(value.trim());
+      final double? result =
+          double.tryParse(
+        value.trim(),
+      );
 
-      if (result != null && result.isFinite) {
+      if (result != null &&
+          result.isFinite) {
         return result;
       }
     }
@@ -1931,7 +2444,9 @@ class _HomePageState extends State<HomePage>
     }
 
     if (value is String) {
-      return int.tryParse(value.trim());
+      return int.tryParse(
+        value.trim(),
+      );
     }
 
     return null;
@@ -1947,7 +2462,8 @@ class _HomePageState extends State<HomePage>
     }
 
     if (value is String) {
-      final String normalized = value.trim().toLowerCase();
+      final String normalized =
+          value.trim().toLowerCase();
 
       if (normalized == 'true') {
         return true;
@@ -1975,31 +2491,56 @@ class _HomePageState extends State<HomePage>
   // ⏱️ FORMAT DURATION
   // ============================================================
 
-  String _formatDuration(int milliseconds) {
-    final int safeMs = milliseconds < 0 ? 0 : milliseconds;
+  String _formatDuration(
+    int milliseconds,
+  ) {
+    final int safeMs =
+        milliseconds < 0
+            ? 0
+            : milliseconds;
 
-    final int totalSeconds = safeMs ~/ 1000;
+    final int totalSeconds =
+        safeMs ~/ 1000;
 
-    final int hours = totalSeconds ~/ 3600;
+    final int hours =
+        totalSeconds ~/ 3600;
 
-    final int minutes = (totalSeconds % 3600) ~/ 60;
+    final int minutes =
+        (totalSeconds % 3600) ~/ 60;
 
-    final int seconds = totalSeconds % 60;
+    final int seconds =
+        totalSeconds % 60;
 
-    final String hoursText = hours.toString().padLeft(2, '0');
+    final String hoursText =
+        hours.toString().padLeft(
+              2,
+              '0',
+            );
 
-    final String minutesText = minutes.toString().padLeft(2, '0');
+    final String minutesText =
+        minutes.toString().padLeft(
+              2,
+              '0',
+            );
 
-    final String secondsText = seconds.toString().padLeft(2, '0');
+    final String secondsText =
+        seconds.toString().padLeft(
+              2,
+              '0',
+            );
 
-    return '$hoursText:$minutesText:$secondsText';
+    return '$hoursText:'
+        '$minutesText:'
+        '$secondsText';
   }
 
   // ============================================================
   // 🔢 FORMAT NUMBER
   // ============================================================
 
-  String _formatNumber(double value) {
+  String _formatNumber(
+    double value,
+  ) {
     if (!value.isFinite) {
       return '0';
     }
@@ -2008,7 +2549,8 @@ class _HomePageState extends State<HomePage>
       return value.toStringAsFixed(2);
     }
 
-    if (value == value.roundToDouble()) {
+    if (value ==
+        value.roundToDouble()) {
       return value.toInt().toString();
     }
 
@@ -2020,20 +2562,28 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   String _errorText(Object error) {
-    if (error is FirebaseFunctionsException) {
-      final String? message = error.message?.trim();
+    if (error
+        is FirebaseFunctionsException) {
+      final String? message =
+          error.message?.trim();
 
-      if (message != null && message.isNotEmpty) {
+      if (message != null &&
+          message.isNotEmpty) {
         return message;
       }
 
       return error.code;
     }
 
-    final String text = error.toString();
+    final String text =
+        error.toString();
 
-    if (text.startsWith('Exception: ')) {
-      return text.substring('Exception: '.length);
+    if (text.startsWith(
+      'Exception: ',
+    )) {
+      return text.substring(
+        'Exception: '.length,
+      );
     }
 
     return text;
@@ -2047,13 +2597,15 @@ class _HomePageState extends State<HomePage>
     String purpose,
     LoadAdError error,
   ) {
-    final String message = error.message.trim();
+    final String message =
+        error.message.trim();
 
     if (message.isNotEmpty) {
       return message;
     }
 
-    return purpose == HomeAdManager.powerBoostPurpose
+    return purpose ==
+            HomeAdManager.powerBoostPurpose
         ? _t('adNotAvailable')
         : _t('prepareAd');
   }
@@ -2066,13 +2618,15 @@ class _HomePageState extends State<HomePage>
     String purpose,
     AdError error,
   ) {
-    final String message = error.message.trim();
+    final String message =
+        error.message.trim();
 
     if (message.isNotEmpty) {
       return message;
     }
 
-    return purpose == HomeAdManager.powerBoostPurpose
+    return purpose ==
+            HomeAdManager.powerBoostPurpose
         ? _t('adNotAvailable')
         : _t('prepareAd');
   }
@@ -2081,7 +2635,9 @@ class _HomePageState extends State<HomePage>
   // 💬 MESSAGE
   // ============================================================
 
-  void _showMessage(String message) {
+  void _showMessage(
+    String message,
+  ) {
     if (!mounted) {
       return;
     }
@@ -2096,11 +2652,16 @@ class _HomePageState extends State<HomePage>
               color: primaryTextColor,
             ),
           ),
-          backgroundColor: cardColor,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          backgroundColor:
+              cardColor,
+          behavior:
+              SnackBarBehavior.floating,
+          margin:
+              const EdgeInsets.all(16),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(14),
           ),
         ),
       );
