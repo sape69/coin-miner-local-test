@@ -318,6 +318,46 @@ const Map<String, String> frTranslations = {
       'Stella mine déjà. 🐱💜',
 
   // ============================================================
+  // ⭐ STELLA LEVEL
+  // ============================================================
+
+  'stellaLevel':
+      'NIVEAU DE STELLA',
+
+  'stellaLevelLoading':
+      'Chargement...',
+
+  'stellaLoading':
+      'Chargement de Stella...',
+
+  'stellaAchievements':
+      'Succès',
+
+  'stellaMaxLevel':
+      'NIVEAU MAXIMUM',
+
+  'stellaAchievementsToNextLevel':
+      '{count} succès jusqu’au niveau suivant',
+
+  'stellaLevelLittle':
+      'Petite Stella',
+
+  'stellaLevelCurious':
+      'Stella Curieuse',
+
+  'stellaLevelMining':
+      'Stella Mineuse',
+
+  'stellaLevelPower':
+      'Stella Power',
+
+  'stellaLevelMaster':
+      'Stella Maîtresse',
+
+  'stellaLevelLegend':
+      'Stella Légende',
+
+  // ============================================================
   // ⛏️ MINING MESSAGES
   // ============================================================
 
