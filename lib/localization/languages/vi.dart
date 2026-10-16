@@ -318,6 +318,46 @@ const Map<String, String> viTranslations = {
       'Stella đang khai thác. 🐱💜',
 
   // ============================================================
+  // ⭐ STELLA LEVEL
+  // ============================================================
+
+  'stellaLevel':
+      'CẤP ĐỘ STELLA',
+
+  'stellaLevelLoading':
+      'Đang tải...',
+
+  'stellaLoading':
+      'Đang tải Stella...',
+
+  'stellaAchievements':
+      'Thành tích',
+
+  'stellaMaxLevel':
+      'CẤP ĐỘ TỐI ĐA',
+
+  'stellaAchievementsToNextLevel':
+      'Còn {count} thành tích để lên cấp tiếp theo',
+
+  'stellaLevelLittle':
+      'Stella Nhỏ Bé',
+
+  'stellaLevelCurious':
+      'Stella Tò Mò',
+
+  'stellaLevelMining':
+      'Stella Khai Thác',
+
+  'stellaLevelPower':
+      'Stella Sức Mạnh',
+
+  'stellaLevelMaster':
+      'Stella Bậc Thầy',
+
+  'stellaLevelLegend':
+      'Stella Huyền Thoại',
+
+  // ============================================================
   // ⛏️ MINING MESSAGES
   // ============================================================
 
