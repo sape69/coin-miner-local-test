@@ -236,6 +236,136 @@ class StelluriiniAchievements {
   );
 
   // ==========================================================
+  // ⛏️ SEASONED MINER
+  // ==========================================================
+
+  static const Achievement seasonedMiner = Achievement(
+    id: 'seasoned_miner',
+    icon: '⛏️',
+    title: 'Seasoned Miner',
+    description: 'Complete 50 mining cycles.',
+    target: 50,
+    reward: 40,
+  );
+
+  // ==========================================================
+  // 🛠️ VETERAN MINER
+  // ==========================================================
+
+  static const Achievement veteranMiner = Achievement(
+    id: 'veteran_miner',
+    icon: '🛠️',
+    title: 'Veteran Miner',
+    description: 'Complete 100 mining cycles.',
+    target: 100,
+    reward: 75,
+  );
+
+  // ==========================================================
+  // 💎 STL HOARDER
+  // ==========================================================
+
+  static const Achievement stlHoarder = Achievement(
+    id: 'stl_hoarder',
+    icon: '💎',
+    title: 'STL Hoarder',
+    description: 'Mine 2,500 STL.',
+    target: 2500,
+    reward: 40,
+  );
+
+  // ==========================================================
+  // 🏦 STL TYCOON
+  // ==========================================================
+
+  static const Achievement stlTycoon = Achievement(
+    id: 'stl_tycoon',
+    icon: '🏦',
+    title: 'STL Tycoon',
+    description: 'Mine 5,000 STL.',
+    target: 5000,
+    reward: 75,
+  );
+
+  // ==========================================================
+  // ⚡ POWER HUNTER
+  // ==========================================================
+
+  static const Achievement powerHunter = Achievement(
+    id: 'power_hunter',
+    icon: '⚡',
+    title: 'Power Hunter',
+    description: 'Use Power Boost 50 times.',
+    target: 50,
+    reward: 50,
+  );
+
+  // ==========================================================
+  // ⚡⚡ POWER MASTER
+  // ==========================================================
+
+  static const Achievement powerMaster = Achievement(
+    id: 'power_master',
+    icon: '⚡⚡',
+    title: 'Power Master',
+    description: 'Use Power Boost 100 times.',
+    target: 100,
+    reward: 100,
+  );
+
+  // ==========================================================
+  // 🐾 STELLA COMPANION
+  // ==========================================================
+
+  static const Achievement stellaCompanion = Achievement(
+    id: 'stella_companion',
+    icon: '🐾',
+    title: 'Stella Companion',
+    description: 'Complete 30 daily check-ins.',
+    target: 30,
+    reward: 50,
+  );
+
+  // ==========================================================
+  // 🌟 STELLA DEVOTEE
+  // ==========================================================
+
+  static const Achievement stellaDevotee = Achievement(
+    id: 'stella_devotee',
+    icon: '🌟',
+    title: 'Stella Devotee',
+    description: 'Complete 60 daily check-ins.',
+    target: 60,
+    reward: 100,
+  );
+
+  // ==========================================================
+  // 🔥 STELLA ETERNAL
+  // ==========================================================
+
+  static const Achievement stellaEternal = Achievement(
+    id: 'stella_eternal',
+    icon: '🔥',
+    title: 'Stella Eternal',
+    description: 'Reach a 60 day mining streak.',
+    target: 60,
+    reward: 100,
+  );
+
+  // ==========================================================
+  // 🌌 STELLA BEYOND
+  // ==========================================================
+
+  static const Achievement stellaBeyond = Achievement(
+    id: 'stella_beyond',
+    icon: '🌌',
+    title: 'Stella Beyond',
+    description: 'Reach a 90 day mining streak.',
+    target: 90,
+    reward: 200,
+  );
+
+  // ==========================================================
   // 📋 ALL ACHIEVEMENTS
   // ==========================================================
 
@@ -256,5 +386,20 @@ class StelluriiniAchievements {
     firstInvitation,
     friendCircle,
     stellasCommunity,
+
+    // ----------------------------------------------------------
+    // 🌟 LONG-TERM ACHIEVEMENTS
+    // ----------------------------------------------------------
+
+    seasonedMiner,
+    veteranMiner,
+    stlHoarder,
+    stlTycoon,
+    powerHunter,
+    powerMaster,
+    stellaCompanion,
+    stellaDevotee,
+    stellaEternal,
+    stellaBeyond,
   ];
 }
