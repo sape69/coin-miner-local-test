@@ -49,7 +49,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/stella/
 
 flutter_launcher_icons:
   android: true
