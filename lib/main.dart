@@ -5,6 +5,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_gate.dart';
+import 'services/mining_notification_service.dart';
 
 // ============================================================
 // 🐱 STELLURIINI
@@ -15,7 +16,8 @@ import 'auth_gate.dart';
 // 1. Firebase
 // 2. Google Analytics
 // 3. Google Mobile Ads
-// 4. Stelluriini app
+// 4. Mining notifications
+// 5. Stelluriini app
 //
 // ANALYTICS
 //
@@ -28,59 +30,84 @@ import 'auth_gate.dart';
 // Ensimmäisellä asennuksella oletuskieli on englanti.
 // Käyttäjän kielivalinta tallennetaan SharedPreferencesiin.
 //
+// NOTIFICATIONS
+//
+// - Paikalliset ilmoitukset alustetaan sovelluksen käynnistyessä.
+// - Androidin ilmoituslupa pyydetään tässä vaiheessa.
+// - Varsinainen louhinnan valmistumisilmoitus ajastetaan
+//   HomePagesta, kun louhinta käynnistetään.
+//
 // ============================================================
 
 Future<void> main() async {
-WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
-// ==========================================================
-// FIREBASE
-// ==========================================================
+  // ==========================================================
+  // FIREBASE
+  // ==========================================================
 
-await Firebase.initializeApp();
+  await Firebase.initializeApp();
 
-// ==========================================================
-// GOOGLE ANALYTICS
-// ==========================================================
+  // ==========================================================
+  // GOOGLE ANALYTICS
+  // ==========================================================
 
-try {
-await FirebaseAnalytics.instance
-.setAnalyticsCollectionEnabled(true);
+  try {
+    await FirebaseAnalytics.instance
+        .setAnalyticsCollectionEnabled(true);
 
-debugPrint(
-  '🐱 Stelluriini: Google Analytics initialized.',
-);
+    debugPrint(
+      '🐱 Stelluriini: Google Analytics initialized.',
+    );
+  } catch (error) {
+    debugPrint(
+      '🐱 Stelluriini: Google Analytics initialization error: $error',
+    );
+  }
 
-} catch (error) {
-debugPrint(
-'🐱 Stelluriini: Google Analytics initialization error: $error',
-);
-}
+  // ==========================================================
+  // GOOGLE MOBILE ADS
+  // ==========================================================
 
-// ==========================================================
-// GOOGLE MOBILE ADS
-// ==========================================================
+  try {
+    await MobileAds.instance.initialize();
 
-try {
-await MobileAds.instance.initialize();
+    debugPrint(
+      '🐱 Stelluriini: Google Mobile Ads SDK initialized.',
+    );
+  } catch (error) {
+    debugPrint(
+      '🐱 Stelluriini: Google Mobile Ads initialization error: $error',
+    );
+  }
 
-debugPrint(
-  '🐱 Stelluriini: Google Mobile Ads SDK initialized.',
-);
+  // ==========================================================
+  // MINING NOTIFICATIONS
+  // ==========================================================
 
-} catch (error) {
-debugPrint(
-'🐱 Stelluriini: Google Mobile Ads initialization error: $error',
-);
-}
+  try {
+    final MiningNotificationService notificationService =
+        MiningNotificationService.instance;
 
-// ==========================================================
-// APP
-// ==========================================================
+    await notificationService.initialize();
+    await notificationService.requestPermission();
 
-runApp(
-const StelluriiniApp(),
-);
+    debugPrint(
+      '🐱 Stelluriini: Mining notifications initialized.',
+    );
+  } catch (error) {
+    debugPrint(
+      '🐱 Stelluriini: Mining notification initialization error: $error',
+    );
+  }
+
+  // ==========================================================
+  // APP
+  // ==========================================================
+
+  runApp(
+    const StelluriiniApp(),
+  );
 }
 
 // ============================================================
@@ -88,142 +115,137 @@ const StelluriiniApp(),
 // ============================================================
 
 class StelluriiniApp extends StatefulWidget {
-const StelluriiniApp({
-super.key,
-});
+  const StelluriiniApp({
+    super.key,
+  });
 
-@override
-State<StelluriiniApp> createState() =>
-_StelluriiniAppState();
+  @override
+  State<StelluriiniApp> createState() =>
+      _StelluriiniAppState();
 }
 
-class _StelluriiniAppState
-extends State<StelluriiniApp> {
-// ==========================================================
-// LANGUAGE
-// ==========================================================
+class _StelluriiniAppState extends State<StelluriiniApp> {
+  // ==========================================================
+  // LANGUAGE
+  // ==========================================================
 
-String _languageCode = 'en';
+  String _languageCode = 'en';
 
-static const String _languageKey =
-'stelluriini_language';
+  static const String _languageKey =
+      'stelluriini_language';
 
-// ==========================================================
-// ANALYTICS
-// ==========================================================
+  // ==========================================================
+  // ANALYTICS
+  // ==========================================================
 
-final FirebaseAnalyticsObserver _analyticsObserver =
-FirebaseAnalyticsObserver(
-analytics: FirebaseAnalytics.instance,
-);
+  final FirebaseAnalyticsObserver _analyticsObserver =
+      FirebaseAnalyticsObserver(
+    analytics: FirebaseAnalytics.instance,
+  );
 
-// ==========================================================
-// INIT
-// ==========================================================
+  // ==========================================================
+  // INIT
+  // ==========================================================
 
-@override
-void initState() {
-super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-_loadLanguage();
-
-}
-
-// ==========================================================
-// LOAD LANGUAGE
-// ==========================================================
-
-Future<void> _loadLanguage() async {
-try {
-final SharedPreferences preferences =
-await SharedPreferences.getInstance();
-
-  final String savedLanguage =
-      preferences.getString(_languageKey) ?? 'en';
-
-  if (!mounted) {
-    return;
+    _loadLanguage();
   }
 
-  setState(() {
-    _languageCode = savedLanguage;
-  });
-} catch (error) {
-  debugPrint(
-    '🐱 Stelluriini: Language load error: $error',
-  );
-}
+  // ==========================================================
+  // LOAD LANGUAGE
+  // ==========================================================
 
-}
+  Future<void> _loadLanguage() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
 
-// ==========================================================
-// CHANGE LANGUAGE
-// ==========================================================
+      final String savedLanguage =
+          preferences.getString(_languageKey) ?? 'en';
 
-Future<void> _changeLanguage(
-String language,
-) async {
-try {
-final SharedPreferences preferences =
-await SharedPreferences.getInstance();
+      if (!mounted) {
+        return;
+      }
 
-  await preferences.setString(
-    _languageKey,
-    language,
-  );
-
-  if (!mounted) {
-    return;
+      setState(() {
+        _languageCode = savedLanguage;
+      });
+    } catch (error) {
+      debugPrint(
+        '🐱 Stelluriini: Language load error: $error',
+      );
+    }
   }
 
-  setState(() {
-    _languageCode = language;
-  });
-} catch (error) {
-  debugPrint(
-    '🐱 Stelluriini: Language save error: $error',
-  );
-}
+  // ==========================================================
+  // CHANGE LANGUAGE
+  // ==========================================================
 
-}
+  Future<void> _changeLanguage(
+    String language,
+  ) async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
 
-// ==========================================================
-// BUILD
-// ==========================================================
+      await preferences.setString(
+        _languageKey,
+        language,
+      );
 
-@override
-Widget build(BuildContext context) {
-return MaterialApp(
-navigatorObservers: <NavigatorObserver>[
-_analyticsObserver,
-],
+      if (!mounted) {
+        return;
+      }
 
-  debugShowCheckedModeBanner: false,
+      setState(() {
+        _languageCode = language;
+      });
+    } catch (error) {
+      debugPrint(
+        '🐱 Stelluriini: Language save error: $error',
+      );
+    }
+  }
 
-  title: 'Stelluriini',
+  // ==========================================================
+  // BUILD
+  // ==========================================================
 
-  theme: ThemeData(
-    brightness: Brightness.dark,
-    useMaterial3: true,
-    scaffoldBackgroundColor:
-        const Color(0xFF120B24),
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFB58CFF),
-      brightness: Brightness.dark,
-      primary: const Color(0xFFB58CFF),
-      secondary: const Color(0xFFFFB7E8),
-    ),
-  ),
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      navigatorObservers: <NavigatorObserver>[
+        _analyticsObserver,
+      ],
 
-  // ========================================================
-  // AUTH GATE
-  // ========================================================
+      debugShowCheckedModeBanner: false,
 
-  home: AuthGate(
-    languageCode: _languageCode,
-    changeLanguage: _changeLanguage,
-  ),
-);
+      title: 'Stelluriini',
 
-}
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        useMaterial3: true,
+        scaffoldBackgroundColor:
+            const Color(0xFF120B24),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFB58CFF),
+          brightness: Brightness.dark,
+          primary: const Color(0xFFB58CFF),
+          secondary: const Color(0xFFFFB7E8),
+        ),
+      ),
+
+      // ========================================================
+      // AUTH GATE
+      // ========================================================
+
+      home: AuthGate(
+        languageCode: _languageCode,
+        changeLanguage: _changeLanguage,
+      ),
+    );
+  }
 }
