@@ -604,6 +604,7 @@ class _HomePageState extends State<HomePage>
         await _miningNotificationService
             .scheduleMiningCompletion(
           Duration(milliseconds: safeRemaining),
+          languageCode: widget.languageCode,
         );
       } else {
         await _miningNotificationService
