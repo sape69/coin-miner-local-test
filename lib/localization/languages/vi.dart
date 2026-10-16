@@ -340,6 +340,16 @@ const Map<String, String> viTranslations = {
       'Phần thưởng khai thác của Stella đã sẵn sàng để nhận. 🐾',
 
   // ============================================================
+  // 🔔 MINING NOTIFICATIONS
+  // ============================================================
+
+  'miningNotificationTitle':
+      '🐱 Stella đang chờ bạn quay lại đào!',
+
+  'miningNotificationBody':
+      'Quá trình đào đã hoàn tất. Hãy quay lại để bắt đầu lượt đào mới. 💜',
+
+  // ============================================================
   // 💎 TRANSACTIONS
   // ============================================================
 
