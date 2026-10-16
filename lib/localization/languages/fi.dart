@@ -160,6 +160,24 @@ const Map<String, String> fiTranslations = {
 'stellaAlreadyMining': 'Stella louhii jo. 🐱💜',
 
 // ============================================================
+// ⭐ STELLA LEVEL
+// ============================================================
+
+'stellaLevel': 'STELLA-TASO',
+'stellaLevelLoading': 'Ladataan...',
+'stellaLoading': 'Ladataan Stellaa...',
+'stellaAchievements': 'Saavutukset',
+'stellaMaxLevel': 'MAKSIMITASO',
+'stellaAchievementsToNextLevel': '{count} saavutusta seuraavaan tasoon',
+
+'stellaLevelLittle': 'Pieni Stella',
+'stellaLevelCurious': 'Utelias Stella',
+'stellaLevelMining': 'Louhiva Stella',
+'stellaLevelPower': 'Voima-Stella',
+'stellaLevelMaster': 'Mestari-Stella',
+'stellaLevelLegend': 'Stella-legenda',
+
+// ============================================================
 // ⛏️ MINING MESSAGES
 // ============================================================
 
