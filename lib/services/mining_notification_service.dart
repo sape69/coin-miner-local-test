@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../localization.dart';
+
 // ============================================================
 // 🐱 STELLURIINI - MINING NOTIFICATION SERVICE
 // ============================================================
@@ -11,6 +13,20 @@ import 'package:timezone/timezone.dart' as tz;
 //
 // The notification is scheduled locally on the device, so it
 // can appear even when the app is closed.
+//
+// Notification language is taken from the current
+// Stelluriini application language.
+//
+// Supported languages:
+//
+// • fi - Suomi
+// • en - English
+// • de - Deutsch
+// • es - Español
+// • fr - Français
+// • zh - 中文
+// • vi - Tiếng Việt
+// • ja - 日本語
 //
 // ============================================================
 
@@ -40,19 +56,22 @@ class MiningNotificationService {
   // ------------------------------------------------------------
 
   static const String _channelId = 'stelluriini_mining';
-  static const String _channelName = 'Stelluriini louhinta';
+
+  static const String _channelName =
+      'Stelluriini Mining';
+
   static const String _channelDescription =
-      'Ilmoitus, kun Stelluriini-louhinta on valmis.';
+      'Notification when Stelluriini mining is complete.';
 
   // ------------------------------------------------------------
-  // Notification text
+  // Localization keys
   // ------------------------------------------------------------
 
-  static const String _notificationTitle =
-      '🐱 Stella kaipaa sinua louhimaan!';
+  static const String _notificationTitleKey =
+      'miningNotificationTitle';
 
-  static const String _notificationBody =
-      'Louhinta on valmis. Tule käynnistämään uusi louhinta. 💜';
+  static const String _notificationBodyKey =
+      'miningNotificationBody';
 
   // ------------------------------------------------------------
   // Initialization state
@@ -72,12 +91,13 @@ class MiningNotificationService {
     // Initialize timezone database.
     //
     // We schedule notifications using a duration from "now",
-    // rather than a fixed clock time, so the device's actual
-    // timezone does not need to be manually selected here.
+    // rather than a fixed clock time.
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
@@ -103,7 +123,9 @@ class MiningNotificationService {
         _notifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.createNotificationChannel(channel);
+    await androidPlugin?.createNotificationChannel(
+      channel,
+    );
 
     _initialized = true;
   }
@@ -128,17 +150,23 @@ class MiningNotificationService {
   //
   // Schedules the notification after the supplied duration.
   //
+  // The languageCode comes directly from HomePage, which means
+  // the notification uses the same language selected by the
+  // user in the Stelluriini application.
+  //
   // Example:
   //
-  //   scheduleMiningCompletion(
+  //   await scheduleMiningCompletion(
   //     const Duration(hours: 24),
+  //     languageCode: 'fi',
   //   );
   //
-  // The existing notification is cancelled first so that
-  // multiple mining sessions cannot create duplicate alerts.
   // ============================================================
 
-  Future<void> scheduleMiningCompletion(Duration remaining) async {
+  Future<void> scheduleMiningCompletion(
+    Duration remaining, {
+    String? languageCode,
+  }) async {
     await initialize();
 
     // Always remove an older mining notification first.
@@ -149,8 +177,42 @@ class MiningNotificationService {
       return;
     }
 
+    // ----------------------------------------------------------
+    // 🌍 LANGUAGE
+    // ----------------------------------------------------------
+
+    final String safeLanguageCode =
+        AppLocalizations.normalizeLanguageCode(
+      languageCode,
+    );
+
+    final AppLocalizations localization =
+        AppLocalizations.forLanguage(
+      safeLanguageCode,
+    );
+
+    final String notificationTitle =
+        localization.get(
+      _notificationTitleKey,
+    );
+
+    final String notificationBody =
+        localization.get(
+      _notificationBodyKey,
+    );
+
+    // ----------------------------------------------------------
+    // ⏰ SCHEDULE TIME
+    // ----------------------------------------------------------
+
     final tz.TZDateTime scheduledDate =
-        tz.TZDateTime.now(tz.local).add(remaining);
+        tz.TZDateTime.now(tz.local).add(
+      remaining,
+    );
+
+    // ----------------------------------------------------------
+    // 🔔 ANDROID NOTIFICATION DETAILS
+    // ----------------------------------------------------------
 
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
@@ -169,13 +231,18 @@ class MiningNotificationService {
       android: androidDetails,
     );
 
+    // ----------------------------------------------------------
+    // 📅 SCHEDULE
+    // ----------------------------------------------------------
+
     await _notifications.zonedSchedule(
       _miningCompletionNotificationId,
-      _notificationTitle,
-      _notificationBody,
+      notificationTitle,
+      notificationBody,
       scheduledDate,
       notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode:
+          AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 
@@ -201,7 +268,8 @@ class MiningNotificationService {
 
     return pending.any(
       (PendingNotificationRequest notification) =>
-          notification.id == _miningCompletionNotificationId,
+          notification.id ==
+          _miningCompletionNotificationId,
     );
   }
 
@@ -212,8 +280,8 @@ class MiningNotificationService {
   void _onNotificationResponse(
     NotificationResponse response,
   ) {
-    // The notification currently only needs to open the app
-    // through the normal Android notification behaviour.
+    // The notification currently opens the application through
+    // the normal Android notification behaviour.
     //
     // Navigation can be added here later if we want the
     // notification to open a specific Stelluriini page.
