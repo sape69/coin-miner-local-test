@@ -342,6 +342,16 @@ const Map<String, String> esTranslations = {
       'La minería de Stella está lista para reclamar. 🐾',
 
   // ============================================================
+  // 🔔 MINING NOTIFICATIONS
+  // ============================================================
+
+  'miningNotificationTitle':
+      '🐱 ¡Stella te necesita para minar!',
+
+  'miningNotificationBody':
+      'La minería ha terminado. Vuelve para iniciar una nueva sesión de minería. 💜',
+
+  // ============================================================
   // 💎 TRANSACTIONS
   // ============================================================
 
