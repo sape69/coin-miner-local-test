@@ -466,16 +466,16 @@ class _HomePageState extends State<HomePage>
                   updateInfo.updateUrl,
                 );
 
-                if (!mounted) {
-                  return;
-                }
-
                 if (opened) {
-                  Navigator.of(dialogContext).pop();
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
                 } else {
-                  _showMessage(
-                    texts['openError']!,
-                  );
+                  if (mounted) {
+                    _showMessage(
+                      texts['openError']!,
+                    );
+                  }
                 }
               },
               icon: const Icon(
