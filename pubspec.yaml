@@ -32,7 +32,6 @@ dependencies:
   package_info_plus: ^8.3.1
 
   # Local notifications
-  # Used for the 24-hour mining completion reminder.
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
 
@@ -42,9 +41,19 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
 
+  # Android app icon generation
+  flutter_launcher_icons: ^0.14.4
+
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
     - assets/images/stella/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/stelluriini_logo.png"
+  adaptive_icon_background: "#120B24"
+  adaptive_icon_foreground: "assets/images/stelluriini_logo.png"
