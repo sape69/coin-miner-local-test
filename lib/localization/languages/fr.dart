@@ -340,6 +340,16 @@ const Map<String, String> frTranslations = {
       'Le minage de Stella est prêt à être récupéré. 🐾',
 
   // ============================================================
+  // 🔔 MINING NOTIFICATIONS
+  // ============================================================
+
+  'miningNotificationTitle':
+      '🐱 Stella a besoin de vous pour miner !',
+
+  'miningNotificationBody':
+      'Le minage est terminé. Revenez lancer une nouvelle session de minage. 💜',
+
+  // ============================================================
   // 💎 TRANSACTIONS
   // ============================================================
 
