@@ -79,8 +79,7 @@ class StellaLevelInfo {
   // ============================================================
 
   bool get isMaxLevel {
-    return level >=
-        StellaLevelService.maxLevel;
+    return level >= StellaLevelService.maxLevel;
   }
 }
 
@@ -94,21 +93,19 @@ class StellaLevelService {
   static const int maxLevel = 6;
 
   // ============================================================
-  // 🐱 LASKE STELLAN TASO
+  // 🐱 LEVEL-RAJAT
   // ============================================================
   //
-  // Tasot perustuvat saavutettujen saavutusten määrään.
+  // 0  saavutusta → Level 1
+  // 1  saavutus    → Level 2
+  // 3  saavutusta  → Level 3
+  // 6  saavutusta  → Level 4
+  // 10 saavutusta  → Level 5
+  // 13 saavutusta  → Level 6
   //
-  // 0 saavutusta  → Level 1
-  // 1 saavutus    → Level 2
-  // 2 saavutusta  → Level 3
-  // 4 saavutusta  → Level 4
-  // 7 saavutusta  → Level 5
-  // 12 saavutusta → Level 6
+  // Stella Legend vaatii kaikki nykyiset 13 achievementia.
   //
-  // Maksimitaso ei vaadi kaikkia saavutuksia.
-  // Näin käyttäjä voi saavuttaa Stella Legend -tason
-  // ilman että jokainen achievement täytyy suorittaa.
+  // Taso ei vaikuta mihinkään pelilliseen arvoon.
   // ============================================================
 
   static StellaLevelInfo calculate(
@@ -119,49 +116,69 @@ class StellaLevelService {
             ? 0
             : completedAchievements;
 
-    if (safeCompleted >= 12) {
+    // ----------------------------------------------------------
+    // 👑 LEVEL 6 - STELLA LEGEND
+    // ----------------------------------------------------------
+
+    if (safeCompleted >= 13) {
       return StellaLevelInfo(
         level: 6,
         name: 'Stella Legend',
         icon: '👑',
         completedAchievements: safeCompleted,
-        currentLevelRequirement: 12,
-        nextLevelRequirement: 12,
+        currentLevelRequirement: 13,
+        nextLevelRequirement: 13,
       );
     }
 
-    if (safeCompleted >= 7) {
+    // ----------------------------------------------------------
+    // 💎 LEVEL 5 - MASTER STELLA
+    // ----------------------------------------------------------
+
+    if (safeCompleted >= 10) {
       return StellaLevelInfo(
         level: 5,
         name: 'Master Stella',
         icon: '💎',
         completedAchievements: safeCompleted,
-        currentLevelRequirement: 7,
-        nextLevelRequirement: 12,
+        currentLevelRequirement: 10,
+        nextLevelRequirement: 13,
       );
     }
 
-    if (safeCompleted >= 4) {
+    // ----------------------------------------------------------
+    // ⚡ LEVEL 4 - POWER STELLA
+    // ----------------------------------------------------------
+
+    if (safeCompleted >= 6) {
       return StellaLevelInfo(
         level: 4,
         name: 'Power Stella',
         icon: '⚡',
         completedAchievements: safeCompleted,
-        currentLevelRequirement: 4,
-        nextLevelRequirement: 7,
+        currentLevelRequirement: 6,
+        nextLevelRequirement: 10,
       );
     }
 
-    if (safeCompleted >= 2) {
+    // ----------------------------------------------------------
+    // ⛏️ LEVEL 3 - MINING STELLA
+    // ----------------------------------------------------------
+
+    if (safeCompleted >= 3) {
       return StellaLevelInfo(
         level: 3,
         name: 'Mining Stella',
         icon: '⛏️',
         completedAchievements: safeCompleted,
-        currentLevelRequirement: 2,
-        nextLevelRequirement: 4,
+        currentLevelRequirement: 3,
+        nextLevelRequirement: 6,
       );
     }
+
+    // ----------------------------------------------------------
+    // 🐾 LEVEL 2 - CURIOUS STELLA
+    // ----------------------------------------------------------
 
     if (safeCompleted >= 1) {
       return StellaLevelInfo(
@@ -170,9 +187,13 @@ class StellaLevelService {
         icon: '🐾',
         completedAchievements: safeCompleted,
         currentLevelRequirement: 1,
-        nextLevelRequirement: 2,
+        nextLevelRequirement: 3,
       );
     }
+
+    // ----------------------------------------------------------
+    // 🐱 LEVEL 1 - LITTLE STELLA
+    // ----------------------------------------------------------
 
     return StellaLevelInfo(
       level: 1,
