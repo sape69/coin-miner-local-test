@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../localization.dart';
 import '../localization/achievements/achievements_localization.dart';
-import '../pages/achievements/achievements_service.dart';
-import '../services/stella_level_service.dart';
 import 'cat_avatar.dart';
 
 // ============================================================
@@ -28,11 +26,8 @@ import 'cat_avatar.dart';
 // - avaa erillisen tilin poistamisen näkymän
 //
 // Stella Level:
-// - perustuu saavutettujen saavutusten määrään
-// - ei vaikuta louhintaan
-// - ei vaikuta STL-määrään
-// - ei vaikuta hash rateen
-// - ei vaikuta Power Boostiin
+// - näytetään nykyään Stellan saavutukset -sivulla
+// - ei enää näytetä Drawerissa
 //
 // ============================================================
 
@@ -109,63 +104,6 @@ class HomeDrawer extends StatefulWidget {
 // ============================================================
 
 class _HomeDrawerState extends State<HomeDrawer> {
-  final AchievementsService _achievementsService =
-      AchievementsService();
-
-  int _completedAchievements = 0;
-
-  bool _loadingStellaLevel = true;
-
-  // ==========================================================
-  // 🚀 INIT
-  // ==========================================================
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadStellaLevel();
-  }
-
-  // ==========================================================
-  // 🏆 LOAD ACHIEVEMENT COUNT
-  // ==========================================================
-
-  Future<void> _loadStellaLevel() async {
-    try {
-      final int completed =
-          await _achievementsService.getCompletedCount();
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _completedAchievements = completed;
-        _loadingStellaLevel = false;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _completedAchievements = 0;
-        _loadingStellaLevel = false;
-      });
-    }
-  }
-
-  // ==========================================================
-  // 🌟 STELLA LEVEL
-  // ==========================================================
-
-  StellaLevelInfo get _stellaLevel {
-    return StellaLevelService.calculate(
-      _completedAchievements,
-    );
-  }
-
   // ==========================================================
   // 🌍 MAIN LOCALIZATION
   // ==========================================================
@@ -175,51 +113,6 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
   String _t(String key) {
     return _localization.get(key);
-  }
-
-  // ==========================================================
-  // ⭐ STELLA LEVEL NAME LOCALIZATION
-  // ==========================================================
-
-  String _stellaLevelName(StellaLevelInfo level) {
-    switch (level.level) {
-      case 6:
-        return _t('stellaLevelLegend');
-
-      case 5:
-        return _t('stellaLevelMaster');
-
-      case 4:
-        return _t('stellaLevelPower');
-
-      case 3:
-        return _t('stellaLevelMining');
-
-      case 2:
-        return _t('stellaLevelCurious');
-
-      default:
-        return _t('stellaLevelLittle');
-    }
-  }
-
-  // ==========================================================
-  // 🏆 STELLA LEVEL PROGRESS TEXT
-  // ==========================================================
-
-  String _stellaLevelProgressText(
-    StellaLevelInfo level,
-  ) {
-    if (level.isMaxLevel) {
-      return _t('stellaMaxLevel');
-    }
-
-    return _t(
-      'stellaAchievementsToNextLevel',
-    ).replaceAll(
-      '{count}',
-      level.achievementsToNextLevel.toString(),
-    );
   }
 
   // ==========================================================
@@ -290,19 +183,26 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        accentColor.withValues(alpha: 0.28),
-                        currentIconColor.withValues(alpha: 0.16),
+                        accentColor.withValues(
+                          alpha: 0.28,
+                        ),
+                        currentIconColor.withValues(
+                          alpha: 0.16,
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius:
+                        BorderRadius.circular(13),
                     border: Border.all(
-                      color: currentIconColor.withValues(
+                      color:
+                          currentIconColor.withValues(
                         alpha: 0.20,
                       ),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: currentIconColor.withValues(
+                        color:
+                            currentIconColor.withValues(
                           alpha: 0.08,
                         ),
                         blurRadius: 10,
@@ -321,28 +221,36 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   child: Text(
                     title,
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow:
+                        TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
                 ),
                 if (badge != null) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
                       color:
-                          goldAccentColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
+                          goldAccentColor.withValues(
+                        alpha: 0.15,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(20),
                       border: Border.all(
                         color:
-                            goldAccentColor.withValues(alpha: 0.15),
+                            goldAccentColor.withValues(
+                          alpha: 0.15,
+                        ),
                       ),
                     ),
                     child: Text(
@@ -350,7 +258,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       style: const TextStyle(
                         color: goldAccentColor,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -360,7 +269,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 Icon(
                   Icons.chevron_right_rounded,
                   color:
-                      Colors.white.withValues(alpha: 0.30),
+                      Colors.white.withValues(
+                    alpha: 0.30,
+                  ),
                 ),
               ],
             ),
@@ -383,296 +294,10 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   // ==========================================================
-  // ⭐ STELLA LEVEL CARD
-  // ==========================================================
-
-  Widget _stellaLevelCard() {
-    final StellaLevelInfo level = _stellaLevel;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF321A55),
-              Color(0xFF24133F),
-              Color(0xFF1A0E31),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: accentColor.withValues(alpha: 0.38),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: accentColor.withValues(alpha: 0.12),
-              blurRadius: 18,
-              spreadRadius: 1,
-            ),
-            BoxShadow(
-              color: pinkAccentColor.withValues(alpha: 0.06),
-              blurRadius: 24,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // --------------------------------------------------
-            // TITLE
-            // --------------------------------------------------
-
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        goldAccentColor,
-                        pinkAccentColor,
-                        accentColor,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            goldAccentColor.withValues(alpha: 0.18),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      _loadingStellaLevel
-                          ? '🐱'
-                          : level.icon,
-                      style: const TextStyle(
-                        fontSize: 22,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            _t('stellaLevel'),
-                            style: TextStyle(
-                              color: goldAccentColor
-                                  .withValues(alpha: 0.95),
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          _stellaStar(
-                            size: 12,
-                            color: goldAccentColor,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _loadingStellaLevel
-                            ? _t('stellaLevelLoading')
-                            : _stellaLevelName(level),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!_loadingStellaLevel)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          accentColor.withValues(alpha: 0.16),
-                      borderRadius:
-                          BorderRadius.circular(20),
-                      border: Border.all(
-                        color:
-                            accentColor.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: Text(
-                      'LV ${level.level}',
-                      style: const TextStyle(
-                        color: accentColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // --------------------------------------------------
-            // DIVIDER
-            // --------------------------------------------------
-
-            Container(
-              height: 1,
-              color: accentColor.withValues(alpha: 0.12),
-            ),
-
-            const SizedBox(height: 13),
-
-            // --------------------------------------------------
-            // ACHIEVEMENT PROGRESS
-            // --------------------------------------------------
-
-            if (_loadingStellaLevel)
-              Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: accentColor.withValues(
-                        alpha: 0.70,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    _t('stellaLoading'),
-                    style: TextStyle(
-                      color:
-                          Colors.white.withValues(alpha: 0.60),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              )
-            else ...[
-              Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.emoji_events_rounded,
-                        color: goldAccentColor.withValues(
-                          alpha: 0.90,
-                        ),
-                        size: 17,
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        _t('stellaAchievements'),
-                        style: TextStyle(
-                          color:
-                              Colors.white.withValues(alpha: 0.72),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${level.completedAchievements}',
-                    style: const TextStyle(
-                      color: goldAccentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 9),
-
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  value: level.progress,
-                  minHeight: 7,
-                  backgroundColor:
-                      Colors.white.withValues(alpha: 0.08),
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(
-                    accentColor,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      _stellaLevelProgressText(level),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color:
-                            pinkAccentColor.withValues(alpha: 0.72),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (!level.isMaxLevel) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '${level.currentLevelRequirement} / ${level.nextLevelRequirement}',
-                      style: TextStyle(
-                        color:
-                            Colors.white.withValues(alpha: 0.42),
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
   // 🗑️ ACCOUNT DELETION ITEM
   // ==========================================================
   //
-  // Tämä EI enää käynnistä poistamista suoraan.
+  // Tämä EI käynnistä poistamista suoraan.
   //
   // Se avaa AccountDeletionPage-sivun, jossa käyttäjä voi:
   //
@@ -693,12 +318,18 @@ class _HomeDrawerState extends State<HomeDrawer> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           splashColor:
-              deleteAccountColor.withValues(alpha: 0.12),
+              deleteAccountColor.withValues(
+            alpha: 0.12,
+          ),
           highlightColor:
-              deleteAccountColor.withValues(alpha: 0.05),
-          onTap: widget.onAccountDeletionPressed,
+              deleteAccountColor.withValues(
+            alpha: 0.05,
+          ),
+          onTap:
+              widget.onAccountDeletionPressed,
           child: Container(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
             ),
@@ -709,16 +340,23 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   height: 44,
                   decoration: BoxDecoration(
                     color:
-                        deleteAccountColor.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(13),
+                        deleteAccountColor.withValues(
+                      alpha: 0.10,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(13),
                     border: Border.all(
                       color:
-                          deleteAccountColor.withValues(alpha: 0.22),
+                          deleteAccountColor.withValues(
+                        alpha: 0.22,
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
                         color:
-                            deleteAccountColor.withValues(alpha: 0.06),
+                            deleteAccountColor.withValues(
+                          alpha: 0.06,
+                        ),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
@@ -735,11 +373,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   child: Text(
                     _t('deleteAccount'),
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow:
+                        TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: deleteAccountColor,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
                 ),
@@ -747,7 +387,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 Icon(
                   Icons.chevron_right_rounded,
                   color:
-                      deleteAccountColor.withValues(alpha: 0.45),
+                      deleteAccountColor.withValues(
+                    alpha: 0.45,
+                  ),
                 ),
               ],
             ),
@@ -778,7 +420,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
               logoutColor.withValues(alpha: 0.05),
           onTap: widget.onLogoutPressed,
           child: Container(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
             ),
@@ -789,11 +432,16 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   height: 44,
                   decoration: BoxDecoration(
                     color:
-                        logoutColor.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(13),
+                        logoutColor.withValues(
+                      alpha: 0.10,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(13),
                     border: Border.all(
                       color:
-                          logoutColor.withValues(alpha: 0.20),
+                          logoutColor.withValues(
+                        alpha: 0.20,
+                      ),
                     ),
                   ),
                   child: const Icon(
@@ -807,11 +455,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   child: Text(
                     _t('logout'),
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow:
+                        TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
                 ),
@@ -851,13 +501,17 @@ class _HomeDrawerState extends State<HomeDrawer> {
         boxShadow: [
           BoxShadow(
             color:
-                accentColor.withValues(alpha: 0.28),
+                accentColor.withValues(
+              alpha: 0.28,
+            ),
             blurRadius: 26,
             spreadRadius: 4,
           ),
           BoxShadow(
             color:
-                pinkAccentColor.withValues(alpha: 0.14),
+                pinkAccentColor.withValues(
+              alpha: 0.14,
+            ),
             blurRadius: 42,
             spreadRadius: 8,
           ),
@@ -884,7 +538,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 22,
       ),
@@ -898,21 +553,28 @@ class _HomeDrawerState extends State<HomeDrawer> {
             Color(0xFF170D2C),
           ],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius:
+            BorderRadius.circular(24),
         border: Border.all(
           color:
-              accentColor.withValues(alpha: 0.45),
+              accentColor.withValues(
+            alpha: 0.45,
+          ),
         ),
         boxShadow: [
           BoxShadow(
             color:
-                accentColor.withValues(alpha: 0.16),
+                accentColor.withValues(
+              alpha: 0.16,
+            ),
             blurRadius: 28,
             spreadRadius: 2,
           ),
           BoxShadow(
             color:
-                pinkAccentColor.withValues(alpha: 0.07),
+                pinkAccentColor.withValues(
+              alpha: 0.07,
+            ),
             blurRadius: 40,
             spreadRadius: 4,
           ),
@@ -928,13 +590,16 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 children: [
                   const Text(
                     '🐱',
-                    style: TextStyle(fontSize: 25),
+                    style:
+                        TextStyle(fontSize: 25),
                   ),
                   const SizedBox(width: 5),
                   _stellaStar(
                     size: 13,
                     color:
-                        goldAccentColor.withValues(alpha: 0.85),
+                        goldAccentColor.withValues(
+                      alpha: 0.85,
+                    ),
                   ),
                 ],
               ),
@@ -942,9 +607,12 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 '🐾 STL • SOLANA 🐾',
                 style: TextStyle(
                   color:
-                      pinkAccentColor.withValues(alpha: 0.90),
+                      pinkAccentColor.withValues(
+                    alpha: 0.90,
+                  ),
                   fontSize: 11,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                   letterSpacing: 1,
                 ),
               ),
@@ -953,12 +621,15 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   _stellaStar(
                     size: 13,
                     color:
-                        goldAccentColor.withValues(alpha: 0.85),
+                        goldAccentColor.withValues(
+                      alpha: 0.85,
+                    ),
                   ),
                   const SizedBox(width: 5),
                   const Text(
                     '🐱',
-                    style: TextStyle(fontSize: 25),
+                    style:
+                        TextStyle(fontSize: 25),
                   ),
                 ],
               ),
@@ -973,7 +644,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 width: 34,
                 height: 1,
                 color:
-                    accentColor.withValues(alpha: 0.25),
+                    accentColor.withValues(
+                  alpha: 0.25,
+                ),
               ),
               const SizedBox(width: 10),
               _stellaStar(
@@ -985,7 +658,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 width: 34,
                 height: 1,
                 color:
-                    accentColor.withValues(alpha: 0.25),
+                    accentColor.withValues(
+                  alpha: 0.25,
+                ),
               ),
             ],
           ),
@@ -1009,23 +684,28 @@ class _HomeDrawerState extends State<HomeDrawer> {
             children: [
               const Text(
                 '🐾',
-                style: TextStyle(fontSize: 12),
+                style:
+                    TextStyle(fontSize: 12),
               ),
               const SizedBox(width: 6),
               Text(
                 'STELLA',
                 style: TextStyle(
                   color:
-                      goldAccentColor.withValues(alpha: 0.95),
+                      goldAccentColor.withValues(
+                    alpha: 0.95,
+                  ),
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                   letterSpacing: 2,
                 ),
               ),
               const SizedBox(width: 6),
               const Text(
                 '🐾',
-                style: TextStyle(fontSize: 12),
+                style:
+                    TextStyle(fontSize: 12),
               ),
             ],
           ),
@@ -1035,9 +715,12 @@ class _HomeDrawerState extends State<HomeDrawer> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color:
-                  pinkAccentColor.withValues(alpha: 0.85),
+                  pinkAccentColor.withValues(
+                alpha: 0.85,
+              ),
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight:
+                  FontWeight.w600,
               letterSpacing: 1,
             ),
           ),
@@ -1059,7 +742,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
         16,
         16,
       ),
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 14,
       ),
@@ -1069,18 +753,25 @@ class _HomeDrawerState extends State<HomeDrawer> {
           end: Alignment.bottomRight,
           colors: [
             cardColor,
-            cardColor.withValues(alpha: 0.82),
+            cardColor.withValues(
+              alpha: 0.82,
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+            BorderRadius.circular(18),
         border: Border.all(
           color:
-              accentColor.withValues(alpha: 0.20),
+              accentColor.withValues(
+            alpha: 0.20,
+          ),
         ),
         boxShadow: [
           BoxShadow(
             color:
-                accentColor.withValues(alpha: 0.07),
+                accentColor.withValues(
+              alpha: 0.07,
+            ),
             blurRadius: 18,
             spreadRadius: 1,
           ),
@@ -1094,25 +785,31 @@ class _HomeDrawerState extends State<HomeDrawer> {
             children: [
               const Text(
                 '🐾',
-                style: TextStyle(fontSize: 16),
+                style:
+                    TextStyle(fontSize: 16),
               ),
               const SizedBox(width: 7),
               Flexible(
                 child: Text(
                   _t('footerTagline'),
-                  textAlign: TextAlign.center,
+                  textAlign:
+                      TextAlign.center,
                   style: TextStyle(
                     color:
-                        Colors.white.withValues(alpha: 0.60),
+                        Colors.white.withValues(
+                      alpha: 0.60,
+                    ),
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight:
+                        FontWeight.w600,
                   ),
                 ),
               ),
               const SizedBox(width: 7),
               const Text(
                 '🐾',
-                style: TextStyle(fontSize: 16),
+                style:
+                    TextStyle(fontSize: 16),
               ),
             ],
           ),
@@ -1125,20 +822,26 @@ class _HomeDrawerState extends State<HomeDrawer> {
                 width: 20,
                 height: 1,
                 color:
-                    accentColor.withValues(alpha: 0.25),
+                    accentColor.withValues(
+                  alpha: 0.25,
+                ),
               ),
               const SizedBox(width: 8),
               _stellaStar(
                 size: 12,
                 color:
-                    goldAccentColor.withValues(alpha: 0.80),
+                    goldAccentColor.withValues(
+                  alpha: 0.80,
+                ),
               ),
               const SizedBox(width: 8),
               Container(
                 width: 20,
                 height: 1,
                 color:
-                    accentColor.withValues(alpha: 0.25),
+                    accentColor.withValues(
+                  alpha: 0.25,
+                ),
               ),
             ],
           ),
@@ -1148,9 +851,12 @@ class _HomeDrawerState extends State<HomeDrawer> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color:
-                  pinkAccentColor.withValues(alpha: 0.72),
+                  pinkAccentColor.withValues(
+                alpha: 0.72,
+              ),
               fontSize: 10,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               letterSpacing: 1,
             ),
           ),
@@ -1169,8 +875,11 @@ class _HomeDrawerState extends State<HomeDrawer> {
       backgroundColor: backgroundColor,
       elevation: 18,
       shadowColor:
-          accentColor.withValues(alpha: 0.35),
-      surfaceTintColor: Colors.transparent,
+          accentColor.withValues(
+        alpha: 0.35,
+      ),
+      surfaceTintColor:
+          Colors.transparent,
       child: SafeArea(
         child: Column(
           children: [
@@ -1178,57 +887,71 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(
+                padding:
+                    const EdgeInsets.only(
                   top: 4,
                   bottom: 8,
                 ),
                 children: [
                   _menuItem(
-                    icon: Icons.language_rounded,
+                    icon:
+                        Icons.language_rounded,
                     title: _t('language'),
-                    onTap: widget.onLanguagePressed,
+                    onTap:
+                        widget.onLanguagePressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.info_outline_rounded,
-                    title: _t('aboutStelluriini'),
-                    onTap: widget.onAboutPressed,
+                    icon:
+                        Icons.info_outline_rounded,
+                    title:
+                        _t('aboutStelluriini'),
+                    onTap:
+                        widget.onAboutPressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.description_outlined,
-                    title: _t('whitePaper'),
-                    onTap: widget.onWhitePaperPressed,
+                    icon:
+                        Icons.description_outlined,
+                    title:
+                        _t('whitePaper'),
+                    onTap:
+                        widget.onWhitePaperPressed,
                   ),
 
                   _menuItem(
-                    icon: Icons.map_outlined,
+                    icon:
+                        Icons.map_outlined,
                     title: _t('roadmap'),
-                    onTap: widget.onRoadmapPressed,
+                    onTap:
+                        widget.onRoadmapPressed,
                   ),
 
                   _referralItem(),
 
                   _menuItem(
-                    icon: Icons.emoji_events_rounded,
-                    title: _achievementsLocalization.get(
+                    icon:
+                        Icons.emoji_events_rounded,
+                    title:
+                        _achievementsLocalization
+                            .get(
                       'achievementsTitle',
                     ),
-                    onTap: widget.onAchievementsPressed,
-                    iconColor: goldAccentColor,
+                    onTap:
+                        widget
+                            .onAchievementsPressed,
+                    iconColor:
+                        goldAccentColor,
                   ),
 
-                  // ------------------------------------------------
-                  // ⭐ STELLA LEVEL
-                  // ------------------------------------------------
-
-                  _stellaLevelCard(),
-
                   _menuItem(
-                    icon: Icons.history_rounded,
-                    title: _t('transactionHistory'),
+                    icon:
+                        Icons.history_rounded,
+                    title:
+                        _t('transactionHistory'),
                     onTap:
-                        widget.onTransactionHistoryPressed,
+                        widget
+                            .onTransactionHistoryPressed,
                   ),
 
                   // ------------------------------------------------
