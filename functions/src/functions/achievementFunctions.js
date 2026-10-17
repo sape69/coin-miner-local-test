@@ -12,133 +12,9 @@
 //    ↓
 // Firestore
 //
-// Asiakas ei kirjoita achievements-kokoelmaan suoraan.
-//
-// Firestore:
-//
-// users/{userId}/achievements/{achievementId}
-//
 // Achievement-palkinnot maksetaan aina serverillä.
-//
-// IMPORTANT:
-//
-// Achievement STL -palkinto EI ole AdMob-palkinto.
-//
-// Achievement reward:
-// - lisätään käyttäjän miningBalance-saldoon
-// - maksetaan vain kerran
-// - käsitellään Firestore-transaktion sisällä
-// - reward-arvo tulee vain serverin achievement-definitionistä
-//
-// ============================================================
-//
-// ACHIEVEMENT DEFINITIONS:
-//
-// first_paw
-//    Target: 1
-//    Reward: 2 STL
-//
-// little_miner
-//    Target: 10
-//    Reward: 5 STL
-//
-// stl_hunter
-//    Target: 100
-//    Reward: 10 STL
-//
-// hot_streak
-//    Target: 7
-//    Reward: 50 STL
-//
-// stellas_friend
-//    Target: 10
-//    Reward: 30 STL
-//
-// growing_miner
-//    Target: 25
-//    Reward: 8 STL
-//
-// stl_collector
-//    Target: 500
-//    Reward: 25 STL
-//
-// stl_master
-//    Target: 1000
-//    Reward: 50 STL
-//
-// dedicated_miner
-//    Target: 25
-//    Reward: 30 STL
-//
-// stella_on_fire
-//    Target: 14
-//    Reward: 50 STL
-//
-// stella_legend
-//    Target: 30
-//    Reward: 100 STL
-//
-// power_paws
-//    Target: 5
-//    Reward: 20 STL
-//
-// super_paws
-//    Target: 25
-//    Reward: 75 STL
-//
-// first_invitation
-//    Target: 1
-//    Reward: 5 STL
-//
-// friend_circle
-//    Target: 5
-//    Reward: 10 STL
-//
-// stellas_community
-//    Target: 10
-//    Reward: 20 STL
-//
-// LONG-TERM ACHIEVEMENTS:
-//
-// seasoned_miner
-//    Target: 50
-//    Reward: 40 STL
-//
-// veteran_miner
-//    Target: 100
-//    Reward: 75 STL
-//
-// stl_hoarder
-//    Target: 2500
-//    Reward: 40 STL
-//
-// stl_tycoon
-//    Target: 5000
-//    Reward: 75 STL
-//
-// power_hunter
-//    Target: 50
-//    Reward: 50 STL
-//
-// power_master
-//    Target: 100
-//    Reward: 100 STL
-//
-// stella_companion
-//    Target: 30
-//    Reward: 50 STL
-//
-// stella_devotee
-//    Target: 60
-//    Reward: 100 STL
-//
-// stella_eternal
-//    Target: 60
-//    Reward: 100 STL
-//
-// stella_beyond
-//    Target: 90
-//    Reward: 200 STL
+// Serveri on achievementien target- ja reward-arvojen
+// lopullinen auktoriteetti.
 //
 // ============================================================
 
@@ -152,24 +28,10 @@ const {
   FieldValue,
 } = require("firebase-admin/firestore");
 
-// ============================================================
-// 🔥 FIRESTORE
-// ============================================================
-
-const db =
-  getFirestore();
+const db = getFirestore();
 
 // ============================================================
 // 🏆 ACHIEVEMENT DEFINITIONS
-// ============================================================
-//
-// Kaikki achievementien target- ja reward-arvot ovat täällä.
-//
-// ÄLÄ kopioi näitä arvoja muihin tiedostoihin.
-//
-// Serveri on achievementien target- ja reward-arvojen
-// lopullinen auktoriteetti.
-//
 // ============================================================
 
 const achievements = Object.freeze([
@@ -258,13 +120,13 @@ const achievements = Object.freeze([
   Object.freeze({
     id: "power_paws",
     target: 5,
-    reward: 20,
+    reward: 10,
   }),
 
   Object.freeze({
     id: "super_paws",
     target: 25,
-    reward: 75,
+    reward: 20,
   }),
 
   // ==========================================================
@@ -328,13 +190,13 @@ const achievements = Object.freeze([
   Object.freeze({
     id: "power_hunter",
     target: 50,
-    reward: 50,
+    reward: 30,
   }),
 
   Object.freeze({
     id: "power_master",
     target: 100,
-    reward: 100,
+    reward: 50,
   }),
 
   // ==========================================================
@@ -344,13 +206,13 @@ const achievements = Object.freeze([
   Object.freeze({
     id: "stella_companion",
     target: 30,
-    reward: 50,
+    reward: 30,
   }),
 
   Object.freeze({
     id: "stella_devotee",
     target: 60,
-    reward: 100,
+    reward: 60,
   }),
 
   // ==========================================================
@@ -374,17 +236,12 @@ const achievements = Object.freeze([
 // 🔎 ACHIEVEMENT DEFINITION LOOKUP
 // ============================================================
 
-function getAchievementDefinition(
-  achievementId
-) {
-  if (
-    typeof achievementId !== "string"
-  ) {
+function getAchievementDefinition(achievementId) {
+  if (typeof achievementId !== "string") {
     return null;
   }
 
-  const normalizedId =
-    achievementId.trim();
+  const normalizedId = achievementId.trim();
 
   if (!normalizedId) {
     return null;
@@ -393,18 +250,13 @@ function getAchievementDefinition(
   return (
     achievements.find(
       (achievement) =>
-        achievement.id ===
-        normalizedId
+        achievement.id === normalizedId
     ) || null
   );
 }
 
 // ============================================================
 // 📋 GET ACHIEVEMENT DEFINITIONS
-// ============================================================
-//
-// Palauttaa turvallisen kopion achievement-määrityksistä.
-//
 // ============================================================
 
 function getAchievementDefinitions() {
@@ -420,8 +272,7 @@ function getAchievementDefinitions() {
 // ============================================================
 
 function requireUser(request) {
-  const uid =
-    request.auth?.uid;
+  const uid = request.auth?.uid;
 
   if (!uid) {
     throw new HttpsError(
@@ -437,9 +288,7 @@ function requireUser(request) {
 // 📁 ACHIEVEMENT COLLECTION
 // ============================================================
 
-function getAchievementCollection(
-  uid
-) {
+function getAchievementCollection(uid) {
   return db
     .collection("users")
     .doc(uid)
@@ -464,12 +313,9 @@ function getSafeInteger(
   value,
   fallback = 0
 ) {
-  const parsed =
-    Number(value);
+  const parsed = Number(value);
 
-  if (
-    !Number.isFinite(parsed)
-  ) {
+  if (!Number.isFinite(parsed)) {
     return fallback;
   }
 
@@ -480,11 +326,8 @@ function getSafeInteger(
 // 💰 SAFE NON-NEGATIVE NUMBER
 // ============================================================
 
-function getSafeBalance(
-  value
-) {
-  const parsed =
-    Number(value);
+function getSafeBalance(value) {
+  const parsed = Number(value);
 
   if (
     !Number.isFinite(parsed) ||
@@ -499,45 +342,33 @@ function getSafeBalance(
 // ============================================================
 // 📊 NORMALIZE ACHIEVEMENT
 // ============================================================
-//
-// Firestore-dataa ei luoteta target/reward-arvojen osalta.
-//
-// Target ja reward tulevat aina serverin definitionistä.
-//
-// ============================================================
 
 function normalizeAchievement(
   definition,
   data
 ) {
-  const source =
-    data || {};
+  const source = data || {};
 
-  const progress =
-    Math.max(
-      0,
-      getSafeInteger(
-        source.progress,
-        0
-      )
-    );
+  const progress = Math.max(
+    0,
+    getSafeInteger(
+      source.progress,
+      0
+    )
+  );
 
-  const target =
-    Math.max(
-      1,
-      getSafeInteger(
-        definition.target,
-        1
-      )
-    );
+  const target = Math.max(
+    1,
+    getSafeInteger(
+      definition.target,
+      1
+    )
+  );
 
-  const reward =
-    Math.max(
-      0,
-      Number(
-        definition.reward
-      ) || 0
-    );
+  const reward = Math.max(
+    0,
+    Number(definition.reward) || 0
+  );
 
   const normalizedProgress =
     Math.min(
@@ -547,8 +378,7 @@ function normalizeAchievement(
 
   const unlocked =
     source.unlocked === true ||
-    normalizedProgress >=
-      target;
+    normalizedProgress >= target;
 
   const rewardClaimed =
     source.rewardClaimed === true;
@@ -569,16 +399,13 @@ function normalizeAchievement(
     rewardClaimed,
 
     unlockedAt:
-      source.unlockedAt ??
-      null,
+      source.unlockedAt ?? null,
 
     rewardClaimedAt:
-      source.rewardClaimedAt ??
-      null,
+      source.rewardClaimedAt ?? null,
 
     updatedAt:
-      source.updatedAt ??
-      null,
+      source.updatedAt ?? null,
   };
 }
 
@@ -610,8 +437,7 @@ function buildInitialAchievement(
 
     rewardClaimedAt: null,
 
-    updatedAt:
-      now,
+    updatedAt: now,
   };
 }
 
@@ -649,8 +475,7 @@ function buildNormalizedUpdate(
     rewardClaimed:
       normalized.rewardClaimed,
 
-    updatedAt:
-      now,
+    updatedAt: now,
   };
 
   if (
@@ -674,19 +499,6 @@ function buildNormalizedUpdate(
 
 // ============================================================
 // 🎁 ACHIEVEMENT REWARD CALCULATION
-// ============================================================
-//
-// Tämä funktio ei kirjoita Firestoreen.
-//
-// Se laskee:
-// - uuden progressin
-// - unlock-tilan
-// - pitääkö palkinto maksaa
-// - paljonko STL:ää maksetaan
-//
-// Reward maksetaan vain silloin kun achievement avautuu
-// ensimmäisen kerran eikä sitä ole vielä merkitty maksetuksi.
-//
 // ============================================================
 
 function calculateAchievementReward(
@@ -782,25 +594,16 @@ function calculateAchievementReward(
     rewardClaimedAt:
       wasRewardClaimed
         ? normalized.rewardClaimedAt
-        : (
-          shouldPayReward
-            ? now
-            : null
-        ),
+        : shouldPayReward
+          ? now
+          : null,
 
-    updatedAt:
-      now,
+    updatedAt: now,
   };
 }
 
 // ============================================================
 // 🎁 BUILD ACHIEVEMENT REWARD UPDATE
-// ============================================================
-//
-// Luo achievement-dokumentin päivityksen.
-//
-// Tätä voidaan käyttää saman Firestore-transaktion sisällä.
-//
 // ============================================================
 
 function buildAchievementRewardUpdate(
@@ -839,18 +642,6 @@ function buildAchievementRewardUpdate(
 // ============================================================
 // 💰 BUILD USER BALANCE UPDATE
 // ============================================================
-//
-// Tämä rakentaa serveripuolen miningBalance-päivityksen.
-//
-// HUOM:
-//
-// Tämä käyttää increment-operaatiota.
-//
-// Näin achievement-palkinto voidaan lisätä käyttäjän
-// nykyiseen miningBalance-saldoon ilman että client voi
-// päättää palkinnon määrää.
-//
-// ============================================================
 
 function buildAchievementBalanceUpdate(
   reward,
@@ -862,9 +653,7 @@ function buildAchievementBalanceUpdate(
       Number(reward) || 0
     );
 
-  if (
-    safeReward <= 0
-  ) {
+  if (safeReward <= 0) {
     return null;
   }
 
@@ -874,28 +663,12 @@ function buildAchievementBalanceUpdate(
         safeReward
       ),
 
-    updatedAt:
-      now,
+    updatedAt: now,
   };
 }
 
 // ============================================================
 // 🐱 APPLY ACHIEVEMENT PROGRESS
-// ============================================================
-//
-// Server-side helper.
-//
-// Tämän tarkoitus on olla miningFunctions.js:n käyttämä
-// keskitetty achievement-käsittelijä.
-//
-// IMPORTANT:
-//
-// Funktio ei tee Firestore-lukuja itse.
-//
-// Se käyttää transactionissa jo luettua achievement-dataa.
-//
-// Tämä on tärkeää Firestore-transaktion kannalta.
-//
 // ============================================================
 
 function applyAchievementProgress(
@@ -970,19 +743,6 @@ function applyAchievementProgress(
 
 // ============================================================
 // 📖 GET ACHIEVEMENTS
-// ============================================================
-//
-// Hakee kaikki käyttäjän achievementit.
-//
-// Puuttuvat achievementit alustetaan palvelimella.
-//
-// HUOM:
-//
-// Tämä endpoint EI maksa achievement-palkintoja.
-//
-// Palkinto syntyy silloin kun achievement saavuttaa targetin
-// serveripuolen mining/event-logiikan kautta.
-//
 // ============================================================
 
 exports.getAchievements =
@@ -1248,21 +1008,6 @@ exports.getAchievementsCompleted =
 
 // ============================================================
 // 📦 SERVER-SIDE EXPORTS
-// ============================================================
-//
-// Achievement configuration
-// + reward calculation
-// + transaction helper.
-//
-// miningFunctions.js voi käyttää:
-//
-// const {
-//   getAchievementDefinition,
-//   getAchievementDefinitions,
-//   applyAchievementProgress,
-//   calculateAchievementReward,
-// } = require("./achievementFunctions");
-//
 // ============================================================
 
 module.exports.getAchievementDefinition =
