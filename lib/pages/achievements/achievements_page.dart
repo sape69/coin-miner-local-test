@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../localization.dart';
 import '../../localization/achievements/achievements_localization.dart';
+import '../../services/stella_level_service.dart';
 import '../../widgets/cat_avatar.dart';
 import 'achievement_card.dart';
 import 'achievement_model.dart';
@@ -8,6 +10,25 @@ import 'achievements_service.dart';
 
 // ============================================================
 // 🏆 STELLURIINI ACHIEVEMENTS PAGE
+// ============================================================
+//
+// Stellan saavutukset.
+//
+// Sivulla näytetään:
+// - Stella
+// - saavutusten kokonaismäärä
+// - Stella-taso
+// - Stella-tason eteneminen
+// - kaikki saavutukset
+//
+// Stella-taso perustuu saavutettujen saavutusten määrään.
+//
+// Taso ei vaikuta:
+// - STL-määrään
+// - hash rateen
+// - louhintaan
+// - Power Boostiin
+//
 // ============================================================
 
 class AchievementsPage extends StatefulWidget {
@@ -72,6 +93,15 @@ class _AchievementsPageState
       AchievementsLocalization(
         widget.languageCode,
       );
+
+  AppLocalizations get _mainLocalization =>
+      AppLocalizations(
+        widget.languageCode,
+      );
+
+  String _t(String key) {
+    return _mainLocalization.get(key);
+  }
 
   // ==========================================================
   // 🚀 INIT
@@ -184,6 +214,383 @@ class _AchievementsPageState
   }
 
   // ==========================================================
+  // ⭐ STELLA LEVEL
+  // ==========================================================
+
+  StellaLevelInfo get _stellaLevel {
+    return StellaLevelService.calculate(
+      _completedCount,
+    );
+  }
+
+  // ==========================================================
+  // ⭐ STELLA LEVEL NAME
+  // ==========================================================
+
+  String _stellaLevelName(
+    StellaLevelInfo level,
+  ) {
+    switch (level.level) {
+      case 6:
+        return _t('stellaLevelLegend');
+
+      case 5:
+        return _t('stellaLevelMaster');
+
+      case 4:
+        return _t('stellaLevelPower');
+
+      case 3:
+        return _t('stellaLevelMining');
+
+      case 2:
+        return _t('stellaLevelCurious');
+
+      default:
+        return _t('stellaLevelLittle');
+    }
+  }
+
+  // ==========================================================
+  // 🏆 STELLA LEVEL PROGRESS TEXT
+  // ==========================================================
+
+  String _stellaLevelProgressText(
+    StellaLevelInfo level,
+  ) {
+    if (level.isMaxLevel) {
+      return _t('stellaMaxLevel');
+    }
+
+    return _t(
+      'stellaAchievementsToNextLevel',
+    ).replaceAll(
+      '{count}',
+      level.achievementsToNextLevel.toString(),
+    );
+  }
+
+  // ==========================================================
+  // ⭐ STELLA LEVEL CARD
+  // ==========================================================
+
+  Widget _buildStellaLevelCard() {
+    final StellaLevelInfo level =
+        _stellaLevel;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF321A55),
+            Color(0xFF24133F),
+            Color(0xFF1A0E31),
+          ],
+        ),
+        borderRadius:
+            BorderRadius.circular(24),
+        border: Border.all(
+          color:
+              accentColor.withValues(alpha: 0.38),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                accentColor.withValues(alpha: 0.12),
+            blurRadius: 20,
+            spreadRadius: 1,
+          ),
+          BoxShadow(
+            color:
+                pinkColor.withValues(alpha: 0.06),
+            blurRadius: 26,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ==================================================
+          // HEADER
+          // ==================================================
+
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient:
+                      const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      goldColor,
+                      pinkColor,
+                      accentColor,
+                    ],
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: goldColor.withValues(
+                        alpha: 0.20,
+                      ),
+                      blurRadius: 14,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    level.icon,
+                    style: const TextStyle(
+                      fontSize: 27,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(
+                width: 14,
+              ),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          _t('stellaLevel'),
+                          style: TextStyle(
+                            color:
+                                goldColor.withValues(
+                              alpha: 0.95,
+                            ),
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        const Icon(
+                          Icons
+                              .auto_awesome_rounded,
+                          color: goldColor,
+                          size: 14,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(
+                      height: 4,
+                    ),
+
+                    Text(
+                      _stellaLevelName(level),
+                      maxLines: 1,
+                      overflow:
+                          TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      accentColor.withValues(
+                    alpha: 0.16,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(20),
+                  border: Border.all(
+                    color:
+                        accentColor.withValues(
+                      alpha: 0.28,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'LV ${level.level}',
+                  style: const TextStyle(
+                    color: accentColor,
+                    fontSize: 12,
+                    fontWeight:
+                        FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(
+            height: 18,
+          ),
+
+          // ==================================================
+          // DIVIDER
+          // ==================================================
+
+          Container(
+            height: 1,
+            color:
+                accentColor.withValues(
+              alpha: 0.12,
+            ),
+          ),
+
+          const SizedBox(
+            height: 15,
+          ),
+
+          // ==================================================
+          // ACHIEVEMENTS COUNT
+          // ==================================================
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons
+                        .emoji_events_rounded,
+                    color:
+                        goldColor.withValues(
+                      alpha: 0.95,
+                    ),
+                    size: 20,
+                  ),
+                  const SizedBox(
+                    width: 8,
+                  ),
+                  Text(
+                    _t('stellaAchievements'),
+                    style: TextStyle(
+                      color:
+                          Colors.white.withValues(
+                        alpha: 0.75,
+                      ),
+                      fontSize: 14,
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '$_completedCount',
+                style: const TextStyle(
+                  color: goldColor,
+                  fontSize: 16,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(
+            height: 12,
+          ),
+
+          // ==================================================
+          // LEVEL PROGRESS
+          // ==================================================
+
+          ClipRRect(
+            borderRadius:
+                BorderRadius.circular(20),
+            child:
+                LinearProgressIndicator(
+              minHeight: 10,
+              value: level.progress,
+              backgroundColor:
+                  Colors.white.withValues(
+                alpha: 0.08,
+              ),
+              valueColor:
+                  const AlwaysStoppedAnimation<
+                      Color>(
+                accentColor,
+              ),
+            ),
+          ),
+
+          const SizedBox(
+            height: 9,
+          ),
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  _stellaLevelProgressText(
+                    level,
+                  ),
+                  style: TextStyle(
+                    color:
+                        pinkColor.withValues(
+                      alpha: 0.78,
+                    ),
+                    fontSize: 12,
+                    fontWeight:
+                        FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              Text(
+                level.isMaxLevel
+                    ? '$_completedCount'
+                    : '$_completedCount / '
+                        '${level.nextLevelRequirement}',
+                style: TextStyle(
+                  color:
+                      Colors.white.withValues(
+                    alpha: 0.55,
+                  ),
+                  fontSize: 11,
+                  fontWeight:
+                      FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
   // 🏆 HEADER
   // ==========================================================
 
@@ -192,7 +599,8 @@ class _AchievementsPageState
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius:
+            BorderRadius.circular(28),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -202,13 +610,15 @@ class _AchievementsPageState
           ],
         ),
         border: Border.all(
-          color: accentColor.withValues(
+          color:
+              accentColor.withValues(
             alpha: 0.30,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(
+            color:
+                accentColor.withValues(
               alpha: 0.08,
             ),
             blurRadius: 22,
@@ -221,27 +631,30 @@ class _AchievementsPageState
       ),
       child: Column(
         children: [
-          // ====================================================
+          // ==================================================
           // 🐱 STELLA
-          // ====================================================
+          // ==================================================
 
           Container(
             width: 100,
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: accentColor.withValues(
+              color:
+                  accentColor.withValues(
                 alpha: 0.12,
               ),
               border: Border.all(
-                color: pinkColor.withValues(
+                color:
+                    pinkColor.withValues(
                   alpha: 0.30,
                 ),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: pinkColor.withValues(
+                  color:
+                      pinkColor.withValues(
                     alpha: 0.10,
                   ),
                   blurRadius: 20,
@@ -259,19 +672,21 @@ class _AchievementsPageState
             height: 16,
           ),
 
-          // ====================================================
+          // ==================================================
           // TITLE
-          // ====================================================
+          // ==================================================
 
           Text(
             _localization.get(
               'achievementsTitle',
             ),
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 25,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               letterSpacing: 0.5,
             ),
           ),
@@ -284,9 +699,11 @@ class _AchievementsPageState
             _localization.get(
               'achievementsSubtitle',
             ),
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: const TextStyle(
-              color: secondaryTextColor,
+              color:
+                  secondaryTextColor,
               fontSize: 13,
               height: 1.4,
             ),
@@ -296,9 +713,9 @@ class _AchievementsPageState
             height: 20,
           ),
 
-          // ====================================================
+          // ==================================================
           // 📊 COMPLETION
-          // ====================================================
+          // ==================================================
 
           Row(
             children: [
@@ -308,11 +725,13 @@ class _AchievementsPageState
                       BorderRadius.circular(
                     20,
                   ),
-                  child: LinearProgressIndicator(
+                  child:
+                      LinearProgressIndicator(
                     minHeight: 10,
                     value: _completion,
                     backgroundColor:
-                        Colors.white.withValues(
+                        Colors.white
+                            .withValues(
                       alpha: 0.08,
                     ),
                     valueColor:
@@ -333,7 +752,8 @@ class _AchievementsPageState
                 style: const TextStyle(
                   color: goldColor,
                   fontSize: 14,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ],
@@ -348,7 +768,8 @@ class _AchievementsPageState
               'achievementsCompleted',
             ),
             style: const TextStyle(
-              color: secondaryTextColor,
+              color:
+                  secondaryTextColor,
               fontSize: 11,
             ),
           ),
@@ -363,25 +784,31 @@ class _AchievementsPageState
 
   Widget _buildAchievementList() {
     return Column(
-      children: StelluriiniAchievements.all
-          .map(
-            (
-              Achievement achievement,
-            ) {
-              final AchievementProgress progress =
-                  _getProgress(
-                achievement,
-              );
+      children:
+          StelluriiniAchievements.all
+              .map(
+                (
+                  Achievement achievement,
+                ) {
+                  final AchievementProgress
+                      progress =
+                      _getProgress(
+                    achievement,
+                  );
 
-              return AchievementCard(
-                achievement: achievement,
-                progress: progress.safeProgress,
-                unlocked: progress.unlocked,
-                localization: _localization,
-              );
-            },
-          )
-          .toList(),
+                  return AchievementCard(
+                    achievement:
+                        achievement,
+                    progress:
+                        progress.safeProgress,
+                    unlocked:
+                        progress.unlocked,
+                    localization:
+                        _localization,
+                  );
+                },
+              )
+              .toList(),
     );
   }
 
@@ -392,13 +819,15 @@ class _AchievementsPageState
   Widget _buildError() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding:
+          const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius:
             BorderRadius.circular(22),
         border: Border.all(
-          color: Colors.redAccent.withValues(
+          color:
+              Colors.redAccent.withValues(
             alpha: 0.25,
           ),
         ),
@@ -420,11 +849,13 @@ class _AchievementsPageState
             _localization.get(
               'achievementsLoadError',
             ),
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontWeight:
+                  FontWeight.w600,
             ),
           ),
 
@@ -433,7 +864,8 @@ class _AchievementsPageState
           ),
 
           OutlinedButton.icon(
-            onPressed: _loadAchievements,
+            onPressed:
+                _loadAchievements,
             icon: const Icon(
               Icons.refresh,
             ),
@@ -476,9 +908,11 @@ class _AchievementsPageState
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor:
+          backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor:
+            backgroundColor,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -494,12 +928,14 @@ class _AchievementsPageState
           ),
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            onPressed: _loadAchievements,
+            onPressed:
+                _loadAchievements,
             icon: const Icon(
               Icons.refresh,
               color: accentColor,
@@ -517,9 +953,12 @@ class _AchievementsPageState
               )
             : RefreshIndicator(
                 color: accentColor,
-                backgroundColor: cardColor,
-                onRefresh: _loadAchievements,
-                child: SingleChildScrollView(
+                backgroundColor:
+                    cardColor,
+                onRefresh:
+                    _loadAchievements,
+                child:
+                    SingleChildScrollView(
                   physics:
                       const AlwaysScrollableScrollPhysics(),
                   padding:
@@ -534,6 +973,16 @@ class _AchievementsPageState
                       _buildHeader(),
 
                       const SizedBox(
+                        height: 18,
+                      ),
+
+                      // ========================================
+                      // ⭐ STELLA LEVEL
+                      // ========================================
+
+                      _buildStellaLevelCard(),
+
+                      const SizedBox(
                         height: 22,
                       ),
 
@@ -546,9 +995,9 @@ class _AchievementsPageState
                         height: 8,
                       ),
 
-                      // ====================================
+                      // ========================================
                       // 🐾 STELLA FOOTER
-                      // ====================================
+                      // ========================================
 
                       Text(
                         _localization.get(
