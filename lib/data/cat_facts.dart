@@ -3,9 +3,7 @@
 //
 // 150 päivittäistä kissafaktaa × 8 kieltä.
 //
-// Yhteensä 1200 lokalisoitua kissafaktaa.
-//
-// Kielikohtaiset faktat on jaettu omiin kansioihinsa:
+// Kielikohtaiset faktat on jaettu omiin tiedostoihinsa:
 //
 //   cat_facts/fi/cat_facts_fi.dart
 //   cat_facts/en/cat_facts_en.dart
@@ -86,7 +84,7 @@ class CatFacts {
 
   /// Palauttaa oikean kielilistan sovelluksen kielikoodin perusteella.
   ///
-  /// Kielikoodista huomioidaan vain ensimmäinen osa:
+  /// Esimerkiksi:
   ///
   /// fi-FI -> fi
   /// en-US -> en
