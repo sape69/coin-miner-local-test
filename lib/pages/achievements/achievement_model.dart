@@ -180,7 +180,7 @@ class StelluriiniAchievements {
     title: 'Power Paws',
     description: 'Use Power Boost 5 times.',
     target: 5,
-    reward: 20,
+    reward: 10,
   );
 
   // ==========================================================
@@ -193,7 +193,7 @@ class StelluriiniAchievements {
     title: 'Super Paws',
     description: 'Use Power Boost 25 times.',
     target: 25,
-    reward: 75,
+    reward: 20,
   );
 
   // ==========================================================
@@ -297,7 +297,7 @@ class StelluriiniAchievements {
     title: 'Power Hunter',
     description: 'Use Power Boost 50 times.',
     target: 50,
-    reward: 50,
+    reward: 30,
   );
 
   // ==========================================================
@@ -310,7 +310,7 @@ class StelluriiniAchievements {
     title: 'Power Master',
     description: 'Use Power Boost 100 times.',
     target: 100,
-    reward: 100,
+    reward: 50,
   );
 
   // ==========================================================
@@ -323,7 +323,7 @@ class StelluriiniAchievements {
     title: 'Stella Companion',
     description: 'Complete 30 daily check-ins.',
     target: 30,
-    reward: 50,
+    reward: 30,
   );
 
   // ==========================================================
@@ -336,7 +336,7 @@ class StelluriiniAchievements {
     title: 'Stella Devotee',
     description: 'Complete 60 daily check-ins.',
     target: 60,
-    reward: 100,
+    reward: 60,
   );
 
   // ==========================================================
