@@ -37,6 +37,22 @@ const Map<String, String> achievementsFi = {
       'Louhi 100 STL-tokenia.',
 
   // ==========================================================
+  // 🔥 HOT STREAK
+  // ==========================================================
+
+  'achievement_hot_streak_title': 'Kuuma putki',
+  'achievement_hot_streak_description':
+      'Saavuta 7 päivän louhintaputki.',
+
+  // ==========================================================
+  // 🐱 STELLA'S FRIEND
+  // ==========================================================
+
+  'achievement_stellas_friend_title': 'Stellan ystävä',
+  'achievement_stellas_friend_description':
+      'Suorita 10 päivittäistä sisäänkirjautumista.',
+
+  // ==========================================================
   // 🌱 GROWING MINER
   // ==========================================================
 
@@ -69,14 +85,6 @@ const Map<String, String> achievementsFi = {
       'Suorita 25 louhintajaksoa.',
 
   // ==========================================================
-  // 🔥 HOT STREAK
-  // ==========================================================
-
-  'achievement_hot_streak_title': 'Kuuma putki',
-  'achievement_hot_streak_description':
-      'Saavuta 7 päivän louhintaputki.',
-
-  // ==========================================================
   // 🔥 STELLA ON FIRE
   // ==========================================================
 
@@ -91,14 +99,6 @@ const Map<String, String> achievementsFi = {
   'achievement_stella_legend_title': 'Stella-legenda',
   'achievement_stella_legend_description':
       'Saavuta 30 päivän louhintaputki.',
-
-  // ==========================================================
-  // 🐱 STELLA'S FRIEND
-  // ==========================================================
-
-  'achievement_stellas_friend_title': 'Stellan ystävä',
-  'achievement_stellas_friend_description':
-      'Suorita 10 päivittäistä sisäänkirjautumista.',
 
   // ==========================================================
   // ⚡ POWER PAWS
@@ -139,6 +139,86 @@ const Map<String, String> achievementsFi = {
   'achievement_stellas_community_title': 'Stellan yhteisö',
   'achievement_stellas_community_description':
       'Kutsu 10 käyttäjää.',
+
+  // ==========================================================
+  // ⛏️ SEASONED MINER
+  // ==========================================================
+
+  'achievement_seasoned_miner_title': 'Kokenut louhija',
+  'achievement_seasoned_miner_description':
+      'Suorita 50 louhintajaksoa.',
+
+  // ==========================================================
+  // 🛠️ VETERAN MINER
+  // ==========================================================
+
+  'achievement_veteran_miner_title': 'Konkari-louhija',
+  'achievement_veteran_miner_description':
+      'Suorita 100 louhintajaksoa.',
+
+  // ==========================================================
+  // 💎 STL HOARDER
+  // ==========================================================
+
+  'achievement_stl_hoarder_title': 'STL-hamstraaja',
+  'achievement_stl_hoarder_description':
+      'Louhi 2 500 STL-tokenia.',
+
+  // ==========================================================
+  // 🏦 STL TYCOON
+  // ==========================================================
+
+  'achievement_stl_tycoon_title': 'STL-moguli',
+  'achievement_stl_tycoon_description':
+      'Louhi 5 000 STL-tokenia.',
+
+  // ==========================================================
+  // ⚡ POWER HUNTER
+  // ==========================================================
+
+  'achievement_power_hunter_title': 'Power-metsästäjä',
+  'achievement_power_hunter_description':
+      'Käytä Power Boostia 50 kertaa.',
+
+  // ==========================================================
+  // ⚡⚡ POWER MASTER
+  // ==========================================================
+
+  'achievement_power_master_title': 'Power-mestari',
+  'achievement_power_master_description':
+      'Käytä Power Boostia 100 kertaa.',
+
+  // ==========================================================
+  // 🐾 STELLA COMPANION
+  // ==========================================================
+
+  'achievement_stella_companion_title': 'Stellan kumppani',
+  'achievement_stella_companion_description':
+      'Suorita 30 päivittäistä sisäänkirjautumista.',
+
+  // ==========================================================
+  // 🌟 STELLA DEVOTEE
+  // ==========================================================
+
+  'achievement_stella_devotee_title': 'Stellan uskollinen ystävä',
+  'achievement_stella_devotee_description':
+      'Suorita 60 päivittäistä sisäänkirjautumista.',
+
+  // ==========================================================
+  // 🔥 STELLA ETERNAL
+  // ==========================================================
+
+  'achievement_stella_eternal_title': 'Ikuinen Stella',
+  'achievement_stella_eternal_description':
+      'Saavuta 60 päivän louhintaputki.',
+
+  // ==========================================================
+  // 🌌 STELLA BEYOND
+  // ==========================================================
+
+  'achievement_stella_beyond_title': 'Stella yli tähtien',
+  'achievement_stella_beyond_description':
+      'Saavuta 90 päivän louhintaputki.',
 
   // ==========================================================
   // 🎁 UI
