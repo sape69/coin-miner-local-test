@@ -141,6 +141,86 @@ const Map<String, String> achievementsEn = {
       'Invite 10 users.',
 
   // ==========================================================
+  // ⛏️ SEASONED MINER
+  // ==========================================================
+
+  'achievement_seasoned_miner_title': 'Seasoned Miner',
+  'achievement_seasoned_miner_description':
+      'Complete 50 mining cycles.',
+
+  // ==========================================================
+  // 🛠️ VETERAN MINER
+  // ==========================================================
+
+  'achievement_veteran_miner_title': 'Veteran Miner',
+  'achievement_veteran_miner_description':
+      'Complete 100 mining cycles.',
+
+  // ==========================================================
+  // 💎 STL HOARDER
+  // ==========================================================
+
+  'achievement_stl_hoarder_title': 'STL Hoarder',
+  'achievement_stl_hoarder_description':
+      'Mine 2,500 STL.',
+
+  // ==========================================================
+  // 🏦 STL TYCOON
+  // ==========================================================
+
+  'achievement_stl_tycoon_title': 'STL Tycoon',
+  'achievement_stl_tycoon_description':
+      'Mine 5,000 STL.',
+
+  // ==========================================================
+  // ⚡ POWER HUNTER
+  // ==========================================================
+
+  'achievement_power_hunter_title': 'Power Hunter',
+  'achievement_power_hunter_description':
+      'Use Power Boost 50 times.',
+
+  // ==========================================================
+  // ⚡⚡ POWER MASTER
+  // ==========================================================
+
+  'achievement_power_master_title': 'Power Master',
+  'achievement_power_master_description':
+      'Use Power Boost 100 times.',
+
+  // ==========================================================
+  // 🐾 STELLA COMPANION
+  // ==========================================================
+
+  'achievement_stella_companion_title': 'Stella Companion',
+  'achievement_stella_companion_description':
+      'Complete 30 daily check-ins.',
+
+  // ==========================================================
+  // 🌟 STELLA DEVOTEE
+  // ==========================================================
+
+  'achievement_stella_devotee_title': 'Stella Devotee',
+  'achievement_stella_devotee_description':
+      'Complete 60 daily check-ins.',
+
+  // ==========================================================
+  // 🔥 STELLA ETERNAL
+  // ==========================================================
+
+  'achievement_stella_eternal_title': 'Stella Eternal',
+  'achievement_stella_eternal_description':
+      'Reach a 60 day mining streak.',
+
+  // ==========================================================
+  // 🌌 STELLA BEYOND
+  // ==========================================================
+
+  'achievement_stella_beyond_title': 'Stella Beyond',
+  'achievement_stella_beyond_description':
+      'Reach a 90 day mining streak.',
+
+  // ==========================================================
   // 🎁 UI
   // ==========================================================
 
