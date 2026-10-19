@@ -323,12 +323,48 @@ function dailyStreak(data) {
 }
 
 // ============================================================
-// DAILY CLAIM
+// DAILY CLAIM / MINING STREAK
 // ============================================================
+//
+// 🐱 STREAK-LOGIIKKA
+//
+// Yksi mining-cycle kestää MINING_DURATION_MS:n.
+//
+// Kun mining-cycle päättyy:
+//
+//   miningEndsAt
+//        │
+//        ├────────────── 24 h ──────────────┤
+//        │                                  │
+//      cycle                            grace deadline
+//      ends
+//
+// Tänä 24 h grace periodina käyttäjä voi aloittaa uuden
+// louhinnan ja streak jatkuu.
+//
+// Jos grace period päättyy ilman uutta louhintaa,
+// seuraava mining-start alkaa streakistä 1.
+//
+// TÄRKEÄÄ:
+//
+// Streak perustuu mining-cycleen, EI UTC-kalenteripäivään.
+//
+// Tämä estää tilanteen, jossa käyttäjä aloittaa louhinnan
+// esimerkiksi joka päivä 5 minuuttia myöhemmin ja streak
+// alkaa vääristyä kalenteripäivien perusteella.
+//
+// Aktiivisen louhinnan aikana streak pysyy aina nykyisenä,
+// vaikka UTC-päivä vaihtuisi kesken mining-cyclen.
+//
+// ============================================================
+
+const MINING_STREAK_GRACE_MS =
+  24 * 60 * 60 * 1000;
 
 function nextDailyClaim(
   data,
-  today
+  today,
+  nowMs = Date.now()
 ) {
   const last =
     typeof data.lastDailyDate === "string"
@@ -337,6 +373,118 @@ function nextDailyClaim(
 
   const current =
     dailyStreak(data);
+
+  const referenceNowMs =
+    Number.isFinite(
+      Number(nowMs)
+    )
+      ? Number(nowMs)
+      : Date.now();
+
+  // ----------------------------------------------------------
+  // ENSIN TARKISTETAAN NYKYINEN / EDELLINEN MINING-CYCLE.
+  //
+  // miningWindow on määritelty alempana function declarationina,
+  // joten sitä voidaan käyttää tässä turvallisesti.
+  // ----------------------------------------------------------
+
+  const window =
+    miningWindow(data);
+
+  if (window.valid) {
+    const miningEndMs =
+      window.miningEndMs;
+
+    // --------------------------------------------------------
+    // AKTIIVINEN LOUHINTA
+    //
+    // UTC-päivän vaihtuminen ei saa muuttaa streakiä.
+    // --------------------------------------------------------
+
+    if (
+      referenceNowMs >=
+        window.miningStartMs &&
+      referenceNowMs <
+        miningEndMs
+    ) {
+      const streak =
+        Math.max(
+          1,
+          current
+        );
+
+      return {
+        claimedToday: true,
+
+        streak,
+
+        dailyHashRate:
+          dailyHashRate(streak),
+      };
+    }
+
+    // --------------------------------------------------------
+    // 24 H GRACE PERIOD
+    //
+    // Mining on päättynyt, mutta käyttäjällä on vielä
+    // 24 tuntia aikaa aloittaa seuraava mining-cycle.
+    // --------------------------------------------------------
+
+    const graceDeadlineMs =
+      miningEndMs +
+      MINING_STREAK_GRACE_MS;
+
+    if (
+      referenceNowMs >=
+        miningEndMs &&
+      referenceNowMs <=
+        graceDeadlineMs
+    ) {
+      const streak =
+        current > 0
+          ? current + 1
+          : 1;
+
+      return {
+        claimedToday: false,
+
+        streak,
+
+        dailyHashRate:
+          dailyHashRate(streak),
+      };
+    }
+
+    // --------------------------------------------------------
+    // GRACE PERIOD ON PÄÄTTYNYT
+    //
+    // Seuraava aloitus alkaa uudesta streakistä.
+    // --------------------------------------------------------
+
+    if (
+      referenceNowMs >
+      graceDeadlineMs
+    ) {
+      return {
+        claimedToday: false,
+
+        streak: 1,
+
+        dailyHashRate:
+          dailyHashRate(1),
+      };
+    }
+  }
+
+  // ----------------------------------------------------------
+  // LEGACY-FALLBACK
+  //
+  // Vanhoilla käyttäjillä voi olla käyttäjätietoja, joissa
+  // miningStartedAt/miningEndsAt puuttuvat tai eivät ole
+  // kelvollisia.
+  //
+  // Tällöin käytetään vanhaa UTC-päivälogiikkaa.
+  // ----------------------------------------------------------
 
   if (last === today) {
     const streak =
@@ -347,7 +495,9 @@ function nextDailyClaim(
 
     return {
       claimedToday: true,
+
       streak,
+
       dailyHashRate:
         dailyHashRate(streak),
     };
@@ -375,7 +525,9 @@ function nextDailyClaim(
 
   return {
     claimedToday: false,
+
     streak,
+
     dailyHashRate:
       dailyHashRate(streak),
   };
@@ -383,12 +535,14 @@ function nextDailyClaim(
 
 function nextDailyHashRate(
   data,
-  today
+  today,
+  nowMs = Date.now()
 ) {
   const daily =
     nextDailyClaim(
       data,
-      today
+      today,
+      nowMs
     );
 
   if (!daily.claimedToday) {
@@ -402,12 +556,14 @@ function nextDailyHashRate(
 
 function nextDailyStreak(
   data,
-  today
+  today,
+  nowMs = Date.now()
 ) {
   const daily =
     nextDailyClaim(
       data,
-      today
+      today,
+      nowMs
     );
 
   return daily.claimedToday
@@ -1568,7 +1724,8 @@ const getMiningStatus =
         const daily =
           nextDailyClaim(
             data,
-            today
+            today,
+            nowMs
           );
 
         const window =
@@ -1638,13 +1795,15 @@ const getMiningStatus =
         const nextRate =
           nextDailyHashRate(
             data,
-            today
+            today,
+            nowMs
           );
 
         const nextStreak =
           nextDailyStreak(
             data,
-            today
+            today,
+            nowMs
           );
 
         return {
@@ -1900,7 +2059,8 @@ const claimMining =
           const daily =
             nextDailyClaim(
               earlyData,
-              today
+              today,
+              earlyNowMs
             );
 
           return {
@@ -1938,13 +2098,15 @@ const claimMining =
             nextDailyHashRate:
               nextDailyHashRate(
                 earlyData,
-                today
+                today,
+                earlyNowMs
               ),
 
             nextDailyStreak:
               nextDailyStreak(
                 earlyData,
-                today
+                today,
+                earlyNowMs
               ),
 
             unclaimedMining:
@@ -2096,7 +2258,8 @@ const claimMining =
               const daily =
                 nextDailyClaim(
                   data,
-                  today
+                  today,
+                  nowMs
                 );
 
               return {
@@ -2134,13 +2297,15 @@ const claimMining =
                 nextDailyHashRate:
                   nextDailyHashRate(
                     data,
-                    today
+                    today,
+                    nowMs
                   ),
 
                 nextDailyStreak:
                   nextDailyStreak(
                     data,
-                    today
+                    today,
+                    nowMs
                   ),
 
                 unclaimedMining:
@@ -2204,7 +2369,8 @@ const claimMining =
             const daily =
               nextDailyClaim(
                 data,
-                today
+                today,
+                nowMs
               );
 
             const rate =
@@ -2748,13 +2914,15 @@ const claimMining =
               nextDailyHashRate:
                 nextDailyHashRate(
                   data,
-                  today
+                  today,
+                  nowMs
                 ),
 
               nextDailyStreak:
                 nextDailyStreak(
                   data,
-                  today
+                  today,
+                  nowMs
                 ),
 
               miningHashRate:
@@ -3373,7 +3541,8 @@ const powerBoost =
             const daily =
               nextDailyClaim(
                 data,
-                today
+                today,
+                nowMs
               );
 
             return {
@@ -3448,13 +3617,15 @@ const powerBoost =
               nextDailyHashRate:
                 nextDailyHashRate(
                   data,
-                  today
+                  today,
+                  nowMs
                 ),
 
               nextDailyStreak:
                 nextDailyStreak(
                   data,
-                  today
+                  today,
+                  nowMs
                 ),
 
               transactionId:
