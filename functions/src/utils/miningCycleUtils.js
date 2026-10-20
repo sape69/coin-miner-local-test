@@ -540,7 +540,46 @@ function getAdStatus(
       : 0;
 
   // ----------------------------------------------------------
+  // MINING WINDOW
+  // ----------------------------------------------------------
+
+  const miningWindow =
+    getMiningWindow(
+      safeData
+    );
+
+  const miningActive =
+    miningWindow.valid &&
+    currentMs >=
+      miningWindow.miningStartMs &&
+    currentMs <
+      miningWindow.miningEndMs;
+
+  // ----------------------------------------------------------
   // COOLDOWN
+  // ----------------------------------------------------------
+  //
+  // TÄRKEÄÄ:
+  //
+  // Power Boostin cooldown kuuluu vain siihen mining-cycleen,
+  // jossa Boost on käytetty.
+  //
+  // Jos lastAdRewardAt on peräisin edellisestä mining-cyclestä,
+  // sitä EI saa käyttää uuden mining-cyclen cooldowniin.
+  //
+  // Näin:
+  //
+  // Mining A
+  //   └─ Boost käytetty
+  //      └─ 4 h cooldown
+  //
+  // Mining B alkaa
+  //   └─ Vanha cooldown ei estä Boostia
+  //
+  // Mining B
+  //   └─ Uusi Boost
+  //      └─ uusi 4 h cooldown
+  //
   // ----------------------------------------------------------
 
   const lastRewardMs =
@@ -548,8 +587,15 @@ function getAdStatus(
       safeData.lastAdRewardAt
     );
 
+  const lastRewardInsideCurrentMining =
+    miningActive &&
+    lastRewardMs >=
+      miningWindow.miningStartMs &&
+    lastRewardMs <
+      miningWindow.miningEndMs;
+
   const cooldownRemainingMs =
-    lastRewardMs > 0
+    lastRewardInsideCurrentMining
       ? Math.max(
           0,
           lastRewardMs +
@@ -571,18 +617,6 @@ function getAdStatus(
     getTimestampMs(
       safeData.adBoostEndsAt
     );
-
-  const miningWindow =
-    getMiningWindow(
-      safeData
-    );
-
-  const miningActive =
-    miningWindow.valid &&
-    currentMs >=
-      miningWindow.miningStartMs &&
-    currentMs <
-      miningWindow.miningEndMs;
 
   // ----------------------------------------------------------
   // BOOST MUST BELONG TO CURRENT MINING CYCLE
