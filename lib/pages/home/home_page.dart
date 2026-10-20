@@ -962,11 +962,18 @@ class _HomePageState extends State<HomePage>
 
           _miningTimer?.cancel();
 
-          _miningNotificationService
-              .cancelMiningCompletion();
-
-          _loadMiningStatus();
-
+          // IMPORTANT:
+          // Do NOT cancel the scheduled mining-completion
+          // notification here. Android may still be waiting
+          // to deliver it at the scheduled completion time.
+          //
+          // Also do not immediately call _loadMiningStatus().
+          // That could receive "miningActive: false" from the
+          // server and cancel the notification before Android
+          // has delivered it.
+          //
+          // The normal 30-second refresh will update the server
+          // state afterwards.
           return;
         }
 
