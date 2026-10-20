@@ -2612,6 +2612,9 @@ const claimMining =
                 adBoostEndsAt:
                   null,
 
+                lastAdRewardAt:
+                  null,
+
                 powerBoostTransactionId:
                   null,
 
