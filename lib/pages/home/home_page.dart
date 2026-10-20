@@ -798,27 +798,33 @@ class _HomePageState extends State<HomePage>
               ? duration
               : defaultMiningDurationMs;
 
-      bool boostActive = serverBoostActive;
-      int boostRemaining = serverBoostRemaining;
+      final int safeRemaining =
+          remaining.clamp(0, safeDuration).toInt();
 
-      if (_boostActive &&
-          _boostRemainingMs > 0 &&
-          !serverBoostActive &&
-          serverBoostRemaining <= 0) {
-        boostActive = true;
-        boostRemaining = _boostRemainingMs;
-      }
+      final bool safeMiningActive =
+          miningActive && safeRemaining > 0;
 
-      if (serverBoostActive &&
-          serverBoostRemaining > 0 &&
-          _boostRemainingMs > serverBoostRemaining) {
-        boostRemaining = _boostRemainingMs;
-      }
+      // ----------------------------------------------------------
+      // IMPORTANT:
+      // The server is the single source of truth for Power Boost.
+      //
+      // Do NOT restore an old local boost when the server says
+      // that no boost is active. The previous implementation did
+      // exactly that and could keep the old boost timer alive
+      // after a mining cycle had ended.
+      // ----------------------------------------------------------
 
-      if (boostRemaining <= 0) {
-        boostActive = false;
-        boostRemaining = 0;
-      }
+      final bool boostActive =
+          safeMiningActive &&
+          serverBoostActive &&
+          serverBoostRemaining > 0;
+
+      final int boostRemaining =
+          boostActive
+              ? serverBoostRemaining
+                  .clamp(0, safeRemaining)
+                  .toInt()
+              : 0;
 
       final double safeHashRate =
           hashRate.isFinite && hashRate >= 0
@@ -845,9 +851,6 @@ class _HomePageState extends State<HomePage>
               ? adBonus
               : defaultAdHashRateBonus;
 
-      final int safeRemaining =
-          remaining.clamp(0, safeDuration).toInt();
-
       final int safeCooldownRemaining =
           cooldownRemaining
               .clamp(0, defaultAdCooldownMs)
@@ -855,9 +858,6 @@ class _HomePageState extends State<HomePage>
 
       final int safeStreak =
           streak > 0 ? streak : 1;
-
-      final bool safeMiningActive =
-          miningActive && safeRemaining > 0;
 
       if (!mounted) {
         return;
@@ -890,9 +890,7 @@ class _HomePageState extends State<HomePage>
         _boostActive = boostActive;
 
         _boostRemainingMs =
-            boostRemaining
-                .clamp(0, safeDuration)
-                .toInt();
+            boostRemaining;
       });
 
       if (safeMiningActive && safeRemaining > 0) {
@@ -1103,6 +1101,15 @@ class _HomePageState extends State<HomePage>
         );
       }
 
+      // ----------------------------------------------------------
+      // IMPORTANT:
+      // A new mining cycle always starts with a clean local
+      // Power Boost state. The backend also resets the boost
+      // fields when a new mining session starts.
+      // ----------------------------------------------------------
+
+      _boostTimer?.cancel();
+
       if (mounted) {
         final int streak =
             _asInt(data['dailyStreak']) ??
@@ -1114,6 +1121,9 @@ class _HomePageState extends State<HomePage>
         setState(() {
           _miningActive = true;
           _streak = safeStreak;
+
+          _boostActive = false;
+          _boostRemainingMs = 0;
         });
       }
 
