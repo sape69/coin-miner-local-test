@@ -11,7 +11,6 @@ import '../../localization.dart';
 import '../../services/app_update_service.dart';
 import '../../services/mining_notification_service.dart';
 import '../../widgets/home_drawer.dart';
-import '../../widgets/stelluriini_logo.dart';
 import '../../widgets/stelluriini_space_background.dart';
 import '../about/about_page.dart';
 import '../account/account_deletion_page.dart';
@@ -21,10 +20,14 @@ import '../referrals/referrals_page.dart';
 import '../roadmap/roadmap_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
+import 'dialogs/app_update_dialog.dart';
+import 'dialogs/delete_account_dialog.dart';
 import 'home_ad_manager.dart';
 import 'home_stats_card.dart';
 import 'power_boost_card.dart';
 import 'stella_mining_card.dart';
+import 'widgets/home_greeting.dart';
+import 'widgets/home_header.dart';
 
 class HomePage extends StatefulWidget {
   final String languageCode;
@@ -383,122 +386,17 @@ class _HomePageState extends State<HomePage>
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: cardColor,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(
-              color: accentColor.withValues(alpha: 0.35),
-            ),
-          ),
-          titlePadding:
-              const EdgeInsets.fromLTRB(24, 24, 24, 8),
-          contentPadding:
-              const EdgeInsets.fromLTRB(24, 8, 24, 8),
-          actionsPadding:
-              const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          title: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color:
-                      accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color:
-                        accentColor.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.system_update_rounded,
-                  color: accentColor,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  texts['title']!,
-                  style: const TextStyle(
-                    color: primaryTextColor,
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            texts['message']!,
-            style: const TextStyle(
-              color: secondaryTextColor,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: secondaryTextColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              child: Text(
-                texts['later']!,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final bool opened =
-                    await _appUpdateService.openUpdateUrl(
-                  updateInfo.updateUrl,
-                );
-
-                if (opened) {
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                } else {
-                  if (mounted) {
-                    _showMessage(
-                      texts['openError']!,
-                    );
-                  }
-                }
-              },
-              icon: const Icon(
-                Icons.download_rounded,
-                size: 19,
-              ),
-              label: Text(
-                texts['update']!,
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: backgroundColor,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
+      builder: (_) {
+        return AppUpdateDialog(
+          updateInfo: updateInfo,
+          texts: texts,
+          onOpenUpdate:
+              _appUpdateService.openUpdateUrl,
+          onOpenError: () {
+            if (mounted) {
+              _showMessage(texts['openError']!);
+            }
+          },
         );
       },
     );
@@ -893,15 +791,28 @@ class _HomePageState extends State<HomePage>
             boostRemaining;
       });
 
+      // ----------------------------------------------------------
+      // IMPORTANT:
+      // Do not cancel a valid Android completion notification
+      // simply because a refresh temporarily reports inactive.
+      //
+      // Only create the notification if one does not already
+      // exist. This prevents the 30-second refresh timer and the
+      // boost timer from repeatedly replacing the same notification.
+      // ----------------------------------------------------------
+
       if (safeMiningActive && safeRemaining > 0) {
-        await _miningNotificationService
-            .scheduleMiningCompletion(
-          Duration(milliseconds: safeRemaining),
-          languageCode: widget.languageCode,
-        );
-      } else {
-        await _miningNotificationService
-            .cancelMiningCompletion();
+        final bool hasPending =
+            await _miningNotificationService
+                .hasPendingMiningCompletion();
+
+        if (!hasPending) {
+          await _miningNotificationService
+              .scheduleMiningCompletion(
+            Duration(milliseconds: safeRemaining),
+            languageCode: widget.languageCode,
+          );
+        }
       }
 
       _startMiningTimer();
@@ -1126,6 +1037,13 @@ class _HomePageState extends State<HomePage>
           _boostRemainingMs = 0;
         });
       }
+
+      // A previous mining cycle may have left a completion
+      // notification pending. Remove it before loading the
+      // new mining session so the new completion time can be
+      // scheduled correctly.
+      await _miningNotificationService
+          .cancelMiningCompletion();
 
       await _loadMiningStatus();
 
@@ -1395,136 +1313,18 @@ class _HomePageState extends State<HomePage>
         await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: cardColor,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(
-              color: deleteAccountColor
-                  .withValues(alpha: 0.30),
-            ),
+      builder: (_) {
+        return DeleteAccountDialog(
+          title: _t(
+            'accountDeletionDialogTitle',
           ),
-          titlePadding:
-              const EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            8,
+          message: _t(
+            'accountDeletionDialogMessage',
           ),
-          contentPadding:
-              const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            8,
-          ),
-          actionsPadding:
-              const EdgeInsets.fromLTRB(
-            16,
-            8,
-            16,
-            16,
-          ),
-          title: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: deleteAccountColor
-                      .withValues(alpha: 0.12),
-                  borderRadius:
-                      BorderRadius.circular(14),
-                  border: Border.all(
-                    color: deleteAccountColor
-                        .withValues(alpha: 0.22),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.delete_forever_rounded,
-                  color: deleteAccountColor,
-                  size: 25,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  _t(
-                    'accountDeletionDialogTitle',
-                  ),
-                  style: const TextStyle(
-                    color: primaryTextColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            _t(
-              'accountDeletionDialogMessage',
-            ),
-            style: const TextStyle(
-              color: secondaryTextColor,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(false);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: accentColor,
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 12,
-                ),
-              ),
-              child: Text(
-                _t('accountDeletionCancel'),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(true);
-              },
-              icon: const Icon(
-                Icons.delete_forever_rounded,
-                size: 19,
-              ),
-              label: Text(
-                _t('accountDeletionConfirm'),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    deleteAccountColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
+          cancelLabel:
+              _t('accountDeletionCancel'),
+          confirmLabel:
+              _t('accountDeletionConfirm'),
         );
       },
     );
@@ -2062,49 +1862,6 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🧭 HEADER
-  // ============================================================
-
-  Widget _buildHeader() {
-    return Padding(
-      padding:
-          const EdgeInsets.fromLTRB(
-        12,
-        12,
-        12,
-        6,
-      ),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) {
-              return IconButton(
-                onPressed: () {
-                  Scaffold.of(context)
-                      .openDrawer();
-                },
-                icon: const Icon(
-                  Icons.menu_rounded,
-                  color: primaryTextColor,
-                  size: 30,
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Center(
-              child:
-                  StelluriiniLogo(size: 48),
-            ),
-          ),
-          const SizedBox(width: 54),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
   // 👋 GREETING
   // ============================================================
 
@@ -2114,38 +1871,11 @@ class _HomePageState extends State<HomePage>
             ? _t('welcome')
             : '${_t('welcome')}, $_username';
 
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 22,
-        vertical: 6,
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Text(
-            greeting,
-            maxLines: 1,
-            overflow:
-                TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: primaryTextColor,
-              fontSize: 23,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _t('stellaWelcome'),
-            style: const TextStyle(
-              color: secondaryTextColor,
-              fontSize: 14,
-              height: 1.35,
-            ),
-          ),
-        ],
-      ),
+    return HomeGreeting(
+      greeting: greeting,
+      subtitle: _t('stellaWelcome'),
+      primaryTextColor: primaryTextColor,
+      secondaryTextColor: secondaryTextColor,
     );
   }
 
@@ -2359,7 +2089,10 @@ class _HomePageState extends State<HomePage>
                       12,
                     ),
                     children: [
-                      _buildHeader(),
+                      const HomeHeader(
+                        primaryTextColor:
+                            primaryTextColor,
+                      ),
                       _buildGreeting(),
                       const SizedBox(
                         height: 10,
