@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 
 class HomeGreeting extends StatelessWidget {
-  final String username;
   final String greeting;
-  final Color accentColor;
+  final String subtitle;
   final Color primaryTextColor;
   final Color secondaryTextColor;
 
   const HomeGreeting({
     super.key,
-    required this.username,
     required this.greeting,
-    required this.accentColor,
+    required this.subtitle,
     required this.primaryTextColor,
     required this.secondaryTextColor,
   });
@@ -19,34 +17,30 @@ class HomeGreeting extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 22,
+        vertical: 6,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             greeting,
-            style: TextStyle(
-              color: secondaryTextColor,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            username.isEmpty ? 'Stelluriini' : username,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: primaryTextColor,
-              fontSize: 24,
+              fontSize: 23,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            '🐱',
+            subtitle,
             style: TextStyle(
-              color: accentColor,
-              fontSize: 18,
+              color: secondaryTextColor,
+              fontSize: 14,
+              height: 1.35,
             ),
           ),
         ],
