@@ -25,6 +25,7 @@ import 'dialogs/delete_account_dialog.dart';
 import 'home_ad_manager.dart';
 import 'home_stats_card.dart';
 import 'power_boost_card.dart';
+import 'stella_footer.dart';
 import 'stella_mining_card.dart';
 import 'widgets/home_greeting.dart';
 import 'widgets/home_header.dart';
@@ -53,7 +54,6 @@ class _HomePageState extends State<HomePage>
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
   static const Color accentColor = Color(0xFFB58CFF);
-  
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
@@ -417,7 +417,8 @@ class _HomePageState extends State<HomePage>
     switch (code) {
       case 'fi':
         return {
-          'title': '🐱 Stelluriinista on uusi versio!',
+          'title':
+              '🐱 Stelluriinista on uusi versio!',
           'message':
               'Uusi versio $latestVersion on saatavilla. '
               'Päivitä Stelluriini Google Playsta, jotta saat '
@@ -481,7 +482,8 @@ class _HomePageState extends State<HomePage>
               '以获得最新功能和改进。',
           'update': '立即更新',
           'later': '稍后',
-          'openError': '无法打开 Google Play。',
+          'openError':
+              '无法打开 Google Play。',
         };
 
       case 'vi':
@@ -702,16 +704,6 @@ class _HomePageState extends State<HomePage>
       final bool safeMiningActive =
           miningActive && safeRemaining > 0;
 
-      // ----------------------------------------------------------
-      // IMPORTANT:
-      // The server is the single source of truth for Power Boost.
-      //
-      // Do NOT restore an old local boost when the server says
-      // that no boost is active. The previous implementation did
-      // exactly that and could keep the old boost timer alive
-      // after a mining cycle had ended.
-      // ----------------------------------------------------------
-
       final bool boostActive =
           safeMiningActive &&
           serverBoostActive &&
@@ -792,13 +784,10 @@ class _HomePageState extends State<HomePage>
       });
 
       // ----------------------------------------------------------
-      // IMPORTANT:
-      // Do not cancel a valid Android completion notification
-      // simply because a refresh temporarily reports inactive.
+      // 🔔 NOTIFICATION
       //
-      // Only create the notification if one does not already
-      // exist. This prevents the 30-second refresh timer and the
-      // boost timer from repeatedly replacing the same notification.
+      // Älä peru olemassa olevaa ilmoitusta refreshin aikana.
+      // Luodaan uusi vain jos sellaista ei ole jo olemassa.
       // ----------------------------------------------------------
 
       if (safeMiningActive && safeRemaining > 0) {
@@ -871,18 +860,8 @@ class _HomePageState extends State<HomePage>
 
           _miningTimer?.cancel();
 
-          // IMPORTANT:
-          // Do NOT cancel the scheduled mining-completion
-          // notification here. Android may still be waiting
-          // to deliver it at the scheduled completion time.
-          //
-          // Also do not immediately call _loadMiningStatus().
-          // That could receive "miningActive: false" from the
-          // server and cancel the notification before Android
-          // has delivered it.
-          //
-          // The normal 30-second refresh will update the server
-          // state afterwards.
+          // Älä peru completion notificationia tässä.
+          // Androidin tulee saada ilmoitus normaalisti.
           return;
         }
 
@@ -1012,13 +991,6 @@ class _HomePageState extends State<HomePage>
         );
       }
 
-      // ----------------------------------------------------------
-      // IMPORTANT:
-      // A new mining cycle always starts with a clean local
-      // Power Boost state. The backend also resets the boost
-      // fields when a new mining session starts.
-      // ----------------------------------------------------------
-
       _boostTimer?.cancel();
 
       if (mounted) {
@@ -1038,10 +1010,8 @@ class _HomePageState extends State<HomePage>
         });
       }
 
-      // A previous mining cycle may have left a completion
-      // notification pending. Remove it before loading the
-      // new mining session so the new completion time can be
-      // scheduled correctly.
+      // Uusi mining cycle:
+      // poistetaan vanhan session ilmoitus ensin.
       await _miningNotificationService
           .cancelMiningCompletion();
 
@@ -1880,114 +1850,6 @@ class _HomePageState extends State<HomePage>
   }
 
   // ============================================================
-  // 🐱 FOOTER
-  // ============================================================
-
-  Widget _buildStellaFooter() {
-    return Padding(
-      padding:
-          const EdgeInsets.only(
-        top: 20,
-        bottom: 18,
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '🐱💜⛏️',
-            style: TextStyle(
-              fontSize: 28,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _t('footerMiningFuture'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: secondaryTextColor,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'STELLURIINI • STL',
-            style: TextStyle(
-              color: accentColor,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-          if (_appVersion.isNotEmpty) ...[
-            const SizedBox(height: 5),
-            Text(
-              _buildNumber.isNotEmpty
-                  ? '${_t('appVersion')} '
-                    '$_appVersion '
-                    '(build $_buildNumber)'
-                  : '${_t('appVersion')} '
-                    '$_appVersion',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: secondaryTextColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-          const SizedBox(height: 8),
-          const SelectableText(
-            'stelluriini.app@gmail.com',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: accentColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-          ),
-          if (_adManager
-              .privacyOptionsRequired) ...[
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              onPressed:
-                  _showPrivacyOptions,
-              icon: const Icon(
-                Icons.privacy_tip_outlined,
-                size: 18,
-              ),
-              label: Text(
-                _privacyOptionsLabel(),
-              ),
-              style:
-                  OutlinedButton.styleFrom(
-                foregroundColor:
-                    accentColor,
-                side: BorderSide(
-                  color: accentColor
-                      .withValues(
-                    alpha: 0.45,
-                  ),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 11,
-                ),
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
   // 🔐 PRIVACY OPTIONS
   // ============================================================
 
@@ -1999,35 +1861,6 @@ class _HomePageState extends State<HomePage>
 
     _adManager
         .showPrivacyOptionsForm();
-  }
-
-  String _privacyOptionsLabel() {
-    switch (widget.languageCode) {
-      case 'fi':
-        return 'Tietosuoja-asetukset';
-
-      case 'de':
-        return 'Datenschutzeinstellungen';
-
-      case 'es':
-        return 'Opciones de privacidad';
-
-      case 'fr':
-        return 'Options de confidentialité';
-
-      case 'zh':
-        return '隐私选项';
-
-      case 'vi':
-        return 'Tùy chọn quyền riêng tư';
-
-      case 'ja':
-        return 'プライバシー設定';
-
-      case 'en':
-      default:
-        return 'Privacy options';
-    }
   }
 
   // ============================================================
@@ -2138,7 +1971,21 @@ class _HomePageState extends State<HomePage>
                         child:
                             _buildDailyCatFact(),
                       ),
-                      _buildStellaFooter(),
+                      StellaFooter(
+                        localization:
+                            _localization,
+                        languageCode:
+                            widget.languageCode,
+                        appVersion:
+                            _appVersion,
+                        buildNumber:
+                            _buildNumber,
+                        privacyOptionsRequired:
+                            _adManager
+                                .privacyOptionsRequired,
+                        onPrivacyOptions:
+                            _showPrivacyOptions,
+                      ),
                     ],
                   ),
                 ),
