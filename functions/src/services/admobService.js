@@ -196,6 +196,16 @@ function validateUid(value) {
 // ============================================================
 // 🧾 TRANSACTION ID
 // ============================================================
+//
+// IMPORTANT:
+//
+// AdMob transaction IDs are NOT required to be hexadecimal.
+// They may contain other characters.
+//
+// The transaction ID is later used as a Firestore document ID,
+// so "/" and control characters are rejected.
+//
+// ============================================================
 
 function validateTransactionId(value) {
   const transactionId =
@@ -209,8 +219,16 @@ function validateTransactionId(value) {
     return "";
   }
 
+  // Firestore document IDs cannot contain "/".
   if (
-    !/^[A-Fa-f0-9]+$/.test(
+    transactionId.includes("/")
+  ) {
+    return "";
+  }
+
+  // Reject control characters.
+  if (
+    /[\u0000-\u001F\u007F]/.test(
       transactionId,
     )
   ) {
@@ -864,18 +882,6 @@ function verifyWithPublicKey(
 // ============================================================
 // 🔓 DECODE SIGNED QUERY
 // ============================================================
-//
-// IMPORTANT:
-//
-// Google signs the query representation used by its URI
-// verifier. Percent-encoded query values therefore need to be
-// decoded before ECDSA verification.
-//
-// decodeURIComponent() is intentionally used instead of
-// URLSearchParams because URLSearchParams also applies form
-// semantics to '+' characters.
-//
-// ============================================================
 
 function decodeSignedQuery(
   rawQueryString,
@@ -949,11 +955,6 @@ async function verifyAdMobSignature(
 
   const queryString =
     rawQueryString;
-
-  // ----------------------------------------------------------
-  // Google guarantees that signature and key_id are the
-  // final two parameters.
-  // ----------------------------------------------------------
 
   const signatureMarker =
     "&signature=";
@@ -1035,10 +1036,6 @@ async function verifyAdMobSignature(
     );
   }
 
-  // ----------------------------------------------------------
-  // Prevent duplicate signature/key_id parameters.
-  // ----------------------------------------------------------
-
   const signedParameters =
     rawSignedQueryString.split(
       "&",
@@ -1079,10 +1076,6 @@ async function verifyAdMobSignature(
       );
     }
   }
-
-  // ----------------------------------------------------------
-  // Signature + key ID.
-  // ----------------------------------------------------------
 
   const rawSignatureValue =
     signatureParameter.substring(
@@ -1144,20 +1137,10 @@ async function verifyAdMobSignature(
       signature,
     );
 
-  // ----------------------------------------------------------
-  // IMPORTANT FIX:
-  //
-  // Decode the signed query before ECDSA verification.
-  // ----------------------------------------------------------
-
   const signedQueryString =
     decodeSignedQuery(
       rawSignedQueryString,
     );
-
-  // ----------------------------------------------------------
-  // Public key.
-  // ----------------------------------------------------------
 
   let publicKeys =
     await getAdMobPublicKeys();
@@ -1166,10 +1149,6 @@ async function verifyAdMobSignature(
     publicKeys.get(
       keyId,
     );
-
-  // ----------------------------------------------------------
-  // Key rotation.
-  // ----------------------------------------------------------
 
   if (
     !publicKeyData
@@ -1193,10 +1172,6 @@ async function verifyAdMobSignature(
       "AdMob public key was not found.",
     );
   }
-
-  // ----------------------------------------------------------
-  // ECDSA verification.
-  // ----------------------------------------------------------
 
   let valid = false;
 
