@@ -22,6 +22,27 @@
 
 
 // ============================================================
+// 🧪 ADMOB TEST MODE
+// ============================================================
+//
+// TRUE:
+// - Flutter käyttää Googlen virallisia testimainoksia.
+// - Backend voi käsitellä testiversion ilman oikean
+//   Stelluriini AdMob SSV -mainosyksikön vaatimista.
+//
+// FALSE:
+// - Normaali tuotantotila.
+// - AdMob SSV tarkistetaan normaalisti.
+//
+// Tämä asetus on tarkoitettu väliaikaisesti AdMob-tilin
+// suspension aikana käytettävälle testiversiolle.
+//
+// ============================================================
+
+const ADMOB_TEST_MODE = true;
+
+
+// ============================================================
 // 🎁 DAILY HASH RATE
 // ============================================================
 //
@@ -168,10 +189,10 @@ const AD_COOLDOWN_MS =
 //
 // Complete AdMob ad unit IDs used by the Flutter application.
 //
-// Mining Start:
+// Production Mining Start:
 // ca-app-pub-1131012057145658/6674097787
 //
-// Power Boost:
+// Production Power Boost:
 // ca-app-pub-1131012057145658/7225738491
 //
 // IMPORTANT:
@@ -276,6 +297,12 @@ const MAX_TRANSACTION_HISTORY =
 // ============================================================
 
 module.exports = {
+  // ----------------------------------------------------------
+  // AdMob test mode
+  // ----------------------------------------------------------
+
+  ADMOB_TEST_MODE,
+
   // ----------------------------------------------------------
   // Daily Hash Rate
   // ----------------------------------------------------------
