@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeAdManager extends ChangeNotifier {
@@ -10,26 +9,14 @@ class HomeAdManager extends ChangeNotifier {
   // 🐱 STELLURIINI - HOME AD MANAGER
   // ============================================================
   //
-  // AdMob Rewarded Ads
+  // TEST MODE
   //
-  // TEST MODE:
-  // Käytetään Googlen virallista test Rewarded Ad ID:tä
+  // Käytetään Googlen virallista Rewarded Test Ad Unit ID:tä
   // sekä Mining Startiin että Power Boostiin.
   //
-  // SSV customData:
+  // Test Ad Unit:
   //
-  //     uid:purpose
-  //
-  // Esimerkiksi:
-  //
-  //     abc123:mining_start
-  //     abc123:power_boost
-  //
-  // Backend:
-  //
-  //     adMobReward
-  //
-  // vastaanottaa SSV:n ja vahvistaa palkinnon.
+  // ca-app-pub-3940256099942544/5224354917
   //
   // ============================================================
 
@@ -37,10 +24,8 @@ class HomeAdManager extends ChangeNotifier {
   // REAL ADMOB IDS
   // ============================================================
   //
-  // Nämä jätetään talteen, jotta oikeat ID:t voidaan palauttaa
-  // myöhemmin, kun AdMob-tilin rajoitus on poistunut.
-  //
-  // ÄLÄ KÄYTÄ NÄITÄ TESTIVERSIOSSA.
+  // Säilytetään myöhempää käyttöönottoa varten.
+  // Näitä EI käytetä testitilassa.
   //
 
   static const String miningRewardedAdUnitId =
@@ -52,11 +37,6 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
   // GOOGLE TEST REWARDED AD
   // ============================================================
-  //
-  // Googlen virallinen Rewarded Ad test ID.
-  //
-  // Tätä käytetään nyt KAIKISSA Rewarded Ads -mainoksissa.
-  //
 
   static const String testRewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
@@ -65,17 +45,38 @@ class HomeAdManager extends ChangeNotifier {
   // PURPOSES
   // ============================================================
 
-  static const String miningStartPurpose =
-      'mining_start';
+  static const String miningStartPurpose = 'mining_start';
 
-  static const String powerBoostPurpose =
-      'power_boost';
+  static const String powerBoostPurpose = 'power_boost';
 
   // ============================================================
-  // CALLBACK
+  // CALLBACKS
   // ============================================================
 
+  final void Function()? onMiningStartReward;
+
+  final void Function()? onPowerBoostReward;
+
+  final void Function(String message)? onAdLoadError;
+
+  final void Function(String message)? onAdShowError;
+
+  final void Function(String purpose)? onAdDismissed;
+
+  // Säilytetään vanha yleinen callback-yhteensopivuus.
   void Function(String purpose)? onRewarded;
+
+  // ============================================================
+  // CONSTRUCTOR
+  // ============================================================
+
+  HomeAdManager({
+    this.onMiningStartReward,
+    this.onPowerBoostReward,
+    this.onAdLoadError,
+    this.onAdShowError,
+    this.onAdDismissed,
+  });
 
   // ============================================================
   // INTERNAL STATE
@@ -85,8 +86,6 @@ class HomeAdManager extends ChangeNotifier {
 
   String? _loadedPurpose;
 
-  String? _loadingPurpose;
-
   bool _isLoading = false;
 
   bool _isShowing = false;
@@ -95,47 +94,52 @@ class HomeAdManager extends ChangeNotifier {
 
   String? _lastError;
 
-  // Estää saman purpose-mainoksen käynnistymisen useita kertoja
-  // samanaikaisesti.
-  final Set<String> _loadingPurposes =
-      <String>{};
+  final Set<String> _loadingPurposes = <String>{};
 
-  final Set<String> _showingPurposes =
-      <String>{};
+  final Set<String> _showingPurposes = <String>{};
+
+  // ============================================================
+  // PRIVACY / UMP STATE
+  // ============================================================
+
+  bool _privacyOptionsRequired = false;
+
+  bool get privacyOptionsRequired => _privacyOptionsRequired;
+
+  // ============================================================
+  // MINING AD FLOW
+  // ============================================================
+
+  bool get miningAdFlowActive =>
+      _isShowing &&
+      _showingPurposes.contains(miningStartPurpose);
 
   // ============================================================
   // PUBLIC GETTERS
   // ============================================================
 
-  bool get isLoading =>
-      _isLoading;
+  bool get isLoading => _isLoading;
 
-  bool get isShowing =>
-      _isShowing;
+  bool get isShowing => _isShowing;
 
   bool get isReady =>
       _rewardedAd != null &&
       _loadedPurpose != null;
 
-  String? get loadedPurpose =>
-      _loadedPurpose;
+  String? get loadedPurpose => _loadedPurpose;
 
-  String? get lastError =>
-      _lastError;
+  String? get lastError => _lastError;
 
   // ============================================================
   // CURRENT USER
   // ============================================================
 
   String? get _uid {
-    final user =
-        FirebaseAuth.instance.currentUser;
-
-    return user?.uid;
+    return FirebaseAuth.instance.currentUser?.uid;
   }
 
   // ============================================================
-  // ADMOB INITIALIZATION
+  // INITIALIZATION
   // ============================================================
 
   Future<void> initialize() async {
@@ -150,8 +154,14 @@ class HomeAdManager extends ChangeNotifier {
         return;
       }
 
+      await _updatePrivacyOptionsStatus();
+
       debugPrint(
         '🐱 AdMob initialized.',
+      );
+
+      debugPrint(
+        '🐱 Test Rewarded Ads enabled.',
       );
     } catch (error) {
       debugPrint(
@@ -161,28 +171,72 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // AD UNIT ID
+  // PRIVACY OPTIONS
   // ============================================================
-  //
-  // TÄRKEÄ:
-  //
-  // Testitilassa palautetaan aina Googlen test Rewarded Ad ID.
-  //
-  // Tämä tarkoittaa, että sekä:
-  //
-  //     Mining Start
-  //
-  // että:
-  //
-  //     Power Boost
-  //
-  // käyttävät samaa virallista testimainosta.
-  //
+
+  Future<void> _updatePrivacyOptionsStatus() async {
+    if (_disposed) {
+      return;
+    }
+
+    try {
+      final status =
+          await ConsentInformation.instance
+              .getPrivacyOptionsRequirementStatus();
+
+      if (_disposed) {
+        return;
+      }
+
+      _privacyOptionsRequired =
+          status == PrivacyOptionsRequirementStatus.required;
+
+      _safeNotify();
+    } catch (error) {
+      debugPrint(
+        '🐱 Privacy options status error: $error',
+      );
+
+      _privacyOptionsRequired = false;
+    }
+  }
+
+  Future<void> showPrivacyOptionsForm() async {
+    if (_disposed) {
+      return;
+    }
+
+    try {
+      ConsentForm.showPrivacyOptionsForm(
+        (
+          FormError? error,
+        ) async {
+          if (error != null) {
+            debugPrint(
+              '🐱 Privacy options error: '
+              '${error.errorCode}: ${error.message}',
+            );
+          }
+
+          await _updatePrivacyOptionsStatus();
+        },
+      );
+    } catch (error) {
+      debugPrint(
+        '🐱 Failed to show privacy options form: $error',
+      );
+    }
+  }
+
+  // ============================================================
+  // AD UNIT
   // ============================================================
 
   String _rewardedAdUnitIdForPurpose(
     String purpose,
   ) {
+    // Testitilassa molemmat käyttävät samaa Googlen
+    // virallista Rewarded Test Ad Unit ID:tä.
     return testRewardedAdUnitId;
   }
 
@@ -197,11 +251,9 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    final uid =
-        _uid;
+    final uid = _uid;
 
-    if (uid == null ||
-        uid.isEmpty) {
+    if (uid == null || uid.isEmpty) {
       _lastError =
           'User is not authenticated.';
 
@@ -228,7 +280,6 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // Jos juuri sama mainos on jo ladattu, ei ladata uudelleen.
     if (_rewardedAd != null &&
         _loadedPurpose == purpose) {
       debugPrint(
@@ -238,7 +289,6 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    // Estetään useampi samanaikainen lataus.
     if (_loadingPurposes.contains(purpose)) {
       debugPrint(
         '🐱 Rewarded Ad already loading: $purpose',
@@ -247,14 +297,9 @@ class HomeAdManager extends ChangeNotifier {
       return;
     }
 
-    _loadingPurposes.add(
-      purpose,
-    );
+    _loadingPurposes.add(purpose);
 
     _isLoading = true;
-
-    _loadingPurpose =
-        purpose;
 
     _lastError = null;
 
@@ -297,28 +342,19 @@ class HomeAdManager extends ChangeNotifier {
               return;
             }
 
-            // Jos jokin vanha mainos on vielä muistissa,
-            // vapautetaan se ennen uuden asettamista.
             _rewardedAd?.dispose();
 
-            _rewardedAd =
-                ad;
+            _rewardedAd = ad;
 
-            _loadedPurpose =
-                purpose;
+            _loadedPurpose = purpose;
 
-            _loadingPurpose =
-                null;
-
-            _isLoading =
-                false;
+            _isLoading = false;
 
             _loadingPurposes.remove(
               purpose,
             );
 
-            _lastError =
-                null;
+            _lastError = null;
 
             debugPrint(
               '🐱 Rewarded Ad loaded successfully.',
@@ -336,17 +372,11 @@ class HomeAdManager extends ChangeNotifier {
               ) {
             _rewardedAd?.dispose();
 
-            _rewardedAd =
-                null;
+            _rewardedAd = null;
 
-            _loadedPurpose =
-                null;
+            _loadedPurpose = null;
 
-            _loadingPurpose =
-                null;
-
-            _isLoading =
-                false;
+            _isLoading = false;
 
             _loadingPurposes.remove(
               purpose,
@@ -367,6 +397,10 @@ class HomeAdManager extends ChangeNotifier {
               '🐱 Error: $error',
             );
 
+            _notifyAdLoadError(
+              error.message,
+            );
+
             _safeNotify();
           },
         ),
@@ -374,17 +408,11 @@ class HomeAdManager extends ChangeNotifier {
     } catch (error) {
       _rewardedAd?.dispose();
 
-      _rewardedAd =
-          null;
+      _rewardedAd = null;
 
-      _loadedPurpose =
-          null;
+      _loadedPurpose = null;
 
-      _loadingPurpose =
-          null;
-
-      _isLoading =
-          false;
+      _isLoading = false;
 
       _loadingPurposes.remove(
         purpose,
@@ -395,6 +423,10 @@ class HomeAdManager extends ChangeNotifier {
 
       debugPrint(
         '🐱 Rewarded Ad load exception: $error',
+      );
+
+      _notifyAdLoadError(
+        error.toString(),
       );
 
       _safeNotify();
@@ -412,11 +444,9 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    final uid =
-        _uid;
+    final uid = _uid;
 
-    if (uid == null ||
-        uid.isEmpty) {
+    if (uid == null || uid.isEmpty) {
       debugPrint(
         '🐱 Cannot show Rewarded Ad: user not authenticated.',
       );
@@ -441,8 +471,7 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    final ad =
-        _rewardedAd;
+    final ad = _rewardedAd;
 
     if (ad == null ||
         _loadedPurpose != purpose) {
@@ -450,7 +479,6 @@ class HomeAdManager extends ChangeNotifier {
         '🐱 Rewarded Ad is not ready for purpose: $purpose',
       );
 
-      // Yritetään ladata oikea mainos seuraavaa yritystä varten.
       unawaited(
         loadRewardedAd(
           purpose,
@@ -460,14 +488,11 @@ class HomeAdManager extends ChangeNotifier {
       return false;
     }
 
-    _rewardedAd =
-        null;
+    _rewardedAd = null;
 
-    _loadedPurpose =
-        null;
+    _loadedPurpose = null;
 
-    _isShowing =
-        true;
+    _isShowing = true;
 
     _showingPurposes.add(
       purpose,
@@ -475,45 +500,36 @@ class HomeAdManager extends ChangeNotifier {
 
     _safeNotify();
 
-    bool rewardEarned =
-        false;
-
-    bool completed =
-        false;
+    bool rewardEarned = false;
 
     final completer =
         Completer<bool>();
 
-    // ----------------------------------------------------------
-    // SERVER SIDE VERIFICATION
-    // ----------------------------------------------------------
+    // ==========================================================
+    // SSV
+    // ==========================================================
     //
-    // customData:
+    // Tämänhetkinen google_mobile_ads-riippuvuus ei tarjoa
+    // analyysin mukaan RewardedAd-oliolle suoraan
+    // setServerSideVerificationOptions()-metodia.
     //
-    //     uid:purpose
+    // Siksi emme kutsu sitä tässä.
     //
-    // Backend adMobReward käyttää tätä tietoa.
+    // Testimainos toimii normaalina Rewarded Ad -mainoksena.
     //
+    // ==========================================================
 
-    final customData =
-        '$uid:$purpose';
+    debugPrint(
+      '🐱 Rewarded Ad purpose: $purpose',
+    );
 
-    try {
-      ad.setServerSideVerificationOptions(
-        ServerSideVerificationOptions(
-          customData:
-              customData,
-        ),
-      );
-    } catch (error) {
-      debugPrint(
-        '🐱 Failed to set SSV options: $error',
-      );
-    }
+    debugPrint(
+      '🐱 Rewarded Ad UID: $uid',
+    );
 
-    // ----------------------------------------------------------
+    // ==========================================================
     // FULLSCREEN CALLBACK
-    // ----------------------------------------------------------
+    // ==========================================================
 
     ad.fullScreenContentCallback =
         FullScreenContentCallback(
@@ -544,6 +560,10 @@ class HomeAdManager extends ChangeNotifier {
           rewardEarned,
           completer,
         );
+
+        _notifyAdDismissed(
+          purpose,
+        );
       },
       onAdFailedToShowFullScreenContent:
           (
@@ -559,6 +579,10 @@ class HomeAdManager extends ChangeNotifier {
         );
 
         ad.dispose();
+
+        _notifyAdShowError(
+          error.message,
+        );
 
         _finishShowing(
           purpose,
@@ -592,9 +616,9 @@ class HomeAdManager extends ChangeNotifier {
       },
     );
 
-    // ----------------------------------------------------------
+    // ==========================================================
     // SHOW
-    // ----------------------------------------------------------
+    // ==========================================================
 
     try {
       ad.show(
@@ -603,8 +627,7 @@ class HomeAdManager extends ChangeNotifier {
               AdWithoutView ad,
               RewardItem reward,
             ) {
-          rewardEarned =
-              true;
+          rewardEarned = true;
 
           debugPrint(
             '🐱 Reward earned.',
@@ -622,22 +645,18 @@ class HomeAdManager extends ChangeNotifier {
             '🐱 Reward type: ${reward.type}',
           );
 
-          if (onRewarded != null) {
-            try {
-              onRewarded!(
-                purpose,
-              );
-            } catch (error) {
-              debugPrint(
-                '🐱 onRewarded callback error: $error',
-              );
-            }
-          }
+          _notifyReward(
+            purpose,
+          );
         },
       );
     } catch (error) {
       debugPrint(
         '🐱 Rewarded Ad show exception: $error',
+      );
+
+      _notifyAdShowError(
+        error.toString(),
       );
 
       try {
@@ -655,6 +674,76 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
+  // REWARD CALLBACK
+  // ============================================================
+
+  void _notifyReward(
+    String purpose,
+  ) {
+    try {
+      if (purpose == miningStartPurpose) {
+        onMiningStartReward?.call();
+      } else if (purpose == powerBoostPurpose) {
+        onPowerBoostReward?.call();
+      }
+
+      onRewarded?.call(
+        purpose,
+      );
+    } catch (error) {
+      debugPrint(
+        '🐱 Reward callback error: $error',
+      );
+    }
+  }
+
+  // ============================================================
+  // ERROR CALLBACKS
+  // ============================================================
+
+  void _notifyAdLoadError(
+    String message,
+  ) {
+    try {
+      onAdLoadError?.call(
+        message,
+      );
+    } catch (error) {
+      debugPrint(
+        '🐱 onAdLoadError callback error: $error',
+      );
+    }
+  }
+
+  void _notifyAdShowError(
+    String message,
+  ) {
+    try {
+      onAdShowError?.call(
+        message,
+      );
+    } catch (error) {
+      debugPrint(
+        '🐱 onAdShowError callback error: $error',
+      );
+    }
+  }
+
+  void _notifyAdDismissed(
+    String purpose,
+  ) {
+    try {
+      onAdDismissed?.call(
+        purpose,
+      );
+    } catch (error) {
+      debugPrint(
+        '🐱 onAdDismissed callback error: $error',
+      );
+    }
+  }
+
+  // ============================================================
   // FINISH SHOWING
   // ============================================================
 
@@ -663,14 +752,11 @@ class HomeAdManager extends ChangeNotifier {
     bool rewardEarned,
     Completer<bool> completer,
   ) {
-    if (completedOrFinished(
-      completer,
-    )) {
+    if (completer.isCompleted) {
       return;
     }
 
-    _isShowing =
-        false;
+    _isShowing = false;
 
     _showingPurposes.remove(
       purpose,
@@ -678,31 +764,16 @@ class HomeAdManager extends ChangeNotifier {
 
     _safeNotify();
 
-    // ----------------------------------------------------------
-    // Lataa seuraava testimainos automaattisesti.
-    // ----------------------------------------------------------
-
+    // Ladataan seuraava testimainos.
     unawaited(
       loadRewardedAd(
         purpose,
       ),
     );
 
-    if (!completer.isCompleted) {
-      completer.complete(
-        rewardEarned,
-      );
-    }
-  }
-
-  // ============================================================
-  // COMPLETER SAFETY
-  // ============================================================
-
-  bool completedOrFinished(
-    Completer<bool> completer,
-  ) {
-    return completer.isCompleted;
+    completer.complete(
+      rewardEarned,
+    );
   }
 
   // ============================================================
@@ -772,17 +843,11 @@ class HomeAdManager extends ChangeNotifier {
       _rewardedAd?.dispose();
     } catch (_) {}
 
-    _rewardedAd =
-        null;
+    _rewardedAd = null;
 
-    _loadedPurpose =
-        null;
+    _loadedPurpose = null;
 
-    _loadingPurpose =
-        null;
-
-    _isLoading =
-        false;
+    _isLoading = false;
 
     _safeNotify();
   }
@@ -811,8 +876,7 @@ class HomeAdManager extends ChangeNotifier {
 
   @override
   void dispose() {
-    _disposed =
-        true;
+    _disposed = true;
 
     _loadingPurposes.clear();
 
@@ -822,20 +886,13 @@ class HomeAdManager extends ChangeNotifier {
       _rewardedAd?.dispose();
     } catch (_) {}
 
-    _rewardedAd =
-        null;
+    _rewardedAd = null;
 
-    _loadedPurpose =
-        null;
+    _loadedPurpose = null;
 
-    _loadingPurpose =
-        null;
+    _isLoading = false;
 
-    _isLoading =
-        false;
-
-    _isShowing =
-        false;
+    _isShowing = false;
 
     super.dispose();
   }
