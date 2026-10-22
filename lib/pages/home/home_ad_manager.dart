@@ -14,10 +14,6 @@ class HomeAdManager extends ChangeNotifier {
   // Käytetään Googlen virallista Rewarded Test Ad Unit ID:tä
   // sekä Mining Startiin että Power Boostiin.
   //
-  // Test Ad Unit:
-  //
-  // ca-app-pub-3940256099942544/5224354917
-  //
   // ============================================================
 
   // ============================================================
@@ -57,13 +53,19 @@ class HomeAdManager extends ChangeNotifier {
 
   final void Function()? onPowerBoostReward;
 
-  final void Function(String message)? onAdLoadError;
+  final void Function(
+    String message,
+    LoadAdError error,
+  )? onAdLoadError;
 
-  final void Function(String message)? onAdShowError;
+  final void Function(
+    String message,
+    AdError error,
+  )? onAdShowError;
 
   final void Function(String purpose)? onAdDismissed;
 
-  // Säilytetään vanha yleinen callback-yhteensopivuus.
+  // Säilytetään yleinen callback-yhteensopivuus.
   void Function(String purpose)? onRewarded;
 
   // ============================================================
@@ -171,7 +173,7 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // PRIVACY OPTIONS
+  // PRIVACY OPTIONS STATUS
   // ============================================================
 
   Future<void> _updatePrivacyOptionsStatus() async {
@@ -189,7 +191,8 @@ class HomeAdManager extends ChangeNotifier {
       }
 
       _privacyOptionsRequired =
-          status == PrivacyOptionsRequirementStatus.required;
+          status ==
+          PrivacyOptionsRequirementStatus.required;
 
       _safeNotify();
     } catch (error) {
@@ -200,6 +203,10 @@ class HomeAdManager extends ChangeNotifier {
       _privacyOptionsRequired = false;
     }
   }
+
+  // ============================================================
+  // PRIVACY OPTIONS FORM
+  // ============================================================
 
   Future<void> showPrivacyOptionsForm() async {
     if (_disposed) {
@@ -229,14 +236,14 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // AD UNIT
+  // AD UNIT ID
   // ============================================================
 
   String _rewardedAdUnitIdForPurpose(
     String purpose,
   ) {
-    // Testitilassa molemmat käyttävät samaa Googlen
-    // virallista Rewarded Test Ad Unit ID:tä.
+    // Testitilassa molemmat käyttävät Googlen virallista
+    // Rewarded Test Ad Unit ID:tä.
     return testRewardedAdUnitId;
   }
 
@@ -260,7 +267,8 @@ class HomeAdManager extends ChangeNotifier {
       _safeNotify();
 
       debugPrint(
-        '🐱 Cannot load Rewarded Ad: user not authenticated.',
+        '🐱 Cannot load Rewarded Ad: '
+        'user not authenticated.',
       );
 
       return;
@@ -382,8 +390,7 @@ class HomeAdManager extends ChangeNotifier {
               purpose,
             );
 
-            _lastError =
-                error.message;
+            _lastError = error.message;
 
             debugPrint(
               '🐱 Rewarded Ad failed to load.',
@@ -399,6 +406,7 @@ class HomeAdManager extends ChangeNotifier {
 
             _notifyAdLoadError(
               error.message,
+              error,
             );
 
             _safeNotify();
@@ -414,19 +422,12 @@ class HomeAdManager extends ChangeNotifier {
 
       _isLoading = false;
 
-      _loadingPurposes.remove(
-        purpose,
-      );
+      _loadingPurposes.remove(purpose);
 
-      _lastError =
-          error.toString();
+      _lastError = error.toString();
 
       debugPrint(
         '🐱 Rewarded Ad load exception: $error',
-      );
-
-      _notifyAdLoadError(
-        error.toString(),
       );
 
       _safeNotify();
@@ -448,7 +449,8 @@ class HomeAdManager extends ChangeNotifier {
 
     if (uid == null || uid.isEmpty) {
       debugPrint(
-        '🐱 Cannot show Rewarded Ad: user not authenticated.',
+        '🐱 Cannot show Rewarded Ad: '
+        'user not authenticated.',
       );
 
       return false;
@@ -476,7 +478,8 @@ class HomeAdManager extends ChangeNotifier {
     if (ad == null ||
         _loadedPurpose != purpose) {
       debugPrint(
-        '🐱 Rewarded Ad is not ready for purpose: $purpose',
+        '🐱 Rewarded Ad is not ready for purpose: '
+        '$purpose',
       );
 
       unawaited(
@@ -509,13 +512,10 @@ class HomeAdManager extends ChangeNotifier {
     // SSV
     // ==========================================================
     //
-    // Tämänhetkinen google_mobile_ads-riippuvuus ei tarjoa
-    // analyysin mukaan RewardedAd-oliolle suoraan
-    // setServerSideVerificationOptions()-metodia.
+    // google_mobile_ads 6.0.0:n nykyisessä API:ssa RewardedAd-
+    // oliolla ei ole setServerSideVerificationOptions()-metodia.
     //
-    // Siksi emme kutsu sitä tässä.
-    //
-    // Testimainos toimii normaalina Rewarded Ad -mainoksena.
+    // Siksi sitä ei kutsuta täällä.
     //
     // ==========================================================
 
@@ -582,6 +582,7 @@ class HomeAdManager extends ChangeNotifier {
 
         _notifyAdShowError(
           error.message,
+          error,
         );
 
         _finishShowing(
@@ -655,10 +656,6 @@ class HomeAdManager extends ChangeNotifier {
         '🐱 Rewarded Ad show exception: $error',
       );
 
-      _notifyAdShowError(
-        error.toString(),
-      );
-
       try {
         ad.dispose();
       } catch (_) {}
@@ -698,36 +695,50 @@ class HomeAdManager extends ChangeNotifier {
   }
 
   // ============================================================
-  // ERROR CALLBACKS
+  // LOAD ERROR CALLBACK
   // ============================================================
 
   void _notifyAdLoadError(
     String message,
+    LoadAdError error,
   ) {
     try {
       onAdLoadError?.call(
         message,
+        error,
       );
-    } catch (error) {
+    } catch (callbackError) {
       debugPrint(
-        '🐱 onAdLoadError callback error: $error',
+        '🐱 onAdLoadError callback error: '
+        '$callbackError',
       );
     }
   }
 
+  // ============================================================
+  // SHOW ERROR CALLBACK
+  // ============================================================
+
   void _notifyAdShowError(
     String message,
+    AdError error,
   ) {
     try {
       onAdShowError?.call(
         message,
+        error,
       );
-    } catch (error) {
+    } catch (callbackError) {
       debugPrint(
-        '🐱 onAdShowError callback error: $error',
+        '🐱 onAdShowError callback error: '
+        '$callbackError',
       );
     }
   }
+
+  // ============================================================
+  // DISMISSED CALLBACK
+  // ============================================================
 
   void _notifyAdDismissed(
     String purpose,
@@ -764,7 +775,6 @@ class HomeAdManager extends ChangeNotifier {
 
     _safeNotify();
 
-    // Ladataan seuraava testimainos.
     unawaited(
       loadRewardedAd(
         purpose,
