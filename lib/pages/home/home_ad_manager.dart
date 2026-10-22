@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -25,12 +24,24 @@ class HomeAdManager extends ChangeNotifier {
   // ============================================================
   // 📺 ADMOB AD UNITS
   // ============================================================
+  //
+  // Oikeat AdMob-mainosyksiköt säilytetään tässä myöhempää
+  // käyttöönottoa varten, mutta niitä EI käytetä tällä hetkellä.
+  //
+  // AdMob-tilin tilapäisen jäädytyksen aikana kaikki rewarded-
+  // mainokset käyttävät Googlen virallista testimainosyksikköä.
+  //
+  // ============================================================
 
   static const String miningRewardedAdUnitId =
       'ca-app-pub-1131012057145658/6674097787';
 
   static const String powerBoostRewardedAdUnitId =
       'ca-app-pub-1131012057145658/7225738491';
+
+  // Googlen virallinen rewarded test ad.
+  static const String testRewardedAdUnitId =
+      'ca-app-pub-3940256099942544/5224354917';
 
   static const String miningStartPurpose =
       'mining_start';
@@ -616,20 +627,23 @@ class HomeAdManager extends ChangeNotifier {
   String _rewardedAdUnitIdForPurpose(
     String purpose,
   ) {
-    // Google test rewarded ID for debug builds.
-    if (kDebugMode) {
-      return 'ca-app-pub-3940256099942544/5224354917';
-    }
+    // ============================================================
+    // 🧪 STELLURIINI TEST ADS
+    // ============================================================
+    //
+    // Google test rewarded ad is used in ALL builds.
+    //
+    // The real Stelluriini AdMob ad units are intentionally
+    // disabled while the AdMob account suspension is active.
+    //
+    // This applies to both:
+    //
+    // 1. Mining Start
+    // 2. Power Boost
+    //
+    // ============================================================
 
-    if (purpose == miningStartPurpose) {
-      return miningRewardedAdUnitId;
-    }
-
-    if (purpose == powerBoostPurpose) {
-      return powerBoostRewardedAdUnitId;
-    }
-
-    return miningRewardedAdUnitId;
+    return testRewardedAdUnitId;
   }
 
   // ============================================================
