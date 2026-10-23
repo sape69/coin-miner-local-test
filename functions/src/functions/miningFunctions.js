@@ -326,38 +326,6 @@ function dailyStreak(data) {
 // ============================================================
 // DAILY CLAIM / MINING STREAK
 // ============================================================
-//
-// 🐱 STREAK-LOGIIKKA
-//
-// Yksi mining-cycle kestää MINING_DURATION_MS:n.
-//
-// Kun mining-cycle päättyy:
-//
-//   miningEndsAt
-//        │
-//        ├────────────── 24 h ──────────────┤
-//        │                                  │
-//      cycle                            grace deadline
-//      ends
-//
-// Tänä 24 h grace periodina käyttäjä voi aloittaa uuden
-// louhinnan ja streak jatkuu.
-//
-// Jos grace period päättyy ilman uutta louhintaa,
-// seuraava mining-start alkaa streakistä 1.
-//
-// TÄRKEÄÄ:
-//
-// Streak perustuu mining-cycleen, EI UTC-kalenteripäivään.
-//
-// Tämä estää tilanteen, jossa käyttäjä aloittaa louhinnan
-// esimerkiksi joka päivä 5 minuuttia myöhemmin ja streak
-// alkaa vääristyä kalenteripäivien perusteella.
-//
-// Aktiivisen louhinnan aikana streak pysyy aina nykyisenä,
-// vaikka UTC-päivä vaihtuisi kesken mining-cyclen.
-//
-// ============================================================
 
 const MINING_STREAK_GRACE_MS =
   24 * 60 * 60 * 1000;
@@ -2074,17 +2042,6 @@ const claimMining =
         // ------------------------------------------------------
         // ADMOB REWARD
         // ------------------------------------------------------
-        //
-        // ADMOB_TEST_MODE=true:
-        // Test Rewarded Ad -mainoksen ei tarvitse saavuttaa
-        // AdMob SSV -endpointia. Mining voidaan aloittaa
-        // turvallisesti vain tämän testitilan ollessa päällä.
-        //
-        // ADMOB_TEST_MODE=false:
-        // Käytetään normaalia AdMob SSV -vahvistusta.
-        //
-        // Power Boostissa SSV-vahvistus pysyy aina käytössä.
-        // ------------------------------------------------------
 
         let transactionId = "";
         let rewardRef = null;
@@ -2300,10 +2257,6 @@ const claimMining =
               };
             }
 
-            // --------------------------------------------------
-            // ADMOB VALIDATION
-            // --------------------------------------------------
-
             let authoritativeId =
               transactionId;
 
@@ -2362,10 +2315,6 @@ const claimMining =
             let previousBoostMs = 0;
             let completedPrevious = false;
 
-            // ------------------------------------------------
-            // COMPLETE PREVIOUS MINING CYCLE
-            // ------------------------------------------------
-
             if (
               previous.valid &&
               previous.miningEndMs <=
@@ -2421,10 +2370,6 @@ const claimMining =
               }
             }
 
-            // ------------------------------------------------
-            // 🏆 ACHIEVEMENTS - READ PHASE
-            // ------------------------------------------------
-
             const achievementResult =
               await prepareMiningAchievements(
                 transaction,
@@ -2445,10 +2390,6 @@ const claimMining =
                     .totalReward
                 )
               );
-
-            // ------------------------------------------------
-            // 🔗 REFERRAL REWARD
-            // ------------------------------------------------
 
             let referralResult = {
               rewarded: false,
@@ -2476,18 +2417,10 @@ const claimMining =
                 );
             }
 
-            // ------------------------------------------------
-            // ACHIEVEMENT WRITE PHASE
-            // ------------------------------------------------
-
             writeMiningAchievements(
               transaction,
               achievementResult
             );
-
-            // ------------------------------------------------
-            // ACHIEVEMENT REWARDS
-            // ------------------------------------------------
 
             if (
               achievementReward > 0
@@ -2528,10 +2461,6 @@ const claimMining =
                 );
               }
             }
-
-            // ------------------------------------------------
-            // NEW MINING CYCLE
-            // ------------------------------------------------
 
             const startedAt =
               now;
@@ -2597,17 +2526,6 @@ const claimMining =
               }
             );
 
-            // ------------------------------------------------
-            // CONSUME ADMOB MINING START REWARD
-            // ------------------------------------------------
-            //
-            // Testitilassa reward-dokumenttia ei ole välttämättä
-            // olemassa, joten sitä ei yritetä kuluttaa.
-            //
-            // Production-tilassa alkuperäinen SSV-reward
-            // kulutetaan normaalisti.
-            // ------------------------------------------------
-
             if (
               ADMOB_TEST_MODE !== true &&
               rewardRef
@@ -2644,10 +2562,6 @@ const claimMining =
                 }
               );
             }
-
-            // ------------------------------------------------
-            // DAILY HASH RATE HISTORY
-            // ------------------------------------------------
 
             if (
               !daily.claimedToday
@@ -2708,10 +2622,6 @@ const claimMining =
               );
             }
 
-            // ------------------------------------------------
-            // PREVIOUS MINING REWARD
-            // ------------------------------------------------
-
             if (
               completedPrevious
             ) {
@@ -2771,10 +2681,6 @@ const claimMining =
                 }
               );
             }
-
-            // ------------------------------------------------
-            // NEW MINING HISTORY
-            // ------------------------------------------------
 
             transaction.set(
               getHistoryCollection(uid)
@@ -3094,47 +3000,74 @@ const powerBoost =
           );
         }
 
-        let verified;
+        // ------------------------------------------------------
+        // ADMOB REWARD
+        // ------------------------------------------------------
+        //
+        // ADMOB_TEST_MODE=true:
+        // Googlen virallinen test Rewarded Ad voidaan käyttää
+        // ilman AdMob SSV -vahvistusdokumenttia.
+        //
+        // ADMOB_TEST_MODE=false:
+        // Käytetään normaalia AdMob SSV -vahvistusta.
+        //
+        // ------------------------------------------------------
 
-        try {
-          verified =
-            await getVerifiedPowerBoostReward(
-              uid,
-              {
-                transactionId:
-                  requestedTransactionId,
-              }
+        let transactionId = "";
+        let rewardRef = null;
+
+        if (ADMOB_TEST_MODE === true) {
+          transactionId =
+            requestedTransactionId ||
+            `test-power-boost-${uid}-${earlyNowMs}`;
+
+          console.log(
+            "🐱 ADMOB_TEST_MODE: Power Boost "
+            + "SSV verification bypassed."
+          );
+        } else {
+          let verified;
+
+          try {
+            verified =
+              await getVerifiedPowerBoostReward(
+                uid,
+                {
+                  transactionId:
+                    requestedTransactionId,
+                }
+              );
+          } catch (error) {
+            throw toRewardHttpsError(
+              error,
+              "🐱 Power Boost -AdMob-palkinnon vahvistaminen epäonnistui."
             );
-        } catch (error) {
-          throw toRewardHttpsError(
-            error,
-            "🐱 Power Boost -AdMob-palkinnon vahvistaminen epäonnistui."
-          );
-        }
+          }
 
-        const transactionId =
-          typeof verified?.transactionId ===
-            "string"
-            ? verified.transactionId.trim()
-            : "";
+          transactionId =
+            typeof verified?.transactionId ===
+              "string"
+              ? verified.transactionId.trim()
+              : "";
 
-        if (!transactionId) {
-          throw new HttpsError(
-            "failed-precondition",
-            "🐱 Power Boost -tapahtuman transaction ID puuttuu."
-          );
-        }
+          if (!transactionId) {
+            throw new HttpsError(
+              "failed-precondition",
+              "🐱 Power Boost -tapahtuman transaction ID puuttuu."
+            );
+          }
 
-        const rewardRef =
-          getAdMobRewardRef(
-            transactionId
-          );
+          rewardRef =
+            getAdMobRewardRef(
+              transactionId
+            );
 
-        if (!rewardRef) {
-          throw new HttpsError(
-            "failed-precondition",
-            "🐱 Power Boost -AdMob-tapahtuman tunnistaminen epäonnistui."
-          );
+          if (!rewardRef) {
+            throw new HttpsError(
+              "failed-precondition",
+              "🐱 Power Boost -AdMob-tapahtuman tunnistaminen epäonnistui."
+            );
+          }
         }
 
         return await db.runTransaction(
@@ -3153,10 +3086,14 @@ const powerBoost =
                 userRef
               );
 
-            const rewardSnapshot =
-              await transaction.get(
-                rewardRef
-              );
+            let rewardSnapshot = null;
+
+            if (rewardRef) {
+              rewardSnapshot =
+                await transaction.get(
+                  rewardRef
+                );
+            }
 
             const data =
               userSnapshot.exists
@@ -3207,31 +3144,42 @@ const powerBoost =
               );
             }
 
-            let validated;
+            // --------------------------------------------------
+            // ADMOB VALIDATION
+            // --------------------------------------------------
 
-            try {
-              validated =
-                validateVerifiedRewardDocument(
-                  rewardSnapshot,
-                  uid,
-                  "power_boost",
-                  "powerBoostClaimed",
-                  {
-                    referenceNowMs:
-                      nowMs,
+            let authoritativeId =
+              transactionId;
 
-                    transactionId,
-                  }
+            if (
+              ADMOB_TEST_MODE !== true
+            ) {
+              let validated;
+
+              try {
+                validated =
+                  validateVerifiedRewardDocument(
+                    rewardSnapshot,
+                    uid,
+                    "power_boost",
+                    "powerBoostClaimed",
+                    {
+                      referenceNowMs:
+                        nowMs,
+
+                      transactionId,
+                    }
+                  );
+              } catch (error) {
+                throw toRewardHttpsError(
+                  error,
+                  "🐱 Power Boost -AdMob-palkinnon vahvistaminen epäonnistui."
                 );
-            } catch (error) {
-              throw toRewardHttpsError(
-                error,
-                "🐱 Power Boost -AdMob-palkinnon vahvistaminen epäonnistui."
-              );
-            }
+              }
 
-            const authoritativeId =
-              validated.transactionId;
+              authoritativeId =
+                validated.transactionId;
+            }
 
             const currentAds =
               adStatus(
@@ -3448,35 +3396,47 @@ const powerBoost =
             // ------------------------------------------------
             // ADMOB REWARD
             // ------------------------------------------------
+            //
+            // Testitilassa rewardRef ei ole olemassa,
+            // joten reward-dokumenttia ei kuluteta.
+            //
+            // Production-tilassa alkuperäinen SSV-reward
+            // kulutetaan normaalisti.
+            // ------------------------------------------------
 
-            transaction.set(
-              rewardSnapshot.ref,
-              {
-                powerBoostClaimed:
-                  true,
+            if (
+              ADMOB_TEST_MODE !== true &&
+              rewardRef
+            ) {
+              transaction.set(
+                rewardRef,
+                {
+                  powerBoostClaimed:
+                    true,
 
-                powerBoostClaimedAt:
-                  FieldValue.serverTimestamp(),
+                  powerBoostClaimedAt:
+                    FieldValue.serverTimestamp(),
 
-                powerBoostClaimedBy:
-                  uid,
+                  powerBoostClaimedBy:
+                    uid,
 
-                powerBoostTransactionId:
-                  authoritativeId,
+                  powerBoostTransactionId:
+                    authoritativeId,
 
-                consumedAt:
-                  FieldValue.serverTimestamp(),
+                  consumedAt:
+                    FieldValue.serverTimestamp(),
 
-                consumedBy:
-                  uid,
+                  consumedBy:
+                    uid,
 
-                rewardConsumed:
-                  true,
-              },
-              {
-                merge: true,
-              }
-            );
+                  rewardConsumed:
+                    true,
+                },
+                {
+                  merge: true,
+                }
+              );
+            }
 
             // ------------------------------------------------
             // POWER BOOST HISTORY
@@ -3524,6 +3484,9 @@ const powerBoost =
 
                 maxAdsPerDay:
                   MAX_ADS_PER_DAY,
+
+                admobTestMode:
+                  ADMOB_TEST_MODE === true,
 
                 createdAt:
                   FieldValue.serverTimestamp(),
@@ -3624,7 +3587,10 @@ const powerBoost =
                 authoritativeId,
 
               rewardConsumed:
-                true,
+                ADMOB_TEST_MODE !== true,
+
+              admobTestMode:
+                ADMOB_TEST_MODE === true,
 
               achievementReward:
                 powerBoostAchievementReward,
