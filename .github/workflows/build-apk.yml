@@ -128,18 +128,7 @@ jobs:
           flutter pub get
 
       # ==========================================================
-      # 9. SAVE GENERATED PUBSPEC LOCK
-      # ==========================================================
-
-      - name: Save generated pubspec.lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: stelluriini-pubspec-lock
-          path: pubspec.lock
-          if-no-files-found: error
-
-      # ==========================================================
-      # 10. RESTORE STELLURIINI RELEASE KEYSTORE FROM SECRET
+      # 9. RESTORE STELLURIINI RELEASE KEYSTORE FROM SECRET
       # ==========================================================
 
       - name: Restore release keystore
@@ -171,7 +160,7 @@ jobs:
           echo "Keystore file is present and ready for signing."
 
       # ==========================================================
-      # 11. GENERATE APP ICON
+      # 10. GENERATE APP ICON
       # ==========================================================
 
       - name: Generate app icon
@@ -184,7 +173,7 @@ jobs:
           dart run flutter_launcher_icons
 
       # ==========================================================
-      # 12. FLUTTER ANALYZE
+      # 11. FLUTTER ANALYZE
       # ==========================================================
 
       - name: Flutter analyze
@@ -192,7 +181,7 @@ jobs:
           flutter analyze
 
       # ==========================================================
-      # 13. FLUTTER TEST
+      # 12. FLUTTER TEST
       # ==========================================================
 
       - name: Flutter test
@@ -205,7 +194,7 @@ jobs:
           fi
 
       # ==========================================================
-      # 14. VERIFY RELEASE KEYSTORE
+      # 13. VERIFY RELEASE KEYSTORE
       # ==========================================================
 
       - name: Verify release keystore
@@ -231,7 +220,7 @@ jobs:
           echo "Release keystore verification PASSED."
 
       # ==========================================================
-      # 15. BUILD RELEASE APP BUNDLE
+      # 14. BUILD RELEASE APP BUNDLE
       # ==========================================================
 
       - name: Build release App Bundle
@@ -256,7 +245,7 @@ jobs:
           flutter build appbundle --release
 
       # ==========================================================
-      # 16. VERIFY APP BUNDLE
+      # 15. VERIFY APP BUNDLE
       # ==========================================================
 
       - name: Verify App Bundle
@@ -273,7 +262,7 @@ jobs:
           ls -lh "$AAB"
 
       # ==========================================================
-      # 17. BUILD RELEASE APK
+      # 16. BUILD RELEASE APK
       # ==========================================================
 
       - name: Build release APK
@@ -288,7 +277,7 @@ jobs:
           flutter build apk --release
 
       # ==========================================================
-      # 18. VERIFY APK
+      # 17. VERIFY APK
       # ==========================================================
 
       - name: Verify APK
@@ -305,7 +294,7 @@ jobs:
           ls -lh "$APK"
 
       # ==========================================================
-      # 19. UPLOAD RELEASE FILES
+      # 18. UPLOAD RELEASE FILES
       # ==========================================================
 
       - name: Upload release files
@@ -316,9 +305,10 @@ jobs:
             build/app/outputs/bundle/release/app-release.aab
             build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+          retention-days: 7
 
       # ==========================================================
-      # 20. REMOVE TEMPORARY RELEASE KEYSTORE
+      # 19. REMOVE TEMPORARY RELEASE KEYSTORE
       # ==========================================================
 
       - name: Remove temporary release keystore
@@ -328,7 +318,7 @@ jobs:
           echo "Temporary release keystore removed from runner."
 
       # ==========================================================
-      # 21. BUILD SUMMARY
+      # 20. BUILD SUMMARY
       # ==========================================================
 
       - name: Build summary
@@ -344,6 +334,8 @@ jobs:
           echo "Release signing:     ENABLED"
           echo "App Bundle:          PASSED"
           echo "APK build:           PASSED"
+          echo ""
+          echo "Artifact retention:  7 days"
           echo ""
           echo "Google Play Bundle:"
           echo "build/app/outputs/bundle/release/app-release.aab"
