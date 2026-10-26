@@ -1,0 +1,85 @@
+name: Cleanup Old Stelluriini Actions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    name: Remove old Stelluriini workflow runs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete old Build and Test Stelluriini Release runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_FILE: build-apk.yml
+          KEEP_RUNS: 10
+        run: |
+          set -e
+
+          echo "=================================================="
+          echo "🐱 STELLURIINI ACTIONS CLEANUP"
+          echo "=================================================="
+          echo ""
+          echo "Repository: $REPOSITORY"
+          echo "Workflow:   $WORKFLOW_FILE"
+          echo "Keeping:    $KEEP_RUNS newest runs"
+          echo ""
+
+          RUN_IDS=$(gh api \
+            --paginate \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$REPOSITORY/actions/workflows/$WORKFLOW_FILE/runs?per_page=100&status=completed" \
+            --jq '.workflow_runs[].id' \
+            | head -n "$KEEP_RUNS")
+
+          if [ -z "$RUN_IDS" ]; then
+            echo "No completed workflow runs found."
+            exit 0
+          fi
+
+          echo "Runs that will be kept:"
+          echo "$RUN_IDS"
+          echo ""
+
+          ALL_RUN_IDS=$(gh api \
+            --paginate \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$REPOSITORY/actions/workflows/$WORKFLOW_FILE/runs?per_page=100&status=completed" \
+            --jq '.workflow_runs[].id')
+
+          COUNT=0
+
+          while IFS= read -r RUN_ID; do
+            [ -z "$RUN_ID" ] && continue
+
+            if echo "$RUN_IDS" | grep -qx "$RUN_ID"; then
+              continue
+            fi
+
+            echo "Deleting workflow run: $RUN_ID"
+
+            gh api \
+              --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/$REPOSITORY/actions/runs/$RUN_ID"
+
+            COUNT=$((COUNT + 1))
+          done <<< "$ALL_RUN_IDS"
+
+          echo ""
+          echo "=================================================="
+          echo "CLEANUP COMPLETE"
+          echo "=================================================="
+          echo ""
+          echo "Deleted runs: $COUNT"
+          echo "Kept runs:    $KEEP_RUNS"
+          echo ""
+          echo "Old workflow artifacts belonging to deleted runs"
+          echo "are removed together with those workflow runs."
+          echo ""
+          echo "=================================================="
