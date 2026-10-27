@@ -2,10 +2,6 @@
 name: Deploy Stelluriini Functions
 
 on:
-  push:
-    branches:
-      - main
-
   workflow_dispatch:
 
 jobs:
@@ -13,72 +9,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ==========================================
-      # CHECKOUT REPOSITORY
-      # ==========================================
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # ==========================================
-      # SETUP NODE.JS
-      # ==========================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
-      # ==========================================
-      # CHECK NODE VERSION
-      # ==========================================
-
       - name: Check Node version
         run: |
           echo "========================================"
           echo "NODE VERSION"
           echo "========================================"
-
           node --version
           npm --version
 
-      # ==========================================
-      # INSTALL FIREBASE CLI
-      # ==========================================
-
       - name: Install Firebase CLI
-        run: |
-          npm install -g firebase-tools
-
-      # ==========================================
-      # CHECK FUNCTIONS FOLDER
-      # ==========================================
+        run: npm install -g firebase-tools
 
       - name: Check Functions files
         run: |
           echo "Repository files:"
           ls -la
-
           echo ""
           echo "Functions folder:"
           ls -la functions
-
           echo ""
           echo "Functions package.json:"
           cat functions/package.json
 
-      # ==========================================
-      # INSTALL FUNCTIONS DEPENDENCIES
-      # ==========================================
-
       - name: Install Functions dependencies
         working-directory: functions
-        run: |
-          npm install
-
-      # ==========================================
-      # CHECK GOOGLE CLOUD STORAGE VERSION
-      # ==========================================
+        run: npm install
 
       - name: Check Google Cloud Storage dependency
         working-directory: functions
@@ -86,15 +49,7 @@ jobs:
           echo "========================================"
           echo "GOOGLE CLOUD STORAGE DEPENDENCY"
           echo "========================================"
-
-          echo ""
-          echo "Checking installed dependency tree..."
-
           npm ls @google-cloud/storage --all || true
-
-          echo ""
-          echo "Checking directly resolvable package version..."
-
           node -e "
           try {
             const pkg = require('@google-cloud/storage/package.json');
@@ -104,45 +59,25 @@ jobs:
             console.log('It may be absent or nested inside another dependency.');
           }
           "
-
-          echo ""
           echo "Dependency check completed."
-
-      # ==========================================
-      # AUTHENTICATE GOOGLE CLOUD
-      # ==========================================
 
       - name: Authenticate Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # ==========================================
-      # SETUP GOOGLE CLOUD SDK
-      # ==========================================
-
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: stelluriini
-
-      # ==========================================
-      # CHECK GOOGLE PROJECT
-      # ==========================================
 
       - name: Check Google project
         run: |
           echo "========================================"
           echo "GOOGLE CLOUD PROJECT"
           echo "========================================"
-
           gcloud config set project stelluriini
-
           gcloud config get-value project
-
-      # ==========================================
-      # DEPLOY FIREBASE FUNCTIONS
-      # ==========================================
 
       - name: Deploy Firebase Functions
         run: |
@@ -152,26 +87,15 @@ jobs:
             --non-interactive \
             --force
 
-      # ==========================================
-      # LIST DEPLOYED FUNCTIONS
-      # ==========================================
-
       - name: List deployed Functions
         run: |
           echo ""
           echo "========================================"
           echo "DEPLOYED FIREBASE FUNCTIONS"
           echo "========================================"
-          echo ""
-
           firebase functions:list \
             --project stelluriini
-
           echo ""
-
-      # ==========================================
-      # GET ADMOB REWARD FUNCTION URL
-      # ==========================================
 
       - name: Get AdMob Reward Function URL
         run: |
@@ -179,16 +103,12 @@ jobs:
           echo "========================================"
           echo "ADMOB REWARD FUNCTION URL"
           echo "========================================"
-          echo ""
-
           gcloud functions describe adMobReward \
             --gen2 \
             --region us-central1 \
             --project stelluriini \
             --format="value(serviceConfig.uri)"
-
           echo ""
           echo "========================================"
           echo "COPY THE URL ABOVE TO ADMOB"
           echo "========================================"
-          echo ""
