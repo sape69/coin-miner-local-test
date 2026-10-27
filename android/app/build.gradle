@@ -10,21 +10,6 @@ apply plugin: "com.google.gms.google-services"
 // ============================================================
 // 🐱 STELLURIINI - RELEASE SIGNING
 // ============================================================
-//
-// Release-keystore ladataan GitHub Actionsissa ennen buildia.
-//
-// Keystore:
-// android/stelluriini-upload-keystore.jks
-//
-// Alias:
-// stelluriini-upload
-//
-// Salasanat tulevat GitHub Secrets -muuttujista:
-// STELLURIINI_KEYSTORE_PASSWORD
-// STELLURIINI_KEY_PASSWORD
-//
-// Salasanoja EI tallenneta tähän tiedostoon.
-// ============================================================
 
 def stelluriiniKeystoreFile =
         file("../stelluriini-upload-keystore.jks")
@@ -75,6 +60,17 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.release
+
+            // R8: poista käyttämätön koodi.
+            minifyEnabled true
+
+            // Poista käyttämättömät Android-resurssit.
+            shrinkResources true
+
+            // Androidin optimoidut oletussäännöt.
+            proguardFiles getDefaultProguardFile(
+                "proguard-android-optimize.txt"
+            )
         }
     }
 }
