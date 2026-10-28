@@ -1,3 +1,4 @@
+
 name: stelluriini
 description: STELLURIINI Android app
 
@@ -27,6 +28,9 @@ dependencies:
 
   # URLs
   url_launcher: ^6.3.1
+
+  # Native sharing
+  share_plus: ^12.0.2
 
   # App information
   package_info_plus: ^8.3.1
