@@ -1,3 +1,4 @@
+
 name: Build and Test Stelluriini Release
 
 on:
@@ -10,25 +11,18 @@ permissions:
 jobs:
   build-and-test:
     name: Analyze, Test and Build Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
 
     steps:
-
-      # ==========================================================
       # 1. CHECKOUT
-      # ==========================================================
-
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      # ==========================================================
       # 2. FLUTTER
-      # ==========================================================
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -36,20 +30,14 @@ jobs:
           channel: stable
           cache: true
 
-      # ==========================================================
       # 3. JAVA
-      # ==========================================================
-
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
-      # ==========================================================
       # 4. ANDROID SDK
-      # ==========================================================
-
       - name: Setup Android SDK
         run: |
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
@@ -69,10 +57,7 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0"
 
-      # ==========================================================
       # 5. VERIFY FIREBASE
-      # ==========================================================
-
       - name: Verify Firebase configuration
         run: |
           FILE="android/app/google-services.json"
@@ -85,10 +70,7 @@ jobs:
 
           echo "Firebase configuration found."
 
-      # ==========================================================
       # 6. VERIFY APPLICATION ID
-      # ==========================================================
-
       - name: Verify application ID
         run: |
           FILE="android/app/build.gradle"
@@ -108,26 +90,15 @@ jobs:
 
           echo "Application ID OK."
 
-      # ==========================================================
       # 7. FLUTTER CLEAN
-      # ==========================================================
-
       - name: Flutter clean
-        run: |
-          flutter clean
+        run: flutter clean
 
-      # ==========================================================
       # 8. PUB GET
-      # ==========================================================
-
       - name: Flutter pub get
-        run: |
-          flutter pub get
+        run: flutter pub get
 
-      # ==========================================================
-      # 9. RESTORE STELLURIINI RELEASE KEYSTORE
-      # ==========================================================
-
+      # 9. RESTORE RELEASE KEYSTORE
       - name: Restore release keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.STELLURIINI_UPLOAD_KEYSTORE_BASE64 }}
@@ -154,13 +125,9 @@ jobs:
             exit 1
           fi
 
-          echo ""
           echo "Release keystore restored successfully."
 
-      # ==========================================================
       # 10. GENERATE APP ICON
-      # ==========================================================
-
       - name: Generate app icon
         run: |
           if [ ! -f assets/images/stelluriini_logo.png ]; then
@@ -170,18 +137,11 @@ jobs:
 
           dart run flutter_launcher_icons
 
-      # ==========================================================
       # 11. FLUTTER ANALYZE
-      # ==========================================================
-
       - name: Flutter analyze
-        run: |
-          flutter analyze
+        run: flutter analyze
 
-      # ==========================================================
       # 12. FLUTTER TEST
-      # ==========================================================
-
       - name: Flutter test
         run: |
           if [ -d test ]; then
@@ -191,10 +151,7 @@ jobs:
             echo "Skipping Flutter unit/widget tests."
           fi
 
-      # ==========================================================
       # 13. VERIFY RELEASE KEYSTORE
-      # ==========================================================
-
       - name: Verify release keystore
         env:
           KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
@@ -214,22 +171,14 @@ jobs:
             -storepass "$KEYSTORE_PASSWORD" \
             -alias stelluriini-upload
 
-          echo ""
           echo "Release keystore verification PASSED."
 
-      # ==========================================================
       # 14. BUILD RELEASE APP BUNDLE
-      # ==========================================================
-
       - name: Build release App Bundle
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
           STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
         run: |
-          echo "=================================================="
-          echo "BUILDING STELLURIINI RELEASE APP BUNDLE"
-          echo "=================================================="
-
           if [ -z "$STELLURIINI_KEYSTORE_PASSWORD" ]; then
             echo "ERROR: STELLURIINI_KEYSTORE_PASSWORD secret is missing."
             exit 1
@@ -242,10 +191,7 @@ jobs:
 
           flutter build appbundle --release
 
-      # ==========================================================
       # 15. VERIFY APP BUNDLE
-      # ==========================================================
-
       - name: Verify App Bundle
         run: |
           AAB="build/app/outputs/bundle/release/app-release.aab"
@@ -255,29 +201,18 @@ jobs:
             exit 1
           fi
 
-          echo ""
           echo "App Bundle successfully created:"
           ls -lh "$AAB"
 
-      # ==========================================================
       # 16. BUILD RELEASE APK
-      # ==========================================================
-
       - name: Build release APK
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
           STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
         run: |
-          echo "=================================================="
-          echo "BUILDING STELLURIINI RELEASE APK"
-          echo "=================================================="
-
           flutter build apk --release
 
-      # ==========================================================
       # 17. VERIFY APK
-      # ==========================================================
-
       - name: Verify APK
         run: |
           APK="build/app/outputs/flutter-apk/app-release.apk"
@@ -287,16 +222,12 @@ jobs:
             exit 1
           fi
 
-          echo ""
           echo "APK successfully created:"
           ls -lh "$APK"
 
-      # ==========================================================
       # 18. UPLOAD RELEASE FILES
-      # ==========================================================
-
       - name: Upload release files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: stelluriini-release
           path: |
@@ -305,42 +236,25 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-      # ==========================================================
       # 19. REMOVE TEMPORARY RELEASE KEYSTORE
-      # ==========================================================
-
       - name: Remove temporary release keystore
         if: always()
         run: |
           rm -f android/stelluriini-upload-keystore.jks
           echo "Temporary release keystore removed from runner."
 
-      # ==========================================================
       # 20. BUILD SUMMARY
-      # ==========================================================
-
       - name: Build summary
+        if: success()
         run: |
-          echo ""
           echo "=================================================="
-          echo "🐱 STELLURIINI RELEASE BUILD SUCCESSFUL"
+          echo "STELLURIINI RELEASE BUILD SUCCESSFUL"
           echo "=================================================="
-          echo ""
-          echo "Flutter analyze:     PASSED"
-          echo "Flutter tests:       PASSED / SKIPPED"
-          echo "Release keystore:    VERIFIED"
-          echo "Release signing:     ENABLED"
-          echo "App Bundle:          PASSED"
-          echo "APK build:           PASSED"
-          echo ""
-          echo "Artifacts:"
-          echo "  stelluriini-release"
-          echo "  Retention: 3 days"
-          echo ""
-          echo "Google Play Bundle:"
-          echo "build/app/outputs/bundle/release/app-release.aab"
-          echo ""
-          echo "Test APK:"
-          echo "build/app/outputs/flutter-apk/app-release.apk"
-          echo ""
+          echo "Flutter analyze: PASSED"
+          echo "Flutter tests: PASSED / SKIPPED"
+          echo "Release keystore: VERIFIED"
+          echo "App Bundle: PASSED"
+          echo "APK build: PASSED"
+          echo "Artifact: stelluriini-release"
+          echo "Retention: 3 days"
           echo "=================================================="
