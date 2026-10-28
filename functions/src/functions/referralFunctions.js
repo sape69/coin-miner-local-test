@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -80,6 +79,46 @@ function nonNegative(value, fallback = 0) {
   return Number.isFinite(result) && result >= 0
     ? result
     : fallback;
+}
+
+// ============================================================
+// NEXT REFERRAL MILESTONE
+// ============================================================
+
+// Palauttaa seuraavan käyttäjämäärärajan ja siihen kuuluvan
+// bonusprosentin. Milestone-asetukset ovat backendissä.
+
+function getNextReferralMilestone(totalUsers) {
+  const userCount = Math.max(
+    0,
+    Math.floor(number(totalUsers, 0)),
+  );
+
+  const nextMilestone = REFERRAL_MILESTONES
+    .filter((milestone) => (
+      number(milestone.minUsers, 0) > userCount
+    ))
+    .sort((a, b) => (
+      number(a.minUsers, 0) - number(b.minUsers, 0)
+    ))[0];
+
+  if (!nextMilestone) {
+    return null;
+  }
+
+  const minUsers = Math.max(
+    0,
+    Math.floor(number(nextMilestone.minUsers, 0)),
+  );
+
+  return {
+    minUsers,
+    bonusPercent: Math.max(
+      0,
+      number(nextMilestone.bonusPercent, 0),
+    ),
+    usersRemaining: Math.max(0, minUsers - userCount),
+  };
 }
 
 // ============================================================
@@ -867,6 +906,16 @@ const getReferralStatus = onCall(
       const bonusPercent =
         number(bonusConfig.bonusPercent, 0);
 
+      // Käytetään palvelimen nykyistä käyttäjämäärää,
+      // jonka perusteella bonusprosentti on laskettu.
+      const totalUsers = Math.max(
+        0,
+        Math.floor(number(bonusConfig.totalUsers, 0)),
+      );
+
+      const nextReferralMilestone =
+        getNextReferralMilestone(totalUsers);
+
       const referrals =
         await buildReferralUsers(uid, { now });
 
@@ -895,6 +944,10 @@ const getReferralStatus = onCall(
         // Esimerkiksi 24 ja 0.24 tarkoittavat 24 %.
         referralBonusPercent: bonusPercent,
         referralBonusRate: bonusPercent / 100,
+
+        // Käyttäjämäärä ja seuraava bonusporras UI:ta varten.
+        totalUsers,
+        nextReferralMilestone,
 
         referralCount: referrals.length,
         activeCount,
