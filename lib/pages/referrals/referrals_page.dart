@@ -1,4 +1,3 @@
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,6 +71,12 @@ class _ReferralsPageState extends State<ReferralsPage> {
   int _referralCount = 0;
   int _activeCount = 0;
   int _inactiveCount = 0;
+
+  // Global community size and the next server-defined bonus milestone.
+  int _totalUsers = 0;
+  int? _nextMilestoneUsers;
+  double? _nextMilestoneBonusPercent;
+  int _usersRemaining = 0;
 
   List<_ReferralUser> _referrals = [];
 
@@ -439,6 +444,61 @@ class _ReferralsPageState extends State<ReferralsPage> {
     return 'Referral data could not be loaded.';
   }
 
+  String get _communityUsersLabel {
+    if (_isFinnish) return 'Rekisteröityneet käyttäjät';
+    if (_isGerman) return 'Registrierte Benutzer';
+    if (_isSpanish) return 'Usuarios registrados';
+    if (_isFrench) return 'Utilisateurs inscrits';
+    if (_isChinese) return '已注册用户';
+    if (_isVietnamese) return 'Người dùng đã đăng ký';
+    if (_isJapanese) return '登録ユーザー数';
+    return 'Registered users';
+  }
+
+  String get _nextMilestoneLabel {
+    if (_isFinnish) return 'Seuraava bonusporras';
+    if (_isGerman) return 'Nächste Bonusstufe';
+    if (_isSpanish) return 'Siguiente nivel de bonificación';
+    if (_isFrench) return 'Prochain palier de bonus';
+    if (_isChinese) return '下一个奖励等级';
+    if (_isVietnamese) return 'Mốc thưởng tiếp theo';
+    if (_isJapanese) return '次のボーナス段階';
+    return 'Next bonus milestone';
+  }
+
+  String get _usersRemainingLabel {
+    if (_isFinnish) return 'käyttäjää jäljellä';
+    if (_isGerman) return 'Benutzer fehlen noch';
+    if (_isSpanish) return 'usuarios restantes';
+    if (_isFrench) return 'utilisateurs restants';
+    if (_isChinese) return '位用户后达到';
+    if (_isVietnamese) return 'người dùng còn lại';
+    if (_isJapanese) return '人で到達';
+    return 'users remaining';
+  }
+
+  String get _highestMilestoneLabel {
+    if (_isFinnish) return 'Korkein bonusporras saavutettu';
+    if (_isGerman) return 'Höchste Bonusstufe erreicht';
+    if (_isSpanish) return 'Se alcanzó el nivel máximo';
+    if (_isFrench) return 'Palier de bonus maximal atteint';
+    if (_isChinese) return '已达到最高奖励等级';
+    if (_isVietnamese) return 'Đã đạt mốc thưởng cao nhất';
+    if (_isJapanese) return '最高ボーナス段階に到達しました';
+    return 'Highest bonus milestone reached';
+  }
+
+  String get _milestoneUsersWord {
+    if (_isFinnish) return 'käyttäjää';
+    if (_isGerman) return 'Benutzer';
+    if (_isSpanish) return 'usuarios';
+    if (_isFrench) return 'utilisateurs';
+    if (_isChinese) return '位用户';
+    if (_isVietnamese) return 'người dùng';
+    if (_isJapanese) return '人';
+    return 'users';
+  }
+
   // ==========================================================
   // 🚀 INIT
   // ==========================================================
@@ -540,6 +600,32 @@ class _ReferralsPageState extends State<ReferralsPage> {
         fallback: calculatedInactive,
       );
 
+      final int loadedTotalUsers = _readInt(data['totalUsers']);
+
+      int? loadedNextMilestoneUsers;
+      double? loadedNextMilestoneBonusPercent;
+      int loadedUsersRemaining = 0;
+
+      final dynamic rawMilestone = data['nextReferralMilestone'];
+      if (rawMilestone is Map) {
+        final Map<String, dynamic> milestone =
+            Map<String, dynamic>.from(rawMilestone);
+
+        final dynamic rawMinUsers = milestone['minUsers'];
+        if (rawMinUsers != null) {
+          final int minUsers = _readInt(rawMinUsers, fallback: -1);
+          if (minUsers >= 0) {
+            loadedNextMilestoneUsers = minUsers;
+            loadedNextMilestoneBonusPercent =
+                _readDouble(milestone['bonusPercent']);
+            loadedUsersRemaining = _readInt(milestone['usersRemaining']);
+            if (loadedUsersRemaining < 0) {
+              loadedUsersRemaining = 0;
+            }
+          }
+        }
+      }
+
       if (!mounted) {
         return;
       }
@@ -567,6 +653,11 @@ class _ReferralsPageState extends State<ReferralsPage> {
                 : loadedInactiveCount;
 
         _referrals = loadedReferrals;
+
+        _totalUsers = loadedTotalUsers < 0 ? 0 : loadedTotalUsers;
+        _nextMilestoneUsers = loadedNextMilestoneUsers;
+        _nextMilestoneBonusPercent = loadedNextMilestoneBonusPercent;
+        _usersRemaining = loadedUsersRemaining;
 
         _loading = false;
         _refreshing = false;
@@ -970,6 +1061,119 @@ class _ReferralsPageState extends State<ReferralsPage> {
                       ),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          // Global community size and next bonus milestone.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.24),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.groups_rounded,
+                      color: referralBlueColor,
+                      size: 21,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        _communityUsersLabel,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.76),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _totalUsers.toString(),
+                      style: const TextStyle(
+                        color: referralBlueColor,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.10),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.trending_up_rounded,
+                      color: pinkAccentColor,
+                      size: 21,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _nextMilestoneLabel,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.76),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          if (_nextMilestoneUsers != null &&
+                              _nextMilestoneBonusPercent != null) ...[
+                            Text(
+                              '${_nextMilestoneUsers!} '
+                              '$_milestoneUsersWord → '
+                              '${_nextMilestoneBonusPercent!.toStringAsFixed(
+                                _nextMilestoneBonusPercent! % 1 == 0 ? 0 : 1,
+                              )}%',
+                              style: const TextStyle(
+                                color: pinkAccentColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$_usersRemaining $_usersRemainingLabel',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.62),
+                                fontSize: 11,
+                                height: 1.3,
+                              ),
+                            ),
+                          ] else
+                            Text(
+                              _highestMilestoneLabel,
+                              style: const TextStyle(
+                                color: goldAccentColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
