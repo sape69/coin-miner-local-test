@@ -30,18 +30,44 @@ jobs:
 
       - name: Check Functions files
         run: |
-          echo "Repository files:"
+          echo "========================================"
+          echo "REPOSITORY FILES"
+          echo "========================================"
           ls -la
+
           echo ""
-          echo "Functions folder:"
+          echo "========================================"
+          echo "FUNCTIONS FOLDER"
+          echo "========================================"
           ls -la functions
+
           echo ""
-          echo "Functions package.json:"
+          echo "========================================"
+          echo "FUNCTIONS PACKAGE.JSON"
+          echo "========================================"
           cat functions/package.json
 
       - name: Install Functions dependencies
         working-directory: functions
         run: npm install
+
+      - name: Check JavaScript syntax
+        working-directory: functions
+        run: |
+          set -e
+
+          echo "========================================"
+          echo "CHECKING JAVASCRIPT SYNTAX"
+          echo "========================================"
+
+          find . \
+            -type d -name node_modules -prune \
+            -o \
+            -type f -name "*.js" -print0 \
+            | xargs -0 -r -n 1 node --check
+
+          echo ""
+          echo "SUCCESS: All JavaScript files passed syntax checks."
 
       - name: Check Google Cloud Storage dependency
         working-directory: functions
@@ -49,7 +75,9 @@ jobs:
           echo "========================================"
           echo "GOOGLE CLOUD STORAGE DEPENDENCY"
           echo "========================================"
+
           npm ls @google-cloud/storage --all || true
+
           node -e "
           try {
             const pkg = require('@google-cloud/storage/package.json');
@@ -59,6 +87,7 @@ jobs:
             console.log('It may be absent or nested inside another dependency.');
           }
           "
+
           echo "Dependency check completed."
 
       - name: Authenticate Google Cloud
@@ -76,6 +105,7 @@ jobs:
           echo "========================================"
           echo "GOOGLE CLOUD PROJECT"
           echo "========================================"
+
           gcloud config set project stelluriini
           gcloud config get-value project
 
@@ -93,8 +123,10 @@ jobs:
           echo "========================================"
           echo "DEPLOYED FIREBASE FUNCTIONS"
           echo "========================================"
+
           firebase functions:list \
             --project stelluriini
+
           echo ""
 
       - name: Get AdMob Reward Function URL
@@ -103,11 +135,13 @@ jobs:
           echo "========================================"
           echo "ADMOB REWARD FUNCTION URL"
           echo "========================================"
+
           gcloud functions describe adMobReward \
             --gen2 \
             --region us-central1 \
             --project stelluriini \
             --format="value(serviceConfig.uri)"
+
           echo ""
           echo "========================================"
           echo "COPY THE URL ABOVE TO ADMOB"
