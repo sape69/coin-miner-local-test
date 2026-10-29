@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -55,6 +56,10 @@ const {
   getReferralSummary,
 } = require("../services/referralService");
 
+const {
+  getOrInitializeReferralBonusTotal,
+} = require("../services/referralBonusSummaryService");
+
 // ============================================================
 // CONSTANTS
 // ============================================================
@@ -84,9 +89,6 @@ function nonNegative(value, fallback = 0) {
 // ============================================================
 // NEXT REFERRAL MILESTONE
 // ============================================================
-
-// Palauttaa seuraavan käyttäjämäärärajan ja siihen kuuluvan
-// bonusprosentin. Milestone-asetukset ovat backendissä.
 
 function getNextReferralMilestone(totalUsers) {
   const userCount = Math.max(
@@ -176,9 +178,6 @@ function timestampMs(value) {
 // USER DISPLAY NAME
 // ============================================================
 
-// Synkroninen varanimi, jota käytetään myös muissa
-// referral-toiminnoissa.
-
 function safeDisplayName(data, uid) {
   const candidates = [
     data.username,
@@ -201,9 +200,6 @@ function safeDisplayName(data, uid) {
 
   return "Stella Miner";
 }
-
-// Hakee ensin profiilin nimimerkin.
-// Jos sitä ei löydy, yrittää Firebase Authenticationia.
 
 async function getReferralDisplayName(data, uid) {
   const profileName = safeDisplayNameFromProfile(data);
@@ -291,41 +287,37 @@ function lastActivityMs(data) {
 }
 
 // ============================================================
-// REFERRAL BONUS HISTORY
+// REFERRAL BONUS SUMMARY
+// ============================================================
+//
+// Käytetään suhteen tallennettua yhteenvetoa, kun se on
+// alustettu. Vanhojen suhteiden summa lasketaan historiasta
+// ja tallennetaan turvallisesti ensimmäisellä käyttökerralla.
+//
+// Historiakyselyn virhettä ei muuteta nollasaldoksi.
+//
 // ============================================================
 
 async function getReferralBonusForUser(
   referrerUid,
   referredUid,
+  relationshipDocument,
 ) {
   if (
     typeof referrerUid !== "string" ||
-    typeof referredUid !== "string"
+    typeof referredUid !== "string" ||
+    !relationshipDocument
   ) {
-    return 0;
-  }
-
-  let total = 0;
-
-  try {
-    const historyQuery = getHistoryCollection(referrerUid)
-      .where("referredUid", "==", referredUid)
-      .where("type", "==", "referral_reward");
-
-    const snapshot = await historyQuery.get();
-
-    snapshot.forEach((document) => {
-      const data = document.data() || {};
-      total += nonNegative(data.amount);
-    });
-  } catch (error) {
-    console.error(
-      "Referral bonus history error:",
-      error,
+    throw new Error(
+      "Referral bonus summary is missing required data.",
     );
   }
 
-  return Math.max(0, total);
+  return getOrInitializeReferralBonusTotal({
+    referrerUid,
+    referredUid,
+    relationshipRef: relationshipDocument.ref,
+  });
 }
 
 // ============================================================
@@ -372,7 +364,6 @@ async function buildReferralUsers(uid, options = {}) {
       continue;
     }
 
-    // Sama käyttäjä näytetään vain kerran.
     if (seenReferredUids.has(referredUid)) {
       continue;
     }
@@ -398,9 +389,9 @@ async function buildReferralUsers(uid, options = {}) {
       await getReferralBonusForUser(
         uid,
         referredUid,
+        relationshipDocument,
       );
 
-    // Hae oikea nimimerkki Firestoresta tai Authista.
     const displayName =
       await getReferralDisplayName(
         userData,
@@ -897,17 +888,12 @@ const getReferralStatus = onCall(
           ? userSnapshot.data() || {}
           : {};
 
-      // Haetaan palvelimen nykyinen bonusprosentti.
-      // Näin sovelluksen näyttämä prosentti vastaa
-      // referral-palvelun voimassa olevaa asetusta.
       const bonusConfig =
         await getCurrentReferralBonusPercent();
 
       const bonusPercent =
         number(bonusConfig.bonusPercent, 0);
 
-      // Käytetään palvelimen nykyistä käyttäjämäärää,
-      // jonka perusteella bonusprosentti on laskettu.
       const totalUsers = Math.max(
         0,
         Math.floor(number(bonusConfig.totalUsers, 0)),
@@ -940,12 +926,9 @@ const getReferralStatus = onCall(
 
         referralCode: ensured.code,
 
-        // Referral-bonus prosentteina ja desimaalina.
-        // Esimerkiksi 24 ja 0.24 tarkoittavat 24 %.
         referralBonusPercent: bonusPercent,
         referralBonusRate: bonusPercent / 100,
 
-        // Käyttäjämäärä ja seuraava bonusporras UI:ta varten.
         totalUsers,
         nextReferralMilestone,
 
@@ -1075,13 +1058,10 @@ const getReferralDashboard = onCall(
 // ============================================================
 
 module.exports = {
-  // Mining käyttää tätä.
   processReferralMiningReward,
 
-  // Säilytetään nykyinen service-wrapper.
   applyReferralMiningReward,
 
-  // Callable Functions
   getReferralProfile,
   applyReferralCode,
   getReferredUsers,
