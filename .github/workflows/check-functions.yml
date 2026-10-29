@@ -1,0 +1,77 @@
+
+name: Check Stelluriini Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - ".github/workflows/check-functions.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - ".github/workflows/check-functions.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-functions:
+    name: Validate Firebase Functions
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: functions
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Verify Node and npm
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Check JavaScript syntax
+        run: |
+          set -eu
+
+          find src \
+            -type f \
+            -name "*.js" \
+            -print0 \
+            | xargs -0 -r -n 1 node --check
+
+          if [ -f index.js ]; then
+            node --check index.js
+          fi
+
+          echo "All checked JavaScript files passed syntax validation."
+
+      - name: Verify required referral files
+        run: |
+          set -eu
+
+          test -f src/services/referralService.js
+          test -f src/services/referralBonusSummaryService.js
+          test -f src/functions/referralFunctions.js
+
+          echo "Required referral files exist."
+
+      - name: Verify installed dependencies
+        run: npm ls --depth=0
