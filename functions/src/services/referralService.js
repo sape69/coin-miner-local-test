@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -43,7 +42,7 @@ const {
 } = require("../utils/userUtils");
 
 const {
-  incrementInitializedReferralBonusTotal,
+  applyReferralBonusToSummary,
 } = require("./referralBonusSummaryService");
 
 const {
@@ -820,17 +819,23 @@ async function applyReferralMiningReward(
       ? relationshipSnapshot.data() || {}
       : null;
 
+  // Päivitetään suhteen bonusyhteenveto ennen ensimmäistä
+  // kirjoitusta. Vanha yhteenveto alustetaan historiasta
+  // ja uusi bonus lisätään siihen samassa transaktiossa.
+
   if (
     relationshipData &&
     relationshipData.referrerUid === referrerUid &&
     relationshipData.referredUid === safeUid
   ) {
-    incrementInitializedReferralBonusTotal(
+    await applyReferralBonusToSummary({
       transaction,
       relationshipRef,
       relationshipData,
-      reward.bonus,
-    );
+      referrerUid,
+      referredUid: safeUid,
+      bonusAmount: reward.bonus,
+    });
   }
 
   // WRITES begin only after all reads and bonus calculation.
