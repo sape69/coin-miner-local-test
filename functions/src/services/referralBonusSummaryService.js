@@ -6,20 +6,24 @@
 // ============================================================
 //
 // Tarkoitus:
-// - Vähentää referral-bonushistorian turhia lukukertoja.
-// - Säilyttää vanhojen referral-suhteiden tiedot.
-// - Päivittää yhteenveto vain, jos se on alustettu luotettavasti.
+// - Vähentää turhia referral-bonushistorian lukukertoja.
+// - Säilyttää vanhojen suosittelusuhteiden bonusmäärät.
+// - Alustaa vanhan yhteenvetotiedon turvallisesti.
+// - Estää historian lukemisen virheen tulkitsemisen nollaksi.
 //
-// TÄRKEÄÄ:
-// Vanhojen referral-suhteiden puuttuvaa yhteenvetoa ei
-// tulkita nollaksi. Niiden historiatiedot pitää käsitellä
-// erikseen ennen kuin historiahaut voidaan ohittaa.
+// Uudet suosittelusuhteet voivat aloittaa summasta 0.
+// Vanhojen suhteiden puuttuvaa yhteenvetoa ei tulkita nollaksi.
 //
 // ============================================================
 
 const {
+  db,
   FieldValue,
 } = require("../firebase/firebase");
+
+const {
+  getHistoryCollection,
+} = require("../utils/userUtils");
 
 // ============================================================
 // VALIDATION
@@ -36,12 +40,12 @@ function normalizeBonusAmount(value) {
 }
 
 // ============================================================
-// READ SUMMARY FROM RELATIONSHIP DATA
+// READ INITIALIZED SUMMARY
 // ============================================================
 //
-// Palauttaa null, jos yhteenvetoa ei ole alustettu.
-// null tarkoittaa, että kutsujan pitää käyttää vanhaa
-// historiapohjaista laskentaa.
+// Palauttaa:
+// - summan, jos yhteenveto on alustettu
+// - null, jos yhteenvetoa ei voida luotettavasti käyttää
 //
 // ============================================================
 
@@ -67,17 +71,116 @@ function getInitializedReferralBonusTotal(
 }
 
 // ============================================================
-// UPDATE INITIALIZED SUMMARY IN TRANSACTION
+// GET OR INITIALIZE SUMMARY
 // ============================================================
 //
-// Kutsu tätä Firestore-transaktion sisällä.
+// Vanhan suosittelusuhteen yhteenveto lasketaan historiasta
+// vain kerran ja tallennetaan suosittelusuhteen dokumenttiin.
 //
-// relationshipRef:
-//   referrals/{referredUid}
+// Historia ja suosittelusuhde luetaan saman Firestore-
+// transaktion sisällä. Tämä suojaa yhteenvetoa tilanteessa,
+// jossa uusi bonus maksetaan samanaikaisesti.
 //
-// Päivitys tehdään vain, kun yhteenveto on alustettu.
-// Vanhoja, alustamattomia suhteita ei muuteta, koska niiden
-// aikaisempaa kokonaispalkkiota ei välttämättä tunneta.
+// Jos historian lukeminen epäonnistuu, virhe välitetään
+// eteenpäin. Epäonnistunutta lukua ei tallenneta nollaksi.
+//
+// ============================================================
+
+async function getOrInitializeReferralBonusTotal({
+  referrerUid,
+  referredUid,
+  relationshipRef,
+}) {
+  if (
+    !referrerUid ||
+    !referredUid ||
+    !relationshipRef
+  ) {
+    throw new Error(
+      "Referral bonus summary is missing required parameters.",
+    );
+  }
+
+  return db.runTransaction(async (transaction) => {
+    // Kaikki lukemiset tehdään ennen kirjoituksia.
+
+    const relationshipSnapshot =
+      await transaction.get(relationshipRef);
+
+    if (!relationshipSnapshot.exists) {
+      throw new Error(
+        "Referral relationship does not exist.",
+      );
+    }
+
+    const relationshipData =
+      relationshipSnapshot.data() || {};
+
+    if (
+      relationshipData.referrerUid !== referrerUid ||
+      relationshipData.referredUid !== referredUid
+    ) {
+      throw new Error(
+        "Referral relationship does not match the requested users.",
+      );
+    }
+
+    const initializedTotal =
+      getInitializedReferralBonusTotal(
+        relationshipData,
+      );
+
+    if (initializedTotal !== null) {
+      return initializedTotal;
+    }
+
+    // Vanha yhteenveto puuttuu tai ei ole luotettava.
+    // Lasketaan bonukset varsinaisesta tapahtumahistoriasta.
+
+    const historyQuery =
+      getHistoryCollection(referrerUid)
+        .where("referredUid", "==", referredUid)
+        .where("type", "==", "referral_reward");
+
+    const historySnapshot =
+      await transaction.get(historyQuery);
+
+    let total = 0;
+
+    historySnapshot.forEach((document) => {
+      const data = document.data() || {};
+
+      total += normalizeBonusAmount(data.amount);
+    });
+
+    // Yhteenveto merkitään alustetuksi vasta onnistuneen
+    // historiakyselyn ja summan laskemisen jälkeen.
+
+    transaction.set(
+      relationshipRef,
+      {
+        referralBonusTotal: total,
+        referralBonusTotalInitialized: true,
+      },
+      {
+        merge: true,
+      },
+    );
+
+    return total;
+  });
+}
+
+// ============================================================
+// INCREMENT INITIALIZED SUMMARY
+// ============================================================
+//
+// Kutsutaan uuden bonuksen maksavan Firestore-transaktion
+// sisältä sen jälkeen, kun relationship-dokumentti on luettu.
+//
+// Alustamatonta yhteenvetoa ei kasvateta, koska sen vanhaa
+// kokonaissummaa ei vielä tunneta. Se voidaan alustaa
+// myöhemmin historiasta.
 //
 // ============================================================
 
@@ -110,8 +213,7 @@ function incrementInitializedReferralBonusTotal(
   transaction.set(
     relationshipRef,
     {
-      referralBonusTotal:
-        FieldValue.increment(amount),
+      referralBonusTotal: FieldValue.increment(amount),
     },
     {
       merge: true,
@@ -128,5 +230,6 @@ function incrementInitializedReferralBonusTotal(
 module.exports = {
   normalizeBonusAmount,
   getInitializedReferralBonusTotal,
+  getOrInitializeReferralBonusTotal,
   incrementInitializedReferralBonusTotal,
 };
