@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -57,6 +56,7 @@ const {
 } = require("../services/referralService");
 
 const {
+  getInitializedReferralBonusTotal,
   getOrInitializeReferralBonusTotal,
 } = require("../services/referralBonusSummaryService");
 
@@ -290,8 +290,10 @@ function lastActivityMs(data) {
 // REFERRAL BONUS SUMMARY
 // ============================================================
 //
-// Käytetään suhteen tallennettua yhteenvetoa, kun se on
-// alustettu. Vanhojen suhteiden summa lasketaan historiasta
+// Käytetään jo haetun referral-dokumentin yhteenvetoa,
+// jos se on alustettu.
+//
+// Vanhojen suhteiden puuttuva yhteenveto lasketaan historiasta
 // ja tallennetaan turvallisesti ensimmäisellä käyttökerralla.
 //
 // Historiakyselyn virhettä ei muuteta nollasaldoksi.
@@ -306,12 +308,43 @@ async function getReferralBonusForUser(
   if (
     typeof referrerUid !== "string" ||
     typeof referredUid !== "string" ||
-    !relationshipDocument
+    !relationshipDocument ||
+    !relationshipDocument.ref
   ) {
     throw new Error(
       "Referral bonus summary is missing required data.",
     );
   }
+
+  const relationshipData =
+    relationshipDocument.data() || {};
+
+  if (
+    relationshipData.referrerUid !== referrerUid ||
+    relationshipData.referredUid !== referredUid
+  ) {
+    throw new Error(
+      "Referral relationship does not match the requested users.",
+    );
+  }
+
+  // OPTIMIZATION:
+  // Referral-dokumentti on jo haettu listaa rakennettaessa.
+  // Jos yhteenveto on alustettu, käytetään tätä tietoa suoraan.
+  // Erillistä Firestore-transaktiota ei tarvita.
+
+  const initializedTotal =
+    getInitializedReferralBonusTotal(
+      relationshipData,
+    );
+
+  if (initializedTotal !== null) {
+    return initializedTotal;
+  }
+
+  // LEGACY:
+  // Vanha suhde ilman alustettua yhteenvetoa.
+  // Lasketaan historia turvallisesti ja alustetaan yhteenveto.
 
   return getOrInitializeReferralBonusTotal({
     referrerUid,
