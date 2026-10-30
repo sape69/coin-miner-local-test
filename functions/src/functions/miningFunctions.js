@@ -2867,7 +2867,7 @@ const claimMining =
             };
           }
         );
-      } catch (error) {
+            } catch (error) {
         console.error(
           "claimMining error:",
           error
@@ -2877,6 +2877,21 @@ const claimMining =
           error instanceof HttpsError
         ) {
           throw error;
+        }
+
+        const referralErrorCodes = [
+          "REFERRAL_RELATIONSHIP_NOT_FOUND",
+          "REFERRAL_RELATIONSHIP_MISMATCH",
+        ];
+
+        if (
+          error &&
+          referralErrorCodes.includes(error.message)
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "🐱 Referral-tiedoissa on ongelma. Louhinnan lunastus keskeytettiin turvallisesti. Ota yhteyttä tukeen."
+          );
         }
 
         throw new HttpsError(
