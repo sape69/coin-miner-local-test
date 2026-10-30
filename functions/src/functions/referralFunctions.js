@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -1149,6 +1150,9 @@ module.exports = {
   processReferralMiningReward,
 
   applyReferralMiningReward,
+
+  // Testikäyttöön: referral-listan rakentamisen testaaminen.
+  buildReferralUsers,
 
   getReferralProfile,
   applyReferralCode,
