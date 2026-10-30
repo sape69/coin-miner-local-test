@@ -1,3 +1,4 @@
+
 name: Check Stelluriini Functions
 
 on:
@@ -76,14 +77,17 @@ jobs:
           test -f src/services/referralService.js
           test -f src/services/referralBonusSummaryService.js
           test -f src/functions/referralFunctions.js
+
           test -f test/referralBonusSummaryService.test.js
           test -f test/referralBonusSummaryService.integration.test.js
           test -f test/referralMiningReward.integration.test.js
+          test -f test/referralFunctions.integration.test.js
 
           echo "All required referral files exist."
 
       - name: Run referral summary unit tests
-        run: node --test test/referralBonusSummaryService.test.js
+        run: |
+          node --test test/referralBonusSummaryService.test.js
 
       - name: Install Firebase CLI
         run: npm install --global firebase-tools
@@ -106,6 +110,14 @@ jobs:
             --only firestore \
             --project demo-stelluriini \
             "cd functions && node --test test/referralMiningReward.integration.test.js"
+        working-directory: .
+
+      - name: Run referral functions integration tests
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-stelluriini \
+            "cd functions && node --test test/referralFunctions.integration.test.js"
         working-directory: .
 
       - name: Verify installed dependencies
