@@ -1,10 +1,11 @@
+
 "use strict";
 
 // ============================================================
 // 🐱 STELLURIINI - REFERRAL MINING REWARD INTEGRATION TESTS
 // ============================================================
 //
-// Testaa varsinaista applyReferralMiningReward()-toimintoa
+// Testaa applyReferralMiningReward()-toimintoa
 // Firestore Emulatorissa.
 //
 // Testit:
@@ -13,6 +14,12 @@
 //    bonusta kahdesti.
 // 3. Eri samanaikaiset tapahtumat säilyttävät kaikki bonukset.
 // 4. Käyttäjän saldo, referral-yhteenveto ja historia täsmäävät.
+// 5. Vanhan referral-suhteen historia säilyy.
+// 6. Puuttuva referral-suhde estää bonuksen.
+// 7. Väärä kutsuja estää bonuksen.
+// 8. Väärä kutsuttu käyttäjä estää bonuksen.
+// 9. Nolla, negatiivinen tai virheellinen louhintamäärä
+//    ei tuota bonusta.
 //
 // ============================================================
 
@@ -65,6 +72,7 @@ function createTestCase(name) {
 
 function createBonusMarkerRef(miningTransactionId) {
   const bonusId = `referral_${miningTransactionId}`;
+
   const markerRef = db
     .collection("referrals")
     .doc(`_bonus_${bonusId}`);
@@ -172,6 +180,44 @@ async function countUserRewardHistory(referrerUid) {
     .get();
 
   return snapshot.size;
+}
+
+async function assertNoReferralPayment({
+  referrerUid,
+  referredUid,
+}) {
+  const referrer = await readUser(referrerUid);
+  const relationship = await readRelationship(referredUid);
+
+  assert.equal(
+    referrer.miningBalance,
+    0,
+    "Referrer balance must not increase.",
+  );
+
+  assert.equal(
+    referrer.referralTotalEarned,
+    0,
+    "Referral total must not increase.",
+  );
+
+  assert.equal(
+    relationship.referralBonusTotal,
+    0,
+    "Referral summary must remain unchanged.",
+  );
+
+  assert.equal(
+    await countReferralHistory(referrerUid),
+    0,
+    "Referral history must not be created.",
+  );
+
+  assert.equal(
+    await countUserRewardHistory(referrerUid),
+    0,
+    "User reward history must not be created.",
+  );
 }
 
 // ============================================================
@@ -489,5 +535,256 @@ test(
       relationship.referralBonusTotalInitialized,
       true,
     );
+  },
+);
+
+// ============================================================
+// TEST 5: MISSING REFERRAL RELATIONSHIP
+// ============================================================
+
+test(
+  "missing referral relationship prevents bonus payment",
+  async () => {
+    const {
+      referrerUid,
+      referredUid,
+    } = createTestCase("missing-relationship");
+
+    await seedTestUsers({
+      referrerUid,
+      referredUid,
+    });
+
+    // Poistetaan referral-suhde, mutta jätetään käyttäjän
+    // referrerUid-kenttä ennalleen.
+    await db
+      .collection("referrals")
+      .doc(referredUid)
+      .delete();
+
+    const miningTransactionId =
+      `${testPrefix}-missing-relationship-event`;
+
+    createBonusMarkerRef(miningTransactionId);
+
+    await assert.rejects(
+      applyReward({
+        referredUid,
+        miningAmount: 100,
+        miningTransactionId,
+      }),
+      /REFERRAL_RELATIONSHIP_NOT_FOUND/,
+    );
+
+    const referrer = await readUser(referrerUid);
+
+    assert.equal(referrer.miningBalance, 0);
+    assert.equal(referrer.referralTotalEarned, 0);
+
+    assert.equal(
+      await countReferralHistory(referrerUid),
+      0,
+    );
+
+    assert.equal(
+      await countUserRewardHistory(referrerUid),
+      0,
+    );
+  },
+);
+
+// ============================================================
+// TEST 6: WRONG REFERRER UID
+// ============================================================
+
+test(
+  "mismatched referrer UID prevents bonus payment",
+  async () => {
+    const {
+      referrerUid,
+      referredUid,
+    } = createTestCase("wrong-referrer");
+
+    await seedTestUsers({
+      referrerUid,
+      referredUid,
+    });
+
+    // Muutetaan referral-suhteen kutsuja vääräksi.
+    // Käyttäjän oma referrerUid säilyy alkuperäisenä.
+    await db
+      .collection("referrals")
+      .doc(referredUid)
+      .update({
+        referrerUid: `${testPrefix}-wrong-referrer`,
+      });
+
+    const miningTransactionId =
+      `${testPrefix}-wrong-referrer-event`;
+
+    createBonusMarkerRef(miningTransactionId);
+
+    await assert.rejects(
+      applyReward({
+        referredUid,
+        miningAmount: 100,
+        miningTransactionId,
+      }),
+      /REFERRAL_RELATIONSHIP_MISMATCH/,
+    );
+
+    await assertNoReferralPayment({
+      referrerUid,
+      referredUid,
+    });
+  },
+);
+
+// ============================================================
+// TEST 7: WRONG REFERRED UID
+// ============================================================
+
+test(
+  "mismatched referred UID prevents bonus payment",
+  async () => {
+    const {
+      referrerUid,
+      referredUid,
+    } = createTestCase("wrong-referred");
+
+    await seedTestUsers({
+      referrerUid,
+      referredUid,
+    });
+
+    // Referral-dokumentin referredUid ei enää vastaa
+    // dokumentin tunnistetta eikä kutsuttua käyttäjää.
+    await db
+      .collection("referrals")
+      .doc(referredUid)
+      .update({
+        referredUid: `${testPrefix}-wrong-referred`,
+      });
+
+    const miningTransactionId =
+      `${testPrefix}-wrong-referred-event`;
+
+    createBonusMarkerRef(miningTransactionId);
+
+    await assert.rejects(
+      applyReward({
+        referredUid,
+        miningAmount: 100,
+        miningTransactionId,
+      }),
+      /REFERRAL_RELATIONSHIP_MISMATCH/,
+    );
+
+    await assertNoReferralPayment({
+      referrerUid,
+      referredUid,
+    });
+  },
+);
+
+// ============================================================
+// TEST 8: INVALID MINING AMOUNTS
+// ============================================================
+
+test(
+  "zero and invalid mining amounts cannot generate bonuses",
+  async () => {
+    const {
+      referrerUid,
+      referredUid,
+    } = createTestCase("invalid-amounts");
+
+    await seedTestUsers({
+      referrerUid,
+      referredUid,
+    });
+
+    const invalidAmounts = [
+      0,
+      -1,
+      -100,
+      NaN,
+      Infinity,
+      -Infinity,
+    ];
+
+    for (
+      let index = 0;
+      index < invalidAmounts.length;
+      index += 1
+    ) {
+      const miningTransactionId =
+        `${testPrefix}-invalid-amount-${index}`;
+
+      createBonusMarkerRef(miningTransactionId);
+
+      const result = await applyReward({
+        referredUid,
+        miningAmount: invalidAmounts[index],
+        miningTransactionId,
+      });
+
+      assert.equal(
+        result.applied,
+        false,
+        `Invalid amount ${String(invalidAmounts[index])} must not be applied.`,
+      );
+
+      assert.equal(
+        result.reason,
+        "NO_BONUS",
+      );
+
+      assert.equal(result.bonus, 0);
+    }
+
+    await assertNoReferralPayment({
+      referrerUid,
+      referredUid,
+    });
+  },
+);
+
+// ============================================================
+// TEST 9: EMPTY MINING TRANSACTION ID
+// ============================================================
+
+test(
+  "empty mining transaction ID cannot generate a bonus",
+  async () => {
+    const {
+      referrerUid,
+      referredUid,
+    } = createTestCase("empty-transaction-id");
+
+    await seedTestUsers({
+      referrerUid,
+      referredUid,
+    });
+
+    const result = await applyReward({
+      referredUid,
+      miningAmount: 100,
+      miningTransactionId: "",
+    });
+
+    assert.equal(result.applied, false);
+
+    assert.equal(
+      result.reason,
+      "INVALID_MINING_TRANSACTION_ID",
+    );
+
+    assert.equal(result.bonus, 0);
+
+    await assertNoReferralPayment({
+      referrerUid,
+      referredUid,
+    });
   },
 );
