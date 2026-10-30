@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -8,11 +9,12 @@
 //
 // Testit:
 // 1. Kaikki kutsutut käyttäjät palautetaan.
-// 2. Käyttäjät käsitellään enintään 100 käyttäjän listasta.
-// 3. Duplikaattikäyttäjät poistetaan.
-// 4. Puuttuvat käyttäjäprofiilit ohitetaan.
-// 5. Referral-bonukset säilyvät oikein.
-// 6. Flutterin tarvitsemat kentät palautetaan.
+// 2. Enintään 100 referral-käyttäjää palautetaan.
+// 3. 101 käyttäjän tilanteessa tulos rajataan sataan.
+// 4. Duplikaattikäyttäjät poistetaan.
+// 5. Puuttuvat käyttäjäprofiilit ohitetaan.
+// 6. Tyhjä referral-lista palauttaa tyhjän taulukon.
+// 7. Flutterin tarvitsemat kentät palautetaan.
 //
 // ============================================================
 
@@ -59,6 +61,7 @@ async function createTestReferral({
   bonus,
   active = false,
   missingProfile = false,
+  testReferrerUid = referrerUid,
 }) {
   const relationshipRef = db
     .collection("referrals")
@@ -67,7 +70,7 @@ async function createTestReferral({
   referralRefs.push(relationshipRef);
 
   await relationshipRef.set({
-    referrerUid,
+    referrerUid: testReferrerUid,
     referredUid,
     referralBonusTotal: bonus,
     referralBonusTotalInitialized: true,
@@ -115,7 +118,9 @@ after(async () => {
     batch.delete(ref);
   }
 
-  await batch.commit();
+  if (referralRefs.length + userRefs.length > 0) {
+    await batch.commit();
+  }
 });
 
 // ============================================================
@@ -223,9 +228,11 @@ test(
 test(
   "missing user profiles are safely omitted",
   async () => {
+    const missingUid = `${testPrefix}-missing-user`;
+
     await createTestReferral({
       relationshipId: `${testPrefix}-missing-profile`,
-      referredUid: `${testPrefix}-missing-user`,
+      referredUid: missingUid,
       username: "Missing",
       bonus: 3,
       missingProfile: true,
@@ -240,7 +247,7 @@ test(
 
     assert.equal(
       users.some(
-        (user) => user.uid === `${testPrefix}-missing-user`,
+        (user) => user.uid === missingUid,
       ),
       false,
     );
@@ -266,19 +273,78 @@ test(
 );
 
 // ============================================================
-// TEST 5: RESULT LIMIT
+// TEST 5: REAL RESULT LIMIT WITH 101 USERS
 // ============================================================
 
 test(
-  "referral result never exceeds the configured maximum",
+  "101 referral users are limited to 100 results",
   async () => {
+    const limitTestReferrerUid =
+      `${testPrefix}-limit-referrer`;
+
+    const expectedUids = new Set();
+
+    // Luodaan 101 erillistä referral-suhdetta
+    // ja vastaavat käyttäjäprofiilit.
+
+    for (let index = 0; index < 101; index += 1) {
+      const number = String(index + 1).padStart(3, "0");
+
+      const referredUid =
+        `${testPrefix}-limit-user-${number}`;
+
+      expectedUids.add(referredUid);
+
+      await createTestReferral({
+        relationshipId:
+          `${testPrefix}-limit-relationship-${number}`,
+
+        referredUid,
+        username: `StellaLimit${number}`,
+        bonus: index + 1,
+        testReferrerUid: limitTestReferrerUid,
+      });
+    }
+
     const users = await buildReferralUsers(
-      referrerUid,
+      limitTestReferrerUid,
       {
         now: new Date(),
       },
     );
 
-    assert.ok(users.length <= 100);
+    // Backendin kyselyn raja on 100 käyttäjää.
+    assert.equal(users.length, 100);
+
+    // Yksikään palautettu käyttäjä ei saa olla
+    // testidatan ulkopuolelta.
+
+    for (const user of users) {
+      assert.ok(
+        expectedUids.has(user.uid),
+        `Unexpected referral user: ${user.uid}`,
+      );
+    }
+
+    // Samoja käyttäjiä ei saa palauttaa kahdesti.
+
+    const returnedUids = users.map(
+      (user) => user.uid,
+    );
+
+    assert.equal(
+      new Set(returnedUids).size,
+      users.length,
+    );
+
+    // Kaikilla palautetuilla käyttäjillä pitää
+    // olla Flutterin tarvitsemat kentät.
+
+    for (const user of users) {
+      assert.equal(typeof user.uid, "string");
+      assert.equal(typeof user.username, "string");
+      assert.equal(typeof user.isMining, "boolean");
+      assert.equal(typeof user.referralBonus, "number");
+    }
   },
 );
