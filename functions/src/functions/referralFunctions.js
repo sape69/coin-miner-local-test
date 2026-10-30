@@ -66,6 +66,11 @@ const {
 
 const MAX_REFERRAL_LIST = 100;
 
+// Samanaikaisesti käsiteltävien käyttäjien enimmäismäärä.
+// Rajoitus estää liian suuren määrän rinnakkaisia pyyntöjä.
+
+const REFERRAL_READ_BATCH_SIZE = 10;
+
 // ============================================================
 // VALUE HELPERS
 // ============================================================
@@ -289,16 +294,6 @@ function lastActivityMs(data) {
 // ============================================================
 // REFERRAL BONUS SUMMARY
 // ============================================================
-//
-// Käytetään jo haetun referral-dokumentin yhteenvetoa,
-// jos se on alustettu.
-//
-// Vanhojen suhteiden puuttuva yhteenveto lasketaan historiasta
-// ja tallennetaan turvallisesti ensimmäisellä käyttökerralla.
-//
-// Historiakyselyn virhettä ei muuteta nollasaldoksi.
-//
-// ============================================================
 
 async function getReferralBonusForUser(
   referrerUid,
@@ -328,11 +323,6 @@ async function getReferralBonusForUser(
     );
   }
 
-  // OPTIMIZATION:
-  // Referral-dokumentti on jo haettu listaa rakennettaessa.
-  // Jos yhteenveto on alustettu, käytetään tätä tietoa suoraan.
-  // Erillistä Firestore-transaktiota ei tarvita.
-
   const initializedTotal =
     getInitializedReferralBonusTotal(
       relationshipData,
@@ -341,10 +331,6 @@ async function getReferralBonusForUser(
   if (initializedTotal !== null) {
     return initializedTotal;
   }
-
-  // LEGACY:
-  // Vanha suhde ilman alustettua yhteenvetoa.
-  // Lasketaan historia turvallisesti ja alustetaan yhteenveto.
 
   return getOrInitializeReferralBonusTotal({
     referrerUid,
@@ -367,7 +353,105 @@ async function getReferredRelationshipDocuments(uid) {
 }
 
 // ============================================================
+// BUILD ONE REFERRAL USER
+// ============================================================
+
+async function buildOneReferralUser(
+  referrerUid,
+  relationshipDocument,
+  nowMs,
+) {
+  const relationshipData =
+    relationshipDocument.data() || {};
+
+  const referredUid =
+    typeof relationshipData.referredUid === "string"
+      ? relationshipData.referredUid.trim()
+      : relationshipDocument.id;
+
+  if (!referredUid) {
+    return null;
+  }
+
+  const userSnapshot =
+    await getUserRef(referredUid).get();
+
+  if (!userSnapshot.exists) {
+    return null;
+  }
+
+  const userData = userSnapshot.data() || {};
+
+  const active =
+    miningWindowActive(userData, nowMs);
+
+  const lastActivity =
+    lastActivityMs(userData);
+
+  const referralBonus =
+    await getReferralBonusForUser(
+      referrerUid,
+      referredUid,
+      relationshipDocument,
+    );
+
+  const displayName =
+    await getReferralDisplayName(
+      userData,
+      referredUid,
+    );
+
+  const relationshipCreatedAt =
+    timestampMs(relationshipData.createdAt);
+
+  const userJoinedAt =
+    timestampMs(userData.referralJoinedAt);
+
+  const joinedAt =
+    relationshipCreatedAt > 0
+      ? relationshipCreatedAt
+      : userJoinedAt;
+
+  return {
+    uid: referredUid,
+
+    displayName,
+    username: displayName,
+
+    active,
+    miningActive: active,
+    isMining: active,
+
+    lastActivityAt:
+      lastActivity > 0
+        ? new Date(lastActivity).toISOString()
+        : null,
+
+    referralJoinedAt:
+      joinedAt > 0
+        ? new Date(joinedAt).toISOString()
+        : null,
+
+    referralBonusEarned:
+      Math.max(0, referralBonus),
+
+    referralBonus:
+      Math.max(0, referralBonus),
+  };
+}
+
+// ============================================================
 // BUILD REFERRAL USER LIST
+// ============================================================
+//
+// Käyttäjät käsitellään pienissä rinnakkaisissa erissä.
+//
+// Tämä nopeuttaa sivun lataamista verrattuna siihen, että
+// jokaisen käyttäjän Firestore-haku odottaisi edellisen
+// käyttäjän valmistumista.
+//
+// Rinnakkaisuus on rajattu kymmeneen käyttäjään kerrallaan.
+//
 // ============================================================
 
 async function buildReferralUsers(uid, options = {}) {
@@ -381,7 +465,7 @@ async function buildReferralUsers(uid, options = {}) {
   const relationshipDocuments =
     await getReferredRelationshipDocuments(uid);
 
-  const users = [];
+  const uniqueRelationships = [];
   const seenReferredUids = new Set();
 
   for (const relationshipDocument of relationshipDocuments) {
@@ -403,66 +487,37 @@ async function buildReferralUsers(uid, options = {}) {
 
     seenReferredUids.add(referredUid);
 
-    const userSnapshot =
-      await getUserRef(referredUid).get();
+    uniqueRelationships.push(relationshipDocument);
+  }
 
-    if (!userSnapshot.exists) {
-      continue;
+  const users = [];
+
+  for (
+    let index = 0;
+    index < uniqueRelationships.length;
+    index += REFERRAL_READ_BATCH_SIZE
+  ) {
+    const batch =
+      uniqueRelationships.slice(
+        index,
+        index + REFERRAL_READ_BATCH_SIZE,
+      );
+
+    const batchResults = await Promise.all(
+      batch.map((relationshipDocument) =>
+        buildOneReferralUser(
+          uid,
+          relationshipDocument,
+          nowMs,
+        ),
+      ),
+    );
+
+    for (const user of batchResults) {
+      if (user !== null) {
+        users.push(user);
+      }
     }
-
-    const userData = userSnapshot.data() || {};
-
-    const active =
-      miningWindowActive(userData, nowMs);
-
-    const lastActivity =
-      lastActivityMs(userData);
-
-    const referralBonus =
-      await getReferralBonusForUser(
-        uid,
-        referredUid,
-        relationshipDocument,
-      );
-
-    const displayName =
-      await getReferralDisplayName(
-        userData,
-        referredUid,
-      );
-
-    users.push({
-      uid: referredUid,
-
-      displayName,
-      username: displayName,
-
-      active,
-      miningActive: active,
-      isMining: active,
-
-      lastActivityAt:
-        lastActivity > 0
-          ? new Date(lastActivity).toISOString()
-          : null,
-
-      referralJoinedAt:
-        timestampMs(relationshipData.createdAt) > 0
-          ? new Date(
-              timestampMs(relationshipData.createdAt),
-            ).toISOString()
-          : timestampMs(userData.referralJoinedAt) > 0
-            ? new Date(
-                timestampMs(userData.referralJoinedAt),
-              ).toISOString()
-            : null,
-
-      referralBonusEarned:
-        Math.max(0, referralBonus),
-
-      referralBonus:
-        Math.max(0, referralBonus),
-    });
   }
 
   users.sort((a, b) => {
