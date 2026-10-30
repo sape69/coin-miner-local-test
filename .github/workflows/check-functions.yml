@@ -38,12 +38,19 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Verify Node and npm
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Verify Node, npm and Java
         run: |
           node --version
           npm --version
+          java -version
 
-      - name: Install dependencies
+      - name: Install Functions dependencies
         run: npm install --ignore-scripts
 
       - name: Check JavaScript syntax
@@ -70,11 +77,27 @@ jobs:
           test -f src/services/referralBonusSummaryService.js
           test -f src/functions/referralFunctions.js
           test -f test/referralBonusSummaryService.test.js
+          test -f test/referralBonusSummaryService.integration.test.js
 
           echo "All required referral files exist."
 
       - name: Run referral summary unit tests
         run: node --test test/referralBonusSummaryService.test.js
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Verify Firebase CLI
+        run: firebase --version
+        working-directory: .
+
+      - name: Run Firestore Emulator integration tests
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-stelluriini \
+            "cd functions && node --test test/referralBonusSummaryService.integration.test.js"
+        working-directory: .
 
       - name: Verify installed dependencies
         run: npm ls --depth=0
