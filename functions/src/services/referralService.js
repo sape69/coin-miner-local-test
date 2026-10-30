@@ -772,9 +772,15 @@ async function applyReferralMiningReward(
 
   const relationshipRef = getReferralRelationshipRef(safeUid);
 
-  const relationshipSnapshot = relationshipRef
-    ? await transaction.get(relationshipRef)
-    : null;
+  if (!relationshipRef) {
+    throw new Error(
+      "REFERRAL_RELATIONSHIP_REFERENCE_MISSING",
+    );
+  }
+
+  const relationshipSnapshot = await transaction.get(
+    relationshipRef,
+  );
 
   if (!referrerSnapshot.exists) {
     return {
@@ -782,6 +788,43 @@ async function applyReferralMiningReward(
       reason: "REFERRER_NOT_FOUND",
       bonus: 0,
     };
+  }
+
+  // Referral-suhteen on oltava olemassa ja vastattava
+  // kutsujaa sekä kutsuttua käyttäjää.
+  //
+  // Jos suhde puuttuu tai tiedot eivät täsmää,
+  // keskeytetään koko transaktio.
+  //
+  // Näin saldoa tai referral-historiaa ei päivitetä
+  // ilman vastaavaa bonusyhteenvetoa.
+
+  if (!relationshipSnapshot.exists) {
+    throw new Error(
+      "REFERRAL_RELATIONSHIP_NOT_FOUND",
+    );
+  }
+
+  const relationshipData =
+    relationshipSnapshot.data() || {};
+
+  const relationshipReferrerUid =
+    typeof relationshipData.referrerUid === "string"
+      ? relationshipData.referrerUid.trim()
+      : "";
+
+  const relationshipReferredUid =
+    typeof relationshipData.referredUid === "string"
+      ? relationshipData.referredUid.trim()
+      : "";
+
+  if (
+    relationshipReferrerUid !== referrerUid ||
+    relationshipReferredUid !== safeUid
+  ) {
+    throw new Error(
+      "REFERRAL_RELATIONSHIP_MISMATCH",
+    );
   }
 
   const reward = await calculateReferralReward(
@@ -814,29 +857,18 @@ async function applyReferralMiningReward(
   const newReferralTotal = oldReferralTotal + reward.bonus;
   const now = FieldValue.serverTimestamp();
 
-  const relationshipData =
-    relationshipSnapshot && relationshipSnapshot.exists
-      ? relationshipSnapshot.data() || {}
-      : null;
-
   // Päivitetään suhteen bonusyhteenveto ennen ensimmäistä
   // kirjoitusta. Vanha yhteenveto alustetaan historiasta
   // ja uusi bonus lisätään siihen samassa transaktiossa.
 
-  if (
-    relationshipData &&
-    relationshipData.referrerUid === referrerUid &&
-    relationshipData.referredUid === safeUid
-  ) {
-    await applyReferralBonusToSummary({
-      transaction,
-      relationshipRef,
-      relationshipData,
-      referrerUid,
-      referredUid: safeUid,
-      bonusAmount: reward.bonus,
-    });
-  }
+  await applyReferralBonusToSummary({
+    transaction,
+    relationshipRef,
+    relationshipData,
+    referrerUid,
+    referredUid: safeUid,
+    bonusAmount: reward.bonus,
+  });
 
   // WRITES begin only after all reads and bonus calculation.
 
