@@ -78,6 +78,7 @@ jobs:
           test -f src/functions/referralFunctions.js
           test -f test/referralBonusSummaryService.test.js
           test -f test/referralBonusSummaryService.integration.test.js
+          test -f test/referralMiningReward.integration.test.js
 
           echo "All required referral files exist."
 
@@ -91,12 +92,20 @@ jobs:
         run: firebase --version
         working-directory: .
 
-      - name: Run Firestore Emulator integration tests
+      - name: Run referral summary integration tests
         run: |
           firebase emulators:exec \
             --only firestore \
             --project demo-stelluriini \
             "cd functions && node --test test/referralBonusSummaryService.integration.test.js"
+        working-directory: .
+
+      - name: Run referral mining reward integration tests
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-stelluriini \
+            "cd functions && node --test test/referralMiningReward.integration.test.js"
         working-directory: .
 
       - name: Verify installed dependencies
