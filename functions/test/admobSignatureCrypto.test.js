@@ -204,9 +204,10 @@ test(
       assert.equal(result.verified, true);
       assert.equal(result.keyId, TEST_KEY_ID);
 
+      // Service returns URL-decoded signed content.
       assert.equal(
         result.signedQueryString,
-        "ad_network=123456&custom_data=test-user%3Apower_boost",
+        "ad_network=123456&custom_data=test-user:power_boost",
       );
 
       assert.ok(
