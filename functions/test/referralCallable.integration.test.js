@@ -4,30 +4,16 @@
 // 🐱 STELLURIINI - REFERRAL CALLABLE INTEGRATION TESTS
 // ============================================================
 //
-// Testaa Firebase Callable -rajapintaa:
-//
-// applyReferralCode()
-// getReferralProfile()
-// getReferredUsers()
-// getReferralStatus()
-// getReferralDashboard()
+// Testaa Firebase Callable -rajapintaa.
 //
 // Testit suoritetaan Firestore Emulatorissa.
 //
 // TESTIT 1–9:
-// 1. Kirjautumaton käyttäjä hylätään.
-// 2. Puuttuva referral-koodi hylätään.
-// 3. Virheellinen referral-koodi hylätään.
-// 4. Tuntematon referral-koodi hylätään.
-// 5. Oma referral-koodi hylätään.
-// 6. Asiakkaan UID-arvoja ei hyväksytä kutsujan UID:ksi.
-// 7. Kelvollinen referral-koodi voidaan liittää.
-// 8. Käyttäjä ei voi vaihtaa kutsujaa.
-// 9. Rinnakkaiset pyynnöt eivät luo kaksoissuhdetta.
+// applyReferralCode-toiminta.
 //
-// TESTIT 10–17:
-// Neljän referral-lukutoiminnon toiminta ja
-// kirjautumisvaatimukset.
+// TESTIT 10–20:
+// Referral-lukutoiminnot, kirjautumisvaatimukset,
+// kutsuttujen käyttäjien aktiivisuus ja bonuskertymät.
 //
 // ============================================================
 
@@ -240,6 +226,103 @@ async function assertNoRelationship(uid) {
 }
 
 // ============================================================
+// HELPER: SEED REFERRAL USER WITH RELATIONSHIP
+// ============================================================
+
+async function seedReferredUser({
+  uid,
+  referrerUid,
+  referralCode,
+  active,
+  bonus,
+}) {
+  const now = Date.now();
+
+  const miningStartedAt = active
+    ? new Date(now - 60 * 60 * 1000)
+    : new Date(now - 3 * 60 * 60 * 1000);
+
+  const miningEndsAt = active
+    ? new Date(now + 60 * 60 * 1000)
+    : new Date(now - 60 * 60 * 1000);
+
+  await seedUser({ uid });
+
+  await db
+    .collection("users")
+    .doc(uid)
+    .set({
+      miningStartedAt,
+      miningEndsAt,
+      lastMiningAt: new Date(now - 30 * 60 * 1000),
+      email: "must-not-be-returned@example.test",
+      privateProfileNote: "must-not-be-returned",
+    }, { merge: true });
+
+  createdReferralUids.add(uid);
+
+  await db
+    .collection("referrals")
+    .doc(uid)
+    .set({
+      referredUid: uid,
+      referrerUid,
+      referralCode,
+      referralBonusTotal: bonus,
+      referralBonusTotalInitialized: true,
+      createdAt: new Date(now - 24 * 60 * 60 * 1000),
+    });
+}
+
+async function seedReferralGroup(name) {
+  const suffix = Date.now().toString(36).slice(-5);
+  const code = `${suffix}${name.slice(0, 3)}`.toUpperCase();
+
+  const data = createTestCase(name, code);
+
+  const activeUid = `${testPrefix}-${name}-active`;
+  const inactiveUid = `${testPrefix}-${name}-inactive`;
+
+  createdUserUids.add(activeUid);
+  createdUserUids.add(inactiveUid);
+
+  createdReferralUids.add(activeUid);
+  createdReferralUids.add(inactiveUid);
+
+  await seedReferrer(data);
+
+  await db
+    .collection("users")
+    .doc(data.referrerUid)
+    .set({
+      referralCount: 2,
+      referralTotalEarned: 3.75,
+    }, { merge: true });
+
+  await seedReferredUser({
+    uid: activeUid,
+    referrerUid: data.referrerUid,
+    referralCode: data.code,
+    active: true,
+    bonus: 1.25,
+  });
+
+  await seedReferredUser({
+    uid: inactiveUid,
+    referrerUid: data.referrerUid,
+    referralCode: data.code,
+    active: false,
+    bonus: 2.50,
+  });
+
+  return {
+    ...data,
+    activeUid,
+    inactiveUid,
+  };
+}
+
+// ============================================================
 // CLEANUP
 // ============================================================
 
@@ -257,8 +340,8 @@ after(async () => {
       .collection("users")
       .doc(uid);
 
-    // Read-callablet voivat luoda käyttäjälle referral-koodin.
-    // Poistetaan koodi vain, jos se kuuluu tälle testikäyttäjälle.
+    // Poistetaan automaattisesti luotu referral-koodi
+    // vain silloin, kun koodi kuuluu tälle testikäyttäjälle.
     const userSnapshot = await userRef.get();
 
     if (userSnapshot.exists) {
@@ -345,11 +428,7 @@ test(
         authenticated: false,
       }),
       (error) => {
-        assert.equal(
-          error.code,
-          "unauthenticated",
-        );
-
+        assert.equal(error.code, "unauthenticated");
         return true;
       },
     );
@@ -369,8 +448,7 @@ test(
 test(
   "missing referral code is rejected",
   async () => {
-    const uid =
-      `${testPrefix}-missing-code-user`;
+    const uid = `${testPrefix}-missing-code-user`;
 
     await seedUser({ uid });
 
@@ -380,11 +458,7 @@ test(
         code: undefined,
       }),
       (error) => {
-        assert.equal(
-          error.code,
-          "invalid-argument",
-        );
-
+        assert.equal(error.code, "invalid-argument");
         return true;
       },
     );
@@ -400,8 +474,7 @@ test(
 test(
   "invalid referral code is rejected",
   async () => {
-    const uid =
-      `${testPrefix}-invalid-code-user`;
+    const uid = `${testPrefix}-invalid-code-user`;
 
     await seedUser({ uid });
 
@@ -411,11 +484,7 @@ test(
         code: "INVALID!",
       }),
       (error) => {
-        assert.equal(
-          error.code,
-          "invalid-argument",
-        );
-
+        assert.equal(error.code, "invalid-argument");
         return true;
       },
     );
@@ -446,11 +515,7 @@ test(
         code: data.code,
       }),
       (error) => {
-        assert.equal(
-          error.code,
-          "not-found",
-        );
-
+        assert.equal(error.code, "not-found");
         return true;
       },
     );
@@ -479,11 +544,7 @@ test(
         code: data.code,
       }),
       (error) => {
-        assert.equal(
-          error.code,
-          "invalid-argument",
-        );
-
+        assert.equal(error.code, "invalid-argument");
         return true;
       },
     );
@@ -535,10 +596,7 @@ test(
     assert.equal(result.success, true);
     assert.equal(result.applied, true);
 
-    assert.equal(
-      result.referrerUid,
-      data.referrerUid,
-    );
+    assert.equal(result.referrerUid, data.referrerUid);
 
     const authenticatedUser =
       await readUser(data.referredUid);
@@ -605,27 +663,13 @@ test(
     assert.equal(result.success, true);
     assert.equal(result.applied, true);
 
-    assert.equal(
-      result.referrerUid,
-      data.referrerUid,
-    );
-
-    assert.equal(
-      result.referralCode,
-      data.code,
-    );
+    assert.equal(result.referrerUid, data.referrerUid);
+    assert.equal(result.referralCode, data.code);
 
     const user = await readUser(data.referredUid);
 
-    assert.equal(
-      user.referrerUid,
-      data.referrerUid,
-    );
-
-    assert.equal(
-      user.referralCodeUsed,
-      data.code,
-    );
+    assert.equal(user.referrerUid, data.referrerUid);
+    assert.equal(user.referralCodeUsed, data.code);
 
     const relationship =
       await readRelationship(data.referredUid);
@@ -681,21 +725,14 @@ test(
         code: data.code,
       }),
       (error) => {
-        assert.equal(
-          error.code,
-          "already-exists",
-        );
-
+        assert.equal(error.code, "already-exists");
         return true;
       },
     );
 
     const user = await readUser(data.referredUid);
 
-    assert.equal(
-      user.referrerUid,
-      oldReferrerUid,
-    );
+    assert.equal(user.referrerUid, oldReferrerUid);
 
     const referrer = await readUser(data.referrerUid);
 
@@ -744,7 +781,6 @@ test(
     );
 
     assert.equal(successful.length, 1);
-
     assert.equal(rejected.length, 4);
 
     for (const result of rejected) {
@@ -756,10 +792,7 @@ test(
 
     const user = await readUser(data.referredUid);
 
-    assert.equal(
-      user.referrerUid,
-      data.referrerUid,
-    );
+    assert.equal(user.referrerUid, data.referrerUid);
 
     const relationship =
       await readRelationship(data.referredUid);
@@ -986,5 +1019,176 @@ test(
         return true;
       },
     );
+  },
+);
+
+// ============================================================
+// TEST 18: GET REFERRED USERS WITH REFERRALS
+// ============================================================
+
+test(
+  "getReferredUsers returns referred users with correct activity and bonus data",
+  async () => {
+    const data = await seedReferralGroup("referred-users-populated");
+
+    const result = await callReferralReadFunction(
+      getReferredUsers,
+      data.referrerUid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(result.invitedCount, 2);
+    assert.equal(result.activeCount, 1);
+    assert.equal(result.inactiveCount, 1);
+    assert.equal(result.totalReferralRewards, 3.75);
+    assert.ok(Array.isArray(result.users));
+    assert.equal(result.users.length, 2);
+
+    const activeUser = result.users.find(
+      (user) => user.uid === data.activeUid,
+    );
+
+    const inactiveUser = result.users.find(
+      (user) => user.uid === data.inactiveUid,
+    );
+
+    assert.ok(activeUser);
+    assert.ok(inactiveUser);
+
+    assert.equal(activeUser.active, true);
+    assert.equal(activeUser.miningActive, true);
+    assert.equal(activeUser.isMining, true);
+    assert.equal(activeUser.referralBonusEarned, 1.25);
+    assert.equal(activeUser.referralBonus, 1.25);
+
+    assert.equal(inactiveUser.active, false);
+    assert.equal(inactiveUser.miningActive, false);
+    assert.equal(inactiveUser.isMining, false);
+    assert.equal(inactiveUser.referralBonusEarned, 2.5);
+    assert.equal(inactiveUser.referralBonus, 2.5);
+
+    const expectedUserKeys = [
+      "uid",
+      "displayName",
+      "username",
+      "active",
+      "miningActive",
+      "isMining",
+      "lastActivityAt",
+      "referralJoinedAt",
+      "referralBonusEarned",
+      "referralBonus",
+    ].sort();
+
+    for (const user of result.users) {
+      assert.deepEqual(
+        Object.keys(user).sort(),
+        expectedUserKeys,
+      );
+
+      assert.equal(Object.hasOwn(user, "email"), false);
+      assert.equal(Object.hasOwn(user, "privateProfileNote"), false);
+    }
+  },
+);
+
+// ============================================================
+// TEST 19: GET REFERRAL STATUS WITH REFERRALS
+// ============================================================
+
+test(
+  "getReferralStatus returns compact referral data and correct counts",
+  async () => {
+    const data = await seedReferralGroup("referral-status-populated");
+
+    const result = await callReferralReadFunction(
+      getReferralStatus,
+      data.referrerUid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(result.referralCount, 2);
+    assert.equal(result.activeCount, 1);
+    assert.equal(result.inactiveCount, 1);
+    assert.equal(result.totalReferralRewards, 3.75);
+    assert.ok(Array.isArray(result.referrals));
+    assert.equal(result.referrals.length, 2);
+
+    const activeUser = result.referrals.find(
+      (user) => user.uid === data.activeUid,
+    );
+
+    const inactiveUser = result.referrals.find(
+      (user) => user.uid === data.inactiveUid,
+    );
+
+    assert.ok(activeUser);
+    assert.ok(inactiveUser);
+
+    assert.equal(activeUser.isMining, true);
+    assert.equal(activeUser.referralBonus, 1.25);
+    assert.equal(inactiveUser.isMining, false);
+    assert.equal(inactiveUser.referralBonus, 2.5);
+
+    const expectedKeys = [
+      "uid",
+      "username",
+      "isMining",
+      "referralBonus",
+    ].sort();
+
+    for (const user of result.referrals) {
+      assert.deepEqual(
+        Object.keys(user).sort(),
+        expectedKeys,
+      );
+
+      assert.equal(Object.hasOwn(user, "email"), false);
+    }
+  },
+);
+
+// ============================================================
+// TEST 20: GET REFERRAL DASHBOARD WITH REFERRALS
+// ============================================================
+
+test(
+  "getReferralDashboard returns correct referral totals and user details",
+  async () => {
+    const data = await seedReferralGroup("referral-dashboard-populated");
+
+    const result = await callReferralReadFunction(
+      getReferralDashboard,
+      data.referrerUid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(result.invitedCount, 2);
+    assert.equal(result.activeCount, 1);
+    assert.equal(result.inactiveCount, 1);
+    assert.equal(result.totalReferralRewards, 3.75);
+    assert.ok(Array.isArray(result.users));
+    assert.equal(result.users.length, 2);
+
+    const activeUser = result.users.find(
+      (user) => user.uid === data.activeUid,
+    );
+
+    const inactiveUser = result.users.find(
+      (user) => user.uid === data.inactiveUid,
+    );
+
+    assert.ok(activeUser);
+    assert.ok(inactiveUser);
+
+    assert.equal(activeUser.active, true);
+    assert.equal(activeUser.referralBonusEarned, 1.25);
+    assert.equal(inactiveUser.active, false);
+    assert.equal(inactiveUser.referralBonusEarned, 2.5);
+
+    for (const user of result.users) {
+      assert.equal(Object.hasOwn(user, "email"), false);
+      assert.equal(Object.hasOwn(user, "privateProfileNote"), false);
+    }
   },
 );
