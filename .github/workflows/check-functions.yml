@@ -70,7 +70,7 @@ jobs:
 
           echo "All JavaScript files passed syntax validation."
 
-      - name: Verify required referral files
+      - name: Verify required test files
         run: |
           set -eu
 
@@ -78,6 +78,7 @@ jobs:
           test -f src/services/referralBonusSummaryService.js
           test -f src/functions/referralFunctions.js
 
+          test -f test/miningUtils.test.js
           test -f test/referralBonusSummaryService.test.js
           test -f test/referralBonusSummaryService.integration.test.js
           test -f test/referralMiningReward.integration.test.js
@@ -85,7 +86,11 @@ jobs:
           test -f test/referralRelationship.integration.test.js
           test -f test/referralCallable.integration.test.js
 
-          echo "All required referral files exist."
+          echo "All required test files exist."
+
+      - name: Run mining utilities unit tests
+        run: |
+          node --test test/miningUtils.test.js
 
       - name: Run referral summary unit tests
         run: |
