@@ -79,6 +79,8 @@ jobs:
           test -f src/functions/referralFunctions.js
 
           test -f test/miningUtils.test.js
+          test -f test/miningService.test.js
+
           test -f test/referralBonusSummaryService.test.js
           test -f test/referralBonusSummaryService.integration.test.js
           test -f test/referralMiningReward.integration.test.js
@@ -91,6 +93,10 @@ jobs:
       - name: Run mining utilities unit tests
         run: |
           node --test test/miningUtils.test.js
+
+      - name: Run mining service unit tests
+        run: |
+          node --test test/miningService.test.js
 
       - name: Run referral summary unit tests
         run: |
