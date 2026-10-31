@@ -82,6 +82,7 @@ jobs:
           test -f test/miningService.test.js
           test -f test/admobService.test.js
           test -f test/admobSignatureCrypto.test.js
+          test -f test/admobPublicKeyCache.test.js
 
           test -f test/referralBonusSummaryService.test.js
           test -f test/referralBonusSummaryService.integration.test.js
@@ -107,6 +108,10 @@ jobs:
       - name: Run AdMob cryptographic signature tests
         run: |
           node --test test/admobSignatureCrypto.test.js
+
+      - name: Run AdMob public key cache tests
+        run: |
+          node --test test/admobPublicKeyCache.test.js
 
       - name: Run referral summary unit tests
         run: |
