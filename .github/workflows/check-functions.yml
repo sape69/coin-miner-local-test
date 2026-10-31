@@ -83,6 +83,7 @@ jobs:
           test -f test/referralMiningReward.integration.test.js
           test -f test/referralFunctions.integration.test.js
           test -f test/referralRelationship.integration.test.js
+          test -f test/referralCallable.integration.test.js
 
           echo "All required referral files exist."
 
@@ -127,6 +128,14 @@ jobs:
             --only firestore \
             --project demo-stelluriini \
             "cd functions && node --test test/referralRelationship.integration.test.js"
+        working-directory: .
+
+      - name: Run referral callable integration tests
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-stelluriini \
+            "cd functions && node --test test/referralCallable.integration.test.js"
         working-directory: .
 
       - name: Verify installed dependencies
