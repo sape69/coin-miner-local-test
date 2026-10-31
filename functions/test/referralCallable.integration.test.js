@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -6,10 +5,16 @@
 // ============================================================
 //
 // Testaa Firebase Callable -rajapintaa:
+//
 // applyReferralCode()
+// getReferralProfile()
+// getReferredUsers()
+// getReferralStatus()
+// getReferralDashboard()
 //
 // Testit suoritetaan Firestore Emulatorissa.
 //
+// TESTIT 1–9:
 // 1. Kirjautumaton käyttäjä hylätään.
 // 2. Puuttuva referral-koodi hylätään.
 // 3. Virheellinen referral-koodi hylätään.
@@ -19,6 +24,10 @@
 // 7. Kelvollinen referral-koodi voidaan liittää.
 // 8. Käyttäjä ei voi vaihtaa kutsujaa.
 // 9. Rinnakkaiset pyynnöt eivät luo kaksoissuhdetta.
+//
+// TESTIT 10–17:
+// Neljän referral-lukutoiminnon toiminta ja
+// kirjautumisvaatimukset.
 //
 // ============================================================
 
@@ -43,6 +52,10 @@ const {
 
 const {
   applyReferralCode,
+  getReferralProfile,
+  getReferredUsers,
+  getReferralStatus,
+  getReferralDashboard,
 } = require("../src/functions/referralFunctions");
 
 // ============================================================
@@ -172,6 +185,17 @@ async function callApplyReferralCode({
   });
 }
 
+async function callReferralReadFunction(
+  callable,
+  uid,
+  authenticated = true,
+) {
+  return callable.run({
+    auth: authenticated ? { uid } : null,
+    data: {},
+  });
+}
+
 async function readUser(uid) {
   const snapshot = await db
     .collection("users")
@@ -232,6 +256,35 @@ after(async () => {
     const userRef = db
       .collection("users")
       .doc(uid);
+
+    // Read-callablet voivat luoda käyttäjälle referral-koodin.
+    // Poistetaan koodi vain, jos se kuuluu tälle testikäyttäjälle.
+    const userSnapshot = await userRef.get();
+
+    if (userSnapshot.exists) {
+      const userData = userSnapshot.data() || {};
+      const generatedCode = userData.referralCode;
+
+      if (
+        typeof generatedCode === "string" &&
+        generatedCode.trim()
+      ) {
+        const generatedCodeRef =
+          getReferralCodeRef(generatedCode);
+
+        if (generatedCodeRef) {
+          const generatedCodeSnapshot =
+            await generatedCodeRef.get();
+
+          if (
+            generatedCodeSnapshot.exists &&
+            generatedCodeSnapshot.data()?.uid === uid
+          ) {
+            await generatedCodeRef.delete();
+          }
+        }
+      }
+    }
 
     const subcollections = [
       "transactions",
@@ -723,6 +776,215 @@ test(
     assert.equal(
       await countJoinedHistory(data.referredUid),
       1,
+    );
+  },
+);
+
+// ============================================================
+// TEST 10: GET REFERRAL PROFILE
+// ============================================================
+
+test(
+  "getReferralProfile returns the authenticated user's referral profile",
+  async () => {
+    const uid = `${testPrefix}-profile-user`;
+
+    await seedUser({ uid });
+
+    const result = await callReferralReadFunction(
+      getReferralProfile,
+      uid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(typeof result.referralCode, "string");
+    assert.ok(result.referralCode.length > 0);
+    assert.equal(typeof result.referralBonusPercent, "number");
+    assert.equal(typeof result.referralBonusRate, "number");
+    assert.equal(typeof result.totalUsers, "number");
+    assert.ok(Array.isArray(result.referralMilestones));
+    assert.equal(result.totalReferralRewards, 0);
+  },
+);
+
+// ============================================================
+// TEST 11: GET REFERRAL PROFILE REQUIRES AUTH
+// ============================================================
+
+test(
+  "getReferralProfile rejects unauthenticated users",
+  async () => {
+    await assert.rejects(
+      callReferralReadFunction(
+        getReferralProfile,
+        `${testPrefix}-profile-unauthenticated`,
+        false,
+      ),
+      (error) => {
+        assert.equal(error.code, "unauthenticated");
+        return true;
+      },
+    );
+  },
+);
+
+// ============================================================
+// TEST 12: GET REFERRED USERS
+// ============================================================
+
+test(
+  "getReferredUsers returns an empty list for a user without referrals",
+  async () => {
+    const uid = `${testPrefix}-referred-users-user`;
+
+    await seedUser({ uid });
+
+    const result = await callReferralReadFunction(
+      getReferredUsers,
+      uid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(typeof result.referralCode, "string");
+    assert.ok(result.referralCode.length > 0);
+    assert.equal(typeof result.referralBonusPercent, "number");
+    assert.equal(typeof result.referralBonusRate, "number");
+    assert.equal(typeof result.totalUsers, "number");
+    assert.equal(result.invitedCount, 0);
+    assert.equal(result.activeCount, 0);
+    assert.equal(result.inactiveCount, 0);
+    assert.ok(result.referralSummary !== null);
+    assert.equal(typeof result.referralSummary, "object");
+    assert.ok(Array.isArray(result.users));
+    assert.equal(result.users.length, 0);
+    assert.equal(typeof result.generatedAt, "string");
+    assert.equal(typeof result.utcDate, "string");
+  },
+);
+
+// ============================================================
+// TEST 13: GET REFERRED USERS REQUIRES AUTH
+// ============================================================
+
+test(
+  "getReferredUsers rejects unauthenticated users",
+  async () => {
+    await assert.rejects(
+      callReferralReadFunction(
+        getReferredUsers,
+        `${testPrefix}-referred-users-unauthenticated`,
+        false,
+      ),
+      (error) => {
+        assert.equal(error.code, "unauthenticated");
+        return true;
+      },
+    );
+  },
+);
+
+// ============================================================
+// TEST 14: GET REFERRAL STATUS
+// ============================================================
+
+test(
+  "getReferralStatus returns an empty referral status for a new user",
+  async () => {
+    const uid = `${testPrefix}-status-user`;
+
+    await seedUser({ uid });
+
+    const result = await callReferralReadFunction(
+      getReferralStatus,
+      uid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(typeof result.referralCode, "string");
+    assert.ok(result.referralCode.length > 0);
+    assert.equal(typeof result.referralBonusPercent, "number");
+    assert.equal(typeof result.referralBonusRate, "number");
+    assert.equal(typeof result.totalUsers, "number");
+    assert.equal(result.referralCount, 0);
+    assert.equal(result.activeCount, 0);
+    assert.equal(result.inactiveCount, 0);
+    assert.ok(Array.isArray(result.referrals));
+    assert.equal(result.referrals.length, 0);
+    assert.equal(result.totalReferralRewards, 0);
+    assert.equal(typeof result.generatedAt, "string");
+  },
+);
+
+// ============================================================
+// TEST 15: GET REFERRAL STATUS REQUIRES AUTH
+// ============================================================
+
+test(
+  "getReferralStatus rejects unauthenticated users",
+  async () => {
+    await assert.rejects(
+      callReferralReadFunction(
+        getReferralStatus,
+        `${testPrefix}-status-unauthenticated`,
+        false,
+      ),
+      (error) => {
+        assert.equal(error.code, "unauthenticated");
+        return true;
+      },
+    );
+  },
+);
+
+// ============================================================
+// TEST 16: GET REFERRAL DASHBOARD
+// ============================================================
+
+test(
+  "getReferralDashboard returns an empty dashboard for a new user",
+  async () => {
+    const uid = `${testPrefix}-dashboard-user`;
+
+    await seedUser({ uid });
+
+    const result = await callReferralReadFunction(
+      getReferralDashboard,
+      uid,
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(typeof result.referralCode, "string");
+    assert.ok(result.referralCode.length > 0);
+    assert.equal(typeof result.referralBonusPercent, "number");
+    assert.equal(typeof result.referralBonusRate, "number");
+    assert.equal(typeof result.totalUsers, "number");
+    assert.equal(result.invitedCount, 0);
+    assert.equal(result.activeCount, 0);
+    assert.equal(result.inactiveCount, 0);
+    assert.equal(result.totalReferralRewards, 0);
+    assert.ok(Array.isArray(result.users));
+    assert.equal(result.users.length, 0);
+    assert.equal(typeof result.generatedAt, "string");
+  },
+);
+
+// ============================================================
+// TEST 17: GET REFERRAL DASHBOARD REQUIRES AUTH
+// ============================================================
+
+test(
+  "getReferralDashboard rejects unauthenticated users",
+  async () => {
+    await assert.rejects(
+      callReferralReadFunction(
+        getReferralDashboard,
+        `${testPrefix}-dashboard-unauthenticated`,
+        false,
+      ),
+      (error) => {
+        assert.equal(error.code, "unauthenticated");
+        return true;
+      },
     );
   },
 );
