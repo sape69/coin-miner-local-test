@@ -89,12 +89,16 @@ function mockAdMobPublicKeyServer() {
 // ✍️ SIGN TEST QUERY
 // ============================================================
 
-function createSignedQuery(
-  signedQueryString,
-) {
+function createSignedQuery(rawSignedQueryString) {
+  // The service decodes the raw query before verification.
+  // Sign exactly the same decoded content.
+
+  const signedContent =
+    decodeURIComponent(rawSignedQueryString);
+
   const signature = crypto.sign(
     "sha256",
-    Buffer.from(signedQueryString, "utf8"),
+    Buffer.from(signedContent, "utf8"),
     {
       key: privateKey,
       dsaEncoding: "der",
@@ -105,7 +109,7 @@ function createSignedQuery(
     signature.toString("base64url");
 
   return (
-    `${encodeURIComponent(signedQueryString)}` +
+    `${rawSignedQueryString}` +
     `&signature=${signatureBase64Url}` +
     `&key_id=${TEST_KEY_ID}`
   );
@@ -118,14 +122,15 @@ function createSignedQuery(
 test(
   "verifyAdMobSignature accepts a valid ECDSA signature and rejects a tampered query",
   async () => {
-    const restoreHttps = mockAdMobPublicKeyServer();
+    const restoreHttps =
+      mockAdMobPublicKeyServer();
 
     try {
-      const signedQueryString =
+      const rawSignedQueryString =
         "ad_network=123456&custom_data=test-user%3Apower_boost";
 
       const rawQueryString =
-        createSignedQuery(signedQueryString);
+        createSignedQuery(rawSignedQueryString);
 
       // ------------------------------------------------------
       // 1. VALID SIGNATURE MUST BE ACCEPTED
@@ -146,7 +151,7 @@ test(
 
       assert.equal(
         result.signedQueryString,
-        decodeURIComponent(signedQueryString),
+        decodeURIComponent(rawSignedQueryString),
       );
 
       assert.ok(
@@ -163,6 +168,12 @@ test(
           "ad_network=123456",
           "ad_network=999999",
         );
+
+      assert.notEqual(
+        tamperedQuery,
+        rawQueryString,
+        "Tampered query must actually differ from original",
+      );
 
       await assert.rejects(
         () => verifyAdMobSignature(tamperedQuery),
