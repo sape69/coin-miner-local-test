@@ -17,14 +17,26 @@ const DAY = 24 * HOUR;
 
 const BASE_TIME = new Date("2026-01-01T00:00:00.000Z");
 
+// Floating point comparison helper.
+function assertApproximatelyEqual(
+  actual,
+  expected,
+  tolerance = 1e-10,
+) {
+  assert.ok(
+    Math.abs(actual - expected) <= tolerance,
+    `Expected ${actual} to be approximately ${expected}`,
+  );
+}
+
 // ============================================================
 // CALCULATE MINING
 // ============================================================
 
 test("calculates mining amount using hash rate and elapsed hours", () => {
-  assert.equal(calculateMining(1, HOUR), 0.1);
-  assert.equal(calculateMining(2, HOUR), 0.2);
-  assert.equal(calculateMining(3.5, DAY), 8.4);
+  assertApproximatelyEqual(calculateMining(1, HOUR), 0.1);
+  assertApproximatelyEqual(calculateMining(2, HOUR), 0.2);
+  assertApproximatelyEqual(calculateMining(3.5, DAY), 8.4);
 });
 
 test("returns zero when hash rate is zero", () => {
@@ -204,7 +216,7 @@ test("returns active status during a mining session", () => {
   assert.equal(result.miningFinished, false);
   assert.equal(result.elapsedMs, HOUR);
   assert.equal(result.miningRemainingMs, DAY - HOUR);
-  assert.equal(result.minedAmount, 0.2);
+  assertApproximatelyEqual(result.minedAmount, 0.2);
   assert.equal(result.hashRate, 2);
 });
 
@@ -226,7 +238,7 @@ test("returns finished status after the mining session ends", () => {
   assert.equal(result.miningFinished, true);
   assert.equal(result.elapsedMs, DAY);
   assert.equal(result.miningRemainingMs, 0);
-  assert.equal(result.minedAmount, 2.4);
+  assertApproximatelyEqual(result.minedAmount, 2.4);
 });
 
 test("returns inactive status before mining starts", () => {
@@ -286,7 +298,7 @@ test("does not calculate mining beyond the session duration", () => {
 
   assert.equal(result.miningFinished, true);
   assert.equal(result.elapsedMs, DAY);
-  assert.equal(result.minedAmount, 2.4);
+  assertApproximatelyEqual(result.minedAmount, 2.4);
 });
 
 test("uses the compatibility hash rate field in mining status", () => {
@@ -306,5 +318,5 @@ test("uses the compatibility hash rate field in mining status", () => {
 
   assert.equal(result.hashRate, 2);
   assert.equal(result.miningHashRate, 2);
-  assert.equal(result.minedAmount, 0.2);
+  assertApproximatelyEqual(result.minedAmount, 0.2);
 });
