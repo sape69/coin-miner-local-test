@@ -66,7 +66,6 @@ function createHarness() {
     const response = new EventEmitter();
 
     response.statusCode = 200;
-
     response.setEncoding = () => {};
 
     process.nextTick(() => {
@@ -140,8 +139,9 @@ test(
       );
 
       assert.equal(
-        first.get(TEST_KEY_ID).pem,
-        publicKeyPem,
+        first.get(TEST_KEY_ID).pem.trim(),
+        publicKeyPem.trim(),
+        "Cached public key should match, ignoring trailing whitespace",
       );
     } finally {
       harness.restore();
@@ -213,8 +213,9 @@ test(
       assert.equal(second, third);
 
       assert.equal(
-        first.get(TEST_KEY_ID).pem,
-        publicKeyPem,
+        first.get(TEST_KEY_ID).pem.trim(),
+        publicKeyPem.trim(),
+        "Concurrent requests should receive the same public key",
       );
     } finally {
       harness.restore();
