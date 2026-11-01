@@ -84,6 +84,7 @@ jobs:
           test -f test/admobSignatureCrypto.test.js
           test -f test/admobPublicKeyCache.test.js
           test -f test/admobPublicKeyErrors.test.js
+          test -f test/admobRewardService.integration.test.js
 
           test -f test/referralBonusSummaryService.test.js
           test -f test/referralBonusSummaryService.integration.test.js
@@ -127,6 +128,14 @@ jobs:
 
       - name: Verify Firebase CLI
         run: firebase --version
+        working-directory: .
+
+      - name: Run AdMob Power Boost reward integration tests
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-stelluriini \
+            "cd functions && node --test test/admobRewardService.integration.test.js"
         working-directory: .
 
       - name: Run referral summary integration tests
