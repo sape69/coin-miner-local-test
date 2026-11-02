@@ -11,8 +11,6 @@
 // - Validering av mining Hash Rate
 // - Historisk Hash Rate
 //
-// Denna fil innehåller endast hjälpfunktioner.
-// Ingen Firestore-data ändras här.
 // ============================================================
 
 const {
@@ -29,14 +27,6 @@ const {
 // VALUE HELPERS
 // ============================================================
 
-function number(value, fallback = 0) {
-  const result = Number(value);
-
-  return Number.isFinite(result)
-    ? result
-    : fallback;
-}
-
 function positive(value, fallback = 0) {
   const result = Number(value);
 
@@ -51,11 +41,9 @@ function positive(value, fallback = 0) {
 
 function getMiningWindow(data) {
   const start = getMiningStartTime(data);
-
   const end = getMiningEndTime(data);
 
   const startMs = start?.getTime() || 0;
-
   const endMs = end?.getTime() || 0;
 
   const valid =
@@ -64,13 +52,9 @@ function getMiningWindow(data) {
 
   return {
     miningStartedAt: valid ? start : null,
-
     miningEndsAt: valid ? end : null,
-
     miningStartMs: valid ? startMs : 0,
-
     miningEndMs: valid ? endMs : 0,
-
     valid,
   };
 }
