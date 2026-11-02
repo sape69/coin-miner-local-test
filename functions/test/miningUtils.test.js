@@ -9,6 +9,9 @@ const {
   getMiningStartTime,
   getMiningEndTime,
   getMiningHashRate,
+  getHalvingMultiplier,
+  getEffectiveMiningRate,
+  getMiningHalvingMultiplier,
   calculateMiningStatus,
 } = require("../src/utils/miningUtils");
 
@@ -60,6 +63,216 @@ test("returns zero for invalid numeric values", () => {
   assert.equal(calculateMining(2, NaN), 0);
   assert.equal(calculateMining(Infinity, HOUR), 0);
   assert.equal(calculateMining(2, Infinity), 0);
+});
+
+// ============================================================
+// HALVING MULTIPLIER
+// ============================================================
+
+test("uses multiplier 1.0 below 100 registered users", () => {
+  assert.equal(getHalvingMultiplier(0), 1.0);
+  assert.equal(getHalvingMultiplier(1), 1.0);
+  assert.equal(getHalvingMultiplier(99), 1.0);
+});
+
+test("uses multiplier 0.5 from 100 registered users", () => {
+  assert.equal(getHalvingMultiplier(100), 0.5);
+  assert.equal(getHalvingMultiplier(999), 0.5);
+});
+
+test("uses multiplier 0.25 from 1000 registered users", () => {
+  assert.equal(getHalvingMultiplier(1000), 0.25);
+  assert.equal(getHalvingMultiplier(9999), 0.25);
+});
+
+test("uses multiplier 0.125 from 10000 registered users", () => {
+  assert.equal(getHalvingMultiplier(10000), 0.125);
+  assert.equal(getHalvingMultiplier(99999), 0.125);
+});
+
+test("uses multiplier 0.0625 from 100000 registered users", () => {
+  assert.equal(getHalvingMultiplier(100000), 0.0625);
+  assert.equal(getHalvingMultiplier(999999), 0.0625);
+});
+
+test("uses multiplier 0.03125 from 1000000 registered users", () => {
+  assert.equal(getHalvingMultiplier(1000000), 0.03125);
+  assert.equal(getHalvingMultiplier(9999999), 0.03125);
+});
+
+test("uses multiplier 0.015625 from 10000000 registered users", () => {
+  assert.equal(getHalvingMultiplier(10000000), 0.015625);
+  assert.equal(getHalvingMultiplier(99999999), 0.015625);
+});
+
+test("uses multiplier 0.0078125 from 100000000 registered users", () => {
+  assert.equal(getHalvingMultiplier(100000000), 0.0078125);
+  assert.equal(getHalvingMultiplier(1000000000), 0.0078125);
+});
+
+test("handles invalid registered user counts safely", () => {
+  assert.equal(getHalvingMultiplier(-100), 1.0);
+  assert.equal(getHalvingMultiplier(NaN), 1.0);
+  assert.equal(getHalvingMultiplier(Infinity), 1.0);
+  assert.equal(getHalvingMultiplier("invalid"), 1.0);
+});
+
+test("floors fractional registered user counts", () => {
+  assert.equal(getHalvingMultiplier(99.9), 1.0);
+  assert.equal(getHalvingMultiplier(100.9), 0.5);
+});
+
+// ============================================================
+// EFFECTIVE MINING RATE
+// ============================================================
+
+test("calculates effective mining rate with halving multiplier", () => {
+  assertApproximatelyEqual(
+    getEffectiveMiningRate(1.0),
+    0.1,
+  );
+
+  assertApproximatelyEqual(
+    getEffectiveMiningRate(0.5),
+    0.05,
+  );
+
+  assertApproximatelyEqual(
+    getEffectiveMiningRate(0.25),
+    0.025,
+  );
+
+  assertApproximatelyEqual(
+    getEffectiveMiningRate(0.125),
+    0.0125,
+  );
+});
+
+test("uses multiplier 1 when no multiplier is supplied", () => {
+  assertApproximatelyEqual(
+    getEffectiveMiningRate(),
+    0.1,
+  );
+});
+
+test("returns zero for invalid effective mining multipliers", () => {
+  assert.equal(getEffectiveMiningRate(0), 0);
+  assert.equal(getEffectiveMiningRate(-1), 0);
+});
+
+// ============================================================
+// MINING WITH HALVING
+// ============================================================
+
+test("calculates mining using a 0.5 halving multiplier", () => {
+  assertApproximatelyEqual(
+    calculateMining(1, HOUR, 0.5),
+    0.05,
+  );
+});
+
+test("calculates mining using a 0.25 halving multiplier", () => {
+  assertApproximatelyEqual(
+    calculateMining(1, HOUR, 0.25),
+    0.025,
+  );
+});
+
+test("calculates mining using a 0.125 halving multiplier", () => {
+  assertApproximatelyEqual(
+    calculateMining(2, HOUR, 0.125),
+    0.025,
+  );
+});
+
+test("calculates mining using the final 0.0078125 multiplier", () => {
+  assertApproximatelyEqual(
+    calculateMining(1, HOUR, 0.0078125),
+    0.00078125,
+  );
+});
+
+test("uses the original mining rate when multiplier is omitted", () => {
+  assertApproximatelyEqual(
+    calculateMining(1, HOUR),
+    0.1,
+  );
+});
+
+// ============================================================
+// STORED MINING HALVING MULTIPLIER
+// ============================================================
+
+test("reads stored mining halving multiplier", () => {
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: 0.5,
+    }),
+    0.5,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: 0.25,
+    }),
+    0.25,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: 0.0078125,
+    }),
+    0.0078125,
+  );
+});
+
+test("uses multiplier 1 for old mining cycles without stored multiplier", () => {
+  assert.equal(
+    getMiningHalvingMultiplier({}),
+    1,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier({
+      hashRate: 2,
+    }),
+    1,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier(null),
+    1,
+  );
+});
+
+test("rejects invalid stored mining halving multipliers", () => {
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: 0,
+    }),
+    1,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: -0.5,
+    }),
+    1,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: 2,
+    }),
+    1,
+  );
+
+  assert.equal(
+    getMiningHalvingMultiplier({
+      miningHalvingMultiplier: "invalid",
+    }),
+    1,
+  );
 });
 
 // ============================================================
@@ -319,4 +532,80 @@ test("uses the compatibility hash rate field in mining status", () => {
   assert.equal(result.hashRate, 2);
   assert.equal(result.miningHashRate, 2);
   assertApproximatelyEqual(result.minedAmount, 0.2);
+});
+
+// ============================================================
+// MINING STATUS WITH HALVING
+// ============================================================
+
+test("applies stored halving multiplier to an active mining cycle", () => {
+  const start = BASE_TIME;
+  const end = new Date(start.getTime() + DAY);
+  const now = new Date(start.getTime() + HOUR);
+
+  const result = calculateMiningStatus(
+    {
+      hashRate: 2,
+      miningHalvingMultiplier: 0.5,
+      miningStartedAt: start,
+      miningEndsAt: end,
+    },
+    now,
+  );
+
+  assert.equal(result.miningActive, true);
+  assert.equal(result.miningHalvingMultiplier, 0.5);
+  assertApproximatelyEqual(result.minedAmount, 0.1);
+});
+
+test("applies stored halving multiplier to a finished mining cycle", () => {
+  const start = BASE_TIME;
+  const end = new Date(start.getTime() + DAY);
+  const now = new Date(end.getTime() + HOUR);
+
+  const result = calculateMiningStatus(
+    {
+      hashRate: 1,
+      miningHalvingMultiplier: 0.25,
+      miningStartedAt: start,
+      miningEndsAt: end,
+    },
+    now,
+  );
+
+  assert.equal(result.miningFinished, true);
+  assert.equal(result.miningHalvingMultiplier, 0.25);
+  assertApproximatelyEqual(result.minedAmount, 0.6);
+});
+
+test("keeps old mining cycles at multiplier 1", () => {
+  const start = BASE_TIME;
+  const end = new Date(start.getTime() + DAY);
+  const now = new Date(start.getTime() + HOUR);
+
+  const result = calculateMiningStatus(
+    {
+      hashRate: 1,
+      miningStartedAt: start,
+      miningEndsAt: end,
+    },
+    now,
+  );
+
+  assert.equal(result.miningHalvingMultiplier, 1);
+  assertApproximatelyEqual(result.minedAmount, 0.1);
+});
+
+test("returns stored multiplier even when mining is inactive", () => {
+  const result = calculateMiningStatus(
+    {
+      hashRate: 2,
+      miningHalvingMultiplier: 0.5,
+    },
+    BASE_TIME,
+  );
+
+  assert.equal(result.miningActive, false);
+  assert.equal(result.miningHalvingMultiplier, 0.5);
+  assert.equal(result.minedAmount, 0);
 });
