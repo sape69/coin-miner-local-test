@@ -1,3 +1,4 @@
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -11,22 +12,9 @@ import '../localization.dart';
 // Handles the local Android notification shown when the
 // 24-hour Stelluriini mining session is finished.
 //
-// The notification is scheduled locally on the device, so it
-// can appear even when the app is closed.
-//
-// Notification language is taken from the current
-// Stelluriini application language.
-//
-// Supported languages:
-//
-// • fi - Suomi
-// • en - English
-// • de - Deutsch
-// • es - Español
-// • fr - Français
-// • zh - 中文
-// • vi - Tiếng Việt
-// • ja - 日本語
+// Uses exact Android alarms when permission is granted.
+// Falls back to inexact scheduling when exact alarm permission
+// is unavailable.
 //
 // ============================================================
 
@@ -47,8 +35,6 @@ class MiningNotificationService {
   // Notification ID
   // ------------------------------------------------------------
 
-  // One fixed ID is used so a new mining session replaces the
-  // previous scheduled mining-completion notification.
   static const int _miningCompletionNotificationId = 1001;
 
   // ------------------------------------------------------------
@@ -57,8 +43,7 @@ class MiningNotificationService {
 
   static const String _channelId = 'stelluriini_mining';
 
-  static const String _channelName =
-      'Stelluriini Mining';
+  static const String _channelName = 'Stelluriini Mining';
 
   static const String _channelDescription =
       'Notification when Stelluriini mining is complete.';
@@ -88,10 +73,6 @@ class MiningNotificationService {
       return;
     }
 
-    // Initialize timezone database.
-    //
-    // We schedule notifications using a duration from "now",
-    // rather than a fixed clock time.
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
@@ -109,7 +90,6 @@ class MiningNotificationService {
       onDidReceiveNotificationResponse: _onNotificationResponse,
     );
 
-    // Create the Android notification channel.
     const AndroidNotificationChannel channel =
         AndroidNotificationChannel(
       _channelId,
@@ -123,15 +103,36 @@ class MiningNotificationService {
         _notifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.createNotificationChannel(
-      channel,
-    );
+    await androidPlugin?.createNotificationChannel(channel);
 
     _initialized = true;
   }
 
   // ============================================================
-  // REQUEST PERMISSION
+  // CHECK EXACT ALARM PERMISSION
+  // ============================================================
+
+  Future<bool> canScheduleExactNotifications() async {
+    await initialize();
+
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+        _notifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidPlugin == null) {
+      return false;
+    }
+
+    try {
+      return await androidPlugin.canScheduleExactNotifications() ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ============================================================
+  // REQUEST PERMISSIONS
   // ============================================================
 
   Future<void> requestPermission() async {
@@ -141,26 +142,30 @@ class MiningNotificationService {
         _notifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.requestNotificationsPermission();
+    if (androidPlugin == null) {
+      return;
+    }
+
+    // Request normal notification permission.
+    await androidPlugin.requestNotificationsPermission();
+
+    // Check exact alarm permission.
+    bool exactAlarmGranted =
+        await canScheduleExactNotifications();
+
+    // If permission is missing, open Android's exact alarm
+    // permission settings for this application.
+    if (!exactAlarmGranted) {
+      await androidPlugin.requestExactAlarmsPermission();
+
+      // Check again after returning from Android settings.
+      exactAlarmGranted =
+          await canScheduleExactNotifications();
+    }
   }
 
   // ============================================================
   // SCHEDULE MINING COMPLETION
-  // ============================================================
-  //
-  // Schedules the notification after the supplied duration.
-  //
-  // The languageCode comes directly from HomePage, which means
-  // the notification uses the same language selected by the
-  // user in the Stelluriini application.
-  //
-  // Example:
-  //
-  //   await scheduleMiningCompletion(
-  //     const Duration(hours: 24),
-  //     languageCode: 'fi',
-  //   );
-  //
   // ============================================================
 
   Future<void> scheduleMiningCompletion(
@@ -169,16 +174,15 @@ class MiningNotificationService {
   }) async {
     await initialize();
 
-    // Always remove an older mining notification first.
+    // Remove an older mining completion notification.
     await cancelMiningCompletion();
 
-    // Do not schedule notifications for zero/negative durations.
     if (remaining <= Duration.zero) {
       return;
     }
 
     // ----------------------------------------------------------
-    // 🌍 LANGUAGE
+    // LANGUAGE
     // ----------------------------------------------------------
 
     final String safeLanguageCode =
@@ -192,26 +196,20 @@ class MiningNotificationService {
     );
 
     final String notificationTitle =
-        localization.get(
-      _notificationTitleKey,
-    );
+        localization.get(_notificationTitleKey);
 
     final String notificationBody =
-        localization.get(
-      _notificationBodyKey,
-    );
+        localization.get(_notificationBodyKey);
 
     // ----------------------------------------------------------
-    // ⏰ SCHEDULE TIME
+    // SCHEDULE TIME
     // ----------------------------------------------------------
 
     final tz.TZDateTime scheduledDate =
-        tz.TZDateTime.now(tz.local).add(
-      remaining,
-    );
+        tz.TZDateTime.now(tz.local).add(remaining);
 
     // ----------------------------------------------------------
-    // 🔔 ANDROID NOTIFICATION DETAILS
+    // ANDROID NOTIFICATION DETAILS
     // ----------------------------------------------------------
 
     const AndroidNotificationDetails androidDetails =
@@ -232,7 +230,19 @@ class MiningNotificationService {
     );
 
     // ----------------------------------------------------------
-    // 📅 SCHEDULE
+    // CHECK EXACT ALARM PERMISSION
+    // ----------------------------------------------------------
+
+    final bool exactAlarmGranted =
+        await canScheduleExactNotifications();
+
+    final AndroidScheduleMode scheduleMode =
+        exactAlarmGranted
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle;
+
+    // ----------------------------------------------------------
+    // SCHEDULE NOTIFICATION
     // ----------------------------------------------------------
 
     await _notifications.zonedSchedule(
@@ -241,9 +251,21 @@ class MiningNotificationService {
       notificationBody,
       scheduledDate,
       notificationDetails,
-      androidScheduleMode:
-          AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
     );
+
+    // ----------------------------------------------------------
+    // VERIFY SCHEDULE
+    // ----------------------------------------------------------
+
+    final bool scheduled =
+        await hasPendingMiningCompletion();
+
+    if (!scheduled) {
+      throw Exception(
+        'Mining completion notification was not scheduled.',
+      );
+    }
   }
 
   // ============================================================
@@ -268,8 +290,7 @@ class MiningNotificationService {
 
     return pending.any(
       (PendingNotificationRequest notification) =>
-          notification.id ==
-          _miningCompletionNotificationId,
+          notification.id == _miningCompletionNotificationId,
     );
   }
 
@@ -280,10 +301,6 @@ class MiningNotificationService {
   void _onNotificationResponse(
     NotificationResponse response,
   ) {
-    // The notification currently opens the application through
-    // the normal Android notification behaviour.
-    //
-    // Navigation can be added here later if we want the
-    // notification to open a specific Stelluriini page.
+    // The notification opens the application normally.
   }
 }
