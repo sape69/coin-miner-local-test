@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -13,6 +14,11 @@
 // - Power Boost -aikojen yhdistäminen
 // - Louhintajakson tuoton laskenta
 // - Lunastamattoman louhinnan laskenta
+//
+// Halving:
+// - Uusi louhintajakso käyttää tallennettua kerrointa.
+// - Vanha jakso ilman kerrointa käyttää arvoa 1.
+// - Sama kerroin vaikuttaa myös Power Boostiin.
 //
 // Tämä tiedosto ei muuta käyttäjän saldoa.
 // Se ei käynnistä eikä päätä louhintajaksoa.
@@ -35,6 +41,7 @@ const {
   calculateMining,
   getMiningStartTime,
   getMiningEndTime,
+  getMiningHalvingMultiplier,
 } = require("../utils/miningUtils");
 
 const {
@@ -332,6 +339,7 @@ async function calculateMiningCycle(
   endMs,
   hashRate,
   transaction = null,
+  halvingMultiplier = 1,
 ) {
   if (
     !startMs ||
@@ -349,6 +357,9 @@ async function calculateMiningCycle(
   const rate = positive(hashRate);
   const duration = endMs - startMs;
 
+  const safeHalvingMultiplier =
+    positive(halvingMultiplier, 1);
+
   const baseMining = rate > 0
     ? Math.max(
         0,
@@ -356,6 +367,7 @@ async function calculateMiningCycle(
           calculateMining(
             rate,
             duration,
+            safeHalvingMultiplier,
           ),
         ),
       )
@@ -382,6 +394,7 @@ async function calculateMiningCycle(
             calculateMining(
               AD_HASH_RATE_BONUS,
               boostMs,
+              safeHalvingMultiplier,
             ),
           ),
         )
@@ -447,12 +460,22 @@ async function currentUnclaimedMining(
     };
   }
 
+  // Käytetään juuri tämän louhintajakson
+  // Firestoreen tallennettua halving-kerrointa.
+  //
+  // Vanhoilla jaksoilla ilman tallennettua
+  // kerrointa arvo on automaattisesti 1.
+
+  const halvingMultiplier =
+    getMiningHalvingMultiplier(data);
+
   const cycle = await calculateMiningCycle(
     uid,
     window.miningStartMs,
     endMs,
     rate,
     transaction,
+    halvingMultiplier,
   );
 
   return {
