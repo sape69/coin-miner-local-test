@@ -80,6 +80,7 @@ jobs:
 
           test -f test/miningUtils.test.js
           test -f test/timestampUtils.test.js
+          test -f test/dailyMiningUtils.test.js
           test -f test/miningService.test.js
           test -f test/admobService.test.js
           test -f test/admobSignatureCrypto.test.js
@@ -95,6 +96,10 @@ jobs:
           test -f test/referralCallable.integration.test.js
 
           echo "All required test files exist."
+
+      - name: Run daily mining utilities unit tests
+        run: |
+          node --test test/dailyMiningUtils.test.js
 
       - name: Run timestamp utilities unit tests
         run: |
