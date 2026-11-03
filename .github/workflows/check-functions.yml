@@ -1,4 +1,3 @@
-
 name: Check Stelluriini Functions
 
 on:
@@ -82,6 +81,7 @@ jobs:
           test -f test/timestampUtils.test.js
           test -f test/dailyMiningUtils.test.js
           test -f test/miningService.test.js
+          test -f test/halvingService.test.js
           test -f test/admobService.test.js
           test -f test/admobSignatureCrypto.test.js
           test -f test/admobPublicKeyCache.test.js
@@ -96,6 +96,10 @@ jobs:
           test -f test/referralCallable.integration.test.js
 
           echo "All required test files exist."
+
+      - name: Run halving service unit tests
+        run: |
+          node --test test/halvingService.test.js
 
       - name: Run daily mining utilities unit tests
         run: |
