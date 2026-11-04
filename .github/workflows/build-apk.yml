@@ -191,7 +191,46 @@ jobs:
 
           flutter build appbundle --release
 
-      # 15. VERIFY APP BUNDLE
+      # 15. DIAGNOSE MERGED ANDROID MANIFEST
+      - name: Diagnose merged Android manifest
+        if: always()
+        run: |
+          echo "=================================================="
+          echo "ANDROID MANIFEST DIAGNOSTICS"
+          echo "=================================================="
+
+          echo "--- Configured app SDK ---"
+          grep -nE 'minSdk|minSdkVersion|targetSdk' android/app/build.gradle || true
+
+          echo "--- Manifest reports and merged manifests ---"
+          find build/app -type f \
+            \( -iname '*manifest*report*' -o -name 'AndroidManifest.xml' \) \
+            -print 2>/dev/null | sort || true
+
+          echo "--- SDK declarations in merged manifests ---"
+          find build/app -type f -name AndroidManifest.xml \
+            -print0 2>/dev/null |
+            while IFS= read -r -d '' FILE; do
+              if grep -qE 'uses-sdk|minSdkVersion' "$FILE"; then
+                echo "FILE: $FILE"
+                grep -nE 'uses-sdk|minSdkVersion|targetSdkVersion' "$FILE" || true
+              fi
+            done
+
+          echo "--- Release manifest merger report ---"
+          REPORT="build/app/outputs/logs/manifest-merger-release-report.txt"
+
+          if [ -f "$REPORT" ]; then
+            cat "$REPORT"
+          else
+            echo "Expected report not found at standard path."
+          fi
+
+          echo "=================================================="
+          echo "END ANDROID MANIFEST DIAGNOSTICS"
+          echo "=================================================="
+
+      # 16. VERIFY APP BUNDLE
       - name: Verify App Bundle
         run: |
           AAB="build/app/outputs/bundle/release/app-release.aab"
@@ -204,7 +243,7 @@ jobs:
           echo "App Bundle successfully created:"
           ls -lh "$AAB"
 
-      # 16. BUILD RELEASE APK
+      # 17. BUILD RELEASE APK
       - name: Build release APK
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
@@ -212,7 +251,7 @@ jobs:
         run: |
           flutter build apk --release
 
-      # 17. VERIFY APK
+      # 18. VERIFY APK
       - name: Verify APK
         run: |
           APK="build/app/outputs/flutter-apk/app-release.apk"
@@ -225,7 +264,7 @@ jobs:
           echo "APK successfully created:"
           ls -lh "$APK"
 
-      # 18. UPLOAD RELEASE FILES
+      # 19. UPLOAD RELEASE FILES
       - name: Upload release files
         uses: actions/upload-artifact@v7
         with:
@@ -236,14 +275,14 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-      # 19. REMOVE TEMPORARY RELEASE KEYSTORE
+      # 20. REMOVE TEMPORARY RELEASE KEYSTORE
       - name: Remove temporary release keystore
         if: always()
         run: |
           rm -f android/stelluriini-upload-keystore.jks
           echo "Temporary release keystore removed from runner."
 
-      # 20. BUILD SUMMARY
+      # 21. BUILD SUMMARY
       - name: Build summary
         if: success()
         run: |
