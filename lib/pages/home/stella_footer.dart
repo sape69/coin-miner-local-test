@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../localization.dart';
 
@@ -29,6 +31,10 @@ class StellaFooter extends StatelessWidget {
   static const String contactEmail =
       'stelluriini.app@gmail.com';
 
+  static final Uri facebookUrl = Uri.parse(
+    'https://www.facebook.com/share/1CSyTzCLb4/',
+  );
+
   String _privacyOptionsLabel() {
     switch (languageCode) {
       case 'fi':
@@ -55,6 +61,46 @@ class StellaFooter extends StatelessWidget {
       case 'en':
       default:
         return 'Privacy options';
+    }
+  }
+
+  String _facebookLabel() {
+    switch (languageCode) {
+      case 'fi':
+        return 'Seuraa meitä Facebookissa';
+
+      case 'de':
+        return 'Folge uns auf Facebook';
+
+      case 'es':
+        return 'Síguenos en Facebook';
+
+      case 'fr':
+        return 'Suivez-nous sur Facebook';
+
+      case 'zh':
+        return '在 Facebook 上关注我们';
+
+      case 'vi':
+        return 'Theo dõi chúng tôi trên Facebook';
+
+      case 'ja':
+        return 'Facebookでフォロー';
+
+      case 'en':
+      default:
+        return 'Follow us on Facebook';
+    }
+  }
+
+  Future<void> _openFacebook() async {
+    try {
+      await launchUrl(
+        facebookUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      // Facebook-linkin avaaminen epäonnistui.
     }
   }
 
@@ -123,6 +169,46 @@ class StellaFooter extends StatelessWidget {
               letterSpacing: 0.3,
             ),
           ),
+
+          // ==================================================
+          // FACEBOOK
+          // ==================================================
+
+          const SizedBox(height: 14),
+          InkWell(
+            onTap: _openFacebook,
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 8,
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.facebook,
+                    size: 34,
+                    color: accentColor,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _facebookLabel(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: accentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ==================================================
+          // PRIVACY OPTIONS
+          // ==================================================
+
           if (privacyOptionsRequired) ...[
             const SizedBox(height: 14),
             OutlinedButton.icon(
