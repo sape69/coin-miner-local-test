@@ -99,8 +99,8 @@ const {
 } = require("./referralFunctions");
 
 const {
-  getTotalUsers,
-} = require("../services/referralService");
+  getRegisteredUserCount,
+} = require("../services/halvingService");
 
 // ============================================================
 // VALUE HELPERS
@@ -1550,14 +1550,14 @@ const claimMining =
               }
             }
 
-            // Hae käyttäjämäärä ennen transactionin ensimmäistä kirjoitusta.
+            // Hae kaikkien rekisteröityneiden käyttäjien määrä.
             // Kerroin tallennetaan vain uuteen louhintajaksoon; aiemman jakson
             // laskennassa käytetään edelleen dataan tallennettua kerrointa.
-            const totalUsers =
-              await getTotalUsers(transaction);
+            const registeredUserCount =
+              await getRegisteredUserCount();
 
             const newMiningHalvingMultiplier =
-              getHalvingMultiplier(totalUsers);
+              getHalvingMultiplier(registeredUserCount);
 
             const achievementResult =
               await prepareMiningAchievements(
