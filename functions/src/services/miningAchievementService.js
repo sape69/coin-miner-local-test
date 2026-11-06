@@ -264,6 +264,7 @@ async function prepareMiningAchievements(
   now
 ) {
   const definitions = [
+    // Mining
     getAchievementDefinition("first_paw"),
     getAchievementDefinition("little_miner"),
     getAchievementDefinition("stl_hunter"),
@@ -271,10 +272,26 @@ async function prepareMiningAchievements(
     getAchievementDefinition("stl_collector"),
     getAchievementDefinition("stl_master"),
     getAchievementDefinition("dedicated_miner"),
+
+    // Mining cycles
+    getAchievementDefinition("seasoned_miner"),
+    getAchievementDefinition("veteran_miner"),
+
+    // STL totals
+    getAchievementDefinition("stl_hoarder"),
+    getAchievementDefinition("stl_tycoon"),
+
+    // Daily streak
     getAchievementDefinition("hot_streak"),
     getAchievementDefinition("stella_on_fire"),
     getAchievementDefinition("stella_legend"),
+    getAchievementDefinition("stella_eternal"),
+    getAchievementDefinition("stella_beyond"),
+
+    // Daily check-ins
     getAchievementDefinition("stellas_friend"),
+    getAchievementDefinition("stella_companion"),
+    getAchievementDefinition("stella_devotee"),
   ].filter(Boolean);
 
   const items =
@@ -287,11 +304,19 @@ async function prepareMiningAchievements(
   const collectedAmount =
     nonNegative(collected);
 
+  // ----------------------------------------------------------
+  // MINING CYCLES
+  // ----------------------------------------------------------
+
   const oldMiningCycles =
     nonNegative(data.miningCycles);
 
   const newMiningCycles =
     oldMiningCycles + (started ? 1 : 0);
+
+  // ----------------------------------------------------------
+  // DAILY CHECK-INS
+  // ----------------------------------------------------------
 
   const oldDailyCheckIns =
     nonNegative(data.dailyCheckIns);
@@ -299,6 +324,10 @@ async function prepareMiningAchievements(
   const newDailyCheckIns =
     oldDailyCheckIns +
     (!dailyClaimedToday ? 1 : 0);
+
+  // ----------------------------------------------------------
+  // DAILY STREAK
+  // ----------------------------------------------------------
 
   const safeDailyStreak =
     Math.max(
@@ -308,6 +337,10 @@ async function prepareMiningAchievements(
       )
     );
 
+  // ----------------------------------------------------------
+  // EXISTING PROGRESS
+  // ----------------------------------------------------------
+
   const existingProgress = {};
 
   for (const item of items) {
@@ -315,13 +348,19 @@ async function prepareMiningAchievements(
       nonNegative(item.data.progress);
   }
 
+  // ----------------------------------------------------------
+  // PROGRESS CALCULATIONS
+  // ----------------------------------------------------------
+
   const progressById = {
+    // Mining start
     first_paw:
       Math.max(
         existingProgress.first_paw || 0,
         started ? 1 : 0
       ),
 
+    // STL accumulated from mining
     little_miner:
       (existingProgress.little_miner || 0) +
       collectedAmount,
@@ -342,9 +381,26 @@ async function prepareMiningAchievements(
       (existingProgress.stl_master || 0) +
       collectedAmount,
 
+    // Mining cycle counts
     dedicated_miner:
       newMiningCycles,
 
+    seasoned_miner:
+      newMiningCycles,
+
+    veteran_miner:
+      newMiningCycles,
+
+    // Long-term STL achievements
+    stl_hoarder:
+      (existingProgress.stl_hoarder || 0) +
+      collectedAmount,
+
+    stl_tycoon:
+      (existingProgress.stl_tycoon || 0) +
+      collectedAmount,
+
+    // Daily streak achievements
     hot_streak:
       Math.max(
         existingProgress.hot_streak || 0,
@@ -363,7 +419,26 @@ async function prepareMiningAchievements(
         safeDailyStreak
       ),
 
+    stella_eternal:
+      Math.max(
+        existingProgress.stella_eternal || 0,
+        safeDailyStreak
+      ),
+
+    stella_beyond:
+      Math.max(
+        existingProgress.stella_beyond || 0,
+        safeDailyStreak
+      ),
+
+    // Daily check-in achievements
     stellas_friend:
+      newDailyCheckIns,
+
+    stella_companion:
+      newDailyCheckIns,
+
+    stella_devotee:
       newDailyCheckIns,
   };
 
@@ -392,6 +467,8 @@ async function preparePowerBoostAchievements(
   const definitions = [
     getAchievementDefinition("power_paws"),
     getAchievementDefinition("super_paws"),
+    getAchievementDefinition("power_hunter"),
+    getAchievementDefinition("power_master"),
   ].filter(Boolean);
 
   const items =
@@ -410,6 +487,8 @@ async function preparePowerBoostAchievements(
   const progressById = {
     power_paws: newPowerBoostCount,
     super_paws: newPowerBoostCount,
+    power_hunter: newPowerBoostCount,
+    power_master: newPowerBoostCount,
   };
 
   return {
