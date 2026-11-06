@@ -7,17 +7,16 @@
 //
 // Saavutusten lukeminen, etenemisen laskenta ja tallennus.
 //
-// Ominaisuudet:
-// - Firestore-transaktiot
-// - Historiallisen STL-saldon huomioiminen
+// Vastuut:
 // - Mining cycle -saavutukset
-// - STL-kertymäsaavutukset
-// - Daily streak -saavutukset
-// - Daily check-in -saavutukset
+// - Kumulatiiviset STL-louhintasaavutukset
 // - Power Boost -saavutukset
-// - Palkintojen kertamaksu
+// - Saavutuspalkintojen kertamaksu
 //
-// Tämä tiedosto ei itse päivitä käyttäjän miningBalance-saldoa.
+// Daily Check-In- ja daily streak -saavutukset kuuluvat
+// yksinomaan dailyFunctions.js-tiedostolle.
+//
+// Tämä palvelu ei päivitä käyttäjän miningBalance-saldoa.
 // ============================================================
 
 const {
@@ -143,17 +142,11 @@ function achievementUpdate(
 
   const update = {
     achievementId: definition.id,
-
     progress: safeProgress,
-
     target: safeTarget,
-
     reward: safeReward,
-
     unlocked,
-
     rewardClaimed,
-
     updatedAt: now,
   };
 
@@ -234,11 +227,8 @@ function buildAchievementResult(
     updates.push({
       ref,
       update,
-
       achievementId: definition.id,
-
       reward,
-
       newlyUnlocked:
         !wasUnlocked &&
         update.unlocked === true,
@@ -247,9 +237,7 @@ function buildAchievementResult(
 
   return {
     updates,
-
     totalReward,
-
     rewards:
       updates
         .filter((item) => item.reward > 0)
@@ -276,6 +264,14 @@ async function prepareMiningAchievements(
   data,
   now
 ) {
+  // Säilytetään vanha kutsurajapinta, jotta
+  // miningFunctions.js-tiedostoa ei tarvitse muuttaa
+  // tässä samassa työvaiheessa.
+  //
+  // Daily Check-In -tietoja ei kuitenkaan käsitellä tässä.
+  void dailyClaimedToday;
+  void dailyStreakValue;
+
   const definitions = [
     // Mining
     "first_paw",
@@ -290,21 +286,9 @@ async function prepareMiningAchievements(
     "seasoned_miner",
     "veteran_miner",
 
-    // STL totals
+    // Cumulative mined STL
     "stl_hoarder",
     "stl_tycoon",
-
-    // Daily streak
-    "hot_streak",
-    "stella_on_fire",
-    "stella_legend",
-    "stella_eternal",
-    "stella_beyond",
-
-    // Daily check-ins
-    "stellas_friend",
-    "stella_companion",
-    "stella_devotee",
   ]
     .map(getAchievementDefinition)
     .filter(Boolean);
@@ -325,24 +309,6 @@ async function prepareMiningAchievements(
     nonNegative(collected);
 
   // ----------------------------------------------------------
-  // HISTORICAL STL BALANCE
-  // ----------------------------------------------------------
-  //
-  // Existing users may already have STL in miningBalance.
-  //
-  // Achievement progress must not start from zero when
-  // the achievement document is newly created.
-  //
-  // Existing progress is preserved if it is higher.
-  //
-  // Collected is added only once for this mining claim.
-  //
-  // ----------------------------------------------------------
-
-  const historicalMiningBalance =
-    nonNegative(userData.miningBalance);
-
-  // ----------------------------------------------------------
   // MINING CYCLES
   // ----------------------------------------------------------
 
@@ -353,104 +319,51 @@ async function prepareMiningAchievements(
     oldMiningCycles + (started ? 1 : 0);
 
   // ----------------------------------------------------------
-  // DAILY CHECK-INS
-  // ----------------------------------------------------------
-
-  const oldDailyCheckIns =
-    safeInteger(userData.dailyCheckIns);
-
-  const newDailyCheckIns =
-    oldDailyCheckIns +
-    (!dailyClaimedToday ? 1 : 0);
-
-  // ----------------------------------------------------------
-  // DAILY STREAK
-  // ----------------------------------------------------------
-
-  const safeDailyStreak =
-    safeInteger(dailyStreakValue);
-
-  // ----------------------------------------------------------
-  // EXISTING ACHIEVEMENT PROGRESS
-  // ----------------------------------------------------------
-
-  const existingProgress = {};
-
-  for (const item of items) {
-    existingProgress[item.definition.id] =
-      nonNegative(item.data.progress);
-  }
-
-  // ----------------------------------------------------------
-  // STL PROGRESS
+  // CUMULATIVE MINED STL
   // ----------------------------------------------------------
   //
-  // Use the greater of:
-  // - Existing achievement progress
-  // - Historical miningBalance
+  // Älä käytä miningBalance-saldoa louhintamääränä:
+  // saldoon lisätään myös achievement-, referral- ja muita
+  // palkintoja. Ne eivät ole varsinaista louhintaa.
   //
-  // Then add the newly collected mining amount.
+  // totalMined otetaan käyttöön käyttäjädokumentissa
+  // erillisessä muutoksessa. Siihen asti progress kasvaa
+  // tässä vain todellisella collected-louhintakertymällä.
   //
-  // This migrates existing users without resetting progress.
-  //
+  // Vanhojen achievement-dokumenttien progress säilyy
+  // achievementUpdate()-funktion monotonisen laskennan ansiosta.
   // ----------------------------------------------------------
+
+  const historicalTotalMined =
+    nonNegative(userData.totalMined);
 
   const lifetimeStlProgress =
-    Math.max(
-      historicalMiningBalance,
-      existingProgress.stl_hoarder || 0,
-      existingProgress.stl_tycoon || 0
-    ) + collectedAmount;
+    historicalTotalMined + collectedAmount;
 
   // ----------------------------------------------------------
   // PROGRESS CALCULATIONS
   // ----------------------------------------------------------
 
   const progressById = {
-
-    // --------------------------------------------------------
-    // FIRST MINING
-    // --------------------------------------------------------
-
+    // First mining
     first_paw:
-      Math.max(
-        existingProgress.first_paw || 0,
-        started ? 1 : 0
-      ),
+      started ? 1 : 0,
 
-    // --------------------------------------------------------
-    // STL ACHIEVEMENTS
-    // --------------------------------------------------------
-
+    // Cumulative mined STL
     little_miner:
-      Math.max(
-        existingProgress.little_miner || 0,
-        lifetimeStlProgress
-      ),
+      lifetimeStlProgress,
 
     stl_hunter:
-      Math.max(
-        existingProgress.stl_hunter || 0,
-        lifetimeStlProgress
-      ),
+      lifetimeStlProgress,
 
     growing_miner:
-      Math.max(
-        existingProgress.growing_miner || 0,
-        lifetimeStlProgress
-      ),
+      lifetimeStlProgress,
 
     stl_collector:
-      Math.max(
-        existingProgress.stl_collector || 0,
-        lifetimeStlProgress
-      ),
+      lifetimeStlProgress,
 
     stl_master:
-      Math.max(
-        existingProgress.stl_master || 0,
-        lifetimeStlProgress
-      ),
+      lifetimeStlProgress,
 
     stl_hoarder:
       lifetimeStlProgress,
@@ -458,10 +371,7 @@ async function prepareMiningAchievements(
     stl_tycoon:
       lifetimeStlProgress,
 
-    // --------------------------------------------------------
-    // MINING CYCLES
-    // --------------------------------------------------------
-
+    // Mining cycles
     dedicated_miner:
       newMiningCycles,
 
@@ -470,54 +380,11 @@ async function prepareMiningAchievements(
 
     veteran_miner:
       newMiningCycles,
-
-    // --------------------------------------------------------
-    // DAILY STREAK
-    // --------------------------------------------------------
-
-    hot_streak:
-      Math.max(
-        existingProgress.hot_streak || 0,
-        safeDailyStreak
-      ),
-
-    stella_on_fire:
-      Math.max(
-        existingProgress.stella_on_fire || 0,
-        safeDailyStreak
-      ),
-
-    stella_legend:
-      Math.max(
-        existingProgress.stella_legend || 0,
-        safeDailyStreak
-      ),
-
-    stella_eternal:
-      Math.max(
-        existingProgress.stella_eternal || 0,
-        safeDailyStreak
-      ),
-
-    stella_beyond:
-      Math.max(
-        existingProgress.stella_beyond || 0,
-        safeDailyStreak
-      ),
-
-    // --------------------------------------------------------
-    // DAILY CHECK-INS
-    // --------------------------------------------------------
-
-    stellas_friend:
-      newDailyCheckIns,
-
-    stella_companion:
-      newDailyCheckIns,
-
-    stella_devotee:
-      newDailyCheckIns,
   };
+
+  // Daily Check-In -laskuri säilyy ennallaan.
+  const unchangedDailyCheckIns =
+    safeInteger(userData.dailyCheckIns);
 
   return {
     ...buildAchievementResult(
@@ -528,7 +395,7 @@ async function prepareMiningAchievements(
 
     miningCycles: newMiningCycles,
 
-    dailyCheckIns: newDailyCheckIns,
+    dailyCheckIns: unchangedDailyCheckIns,
   };
 }
 
@@ -565,37 +432,18 @@ async function preparePowerBoostAchievements(
   const newPowerBoostCount =
     oldPowerBoostCount + 1;
 
-  const existingProgress = {};
-
-  for (const item of items) {
-    existingProgress[item.definition.id] =
-      nonNegative(item.data.progress);
-  }
-
   const progressById = {
     power_paws:
-      Math.max(
-        existingProgress.power_paws || 0,
-        newPowerBoostCount
-      ),
+      newPowerBoostCount,
 
     super_paws:
-      Math.max(
-        existingProgress.super_paws || 0,
-        newPowerBoostCount
-      ),
+      newPowerBoostCount,
 
     power_hunter:
-      Math.max(
-        existingProgress.power_hunter || 0,
-        newPowerBoostCount
-      ),
+      newPowerBoostCount,
 
     power_master:
-      Math.max(
-        existingProgress.power_master || 0,
-        newPowerBoostCount
-      ),
+      newPowerBoostCount,
   };
 
   return {
