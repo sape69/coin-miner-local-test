@@ -78,7 +78,6 @@ const {
 const {
   dailyHashRate,
   dailyHashRateBonus,
-  dailyStreak,
   nextDailyClaim,
   nextDailyHashRate,
   nextDailyStreak,
@@ -128,6 +127,89 @@ function positive(value, fallback = 0) {
   return Number.isFinite(result) && result > 0
     ? result
     : fallback;
+}
+
+// ============================================================
+// MINING-SPECIFIC DAILY STREAK
+// ============================================================
+//
+// Mining streak and Daily Check-In are separate systems.
+//
+// Mining uses:
+// - miningStreak
+// - lastMiningDate
+//
+// Daily Check-In exclusively owns:
+// - dailyStreak
+// - streak
+// - lastDailyDate
+//
+// Legacy Daily Check-In fields are read only as a migration
+// fallback for accounts that do not yet have mining fields.
+// ============================================================
+
+function miningDailyStreak(data) {
+  const source =
+    data && typeof data === "object"
+      ? data
+      : {};
+
+  const value =
+    source.miningStreak ??
+    source.dailyStreak ??
+    source.streak;
+
+  return Math.max(
+    0,
+    Math.floor(
+      number(value)
+    )
+  );
+}
+
+function miningDailyData(data) {
+  const source =
+    data && typeof data === "object"
+      ? data
+      : {};
+
+  const lastMiningDate =
+    typeof source.lastMiningDate === "string"
+      ? source.lastMiningDate
+      : typeof source.lastDailyDate === "string"
+        ? source.lastDailyDate
+        : "";
+
+  return {
+    ...source,
+    dailyStreak: miningDailyStreak(source),
+    streak: miningDailyStreak(source),
+    lastDailyDate: lastMiningDate,
+  };
+}
+
+function getMiningDailyClaim(data, today, nowMs) {
+  return nextDailyClaim(
+    miningDailyData(data),
+    today,
+    nowMs
+  );
+}
+
+function getNextMiningDailyHashRate(data, today, nowMs) {
+  return nextDailyHashRate(
+    miningDailyData(data),
+    today,
+    nowMs
+  );
+}
+
+function getNextMiningDailyStreak(data, today, nowMs) {
+  return nextDailyStreak(
+    miningDailyData(data),
+    today,
+    nowMs
+  );
 }
 
 // ============================================================
@@ -788,7 +870,7 @@ const getMiningStatus =
           getUtcDateString(now);
 
         const daily =
-          nextDailyClaim(
+          getMiningDailyClaim(
             data,
             today,
             nowMs
@@ -864,14 +946,14 @@ const getMiningStatus =
           halvingMultiplier;
 
         const nextRate =
-          nextDailyHashRate(
+          getNextMiningDailyHashRate(
             data,
             today,
             nowMs
           );
 
         const nextStreak =
-          nextDailyStreak(
+          getNextMiningDailyStreak(
             data,
             today,
             nowMs
@@ -1099,7 +1181,7 @@ const claimMining =
             : miningHashRate(
                 earlyData,
                 dailyHashRate(
-                  dailyStreak(
+                  miningDailyStreak(
                     earlyData
                   ) || 1
                 )
@@ -1131,7 +1213,7 @@ const claimMining =
             );
 
           const daily =
-            nextDailyClaim(
+            getMiningDailyClaim(
               earlyData,
               today,
               earlyNowMs
@@ -1170,14 +1252,14 @@ const claimMining =
               daily.streak,
 
             nextDailyHashRate:
-              nextDailyHashRate(
+              getNextMiningDailyHashRate(
                 earlyData,
                 today,
                 earlyNowMs
               ),
 
             nextDailyStreak:
-              nextDailyStreak(
+              getNextMiningDailyStreak(
                 earlyData,
                 today,
                 earlyNowMs
@@ -1310,7 +1392,7 @@ const claimMining =
                 : {};
 
             const currentStreak =
-              dailyStreak(data);
+              miningDailyStreak(data);
 
             const fallbackRate =
               dailyHashRate(
@@ -1352,7 +1434,7 @@ const claimMining =
                 );
 
               const daily =
-                nextDailyClaim(
+                getMiningDailyClaim(
                   data,
                   today,
                   nowMs
@@ -1391,14 +1473,14 @@ const claimMining =
                   daily.streak,
 
                 nextDailyHashRate:
-                  nextDailyHashRate(
+                  getNextMiningDailyHashRate(
                     data,
                     today,
                     nowMs
                   ),
 
                 nextDailyStreak:
-                  nextDailyStreak(
+                  getNextMiningDailyStreak(
                     data,
                     today,
                     nowMs
@@ -1470,7 +1552,7 @@ const claimMining =
             }
 
             const daily =
-              nextDailyClaim(
+              getMiningDailyClaim(
                 data,
                 today,
                 nowMs
@@ -1666,13 +1748,11 @@ const claimMining =
                 hashRate:
                   rate,
 
-                dailyStreak:
+                // Mining streak is independent from Daily Check-In.
+                miningStreak:
                   daily.streak,
 
-                streak:
-                  daily.streak,
-
-                lastDailyDate:
+                lastMiningDate:
                   today,
 
                 miningHashRate:
@@ -1684,6 +1764,11 @@ const claimMining =
                 miningBalance:
                   newBalance,
 
+                // Count only STL produced by mining.
+                // Achievement and referral rewards are excluded.
+                totalMined:
+                  FieldValue.increment(collected),
+
                 miningStartedAt:
                   startedAt,
 
@@ -1693,10 +1778,6 @@ const claimMining =
                 miningCycles:
                   achievementResult
                     .miningCycles,
-
-                dailyCheckIns:
-                  achievementResult
-                    .dailyCheckIns,
 
                 adBoostStartedAt:
                   null,
@@ -1800,10 +1881,12 @@ const claimMining =
                     daily.streak,
 
                   previousDailyDate:
-                    typeof data.lastDailyDate ===
+                    typeof data.lastMiningDate ===
                       "string"
-                      ? data.lastDailyDate
-                      : null,
+                      ? data.lastMiningDate
+                      : typeof data.lastDailyDate === "string"
+                        ? data.lastDailyDate
+                        : null,
 
                   currentDailyDate:
                     today,
@@ -1999,14 +2082,14 @@ const claimMining =
                 daily.streak,
 
               nextDailyHashRate:
-                nextDailyHashRate(
+                getNextMiningDailyHashRate(
                   data,
                   today,
                   nowMs
                 ),
 
               nextDailyStreak:
-                nextDailyStreak(
+                getNextMiningDailyStreak(
                   data,
                   today,
                   nowMs
@@ -2701,7 +2784,7 @@ const powerBoost =
             );
 
             const daily =
-              nextDailyClaim(
+              getMiningDailyClaim(
                 data,
                 today,
                 nowMs
@@ -2777,14 +2860,14 @@ const powerBoost =
                 daily.streak,
 
               nextDailyHashRate:
-                nextDailyHashRate(
+                getNextMiningDailyHashRate(
                   data,
                   today,
                   nowMs
                 ),
 
               nextDailyStreak:
-                nextDailyStreak(
+                getNextMiningDailyStreak(
                   data,
                   today,
                   nowMs
