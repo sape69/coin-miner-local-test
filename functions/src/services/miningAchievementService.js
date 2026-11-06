@@ -7,12 +7,15 @@
 //
 // Saavutusten lukeminen, etenemisen laskenta ja tallennus.
 //
-// Tämä palvelu:
-// - Lukee käyttäjän saavutukset Firestore-transaktion kautta.
-// - Laskee saavutusten etenemisen.
-// - Tunnistaa uudet saavutukset.
-// - Laskee saavutuspalkkiot.
-// - Valmistelee Firestore-päivitykset.
+// Ominaisuudet:
+// - Firestore-transaktiot
+// - Historiallisen STL-saldon huomioiminen
+// - Mining cycle -saavutukset
+// - STL-kertymäsaavutukset
+// - Daily streak -saavutukset
+// - Daily check-in -saavutukset
+// - Power Boost -saavutukset
+// - Palkintojen kertamaksu
 //
 // Tämä tiedosto ei itse päivitä käyttäjän miningBalance-saldoa.
 // ============================================================
@@ -24,6 +27,7 @@ const {
 const {
   getAchievementDefinition,
 } = require("../functions/achievementFunctions");
+
 
 // ============================================================
 // VALUE HELPERS
@@ -45,6 +49,15 @@ function nonNegative(value, fallback = 0) {
     : fallback;
 }
 
+function safeInteger(value, fallback = 0) {
+  const result = number(value, fallback);
+
+  return Number.isFinite(result)
+    ? Math.max(0, Math.floor(result))
+    : fallback;
+}
+
+
 // ============================================================
 // ACHIEVEMENT COLLECTION
 // ============================================================
@@ -53,6 +66,7 @@ function achievementCollection(uid) {
   return getUserRef(uid)
     .collection("achievements");
 }
+
 
 // ============================================================
 // READ ACHIEVEMENT DATA
@@ -76,15 +90,15 @@ async function readAchievementData(
     items.push({
       definition,
       ref,
-      data:
-        snapshot.exists
-          ? snapshot.data() || {}
-          : {},
+      data: snapshot.exists
+        ? snapshot.data() || {}
+        : {},
     });
   }
 
   return items;
 }
+
 
 // ============================================================
 // ACHIEVEMENT UPDATE
@@ -97,22 +111,13 @@ function achievementUpdate(
   now
 ) {
   const oldProgress =
-    Math.max(
-      0,
-      number(existing.progress)
-    );
+    nonNegative(existing.progress);
 
   const safeTarget =
-    Math.max(
-      0,
-      number(definition.target)
-    );
+    nonNegative(definition.target);
 
   const safeReward =
-    Math.max(
-      0,
-      number(definition.reward)
-    );
+    nonNegative(definition.reward);
 
   const safeProgress =
     Math.min(
@@ -138,11 +143,17 @@ function achievementUpdate(
 
   const update = {
     achievementId: definition.id,
+
     progress: safeProgress,
+
     target: safeTarget,
+
     reward: safeReward,
+
     unlocked,
+
     rewardClaimed,
+
     updatedAt: now,
   };
 
@@ -153,8 +164,7 @@ function achievementUpdate(
   ) {
     update.unlockedAt = now;
   } else if (existing.unlockedAt) {
-    update.unlockedAt =
-      existing.unlockedAt;
+    update.unlockedAt = existing.unlockedAt;
   }
 
   if (existing.rewardClaimedAt) {
@@ -164,6 +174,7 @@ function achievementUpdate(
 
   return update;
 }
+
 
 // ============================================================
 // ACHIEVEMENT RESULT BUILDER
@@ -204,18 +215,15 @@ function buildAchievementResult(
         now
       );
 
-    const newlyRewardable =
-      update.unlocked === true &&
-      wasRewardClaimed === false;
-
     let reward = 0;
 
-    if (newlyRewardable) {
+    // Palkinto maksetaan vain kerran.
+    if (
+      update.unlocked === true &&
+      wasRewardClaimed === false
+    ) {
       reward =
-        Math.max(
-          0,
-          number(definition.reward)
-        );
+        nonNegative(definition.reward);
 
       update.rewardClaimed = true;
       update.rewardClaimedAt = now;
@@ -226,8 +234,11 @@ function buildAchievementResult(
     updates.push({
       ref,
       update,
+
       achievementId: definition.id,
+
       reward,
+
       newlyUnlocked:
         !wasUnlocked &&
         update.unlocked === true,
@@ -236,6 +247,7 @@ function buildAchievementResult(
 
   return {
     updates,
+
     totalReward,
 
     rewards:
@@ -248,6 +260,7 @@ function buildAchievementResult(
         })),
   };
 }
+
 
 // ============================================================
 // PREPARE MINING ACHIEVEMENTS
@@ -265,34 +278,36 @@ async function prepareMiningAchievements(
 ) {
   const definitions = [
     // Mining
-    getAchievementDefinition("first_paw"),
-    getAchievementDefinition("little_miner"),
-    getAchievementDefinition("stl_hunter"),
-    getAchievementDefinition("growing_miner"),
-    getAchievementDefinition("stl_collector"),
-    getAchievementDefinition("stl_master"),
-    getAchievementDefinition("dedicated_miner"),
+    "first_paw",
+    "little_miner",
+    "stl_hunter",
+    "growing_miner",
+    "stl_collector",
+    "stl_master",
+    "dedicated_miner",
 
     // Mining cycles
-    getAchievementDefinition("seasoned_miner"),
-    getAchievementDefinition("veteran_miner"),
+    "seasoned_miner",
+    "veteran_miner",
 
     // STL totals
-    getAchievementDefinition("stl_hoarder"),
-    getAchievementDefinition("stl_tycoon"),
+    "stl_hoarder",
+    "stl_tycoon",
 
     // Daily streak
-    getAchievementDefinition("hot_streak"),
-    getAchievementDefinition("stella_on_fire"),
-    getAchievementDefinition("stella_legend"),
-    getAchievementDefinition("stella_eternal"),
-    getAchievementDefinition("stella_beyond"),
+    "hot_streak",
+    "stella_on_fire",
+    "stella_legend",
+    "stella_eternal",
+    "stella_beyond",
 
     // Daily check-ins
-    getAchievementDefinition("stellas_friend"),
-    getAchievementDefinition("stella_companion"),
-    getAchievementDefinition("stella_devotee"),
-  ].filter(Boolean);
+    "stellas_friend",
+    "stella_companion",
+    "stella_devotee",
+  ]
+    .map(getAchievementDefinition)
+    .filter(Boolean);
 
   const items =
     await readAchievementData(
@@ -301,15 +316,38 @@ async function prepareMiningAchievements(
       definitions
     );
 
+  const userData =
+    data && typeof data === "object"
+      ? data
+      : {};
+
   const collectedAmount =
     nonNegative(collected);
+
+  // ----------------------------------------------------------
+  // HISTORICAL STL BALANCE
+  // ----------------------------------------------------------
+  //
+  // Existing users may already have STL in miningBalance.
+  //
+  // Achievement progress must not start from zero when
+  // the achievement document is newly created.
+  //
+  // Existing progress is preserved if it is higher.
+  //
+  // Collected is added only once for this mining claim.
+  //
+  // ----------------------------------------------------------
+
+  const historicalMiningBalance =
+    nonNegative(userData.miningBalance);
 
   // ----------------------------------------------------------
   // MINING CYCLES
   // ----------------------------------------------------------
 
   const oldMiningCycles =
-    nonNegative(data.miningCycles);
+    safeInteger(userData.miningCycles);
 
   const newMiningCycles =
     oldMiningCycles + (started ? 1 : 0);
@@ -319,7 +357,7 @@ async function prepareMiningAchievements(
   // ----------------------------------------------------------
 
   const oldDailyCheckIns =
-    nonNegative(data.dailyCheckIns);
+    safeInteger(userData.dailyCheckIns);
 
   const newDailyCheckIns =
     oldDailyCheckIns +
@@ -330,15 +368,10 @@ async function prepareMiningAchievements(
   // ----------------------------------------------------------
 
   const safeDailyStreak =
-    Math.max(
-      0,
-      Math.floor(
-        number(dailyStreakValue)
-      )
-    );
+    safeInteger(dailyStreakValue);
 
   // ----------------------------------------------------------
-  // EXISTING PROGRESS
+  // EXISTING ACHIEVEMENT PROGRESS
   // ----------------------------------------------------------
 
   const existingProgress = {};
@@ -349,39 +382,86 @@ async function prepareMiningAchievements(
   }
 
   // ----------------------------------------------------------
+  // STL PROGRESS
+  // ----------------------------------------------------------
+  //
+  // Use the greater of:
+  // - Existing achievement progress
+  // - Historical miningBalance
+  //
+  // Then add the newly collected mining amount.
+  //
+  // This migrates existing users without resetting progress.
+  //
+  // ----------------------------------------------------------
+
+  const lifetimeStlProgress =
+    Math.max(
+      historicalMiningBalance,
+      existingProgress.stl_hoarder || 0,
+      existingProgress.stl_tycoon || 0
+    ) + collectedAmount;
+
+  // ----------------------------------------------------------
   // PROGRESS CALCULATIONS
   // ----------------------------------------------------------
 
   const progressById = {
-    // Mining start
+
+    // --------------------------------------------------------
+    // FIRST MINING
+    // --------------------------------------------------------
+
     first_paw:
       Math.max(
         existingProgress.first_paw || 0,
         started ? 1 : 0
       ),
 
-    // STL accumulated from mining
+    // --------------------------------------------------------
+    // STL ACHIEVEMENTS
+    // --------------------------------------------------------
+
     little_miner:
-      (existingProgress.little_miner || 0) +
-      collectedAmount,
+      Math.max(
+        existingProgress.little_miner || 0,
+        lifetimeStlProgress
+      ),
 
     stl_hunter:
-      (existingProgress.stl_hunter || 0) +
-      collectedAmount,
+      Math.max(
+        existingProgress.stl_hunter || 0,
+        lifetimeStlProgress
+      ),
 
     growing_miner:
-      (existingProgress.growing_miner || 0) +
-      collectedAmount,
+      Math.max(
+        existingProgress.growing_miner || 0,
+        lifetimeStlProgress
+      ),
 
     stl_collector:
-      (existingProgress.stl_collector || 0) +
-      collectedAmount,
+      Math.max(
+        existingProgress.stl_collector || 0,
+        lifetimeStlProgress
+      ),
 
     stl_master:
-      (existingProgress.stl_master || 0) +
-      collectedAmount,
+      Math.max(
+        existingProgress.stl_master || 0,
+        lifetimeStlProgress
+      ),
 
-    // Mining cycle counts
+    stl_hoarder:
+      lifetimeStlProgress,
+
+    stl_tycoon:
+      lifetimeStlProgress,
+
+    // --------------------------------------------------------
+    // MINING CYCLES
+    // --------------------------------------------------------
+
     dedicated_miner:
       newMiningCycles,
 
@@ -391,16 +471,10 @@ async function prepareMiningAchievements(
     veteran_miner:
       newMiningCycles,
 
-    // Long-term STL achievements
-    stl_hoarder:
-      (existingProgress.stl_hoarder || 0) +
-      collectedAmount,
+    // --------------------------------------------------------
+    // DAILY STREAK
+    // --------------------------------------------------------
 
-    stl_tycoon:
-      (existingProgress.stl_tycoon || 0) +
-      collectedAmount,
-
-    // Daily streak achievements
     hot_streak:
       Math.max(
         existingProgress.hot_streak || 0,
@@ -431,7 +505,10 @@ async function prepareMiningAchievements(
         safeDailyStreak
       ),
 
-    // Daily check-in achievements
+    // --------------------------------------------------------
+    // DAILY CHECK-INS
+    // --------------------------------------------------------
+
     stellas_friend:
       newDailyCheckIns,
 
@@ -450,9 +527,11 @@ async function prepareMiningAchievements(
     ),
 
     miningCycles: newMiningCycles,
+
     dailyCheckIns: newDailyCheckIns,
   };
 }
+
 
 // ============================================================
 // PREPARE POWER BOOST ACHIEVEMENTS
@@ -465,11 +544,13 @@ async function preparePowerBoostAchievements(
   now
 ) {
   const definitions = [
-    getAchievementDefinition("power_paws"),
-    getAchievementDefinition("super_paws"),
-    getAchievementDefinition("power_hunter"),
-    getAchievementDefinition("power_master"),
-  ].filter(Boolean);
+    "power_paws",
+    "super_paws",
+    "power_hunter",
+    "power_master",
+  ]
+    .map(getAchievementDefinition)
+    .filter(Boolean);
 
   const items =
     await readAchievementData(
@@ -479,16 +560,42 @@ async function preparePowerBoostAchievements(
     );
 
   const oldPowerBoostCount =
-    nonNegative(data.powerBoostCount);
+    safeInteger(data.powerBoostCount);
 
   const newPowerBoostCount =
     oldPowerBoostCount + 1;
 
+  const existingProgress = {};
+
+  for (const item of items) {
+    existingProgress[item.definition.id] =
+      nonNegative(item.data.progress);
+  }
+
   const progressById = {
-    power_paws: newPowerBoostCount,
-    super_paws: newPowerBoostCount,
-    power_hunter: newPowerBoostCount,
-    power_master: newPowerBoostCount,
+    power_paws:
+      Math.max(
+        existingProgress.power_paws || 0,
+        newPowerBoostCount
+      ),
+
+    super_paws:
+      Math.max(
+        existingProgress.super_paws || 0,
+        newPowerBoostCount
+      ),
+
+    power_hunter:
+      Math.max(
+        existingProgress.power_hunter || 0,
+        newPowerBoostCount
+      ),
+
+    power_master:
+      Math.max(
+        existingProgress.power_master || 0,
+        newPowerBoostCount
+      ),
   };
 
   return {
@@ -502,6 +609,7 @@ async function preparePowerBoostAchievements(
   };
 }
 
+
 // ============================================================
 // WRITE MINING ACHIEVEMENTS
 // ============================================================
@@ -510,6 +618,13 @@ function writeMiningAchievements(
   transaction,
   achievementResult
 ) {
+  if (
+    !achievementResult ||
+    !Array.isArray(achievementResult.updates)
+  ) {
+    return;
+  }
+
   for (const item of achievementResult.updates) {
     transaction.set(
       item.ref,
@@ -520,6 +635,7 @@ function writeMiningAchievements(
     );
   }
 }
+
 
 // ============================================================
 // EXPORTS
