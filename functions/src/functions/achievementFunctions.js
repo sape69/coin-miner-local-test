@@ -1,496 +1,120 @@
-
 "use strict";
 
-// ============================================================
-// 🐱 STELLURIINI - ACHIEVEMENT FUNCTIONS
-// ============================================================
-//
-// Stella Achievements.
-//
-// Flutter
-//    ↓
-// Cloud Functions
-//    ↓
-// Firestore
-//
-// Serveri on achievementien target- ja reward-arvojen
-// lopullinen auktoriteetti.
-//
-// Ominaisuudet:
-// - Historiallisen käyttäjätilan synkronointi
-// - STL-saavutusten eteneminen
-// - Mining cycle -saavutukset
-// - Daily streak -saavutukset
-// - Daily check-in -saavutukset
-// - Power Boost -saavutukset
-// - Palkintojen kertamaksu
-//
-// getAchievements ei itsessään maksa palkintoja.
-// Palkinnot käsitellään miningAchievementService-tiedostossa.
-// ============================================================
-
-const {
-  onCall,
-  HttpsError,
-} = require("firebase-functions/v2/https");
-
-const {
-  getFirestore,
-  FieldValue,
-} = require("firebase-admin/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const db = getFirestore();
 
-
-// ============================================================
-// 🏆 ACHIEVEMENT DEFINITIONS
-// ============================================================
-
 const achievements = Object.freeze([
-
-  // ==========================================================
-  // 🐾 MINING
-  // ==========================================================
-
-  Object.freeze({
-    id: "first_paw",
-    target: 1,
-    reward: 2,
-  }),
-
-  Object.freeze({
-    id: "little_miner",
-    target: 10,
-    reward: 5,
-  }),
-
-  Object.freeze({
-    id: "stl_hunter",
-    target: 100,
-    reward: 10,
-  }),
-
-  Object.freeze({
-    id: "growing_miner",
-    target: 25,
-    reward: 8,
-  }),
-
-  Object.freeze({
-    id: "stl_collector",
-    target: 500,
-    reward: 25,
-  }),
-
-  Object.freeze({
-    id: "stl_master",
-    target: 1000,
-    reward: 50,
-  }),
-
-  Object.freeze({
-    id: "dedicated_miner",
-    target: 25,
-    reward: 30,
-  }),
-
-  // ==========================================================
-  // 🔥 STREAK
-  // ==========================================================
-
-  Object.freeze({
-    id: "hot_streak",
-    target: 7,
-    reward: 50,
-  }),
-
-  Object.freeze({
-    id: "stella_on_fire",
-    target: 14,
-    reward: 50,
-  }),
-
-  Object.freeze({
-    id: "stella_legend",
-    target: 30,
-    reward: 100,
-  }),
-
-  // ==========================================================
-  // 🐱 DAILY
-  // ==========================================================
-
-  Object.freeze({
-    id: "stellas_friend",
-    target: 10,
-    reward: 30,
-  }),
-
-  // ==========================================================
-  // ⚡ POWER BOOST
-  // ==========================================================
-
-  Object.freeze({
-    id: "power_paws",
-    target: 5,
-    reward: 10,
-  }),
-
-  Object.freeze({
-    id: "super_paws",
-    target: 25,
-    reward: 20,
-  }),
-
-  // ==========================================================
-  // 👥 INVITATIONS
-  // ==========================================================
-
-  Object.freeze({
-    id: "first_invitation",
-    target: 1,
-    reward: 5,
-  }),
-
-  Object.freeze({
-    id: "friend_circle",
-    target: 5,
-    reward: 10,
-  }),
-
-  Object.freeze({
-    id: "stellas_community",
-    target: 10,
-    reward: 20,
-  }),
-
-  // ==========================================================
-  // ⛏️ LONG-TERM MINING
-  // ==========================================================
-
-  Object.freeze({
-    id: "seasoned_miner",
-    target: 50,
-    reward: 40,
-  }),
-
-  Object.freeze({
-    id: "veteran_miner",
-    target: 100,
-    reward: 75,
-  }),
-
-  // ==========================================================
-  // 💎 LONG-TERM STL
-  // ==========================================================
-
-  Object.freeze({
-    id: "stl_hoarder",
-    target: 2500,
-    reward: 40,
-  }),
-
-  Object.freeze({
-    id: "stl_tycoon",
-    target: 5000,
-    reward: 75,
-  }),
-
-  // ==========================================================
-  // ⚡ LONG-TERM POWER BOOST
-  // ==========================================================
-
-  Object.freeze({
-    id: "power_hunter",
-    target: 50,
-    reward: 30,
-  }),
-
-  Object.freeze({
-    id: "power_master",
-    target: 100,
-    reward: 50,
-  }),
-
-  // ==========================================================
-  // 🐾 LONG-TERM DAILY
-  // ==========================================================
-
-  Object.freeze({
-    id: "stella_companion",
-    target: 30,
-    reward: 30,
-  }),
-
-  Object.freeze({
-    id: "stella_devotee",
-    target: 60,
-    reward: 60,
-  }),
-
-  // ==========================================================
-  // 🔥 LONG-TERM STREAK
-  // ==========================================================
-
-  Object.freeze({
-    id: "stella_eternal",
-    target: 60,
-    reward: 100,
-  }),
-
-  Object.freeze({
-    id: "stella_beyond",
-    target: 90,
-    reward: 200,
-  }),
-
+  Object.freeze({ id: "first_paw", target: 1, reward: 2 }),
+  Object.freeze({ id: "little_miner", target: 10, reward: 5 }),
+  Object.freeze({ id: "stl_hunter", target: 100, reward: 10 }),
+  Object.freeze({ id: "growing_miner", target: 25, reward: 8 }),
+  Object.freeze({ id: "stl_collector", target: 500, reward: 25 }),
+  Object.freeze({ id: "stl_master", target: 1000, reward: 50 }),
+  Object.freeze({ id: "dedicated_miner", target: 25, reward: 30 }),
+  Object.freeze({ id: "hot_streak", target: 7, reward: 50 }),
+  Object.freeze({ id: "stella_on_fire", target: 14, reward: 50 }),
+  Object.freeze({ id: "stella_legend", target: 30, reward: 100 }),
+  Object.freeze({ id: "stellas_friend", target: 10, reward: 30 }),
+  Object.freeze({ id: "power_paws", target: 5, reward: 10 }),
+  Object.freeze({ id: "super_paws", target: 25, reward: 20 }),
+  Object.freeze({ id: "first_invitation", target: 1, reward: 5 }),
+  Object.freeze({ id: "friend_circle", target: 5, reward: 10 }),
+  Object.freeze({ id: "stellas_community", target: 10, reward: 20 }),
+  Object.freeze({ id: "seasoned_miner", target: 50, reward: 40 }),
+  Object.freeze({ id: "veteran_miner", target: 100, reward: 75 }),
+  Object.freeze({ id: "stl_hoarder", target: 2500, reward: 40 }),
+  Object.freeze({ id: "stl_tycoon", target: 5000, reward: 75 }),
+  Object.freeze({ id: "power_hunter", target: 50, reward: 30 }),
+  Object.freeze({ id: "power_master", target: 100, reward: 50 }),
+  Object.freeze({ id: "stella_companion", target: 30, reward: 30 }),
+  Object.freeze({ id: "stella_devotee", target: 60, reward: 60 }),
+  Object.freeze({ id: "stella_eternal", target: 60, reward: 100 }),
+  Object.freeze({ id: "stella_beyond", target: 90, reward: 200 }),
 ]);
 
-
-// ============================================================
-// 🔎 ACHIEVEMENT DEFINITION LOOKUP
-// ============================================================
-
 function getAchievementDefinition(achievementId) {
-  if (typeof achievementId !== "string") {
-    return null;
-  }
-
-  const normalizedId =
-    achievementId.trim();
-
-  if (!normalizedId) {
-    return null;
-  }
-
-  return (
-    achievements.find(
-      (achievement) =>
-        achievement.id === normalizedId
-    ) || null
-  );
+  if (typeof achievementId !== "string") return null;
+  const normalizedId = achievementId.trim();
+  if (!normalizedId) return null;
+  return achievements.find((item) => item.id === normalizedId) || null;
 }
-
-
-// ============================================================
-// 📋 GET ACHIEVEMENT DEFINITIONS
-// ============================================================
 
 function getAchievementDefinitions() {
-  return achievements.map(
-    (achievement) => ({
-      ...achievement,
-    })
-  );
+  return achievements.map((item) => ({ ...item }));
 }
 
-
-// ============================================================
-// 👤 USER VALIDATION
-// ============================================================
-
 function requireUser(request) {
-  const uid =
-    request.auth?.uid;
-
+  const uid = request.auth?.uid;
   if (!uid) {
-    throw new HttpsError(
-      "unauthenticated",
-      "Kirjautuminen vaaditaan."
-    );
+    throw new HttpsError("unauthenticated", "Kirjautuminen vaaditaan.");
   }
-
   return uid;
 }
 
-
-// ============================================================
-// 📁 ACHIEVEMENT COLLECTION
-// ============================================================
-
 function getAchievementCollection(uid) {
-  return db
-    .collection("users")
-    .doc(uid)
-    .collection("achievements");
+  return db.collection("users").doc(uid).collection("achievements");
 }
-
-
-// ============================================================
-// 👤 USER REFERENCE
-// ============================================================
 
 function getUserRef(uid) {
-  return db
-    .collection("users")
-    .doc(uid);
+  return db.collection("users").doc(uid);
 }
 
-
-// ============================================================
-// 🔢 SAFE INTEGER
-// ============================================================
-
-function getSafeInteger(
-  value,
-  fallback = 0
-) {
-  const parsed =
-    Number(value);
-
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-
-  return Math.max(
-    0,
-    Math.floor(parsed)
-  );
+function getSafeInteger(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(0, Math.floor(parsed));
 }
-
-
-// ============================================================
-// 💰 SAFE NON-NEGATIVE NUMBER
-// ============================================================
 
 function getSafeBalance(value) {
-  const parsed =
-    Number(value);
-
-  if (
-    !Number.isFinite(parsed) ||
-    parsed < 0
-  ) {
-    return 0;
-  }
-
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
 }
 
-
-// ============================================================
-// 📊 NORMALIZE ACHIEVEMENT
-// ============================================================
-
-function normalizeAchievement(
-  definition,
-  data
-) {
-  const source =
-    data || {};
-
-  const progress =
-    Math.max(
-      0,
-      getSafeInteger(
-        source.progress,
-        0
-      )
-    );
-
-  const target =
-    Math.max(
-      1,
-      getSafeInteger(
-        definition.target,
-        1
-      )
-    );
-
-  const reward =
-    Math.max(
-      0,
-      Number(definition.reward) || 0
-    );
-
-  const normalizedProgress =
-    Math.min(
-      progress,
-      target
-    );
-
+function normalizeAchievement(definition, data) {
+  const source = data || {};
+  const progress = Math.max(0, getSafeInteger(source.progress, 0));
+  const target = Math.max(1, getSafeInteger(definition.target, 1));
+  const reward = Math.max(0, Number(definition.reward) || 0);
+  const normalizedProgress = Math.min(progress, target);
   const unlocked =
-    source.unlocked === true ||
-    normalizedProgress >= target;
-
-  const rewardClaimed =
-    source.rewardClaimed === true;
+    source.unlocked === true || normalizedProgress >= target;
+  const rewardClaimed = source.rewardClaimed === true;
 
   return {
-    achievementId:
-      definition.id,
-
-    progress:
-      normalizedProgress,
-
+    achievementId: definition.id,
+    progress: normalizedProgress,
     target,
-
     reward,
-
     unlocked,
-
     rewardClaimed,
-
-    unlockedAt:
-      source.unlockedAt ?? null,
-
-    rewardClaimedAt:
-      source.rewardClaimedAt ?? null,
-
-    updatedAt:
-      source.updatedAt ?? null,
+    unlockedAt: source.unlockedAt ?? null,
+    rewardClaimedAt: source.rewardClaimedAt ?? null,
+    updatedAt: source.updatedAt ?? null,
   };
 }
 
-
-// ============================================================
-// 📝 BUILD INITIAL ACHIEVEMENT
-// ============================================================
-
-function buildInitialAchievement(
-  definition,
-  now,
-  progress = 0
-) {
-  const safeProgress =
-    Math.min(
-      definition.target,
-      getSafeInteger(progress)
-    );
-
-  const unlocked =
-    safeProgress >= definition.target;
+function buildInitialAchievement(definition, now, progress = 0) {
+  const safeProgress = Math.min(
+    definition.target,
+    getSafeInteger(progress)
+  );
+  const unlocked = safeProgress >= definition.target;
 
   return {
-    achievementId:
-      definition.id,
-
-    progress:
-      safeProgress,
-
-    target:
-      definition.target,
-
-    reward:
-      definition.reward,
-
+    achievementId: definition.id,
+    progress: safeProgress,
+    target: definition.target,
+    reward: definition.reward,
     unlocked,
-
     rewardClaimed: false,
-
-    unlockedAt:
-      unlocked ? now : null,
-
+    unlockedAt: unlocked ? now : null,
     rewardClaimedAt: null,
-
     updatedAt: now,
   };
 }
-
-
-// ============================================================
-// 🔧 BUILD SERVER NORMALIZED UPDATE
-// ============================================================
 
 function buildNormalizedUpdate(
   definition,
@@ -498,105 +122,49 @@ function buildNormalizedUpdate(
   now,
   historicalProgress = 0
 ) {
-  const normalized =
-    normalizeAchievement(
-      definition,
-      data
-    );
-
-  const progress =
-    Math.min(
-      definition.target,
-      Math.max(
-        normalized.progress,
-        getSafeInteger(historicalProgress)
-      )
-    );
-
+  const normalized = normalizeAchievement(definition, data);
+  const progress = Math.min(
+    definition.target,
+    Math.max(
+      normalized.progress,
+      getSafeInteger(historicalProgress)
+    )
+  );
   const unlocked =
-    normalized.unlocked ||
-    progress >= definition.target;
+    normalized.unlocked || progress >= definition.target;
 
   const update = {
-    achievementId:
-      definition.id,
-
+    achievementId: definition.id,
     progress,
-
-    target:
-      definition.target,
-
-    reward:
-      definition.reward,
-
+    target: definition.target,
+    reward: definition.reward,
     unlocked,
-
-    rewardClaimed:
-      normalized.rewardClaimed,
-
+    rewardClaimed: normalized.rewardClaimed,
     updatedAt: now,
   };
 
   update.unlockedAt =
-    normalized.unlockedAt ||
-    (unlocked ? now : null);
-
-  update.rewardClaimedAt =
-    normalized.rewardClaimedAt;
-
+    normalized.unlockedAt || (unlocked ? now : null);
+  update.rewardClaimedAt = normalized.rewardClaimedAt;
   return update;
 }
 
-
-// ============================================================
-// 📈 HISTORICAL PROGRESS
-// ============================================================
-
-function getHistoricalAchievementProgress(
-  definition,
-  userData
-) {
-  const data =
-    userData || {};
-
-  const miningBalance =
-    getSafeBalance(
-      data.miningBalance
-    );
-
-  const miningCycles =
-    getSafeInteger(
-      data.miningCycles
-    );
-
-  const dailyCheckIns =
-    getSafeInteger(
-      data.dailyCheckIns
-    );
-
-  const dailyStreak =
-    Math.max(
-      getSafeInteger(data.dailyStreak),
-      getSafeInteger(data.streak)
-    );
-
-  const powerBoostCount =
-    getSafeInteger(
-      data.powerBoostCount
-    );
+// STL achievement progress is based only on lifetime mined STL.
+// miningBalance may also contain achievement and referral rewards.
+function getHistoricalAchievementProgress(definition, userData) {
+  const data = userData || {};
+  const totalMined = getSafeBalance(data.totalMined);
+  const miningCycles = getSafeInteger(data.miningCycles);
+  const dailyCheckIns = getSafeInteger(data.dailyCheckIns);
+  const dailyStreak = Math.max(
+    getSafeInteger(data.dailyStreak),
+    getSafeInteger(data.streak)
+  );
+  const powerBoostCount = getSafeInteger(data.powerBoostCount);
 
   switch (definition.id) {
-
-    // --------------------------------------------------------
-    // FIRST MINING
-    // --------------------------------------------------------
-
     case "first_paw":
       return miningCycles > 0 ? 1 : 0;
-
-    // --------------------------------------------------------
-    // STL ACHIEVEMENTS
-    // --------------------------------------------------------
 
     case "little_miner":
     case "stl_hunter":
@@ -605,20 +173,12 @@ function getHistoricalAchievementProgress(
     case "stl_master":
     case "stl_hoarder":
     case "stl_tycoon":
-      return miningBalance;
-
-    // --------------------------------------------------------
-    // MINING CYCLES
-    // --------------------------------------------------------
+      return totalMined;
 
     case "dedicated_miner":
     case "seasoned_miner":
     case "veteran_miner":
       return miningCycles;
-
-    // --------------------------------------------------------
-    // DAILY STREAK
-    // --------------------------------------------------------
 
     case "hot_streak":
     case "stella_on_fire":
@@ -627,18 +187,10 @@ function getHistoricalAchievementProgress(
     case "stella_beyond":
       return dailyStreak;
 
-    // --------------------------------------------------------
-    // DAILY CHECK-INS
-    // --------------------------------------------------------
-
     case "stellas_friend":
     case "stella_companion":
     case "stella_devotee":
       return dailyCheckIns;
-
-    // --------------------------------------------------------
-    // POWER BOOST
-    // --------------------------------------------------------
 
     case "power_paws":
     case "super_paws":
@@ -646,12 +198,6 @@ function getHistoricalAchievementProgress(
     case "power_master":
       return powerBoostCount;
 
-    // --------------------------------------------------------
-    // REFERRALS
-    // --------------------------------------------------------
-
-    // Referral achievements are maintained by their
-    // own referral processing logic.
     case "first_invitation":
     case "friend_circle":
     case "stellas_community":
@@ -662,182 +208,75 @@ function getHistoricalAchievementProgress(
   }
 }
 
-
-// ============================================================
-// 🎁 ACHIEVEMENT REWARD CALCULATION
-// ============================================================
-
 function calculateAchievementReward(
   definition,
   existingData,
   newProgress,
   now
 ) {
-  const normalized =
-    normalizeAchievement(
-      definition,
-      existingData
-    );
-
-  const oldProgress =
-    normalized.progress;
-
-  const safeProgress =
-    Math.min(
-      normalized.target,
-      Math.max(
-        oldProgress,
-        getSafeInteger(
-          newProgress,
-          oldProgress
-        )
-      )
-    );
-
-  const wasUnlocked =
-    normalized.unlocked === true;
-
-  const wasRewardClaimed =
-    normalized.rewardClaimed === true;
-
-  const isNowUnlocked =
-    wasUnlocked ||
-    safeProgress >= normalized.target;
-
-  const shouldPayReward =
-    isNowUnlocked &&
-    !wasRewardClaimed;
-
-  const reward =
-    shouldPayReward
-      ? normalized.reward
-      : 0;
-
-  return {
-    achievementId:
-      definition.id,
-
-    oldProgress,
-
-    progress:
-      safeProgress,
-
-    target:
-      normalized.target,
-
-    reward:
-      normalized.reward,
-
-    rewardToCredit:
-      reward,
-
-    unlocked:
-      isNowUnlocked,
-
-    rewardClaimed:
-      wasRewardClaimed ||
-      shouldPayReward,
-
-    wasUnlocked,
-
-    wasRewardClaimed,
-
-    newlyUnlocked:
-      !wasUnlocked &&
-      isNowUnlocked,
-
-    shouldPayReward,
-
-    unlockedAt:
-      normalized.unlockedAt ||
-      (
-        isNowUnlocked
-          ? now
-          : null
-      ),
-
-    rewardClaimedAt:
-      wasRewardClaimed
-        ? normalized.rewardClaimedAt
-        : shouldPayReward
-          ? now
-          : null,
-
-    updatedAt: now,
-  };
-}
-
-
-// ============================================================
-// 🎁 BUILD ACHIEVEMENT REWARD UPDATE
-// ============================================================
-
-function buildAchievementRewardUpdate(
-  calculation
-) {
-  return {
-    achievementId:
-      calculation.achievementId,
-
-    progress:
-      calculation.progress,
-
-    target:
-      calculation.target,
-
-    reward:
-      calculation.reward,
-
-    unlocked:
-      calculation.unlocked,
-
-    rewardClaimed:
-      calculation.rewardClaimed,
-
-    unlockedAt:
-      calculation.unlockedAt,
-
-    rewardClaimedAt:
-      calculation.rewardClaimedAt,
-
-    updatedAt:
-      calculation.updatedAt,
-  };
-}
-
-
-// ============================================================
-// 💰 BUILD USER BALANCE UPDATE
-// ============================================================
-
-function buildAchievementBalanceUpdate(
-  reward,
-  now
-) {
-  const safeReward =
+  const normalized = normalizeAchievement(definition, existingData);
+  const oldProgress = normalized.progress;
+  const safeProgress = Math.min(
+    normalized.target,
     Math.max(
-      0,
-      Number(reward) || 0
-    );
-
-  if (safeReward <= 0) {
-    return null;
-  }
+      oldProgress,
+      getSafeInteger(newProgress, oldProgress)
+    )
+  );
+  const wasUnlocked = normalized.unlocked === true;
+  const wasRewardClaimed = normalized.rewardClaimed === true;
+  const isNowUnlocked =
+    wasUnlocked || safeProgress >= normalized.target;
+  const shouldPayReward = isNowUnlocked && !wasRewardClaimed;
+  const reward = shouldPayReward ? normalized.reward : 0;
 
   return {
-    miningBalance:
-      FieldValue.increment(
-        safeReward
-      ),
-
+    achievementId: definition.id,
+    oldProgress,
+    progress: safeProgress,
+    target: normalized.target,
+    reward: normalized.reward,
+    rewardToCredit: reward,
+    unlocked: isNowUnlocked,
+    rewardClaimed: wasRewardClaimed || shouldPayReward,
+    wasUnlocked,
+    wasRewardClaimed,
+    newlyUnlocked: !wasUnlocked && isNowUnlocked,
+    shouldPayReward,
+    unlockedAt:
+      normalized.unlockedAt || (isNowUnlocked ? now : null),
+    rewardClaimedAt: wasRewardClaimed
+      ? normalized.rewardClaimedAt
+      : shouldPayReward
+        ? now
+        : null,
     updatedAt: now,
   };
 }
 
+function buildAchievementRewardUpdate(calculation) {
+  return {
+    achievementId: calculation.achievementId,
+    progress: calculation.progress,
+    target: calculation.target,
+    reward: calculation.reward,
+    unlocked: calculation.unlocked,
+    rewardClaimed: calculation.rewardClaimed,
+    unlockedAt: calculation.unlockedAt,
+    rewardClaimedAt: calculation.rewardClaimedAt,
+    updatedAt: calculation.updatedAt,
+  };
+}
 
-// ============================================================
-// 🐱 APPLY ACHIEVEMENT PROGRESS
-// ============================================================
+function buildAchievementBalanceUpdate(reward, now) {
+  const safeReward = Math.max(0, Number(reward) || 0);
+  if (safeReward <= 0) return null;
+
+  return {
+    miningBalance: FieldValue.increment(safeReward),
+    updatedAt: now,
+  };
+}
 
 function applyAchievementProgress(
   transaction,
@@ -847,394 +286,180 @@ function applyAchievementProgress(
   newProgress,
   now
 ) {
-  const definition =
-    getAchievementDefinition(
-      achievementId
-    );
-
+  const definition = getAchievementDefinition(achievementId);
   if (!definition) {
-    throw new Error(
-      `Unknown achievement: ${achievementId}`
-    );
+    throw new Error(`Unknown achievement: ${achievementId}`);
   }
 
-  const calculation =
-    calculateAchievementReward(
-      definition,
-      existingData,
-      newProgress,
+  const calculation = calculateAchievementReward(
+    definition,
+    existingData,
+    newProgress,
+    now
+  );
+  const achievementRef = getAchievementCollection(uid).doc(definition.id);
+  const achievementUpdate = buildAchievementRewardUpdate(calculation);
+
+  transaction.set(achievementRef, achievementUpdate, { merge: true });
+
+  if (calculation.rewardToCredit > 0) {
+    const userRef = getUserRef(uid);
+    const balanceUpdate = buildAchievementBalanceUpdate(
+      calculation.rewardToCredit,
       now
     );
-
-  const achievementRef =
-    getAchievementCollection(uid)
-      .doc(definition.id);
-
-  const achievementUpdate =
-    buildAchievementRewardUpdate(
-      calculation
-    );
-
-  transaction.set(
-    achievementRef,
-    achievementUpdate,
-    {
-      merge: true,
-    }
-  );
-
-  if (
-    calculation.rewardToCredit > 0
-  ) {
-    const userRef =
-      getUserRef(uid);
-
-    const balanceUpdate =
-      buildAchievementBalanceUpdate(
-        calculation.rewardToCredit,
-        now
-      );
-
-    transaction.set(
-      userRef,
-      balanceUpdate,
-      {
-        merge: true,
-      }
-    );
+    transaction.set(userRef, balanceUpdate, { merge: true });
   }
 
   return calculation;
 }
 
+exports.getAchievements = onCall(
+  { region: "us-central1" },
+  async (request) => {
+    try {
+      const uid = requireUser(request);
+      const userRef = getUserRef(uid);
+      const collection = getAchievementCollection(uid);
 
-// ============================================================
-// 📖 GET ACHIEVEMENTS
-// ============================================================
+      const userSnapshot = await userRef.get();
+      const userData = userSnapshot.exists
+        ? userSnapshot.data() || {}
+        : {};
 
-exports.getAchievements =
-  onCall(
-    {
-      region: "us-central1",
-    },
+      const snapshot = await collection.get();
+      const existing = new Map();
 
-    async (request) => {
-      try {
-        const uid =
-          requireUser(request);
+      for (const document of snapshot.docs) {
+        existing.set(document.id, document.data() || {});
+      }
 
-        const userRef =
-          getUserRef(uid);
+      const batch = db.batch();
+      const now = new Date();
+      const result = [];
+      let batchHasWrites = false;
 
-        const collection =
-          getAchievementCollection(uid);
+      for (const definition of achievements) {
+        const existingData = existing.get(definition.id);
+        const document = collection.doc(definition.id);
+        const historicalProgress =
+          getHistoricalAchievementProgress(definition, userData);
 
-        // ----------------------------------------------------
-        // READ USER DATA
-        // ----------------------------------------------------
-
-        const userSnapshot =
-          await userRef.get();
-
-        const userData =
-          userSnapshot.exists
-            ? userSnapshot.data() || {}
-            : {};
-
-        // ----------------------------------------------------
-        // READ EXISTING ACHIEVEMENTS
-        // ----------------------------------------------------
-
-        const snapshot =
-          await collection.get();
-
-        const existing =
-          new Map();
-
-        for (const document of snapshot.docs) {
-          existing.set(
-            document.id,
-            document.data() || {}
+        if (!existingData) {
+          const initialData = buildInitialAchievement(
+            definition,
+            now,
+            historicalProgress
           );
+          batch.set(document, initialData);
+          batchHasWrites = true;
+          result.push(initialData);
+          continue;
         }
 
-        // ----------------------------------------------------
-        // PREPARE SYNCHRONIZATION
-        // ----------------------------------------------------
-
-        const batch =
-          db.batch();
-
-        const now =
-          new Date();
-
-        const result = [];
-
-        let batchHasWrites = false;
-
-        // ----------------------------------------------------
-        // PROCESS DEFINITIONS
-        // ----------------------------------------------------
-
-        for (const definition of achievements) {
-          const existingData =
-            existing.get(definition.id);
-
-          const document =
-            collection.doc(definition.id);
-
-          // --------------------------------------------------
-          // HISTORICAL PROGRESS
-          // --------------------------------------------------
-
-          const historicalProgress =
-            getHistoricalAchievementProgress(
-              definition,
-              userData
-            );
-
-          // --------------------------------------------------
-          // CREATE NEW ACHIEVEMENT
-          // --------------------------------------------------
-
-          if (!existingData) {
-            const initialData =
-              buildInitialAchievement(
-                definition,
-                now,
-                historicalProgress
-              );
-
-            batch.set(
-              document,
-              initialData
-            );
-
-            batchHasWrites = true;
-
-            result.push(initialData);
-
-            continue;
-          }
-
-          // --------------------------------------------------
-          // UPDATE EXISTING ACHIEVEMENT
-          // --------------------------------------------------
-
-          const normalized =
-            buildNormalizedUpdate(
-              definition,
-              existingData,
-              now,
-              historicalProgress
-            );
-
-          const current =
-            normalizeAchievement(
-              definition,
-              existingData
-            );
-
-          const needsUpdate =
-            current.progress !==
-              normalized.progress ||
-
-            current.target !==
-              normalized.target ||
-
-            current.reward !==
-              normalized.reward ||
-
-            current.unlocked !==
-              normalized.unlocked ||
-
-            current.rewardClaimed !==
-              normalized.rewardClaimed ||
-
-            (
-              normalized.unlockedAt &&
-              !current.unlockedAt
-            );
-
-          if (needsUpdate) {
-            batch.set(
-              document,
-              normalized,
-              {
-                merge: true,
-              }
-            );
-
-            batchHasWrites = true;
-          }
-
-          result.push(normalized);
-        }
-
-        // ----------------------------------------------------
-        // COMMIT
-        // ----------------------------------------------------
-
-        if (batchHasWrites) {
-          await batch.commit();
-        }
-
-        // ----------------------------------------------------
-        // RESPONSE
-        // ----------------------------------------------------
-
-        const completed =
-          result.filter(
-            (achievement) =>
-              achievement.unlocked === true
-          ).length;
-
-        return {
-          success: true,
-
-          achievements: result,
-
-          completed,
-
-          total: achievements.length,
-
-          miningBalance:
-            getSafeBalance(
-              userData.miningBalance
-            ),
-
-          miningCycles:
-            getSafeInteger(
-              userData.miningCycles
-            ),
-
-          dailyCheckIns:
-            getSafeInteger(
-              userData.dailyCheckIns
-            ),
-
-          powerBoostCount:
-            getSafeInteger(
-              userData.powerBoostCount
-            ),
-        };
-
-      } catch (error) {
-        console.error(
-          "getAchievements error:",
-          error
+        const normalized = buildNormalizedUpdate(
+          definition,
+          existingData,
+          now,
+          historicalProgress
+        );
+        const current = normalizeAchievement(
+          definition,
+          existingData
         );
 
-        if (error instanceof HttpsError) {
-          throw error;
+        const needsUpdate =
+          current.progress !== normalized.progress ||
+          current.target !== normalized.target ||
+          current.reward !== normalized.reward ||
+          current.unlocked !== normalized.unlocked ||
+          current.rewardClaimed !== normalized.rewardClaimed ||
+          (normalized.unlockedAt && !current.unlockedAt);
+
+        if (needsUpdate) {
+          batch.set(document, normalized, { merge: true });
+          batchHasWrites = true;
         }
 
-        throw new HttpsError(
-          "internal",
-          "🐱 Achievements-tietojen lataaminen epäonnistui."
-        );
+        result.push(normalized);
       }
-    }
-  );
 
-
-// ============================================================
-// 📊 GET ACHIEVEMENT COMPLETION COUNT
-// ============================================================
-
-exports.getAchievementsCompleted =
-  onCall(
-    {
-      region: "us-central1",
-    },
-
-    async (request) => {
-      try {
-        const uid =
-          requireUser(request);
-
-        const collection =
-          getAchievementCollection(uid);
-
-        const snapshot =
-          await collection.get();
-
-        const unlockedIds =
-          new Set();
-
-        for (const document of snapshot.docs) {
-          const definition =
-            getAchievementDefinition(
-              document.id
-            );
-
-          if (!definition) {
-            continue;
-          }
-
-          const normalized =
-            normalizeAchievement(
-              definition,
-              document.data() || {}
-            );
-
-          if (normalized.unlocked) {
-            unlockedIds.add(
-              definition.id
-            );
-          }
-        }
-
-        return {
-          success: true,
-
-          completed:
-            unlockedIds.size,
-
-          total:
-            achievements.length,
-        };
-
-      } catch (error) {
-        console.error(
-          "getAchievementsCompleted error:",
-          error
-        );
-
-        if (error instanceof HttpsError) {
-          throw error;
-        }
-
-        throw new HttpsError(
-          "internal",
-          "🐱 Achievementien valmistumistietojen lataaminen epäonnistui."
-        );
+      if (batchHasWrites) {
+        await batch.commit();
       }
+
+      const completed = result.filter(
+        (achievement) => achievement.unlocked === true
+      ).length;
+
+      return {
+        success: true,
+        achievements: result,
+        completed,
+        total: achievements.length,
+        miningBalance: getSafeBalance(userData.miningBalance),
+        totalMined: getSafeBalance(userData.totalMined),
+        miningCycles: getSafeInteger(userData.miningCycles),
+        dailyCheckIns: getSafeInteger(userData.dailyCheckIns),
+        powerBoostCount: getSafeInteger(userData.powerBoostCount),
+      };
+    } catch (error) {
+      console.error("getAchievements error:", error);
+      if (error instanceof HttpsError) throw error;
+
+      throw new HttpsError(
+        "internal",
+        "🐱 Achievements-tietojen lataaminen epäonnistui."
+      );
     }
-  );
+  }
+);
 
+exports.getAchievementsCompleted = onCall(
+  { region: "us-central1" },
+  async (request) => {
+    try {
+      const uid = requireUser(request);
+      const collection = getAchievementCollection(uid);
+      const snapshot = await collection.get();
+      const unlockedIds = new Set();
 
-// ============================================================
-// 📦 SERVER-SIDE EXPORTS
-// ============================================================
+      for (const document of snapshot.docs) {
+        const definition = getAchievementDefinition(document.id);
+        if (!definition) continue;
 
-module.exports.getAchievementDefinition =
-  getAchievementDefinition;
+        const normalized = normalizeAchievement(
+          definition,
+          document.data() || {}
+        );
 
-module.exports.getAchievementDefinitions =
-  getAchievementDefinitions;
+        if (normalized.unlocked) {
+          unlockedIds.add(definition.id);
+        }
+      }
 
-module.exports.calculateAchievementReward =
-  calculateAchievementReward;
+      return {
+        success: true,
+        completed: unlockedIds.size,
+        total: achievements.length,
+      };
+    } catch (error) {
+      console.error("getAchievementsCompleted error:", error);
+      if (error instanceof HttpsError) throw error;
 
-module.exports.buildAchievementRewardUpdate =
-  buildAchievementRewardUpdate;
+      throw new HttpsError(
+        "internal",
+        "🐱 Achievementien valmistumistietojen lataaminen epäonnistui."
+      );
+    }
+  }
+);
 
-module.exports.buildAchievementBalanceUpdate =
-  buildAchievementBalanceUpdate;
-
-module.exports.applyAchievementProgress =
-  applyAchievementProgress;
-
+module.exports.getAchievementDefinition = getAchievementDefinition;
+module.exports.getAchievementDefinitions = getAchievementDefinitions;
+module.exports.calculateAchievementReward = calculateAchievementReward;
+module.exports.buildAchievementRewardUpdate = buildAchievementRewardUpdate;
+module.exports.buildAchievementBalanceUpdate = buildAchievementBalanceUpdate;
+module.exports.applyAchievementProgress = applyAchievementProgress;
 module.exports.getHistoricalAchievementProgress =
   getHistoricalAchievementProgress;
