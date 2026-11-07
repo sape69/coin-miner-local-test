@@ -220,6 +220,9 @@ const getMiningStatus =
     miningHashRate,
     calculateMiningStatus,
 
+    // Päivittäisen hash rate -bonuksen laskenta.
+    dailyHashRateBonus,
+
     AD_HASH_RATE_BONUS,
     AD_BOOST_DURATION_MS,
     MINING_PER_HASH_PER_HOUR,
