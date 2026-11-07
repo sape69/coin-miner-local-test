@@ -19,6 +19,23 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
+// ============================================================
+// FIREBASE ADMIN INITIALIZATION
+// ============================================================
+//
+// achievementFunctions.js hakee Firestore-yhteyden
+// tiedoston lataamisen yhteydessä.
+//
+// Alustetaan Firebase Admin ensin, jotta getFirestore()
+// löytää oletussovelluksen.
+// ============================================================
+
+require("../src/firebase/firebase");
+
+// ============================================================
+// IMPORT ACHIEVEMENT FUNCTIONS
+// ============================================================
+
 const {
   getHistoricalAchievementProgress,
   buildAchievementBalanceUpdate,
