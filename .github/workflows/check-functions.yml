@@ -1,3 +1,4 @@
+
 name: Check Stelluriini Functions
 
 on:
@@ -95,6 +96,8 @@ jobs:
           test -f test/referralRelationship.integration.test.js
           test -f test/referralCallable.integration.test.js
 
+          test -f test/totalMinedAccounting.test.js
+
           echo "All required test files exist."
 
       - name: Run halving service unit tests
@@ -116,6 +119,10 @@ jobs:
       - name: Run mining service unit tests
         run: |
           node --test test/miningService.test.js
+
+      - name: Run total mined accounting tests
+        run: |
+          node --test test/totalMinedAccounting.test.js
 
       - name: Run AdMob service unit tests
         run: |
