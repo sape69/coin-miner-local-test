@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 // 🐱 STELLURIINI - HALVING & MINING RATE
 // ============================================================
 //
-// Shows the server-reported halving multiplier and all
-// configured milestones. Registered user count is not
-// currently exposed by getMiningStatus, so it is not guessed.
+// Shows server-reported halving multiplier and mining rates.
+// Registered user count is not guessed because the current
+// getMiningStatus response does not expose that value.
 //
 // ============================================================
 
@@ -35,6 +35,7 @@ class _HalvingPageState extends State<HalvingPage> {
   static const Color primaryTextColor = Color(0xFFF8F4FF);
   static const Color secondaryTextColor = Color(0xFFBDB4D1);
   static const Color errorColor = Color(0xFFFF6B7A);
+  static const Color successColor = Color(0xFF75E0A3);
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(region: 'us-central1');
@@ -53,15 +54,23 @@ class _HalvingPageState extends State<HalvingPage> {
 
   bool _loading = true;
   bool _miningActive = false;
+  bool _adBoostActive = false;
+
   String? _error;
 
   double _multiplier = 1.0;
   double _hashRate = 0.0;
+  double _miningPerHour = 0.0;
+  double _activeMiningPerHour = 0.0;
 
   bool get _isFinnish =>
       widget.languageCode.toLowerCase().startsWith('fi');
 
   String _text(String fi, String en) => _isFinnish ? fi : en;
+
+  // Use the server's effective rate when Power Boost is active.
+  double get _displayMiningPerHour =>
+      _adBoostActive ? _activeMiningPerHour : _miningPerHour;
 
   @override
   void initState() {
@@ -74,12 +83,12 @@ class _HalvingPageState extends State<HalvingPage> {
   // ==========================================================
 
   Future<void> _loadHalvingStatus() async {
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     try {
       final callable = _functions.httpsCallable('getMiningStatus');
@@ -94,8 +103,21 @@ class _HalvingPageState extends State<HalvingPage> {
 
       final multiplier =
           _readDouble(data['miningHalvingMultiplier']) ?? 1.0;
-      final hashRate = _readDouble(data['hashRate']) ?? 0.0;
-      final miningActive = data['miningActive'] == true;
+
+      final hashRate =
+          _readDouble(data['hashRate']) ?? 0.0;
+
+      final miningPerHour =
+          _readDouble(data['miningPerHour']) ?? 0.0;
+
+      final activeMiningPerHour =
+          _readDouble(data['activeMiningPerHour']) ?? miningPerHour;
+
+      final miningActive =
+          data['miningActive'] == true;
+
+      final adBoostActive =
+          data['adBoostActive'] == true;
 
       if (!multiplier.isFinite ||
           multiplier <= 0 ||
@@ -107,9 +129,23 @@ class _HalvingPageState extends State<HalvingPage> {
 
       setState(() {
         _multiplier = multiplier;
+
         _hashRate =
             hashRate.isFinite && hashRate > 0 ? hashRate : 0.0;
+
+        _miningPerHour =
+            miningPerHour.isFinite && miningPerHour >= 0
+                ? miningPerHour
+                : 0.0;
+
+        _activeMiningPerHour =
+            activeMiningPerHour.isFinite &&
+                    activeMiningPerHour >= 0
+                ? activeMiningPerHour
+                : _miningPerHour;
+
         _miningActive = miningActive;
+        _adBoostActive = adBoostActive;
         _loading = false;
       });
     } catch (error) {
@@ -137,9 +173,6 @@ class _HalvingPageState extends State<HalvingPage> {
     }
     return 0;
   }
-
-  double get _estimatedMiningPerHour =>
-      _hashRate * 0.10 * _multiplier;
 
   String _formatMultiplier(double value) {
     return '${value.toStringAsFixed(7).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '')}×';
@@ -242,8 +275,11 @@ class _HalvingPageState extends State<HalvingPage> {
         children: [
           const Row(
             children: [
-              Icon(Icons.auto_graph_rounded,
-                  color: goldColor, size: 30),
+              Icon(
+                Icons.auto_graph_rounded,
+                color: goldColor,
+                size: 30,
+              ),
               SizedBox(width: 10),
               Text(
                 'STELLURIINI • STL',
@@ -308,8 +344,11 @@ class _HalvingPageState extends State<HalvingPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.speed_rounded,
-                  color: goldColor, size: 23),
+              const Icon(
+                Icons.speed_rounded,
+                color: goldColor,
+                size: 23,
+              ),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
@@ -329,7 +368,7 @@ class _HalvingPageState extends State<HalvingPage> {
                     ? Icons.check_circle_rounded
                     : Icons.info_outline_rounded,
                 color: _miningActive
-                    ? const Color(0xFF75E0A3)
+                    ? successColor
                     : secondaryTextColor,
                 size: 19,
               ),
@@ -371,19 +410,40 @@ class _HalvingPageState extends State<HalvingPage> {
                 : _text('Ei aktiivista jaksoa', 'No active cycle'),
           ),
           const SizedBox(height: 9),
-          _infoRow('Hash Rate', _hashRate.toStringAsFixed(4)),
+          _infoRow(
+            'Hash Rate',
+            _hashRate.toStringAsFixed(4),
+          ),
           const SizedBox(height: 9),
           _infoRow(
-            _text('Arvioitu louhinta / tunti', 'Estimated mining / hour'),
-            '${_estimatedMiningPerHour.toStringAsFixed(6)} STL',
+            _text('Power Boost', 'Power Boost'),
+            _adBoostActive
+                ? _text('Aktiivinen', 'Active')
+                : _text('Ei aktiivinen', 'Inactive'),
+            valueColor: _adBoostActive
+                ? successColor
+                : secondaryTextColor,
+          ),
+          const SizedBox(height: 9),
+          _infoRow(
+            _text('Normaali louhinta / tunti', 'Normal mining / hour'),
+            '${_miningPerHour.toStringAsFixed(6)} STL',
+          ),
+          const SizedBox(height: 9),
+          _infoRow(
+            _text(
+              'Todellinen nopeus / tunti',
+              'Effective mining / hour',
+            ),
+            '${_displayMiningPerHour.toStringAsFixed(6)} STL',
             valueColor: goldColor,
           ),
           const SizedBox(height: 12),
           Text(
             _miningActive
                 ? _text(
-                    'Tämä on aktiivisen louhintajakson palvelimelta saatu kerroin.',
-                    'This is the multiplier returned for your active mining cycle.',
+                    'Kerroin ja louhintanopeudet on haettu palvelimelta. Power Boostin vaikutus näkyy todellisessa tuntinopeudessa.',
+                    'The multiplier and mining rates are loaded from the server. Power Boost is reflected in the effective hourly rate.',
                   )
                 : _text(
                     'Kerroin on käyttäjäprofiilista palvelimelta palautettu arvo. Uusi kerroin määräytyy seuraavan louhintajakson alkaessa.',
@@ -440,11 +500,14 @@ class _HalvingPageState extends State<HalvingPage> {
           const SizedBox(height: 22),
           ...List.generate(_milestones.length, (index) {
             final item = _milestones[index];
+
             final selected =
                 (item.multiplier - _multiplier).abs() < 0.000000001;
+
             final progress =
                 (item.multiplier / _milestones.first.multiplier)
                     .clamp(0.0, 1.0);
+
             final color = selected
                 ? goldColor
                 : index.isEven
@@ -621,7 +684,10 @@ class _HalvingPageState extends State<HalvingPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.timelapse_rounded, color: pinkColor),
+              const Icon(
+                Icons.timelapse_rounded,
+                color: pinkColor,
+              ),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
@@ -685,8 +751,11 @@ class _HalvingPageState extends State<HalvingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.cloud_off_rounded,
-              color: errorColor, size: 28),
+          const Icon(
+            Icons.cloud_off_rounded,
+            color: errorColor,
+            size: 28,
+          ),
           const SizedBox(height: 10),
           Text(
             _text(
@@ -766,7 +835,11 @@ class _HalvingPageState extends State<HalvingPage> {
   Widget _buildFooter() {
     return Column(
       children: [
-        const Icon(Icons.pets_rounded, color: pinkColor, size: 25),
+        const Icon(
+          Icons.pets_rounded,
+          color: pinkColor,
+          size: 25,
+        ),
         const SizedBox(height: 8),
         Text(
           _text(
