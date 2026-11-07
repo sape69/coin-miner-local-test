@@ -12,7 +12,8 @@
 //
 // Mining formula:
 //
-// Hash Rate × STL / Hash / Hour × elapsed time.
+// Hash Rate × STL / Hash / Hour × elapsed time
+// × halving multiplier.
 //
 // ============================================================
 
@@ -57,12 +58,12 @@ const MINING_DURATION_MS =
 // 💰 MINING RATE
 // ============================================================
 //
-// Base rate before halving:
+// Base mining rate before halving:
 //
 // 1 HR × 0.10 × 1 hour = 0.10 STL
 //
-// The halving multiplier will be integrated into the
-// mining calculation in a later step.
+// The active halving multiplier is applied
+// by the mining calculation logic.
 //
 
 const MINING_PER_HASH_PER_HOUR = 0.10;
@@ -78,11 +79,11 @@ const MINING_PER_HASH_PER_HOUR = 0.10;
 // - Users who are mining.
 // - Users who are not mining.
 //
-// Each milestone halves the mining rate.
+// Each milestone reduces the mining rate
+// by applying the corresponding multiplier.
 //
-// IMPORTANT:
-// These settings do not change mining calculations yet.
-// They will be activated in a later backend step.
+// Halving is enabled and integrated into
+// the backend mining calculations.
 //
 
 const HALVING_ENABLED = true;
