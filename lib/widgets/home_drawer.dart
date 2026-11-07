@@ -48,6 +48,11 @@ class HomeDrawer extends StatefulWidget {
   final VoidCallback onAboutPressed;
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
+
+  // Halving-sivun avaus.
+  // Valinnainen, jotta nykyiset kutsut eivät rikkoudu.
+  final VoidCallback? onHalvingPressed;
+
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onReferralPressed;
@@ -61,6 +66,7 @@ class HomeDrawer extends StatefulWidget {
     required this.onAboutPressed,
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
+    this.onHalvingPressed,
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onReferralPressed,
@@ -248,6 +254,24 @@ class _HomeDrawerState extends State<HomeDrawer> {
           ),
         ),
       ),
+    );
+  }
+
+  // ==========================================================
+  // 📉 HALVING MENU ITEM
+  // ==========================================================
+
+  Widget _halvingItem() {
+    final bool isFinnish =
+        widget.languageCode.toLowerCase() == 'fi';
+
+    return _menuItem(
+      icon: Icons.show_chart_rounded,
+      title: isFinnish
+          ? 'Puoliintuminen ja louhintanopeus'
+          : 'Halving & Mining Rate',
+      onTap: widget.onHalvingPressed!,
+      iconColor: goldAccentColor,
     );
   }
 
@@ -990,6 +1014,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
                         widget
                             .onRoadmapPressed,
                   ),
+
+                  // ------------------------------------------------
+                  // 📉 HALVING
+                  // ------------------------------------------------
+
+                  if (widget.onHalvingPressed != null)
+                    _halvingItem(),
 
                   // ------------------------------------------------
                   // 👥 REFERRALS
