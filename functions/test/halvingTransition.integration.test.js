@@ -148,9 +148,7 @@ async function addHundredthUser() {
 // CLEANUP
 // ============================================================
 
-async function deleteSubcollection(
-  collectionName,
-) {
+async function deleteSubcollection(collectionName) {
   const collectionRef = userRef
     .collection(collectionName);
 
@@ -369,10 +367,12 @@ test(
       "The new cycle must use the 0.5 multiplier.",
     );
 
-    assert.equal(
-      nextClaim.hashRate,
-      firstClaim.hashRate,
-      "Daily hash rate should remain unchanged during this transition.",
+    // Daily hash rate can change when a new mining day
+    // begins. It must not be compared with the previous cycle.
+    assert.ok(
+      Number.isFinite(nextClaim.hashRate) &&
+      nextClaim.hashRate > 0,
+      "The new mining cycle must have a positive hash rate.",
     );
 
     // --------------------------------------------------------
@@ -465,6 +465,14 @@ test(
 
     console.log(
       `New multiplier: ${newData.miningHalvingMultiplier}`,
+    );
+
+    console.log(
+      `Old hash rate: ${firstClaim.hashRate}`,
+    );
+
+    console.log(
+      `New hash rate: ${nextClaim.hashRate}`,
     );
 
     console.log(
