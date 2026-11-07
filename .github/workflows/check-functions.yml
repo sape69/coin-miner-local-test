@@ -1,4 +1,3 @@
-
 name: Check Stelluriini Functions
 
 on:
@@ -98,6 +97,7 @@ jobs:
 
           test -f test/totalMinedAccounting.test.js
           test -f test/claimMiningAccounting.integration.test.js
+          test -f test/halvingAccounting.integration.test.js
 
           echo "All required test files exist."
 
@@ -206,6 +206,14 @@ jobs:
             --only firestore \
             --project demo-stelluriini \
             "cd functions && node --test test/claimMiningAccounting.integration.test.js"
+        working-directory: .
+
+      - name: Run halving accounting integration tests
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-stelluriini \
+            "cd functions && node --test test/halvingAccounting.integration.test.js"
         working-directory: .
 
       - name: Verify installed dependencies
