@@ -16,6 +16,7 @@ import '../about/about_page.dart';
 import '../account/account_deletion_page.dart';
 import '../achievements/achievements_page.dart';
 import '../history/transaction_history_page.dart';
+import '../halving/halving_page.dart';
 import '../referrals/referrals_page.dart';
 import '../roadmap/roadmap_page.dart';
 import '../whitepaper/whitepaper_page.dart';
@@ -1542,6 +1543,14 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  void _openHalving() {
+    _openPage(
+      HalvingPage(
+        languageCode: widget.languageCode,
+      ),
+    );
+  }
+
   void _openTransactionHistory() {
     _openPage(
       TransactionHistoryPage(
@@ -1883,6 +1892,8 @@ class _HomePageState extends State<HomePage>
             _openWhitePaper,
         onRoadmapPressed:
             _openRoadmap,
+        onHalvingPressed:
+            _openHalving,
         onAchievementsPressed:
             _openAchievements,
         onTransactionHistoryPressed:
