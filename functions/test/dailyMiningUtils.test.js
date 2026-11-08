@@ -240,6 +240,7 @@ test("continues streak when mining ends", () => {
   assert.equal(result.claimedToday, false);
   assert.equal(result.streak, 4);
   assert.equal(result.dailyHashRate, 2.0);
+  assert.equal(result.miningEndMs, END.getTime());
 });
 
 test("continues streak inside the grace period", () => {
@@ -303,6 +304,131 @@ test("starts at day 1 during grace period when no streak exists", () => {
   assert.equal(result.claimedToday, false);
   assert.equal(result.streak, 1);
   assert.equal(result.dailyHashRate, 0.5);
+});
+
+// ============================================================
+// DUPLICATE CHECK-IN PREVENTION
+// ============================================================
+
+test("blocks a second check-in in the same mining period", () => {
+  const userData = {
+    dailyStreak: 3,
+    miningStartedAt: START,
+    miningEndsAt: END,
+    dailyStreakClaimedMiningEndMs: END.getTime(),
+  };
+
+  const result = nextDailyClaim(
+    userData,
+    "2026-01-02",
+    END.getTime() + 12 * HOUR,
+  );
+
+  assert.equal(result.claimedToday, true);
+  assert.equal(result.streak, 3);
+  assert.equal(result.dailyHashRate, 1.5);
+  assert.equal(result.miningEndMs, END.getTime());
+});
+
+test("blocks duplicate check-in after UTC date changes", () => {
+  const userData = {
+    dailyStreak: 4,
+    lastDailyDate: "2026-01-02",
+    miningStartedAt: START,
+    miningEndsAt: END,
+    dailyStreakClaimedMiningEndMs: END.getTime(),
+  };
+
+  const result = nextDailyClaim(
+    userData,
+    "2026-01-03",
+    END.getTime() + 18 * HOUR,
+  );
+
+  assert.equal(result.claimedToday, true);
+  assert.equal(result.streak, 4);
+  assert.equal(result.dailyHashRate, 2.0);
+});
+
+test("blocks a second check-in after grace period reset", () => {
+  const userData = {
+    dailyStreak: 1,
+    miningStartedAt: START,
+    miningEndsAt: END,
+    dailyStreakClaimedMiningEndMs: END.getTime(),
+  };
+
+  const result = nextDailyClaim(
+    userData,
+    "2026-01-04",
+    END.getTime() + MINING_STREAK_GRACE_MS + HOUR,
+  );
+
+  assert.equal(result.claimedToday, true);
+  assert.equal(result.streak, 1);
+  assert.equal(result.dailyHashRate, 0.5);
+});
+
+test("allows check-in for a new mining period", () => {
+  const newStart = new Date(
+    END.getTime() + MINING_STREAK_GRACE_MS + HOUR
+  );
+
+  const newEnd = new Date(
+    newStart.getTime() + DAY
+  );
+
+  const userData = {
+    dailyStreak: 4,
+
+    miningStartedAt: newStart,
+    miningEndsAt: newEnd,
+
+    // Previous mining period was already claimed.
+    dailyStreakClaimedMiningEndMs: END.getTime(),
+  };
+
+  const result = nextDailyClaim(
+    userData,
+    "2026-01-04",
+    newEnd.getTime(),
+  );
+
+  assert.equal(result.claimedToday, false);
+  assert.equal(result.streak, 5);
+  assert.equal(result.dailyHashRate, 2.5);
+  assert.equal(result.miningEndMs, newEnd.getTime());
+});
+
+test("allows only one reset check-in after grace expires", () => {
+  const firstResult = nextDailyClaim(
+    {
+      dailyStreak: 5,
+      miningStartedAt: START,
+      miningEndsAt: END,
+    },
+    "2026-01-04",
+    END.getTime() + MINING_STREAK_GRACE_MS + HOUR,
+  );
+
+  assert.equal(firstResult.claimedToday, false);
+  assert.equal(firstResult.streak, 1);
+
+  const savedUserData = {
+    dailyStreak: firstResult.streak,
+    miningStartedAt: START,
+    miningEndsAt: END,
+    dailyStreakClaimedMiningEndMs: firstResult.miningEndMs,
+  };
+
+  const secondResult = nextDailyClaim(
+    savedUserData,
+    "2026-01-04",
+    END.getTime() + MINING_STREAK_GRACE_MS + 2 * HOUR,
+  );
+
+  assert.equal(secondResult.claimedToday, true);
+  assert.equal(secondResult.streak, 1);
 });
 
 // ============================================================
