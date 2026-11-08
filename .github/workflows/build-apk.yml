@@ -26,7 +26,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.29.3"
+          flutter-version: "3.47.9"
           channel: stable
           cache: true
 
@@ -107,7 +107,15 @@ jobs:
 
       # 9. PUB GET
       - name: Flutter pub get
-        run: flutter pub get
+        run: |
+          flutter pub get
+
+          echo "=================================================="
+          echo "VERIFYING GOOGLE PLAY BILLING DEPENDENCY"
+          echo "=================================================="
+
+          grep -A 8 "^  in_app_purchase:" pubspec.lock
+          grep -A 8 "^  in_app_purchase_android:" pubspec.lock
 
       # 10. RESTORE RELEASE KEYSTORE
       - name: Restore release keystore
@@ -221,7 +229,7 @@ jobs:
                 find "$HOME/.gradle/wrapper/dists" \
                   -maxdepth 2 \
                   -type d \
-                  -name "gradle-8.14-all" \
+                  -name "gradle-8.14-bin" \
                   -prune \
                   -exec rm -rf {} +
               fi
@@ -334,6 +342,10 @@ jobs:
           echo "=================================================="
           echo "STELLURIINI RELEASE BUILD SUCCESSFUL"
           echo "=================================================="
+          echo "Flutter version: 3.47.9"
+          echo "App version: 1.0.14"
+          echo "Version code: 16"
+          echo "Google Play Billing: verified in pubspec.lock"
           echo "Flutter analyze: PASSED"
           echo "Flutter tests: PASSED / SKIPPED"
           echo "Release keystore: VERIFIED"
