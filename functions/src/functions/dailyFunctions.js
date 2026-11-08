@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -18,6 +19,7 @@
 // - Louhinnan päätyttyä alkaa 24 tunnin armonaika.
 // - Armonaikana uusi Daily Check-In jatkaa päiväputkea.
 // - Armonaikaa myöhemmin päiväputki alkaa päivästä 1.
+// - Sama louhintajakso voidaan kuitata vain kerran.
 //
 // ============================================================
 
@@ -103,6 +105,9 @@ function getSafeNumber(value, fallback = 0) {
 //
 // Armonaika lasketaan miningEndsAt-ajasta.
 //
+// miningEndMs välitetään eteenpäin, jotta onnistunut
+// Check-In voidaan yhdistää oikeaan louhintajaksoon.
+//
 // ============================================================
 
 function calculateDailyCheckIn(data, today, nowMs) {
@@ -116,6 +121,7 @@ function calculateDailyCheckIn(data, today, nowMs) {
     alreadyClaimed: daily.claimedToday,
     streak: daily.streak,
     dailyHashRate: daily.dailyHashRate,
+    miningEndMs: daily.miningEndMs,
   };
 }
 
@@ -326,7 +332,7 @@ const dailyCheckIn = onCall(
 
 
           // ==================================================
-          // 🚫 ALREADY CLAIMED TODAY
+          // 🚫 ALREADY CLAIMED
           // ==================================================
 
           if (daily.alreadyClaimed) {
@@ -391,13 +397,40 @@ const dailyCheckIn = onCall(
               FieldValue.serverTimestamp(),
           };
 
-          // Credit achievement rewards only when earned.
+
+          // ==================================================
+          // 🔒 SAVE CLAIMED MINING PERIOD
+          // ==================================================
+          //
+          // Tallennetaan louhintajakson päättymisaika vain,
+          // kun Check-In onnistuu ja käytössä on kelvollinen
+          // miningEndMs-arvo.
+          //
+          // Tämä estää saman louhintajakson päiväputken
+          // kasvattamisen useita kertoja.
+          //
+          // ==================================================
+
+          if (
+            Number.isFinite(daily.miningEndMs) &&
+            daily.miningEndMs > 0
+          ) {
+            userUpdate.dailyStreakClaimedMiningEndMs =
+              daily.miningEndMs;
+          }
+
+
+          // ==================================================
+          // 🎁 ACHIEVEMENT REWARDS
+          // ==================================================
+
           if (achievementResult.totalReward > 0) {
             userUpdate.miningBalance =
               FieldValue.increment(
                 achievementResult.totalReward
               );
           }
+
 
           transaction.set(
             userRef,
