@@ -23,6 +23,9 @@ dependencies:
   # Google Mobile Ads
   google_mobile_ads: ^6.0.0
 
+  # Google Play Billing - Premium subscriptions
+  in_app_purchase: ^3.2.3
+
   # Local storage
   shared_preferences: ^2.5.3
 
