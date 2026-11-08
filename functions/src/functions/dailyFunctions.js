@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -14,11 +13,11 @@
 // - Päivittää päivittäiset saavutukset.
 // - Maksaa saavutuspalkkiot vain kerran.
 //
-// Daily Check-In ei:
-// - Käynnistä Mining Startia.
-// - Aktivoi Power Boostia.
-// - Muuta aktiivisen mining-jakson Hash Ratea.
-// - Käsittele AdMob SSV:tä.
+// Päiväputken sääntö:
+// - Aktiivisen louhinnan aikana päiväputki säilyy.
+// - Louhinnan päätyttyä alkaa 24 tunnin armonaika.
+// - Armonaikana uusi Daily Check-In jatkaa päiväputkea.
+// - Armonaikaa myöhemmin päiväputki alkaa päivästä 1.
 //
 // ============================================================
 
@@ -44,18 +43,6 @@ const {
 
 
 // ============================================================
-// ⚙️ MINING CONFIG
-// ============================================================
-
-const {
-  DAILY_HASH_RATE_START,
-  DAILY_HASH_RATE_STEP,
-  DAILY_HASH_RATE_MAX_DAY,
-  MAX_DAILY_HASH_RATE,
-} = require("../config/miningConfig");
-
-
-// ============================================================
 // 📅 DATE UTILITIES
 // ============================================================
 
@@ -72,6 +59,15 @@ const {
   getUserRef,
   getHistoryCollection,
 } = require("../utils/userUtils");
+
+
+// ============================================================
+// 🎁 DAILY MINING UTILITIES
+// ============================================================
+
+const {
+  nextDailyClaim,
+} = require("../utils/mining/dailyMiningUtils");
 
 
 // ============================================================
@@ -99,113 +95,27 @@ function getSafeNumber(value, fallback = 0) {
 
 
 // ============================================================
-// 🎁 CALCULATE DAILY HASH RATE
-// ============================================================
-
-function calculateDailyHashRate(streak) {
-  const safeStreak = Math.max(
-    1,
-    Math.floor(getSafeNumber(streak, 1))
-  );
-
-  const effectiveDay = Math.min(
-    safeStreak,
-    DAILY_HASH_RATE_MAX_DAY
-  );
-
-  const hashRate =
-    DAILY_HASH_RATE_START +
-    ((effectiveDay - 1) * DAILY_HASH_RATE_STEP);
-
-  return Math.min(
-    MAX_DAILY_HASH_RATE,
-    Math.max(DAILY_HASH_RATE_START, hashRate)
-  );
-}
-
-
-// ============================================================
-// 📅 GET PREVIOUS UTC DATE
-// ============================================================
-
-function getPreviousUtcDate(dateString) {
-  if (
-    typeof dateString !== "string" ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(dateString)
-  ) {
-    return "";
-  }
-
-  const date = new Date(
-    `${dateString}T00:00:00.000Z`
-  );
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  date.setUTCDate(date.getUTCDate() - 1);
-
-  return date.toISOString().slice(0, 10);
-}
-
-
-// ============================================================
-// 🎁 GET STORED DAILY STREAK
-// ============================================================
-
-function getStoredDailyStreak(data) {
-  const stored =
-    data.dailyStreak ??
-    data.streak ??
-    0;
-
-  return Math.max(
-    0,
-    Math.floor(getSafeNumber(stored, 0))
-  );
-}
-
-
-// ============================================================
 // 🎁 CALCULATE DAILY CHECK-IN
 // ============================================================
+//
+// Käytetään samaa louhintajaksoon sidottua sääntöä
+// kuin dailyMiningUtils-apufunktioissa.
+//
+// Armonaika lasketaan miningEndsAt-ajasta.
+//
+// ============================================================
 
-function calculateDailyCheckIn(data, today) {
-  const lastDailyDate =
-    typeof data.lastDailyDate === "string"
-      ? data.lastDailyDate
-      : "";
-
-  const storedStreak =
-    getStoredDailyStreak(data);
-
-  // Already claimed today.
-  if (lastDailyDate === today) {
-    const streak = Math.max(1, storedStreak);
-
-    return {
-      alreadyClaimed: true,
-      streak,
-      dailyHashRate: calculateDailyHashRate(streak),
-    };
-  }
-
-  const yesterday = getPreviousUtcDate(today);
-
-  let streak = 1;
-
-  if (
-    lastDailyDate === yesterday &&
-    storedStreak > 0
-  ) {
-    streak = storedStreak + 1;
-  }
+function calculateDailyCheckIn(data, today, nowMs) {
+  const daily = nextDailyClaim(
+    data,
+    today,
+    nowMs
+  );
 
   return {
-    alreadyClaimed: false,
-    streak,
-    dailyHashRate: calculateDailyHashRate(streak),
+    alreadyClaimed: daily.claimedToday,
+    streak: daily.streak,
+    dailyHashRate: daily.dailyHashRate,
   };
 }
 
@@ -402,10 +312,16 @@ const dailyCheckIn = onCall(
           // ==================================================
           // 🎁 CALCULATE DAILY STATE
           // ==================================================
+          //
+          // Armonaika tarkistetaan nykyisen ajan ja
+          // miningEndsAt-arvon perusteella.
+          //
+          // ==================================================
 
           const daily = calculateDailyCheckIn(
             data,
-            today
+            today,
+            now.getTime()
           );
 
 
