@@ -37,7 +37,18 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # 4. ANDROID SDK
+      # 4. GRADLE CACHE
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper/dists
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 5. ANDROID SDK
       - name: Setup Android SDK
         run: |
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
@@ -57,7 +68,7 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0"
 
-      # 5. VERIFY FIREBASE
+      # 6. VERIFY FIREBASE
       - name: Verify Firebase configuration
         run: |
           FILE="android/app/google-services.json"
@@ -70,7 +81,7 @@ jobs:
 
           echo "Firebase configuration found."
 
-      # 6. VERIFY APPLICATION ID
+      # 7. VERIFY APPLICATION ID
       - name: Verify application ID
         run: |
           FILE="android/app/build.gradle"
@@ -90,15 +101,15 @@ jobs:
 
           echo "Application ID OK."
 
-      # 7. FLUTTER CLEAN
+      # 8. FLUTTER CLEAN
       - name: Flutter clean
         run: flutter clean
 
-      # 8. PUB GET
+      # 9. PUB GET
       - name: Flutter pub get
         run: flutter pub get
 
-      # 9. RESTORE RELEASE KEYSTORE
+      # 10. RESTORE RELEASE KEYSTORE
       - name: Restore release keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.STELLURIINI_UPLOAD_KEYSTORE_BASE64 }}
@@ -127,7 +138,7 @@ jobs:
 
           echo "Release keystore restored successfully."
 
-      # 10. GENERATE APP ICON
+      # 11. GENERATE APP ICON
       - name: Generate app icon
         run: |
           if [ ! -f assets/images/stelluriini_logo.png ]; then
@@ -137,11 +148,11 @@ jobs:
 
           dart run flutter_launcher_icons
 
-      # 11. FLUTTER ANALYZE
+      # 12. FLUTTER ANALYZE
       - name: Flutter analyze
         run: flutter analyze
 
-      # 12. FLUTTER TEST
+      # 13. FLUTTER TEST
       - name: Flutter test
         run: |
           if [ -d test ]; then
@@ -151,7 +162,7 @@ jobs:
             echo "Skipping Flutter unit/widget tests."
           fi
 
-      # 13. VERIFY RELEASE KEYSTORE
+      # 14. VERIFY RELEASE KEYSTORE
       - name: Verify release keystore
         env:
           KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
@@ -173,7 +184,7 @@ jobs:
 
           echo "Release keystore verification PASSED."
 
-      # 14. BUILD RELEASE APP BUNDLE
+      # 15. BUILD RELEASE APP BUNDLE WITH RETRIES
       - name: Build release App Bundle
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
@@ -189,9 +200,43 @@ jobs:
             exit 1
           fi
 
-          flutter build appbundle --release
+          MAX_ATTEMPTS=3
 
-      # 15. DIAGNOSE MERGED ANDROID MANIFEST
+          for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "=================================================="
+            echo "AAB BUILD ATTEMPT $ATTEMPT / $MAX_ATTEMPTS"
+            echo "=================================================="
+
+            if flutter build appbundle --release; then
+              echo "AAB BUILD SUCCESSFUL."
+              exit 0
+            fi
+
+            echo "AAB build failed on attempt $ATTEMPT."
+
+            if [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Removing incomplete Gradle 8.14 distribution..."
+
+              if [ -d "$HOME/.gradle/wrapper/dists" ]; then
+                find "$HOME/.gradle/wrapper/dists" \
+                  -maxdepth 2 \
+                  -type d \
+                  -name "gradle-8.14-all" \
+                  -prune \
+                  -exec rm -rf {} +
+              fi
+
+              WAIT_SECONDS=$((ATTEMPT * 20))
+
+              echo "Waiting ${WAIT_SECONDS} seconds before retry..."
+              sleep "$WAIT_SECONDS"
+            fi
+          done
+
+          echo "ERROR: AAB build failed after $MAX_ATTEMPTS attempts."
+          exit 1
+
+      # 16. DIAGNOSE MERGED ANDROID MANIFEST
       - name: Diagnose merged Android manifest
         if: always()
         run: |
@@ -230,7 +275,7 @@ jobs:
           echo "END ANDROID MANIFEST DIAGNOSTICS"
           echo "=================================================="
 
-      # 16. VERIFY APP BUNDLE
+      # 17. VERIFY APP BUNDLE
       - name: Verify App Bundle
         run: |
           AAB="build/app/outputs/bundle/release/app-release.aab"
@@ -243,7 +288,7 @@ jobs:
           echo "App Bundle successfully created:"
           ls -lh "$AAB"
 
-      # 17. BUILD RELEASE APK
+      # 18. BUILD RELEASE APK
       - name: Build release APK
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
@@ -251,7 +296,7 @@ jobs:
         run: |
           flutter build apk --release
 
-      # 18. VERIFY APK
+      # 19. VERIFY APK
       - name: Verify APK
         run: |
           APK="build/app/outputs/flutter-apk/app-release.apk"
@@ -264,7 +309,7 @@ jobs:
           echo "APK successfully created:"
           ls -lh "$APK"
 
-      # 19. UPLOAD RELEASE FILES
+      # 20. UPLOAD RELEASE FILES
       - name: Upload release files
         uses: actions/upload-artifact@v7
         with:
@@ -275,14 +320,14 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-      # 20. REMOVE TEMPORARY RELEASE KEYSTORE
+      # 21. REMOVE TEMPORARY RELEASE KEYSTORE
       - name: Remove temporary release keystore
         if: always()
         run: |
           rm -f android/stelluriini-upload-keystore.jks
           echo "Temporary release keystore removed from runner."
 
-      # 21. BUILD SUMMARY
+      # 22. BUILD SUMMARY
       - name: Build summary
         if: success()
         run: |
