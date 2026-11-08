@@ -11,6 +11,7 @@
 // - Mining streak
 // - Nästa dagliga claim
 // - Streakens grace-period
+// - Endast en streak-claim per mining-period
 //
 // ============================================================
 
@@ -105,6 +106,64 @@ function dailyStreak(data) {
 const MINING_STREAK_GRACE_MS =
   24 * 60 * 60 * 1000;
 
+// ============================================================
+// CHECK WHETHER THIS MINING PERIOD WAS ALREADY CLAIMED
+// ============================================================
+//
+// dailyStreakClaimedMiningEndMs tallentaa sen louhintajakson
+// päättymisajan, jonka perusteella päiväputki on jo päivitetty.
+//
+// Sama louhintajakso voidaan kuitata vain kerran.
+//
+// Uusi louhintajakso saa uuden miningEndMs-arvon.
+//
+// ============================================================
+
+function wasMiningPeriodAlreadyClaimed(
+  data,
+  miningEndMs
+) {
+  const claimedMiningEndMs = number(
+    data.dailyStreakClaimedMiningEndMs,
+    0
+  );
+
+  return (
+    claimedMiningEndMs > 0 &&
+    claimedMiningEndMs === miningEndMs
+  );
+}
+
+// ============================================================
+// BUILD DAILY CLAIM RESULT
+// ============================================================
+
+function buildDailyResult(
+  claimedToday,
+  streak,
+  miningEndMs = null
+) {
+  const safeStreak = Math.max(
+    1,
+    Math.floor(number(streak, 1))
+  );
+
+  return {
+    claimedToday,
+
+    streak: safeStreak,
+
+    dailyHashRate:
+      dailyHashRate(safeStreak),
+
+    miningEndMs,
+  };
+}
+
+// ============================================================
+// NEXT DAILY CLAIM
+// ============================================================
+
 function nextDailyClaim(
   data,
   today,
@@ -124,21 +183,53 @@ function nextDailyClaim(
 
   const window = getMiningWindow(data);
 
+  // ==========================================================
+  // VALID MINING WINDOW
+  // ==========================================================
+
   if (window.valid) {
-    const miningEndMs = window.miningEndMs;
+    const miningStartMs =
+      window.miningStartMs;
+
+    const miningEndMs =
+      window.miningEndMs;
+
+    const alreadyClaimedForMining =
+      wasMiningPeriodAlreadyClaimed(
+        data,
+        miningEndMs
+      );
+
+    // --------------------------------------------------------
+    // ACTIVE MINING
+    // --------------------------------------------------------
+    //
+    // Päiväputki säilyy aktiivisen louhinnan ajan.
+    // Uutta Daily Check-Iniä ei voi tehdä vielä.
+    //
+    // --------------------------------------------------------
 
     if (
-      referenceNowMs >= window.miningStartMs &&
+      referenceNowMs >= miningStartMs &&
       referenceNowMs < miningEndMs
     ) {
-      const streak = Math.max(1, current);
-
-      return {
-        claimedToday: true,
-        streak,
-        dailyHashRate: dailyHashRate(streak),
-      };
+      return buildDailyResult(
+        true,
+        Math.max(1, current),
+        miningEndMs
+      );
     }
+
+    // --------------------------------------------------------
+    // MINING END + 24 HOUR GRACE PERIOD
+    // --------------------------------------------------------
+    //
+    // Armonaika alkaa täsmälleen miningEndMs-ajasta.
+    //
+    // Päiväputki kasvaa vain kerran kyseistä louhintajaksoa
+    // kohden.
+    //
+    // --------------------------------------------------------
 
     const graceDeadlineMs =
       miningEndMs + MINING_STREAK_GRACE_MS;
@@ -147,35 +238,66 @@ function nextDailyClaim(
       referenceNowMs >= miningEndMs &&
       referenceNowMs <= graceDeadlineMs
     ) {
+      if (alreadyClaimedForMining) {
+        return buildDailyResult(
+          true,
+          Math.max(1, current),
+          miningEndMs
+        );
+      }
+
       const streak =
         current > 0
           ? current + 1
           : 1;
 
-      return {
-        claimedToday: false,
+      return buildDailyResult(
+        false,
         streak,
-        dailyHashRate: dailyHashRate(streak),
-      };
+        miningEndMs
+      );
     }
 
-    if (referenceNowMs > graceDeadlineMs) {
-      return {
-        claimedToday: false,
-        streak: 1,
-        dailyHashRate: dailyHashRate(1),
-      };
+    // --------------------------------------------------------
+    // GRACE PERIOD EXPIRED
+    // --------------------------------------------------------
+    //
+    // Jos käyttäjä ei tehnyt Check-Iniä armonaikana,
+    // päiväputki alkaa uudelleen päivästä 1.
+    //
+    // Myös tämä nollaus voidaan kuitata vain kerran
+    // kyseistä louhintajaksoa kohden.
+    //
+    // --------------------------------------------------------
+
+    if (
+      referenceNowMs > graceDeadlineMs
+    ) {
+      if (alreadyClaimedForMining) {
+        return buildDailyResult(
+          true,
+          Math.max(1, current),
+          miningEndMs
+        );
+      }
+
+      return buildDailyResult(
+        false,
+        1,
+        miningEndMs
+      );
     }
   }
 
-  if (last === today) {
-    const streak = Math.max(1, current);
+  // ==========================================================
+  // FALLBACK WITHOUT VALID MINING WINDOW
+  // ==========================================================
 
-    return {
-      claimedToday: true,
-      streak,
-      dailyHashRate: dailyHashRate(streak),
-    };
+  if (last === today) {
+    return buildDailyResult(
+      true,
+      Math.max(1, current)
+    );
   }
 
   const yesterday = new Date(
@@ -195,11 +317,10 @@ function nextDailyClaim(
       ? current + 1
       : 1;
 
-  return {
-    claimedToday: false,
-    streak,
-    dailyHashRate: dailyHashRate(streak),
-  };
+  return buildDailyResult(
+    false,
+    streak
+  );
 }
 
 // ============================================================
