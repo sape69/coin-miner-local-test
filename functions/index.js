@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -5,17 +6,6 @@
 // ============================================================
 //
 // Stelluriini Cloud Functions -päävientitiedosto.
-//
-// Firebase käyttää tätä tiedostoa Cloud Functions -entry pointina,
-// koska functions/package.json sisältää:
-//
-// "main": "index.js"
-//
-// Varsinaiset funktiot sijaitsevat:
-//
-// functions/src/functions/
-//
-// Tämä tiedosto toimii keskitettynä export-pisteenä.
 //
 // ============================================================
 
@@ -28,9 +18,7 @@ const {
   getMiningStatus,
   claimMining,
   powerBoost,
-} = require(
-  "./src/functions/miningFunctions",
-);
+} = require("./src/functions/miningFunctions");
 
 
 // ============================================================
@@ -39,9 +27,7 @@ const {
 
 const {
   dailyCheckIn,
-} = require(
-  "./src/functions/dailyFunctions",
-);
+} = require("./src/functions/dailyFunctions");
 
 
 // ============================================================
@@ -50,9 +36,7 @@ const {
 
 const {
   adMobReward,
-} = require(
-  "./src/functions/adFunctions",
-);
+} = require("./src/functions/adFunctions");
 
 
 // ============================================================
@@ -61,9 +45,7 @@ const {
 
 const {
   getTransactionHistory,
-} = require(
-  "./src/functions/historyFunctions",
-);
+} = require("./src/functions/historyFunctions");
 
 
 // ============================================================
@@ -73,106 +55,39 @@ const {
 const {
   getAchievements,
   getAchievementsCompleted,
-} = require(
-  "./src/functions/achievementFunctions",
-);
+} = require("./src/functions/achievementFunctions");
 
 
 // ============================================================
 // 👤 USER PROFILE
 // ============================================================
-//
-// Stella User Profile.
-//
-// Flutter käyttää näitä toimintoja:
-//
-// ensureUserProfile
-// getUserProfile
-//
-// TÄRKEÄÄ:
-//
-// Flutter EI kirjoita users/{uid}-dokumenttia suoraan.
-//
-// Käyttäjäprofiilin luonti ja lukeminen tapahtuvat
-// Cloud Functions -palvelimella Firebase Admin SDK:n kautta.
-//
-// ============================================================
 
 const {
   ensureUserProfile,
   getUserProfile,
-} = require(
-  "./src/functions/userFunctions",
-);
+} = require("./src/functions/userFunctions");
 
 
 // ============================================================
 // 🗑️ ACCOUNT
 // ============================================================
-//
-// Stella Account Management.
-//
-// deleteAccount poistaa kirjautuneen käyttäjän Firebase
-// Authentication -tilin sekä käyttäjäprofiilin.
-//
-// Käyttäjän UID saadaan callable-functionin
-// request.auth.uid-arvosta.
-//
-// ============================================================
 
 const {
   deleteAccount,
-} = require(
-  "./src/functions/accountFunctions",
-);
+} = require("./src/functions/accountFunctions");
 
 
 // ============================================================
-// 🌐 EXTERNAL ACCOUNT DELETION REQUEST
-// ============================================================
-//
-// Ulkoinen Google Play -tilinpoistopyyntö.
-//
-// Tämä endpoint vastaanottaa ulkoiselta
-// Stelluriini Hosting -sivulta tilinpoistopyynnön.
-//
-// TÄRKEÄÄ:
-//
-// Tämä ei vielä poista käyttäjätiliä automaattisesti.
-//
-// Pyyntö tallennetaan Firestoreen käsiteltäväksi.
-//
+// 🌐 ACCOUNT DELETION REQUEST
 // ============================================================
 
 const {
   requestAccountDeletion,
-} = require(
-  "./src/functions/accountDeletionRequestFunctions",
-);
+} = require("./src/functions/accountDeletionRequestFunctions");
 
 
 // ============================================================
 // 🔗 REFERRAL
-// ============================================================
-//
-// Stella Referral System.
-//
-// Flutter käyttää tällä hetkellä:
-//
-// getReferralStatus
-//
-// Lisäksi backendissä ovat:
-//
-// getReferralProfile
-// applyReferralCode
-// getReferredUsers
-// getReferralDashboard
-//
-// processReferralMiningReward
-// ei ole suoraan clientin callable,
-// vaan mining-järjestelmä käyttää sitä referral-bonuksen
-// käsittelyyn.
-//
 // ============================================================
 
 const {
@@ -181,175 +96,104 @@ const {
   getReferredUsers,
   getReferralStatus,
   getReferralDashboard,
-} = require(
-  "./src/functions/referralFunctions",
-);
+} = require("./src/functions/referralFunctions");
 
 
 // ============================================================
 // 🔍 REFERRAL CODE VALIDATION
 // ============================================================
-//
-// Tarkistaa referral-koodin ennen Firebase Auth -tilin
-// luomista.
-//
-// Tämä funktio ei luo käyttäjää eikä referral-suhdetta.
-//
-// ============================================================
 
 const {
   validateReferralCode,
-} = require(
-  "./src/functions/validateReferralCode",
-);
+} = require("./src/functions/validateReferralCode");
+
+
+// ============================================================
+// ⭐ GOOGLE PLAY SUBSCRIPTIONS
+// ============================================================
+
+const {
+  verifyPlaySubscription,
+} = require("./src/functions/subscriptionFunctions");
 
 
 // ============================================================
 // ⛏️ MINING EXPORTS
 // ============================================================
 
-exports.getMiningStatus =
-  getMiningStatus;
-
-exports.claimMining =
-  claimMining;
-
-exports.powerBoost =
-  powerBoost;
+exports.getMiningStatus = getMiningStatus;
+exports.claimMining = claimMining;
+exports.powerBoost = powerBoost;
 
 
 // ============================================================
 // 🎁 DAILY CHECK-IN EXPORT
 // ============================================================
 
-exports.dailyCheckIn =
-  dailyCheckIn;
+exports.dailyCheckIn = dailyCheckIn;
 
 
 // ============================================================
 // 📺 ADMOB SSV EXPORT
 // ============================================================
 
-exports.adMobReward =
-  adMobReward;
+exports.adMobReward = adMobReward;
 
 
 // ============================================================
 // 📜 TRANSACTION HISTORY EXPORT
 // ============================================================
 
-exports.getTransactionHistory =
-  getTransactionHistory;
+exports.getTransactionHistory = getTransactionHistory;
 
 
 // ============================================================
 // 🏆 ACHIEVEMENT EXPORTS
 // ============================================================
 
-exports.getAchievements =
-  getAchievements;
-
-exports.getAchievementsCompleted =
-  getAchievementsCompleted;
+exports.getAchievements = getAchievements;
+exports.getAchievementsCompleted = getAchievementsCompleted;
 
 
 // ============================================================
 // 👤 USER PROFILE EXPORTS
 // ============================================================
-//
-// Flutter voi kutsua:
-//
-// FirebaseFunctions
-//   .httpsCallable('ensureUserProfile')
-//
-// FirebaseFunctions
-//   .httpsCallable('getUserProfile')
-//
-// Käyttäjäprofiili käsitellään aina palvelinpuolella
-// Admin SDK:n kautta.
-//
-// ============================================================
 
-exports.ensureUserProfile =
-  ensureUserProfile;
-
-exports.getUserProfile =
-  getUserProfile;
+exports.ensureUserProfile = ensureUserProfile;
+exports.getUserProfile = getUserProfile;
 
 
 // ============================================================
 // 🗑️ ACCOUNT EXPORT
 // ============================================================
-//
-// Flutter voi kutsua:
-//
-// FirebaseFunctions
-//   .httpsCallable('deleteAccount')
-//
-// Poisto tehdään aina kirjautuneen käyttäjän
-// authentication UID:n perusteella.
-//
-// ============================================================
 
-exports.deleteAccount =
-  deleteAccount;
+exports.deleteAccount = deleteAccount;
 
 
 // ============================================================
-// 🌐 EXTERNAL ACCOUNT DELETION REQUEST EXPORT
-// ============================================================
-//
-// Google Playn ulkoinen tilinpoistopyyntö.
-//
-// Endpoint vastaanottaa:
-//
-// POST
-//
-// Stelluriini Hosting:
-// https://stelluriini.web.app
-//
+// 🌐 ACCOUNT DELETION REQUEST EXPORT
 // ============================================================
 
-exports.requestAccountDeletion =
-  requestAccountDeletion;
+exports.requestAccountDeletion = requestAccountDeletion;
 
 
 // ============================================================
 // 🔗 REFERRAL EXPORTS
 // ============================================================
-//
-// Nämä ovat Firebase Cloud Functions -exportteja.
-//
-// Flutter voi kutsua:
-//
-// FirebaseFunctions
-//   .httpsCallable('getReferralStatus')
-//
-// FirebaseFunctions
-//   .httpsCallable('validateReferralCode')
-//
-// FirebaseFunctions
-//   .httpsCallable('applyReferralCode')
-//
+
+exports.getReferralProfile = getReferralProfile;
+exports.applyReferralCode = applyReferralCode;
+exports.getReferredUsers = getReferredUsers;
+exports.getReferralStatus = getReferralStatus;
+exports.getReferralDashboard = getReferralDashboard;
+exports.validateReferralCode = validateReferralCode;
+
+
+// ============================================================
+// ⭐ GOOGLE PLAY SUBSCRIPTION EXPORT
 // ============================================================
 
-exports.getReferralProfile =
-  getReferralProfile;
-
-exports.applyReferralCode =
-  applyReferralCode;
-
-exports.getReferredUsers =
-  getReferredUsers;
-
-exports.getReferralStatus =
-  getReferralStatus;
-
-exports.getReferralDashboard =
-  getReferralDashboard;
-
-exports.validateReferralCode =
-  validateReferralCode;
+exports.verifyPlaySubscription = verifyPlaySubscription;
 
 
 // ============================================================
