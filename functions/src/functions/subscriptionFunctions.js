@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -414,6 +413,10 @@ const expirePremiumSubscriptions = onSchedule(
     memory: "256MiB",
   },
   async () => {
+    // Tämä lokimerkintä auttaa varmistamaan,
+    // että ajastusfunktio käynnistyy.
+    console.log("Premium expiry scheduler started.");
+
     const now = Timestamp.now();
 
     let lastDocument = null;
