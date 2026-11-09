@@ -4,10 +4,6 @@
 // ============================================================
 // 🐱 STELLURIINI CLOUD FUNCTIONS
 // ============================================================
-//
-// Stelluriini Cloud Functions -päävientitiedosto.
-//
-// ============================================================
 
 
 // ============================================================
@@ -114,6 +110,7 @@ const {
 
 const {
   verifyPlaySubscription,
+  expirePremiumSubscriptions,
 } = require("./src/functions/subscriptionFunctions");
 
 
@@ -190,10 +187,11 @@ exports.validateReferralCode = validateReferralCode;
 
 
 // ============================================================
-// ⭐ GOOGLE PLAY SUBSCRIPTION EXPORT
+// ⭐ GOOGLE PLAY SUBSCRIPTION EXPORTS
 // ============================================================
 
 exports.verifyPlaySubscription = verifyPlaySubscription;
+exports.expirePremiumSubscriptions = expirePremiumSubscriptions;
 
 
 // ============================================================
