@@ -2,7 +2,7 @@
 "use strict";
 
 // ============================================================
-// 🐱 STELLURIINI - GOOGLE PLAY SUBSCRIPTION VERIFICATION
+// 🐱 STELLURIINI - GOOGLE PLAY PREMIUM SUBSCRIPTIONS
 // ============================================================
 
 const crypto = require("crypto");
@@ -11,6 +11,10 @@ const {
   onCall,
   HttpsError,
 } = require("firebase-functions/v2/https");
+
+const {
+  onSchedule,
+} = require("firebase-functions/v2/scheduler");
 
 const {
   Timestamp,
@@ -37,6 +41,8 @@ const REGION = "us-central1";
 
 const PACKAGE_NAME = "com.stelluriini.app";
 
+const EXPECTED_BASE_PLAN_ID = "monthly";
+
 const PREMIUM_PRODUCTS = Object.freeze({
   stelluriini_premium_monthly: "premium",
   stelluriini_premium_plus_monthly: "premium_plus",
@@ -47,6 +53,8 @@ const ALLOWED_SUBSCRIPTION_STATES = new Set([
   "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
   "SUBSCRIPTION_STATE_CANCELED",
 ]);
+
+const EXPIRY_BATCH_SIZE = 200;
 
 let publisherClientPromise = null;
 
@@ -91,10 +99,12 @@ function validateRequestData(data) {
       ? data.purchaseToken.trim()
       : "";
 
-  if (!Object.prototype.hasOwnProperty.call(
-    PREMIUM_PRODUCTS,
-    productId
-  )) {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      PREMIUM_PRODUCTS,
+      productId
+    )
+  ) {
     throw new HttpsError(
       "invalid-argument",
       "Tuntematon Premium-tuote."
@@ -181,14 +191,17 @@ function validateGoogleSubscription(
     ? subscription.lineItems
     : [];
 
-  const matchingItems = lineItems.filter(
-    (item) => item?.productId === expectedProductId
-  );
+  const matchingItems = lineItems.filter((item) => {
+    return (
+      item?.productId === expectedProductId &&
+      item?.offerDetails?.basePlanId === EXPECTED_BASE_PLAN_ID
+    );
+  });
 
   if (matchingItems.length === 0) {
     throw new HttpsError(
       "failed-precondition",
-      "Ostettu tuote ei vastaa pyydettyä Premium-tuotetta."
+      "Ostettu tuote tai kuukausitilaus ei vastaa Premium-tuotetta."
     );
   }
 
@@ -196,11 +209,9 @@ function validateGoogleSubscription(
 
   const validExpiries = matchingItems
     .map((item) => Date.parse(item.expiryTime || ""))
-    .filter(
-      (expiry) =>
-        Number.isFinite(expiry) &&
-        expiry > now
-    );
+    .filter((expiry) => {
+      return Number.isFinite(expiry) && expiry > now;
+    });
 
   if (validExpiries.length === 0) {
     throw new HttpsError(
@@ -216,7 +227,7 @@ function validateGoogleSubscription(
 }
 
 // ============================================================
-// FIRESTORE ENTITLEMENT UPDATE
+// SAVE VERIFIED SUBSCRIPTION
 // ============================================================
 
 async function saveVerifiedSubscription({
@@ -279,7 +290,7 @@ async function saveVerifiedSubscription({
     const incomingIsPlus =
       tier === "premium_plus";
 
-    const shouldKeepCurrentPlus =
+    const keepCurrentPlus =
       currentIsPlus && !incomingIsPlus;
 
     const updates = {
@@ -288,7 +299,7 @@ async function saveVerifiedSubscription({
       premiumUpdatedAt: FieldValue.serverTimestamp(),
     };
 
-    if (!shouldKeepCurrentPlus) {
+    if (!keepCurrentPlus) {
       updates.premiumTier = tier;
       updates.premiumProductId = productId;
       updates.premiumExpiryTime = expiryTimestamp;
@@ -310,6 +321,7 @@ async function saveVerifiedSubscription({
         tier,
         expiryTime: expiryTimestamp,
         subscriptionState: state,
+        status: "active",
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
@@ -379,9 +391,173 @@ const verifyPlaySubscription = onCall(
 );
 
 // ============================================================
+// AUTOMATIC PREMIUM EXPIRY
+// ============================================================
+//
+// Tarkistaa kerran tunnissa päättyneet tilaukset.
+//
+// Tämä tarkistus käyttää palvelimelle tallennettua
+// tilauksen voimassaoloaikaa.
+//
+// Se ei yksin tunnista Google Playn uusimista.
+// Uusiminen päivitetään uudella varmennuksella tai
+// myöhemmin lisättävällä Google Play RTDN -integraatiolla.
+//
+// ============================================================
+
+const expirePremiumSubscriptions = onSchedule(
+  {
+    region: REGION,
+    schedule: "every 60 minutes",
+    timeZone: "UTC",
+    timeoutSeconds: 300,
+    memory: "256MiB",
+  },
+  async () => {
+    const now = Timestamp.now();
+
+    let lastDocument = null;
+    let expiredCount = 0;
+
+    while (true) {
+      let query = db
+        .collection("playPurchaseTokens")
+        .where("expiryTime", "<=", now)
+        .orderBy("expiryTime")
+        .limit(EXPIRY_BATCH_SIZE);
+
+      if (lastDocument) {
+        query = query.startAfter(lastDocument);
+      }
+
+      const snapshot = await query.get();
+
+      if (snapshot.empty) {
+        break;
+      }
+
+      for (const tokenDocument of snapshot.docs) {
+        const tokenData = tokenDocument.data();
+
+        if (tokenData.status === "expired") {
+          continue;
+        }
+
+        const uid = tokenData.uid;
+
+        if (typeof uid !== "string" || !uid) {
+          console.error(
+            "Expired subscription has no valid UID:",
+            tokenDocument.id
+          );
+          continue;
+        }
+
+        const userRef = getUserRef(uid);
+
+        await db.runTransaction(async (transaction) => {
+          const currentTokenSnapshot =
+            await transaction.get(tokenDocument.ref);
+
+          const userSnapshot =
+            await transaction.get(userRef);
+
+          if (!currentTokenSnapshot.exists) {
+            return;
+          }
+
+          const currentToken =
+            currentTokenSnapshot.data();
+
+          if (currentToken.status === "expired") {
+            return;
+          }
+
+          const currentExpiry =
+            currentToken.expiryTime;
+
+          const currentExpiryMs =
+            currentExpiry &&
+            typeof currentExpiry.toMillis === "function"
+              ? currentExpiry.toMillis()
+              : 0;
+
+          if (currentExpiryMs > Date.now()) {
+            return;
+          }
+
+          transaction.set(
+            tokenDocument.ref,
+            {
+              status: "expired",
+              processedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          if (!userSnapshot.exists) {
+            return;
+          }
+
+          const userData = userSnapshot.data() || {};
+
+          const currentUserTokenHash =
+            userData.premiumPurchaseTokenHash;
+
+          const userExpiry =
+            userData.premiumExpiryTime;
+
+          const userExpiryMs =
+            userExpiry &&
+            typeof userExpiry.toMillis === "function"
+              ? userExpiry.toMillis()
+              : 0;
+
+          // Poistetaan Premium vain, jos vanhentunut
+          // ostotunniste on käyttäjän nykyinen tilaus.
+          if (
+            currentUserTokenHash === tokenDocument.id &&
+            userExpiryMs <= Date.now()
+          ) {
+            transaction.set(
+              userRef,
+              {
+                premium: false,
+                premiumVerified: false,
+                premiumTier: FieldValue.delete(),
+                premiumProductId: FieldValue.delete(),
+                premiumExpiryTime: FieldValue.delete(),
+                premiumSubscriptionState: "EXPIRED",
+                premiumPurchaseTokenHash: FieldValue.delete(),
+                premiumUpdatedAt: FieldValue.serverTimestamp(),
+              },
+              { merge: true }
+            );
+          }
+        });
+
+        expiredCount++;
+      }
+
+      lastDocument =
+        snapshot.docs[snapshot.docs.length - 1];
+
+      if (snapshot.size < EXPIRY_BATCH_SIZE) {
+        break;
+      }
+    }
+
+    console.log(
+      `Premium expiry check completed. Processed: ${expiredCount}`
+    );
+  }
+);
+
+// ============================================================
 // EXPORTS
 // ============================================================
 
 module.exports = {
   verifyPlaySubscription,
+  expirePremiumSubscriptions,
 };
