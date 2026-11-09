@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -409,7 +410,8 @@ class PremiumSubscriptionService extends ChangeNotifier {
 
       _activeTier = tier;
 
-      final dynamic expiryValue = data['expiresAt'];
+      // Backend palauttaa voimassaoloajan kentässä expiryTime.
+      final dynamic expiryValue = data['expiryTime'];
 
       if (expiryValue is String) {
         _premiumExpiresAt = DateTime.tryParse(expiryValue);
