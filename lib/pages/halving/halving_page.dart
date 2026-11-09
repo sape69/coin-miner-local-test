@@ -623,13 +623,13 @@ class _HalvingPageState extends State<HalvingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.calculate_rounded, color: goldColor),
-              SizedBox(width: 9),
+              const Icon(Icons.calculate_rounded, color: goldColor),
+              const SizedBox(width: 9),
               Text(
-                'MINING FORMULA',
-                style: TextStyle(
+                _text('LOUHINTAKAAVA', 'MINING FORMULA'),
+                style: const TextStyle(
                   color: goldColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
@@ -639,9 +639,12 @@ class _HalvingPageState extends State<HalvingPage> {
             ],
           ),
           const SizedBox(height: 15),
-          const Text(
-            'Hash Rate × 0.10 × Halving Multiplier',
-            style: TextStyle(
+          Text(
+            _text(
+              'Louhintateho × 0,10 × halving-kerroin',
+              'Hash Rate × 0.10 × Halving Multiplier',
+            ),
+            style: const TextStyle(
               color: primaryTextColor,
               fontSize: 15,
               fontWeight: FontWeight.w800,
