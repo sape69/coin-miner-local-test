@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import '../localization.dart';
@@ -7,34 +8,13 @@ import 'cat_avatar.dart';
 // ============================================================
 // 🐱 STELLURIINI / STELLA HOME DRAWER
 // ============================================================
-//
-// Kompakti päävalikko.
-//
-// Stella Level:
-// - näytetään Stellan saavutukset -sivulla
-// - ei enää näytetä Drawerissa
-//
-// Drawer on tarkoituksella kompakti, jotta useampi valikkokohta
-// näkyy samanaikaisesti puhelimen näytöllä.
-//
-// ============================================================
-
-// ============================================================
-// 🎨 STELLURIINI COLORS
-// ============================================================
 
 const Color backgroundColor = Color(0xFF120B24);
-
 const Color cardColor = Color(0xFF21113B);
-
 const Color accentColor = Color(0xFFB58CFF);
-
 const Color pinkAccentColor = Color(0xFFFFB7E8);
-
 const Color goldAccentColor = Color(0xFFFFD166);
-
 const Color logoutColor = Color(0xFFFF8A8A);
-
 const Color deleteAccountColor = Color(0xFFFF6B7A);
 
 // ============================================================
@@ -49,9 +29,11 @@ class HomeDrawer extends StatefulWidget {
   final VoidCallback onWhitePaperPressed;
   final VoidCallback onRoadmapPressed;
 
-  // Halving-sivun avaus.
-  // Valinnainen, jotta nykyiset kutsut eivät rikkoudu.
   final VoidCallback? onHalvingPressed;
+
+  // Premium-sivun avaus.
+  // Valinnainen, jotta nykyiset kutsut eivät rikkoudu.
+  final VoidCallback? onPremiumPressed;
 
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
@@ -67,6 +49,7 @@ class HomeDrawer extends StatefulWidget {
     required this.onWhitePaperPressed,
     required this.onRoadmapPressed,
     this.onHalvingPressed,
+    this.onPremiumPressed,
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onReferralPressed,
@@ -75,8 +58,7 @@ class HomeDrawer extends StatefulWidget {
   });
 
   @override
-  State<HomeDrawer> createState() =>
-      _HomeDrawerState();
+  State<HomeDrawer> createState() => _HomeDrawerState();
 }
 
 // ============================================================
@@ -84,10 +66,6 @@ class HomeDrawer extends StatefulWidget {
 // ============================================================
 
 class _HomeDrawerState extends State<HomeDrawer> {
-  // ==========================================================
-  // 🌍 LOCALIZATION
-  // ==========================================================
-
   AppLocalizations get _localization =>
       AppLocalizations(widget.languageCode);
 
@@ -96,9 +74,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   AchievementsLocalization get _achievementsLocalization =>
-      AchievementsLocalization(
-        widget.languageCode,
-      );
+      AchievementsLocalization(widget.languageCode);
 
   // ==========================================================
   // ✨ STELLA STAR
@@ -135,71 +111,36 @@ class _HomeDrawerState extends State<HomeDrawer> {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(14),
-          splashColor:
-              accentColor.withValues(
-            alpha: 0.10,
-          ),
-          highlightColor:
-              pinkAccentColor.withValues(
-            alpha: 0.05,
-          ),
+          borderRadius: BorderRadius.circular(14),
+          splashColor: accentColor.withValues(alpha: 0.10),
+          highlightColor: pinkAccentColor.withValues(alpha: 0.05),
           onTap: onTap,
           child: Container(
             height: 58,
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                // ------------------------------------------------
-                // ICON
-                // ------------------------------------------------
-
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient:
-                        LinearGradient(
-                      begin:
-                          Alignment.topLeft,
-                      end:
-                          Alignment.bottomRight,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
-                        accentColor
-                            .withValues(
-                          alpha: 0.25,
-                        ),
-                        currentIconColor
-                            .withValues(
-                          alpha: 0.14,
-                        ),
+                        accentColor.withValues(alpha: 0.25),
+                        currentIconColor.withValues(alpha: 0.14),
                       ],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
+                    borderRadius: BorderRadius.circular(13),
                     border: Border.all(
-                      color:
-                          currentIconColor
-                              .withValues(
-                        alpha: 0.20,
-                      ),
+                      color: currentIconColor.withValues(alpha: 0.20),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            currentIconColor
-                                .withValues(
-                          alpha: 0.07,
-                        ),
+                        color: currentIconColor.withValues(alpha: 0.07),
                         blurRadius: 9,
                         spreadRadius: 1,
                       ),
@@ -207,46 +148,26 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   ),
                   child: Icon(
                     icon,
-                    color:
-                        currentIconColor,
+                    color: currentIconColor,
                     size: 22,
                   ),
                 ),
-
-                const SizedBox(
-                  width: 13,
-                ),
-
-                // ------------------------------------------------
-                // TITLE
-                // ------------------------------------------------
-
+                const SizedBox(width: 13),
                 Expanded(
                   child: Text(
                     title,
                     maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
-                // ------------------------------------------------
-                // ARROW
-                // ------------------------------------------------
-
                 Icon(
                   Icons.chevron_right_rounded,
-                  color:
-                      Colors.white.withValues(
-                    alpha: 0.28,
-                  ),
+                  color: Colors.white.withValues(alpha: 0.28),
                   size: 24,
                 ),
               ],
@@ -276,6 +197,24 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   // ==========================================================
+  // ⭐ PREMIUM MENU ITEM
+  // ==========================================================
+
+  Widget _premiumItem() {
+    final bool isFinnish =
+        widget.languageCode.toLowerCase() == 'fi';
+
+    return _menuItem(
+      icon: Icons.workspace_premium_rounded,
+      title: isFinnish
+          ? 'Stelluriini Premium'
+          : 'Stelluriini Premium',
+      onTap: widget.onPremiumPressed!,
+      iconColor: goldAccentColor,
+    );
+  }
+
+  // ==========================================================
   // 👥 REFERRAL
   // ==========================================================
 
@@ -299,89 +238,49 @@ class _HomeDrawerState extends State<HomeDrawer> {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(14),
-          splashColor:
-              deleteAccountColor.withValues(
-            alpha: 0.10,
-          ),
-          highlightColor:
-              deleteAccountColor.withValues(
-            alpha: 0.05,
-          ),
-          onTap:
-              widget.onAccountDeletionPressed,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: deleteAccountColor.withValues(alpha: 0.10),
+          highlightColor: deleteAccountColor.withValues(alpha: 0.05),
+          onTap: widget.onAccountDeletionPressed,
           child: Container(
             height: 58,
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        deleteAccountColor
-                            .withValues(
-                      alpha: 0.10,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
+                  decoration: BoxDecoration(
+                    color: deleteAccountColor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(13),
                     border: Border.all(
-                      color:
-                          deleteAccountColor
-                              .withValues(
-                        alpha: 0.20,
-                      ),
+                      color: deleteAccountColor.withValues(alpha: 0.20),
                     ),
                   ),
                   child: const Icon(
-                    Icons
-                        .delete_forever_rounded,
-                    color:
-                        deleteAccountColor,
+                    Icons.delete_forever_rounded,
+                    color: deleteAccountColor,
                     size: 22,
                   ),
                 ),
-
-                const SizedBox(
-                  width: 13,
-                ),
-
+                const SizedBox(width: 13),
                 Expanded(
                   child: Text(
                     _t('deleteAccount'),
                     maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
-                      color:
-                          deleteAccountColor,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: deleteAccountColor,
                       fontSize: 15,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
                 Icon(
-                  Icons
-                      .chevron_right_rounded,
-                  color:
-                      deleteAccountColor
-                          .withValues(
-                    alpha: 0.40,
-                  ),
+                  Icons.chevron_right_rounded,
+                  color: deleteAccountColor.withValues(alpha: 0.40),
                   size: 24,
                 ),
               ],
@@ -404,48 +303,25 @@ class _HomeDrawerState extends State<HomeDrawer> {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius:
-              BorderRadius.circular(14),
-          splashColor:
-              logoutColor.withValues(
-            alpha: 0.10,
-          ),
-          highlightColor:
-              logoutColor.withValues(
-            alpha: 0.05,
-          ),
+          borderRadius: BorderRadius.circular(14),
+          splashColor: logoutColor.withValues(alpha: 0.10),
+          highlightColor: logoutColor.withValues(alpha: 0.05),
           onTap: widget.onLogoutPressed,
           child: Container(
             height: 58,
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        logoutColor
-                            .withValues(
-                      alpha: 0.10,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      13,
-                    ),
+                  decoration: BoxDecoration(
+                    color: logoutColor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(13),
                     border: Border.all(
-                      color:
-                          logoutColor
-                              .withValues(
-                        alpha: 0.18,
-                      ),
+                      color: logoutColor.withValues(alpha: 0.18),
                     ),
                   ),
                   child: const Icon(
@@ -454,34 +330,22 @@ class _HomeDrawerState extends State<HomeDrawer> {
                     size: 22,
                   ),
                 ),
-
-                const SizedBox(
-                  width: 13,
-                ),
-
+                const SizedBox(width: 13),
                 Expanded(
                   child: Text(
                     _t('logout'),
                     maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
                 Icon(
-                  Icons
-                      .chevron_right_rounded,
-                  color:
-                      Colors.white.withValues(
-                    alpha: 0.28,
-                  ),
+                  Icons.chevron_right_rounded,
+                  color: Colors.white.withValues(alpha: 0.28),
                   size: 24,
                 ),
               ],
@@ -500,12 +364,10 @@ class _HomeDrawerState extends State<HomeDrawer> {
     return Container(
       width: 76,
       height: 76,
-      padding:
-          const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient:
-            const LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -516,26 +378,19 @@ class _HomeDrawerState extends State<HomeDrawer> {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                accentColor.withValues(
-              alpha: 0.24,
-            ),
+            color: accentColor.withValues(alpha: 0.24),
             blurRadius: 18,
             spreadRadius: 2,
           ),
         ],
       ),
       child: Container(
-        padding:
-            const EdgeInsets.all(2),
-        decoration:
-            const BoxDecoration(
+        padding: const EdgeInsets.all(2),
+        decoration: const BoxDecoration(
           color: backgroundColor,
           shape: BoxShape.circle,
         ),
-        child: const CatAvatar(
-          size: 66,
-        ),
+        child: const CatAvatar(size: 66),
       ),
     );
   }
@@ -547,20 +402,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
   Widget _header() {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(
-        10,
-        10,
-        10,
-        8,
-      ),
-      padding:
-          const EdgeInsets.symmetric(
+      margin: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      padding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 14,
       ),
       decoration: BoxDecoration(
-        gradient:
-            const LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -569,20 +417,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
             Color(0xFF170D2C),
           ],
         ),
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color:
-              accentColor.withValues(
-            alpha: 0.38,
-          ),
+          color: accentColor.withValues(alpha: 0.38),
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                accentColor.withValues(
-              alpha: 0.12,
-            ),
+            color: accentColor.withValues(alpha: 0.12),
             blurRadius: 20,
             spreadRadius: 1,
           ),
@@ -590,105 +431,61 @@ class _HomeDrawerState extends State<HomeDrawer> {
       ),
       child: Column(
         children: [
-          // ==================================================
-          // TOP ROW
-          // ==================================================
-
           Row(
             children: [
               _stellaAvatar(),
-
-              const SizedBox(
-                width: 14,
-              ),
-
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         const Text(
                           '🐱',
-                          style:
-                              TextStyle(
-                            fontSize: 17,
-                          ),
+                          style: TextStyle(fontSize: 17),
                         ),
-                        const SizedBox(
-                          width: 5,
-                        ),
+                        const SizedBox(width: 5),
                         _stellaStar(
                           size: 11,
-                          color:
-                              goldAccentColor,
+                          color: goldAccentColor,
                         ),
-                        const SizedBox(
-                          width: 6,
-                        ),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                             'STELLA',
-                            overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style:
-                                TextStyle(
-                              color:
-                                  goldAccentColor
-                                      .withValues(
-                                alpha: 0.95,
-                              ),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: goldAccentColor.withValues(alpha: 0.95),
                               fontSize: 11,
-                              fontWeight:
-                                  FontWeight.bold,
-                              letterSpacing:
-                                  1.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
                             ),
                           ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(
-                      height: 4,
-                    ),
-
+                    const SizedBox(height: 4),
                     const Text(
                       'STELLURIINI',
                       maxLines: 1,
-                      overflow:
-                          TextOverflow
-                              .ellipsis,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         letterSpacing: 2,
                       ),
                     ),
-
-                    const SizedBox(
-                      height: 4,
-                    ),
-
+                    const SizedBox(height: 4),
                     Text(
                       _t('stellaCommunity'),
                       maxLines: 1,
-                      overflow:
-                          TextOverflow
-                              .ellipsis,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color:
-                            pinkAccentColor
-                                .withValues(
-                          alpha: 0.82,
-                        ),
+                        color: pinkAccentColor.withValues(alpha: 0.82),
                         fontSize: 11,
-                        fontWeight:
-                            FontWeight.w600,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -696,76 +493,40 @@ class _HomeDrawerState extends State<HomeDrawer> {
               ),
             ],
           ),
-
-          const SizedBox(
-            height: 10,
-          ),
-
-          // ==================================================
-          // STELLURIINI / SOLANA
-          // ==================================================
-
+          const SizedBox(height: 10),
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 25,
                 height: 1,
-                color:
-                    accentColor.withValues(
-                  alpha: 0.22,
-                ),
+                color: accentColor.withValues(alpha: 0.22),
               ),
-              const SizedBox(
-                width: 8,
-              ),
+              const SizedBox(width: 8),
               _stellaStar(
                 size: 12,
-                color:
-                    goldAccentColor
-                        .withValues(
-                  alpha: 0.80,
-                ),
+                color: goldAccentColor.withValues(alpha: 0.80),
               ),
-              const SizedBox(
-                width: 7,
-              ),
+              const SizedBox(width: 7),
               Text(
                 '🐾 STL • SOLANA 🐾',
                 style: TextStyle(
-                  color:
-                      pinkAccentColor
-                          .withValues(
-                    alpha: 0.82,
-                  ),
+                  color: pinkAccentColor.withValues(alpha: 0.82),
                   fontSize: 9,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
                 ),
               ),
-              const SizedBox(
-                width: 7,
-              ),
+              const SizedBox(width: 7),
               _stellaStar(
                 size: 12,
-                color:
-                    goldAccentColor
-                        .withValues(
-                  alpha: 0.80,
-                ),
+                color: goldAccentColor.withValues(alpha: 0.80),
               ),
-              const SizedBox(
-                width: 8,
-              ),
+              const SizedBox(width: 8),
               Container(
                 width: 25,
                 height: 1,
-                color:
-                    accentColor.withValues(
-                  alpha: 0.22,
-                ),
+                color: accentColor.withValues(alpha: 0.22),
               ),
             ],
           ),
@@ -781,21 +542,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
   Widget _footer() {
     return Container(
       width: double.infinity,
-      margin:
-          const EdgeInsets.fromLTRB(
-        12,
-        4,
-        12,
-        10,
-      ),
-      padding:
-          const EdgeInsets.symmetric(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+      padding: const EdgeInsets.symmetric(
         horizontal: 12,
         vertical: 9,
       ),
       decoration: BoxDecoration(
-        gradient:
-            const LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -803,117 +556,65 @@ class _HomeDrawerState extends State<HomeDrawer> {
             Color(0xFF1A0E31),
           ],
         ),
-        borderRadius:
-            BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color:
-              accentColor.withValues(
-            alpha: 0.18,
-          ),
+          color: accentColor.withValues(alpha: 0.18),
         ),
       ),
       child: Column(
         children: [
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                '🐾',
-                style:
-                    TextStyle(fontSize: 13),
-              ),
-              const SizedBox(
-                width: 6,
-              ),
+              const Text('🐾', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   _t('footerTagline'),
                   maxLines: 1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  textAlign:
-                      TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color:
-                        Colors.white.withValues(
-                      alpha: 0.58,
-                    ),
+                    color: Colors.white.withValues(alpha: 0.58),
                     fontSize: 9,
-                    fontWeight:
-                        FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(
-                width: 6,
-              ),
-              const Text(
-                '🐾',
-                style:
-                    TextStyle(fontSize: 13),
-              ),
+              const SizedBox(width: 6),
+              const Text('🐾', style: TextStyle(fontSize: 13)),
             ],
           ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
+          const SizedBox(height: 5),
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 18,
                 height: 1,
-                color:
-                    accentColor.withValues(
-                  alpha: 0.20,
-                ),
+                color: accentColor.withValues(alpha: 0.20),
               ),
-              const SizedBox(
-                width: 6,
-              ),
+              const SizedBox(width: 6),
               _stellaStar(
                 size: 10,
-                color:
-                    goldAccentColor
-                        .withValues(
-                  alpha: 0.75,
-                ),
+                color: goldAccentColor.withValues(alpha: 0.75),
               ),
-              const SizedBox(
-                width: 6,
-              ),
+              const SizedBox(width: 6),
               Container(
                 width: 18,
                 height: 1,
-                color:
-                    accentColor.withValues(
-                  alpha: 0.20,
-                ),
+                color: accentColor.withValues(alpha: 0.20),
               ),
             ],
           ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
+          const SizedBox(height: 5),
           Text(
             _t('footerToken'),
-            textAlign:
-                TextAlign.center,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color:
-                  pinkAccentColor
-                      .withValues(
-                alpha: 0.68,
-              ),
+              color: pinkAccentColor.withValues(alpha: 0.68),
               fontSize: 9,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
               letterSpacing: 0.8,
             ),
           ),
@@ -929,158 +630,86 @@ class _HomeDrawerState extends State<HomeDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor:
-          backgroundColor,
+      backgroundColor: backgroundColor,
       elevation: 18,
-      shadowColor:
-          accentColor.withValues(
-        alpha: 0.35,
-      ),
-      surfaceTintColor:
-          Colors.transparent,
+      shadowColor: accentColor.withValues(alpha: 0.35),
+      surfaceTintColor: Colors.transparent,
       child: SafeArea(
         child: Column(
           children: [
-            // ==================================================
-            // 🐱 COMPACT HEADER
-            // ==================================================
-
             _header(),
-
-            // ==================================================
-            // 📋 MENU
-            // ==================================================
 
             Expanded(
               child: ListView(
-                padding:
-                    const EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   top: 2,
                   bottom: 4,
                 ),
                 children: [
-                  // ------------------------------------------------
-                  // 🌍 LANGUAGE
-                  // ------------------------------------------------
-
+                  // LANGUAGE
                   _menuItem(
-                    icon:
-                        Icons.language_rounded,
-                    title:
-                        _t('language'),
-                    onTap:
-                        widget
-                            .onLanguagePressed,
+                    icon: Icons.language_rounded,
+                    title: _t('language'),
+                    onTap: widget.onLanguagePressed,
                   ),
 
-                  // ------------------------------------------------
-                  // ℹ️ ABOUT
-                  // ------------------------------------------------
-
+                  // ABOUT
                   _menuItem(
-                    icon: Icons
-                        .info_outline_rounded,
-                    title:
-                        _t('aboutStelluriini'),
-                    onTap:
-                        widget
-                            .onAboutPressed,
+                    icon: Icons.info_outline_rounded,
+                    title: _t('aboutStelluriini'),
+                    onTap: widget.onAboutPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // 📄 WHITE PAPER
-                  // ------------------------------------------------
-
+                  // WHITE PAPER
                   _menuItem(
-                    icon: Icons
-                        .description_outlined,
-                    title:
-                        _t('whitePaper'),
-                    onTap:
-                        widget
-                            .onWhitePaperPressed,
+                    icon: Icons.description_outlined,
+                    title: _t('whitePaper'),
+                    onTap: widget.onWhitePaperPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // 🗺️ ROADMAP
-                  // ------------------------------------------------
-
+                  // ROADMAP
                   _menuItem(
-                    icon:
-                        Icons.map_outlined,
-                    title:
-                        _t('roadmap'),
-                    onTap:
-                        widget
-                            .onRoadmapPressed,
+                    icon: Icons.map_outlined,
+                    title: _t('roadmap'),
+                    onTap: widget.onRoadmapPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // 📉 HALVING
-                  // ------------------------------------------------
-
+                  // HALVING
                   if (widget.onHalvingPressed != null)
                     _halvingItem(),
 
-                  // ------------------------------------------------
-                  // 👥 REFERRALS
-                  // ------------------------------------------------
+                  // PREMIUM
+                  if (widget.onPremiumPressed != null)
+                    _premiumItem(),
 
+                  // REFERRALS
                   _referralItem(),
 
-                  // ------------------------------------------------
-                  // 🏆 ACHIEVEMENTS
-                  // ------------------------------------------------
-
+                  // ACHIEVEMENTS
                   _menuItem(
-                    icon: Icons
-                        .emoji_events_rounded,
-                    title:
-                        _achievementsLocalization
-                            .get(
+                    icon: Icons.emoji_events_rounded,
+                    title: _achievementsLocalization.get(
                       'achievementsTitle',
                     ),
-                    onTap:
-                        widget
-                            .onAchievementsPressed,
-                    iconColor:
-                        goldAccentColor,
+                    onTap: widget.onAchievementsPressed,
+                    iconColor: goldAccentColor,
                   ),
 
-                  // ------------------------------------------------
-                  // 🕒 TRANSACTION HISTORY
-                  // ------------------------------------------------
-
+                  // TRANSACTION HISTORY
                   _menuItem(
-                    icon: Icons
-                        .history_rounded,
-                    title:
-                        _t(
-                      'transactionHistory',
-                    ),
-                    onTap:
-                        widget
-                            .onTransactionHistoryPressed,
+                    icon: Icons.history_rounded,
+                    title: _t('transactionHistory'),
+                    onTap: widget.onTransactionHistoryPressed,
                   ),
 
-                  // ------------------------------------------------
-                  // 🗑️ ACCOUNT DELETION
-                  // ------------------------------------------------
-
+                  // ACCOUNT DELETION
                   _accountDeletionItem(),
 
-                  // ------------------------------------------------
-                  // 🚪 LOGOUT
-                  // ------------------------------------------------
-
+                  // LOGOUT
                   _logoutItem(),
                 ],
               ),
             ),
-
-            // ==================================================
-            // 🐾 FOOTER
-            // ==================================================
 
             _footer(),
           ],
