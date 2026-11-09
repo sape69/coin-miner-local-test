@@ -9,10 +9,44 @@
 // Tämä moduuli sisältää claimMining Firebase Callable
 // -toiminnon erillään miningFunctions.js-tiedostosta.
 //
-// Riippuvuudet annetaan factory-funktion kautta.
-// Nykyistä louhintalogiikkaa ei kopioida eikä muuteta.
+// Premium-käyttäjän mainosvapaa Mining Start tarkistetaan
+// palvelimella Firestoresta.
 //
 // ============================================================
+
+// ------------------------------------------------------------
+// VERIFIED PREMIUM ENTITLEMENT
+// ------------------------------------------------------------
+
+function hasActiveVerifiedPremium(data, referenceNowMs) {
+  if (
+    !data ||
+    data.premium !== true ||
+    data.premiumVerified !== true
+  ) {
+    return false;
+  }
+
+  const expiry = data.premiumExpiryTime;
+  let expiryMs = NaN;
+
+  if (expiry && typeof expiry.toMillis === "function") {
+    expiryMs = expiry.toMillis();
+  } else if (expiry && typeof expiry.toDate === "function") {
+    expiryMs = expiry.toDate().getTime();
+  } else if (expiry instanceof Date) {
+    expiryMs = expiry.getTime();
+  } else if (typeof expiry === "number") {
+    expiryMs = expiry;
+  } else if (typeof expiry === "string") {
+    expiryMs = Date.parse(expiry);
+  }
+
+  return (
+    Number.isFinite(expiryMs) &&
+    expiryMs > referenceNowMs
+  );
+}
 
 function createClaimMining({
   onCall,
@@ -202,13 +236,26 @@ function createClaimMining({
         }
 
         // ------------------------------------------------------
-        // ADMOB REWARD
+        // PREMIUM / ADMOB REWARD
         // ------------------------------------------------------
+
+        const earlyPremiumMining =
+          hasActiveVerifiedPremium(
+            earlyData,
+            earlyNowMs
+          );
 
         let transactionId = "";
         let rewardRef = null;
 
-        if (ADMOB_TEST_MODE === true) {
+        if (earlyPremiumMining) {
+          transactionId =
+            `premium-mining-start-${uid}-${earlyNowMs}`;
+
+          console.log(
+            "🐱 Premium entitlement verified: Mining Start ad bypassed."
+          );
+        } else if (ADMOB_TEST_MODE === true) {
           transactionId =
             requestedTransactionId ||
             `test-mining-start-${uid}-${earlyNowMs}`;
@@ -395,12 +442,31 @@ function createClaimMining({
             }
 
             // --------------------------------------------------
-            // ADMOB VALIDATION
+            // PREMIUM ENTITLEMENT / ADMOB VALIDATION
             // --------------------------------------------------
+
+            const premiumMining =
+              hasActiveVerifiedPremium(
+                data,
+                nowMs
+              );
+
+            if (
+              earlyPremiumMining &&
+              !premiumMining
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "🐱 Premium-tilaus ei ole enää voimassa. Päivitä tilaus tai katso mainos aloittaaksesi louhinnan."
+              );
+            }
 
             let authoritativeId = transactionId;
 
-            if (ADMOB_TEST_MODE !== true) {
+            if (
+              !premiumMining &&
+              ADMOB_TEST_MODE !== true
+            ) {
               let validated;
 
               try {
@@ -658,6 +724,7 @@ function createClaimMining({
             // --------------------------------------------------
 
             if (
+              !premiumMining &&
               ADMOB_TEST_MODE !== true &&
               rewardRef
             ) {
@@ -828,6 +895,9 @@ function createClaimMining({
 
                 rewardPurpose: "mining_start",
 
+                premiumAdFreeMining:
+                  premiumMining,
+
                 admobTestMode:
                   ADMOB_TEST_MODE === true,
 
@@ -933,7 +1003,11 @@ function createClaimMining({
                 authoritativeId,
 
               rewardConsumed:
+                !premiumMining &&
                 ADMOB_TEST_MODE !== true,
+
+              premiumAdFreeMining:
+                premiumMining,
 
               admobTestMode:
                 ADMOB_TEST_MODE === true,
@@ -945,7 +1019,9 @@ function createClaimMining({
                     ? `🐱🏆✨ Stella avasi achievement-palkinnon! +${achievementReward} STL.`
                     : completedPrevious
                       ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
-                      : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
+                      : premiumMining
+                        ? `🐱✨ Stella aloitti mainosvapaan Premium-louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
+                        : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
             };
           }
         );
