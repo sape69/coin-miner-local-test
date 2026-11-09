@@ -1,36 +1,20 @@
-
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
-// ============================================================
-// 🐱 STELLURIINI - PREMIUM SUBSCRIPTION SERVICE
-// ============================================================
-//
-// Google Play Billing + Firebase server-side verification.
-//
-// Products:
-// - stelluriini_premium_monthly      €1.99 / month
-// - stelluriini_premium_plus_monthly €4.99 / month
-//
-// ============================================================
-
+/// Stelluriini Premium -tilausten hallinta.
+///
+/// Google Play hoitaa maksun ja Firebase Functions varmentaa ostot.
+/// Ostoa ei kuitata valmiiksi ennen onnistunutta palvelinvarmennusta.
 class PremiumSubscriptionService extends ChangeNotifier {
   PremiumSubscriptionService({
     InAppPurchase? inAppPurchase,
     FirebaseFunctions? functions,
-  })  : _inAppPurchase =
-            inAppPurchase ?? InAppPurchase.instance,
+  })  : _inAppPurchase = inAppPurchase ?? InAppPurchase.instance,
         _functions = functions ??
-            FirebaseFunctions.instanceFor(
-              region: 'us-central1',
-            );
-
-  // ==========================================================
-  // CONFIGURATION
-  // ==========================================================
+            FirebaseFunctions.instanceFor(region: 'us-central1');
 
   static const String premiumProductId =
       'stelluriini_premium_monthly';
@@ -43,157 +27,61 @@ class PremiumSubscriptionService extends ChangeNotifier {
     premiumPlusProductId,
   };
 
-  // ==========================================================
-  // SERVICES
-  // ==========================================================
-
   final InAppPurchase _inAppPurchase;
-
   final FirebaseFunctions _functions;
 
-  StreamSubscription<List<PurchaseDetails>>?
-      _purchaseSubscription;
-
-  // ==========================================================
-  // STATE
-  // ==========================================================
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 
   final List<ProductDetails> _products = [];
+
+  bool _initialized = false;
+  bool _disposed = false;
+  bool _storeAvailable = false;
+  bool _loading = false;
+  bool _purchasePending = false;
+  bool _verifying = false;
+
+  String? _error;
+  String? _message;
+
+  String _activeTier = 'free';
+  DateTime? _premiumExpiresAt;
+
+  // ------------------------------------------------------------
+  // GETTERS
+  // ------------------------------------------------------------
+
+  bool get isInitialized => _initialized;
+
+  bool get isStoreAvailable => _storeAvailable;
+
+  bool get isLoading => _loading;
+
+  bool get isPurchasePending => _purchasePending;
+
+  bool get isVerifying => _verifying;
+
+  bool get isPremium => _activeTier == 'premium' ||
+      _activeTier == 'premium_plus';
+
+  bool get isPremiumPlus => _activeTier == 'premium_plus';
+
+  bool get isDisposed => _disposed;
+
+  String get activeTier => _activeTier;
+
+  String? get error => _error;
+
+  String? get message => _message;
+
+  DateTime? get premiumExpiresAt => _premiumExpiresAt;
 
   List<ProductDetails> get products =>
       List.unmodifiable(_products);
 
-  bool _storeAvailable = false;
-
-  bool get storeAvailable => _storeAvailable;
-
-  bool _loading = false;
-
-  bool get loading => _loading;
-
-  bool _purchasePending = false;
-
-  bool get purchasePending => _purchasePending;
-
-  bool _verifying = false;
-
-  bool get verifying => _verifying;
-
-  bool _initialized = false;
-
-  bool get initialized => _initialized;
-
-  String? _error;
-
-  String? get error => _error;
-
-  String? _message;
-
-  String? get message => _message;
-
-  String? _activeTier;
-
-  String? get activeTier => _activeTier;
-
-  DateTime? _expiryTime;
-
-  DateTime? get expiryTime => _expiryTime;
-
-  bool get isPremium =>
-      _activeTier == 'premium' ||
-      _activeTier == 'premium_plus';
-
-  bool get isPremiumPlus =>
-      _activeTier == 'premium_plus';
-
-  // ==========================================================
-  // INITIALIZE
-  // ==========================================================
-
-  Future<void> initialize() async {
-    if (_initialized) {
-      return;
-    }
-
-    _setLoading(true);
-    _error = null;
-    _message = null;
-
-    try {
-      _storeAvailable =
-          await _inAppPurchase.isAvailable();
-
-      if (!_storeAvailable) {
-        _error =
-            'Google Play -kauppa ei ole tällä hetkellä käytettävissä.';
-        return;
-      }
-
-      _purchaseSubscription ??=
-          _inAppPurchase.purchaseStream.listen(
-        _handlePurchaseUpdates,
-        onError: (Object error) {
-          _setError(
-            'Ostotapahtuman käsittely epäonnistui: $error',
-          );
-        },
-      );
-
-      await loadProducts();
-
-      _initialized = true;
-    } catch (error) {
-      _error =
-          'Premium-palvelun käynnistäminen epäonnistui: $error';
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // ==========================================================
-  // LOAD GOOGLE PLAY PRODUCTS
-  // ==========================================================
-
-  Future<void> loadProducts() async {
-    _error = null;
-
-    try {
-      final ProductDetailsResponse response =
-          await _inAppPurchase.queryProductDetails(
-        productIds,
-      );
-
-      if (response.error != null) {
-        _error =
-            'Premium-tuotteiden hakeminen epäonnistui: '
-            '${response.error!.message}';
-      }
-
-      _products
-        ..clear()
-        ..addAll(response.productDetails);
-
-      if (response.notFoundIDs.isNotEmpty) {
-        _error ??=
-            'Google Playsta puuttuvat tuotteet: '
-            '${response.notFoundIDs.join(', ')}';
-      }
-
-      _notify();
-    } catch (error) {
-      _setError(
-        'Tuotteiden hakeminen epäonnistui: $error',
-      );
-    }
-  }
-
-  // ==========================================================
-  // GET PRODUCT
-  // ==========================================================
-
-  ProductDetails? getProduct(String productId) {
-    for (final ProductDetails product in _products) {
-      if (product.id == productId) {
+  ProductDetails? get premiumProduct {
+    for (final product in _products) {
+      if (product.id == premiumProductId) {
         return product;
       }
     }
@@ -201,133 +89,224 @@ class PremiumSubscriptionService extends ChangeNotifier {
     return null;
   }
 
-  // ==========================================================
-  // BUY PREMIUM
-  // ==========================================================
+  ProductDetails? get premiumPlusProduct {
+    for (final product in _products) {
+      if (product.id == premiumPlusProductId) {
+        return product;
+      }
+    }
 
-  Future<bool> buyPremium() {
+    return null;
+  }
+
+  String get premiumPrice =>
+      premiumProduct?.price ?? 'Ei saatavilla';
+
+  String get premiumPlusPrice =>
+      premiumPlusProduct?.price ?? 'Ei saatavilla';
+
+  // ------------------------------------------------------------
+  // INITIALIZATION
+  // ------------------------------------------------------------
+
+  Future<void> initialize() async {
+    if (_disposed || _initialized || _loading) {
+      return;
+    }
+
+    _loading = true;
+    _error = null;
+    _message = null;
+    _notify();
+
+    try {
+      _storeAvailable = await _inAppPurchase.isAvailable();
+
+      if (_disposed) return;
+
+      if (!_storeAvailable) {
+        _error = 'Google Play -kauppa ei ole käytettävissä.';
+        return;
+      }
+
+      await _purchaseSubscription?.cancel();
+
+      if (_disposed) return;
+
+      _purchaseSubscription =
+          _inAppPurchase.purchaseStream.listen(
+        _handlePurchaseUpdates,
+        onError: (Object error) {
+          if (_disposed) return;
+
+          _error = 'Ostotapahtuman käsittely epäonnistui.';
+          _purchasePending = false;
+          _verifying = false;
+          _notify();
+        },
+      );
+
+      await loadProducts();
+
+      if (_disposed) return;
+
+      _initialized = true;
+    } catch (e) {
+      if (!_disposed) {
+        _error = 'Premium-palvelun käynnistys epäonnistui.';
+      }
+    } finally {
+      _loading = false;
+      _notify();
+    }
+  }
+
+  // ------------------------------------------------------------
+  // LOAD PRODUCTS
+  // ------------------------------------------------------------
+
+  Future<void> loadProducts() async {
+    if (_disposed) return;
+
+    try {
+      final ProductDetailsResponse response =
+          await _inAppPurchase.queryProductDetails(productIds);
+
+      if (_disposed) return;
+
+      _products
+        ..clear()
+        ..addAll(response.productDetails);
+
+      if (response.error != null) {
+        _error = 'Tuotteiden lataaminen epäonnistui.';
+      } else if (response.notFoundIDs.isNotEmpty) {
+        _error =
+            'Kaikkia Premium-tuotteita ei löytynyt Google Playsta.';
+      } else {
+        _error = null;
+      }
+
+      _notify();
+    } catch (e) {
+      if (!_disposed) {
+        _error = 'Premium-tuotteiden lataaminen epäonnistui.';
+        _notify();
+      }
+    }
+  }
+
+  // ------------------------------------------------------------
+  // BUY PREMIUM
+  // ------------------------------------------------------------
+
+  Future<bool> buyPremium() async {
     return _buyProduct(premiumProductId);
   }
 
-  // ==========================================================
-  // BUY PREMIUM PLUS
-  // ==========================================================
-
-  Future<bool> buyPremiumPlus() {
+  Future<bool> buyPremiumPlus() async {
     return _buyProduct(premiumPlusProductId);
   }
 
-  // ==========================================================
-  // BUY PRODUCT
-  // ==========================================================
-
   Future<bool> _buyProduct(String productId) async {
+    if (_disposed) return false;
+
     if (!_storeAvailable) {
-      _setError(
-        'Google Play -kauppa ei ole käytettävissä.',
-      );
+      _error = 'Google Play -kauppa ei ole käytettävissä.';
+      _notify();
       return false;
     }
 
     if (_purchasePending || _verifying) {
-      _setError(
-        'Ostoa käsitellään jo. Odota hetki.',
-      );
+      _error = 'Aiempi ostotapahtuma on vielä kesken.';
+      _notify();
       return false;
     }
 
-    final ProductDetails? product =
-        getProduct(productId);
+    ProductDetails? product;
+
+    for (final item in _products) {
+      if (item.id == productId) {
+        product = item;
+        break;
+      }
+    }
 
     if (product == null) {
-      _setError(
-        'Tuotetta ei löytynyt Google Playsta. '
-        'Päivitä tuoteluettelo ja yritä uudelleen.',
-      );
+      _error = 'Valittua Premium-tuotetta ei löytynyt.';
+      _notify();
       return false;
     }
 
-    _error = null;
-    _message = null;
-
     try {
-      final PurchaseParam purchaseParam =
-          PurchaseParam(
-        productDetails: product,
-      );
-
+      _error = null;
+      _message = null;
       _purchasePending = true;
       _notify();
 
-      final bool started =
-          await _inAppPurchase.buyNonConsumable(
+      final PurchaseParam purchaseParam =
+          PurchaseParam(productDetails: product);
+
+      return await _inAppPurchase.buyNonConsumable(
         purchaseParam: purchaseParam,
       );
-
-      if (!started) {
+    } catch (e) {
+      if (!_disposed) {
         _purchasePending = false;
-        _setError(
-          'Google Play ei käynnistänyt ostotapahtumaa.',
-        );
-        return false;
+        _error = 'Oston käynnistäminen epäonnistui.';
+        _notify();
       }
-
-      return true;
-    } catch (error) {
-      _purchasePending = false;
-
-      _setError(
-        'Premium-oston käynnistäminen epäonnistui: $error',
-      );
 
       return false;
     }
   }
 
-  // ==========================================================
+  // ------------------------------------------------------------
   // RESTORE PURCHASES
-  // ==========================================================
+  // ------------------------------------------------------------
 
   Future<void> restorePurchases() async {
+    if (_disposed) return;
+
     if (!_storeAvailable) {
-      _setError(
-        'Google Play -kauppa ei ole käytettävissä.',
-      );
+      _error = 'Google Play -kauppa ei ole käytettävissä.';
+      _notify();
       return;
     }
-
-    if (_purchasePending || _verifying) {
-      _setError(
-        'Ostotapahtumaa käsitellään jo.',
-      );
-      return;
-    }
-
-    _error = null;
-    _message = null;
-    _setLoading(true);
 
     try {
+      _loading = true;
+      _error = null;
+      _message = null;
+      _notify();
+
       await _inAppPurchase.restorePurchases();
 
-      _message =
-          'Ostojen palautuspyyntö lähetettiin Google Playhin.';
-    } catch (error) {
-      _error =
-          'Ostojen palauttaminen epäonnistui: $error';
+      if (_disposed) return;
+
+      _message = 'Ostojen palautus käynnistetty.';
+    } catch (e) {
+      if (!_disposed) {
+        _error = 'Ostojen palauttaminen epäonnistui.';
+      }
     } finally {
-      _setLoading(false);
+      _loading = false;
+      _notify();
     }
   }
 
-  // ==========================================================
+  // ------------------------------------------------------------
   // PURCHASE STREAM
-  // ==========================================================
+  // ------------------------------------------------------------
 
   Future<void> _handlePurchaseUpdates(
     List<PurchaseDetails> purchases,
   ) async {
-    for (final PurchaseDetails purchase in purchases) {
+    if (_disposed) return;
+
+    for (final purchase in purchases) {
+      if (_disposed) return;
+
       switch (purchase.status) {
         case PurchaseStatus.pending:
           _purchasePending = true;
@@ -342,198 +321,187 @@ class PremiumSubscriptionService extends ChangeNotifier {
 
         case PurchaseStatus.error:
           _purchasePending = false;
-
-          _setError(
-            purchase.error?.message ??
-                'Google Play -osto epäonnistui.',
-          );
+          _verifying = false;
+          _error = purchase.error?.message ??
+              'Ostotapahtuma epäonnistui.';
 
           await _completePurchaseIfNeeded(purchase);
+
+          _notify();
           break;
 
         case PurchaseStatus.canceled:
           _purchasePending = false;
+          _verifying = false;
           _message = 'Osto peruutettiin.';
-          _notify();
 
           await _completePurchaseIfNeeded(purchase);
+
+          _notify();
           break;
       }
     }
   }
 
-  // ==========================================================
+  // ------------------------------------------------------------
   // VERIFY PURCHASE WITH FIREBASE
-  // ==========================================================
+  // ------------------------------------------------------------
 
   Future<void> _verifyPurchase(
     PurchaseDetails purchase,
   ) async {
-    if (!productIds.contains(purchase.productID)) {
-      _purchasePending = false;
+    if (_disposed) return;
 
-      _setError(
-        'Tuntematon Premium-tuote: ${purchase.productID}',
-      );
-
-      await _completePurchaseIfNeeded(purchase);
-      return;
-    }
-
-    final String purchaseToken =
-        purchase.verificationData.serverVerificationData
-            .trim();
-
-    if (purchaseToken.isEmpty) {
-      _purchasePending = false;
-
-      _setError(
-        'Google Play -ostotunniste puuttuu.',
-      );
-
-      await _completePurchaseIfNeeded(purchase);
-      return;
-    }
-
-    _verifying = true;
-    _purchasePending = true;
-    _error = null;
-    _message =
-        'Varmennetaan Premium-tilausta...';
-
-    _notify();
+    bool verified = false;
 
     try {
+      _verifying = true;
+      _purchasePending = true;
+      _error = null;
+      _message = 'Varmistetaan Premium-tilausta...';
+      _notify();
+
+      final String productId = purchase.productID;
+
+      if (!productIds.contains(productId)) {
+        throw Exception('Tuntematon Premium-tuote.');
+      }
+
+      final String purchaseToken =
+          purchase.verificationData.serverVerificationData;
+
+      if (purchaseToken.trim().isEmpty) {
+        throw Exception('Google Play -ostotunniste puuttuu.');
+      }
+
       final HttpsCallable callable =
-          _functions.httpsCallable(
-        'verifyPlaySubscription',
-        options: HttpsCallableOptions(
-          timeout: const Duration(seconds: 30),
-        ),
-      );
+          _functions.httpsCallable('verifyPlaySubscription');
 
       final HttpsCallableResult<dynamic> result =
           await callable.call({
-        'productId': purchase.productID,
+        'productId': productId,
         'purchaseToken': purchaseToken,
       });
 
-      final dynamic raw = result.data;
+      if (_disposed) return;
 
-      if (raw is! Map) {
-        throw Exception(
-          'Palvelin palautti virheellisen vastauksen.',
-        );
+      final dynamic data = result.data;
+
+      if (data is! Map) {
+        throw Exception('Palvelimen vastaus oli virheellinen.');
       }
 
-      final Map<String, dynamic> data =
-          Map<String, dynamic>.from(raw);
+      final bool success = data['success'] == true;
 
-      if (data['success'] != true ||
-          data['verified'] != true) {
+      if (!success) {
         throw Exception(
-          'Google Play -tilauksen varmennus epäonnistui.',
+          data['message']?.toString() ??
+              'Google Play -tilausta ei voitu varmentaa.',
         );
       }
 
       final String tier =
           data['tier']?.toString() ?? '';
 
-      if (tier != 'premium' &&
-          tier != 'premium_plus') {
-        throw Exception(
-          'Palvelin palautti tuntemattoman tilaustason.',
-        );
+      if (tier != 'premium' && tier != 'premium_plus') {
+        throw Exception('Palvelin palautti virheellisen tilaustason.');
       }
 
       _activeTier = tier;
 
-      final String? expiry =
-          data['expiryTime']?.toString();
+      final dynamic expiryValue = data['expiresAt'];
 
-      _expiryTime = expiry == null
-          ? null
-          : DateTime.tryParse(expiry);
+      if (expiryValue is String) {
+        _premiumExpiresAt = DateTime.tryParse(expiryValue);
+      } else if (expiryValue is int) {
+        _premiumExpiresAt =
+            DateTime.fromMillisecondsSinceEpoch(expiryValue);
+      }
 
       _message = tier == 'premium_plus'
           ? 'Premium Plus on aktivoitu!'
           : 'Premium on aktivoitu!';
 
       _error = null;
-    } catch (error) {
-      _error =
-          'Premium-tilauksen varmennus epäonnistui: $error';
 
-      _message = null;
+      // Ostoa voidaan kuitata vasta onnistuneen
+      // palvelinvarmennuksen jälkeen.
+      verified = true;
+    } catch (e) {
+      if (!_disposed) {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _message = null;
+      }
     } finally {
-      _verifying = false;
-      _purchasePending = false;
+      if (!_disposed) {
+        _verifying = false;
+        _purchasePending = false;
 
-      await _completePurchaseIfNeeded(purchase);
+        if (verified) {
+          await _completePurchaseIfNeeded(purchase);
+        }
 
-      _notify();
+        _notify();
+      }
     }
   }
 
-  // ==========================================================
+  // ------------------------------------------------------------
   // COMPLETE PURCHASE
-  // ==========================================================
+  // ------------------------------------------------------------
 
   Future<void> _completePurchaseIfNeeded(
     PurchaseDetails purchase,
   ) async {
+    if (_disposed) return;
+
     if (!purchase.pendingCompletePurchase) {
       return;
     }
 
     try {
       await _inAppPurchase.completePurchase(purchase);
-    } catch (error) {
-      _setError(
-        'Oston viimeistely epäonnistui: $error',
-      );
+    } catch (e) {
+      if (!_disposed) {
+        _error =
+            'Oston kuittaus epäonnistui. Voit yrittää palauttaa ostot myöhemmin.';
+        _notify();
+      }
     }
   }
 
-  // ==========================================================
-  // CLEAR MESSAGES
-  // ==========================================================
+  // ------------------------------------------------------------
+  // CLEAR MESSAGE
+  // ------------------------------------------------------------
 
-  void clearMessages() {
+  void clearMessage() {
+    if (_disposed) return;
+
+    _message = null;
     _error = null;
-    _message = null;
     _notify();
   }
 
-  // ==========================================================
-  // INTERNAL STATE HELPERS
-  // ==========================================================
-
-  void _setLoading(bool value) {
-    _loading = value;
-    _notify();
-  }
-
-  void _setError(String value) {
-    _error = value;
-    _message = null;
-    _notify();
-  }
+  // ------------------------------------------------------------
+  // NOTIFY
+  // ------------------------------------------------------------
 
   void _notify() {
-    if (!isDisposed) {
+    if (!_disposed) {
       notifyListeners();
     }
   }
 
-  bool get isDisposed => !_initialized && false;
-
-  // ==========================================================
+  // ------------------------------------------------------------
   // DISPOSE
-  // ==========================================================
+  // ------------------------------------------------------------
 
   @override
   void dispose() {
+    if (_disposed) return;
+
+    _disposed = true;
+
     _purchaseSubscription?.cancel();
     _purchaseSubscription = null;
 
