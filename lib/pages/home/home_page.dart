@@ -18,6 +18,7 @@ import '../achievements/achievements_page.dart';
 import '../history/transaction_history_page.dart';
 import '../halving/halving_page.dart';
 import '../referrals/referrals_page.dart';
+import '../premium/premium_page.dart';
 import '../roadmap/roadmap_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
@@ -1567,6 +1568,14 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  void _openPremium() {
+    _openPage(
+      PremiumPage(
+        languageCode: widget.languageCode,
+      ),
+    );
+  }
+
   // ============================================================
   // 🌐 LANGUAGE DIALOG
   // ============================================================
@@ -1900,6 +1909,8 @@ class _HomePageState extends State<HomePage>
             _openTransactionHistory,
         onReferralPressed:
             _openReferrals,
+        onPremiumPressed:
+            _openPremium,
         onAccountDeletionPressed:
             _openAccountDeletion,
         onLogoutPressed:
