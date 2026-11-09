@@ -124,6 +124,7 @@ class _HomePageState extends State<HomePage>
   bool _actionLoading = false;
   bool _miningActive = false;
   bool _deletingAccount = false;
+  bool _premiumActive = false;
 
   double _hashRate = defaultDailyHashRate;
   double _unclaimedMining = 0;
@@ -537,6 +538,43 @@ class _HomePageState extends State<HomePage>
   // 👤 LOAD USERNAME
   // ============================================================
 
+  bool _isActivePremiumProfile(Map<String, dynamic> profile) {
+    if (profile['premium'] != true ||
+        profile['premiumVerified'] != true) {
+      return false;
+    }
+
+    final dynamic rawExpiry = profile['premiumExpiryTime'];
+    DateTime? expiry;
+
+    if (rawExpiry is DateTime) {
+      expiry = rawExpiry;
+    } else if (rawExpiry is String) {
+      expiry = DateTime.tryParse(rawExpiry);
+    } else if (rawExpiry is int) {
+      expiry = DateTime.fromMillisecondsSinceEpoch(rawExpiry);
+    } else if (rawExpiry is double && rawExpiry.isFinite) {
+      expiry = DateTime.fromMillisecondsSinceEpoch(
+        rawExpiry.toInt(),
+      );
+    } else if (rawExpiry is Map) {
+      final dynamic seconds =
+          rawExpiry['_seconds'] ?? rawExpiry['seconds'];
+      final dynamic nanoseconds =
+          rawExpiry['_nanoseconds'] ?? rawExpiry['nanoseconds'] ?? 0;
+
+      if (seconds is num && nanoseconds is num) {
+        final int milliseconds =
+            seconds.toInt() * 1000 +
+            (nanoseconds.toInt() ~/ 1000000);
+
+        expiry = DateTime.fromMillisecondsSinceEpoch(milliseconds);
+      }
+    }
+
+    return expiry != null && expiry.isAfter(DateTime.now());
+  }
+
   Future<void> _loadUsername() async {
     final User? user = _auth.currentUser;
 
@@ -562,12 +600,22 @@ class _HomePageState extends State<HomePage>
         final dynamic rawProfile =
             data['profile'];
 
+        bool premiumActive = false;
+
         if (rawProfile is Map) {
           final Map<String, dynamic> profile =
               Map<String, dynamic>.from(rawProfile);
 
           username =
               profile['username']?.toString().trim() ?? '';
+
+          premiumActive = _isActivePremiumProfile(profile);
+        }
+
+        if (mounted) {
+          setState(() {
+            _premiumActive = premiumActive;
+          });
         }
 
         if (username.isEmpty) {
@@ -930,6 +978,13 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
+      if (_premiumActive) {
+        // Palvelin tarkistaa Premium-tilauksen uudelleen claimMining-kutsussa.
+        // Voimassa oleva Premium ohittaa Mining Start -mainoksen.
+        await _startMiningAfterAd();
+        return;
+      }
+
       final bool shown =
           await _adManager.showMiningStartAd();
 
@@ -1568,12 +1623,17 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  void _openPremium() {
-    _openPage(
+  Future<void> _openPremium() async {
+    await _openPage(
       PremiumPage(
         languageCode: widget.languageCode,
       ),
     );
+
+    if (mounted && !_deletingAccount) {
+      // Päivitä Premium-tila ostamisen tai palauttamisen jälkeen.
+      await _loadUsername();
+    }
   }
 
   // ============================================================
