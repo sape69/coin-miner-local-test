@@ -11,8 +11,7 @@
 // - getMiningStatus
 // - claimMining
 // - powerBoost
-//
-// Yhteiset apufunktiot ja palvelut alustetaan täällä.
+// - Premium Plus Auto Mining
 //
 // ============================================================
 
@@ -163,6 +162,15 @@ const {
 
 
 // ============================================================
+// PREMIUM PLUS AUTO MINING SERVICE
+// ============================================================
+
+const {
+  createAutoMiningService,
+} = require("./autoMining/autoMiningService");
+
+
+// ============================================================
 // MINING FUNCTIONS
 // ============================================================
 
@@ -221,6 +229,50 @@ const miningCycleService =
       miningHelpers.calculateMiningCycle,
 
     getMiningHalvingMultiplier,
+  });
+
+
+// ============================================================
+// CREATE PREMIUM PLUS AUTO MINING SERVICE
+// ============================================================
+
+const autoMiningService =
+  createAutoMiningService({
+    db,
+    FieldValue,
+
+    getUserRef,
+    getHistoryCollection,
+    getUtcDateString,
+
+    miningWindow,
+    historicalHashRate,
+
+    collectCompletedMiningCycle:
+      miningCycleService.collectCompletedMiningCycle,
+
+    // Päivittäinen Hash Rate käyttää täsmälleen
+    // samaa logiikkaa kuin tavallinen Mining Start.
+    getMiningDailyClaim:
+      miningHelpers.getMiningDailyClaim,
+
+    getNextMiningDailyHashRate:
+      miningHelpers.getNextMiningDailyHashRate,
+
+    getNextMiningDailyStreak:
+      miningHelpers.getNextMiningDailyStreak,
+
+    dailyHashRateBonus,
+
+    getHalvingMultiplier,
+    getRegisteredUserCount,
+
+    prepareMiningAchievements,
+    writeMiningAchievements,
+
+    processReferralMiningReward,
+
+    MINING_DURATION_MS,
   });
 
 
@@ -294,7 +346,6 @@ const claimMining =
 
     processReferralMiningReward,
 
-    // Yhteinen päättyneen louhintajakson laskenta.
     collectCompletedMiningCycle:
       miningCycleService.collectCompletedMiningCycle,
 
@@ -352,4 +403,8 @@ module.exports = {
   getMiningStatus,
   claimMining,
   powerBoost,
+
+  // Scheduler käyttää tätä palvelinpuolen toimintoa.
+  processAutoMiningUser:
+    autoMiningService.processUser,
 };
