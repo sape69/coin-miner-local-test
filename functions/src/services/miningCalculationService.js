@@ -206,8 +206,17 @@ async function getAdBoostHistory(
   snapshot.forEach((doc) => {
     const data = doc.data() || {};
 
+    // Hyväksytään mainoksella saadut Boostit
+    // sekä Premium-tilauksen Boostit.
+    //
+    // Premium Plusin automaattinen Boost käyttää
+    // samaa premium_power_boost-tyyppiä.
+
     if (
-      data.type !== "ad_reward" ||
+      ![
+        "ad_reward",
+        "premium_power_boost",
+      ].includes(data.type) ||
       data.rewardPurpose !== "power_boost"
     ) {
       return;
