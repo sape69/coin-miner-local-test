@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -6,17 +7,12 @@
 //
 // Stella Mining.
 //
-// Tämä tiedosto toimii keskitettynä kytkentäpisteenä.
+// Keskitetty kytkentäpiste:
+// - getMiningStatus
+// - claimMining
+// - powerBoost
 //
-// Varsinaiset toiminnot sijaitsevat:
-//
-// - getMiningStatus.js
-// - claimMining.js
-// - powerBoost.js
-//
-// Yhteiset apufunktiot sijaitsevat:
-//
-// - miningHelpers.js
+// Yhteiset apufunktiot ja palvelut alustetaan täällä.
 //
 // ============================================================
 
@@ -158,6 +154,15 @@ const {
 
 
 // ============================================================
+// SHARED MINING CYCLE SERVICE
+// ============================================================
+
+const {
+  createMiningCycleService,
+} = require("../services/automation/miningCycleService");
+
+
+// ============================================================
 // MINING FUNCTIONS
 // ============================================================
 
@@ -202,6 +207,24 @@ const miningHelpers =
 
 
 // ============================================================
+// CREATE SHARED MINING CYCLE SERVICE
+// ============================================================
+
+const miningCycleService =
+  createMiningCycleService({
+    HttpsError,
+
+    miningWindow,
+    historicalHashRate,
+
+    calculateMiningCycle:
+      miningHelpers.calculateMiningCycle,
+
+    getMiningHalvingMultiplier,
+  });
+
+
+// ============================================================
 // GET MINING STATUS
 // ============================================================
 
@@ -220,7 +243,6 @@ const getMiningStatus =
     miningHashRate,
     calculateMiningStatus,
 
-    // Päivittäisen hash rate -bonuksen laskenta.
     dailyHashRateBonus,
 
     AD_HASH_RATE_BONUS,
@@ -271,6 +293,10 @@ const claimMining =
     writeMiningAchievements,
 
     processReferralMiningReward,
+
+    // Yhteinen päättyneen louhintajakson laskenta.
+    collectCompletedMiningCycle:
+      miningCycleService.collectCompletedMiningCycle,
 
     ADMOB_TEST_MODE,
     MINING_DURATION_MS,
