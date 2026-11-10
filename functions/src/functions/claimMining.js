@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -6,17 +7,15 @@
 //
 // Stella Mining.
 //
-// Tämä moduuli sisältää claimMining Firebase Callable
-// -toiminnon erillään miningFunctions.js-tiedostosta.
-//
-// Premium-käyttäjän mainosvapaa Mining Start tarkistetaan
-// palvelimella Firestoresta.
+// Päättyneen louhintajakson tuotto lasketaan yhteisellä
+// miningCycleService-palvelulla.
 //
 // ============================================================
 
-// ------------------------------------------------------------
+
+// ============================================================
 // VERIFIED PREMIUM ENTITLEMENT
-// ------------------------------------------------------------
+// ============================================================
 
 function hasActiveVerifiedPremium(data, referenceNowMs) {
   if (
@@ -48,6 +47,11 @@ function hasActiveVerifiedPremium(data, referenceNowMs) {
   );
 }
 
+
+// ============================================================
+// CREATE CLAIM MINING
+// ============================================================
+
 function createClaimMining({
   onCall,
   HttpsError,
@@ -65,7 +69,9 @@ function createClaimMining({
   miningHashRate,
   calculateMiningStatus,
   currentUnclaimedMining,
-  calculateMiningCycle,
+
+  // Yhteinen louhintajakson laskentapalvelu.
+  collectCompletedMiningCycle,
 
   miningDailyStreak,
   getMiningDailyClaim,
@@ -95,6 +101,12 @@ function createClaimMining({
   MINING_DURATION_MS,
   AD_HASH_RATE_BONUS,
 }) {
+  if (typeof collectCompletedMiningCycle !== "function") {
+    throw new Error(
+      "CLAIM_MINING: collectCompletedMiningCycle dependency missing."
+    );
+  }
+
   return onCall(
     {
       region: "us-central1",
@@ -110,7 +122,6 @@ function createClaimMining({
         }
 
         const uid = request.auth.uid;
-
         const userRef = getUserRef(uid);
 
         const requestedTransactionId =
@@ -127,9 +138,7 @@ function createClaimMining({
           ? earlySnapshot.data() || {}
           : {};
 
-        const earlyWindow = miningWindow(
-          earlyData
-        );
+        const earlyWindow = miningWindow(earlyData);
 
         const earlyRate = earlyWindow.valid
           ? historicalHashRate(earlyData)
@@ -148,9 +157,9 @@ function createClaimMining({
           earlyNow
         );
 
-        // ------------------------------------------------------
+        // ======================================================
         // MINING ALREADY ACTIVE
-        // ------------------------------------------------------
+        // ======================================================
 
         if (earlyStatus.miningActive) {
           const current = await currentUnclaimedMining(
@@ -159,9 +168,7 @@ function createClaimMining({
             earlyNowMs
           );
 
-          const today = getUtcDateString(
-            earlyNow
-          );
+          const today = getUtcDateString(earlyNow);
 
           const daily = getMiningDailyClaim(
             earlyData,
@@ -171,26 +178,19 @@ function createClaimMining({
 
           return {
             success: true,
-
             started: false,
-
             collected: 0,
-
             miningActive: true,
 
             hashRate: earlyRate,
-
             miningHashRate: earlyRate,
 
             miningDay: daily.streak,
-
             dailyHashRate: daily.dailyHashRate,
-
             dailyHashRateBonus:
               dailyHashRateBonus(daily.streak),
 
             dailyStreak: daily.streak,
-
             streak: daily.streak,
 
             nextDailyHashRate:
@@ -207,17 +207,10 @@ function createClaimMining({
                 earlyNowMs
               ),
 
-            unclaimedMining:
-              current.unclaimedMining,
-
-            baseMining:
-              current.baseMining,
-
-            adBoostMining:
-              current.adBoostMining,
-
-            boostMilliseconds:
-              current.boostMilliseconds,
+            unclaimedMining: current.unclaimedMining,
+            baseMining: current.baseMining,
+            adBoostMining: current.adBoostMining,
+            boostMilliseconds: current.boostMilliseconds,
 
             miningRemainingMs: Math.max(
               0,
@@ -235,9 +228,9 @@ function createClaimMining({
           };
         }
 
-        // ------------------------------------------------------
+        // ======================================================
         // PREMIUM / ADMOB REWARD
-        // ------------------------------------------------------
+        // ======================================================
 
         const earlyPremiumMining =
           hasActiveVerifiedPremium(
@@ -261,21 +254,18 @@ function createClaimMining({
             `test-mining-start-${uid}-${earlyNowMs}`;
 
           console.log(
-            "🐱 ADMOB_TEST_MODE: Mining Start " +
-            "SSV verification bypassed."
+            "🐱 ADMOB_TEST_MODE: Mining Start SSV verification bypassed."
           );
         } else {
           let verified;
 
           try {
-            verified =
-              await getVerifiedMiningStartReward(
-                uid,
-                {
-                  transactionId:
-                    requestedTransactionId,
-                }
-              );
+            verified = await getVerifiedMiningStartReward(
+              uid,
+              {
+                transactionId: requestedTransactionId,
+              }
+            );
           } catch (error) {
             throw toRewardHttpsError(
               error,
@@ -295,9 +285,7 @@ function createClaimMining({
             );
           }
 
-          rewardRef = getAdMobRewardRef(
-            transactionId
-          );
+          rewardRef = getAdMobRewardRef(transactionId);
 
           if (!rewardRef) {
             throw new HttpsError(
@@ -307,18 +295,16 @@ function createClaimMining({
           }
         }
 
-        // ------------------------------------------------------
+        // ======================================================
         // FIRESTORE TRANSACTION
-        // ------------------------------------------------------
+        // ======================================================
 
         return await db.runTransaction(
           async (transaction) => {
             const now = new Date();
             const nowMs = now.getTime();
 
-            const today = getUtcDateString(
-              now
-            );
+            const today = getUtcDateString(now);
 
             const userSnapshot =
               await transaction.get(userRef);
@@ -358,9 +344,9 @@ function createClaimMining({
               now
             );
 
-            // --------------------------------------------------
+            // ==================================================
             // MINING ALREADY STARTED DURING REQUEST
-            // --------------------------------------------------
+            // ==================================================
 
             if (status.miningActive) {
               const current = await currentUnclaimedMining(
@@ -378,26 +364,19 @@ function createClaimMining({
 
               return {
                 success: true,
-
                 started: false,
-
                 collected: 0,
-
                 miningActive: true,
 
                 hashRate: existingRate,
-
                 miningHashRate: existingRate,
 
                 miningDay: daily.streak,
-
                 dailyHashRate: daily.dailyHashRate,
-
                 dailyHashRateBonus:
                   dailyHashRateBonus(daily.streak),
 
                 dailyStreak: daily.streak,
-
                 streak: daily.streak,
 
                 nextDailyHashRate:
@@ -414,17 +393,10 @@ function createClaimMining({
                     nowMs
                   ),
 
-                unclaimedMining:
-                  current.unclaimedMining,
-
-                baseMining:
-                  current.baseMining,
-
-                adBoostMining:
-                  current.adBoostMining,
-
-                boostMilliseconds:
-                  current.boostMilliseconds,
+                unclaimedMining: current.unclaimedMining,
+                baseMining: current.baseMining,
+                adBoostMining: current.adBoostMining,
+                boostMilliseconds: current.boostMilliseconds,
 
                 miningRemainingMs: Math.max(
                   0,
@@ -432,18 +404,16 @@ function createClaimMining({
                 ),
 
                 rewardConsumed: false,
-
-                adRewardTransactionId:
-                  transactionId,
+                adRewardTransactionId: transactionId,
 
                 message:
                   "🐱⛏️ Stella louhii jo STL:ää. Mainospalkintoa ei kulutettu.",
               };
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // PREMIUM ENTITLEMENT / ADMOB VALIDATION
-            // --------------------------------------------------
+            // ==================================================
 
             const premiumMining =
               hasActiveVerifiedPremium(
@@ -470,17 +440,16 @@ function createClaimMining({
               let validated;
 
               try {
-                validated =
-                  validateVerifiedRewardDocument(
-                    rewardSnapshot,
-                    uid,
-                    "mining_start",
-                    "miningStartClaimed",
-                    {
-                      referenceNowMs: nowMs,
-                      transactionId,
-                    }
-                  );
+                validated = validateVerifiedRewardDocument(
+                  rewardSnapshot,
+                  uid,
+                  "mining_start",
+                  "miningStartClaimed",
+                  {
+                    referenceNowMs: nowMs,
+                    transactionId,
+                  }
+                );
               } catch (error) {
                 throw toRewardHttpsError(
                   error,
@@ -488,13 +457,12 @@ function createClaimMining({
                 );
               }
 
-              authoritativeId =
-                validated.transactionId;
+              authoritativeId = validated.transactionId;
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // DAILY MINING
-            // --------------------------------------------------
+            // ==================================================
 
             const daily = getMiningDailyClaim(
               data,
@@ -509,7 +477,6 @@ function createClaimMining({
             );
 
             let newBalance = oldBalance;
-
             let collected = 0;
 
             let previousBase = 0;
@@ -518,55 +485,47 @@ function createClaimMining({
 
             let completedPrevious = false;
 
-            // --------------------------------------------------
+            // ==================================================
             // COLLECT PREVIOUS MINING CYCLE
-            // --------------------------------------------------
+            // ==================================================
 
             if (
               previous.valid &&
               previous.miningEndMs <= nowMs
             ) {
-              const previousRate =
-                historicalHashRate(data);
+              const cycle =
+                await collectCompletedMiningCycle({
+                  uid,
+                  userData: data,
+                  nowMs,
+                  transaction,
+                });
 
-              if (previousRate <= 0) {
+              if (!cycle.completed) {
                 throw new HttpsError(
                   "failed-precondition",
-                  "🐱 Edellisen mining-cyclen Hash Rate on virheellinen."
+                  "🐱 Päättyneen mining-cyclen laskenta epäonnistui."
                 );
               }
 
-              const cycle = await calculateMiningCycle(
-                uid,
-                previous.miningStartMs,
-                previous.miningEndMs,
-                previousRate,
-                transaction,
-                getMiningHalvingMultiplier(data)
-              );
-
               previousBase = cycle.baseMining;
-
               previousBoost = cycle.adBoostMining;
-
-              previousBoostMs =
-                cycle.boostMilliseconds;
+              previousBoostMs = cycle.boostMilliseconds;
 
               collected = Math.max(
                 0,
-                cycle.totalMining
+                cycle.collected
               );
 
               if (collected > 0) {
                 newBalance = oldBalance + collected;
-
                 completedPrevious = true;
               }
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // HALVING
-            // --------------------------------------------------
+            // ==================================================
 
             const registeredUserCount =
               await getRegisteredUserCount();
@@ -576,9 +535,9 @@ function createClaimMining({
                 registeredUserCount
               );
 
-            // --------------------------------------------------
+            // ==================================================
             // ACHIEVEMENTS
-            // --------------------------------------------------
+            // ==================================================
 
             const achievementResult =
               await prepareMiningAchievements(
@@ -597,9 +556,9 @@ function createClaimMining({
               number(achievementResult.totalReward)
             );
 
-            // --------------------------------------------------
+            // ==================================================
             // REFERRAL REWARD
-            // --------------------------------------------------
+            // ==================================================
 
             let referralResult = {
               rewarded: false,
@@ -630,9 +589,9 @@ function createClaimMining({
               achievementResult
             );
 
-            // --------------------------------------------------
+            // ==================================================
             // ACHIEVEMENT REWARDS
-            // --------------------------------------------------
+            // ==================================================
 
             if (achievementReward > 0) {
               newBalance += achievementReward;
@@ -648,13 +607,10 @@ function createClaimMining({
                     title:
                       "Stella Achievement Reward 🐱🏆✨",
 
-                    achievementId:
-                      reward.achievementId,
+                    achievementId: reward.achievementId,
 
                     amount: reward.reward,
-
                     balanceAfter: newBalance,
-
                     reward: reward.reward,
 
                     createdAt:
@@ -664,9 +620,9 @@ function createClaimMining({
               }
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // NEW MINING CYCLE
-            // --------------------------------------------------
+            // ==================================================
 
             const startedAt = now;
 
@@ -691,24 +647,19 @@ function createClaimMining({
 
                 miningBalance: newBalance,
 
-                // Count only STL produced by mining.
-                // Achievement and referral rewards are excluded.
+                // Only actual mining STL is counted here.
                 totalMined:
                   FieldValue.increment(collected),
 
                 miningStartedAt: startedAt,
-
                 miningEndsAt: endsAt,
 
                 miningCycles:
                   achievementResult.miningCycles,
 
                 adBoostStartedAt: null,
-
                 adBoostEndsAt: null,
-
                 lastAdRewardAt: null,
-
                 powerBoostTransactionId: null,
 
                 updatedAt:
@@ -719,9 +670,9 @@ function createClaimMining({
               }
             );
 
-            // --------------------------------------------------
+            // ==================================================
             // ADMOB REWARD CONSUMPTION
-            // --------------------------------------------------
+            // ==================================================
 
             if (
               !premiumMining &&
@@ -756,9 +707,9 @@ function createClaimMining({
               );
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // DAILY HASH RATE HISTORY
-            // --------------------------------------------------
+            // ==================================================
 
             if (!daily.claimedToday) {
               transaction.set(
@@ -770,9 +721,7 @@ function createClaimMining({
                     "Stella Daily Hash Rate 🐱✨",
 
                   amount: rate,
-
                   hashRate: rate,
-
                   dailyHashRate: rate,
 
                   hashRateBefore:
@@ -784,9 +733,7 @@ function createClaimMining({
                     dailyHashRateBonus(daily.streak),
 
                   dailyStreak: daily.streak,
-
                   streak: daily.streak,
-
                   miningDay: daily.streak,
 
                   previousDailyDate:
@@ -804,9 +751,9 @@ function createClaimMining({
               );
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // PREVIOUS MINING REWARD HISTORY
-            // --------------------------------------------------
+            // ==================================================
 
             if (completedPrevious) {
               transaction.set(
@@ -820,7 +767,6 @@ function createClaimMining({
                     "Stella Mining Complete 🐱⛏️✨",
 
                   amount: collected,
-
                   balanceAfter: newBalance,
 
                   hashRate:
@@ -830,9 +776,7 @@ function createClaimMining({
                     historicalHashRate(data),
 
                   baseMining: previousBase,
-
                   adBoostMining: previousBoost,
-
                   boostMilliseconds: previousBoostMs,
 
                   miningStartedAt:
@@ -854,9 +798,9 @@ function createClaimMining({
               );
             }
 
-            // --------------------------------------------------
+            // ==================================================
             // NEW MINING HISTORY
-            // --------------------------------------------------
+            // ==================================================
 
             transaction.set(
               getHistoryCollection(uid).doc(),
@@ -869,25 +813,20 @@ function createClaimMining({
                 amount: 0,
 
                 hashRate: rate,
-
                 miningHashRate: rate,
-
                 dailyHashRate: rate,
 
                 dailyHashRateBonus:
                   dailyHashRateBonus(daily.streak),
 
                 dailyStreak: daily.streak,
-
                 streak: daily.streak,
-
                 miningDay: daily.streak,
 
                 miningDurationMs:
                   MINING_DURATION_MS,
 
                 miningStartedAt: startedAt,
-
                 miningEndsAt: endsAt,
 
                 adRewardTransactionId:
@@ -906,15 +845,14 @@ function createClaimMining({
               }
             );
 
-            // --------------------------------------------------
+            // ==================================================
             // RESPONSE
-            // --------------------------------------------------
+            // ==================================================
 
             return {
               success: true,
 
               started: true,
-
               miningActive: true,
 
               collected,
@@ -950,16 +888,13 @@ function createClaimMining({
               miningBalance: newBalance,
 
               hashRate: rate,
-
               miningDay: daily.streak,
-
               dailyHashRate: rate,
 
               dailyHashRateBonus:
                 dailyHashRateBonus(daily.streak),
 
               dailyStreak: daily.streak,
-
               streak: daily.streak,
 
               nextDailyHashRate:
@@ -991,7 +926,6 @@ function createClaimMining({
                 endsAt.toISOString(),
 
               adBoostActive: false,
-
               adBoostRemainingMs: 0,
 
               adHashRateBonus:
@@ -1058,6 +992,11 @@ function createClaimMining({
     }
   );
 }
+
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
   createClaimMining,
