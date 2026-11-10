@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -1124,6 +1125,21 @@ class _HomePageState extends State<HomePage>
     });
 
     try {
+      // Päivitä Premium-oikeus palvelimelta ennen mainoksen näyttämistä.
+      // Näin juuri ostettu tai uusittu tilaus huomioidaan heti.
+      await _loadUsername();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (_premiumActive) {
+        // Premium: aktivoi Power Boost suoraan ilman AdMob-mainosta.
+        await _waitForServerSidePowerBoost();
+        return;
+      }
+
+      // Tavallinen käyttäjä: alkuperäinen palkintomainosprosessi.
       final bool shown =
           await _adManager.showPowerBoostAd();
 
