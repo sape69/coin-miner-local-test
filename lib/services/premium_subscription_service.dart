@@ -62,8 +62,8 @@ class PremiumSubscriptionService extends ChangeNotifier {
 
   bool get isVerifying => _verifying;
 
-  bool get isPremium => _activeTier == 'premium' ||
-      _activeTier == 'premium_plus';
+  bool get isPremium =>
+      _activeTier == 'premium' || _activeTier == 'premium_plus';
 
   bool get isPremiumPlus => _activeTier == 'premium_plus';
 
@@ -134,6 +134,8 @@ class PremiumSubscriptionService extends ChangeNotifier {
 
       if (_disposed) return;
 
+      // Kuuntelija rekisteröidään ennen ostojen palautusta,
+      // jotta Google Playn palauttamat ostot vastaanotetaan.
       _purchaseSubscription =
           _inAppPurchase.purchaseStream.listen(
         _handlePurchaseUpdates,
@@ -152,6 +154,23 @@ class PremiumSubscriptionService extends ChangeNotifier {
       if (_disposed) return;
 
       _initialized = true;
+
+      // Tarkista aiemmin ostetut aktiiviset tilaukset
+      // automaattisesti sovelluksen käynnistyessä.
+      //
+      // Tämä EI käynnistä uutta tilausta eikä tee maksua.
+      // Google Play lähettää löydetyt ostot purchaseStreamiin,
+      // jossa ne varmennetaan Firebase-palvelimella.
+      try {
+        await _inAppPurchase.restorePurchases();
+      } catch (e) {
+        if (!_disposed) {
+          _error =
+              'Aktiivisen Premium-tilauksen tarkistus epäonnistui.';
+        }
+      }
+
+      if (_disposed) return;
     } catch (e) {
       if (!_disposed) {
         _error = 'Premium-palvelun käynnistys epäonnistui.';
@@ -405,7 +424,9 @@ class PremiumSubscriptionService extends ChangeNotifier {
           data['tier']?.toString() ?? '';
 
       if (tier != 'premium' && tier != 'premium_plus') {
-        throw Exception('Palvelin palautti virheellisen tilaustason.');
+        throw Exception(
+          'Palvelin palautti virheellisen tilaustason.',
+        );
       }
 
       _activeTier = tier;
