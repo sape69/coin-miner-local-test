@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -20,6 +19,7 @@
 // - Käynnistyy täsmälleen louhinnan alkaessa.
 // - Ei kuluta AdMob-mainosten käyttökiintiötä.
 // - Ei anna erillistä STL-palkkiota.
+// - Ei muuta tavallisen AdMob-Boostin jäähdytysaikaa.
 //
 // Kaikki käyttäjän muutokset tehdään yhdessä
 // Firestore-transaktiossa.
@@ -410,15 +410,6 @@ function createAutoMiningService({
         // ----------------------------------------------------
         // AUTOMATIC PREMIUM PLUS POWER BOOST
         // ----------------------------------------------------
-        //
-        // Boost starts at exactly the same time as mining.
-        // Boost ends at exactly the same time as mining.
-        //
-        // Same Hash Rate bonus as normal Power Boost.
-        //
-        // No AdMob reward is consumed.
-        // No separate STL reward is created.
-        // ----------------------------------------------------
 
         const boostStartedAt = startedAt;
         const boostEndsAt = endsAt;
@@ -468,8 +459,11 @@ function createAutoMiningService({
             powerBoostTransactionId:
               autoBoostTransactionId,
 
-            // Automatic Boost is not an AdMob reward.
-            lastAdRewardAt: null,
+            // HUOM:
+            // lastAdRewardAt jätetään ennalleen.
+            // Automaattinen Premium Plus Boost ei ole
+            // AdMob-mainospalkinto eikä saa nollata
+            // tavallisen Power Boostin jäähdytysaikaa.
 
             autoMiningLastRunAt:
               FieldValue.serverTimestamp(),
@@ -618,12 +612,6 @@ function createAutoMiningService({
 
         // ----------------------------------------------------
         // AUTOMATIC POWER BOOST HISTORY
-        // ----------------------------------------------------
-        //
-        // Uses premium_power_boost so the shared mining
-        // calculation service recognizes this Boost.
-        //
-        // This is NOT an AdMob ad reward.
         // ----------------------------------------------------
 
         transaction.set(
