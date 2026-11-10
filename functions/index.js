@@ -18,6 +18,15 @@ const {
 
 
 // ============================================================
+// 🤖 PREMIUM PLUS AUTO MINING
+// ============================================================
+
+const {
+  premiumPlusAutoMiningScheduler,
+} = require("./src/functions/autoMining/autoMiningScheduler");
+
+
+// ============================================================
 // 🎁 DAILY CHECK-IN
 // ============================================================
 
@@ -121,6 +130,14 @@ const {
 exports.getMiningStatus = getMiningStatus;
 exports.claimMining = claimMining;
 exports.powerBoost = powerBoost;
+
+
+// ============================================================
+// 🤖 PREMIUM PLUS AUTO MINING EXPORT
+// ============================================================
+
+exports.premiumPlusAutoMiningScheduler =
+  premiumPlusAutoMiningScheduler;
 
 
 // ============================================================
