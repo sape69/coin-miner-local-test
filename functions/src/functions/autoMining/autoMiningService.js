@@ -6,12 +6,14 @@
 // ============================================================
 //
 // Vastuut:
-// - Premium Plus -oikeuden tarkistaminen
+// - Premium Plus -tilauksen palvelinpuolen tarkistus
 // - Päättyneen louhintajakson kerääminen
 // - STL-saldon päivittäminen
-// - Achievementien käsittely
+// - Mining achievementien käsittely
 // - Referral-palkkion käsittely
 // - Seuraavan 24h louhintajakson käynnistäminen
+//
+// Käyttää samoja laskentapalveluita kuin claimMining.js.
 //
 // Kaikki käyttäjän muutokset tehdään yhdessä
 // Firestore-transaktiossa.
@@ -55,25 +57,20 @@ function createAutoMiningService({
 
   getUserRef,
   getHistoryCollection,
-
   getUtcDateString,
 
   miningWindow,
   historicalHashRate,
-  miningHashRate,
 
-  dailyHashRate,
-  dailyHashRateBonus,
-  miningDailyStreak,
+  collectCompletedMiningCycle,
+
   getMiningDailyClaim,
   getNextMiningDailyHashRate,
   getNextMiningDailyStreak,
+  dailyHashRateBonus,
 
-  getMiningHalvingMultiplier,
   getHalvingMultiplier,
   getRegisteredUserCount,
-
-  collectCompletedMiningCycle,
 
   prepareMiningAchievements,
   writeMiningAchievements,
@@ -92,17 +89,13 @@ function createAutoMiningService({
     getUtcDateString,
     miningWindow,
     historicalHashRate,
-    miningHashRate,
-    dailyHashRate,
-    dailyHashRateBonus,
-    miningDailyStreak,
+    collectCompletedMiningCycle,
     getMiningDailyClaim,
     getNextMiningDailyHashRate,
     getNextMiningDailyStreak,
-    getMiningHalvingMultiplier,
+    dailyHashRateBonus,
     getHalvingMultiplier,
     getRegisteredUserCount,
-    collectCompletedMiningCycle,
     prepareMiningAchievements,
     writeMiningAchievements,
     processReferralMiningReward,
@@ -162,9 +155,10 @@ function createAutoMiningService({
         // READ USER
         // ----------------------------------------------------
 
-        const snapshot = await transaction.get(userRef);
+        const userSnapshot =
+          await transaction.get(userRef);
 
-        if (!snapshot.exists) {
+        if (!userSnapshot.exists) {
           return {
             success: false,
             skipped: true,
@@ -172,7 +166,8 @@ function createAutoMiningService({
           };
         }
 
-        const data = snapshot.data() || {};
+        const data =
+          userSnapshot.data() || {};
 
         // ----------------------------------------------------
         // VERIFY PREMIUM PLUS
@@ -192,10 +187,11 @@ function createAutoMiningService({
         }
 
         // ----------------------------------------------------
-        // CHECK MINING WINDOW
+        // CHECK PREVIOUS MINING WINDOW
         // ----------------------------------------------------
 
-        const previous = miningWindow(data);
+        const previous =
+          miningWindow(data);
 
         if (
           !isMiningCycleExpired(
@@ -240,46 +236,43 @@ function createAutoMiningService({
             transaction,
           });
 
-        if (!cycle || cycle.completed !== true) {
+        if (
+          !cycle ||
+          cycle.completed !== true
+        ) {
           throw new Error(
-            "AUTO_MINING: Completed mining cycle could not be collected."
+            "AUTO_MINING: Completed mining cycle calculation failed."
           );
         }
 
-        const collected = nonNegative(
-          cycle.collected
-        );
-
-        const oldBalance = nonNegative(
-          data.miningBalance
-        );
-
-        let newBalance =
-          oldBalance + collected;
+        const collected =
+          nonNegative(cycle.collected);
 
         // ----------------------------------------------------
         // DAILY HASH RATE
         // ----------------------------------------------------
 
-        const currentStreak =
-          miningDailyStreak(data);
+        const daily =
+          getMiningDailyClaim(
+            data,
+            today,
+            nowMs
+          );
 
-        const daily = getMiningDailyClaim(
-          data,
-          today,
-          nowMs
-        );
-
-        const rate = number(
-          daily.dailyHashRate,
-          0
-        );
+        const rate =
+          number(daily.dailyHashRate);
 
         if (rate <= 0) {
           throw new Error(
-            "AUTO_MINING: Invalid next mining Hash Rate."
+            "AUTO_MINING: Invalid daily Hash Rate."
           );
         }
+
+        const oldBalance =
+          nonNegative(data.miningBalance);
+
+        let newBalance =
+          oldBalance + collected;
 
         // ----------------------------------------------------
         // HALVING
@@ -288,7 +281,7 @@ function createAutoMiningService({
         const registeredUserCount =
           await getRegisteredUserCount();
 
-        const newHalvingMultiplier =
+        const newMiningHalvingMultiplier =
           getHalvingMultiplier(
             registeredUserCount
           );
@@ -309,9 +302,10 @@ function createAutoMiningService({
             now
           );
 
-        const achievementReward = nonNegative(
-          achievementResult.totalReward
-        );
+        const achievementReward =
+          nonNegative(
+            achievementResult.totalReward
+          );
 
         newBalance += achievementReward;
 
@@ -339,6 +333,11 @@ function createAutoMiningService({
               transaction
             );
         }
+
+        // ====================================================
+        // ALL TRANSACTION READS ARE NOW COMPLETE.
+        // FIRESTORE WRITES BEGIN BELOW.
+        // ====================================================
 
         // ----------------------------------------------------
         // WRITE ACHIEVEMENTS
@@ -369,8 +368,8 @@ function createAutoMiningService({
                   reward.achievementId,
 
                 amount: reward.reward,
-                reward: reward.reward,
                 balanceAfter: newBalance,
+                reward: reward.reward,
 
                 createdAt:
                   FieldValue.serverTimestamp(),
@@ -380,7 +379,7 @@ function createAutoMiningService({
         }
 
         // ----------------------------------------------------
-        // NEW MINING CYCLE
+        // START NEXT MINING CYCLE
         // ----------------------------------------------------
 
         const startedAt = now;
@@ -401,7 +400,7 @@ function createAutoMiningService({
             lastMiningDate: today,
 
             miningHalvingMultiplier:
-              newHalvingMultiplier,
+              newMiningHalvingMultiplier,
 
             miningBalance: newBalance,
 
@@ -464,7 +463,9 @@ function createAutoMiningService({
               previousDailyDate:
                 typeof data.lastMiningDate === "string"
                   ? data.lastMiningDate
-                  : null,
+                  : typeof data.lastDailyDate === "string"
+                    ? data.lastDailyDate
+                    : null,
 
               currentDailyDate: today,
 
@@ -478,48 +479,48 @@ function createAutoMiningService({
         // PREVIOUS MINING REWARD HISTORY
         // ----------------------------------------------------
 
-        transaction.set(
-          getHistoryCollection(uid).doc(
-            miningTransactionId ||
-              getHistoryCollection(uid).doc().id
-          ),
-          {
-            type: "mining_reward",
+        if (collected > 0) {
+          transaction.set(
+            getHistoryCollection(uid).doc(
+              miningTransactionId
+            ),
+            {
+              type: "mining_reward",
 
-            title:
-              "Stella Automatic Mining Complete 🐱⛏️✨",
+              title:
+                "Stella Automatic Mining Complete 🐱⛏️✨",
 
-            amount: collected,
+              amount: collected,
 
-            balanceAfter: newBalance,
+              balanceAfter: newBalance,
 
-            hashRate: oldHashRate,
-            miningHashRate: oldHashRate,
+              hashRate: oldHashRate,
+              miningHashRate: oldHashRate,
 
-            baseMining: cycle.baseMining,
-            adBoostMining: cycle.adBoostMining,
-            boostMilliseconds: cycle.boostMilliseconds,
+              baseMining: cycle.baseMining,
+              adBoostMining: cycle.adBoostMining,
+              boostMilliseconds: cycle.boostMilliseconds,
 
-            miningStartedAt:
-              previous.miningStartedAt,
+              miningStartedAt:
+                previous.miningStartedAt,
 
-            miningEndsAt:
-              previous.miningEndsAt,
+              miningEndsAt:
+                previous.miningEndsAt,
 
-            miningTransactionId:
-              miningTransactionId || null,
+              miningTransactionId,
 
-            referralReward:
-              referralResult.rewarded
-                ? referralResult.bonus
-                : 0,
+              referralReward:
+                referralResult.rewarded
+                  ? referralResult.bonus
+                  : 0,
 
-            automaticMining: true,
+              automaticMining: true,
 
-            createdAt:
-              FieldValue.serverTimestamp(),
-          }
-        );
+              createdAt:
+                FieldValue.serverTimestamp(),
+            }
+          );
+        }
 
         // ----------------------------------------------------
         // NEW MINING HISTORY
@@ -552,10 +553,11 @@ function createAutoMiningService({
             miningStartedAt: startedAt,
             miningEndsAt: endsAt,
 
-            automaticMining: true,
-            premiumAdFreeMining: true,
+            rewardPurpose:
+              "premium_plus_auto_mining",
 
-            rewardPurpose: "premium_plus_auto_mining",
+            premiumAdFreeMining: true,
+            automaticMining: true,
 
             createdAt:
               FieldValue.serverTimestamp(),
@@ -581,9 +583,31 @@ function createAutoMiningService({
               ? referralResult.bonus
               : 0,
 
+          referralRewarded:
+            referralResult.rewarded === true,
+
+          referralDuplicate:
+            referralResult.duplicate === true,
+
           miningBalance: newBalance,
 
           hashRate: rate,
+
+          miningDay: daily.streak,
+
+          nextDailyHashRate:
+            getNextMiningDailyHashRate(
+              data,
+              today,
+              nowMs
+            ),
+
+          nextDailyStreak:
+            getNextMiningDailyStreak(
+              data,
+              today,
+              nowMs
+            ),
 
           miningStartedAt:
             startedAt.toISOString(),
@@ -597,7 +621,7 @@ function createAutoMiningService({
 
 
   // ==========================================================
-  // EXPORT SERVICE
+  // EXPORTS
   // ==========================================================
 
   return {
@@ -607,7 +631,7 @@ function createAutoMiningService({
 
 
 // ============================================================
-// EXPORTS
+// MODULE EXPORTS
 // ============================================================
 
 module.exports = {
