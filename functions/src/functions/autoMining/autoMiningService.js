@@ -12,13 +12,23 @@
 // - Mining achievementien käsittely
 // - Referral-palkkion käsittely
 // - Seuraavan 24h louhintajakson käynnistäminen
+// - Automaattisen 24h Power Boostin käynnistäminen
 //
-// Käyttää samoja laskentapalveluita kuin claimMining.js.
+// Premium Plus Power Boost:
+// - Sama AD_HASH_RATE_BONUS kuin tavallisessa Boostissa.
+// - Kesto on koko 24h louhintajakso.
+// - Käynnistyy täsmälleen louhinnan alkaessa.
+// - Ei kuluta AdMob-mainosten käyttökiintiötä.
+// - Ei anna erillistä STL-palkkiota.
 //
 // Kaikki käyttäjän muutokset tehdään yhdessä
 // Firestore-transaktiossa.
 //
 // ============================================================
+
+const {
+  AD_HASH_RATE_BONUS,
+} = require("../../config/miningConfig");
 
 const {
   hasActiveVerifiedPremiumPlus,
@@ -123,6 +133,15 @@ function createAutoMiningService({
   ) {
     throw new Error(
       "AUTO_MINING: Invalid mining duration."
+    );
+  }
+
+  if (
+    !Number.isFinite(AD_HASH_RATE_BONUS) ||
+    AD_HASH_RATE_BONUS <= 0
+  ) {
+    throw new Error(
+      "AUTO_MINING: Invalid Power Boost Hash Rate bonus."
     );
   }
 
@@ -313,9 +332,6 @@ function createAutoMiningService({
         // REFERRAL REWARD
         // ----------------------------------------------------
 
-        // Referral-palvelun todellinen palauterajapinta:
-        // applied, alreadyProcessed ja bonus.
-
         let referralResult = {
           applied: false,
           alreadyProcessed: false,
@@ -391,6 +407,33 @@ function createAutoMiningService({
           nowMs + MINING_DURATION_MS
         );
 
+        // ----------------------------------------------------
+        // AUTOMATIC PREMIUM PLUS POWER BOOST
+        // ----------------------------------------------------
+        //
+        // Boost starts at exactly the same time as mining.
+        // Boost ends at exactly the same time as mining.
+        //
+        // Same Hash Rate bonus as normal Power Boost.
+        //
+        // No AdMob reward is consumed.
+        // No separate STL reward is created.
+        // ----------------------------------------------------
+
+        const boostStartedAt = startedAt;
+        const boostEndsAt = endsAt;
+
+        const boostDurationMs =
+          boostEndsAt.getTime() -
+          boostStartedAt.getTime();
+
+        const autoBoostTransactionId =
+          `premium-plus-auto-${uid}-${nowMs}`;
+
+        // ----------------------------------------------------
+        // UPDATE USER
+        // ----------------------------------------------------
+
         transaction.set(
           userRef,
           {
@@ -417,10 +460,16 @@ function createAutoMiningService({
             miningCycles:
               achievementResult.miningCycles,
 
-            adBoostStartedAt: null,
-            adBoostEndsAt: null,
+            // Automatic Premium Plus Power Boost.
+            adBoostStartedAt: boostStartedAt,
+
+            adBoostEndsAt: boostEndsAt,
+
+            powerBoostTransactionId:
+              autoBoostTransactionId,
+
+            // Automatic Boost is not an AdMob reward.
             lastAdRewardAt: null,
-            powerBoostTransactionId: null,
 
             autoMiningLastRunAt:
               FieldValue.serverTimestamp(),
@@ -535,7 +584,7 @@ function createAutoMiningService({
             type: "mining",
 
             title:
-              "Stella Premium Plus Auto Mining Started 🐱⛏️",
+              "Stella Premium Plus Auto Mining Started 🐱⛏️✨",
 
             amount: 0,
 
@@ -561,6 +610,53 @@ function createAutoMiningService({
 
             premiumAdFreeMining: true,
             automaticMining: true,
+
+            createdAt:
+              FieldValue.serverTimestamp(),
+          }
+        );
+
+        // ----------------------------------------------------
+        // AUTOMATIC POWER BOOST HISTORY
+        // ----------------------------------------------------
+        //
+        // Uses premium_power_boost so the shared mining
+        // calculation service recognizes this Boost.
+        //
+        // This is NOT an AdMob ad reward.
+        // ----------------------------------------------------
+
+        transaction.set(
+          getHistoryCollection(uid).doc(),
+          {
+            type: "premium_power_boost",
+
+            title:
+              "Stelluriini Premium Plus Automatic Power Boost 🐱⚡",
+
+            amount: 0,
+
+            adRewardTransactionId:
+              autoBoostTransactionId,
+
+            rewardPurpose: "power_boost",
+
+            premiumAdFreePowerBoost: true,
+
+            automaticPremiumPlusPowerBoost: true,
+
+            adHashRateBonus:
+              AD_HASH_RATE_BONUS,
+
+            boostStartedAt,
+            boostEndsAt,
+
+            boostDurationMs,
+
+            miningStartedAt: startedAt,
+            miningEndsAt: endsAt,
+
+            miningHashRate: rate,
 
             createdAt:
               FieldValue.serverTimestamp(),
@@ -595,6 +691,17 @@ function createAutoMiningService({
           miningBalance: newBalance,
 
           hashRate: rate,
+
+          adHashRateBonus:
+            AD_HASH_RATE_BONUS,
+
+          boostDurationMs,
+
+          boostStartedAt:
+            boostStartedAt.toISOString(),
+
+          boostEndsAt:
+            boostEndsAt.toISOString(),
 
           miningDay: daily.streak,
 
