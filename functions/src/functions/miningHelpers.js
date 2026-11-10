@@ -70,21 +70,6 @@ function createMiningHelpers({
   // ==========================================================
   // MINING-SPECIFIC DAILY STREAK
   // ==========================================================
-  //
-  // Mining streak and Daily Check-In are separate systems.
-  //
-  // Mining uses:
-  // - miningStreak
-  // - lastMiningDate
-  //
-  // Daily Check-In exclusively owns:
-  // - dailyStreak
-  // - streak
-  // - lastDailyDate
-  //
-  // Legacy Daily Check-In fields are read only as a migration
-  // fallback for accounts that do not yet have mining fields.
-  // ==========================================================
 
   function miningDailyStreak(data) {
     const source =
@@ -99,9 +84,7 @@ function createMiningHelpers({
 
     return Math.max(
       0,
-      Math.floor(
-        number(value)
-      )
+      Math.floor(number(value))
     );
   }
 
@@ -154,10 +137,7 @@ function createMiningHelpers({
   // ADMOB ERROR MAPPING
   // ==========================================================
 
-  function toRewardHttpsError(
-    error,
-    fallbackMessage
-  ) {
+  function toRewardHttpsError(error, fallbackMessage) {
     if (error instanceof HttpsError) {
       return error;
     }
@@ -237,8 +217,7 @@ function createMiningHelpers({
 
     if (typeof value.toMillis === "function") {
       try {
-        const milliseconds =
-          value.toMillis();
+        const milliseconds = value.toMillis();
 
         return Number.isFinite(milliseconds)
           ? milliseconds
@@ -250,8 +229,7 @@ function createMiningHelpers({
 
     if (typeof value.toDate === "function") {
       try {
-        const date =
-          value.toDate();
+        const date = value.toDate();
 
         return date instanceof Date &&
           Number.isFinite(date.getTime())
@@ -269,8 +247,7 @@ function createMiningHelpers({
     }
 
     if (typeof value === "string") {
-      const milliseconds =
-        new Date(value).getTime();
+      const milliseconds = new Date(value).getTime();
 
       return Number.isFinite(milliseconds)
         ? milliseconds
@@ -291,11 +268,7 @@ function createMiningHelpers({
   // AD STATUS
   // ==========================================================
 
-  function adStatus(
-    data,
-    nowMs,
-    today
-  ) {
+  function adStatus(data, nowMs, today) {
     const lastDate =
       typeof data.lastAdDate === "string"
         ? data.lastAdDate
@@ -305,39 +278,24 @@ function createMiningHelpers({
       lastDate === today
         ? Math.max(
             0,
-            Math.floor(
-              number(data.adsToday)
-            )
+            Math.floor(number(data.adsToday))
           )
         : 0;
 
-    const lastRewardMs =
-      timestampMs(
-        data.lastAdRewardAt
-      );
+    const lastRewardMs = timestampMs(data.lastAdRewardAt);
 
     const cooldownRemainingMs =
       lastRewardMs > 0
         ? Math.max(
             0,
-            lastRewardMs +
-              AD_COOLDOWN_MS -
-              nowMs
+            lastRewardMs + AD_COOLDOWN_MS - nowMs
           )
         : 0;
 
-    const boostStartMs =
-      timestampMs(
-        data.adBoostStartedAt
-      );
+    const boostStartMs = timestampMs(data.adBoostStartedAt);
+    const boostEndMs = timestampMs(data.adBoostEndsAt);
 
-    const boostEndMs =
-      timestampMs(
-        data.adBoostEndsAt
-      );
-
-    const window =
-      miningWindow(data);
+    const window = miningWindow(data);
 
     const active =
       window.valid &&
@@ -350,24 +308,16 @@ function createMiningHelpers({
       boostStartMs < window.miningEndMs;
 
     const effectiveEnd =
-      boostInsideMining &&
-      boostEndMs > boostStartMs
-        ? Math.min(
-            boostEndMs,
-            window.miningEndMs
-          )
+      boostInsideMining && boostEndMs > boostStartMs
+        ? Math.min(boostEndMs, window.miningEndMs)
         : 0;
 
     const boostActive =
-      active &&
-      effectiveEnd > nowMs;
+      active && effectiveEnd > nowMs;
 
     return {
       adsToday,
-
-      maxAdsPerDay:
-        MAX_ADS_PER_DAY,
-
+      maxAdsPerDay: MAX_ADS_PER_DAY,
       cooldownRemainingMs,
 
       canWatchAd:
@@ -376,8 +326,7 @@ function createMiningHelpers({
         cooldownRemainingMs === 0 &&
         !boostActive,
 
-      adBoostActive:
-        boostActive,
+      adBoostActive: boostActive,
 
       adBoostRemainingMs:
         boostActive
@@ -401,23 +350,16 @@ function createMiningHelpers({
   // ==========================================================
 
   function maxBoostHistoryEntries() {
-    const dayMs =
-      24 * 60 * 60 * 1000;
+    const dayMs = 24 * 60 * 60 * 1000;
 
-    const days =
-      Math.max(
-        1,
-        Math.ceil(
-          MINING_DURATION_MS /
-            dayMs
-        )
-      );
+    const days = Math.max(
+      1,
+      Math.ceil(MINING_DURATION_MS / dayMs)
+    );
 
     return Math.max(
       MAX_ADS_PER_DAY,
-      (days + 1) *
-        MAX_ADS_PER_DAY +
-        10
+      (days + 1) * MAX_ADS_PER_DAY + 10
     );
   }
 
@@ -451,9 +393,7 @@ function createMiningHelpers({
           "boostStartedAt",
           "asc"
         )
-        .limit(
-          maxBoostHistoryEntries()
-        );
+        .limit(maxBoostHistoryEntries());
 
     const snapshot =
       transaction
@@ -463,26 +403,25 @@ function createMiningHelpers({
     const boosts = [];
 
     snapshot.forEach((doc) => {
-      const data =
-        doc.data() || {};
+      const data = doc.data() || {};
 
+      // Hyväksytään sekä mainoksella saadut Boostit
+      // että Premium-tilauksen Boostit.
+      //
+      // Premium Plusin automaattinen Boost käyttää
+      // samaa premium_power_boost-tyyppiä.
       if (
-        data.type !== "ad_reward" ||
-        data.rewardPurpose !==
-          "power_boost"
+        ![
+          "ad_reward",
+          "premium_power_boost",
+        ].includes(data.type) ||
+        data.rewardPurpose !== "power_boost"
       ) {
         return;
       }
 
-      const start =
-        timestampMs(
-          data.boostStartedAt
-        );
-
-      const end =
-        timestampMs(
-          data.boostEndsAt
-        );
+      const start = timestampMs(data.boostStartedAt);
+      const end = timestampMs(data.boostEndsAt);
 
       if (
         start <= 0 ||
@@ -495,28 +434,15 @@ function createMiningHelpers({
       }
 
       boosts.push({
-        boostStartedMs:
-          Math.max(
-            start,
-            startMs
-          ),
-
-        boostEndsMs:
-          Math.min(
-            end,
-            endMs
-          ),
+        boostStartedMs: Math.max(start, startMs),
+        boostEndsMs: Math.min(end, endMs),
       });
     });
 
     return boosts;
   }
 
-  function boostMilliseconds(
-    boosts,
-    startMs,
-    endMs
-  ) {
+  function boostMilliseconds(boosts, startMs, endMs) {
     if (
       !Array.isArray(boosts) ||
       !startMs ||
@@ -529,78 +455,44 @@ function createMiningHelpers({
     const intervals =
       boosts
         .map((boost) => {
-          const start =
-            Math.max(
-              startMs,
-              number(
-                boost.boostStartedMs
-              )
-            );
+          const start = Math.max(
+            startMs,
+            number(boost.boostStartedMs)
+          );
 
-          const end =
-            Math.min(
-              endMs,
-              number(
-                boost.boostEndsMs
-              )
-            );
+          const end = Math.min(
+            endMs,
+            number(boost.boostEndsMs)
+          );
 
           return end > start
             ? { start, end }
             : null;
         })
         .filter(Boolean)
-        .sort(
-          (a, b) =>
-            a.start - b.start
-        );
+        .sort((a, b) => a.start - b.start);
 
     if (!intervals.length) {
       return 0;
     }
 
     let total = 0;
+    let start = intervals[0].start;
+    let end = intervals[0].end;
 
-    let start =
-      intervals[0].start;
+    for (let i = 1; i < intervals.length; i++) {
+      const current = intervals[i];
 
-    let end =
-      intervals[0].end;
-
-    for (
-      let i = 1;
-      i < intervals.length;
-      i++
-    ) {
-      const current =
-        intervals[i];
-
-      if (
-        current.start <= end
-      ) {
-        end =
-          Math.max(
-            end,
-            current.end
-          );
+      if (current.start <= end) {
+        end = Math.max(end, current.end);
       } else {
-        total +=
-          end - start;
-
-        start =
-          current.start;
-
-        end =
-          current.end;
+        total += end - start;
+        start = current.start;
+        end = current.end;
       }
     }
 
-    return Math.max(
-      0,
-      total +
-        end -
-        start
-    );
+    return Math.max(0, total + end - start);
   }
 
   // ==========================================================
@@ -628,14 +520,12 @@ function createMiningHelpers({
       };
     }
 
-    const rate =
-      positive(hashRate);
+    const rate = positive(hashRate);
 
     const safeHalvingMultiplier =
       positive(halvingMultiplier, 1);
 
-    const duration =
-      endMs - startMs;
+    const duration = endMs - startMs;
 
     const baseMining =
       rate > 0
@@ -651,24 +541,21 @@ function createMiningHelpers({
           )
         : 0;
 
-    const boosts =
-      await getAdBoostHistory(
-        uid,
-        startMs,
-        endMs,
-        transaction
-      );
+    const boosts = await getAdBoostHistory(
+      uid,
+      startMs,
+      endMs,
+      transaction
+    );
 
-    const boostMs =
-      boostMilliseconds(
-        boosts,
-        startMs,
-        endMs
-      );
+    const boostMs = boostMilliseconds(
+      boosts,
+      startMs,
+      endMs
+    );
 
     const adBoostMining =
-      boostMs > 0 &&
-      AD_HASH_RATE_BONUS > 0
+      boostMs > 0 && AD_HASH_RATE_BONUS > 0
         ? Math.max(
             0,
             number(
@@ -684,14 +571,11 @@ function createMiningHelpers({
     return {
       baseMining,
       adBoostMining,
-      boostMilliseconds:
-        boostMs,
-      totalMining:
-        Math.max(
-          0,
-          baseMining +
-            adBoostMining
-        ),
+      boostMilliseconds: boostMs,
+      totalMining: Math.max(
+        0,
+        baseMining + adBoostMining
+      ),
     };
   }
 
@@ -705,8 +589,7 @@ function createMiningHelpers({
     nowMs,
     transaction = null
   ) {
-    const window =
-      miningWindow(data);
+    const window = miningWindow(data);
 
     if (!window.valid) {
       return {
@@ -717,16 +600,12 @@ function createMiningHelpers({
       };
     }
 
-    const endMs =
-      Math.min(
-        window.miningEndMs,
-        nowMs
-      );
+    const endMs = Math.min(
+      window.miningEndMs,
+      nowMs
+    );
 
-    if (
-      endMs <=
-      window.miningStartMs
-    ) {
+    if (endMs <= window.miningStartMs) {
       return {
         unclaimedMining: 0,
         baseMining: 0,
@@ -735,8 +614,7 @@ function createMiningHelpers({
       };
     }
 
-    const rate =
-      historicalHashRate(data);
+    const rate = historicalHashRate(data);
 
     if (rate <= 0) {
       return {
@@ -747,28 +625,20 @@ function createMiningHelpers({
       };
     }
 
-    const cycle =
-      await calculateMiningCycle(
-        uid,
-        window.miningStartMs,
-        endMs,
-        rate,
-        transaction,
-        getMiningHalvingMultiplier(data)
-      );
+    const cycle = await calculateMiningCycle(
+      uid,
+      window.miningStartMs,
+      endMs,
+      rate,
+      transaction,
+      getMiningHalvingMultiplier(data)
+    );
 
     return {
-      unclaimedMining:
-        cycle.totalMining,
-
-      baseMining:
-        cycle.baseMining,
-
-      adBoostMining:
-        cycle.adBoostMining,
-
-      boostMilliseconds:
-        cycle.boostMilliseconds,
+      unclaimedMining: cycle.totalMining,
+      baseMining: cycle.baseMining,
+      adBoostMining: cycle.adBoostMining,
+      boostMilliseconds: cycle.boostMilliseconds,
     };
   }
 
