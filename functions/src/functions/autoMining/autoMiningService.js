@@ -313,9 +313,12 @@ function createAutoMiningService({
         // REFERRAL REWARD
         // ----------------------------------------------------
 
+        // Referral-palvelun todellinen palauterajapinta:
+        // applied, alreadyProcessed ja bonus.
+
         let referralResult = {
-          rewarded: false,
-          duplicate: false,
+          applied: false,
+          alreadyProcessed: false,
           bonus: 0,
         };
 
@@ -510,7 +513,7 @@ function createAutoMiningService({
               miningTransactionId,
 
               referralReward:
-                referralResult.rewarded
+                referralResult.applied
                   ? referralResult.bonus
                   : 0,
 
@@ -579,15 +582,15 @@ function createAutoMiningService({
           achievementReward,
 
           referralReward:
-            referralResult.rewarded
+            referralResult.applied
               ? referralResult.bonus
               : 0,
 
           referralRewarded:
-            referralResult.rewarded === true,
+            referralResult.applied === true,
 
           referralDuplicate:
-            referralResult.duplicate === true,
+            referralResult.alreadyProcessed === true,
 
           miningBalance: newBalance,
 
