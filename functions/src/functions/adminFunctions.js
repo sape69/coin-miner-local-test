@@ -4,15 +4,15 @@
 // 🐱 STELLURIINI - ADMIN DASHBOARD FUNCTIONS
 // ============================================================
 //
-// Kaikki hallintanäkymän käyttäjätiedot haetaan palvelimelta.
+// Hallintatiedot haetaan aina palvelimelta.
 // Firestore-sääntöjä ei avata Flutter-sovellukselle.
 //
 // Pääsynhallinta:
 // - Firebase Authentication vaaditaan.
 // - Firebase Custom Claim: admin === true vaaditaan.
-// - UID:tä tai ylläpitäjälistaa ei luoteta asiakkaan lähettämänä.
+// - Asiakkaan lähettämää UID:tä ei käytetä oikeuksien tarkistamiseen.
 //
-// Palautetaan vain hallintanäkymässä tarvittavat tiedot.
+// Palautetaan vain hallintanäkymän tarvitsemat tiedot.
 // ============================================================
 
 const {
@@ -60,7 +60,9 @@ function toIso(value) {
 
 function safeNumber(value, fallback = 0) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed >= 0
+    ? parsed
+    : fallback;
 }
 
 function requireAdmin(request) {
@@ -81,10 +83,11 @@ function requireAdmin(request) {
 
 function buildUserRow(document, nowMs) {
   const data = document.data() || {};
+
   const startedAt = toDate(data.miningStartedAt);
   const endsAt = toDate(data.miningEndsAt);
 
-  const isMiningActive = Boolean(
+  const miningActive = Boolean(
     startedAt &&
     endsAt &&
     startedAt.getTime() <= nowMs &&
@@ -96,28 +99,35 @@ function buildUserRow(document, nowMs) {
     : null;
 
   return {
-    uid: document.id,
     username:
       typeof data.username === "string" && data.username.trim()
         ? data.username.trim()
         : "—",
-    miningActive: isMiningActive,
+
+    displayName:
+      typeof data.displayName === "string" && data.displayName.trim()
+        ? data.displayName.trim()
+        : "",
+
+    miningActive,
     miningStartedAt: toIso(data.miningStartedAt),
     miningEndsAt: toIso(data.miningEndsAt),
-    hashRate: safeNumber(
-      data.miningHashRate ?? data.hashRate,
-      0
-    ),
+
+    hashRate: safeNumber(data.miningHashRate, 0),
     miningBalance: safeNumber(data.miningBalance, 0),
+
     premium: data.premium === true,
     premiumVerified: data.premiumVerified === true,
+
     premiumTier:
       typeof data.premiumTier === "string"
         ? data.premiumTier
         : "free",
-    autoMiningLastRunAt: toIso(data.autoMiningLastRunAt),
+
+    premiumExpiryTime: toIso(data.premiumExpiryTime),
+
     endingSoon: Boolean(
-      isMiningActive &&
+      miningActive &&
       endsInMs !== null &&
       endsInMs <= ENDING_SOON_MS
     ),
@@ -140,6 +150,9 @@ const getAdminDashboard = onCall(
 
     const now = Timestamp.now();
     const nowMs = now.toMillis();
+    const endingSoonAt = Timestamp.fromMillis(
+      nowMs + ENDING_SOON_MS
+    );
 
     try {
       const usersQuery = db
@@ -147,43 +160,70 @@ const getAdminDashboard = onCall(
         .orderBy("updatedAt", "desc")
         .limit(pageSize);
 
-      const [usersSnapshot, totalUsersResult, premiumPlusResult] =
-        await Promise.all([
-          usersQuery.get(),
-          db.collection("users").count().get(),
-          db.collection("users")
-            .where("premium", "==", true)
-            .where("premiumVerified", "==", true)
-            .where("premiumTier", "==", "premium_plus")
-            .where("premiumExpiryTime", ">", now)
-            .count()
-            .get(),
-        ]);
+      // Sama varmennettujen Premium Plus -tilausten
+      // kenttärakenne, jota nykyinen automaattinen
+      // louhinta-ajastus käyttää.
+      const premiumPlusQuery = db
+        .collection("users")
+        .where("premium", "==", true)
+        .where("premiumVerified", "==", true)
+        .where("premiumTier", "==", "premium_plus")
+        .where("premiumExpiryTime", ">", now);
+
+      // Louhintajakson päättymisajan perusteella haetaan
+      // kaikki parhaillaan päättymättömät jaksot.
+      const activeMiningQuery = db
+        .collection("users")
+        .where("miningEndsAt", ">", now);
+
+      const endingSoonQuery = db
+        .collection("users")
+        .where("miningEndsAt", ">", now)
+        .where("miningEndsAt", "<=", endingSoonAt);
+
+      const [
+        usersSnapshot,
+        totalUsersResult,
+        premiumPlusResult,
+        activeMinersResult,
+        activeMinersSnapshot,
+        endingSoonResult,
+      ] = await Promise.all([
+        usersQuery.get(),
+        db.collection("users").count().get(),
+        premiumPlusQuery.count().get(),
+        activeMiningQuery.count().get(),
+        activeMiningQuery.limit(MAX_PAGE_SIZE).get(),
+        endingSoonQuery.count().get(),
+      ]);
 
       const users = usersSnapshot.docs.map((document) =>
         buildUserRow(document, nowMs)
       );
 
-      const activeMiners = users.filter(
-        (user) => user.miningActive
-      );
-
-      const endingSoon = users.filter(
-        (user) => user.endingSoon
-      );
+      // Tarkistetaan myös aloitusaika, jotta tulevaisuuteen
+      // ajoitettu tai virheellinen jakso ei näy aktiivisena.
+      const activeMiners = activeMinersSnapshot.docs
+        .map((document) => buildUserRow(document, nowMs))
+        .filter((user) => user.miningActive);
 
       return {
         success: true,
         generatedAt: now.toDate().toISOString(),
-        pageSize,
+
         totalUsers: totalUsersResult.data().count,
         premiumPlusUsers: premiumPlusResult.data().count,
-        activeMinersOnPage: activeMiners.length,
-        endingSoonOnPage: endingSoon.length,
+
+        // Kokonaismäärä perustuu Firestore-kyselyyn.
+        activeMiners: activeMinersResult.data().count,
+        endingSoon: endingSoonResult.data().count,
+
+        // Enintään 100 aktiivisen louhijan tiedot.
+        activeMinerList: activeMiners,
+
+        // Viimeksi päivitetyt käyttäjäprofiilit.
+        pageSize,
         users,
-        nextPageCursor: usersSnapshot.docs.length === pageSize
-          ? usersSnapshot.docs[usersSnapshot.docs.length - 1].id
-          : null,
       };
     } catch (error) {
       console.error("getAdminDashboard failed:", error);
