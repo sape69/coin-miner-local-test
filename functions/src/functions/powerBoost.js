@@ -21,56 +21,92 @@ const PREMIUM_PLUS_BOOST_DURATION_MS =
 // VERIFIED PREMIUM CHECK
 // ------------------------------------------------------------
 
+const PREMIUM_PRODUCT_IDS = new Set([
+  "stelluriini_premium_monthly",
+  "stelluriini_premium_plus_monthly",
+]);
+
+const PREMIUM_PLUS_PRODUCT_ID =
+  "stelluriini_premium_plus_monthly";
+
+const VALID_PLAY_SUBSCRIPTION_STATES = new Set([
+  "SUBSCRIPTION_STATE_ACTIVE",
+  "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+]);
+
+function timestampMs(value) {
+  if (!value) return 0;
+
+  if (typeof value.toMillis === "function") {
+    return value.toMillis();
+  }
+
+  if (typeof value.toDate === "function") {
+    return value.toDate().getTime();
+  }
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return Date.parse(value) || 0;
+  }
+
+  if (typeof value === "object") {
+    const seconds =
+      value._seconds ?? value.seconds;
+
+    const nanos =
+      value._nanoseconds ??
+      value.nanoseconds ??
+      0;
+
+    if (typeof seconds === "number") {
+      return (
+        seconds * 1000 +
+        Math.floor(nanos / 1000000)
+      );
+    }
+  }
+
+  return 0;
+}
+
+// ------------------------------------------------------------
+// VERIFIED PREMIUM CHECK
+// ------------------------------------------------------------
+
 function hasActiveVerifiedPremium(data, referenceNowMs) {
   if (
+    !data ||
     data.premium !== true ||
-    data.premiumVerified !== true
+    data.premiumVerified !== true ||
+    !PREMIUM_PRODUCT_IDS.has(data.premiumProductId) ||
+    !VALID_PLAY_SUBSCRIPTION_STATES.has(
+      data.premiumSubscriptionState
+    )
   ) {
     return false;
   }
 
-  const expiry = data.premiumExpiryTime;
-  let expiryMs = 0;
+  const expectedTier =
+    data.premiumProductId === PREMIUM_PLUS_PRODUCT_ID
+      ? "premium_plus"
+      : "premium";
 
-  if (
-    expiry &&
-    typeof expiry.toMillis === "function"
-  ) {
-    expiryMs = expiry.toMillis();
-  } else if (
-    expiry &&
-    typeof expiry.toDate === "function"
-  ) {
-    expiryMs = expiry.toDate().getTime();
-  } else if (expiry instanceof Date) {
-    expiryMs = expiry.getTime();
-  } else if (
-    typeof expiry === "number" &&
-    Number.isFinite(expiry)
-  ) {
-    expiryMs = expiry;
-  } else if (typeof expiry === "string") {
-    expiryMs = Date.parse(expiry) || 0;
-  } else if (
-    expiry &&
-    typeof expiry === "object"
-  ) {
-    const seconds =
-      expiry._seconds ?? expiry.seconds;
-
-    const nanos =
-      expiry._nanoseconds ??
-      expiry.nanoseconds ??
-      0;
-
-    if (typeof seconds === "number") {
-      expiryMs =
-        seconds * 1000 +
-        Math.floor(nanos / 1000000);
-    }
+  if (data.premiumTier !== expectedTier) {
+    return false;
   }
 
-  return expiryMs > referenceNowMs;
+  return timestampMs(data.premiumExpiryTime) > referenceNowMs;
 }
 
 // ------------------------------------------------------------
@@ -82,10 +118,8 @@ function hasActiveVerifiedPremiumPlus(
   referenceNowMs
 ) {
   return (
-    hasActiveVerifiedPremium(
-      data,
-      referenceNowMs
-    ) &&
+    hasActiveVerifiedPremium(data, referenceNowMs) &&
+    data.premiumProductId === PREMIUM_PLUS_PRODUCT_ID &&
     data.premiumTier === "premium_plus"
   );
 }
