@@ -1,0 +1,80 @@
+
+name: Grant Stelluriini Admin Access
+
+on:
+  workflow_dispatch:
+    inputs:
+      firebase_uid:
+        description: "Firebase Authentication UID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  grant-admin:
+    name: Grant Admin Custom Claim
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install Firebase Admin SDK
+        working-directory: functions
+        run: npm install --ignore-scripts
+
+      - name: Grant admin claim
+        working-directory: functions
+        env:
+          FIREBASE_UID: ${{ inputs.firebase_uid }}
+        run: |
+          node <<'NODE'
+          const {
+            initializeApp,
+            applicationDefault,
+          } = require("firebase-admin/app");
+
+          const { getAuth } = require("firebase-admin/auth");
+
+          async function main() {
+            const uid = process.env.FIREBASE_UID;
+
+            if (!uid || !uid.trim()) {
+              throw new Error("Firebase UID is missing.");
+            }
+
+            initializeApp({
+              credential: applicationDefault(),
+              projectId: "stelluriini",
+            });
+
+            const auth = getAuth();
+            const user = await auth.getUser(uid);
+
+            const existingClaims = user.customClaims || {};
+
+            await auth.setCustomUserClaims(uid, {
+              ...existingClaims,
+              admin: true,
+            });
+
+            console.log("Admin custom claim granted successfully.");
+          }
+
+          main().catch((error) => {
+            console.error("Admin claim update failed:", error.message);
+            process.exit(1);
+          });
+          NODE
