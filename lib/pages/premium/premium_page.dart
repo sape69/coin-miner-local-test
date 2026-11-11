@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -507,7 +506,6 @@ class _PremiumPageState extends State<PremiumPage> {
                 price: service.premiumPrice,
                 features: [
                   _text('Mainokseton louhintakokemus', 'Ad-free mining experience'),
-                  _text('Tehostettu louhintateho', 'Enhanced mining power'),
                 ],
                 isPlus: false,
                 onPressed: premiumAvailable && !busy ? _buyPremium : null,
@@ -523,7 +521,10 @@ class _PremiumPageState extends State<PremiumPage> {
                 features: [
                   _text('Mainokseton louhintakokemus', 'Ad-free mining experience'),
                   _text('Automaattinen Power Boost', 'Automatic Power Boost'),
-                  _text('Tehostetut louhintapalkkiot', 'Enhanced mining rewards'),
+                  _text(
+                    'Automaattinen louhinnan aloitus',
+                    'Automatic mining restart',
+                  ),
                 ],
                 isPlus: true,
                 onPressed:
