@@ -127,6 +127,7 @@ class _HomePageState extends State<HomePage>
   bool _miningActive = false;
   bool _deletingAccount = false;
   bool _premiumActive = false;
+  String _premiumTier = 'free';
 
   double _hashRate = defaultDailyHashRate;
   double _unclaimedMining = 0;
@@ -185,6 +186,77 @@ class _HomePageState extends State<HomePage>
       key,
       params: params,
     );
+  }
+
+  // ============================================================
+  // ⭐ PREMIUM POWER BOOST TEXTS
+  // ============================================================
+
+  Map<String, String> _premiumPowerBoostTexts() {
+    final String code =
+        AppLocalizations.normalizeLanguageCode(
+      widget.languageCode,
+    );
+
+    switch (code) {
+      case 'fi':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus sisältää automaattisen boostin. Voit aktivoida myös manuaalisen Power Boostin ilman mainosta.'
+              : 'Premium-jäsenenä voit aktivoida Power Boostin ilman mainosta.',
+          'button': 'Aktivoi Power Boost',
+        };
+      case 'de':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus enthält einen automatischen Boost. Du kannst den manuellen Power Boost auch ohne Werbung aktivieren.'
+              : 'Mit Premium kannst du Power Boost ohne Werbung aktivieren.',
+          'button': 'Power Boost aktivieren',
+        };
+      case 'es':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus incluye un impulso automático. También puedes activar Power Boost manualmente sin anuncios.'
+              : 'Con Premium puedes activar Power Boost sin anuncios.',
+          'button': 'Activar Power Boost',
+        };
+      case 'fr':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus inclut un boost automatique. Vous pouvez aussi activer Power Boost manuellement sans publicité.'
+              : 'Avec Premium, vous pouvez activer Power Boost sans publicité.',
+          'button': 'Activer Power Boost',
+        };
+      case 'zh':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus 包含自动加成。您也可以无需观看广告，手动启用 Power Boost。'
+              : 'Premium 会员无需观看广告即可启用 Power Boost。',
+          'button': '启用 Power Boost',
+        };
+      case 'vi':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus bao gồm tăng tốc tự động. Bạn cũng có thể bật Power Boost thủ công mà không cần xem quảng cáo.'
+              : 'Với Premium, bạn có thể bật Power Boost mà không cần xem quảng cáo.',
+          'button': 'Kích hoạt Power Boost',
+        };
+      case 'ja':
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plusには自動ブーストが含まれます。広告なしで手動のPower Boostも有効にできます。'
+              : 'Premium会員は広告なしでPower Boostを有効にできます。',
+          'button': 'Power Boostを有効にする',
+        };
+      case 'en':
+      default:
+        return {
+          'subtitle': _premiumTier == 'premium_plus'
+              ? 'Premium Plus includes an automatic boost. You can also activate Power Boost manually without watching an ad.'
+              : 'As a Premium member, you can activate Power Boost without watching an ad.',
+          'button': 'Activate Power Boost',
+        };
+    }
   }
 
   // ============================================================
@@ -603,6 +675,7 @@ class _HomePageState extends State<HomePage>
             data['profile'];
 
         bool premiumActive = false;
+        String premiumTier = 'free';
 
         if (rawProfile is Map) {
           final Map<String, dynamic> profile =
@@ -612,11 +685,26 @@ class _HomePageState extends State<HomePage>
               profile['username']?.toString().trim() ?? '';
 
           premiumActive = _isActivePremiumProfile(profile);
+
+          final String storedTier =
+              profile['premiumTier']
+                      ?.toString()
+                      .trim()
+                      .toLowerCase() ??
+                  '';
+
+          if (premiumActive) {
+            premiumTier =
+                storedTier == 'premium_plus'
+                    ? 'premium_plus'
+                    : 'premium';
+          }
         }
 
         if (mounted) {
           setState(() {
             _premiumActive = premiumActive;
+            _premiumTier = premiumTier;
           });
         }
 
@@ -1899,10 +1987,23 @@ class _HomePageState extends State<HomePage>
       },
     );
 
+    final Map<String, String> premiumTexts =
+        _premiumPowerBoostTexts();
+
+    final bool premiumCanActivateWithoutAd =
+        _premiumActive;
+
     final String subtitle =
         _boostActive
             ? _t('powerBoostActive')
-            : _t('watchAdSubtitle');
+            : premiumCanActivateWithoutAd
+                ? premiumTexts['subtitle']!
+                : _t('watchAdSubtitle');
+
+    final String actionText =
+        premiumCanActivateWithoutAd
+            ? premiumTexts['button']!
+            : _t('watchAd');
 
     final String remainingText =
         _tp(
@@ -1940,7 +2041,7 @@ class _HomePageState extends State<HomePage>
       nextAdAfterBoostText:
           _t('nextAdAfterBoost'),
       watchAdText:
-          _t('watchAd'),
+          actionText,
       adsTodayText:
           adsTodayLabel,
       maxBoostsInfoText:
