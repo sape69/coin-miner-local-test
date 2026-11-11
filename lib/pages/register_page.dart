@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../localization.dart';
+import '../services/analytics_service.dart';
 import '../widgets/cat_avatar.dart';
 
 // ============================================================
@@ -1018,6 +1019,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
           return;
         }
+      }
+
+      // ======================================================
+      // 📊 ANALYTICS: SUCCESSFUL REGISTRATION
+      // ======================================================
+
+      try {
+        await AnalyticsService.logSignUp(
+          method: 'email',
+        );
+      } catch (error) {
+        debugPrint(
+          'Analytics sign-up event error: $error',
+        );
       }
 
       // ======================================================
