@@ -270,41 +270,23 @@ async function saveVerifiedSubscription({
       );
     }
 
-    const userData = userSnapshot.data() || {};
-
-    const currentExpiry = userData.premiumExpiryTime;
-
-    const currentExpiryMs =
-      currentExpiry &&
-      typeof currentExpiry.toMillis === "function"
-        ? currentExpiry.toMillis()
-        : 0;
-
-    const currentTier = userData.premiumTier || "";
-
-    const currentIsPlus =
-      currentTier === "premium_plus" &&
-      currentExpiryMs > Date.now();
-
-    const incomingIsPlus =
-      tier === "premium_plus";
-
-    const keepCurrentPlus =
-      currentIsPlus && !incomingIsPlus;
-
+    // The incoming purchase has just been verified directly with
+    // Google Play and its productId was matched against the actual
+    // subscription line item. It is therefore the authoritative tier.
+    //
+    // Do not preserve a stale premium_plus value from the user document:
+    // doing so can incorrectly grant Premium Plus benefits to a regular
+    // Premium subscriber and can prevent premiumProductId from being saved.
     const updates = {
       premium: true,
       premiumVerified: true,
+      premiumTier: tier,
+      premiumProductId: productId,
+      premiumExpiryTime: expiryTimestamp,
+      premiumSubscriptionState: state,
+      premiumPurchaseTokenHash: purchaseTokenHash,
       premiumUpdatedAt: FieldValue.serverTimestamp(),
     };
-
-    if (!keepCurrentPlus) {
-      updates.premiumTier = tier;
-      updates.premiumProductId = productId;
-      updates.premiumExpiryTime = expiryTimestamp;
-      updates.premiumSubscriptionState = state;
-      updates.premiumPurchaseTokenHash = purchaseTokenHash;
-    }
 
     transaction.set(
       userRef,
