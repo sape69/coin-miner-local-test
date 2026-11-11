@@ -1,19 +1,21 @@
-
 "use strict";
 
 // ============================================================
 // 🐱 STELLURIINI - POWER BOOST
 // ============================================================
 //
-// Stella Power Boost.
+// Power Boost duration:
+// FREE       = 4 hours
+// PREMIUM    = 4 hours
+// PREMIUM_PLUS = 24 hours
 //
-// Premium-käyttäjät voivat aktivoida Power Boostin ilman AdMob-mainosta.
-// Premium-oikeus tarkistetaan aina palvelimella Firestore-profiilista.
-//
-// Tavallisten käyttäjien AdMob SSV -vahvistus säilyy ennallaan.
-// Päivittäinen Boost-raja ja cooldown koskevat kaikkia käyttäjiä.
+// Premium users can activate without AdMob.
+// Premium Plus gets the extended 24-hour duration.
 //
 // ============================================================
+
+const PREMIUM_PLUS_BOOST_DURATION_MS =
+  24 * 60 * 60 * 1000;
 
 // ------------------------------------------------------------
 // VERIFIED PREMIUM CHECK
@@ -69,6 +71,23 @@ function hasActiveVerifiedPremium(data, referenceNowMs) {
   }
 
   return expiryMs > referenceNowMs;
+}
+
+// ------------------------------------------------------------
+// VERIFIED PREMIUM PLUS CHECK
+// ------------------------------------------------------------
+
+function hasActiveVerifiedPremiumPlus(
+  data,
+  referenceNowMs
+) {
+  return (
+    hasActiveVerifiedPremium(
+      data,
+      referenceNowMs
+    ) &&
+    data.premiumTier === "premium_plus"
+  );
 }
 
 // ============================================================
@@ -128,7 +147,6 @@ function createPowerBoost({
         }
 
         const uid = request.auth.uid;
-
         const userRef = getUserRef(uid);
 
         const requestedTransactionId =
@@ -192,7 +210,10 @@ function createPowerBoost({
           earlyToday
         );
 
-        // Päivittäinen käyttöraja koskee myös Premium-käyttäjiä.
+        // ------------------------------------------------------
+        // DAILY LIMIT
+        // ------------------------------------------------------
+
         if (
           earlyAds.adsToday >= MAX_ADS_PER_DAY
         ) {
@@ -220,7 +241,6 @@ function createPowerBoost({
 
         // ------------------------------------------------------
         // ADMOB REWARD
-        // Premium ohittaa tämän vaiheen kokonaan.
         // ------------------------------------------------------
 
         let transactionId = "";
@@ -239,8 +259,7 @@ function createPowerBoost({
             `test-power-boost-${uid}-${earlyNowMs}`;
 
           console.log(
-            "🐱 ADMOB_TEST_MODE: Power Boost " +
-            "SSV verification bypassed."
+            "🐱 ADMOB_TEST_MODE: Power Boost SSV verification bypassed."
           );
         } else {
           let verified;
@@ -312,15 +331,25 @@ function createPowerBoost({
               ? userSnapshot.data() || {}
               : {};
 
-            // Tarkistetaan Premium uudelleen transaktion sisällä.
+            // --------------------------------------------------
+            // VERIFIED PREMIUM
+            // --------------------------------------------------
+
             const premiumActive =
               hasActiveVerifiedPremium(
                 data,
                 nowMs
               );
 
-            // Jos Premium ehti vanhentua tarkistusten välissä,
-            // Premium-ohitusta ei hyväksytä.
+            // Premium Plus tarkistetaan erikseen.
+            // Tavallinen Premium ei saa 24 tunnin boostia.
+
+            const premiumPlusActive =
+              hasActiveVerifiedPremiumPlus(
+                data,
+                nowMs
+              );
+
             if (
               earlyPremiumActive &&
               !premiumActive
@@ -330,6 +359,10 @@ function createPowerBoost({
                 "🐱 Premium-tilaus ei ole enää voimassa. Tarkista tilauksesi ja yritä uudelleen."
               );
             }
+
+            // --------------------------------------------------
+            // MINING VALIDATION
+            // --------------------------------------------------
 
             const window = miningWindow(data);
 
@@ -372,7 +405,6 @@ function createPowerBoost({
 
             // --------------------------------------------------
             // ADMOB VALIDATION
-            // Premium ei tarvitse AdMob-vahvistusta.
             // --------------------------------------------------
 
             let authoritativeId = transactionId;
@@ -408,7 +440,6 @@ function createPowerBoost({
 
             // --------------------------------------------------
             // DAILY LIMIT AND COOLDOWN
-            // Koskevat kaikkia käyttäjiä.
             // --------------------------------------------------
 
             const currentAds = adStatus(
@@ -473,11 +504,26 @@ function createPowerBoost({
             // --------------------------------------------------
             // POWER BOOST DURATION
             // --------------------------------------------------
+            //
+            // FREE       = 4 HOURS
+            // PREMIUM    = 4 HOURS
+            // PREMIUM_PLUS = 24 HOURS
+            //
+            // Only an active and verified Premium Plus
+            // subscription receives the 24-hour duration.
+            //
+            // The mining cycle end is always respected.
+            // --------------------------------------------------
+
+            const configuredBoostDurationMs =
+              premiumPlusActive
+                ? PREMIUM_PLUS_BOOST_DURATION_MS
+                : AD_BOOST_DURATION_MS;
 
             const boostStartedAt = now;
 
             const actualEndMs = Math.min(
-              nowMs + AD_BOOST_DURATION_MS,
+              nowMs + configuredBoostDurationMs,
               window.miningEndMs
             );
 
@@ -499,8 +545,6 @@ function createPowerBoost({
 
             // --------------------------------------------------
             // DAILY BOOST COUNTER
-            // Lasketaan Boostin käyttökerrat,
-            // ei pelkästään katsottuja mainoksia.
             // --------------------------------------------------
 
             const storedDate =
@@ -601,42 +645,6 @@ function createPowerBoost({
             }
 
             // --------------------------------------------------
-            // ADMOB REWARD CONSUMPTION
-            // Premium ei kuluta AdMob-palkintoa.
-            // --------------------------------------------------
-
-            if (
-              !premiumActive &&
-              ADMOB_TEST_MODE !== true &&
-              rewardRef
-            ) {
-              transaction.set(
-                rewardRef,
-                {
-                  powerBoostClaimed: true,
-
-                  powerBoostClaimedAt:
-                    FieldValue.serverTimestamp(),
-
-                  powerBoostClaimedBy: uid,
-
-                  powerBoostTransactionId:
-                    authoritativeId,
-
-                  consumedAt:
-                    FieldValue.serverTimestamp(),
-
-                  consumedBy: uid,
-
-                  rewardConsumed: true,
-                },
-                {
-                  merge: true,
-                }
-              );
-            }
-
-            // --------------------------------------------------
             // POWER BOOST HISTORY
             // --------------------------------------------------
 
@@ -661,6 +669,12 @@ function createPowerBoost({
                 premiumAdFreePowerBoost:
                   premiumActive,
 
+                premiumTier: premiumPlusActive
+                  ? "premium_plus"
+                  : premiumActive
+                    ? "premium"
+                    : "free",
+
                 adHashRateBonus:
                   AD_HASH_RATE_BONUS,
 
@@ -669,6 +683,8 @@ function createPowerBoost({
                 boostEndsAt,
 
                 boostDurationMs: durationMs,
+
+                configuredBoostDurationMs,
 
                 miningStartedAt:
                   window.miningStartedAt,
@@ -724,8 +740,16 @@ function createPowerBoost({
 
               adBoostDurationMs: durationMs,
 
-              configuredBoostDurationMs:
-                AD_BOOST_DURATION_MS,
+              configuredBoostDurationMs,
+
+              premiumTier: premiumPlusActive
+                ? "premium_plus"
+                : premiumActive
+                  ? "premium"
+                  : "free",
+
+              premiumPlusBoost:
+                premiumPlusActive,
 
               adBoostStartedAt:
                 boostStartedAt.toISOString(),
@@ -798,7 +822,7 @@ function createPowerBoost({
                 powerBoostAchievementResult.powerBoostCount,
 
               message:
-                durationMs < AD_BOOST_DURATION_MS
+                durationMs < configuredBoostDurationMs
                   ? "🐱⚡ Stella Power Boost on aktiivinen louhinnan loppuun asti!"
                   : powerBoostAchievementReward > 0
                     ? `🐱⚡ Stella Power Boost on aktiivinen! Stella avasi achievement-palkinnon +${powerBoostAchievementReward} STL.`
