@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -124,6 +123,15 @@ const {
 
 
 // ============================================================
+// 🛡️ ADMIN DASHBOARD
+// ============================================================
+
+const {
+  getAdminDashboard,
+} = require("./src/functions/adminFunctions");
+
+
+// ============================================================
 // ⛏️ MINING EXPORTS
 // ============================================================
 
@@ -209,6 +217,13 @@ exports.validateReferralCode = validateReferralCode;
 
 exports.verifyPlaySubscription = verifyPlaySubscription;
 exports.expirePremiumSubscriptions = expirePremiumSubscriptions;
+
+
+// ============================================================
+// 🛡️ ADMIN DASHBOARD EXPORT
+// ============================================================
+
+exports.getAdminDashboard = getAdminDashboard;
 
 
 // ============================================================
