@@ -32,42 +32,22 @@ class _AdminDashboardPageState
   // 🎨 STELLA THEME
   // ==========================================================
 
-  static const Color backgroundColor =
-      Color(0xFF120B24);
-
-  static const Color surfaceColor =
-      Color(0xFF1A0E31);
-
-  static const Color cardColor =
-      Color(0xFF21113B);
-
-  static const Color purpleColor =
-      Color(0xFFB58CFF);
-
-  static const Color pinkColor =
-      Color(0xFFFFB7E8);
-
-  static const Color goldColor =
-      Color(0xFFFFD166);
-
-  static const Color primaryTextColor =
-      Color(0xFFF8F4FF);
-
-  static const Color secondaryTextColor =
-      Color(0xFFBDB4D1);
-
-  static const Color greenColor =
-      Color(0xFF65D6A0);
-
-  static const Color redColor =
-      Color(0xFFFF6B7A);
+  static const Color backgroundColor = Color(0xFF120B24);
+  static const Color surfaceColor = Color(0xFF1A0E31);
+  static const Color cardColor = Color(0xFF21113B);
+  static const Color purpleColor = Color(0xFFB58CFF);
+  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color goldColor = Color(0xFFFFD166);
+  static const Color primaryTextColor = Color(0xFFF8F4FF);
+  static const Color secondaryTextColor = Color(0xFFBDB4D1);
+  static const Color greenColor = Color(0xFF65D6A0);
+  static const Color redColor = Color(0xFFFF6B7A);
 
   // ==========================================================
   // 🔥 FIREBASE
   // ==========================================================
 
-  final FirebaseAuth _auth =
-      FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(
@@ -98,14 +78,9 @@ class _AdminDashboardPageState
   // ==========================================================
 
   bool get _isFinnish =>
-      widget.languageCode
-          .toLowerCase()
-          .startsWith('fi');
+      widget.languageCode.toLowerCase().startsWith('fi');
 
-  String _text(
-    String fi,
-    String en,
-  ) {
+  String _text(String fi, String en) {
     return _isFinnish ? fi : en;
   }
 
@@ -116,7 +91,6 @@ class _AdminDashboardPageState
   @override
   void initState() {
     super.initState();
-
     _loadDashboard();
   }
 
@@ -152,8 +126,7 @@ class _AdminDashboardPageState
     });
 
     try {
-      final bool isAdmin =
-          await _checkAdminAccess();
+      final bool isAdmin = await _checkAdminAccess();
 
       if (!mounted) return;
 
@@ -193,9 +166,7 @@ class _AdminDashboardPageState
       );
 
       if (data['success'] != true) {
-        throw Exception(
-          'Dashboard request failed.',
-        );
+        throw Exception('Dashboard request failed.');
       }
 
       final List<Map<String, dynamic>> users =
@@ -207,24 +178,15 @@ class _AdminDashboardPageState
       if (!mounted) return;
 
       setState(() {
-        _totalUsers =
-            _toInt(data['totalUsers']);
-
-        _activeMiners =
-            _toInt(data['activeMiners']);
-
-        _premiumPlusUsers =
-            _toInt(data['premiumPlusUsers']);
-
-        _endingSoon =
-            _toInt(data['endingSoon']);
+        _totalUsers = _toInt(data['totalUsers']);
+        _activeMiners = _toInt(data['activeMiners']);
+        _premiumPlusUsers = _toInt(data['premiumPlusUsers']);
+        _endingSoon = _toInt(data['endingSoon']);
 
         _users = users;
         _activeMinerList = activeMiners;
 
-        _generatedAt = _parseDate(
-          data['generatedAt'],
-        );
+        _generatedAt = _parseDate(data['generatedAt']);
 
         _loading = false;
       });
@@ -246,8 +208,7 @@ class _AdminDashboardPageState
             'Please sign in again.',
           );
         } else {
-          _errorMessage =
-              error.message ??
+          _errorMessage = error.message ??
               _text(
                 'Hallintatietojen hakeminen epäonnistui.',
                 'Failed to load dashboard data.',
@@ -271,18 +232,14 @@ class _AdminDashboardPageState
   // DATA HELPERS
   // ==========================================================
 
-  List<Map<String, dynamic>> _parseList(
-    dynamic value,
-  ) {
+  List<Map<String, dynamic>> _parseList(dynamic value) {
     if (value is! List) {
       return [];
     }
 
     return value
         .whereType<Map>()
-        .map(
-          (item) => Map<String, dynamic>.from(item),
-        )
+        .map((item) => Map<String, dynamic>.from(item))
         .toList();
   }
 
@@ -291,10 +248,7 @@ class _AdminDashboardPageState
       return value.toInt();
     }
 
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   double _toDouble(dynamic value) {
@@ -302,10 +256,7 @@ class _AdminDashboardPageState
       return value.toDouble();
     }
 
-    return double.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
+    return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   DateTime? _parseDate(dynamic value) {
@@ -354,13 +305,47 @@ class _AdminDashboardPageState
     switch (value?.toString()) {
       case 'premium_plus':
         return 'Premium Plus';
-
       case 'premium':
         return 'Premium';
-
       default:
         return 'Free';
     }
+  }
+
+  String _premiumStatus(Map<String, dynamic> user) {
+    final bool premium = user['premium'] == true;
+    final bool verified = user['premiumVerified'] == true;
+
+    if (!premium) {
+      return _text('Ei tilausta', 'No subscription');
+    }
+
+    if (verified) {
+      return _text(
+        'Vahvistettu tilaus',
+        'Verified subscription',
+      );
+    }
+
+    return _text(
+      'Ei vahvistettu',
+      'Not verified',
+    );
+  }
+
+  Color _premiumStatusColor(Map<String, dynamic> user) {
+    final bool premium = user['premium'] == true;
+    final bool verified = user['premiumVerified'] == true;
+
+    if (premium && verified) {
+      return greenColor;
+    }
+
+    if (premium) {
+      return pinkColor;
+    }
+
+    return secondaryTextColor;
   }
 
   // ==========================================================
@@ -383,14 +368,9 @@ class _AdminDashboardPageState
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 25,
-          ),
+          Icon(icon, color: color, size: 25),
           const SizedBox(height: 12),
           Text(
             value.toString(),
@@ -421,26 +401,19 @@ class _AdminDashboardPageState
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
-      physics:
-          const NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 11,
       mainAxisSpacing: 11,
       childAspectRatio: 1.48,
       children: [
         _buildSummaryCard(
-          title: _text(
-            'Kaikki käyttäjät',
-            'Total users',
-          ),
+          title: _text('Kaikki käyttäjät', 'Total users'),
           value: _totalUsers,
           icon: Icons.people_alt_rounded,
           color: purpleColor,
         ),
         _buildSummaryCard(
-          title: _text(
-            'Aktiiviset louhijat',
-            'Active miners',
-          ),
+          title: _text('Aktiiviset louhijat', 'Active miners'),
           value: _activeMiners,
           icon: Icons.bolt_rounded,
           color: greenColor,
@@ -479,11 +452,7 @@ class _AdminDashboardPageState
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: purpleColor,
-            size: 21,
-          ),
+          Icon(icon, color: purpleColor, size: 21),
           const SizedBox(width: 9),
           Expanded(
             child: Text(
@@ -508,20 +477,26 @@ class _AdminDashboardPageState
     Map<String, dynamic> user, {
     required bool showMiningStatus,
   }) {
-    final bool miningActive =
-        user['miningActive'] == true;
-
-    final bool endingSoon =
-        user['endingSoon'] == true;
+    final bool miningActive = user['miningActive'] == true;
+    final bool endingSoon = user['endingSoon'] == true;
 
     final String username =
         user['username']?.toString() ?? '—';
 
-    final String tier =
-        _tierName(user['premiumTier']);
+    final String displayName =
+        user['displayName']?.toString().trim() ?? '';
 
-    final double hashRate =
-        _toDouble(user['hashRate']);
+    final bool showDisplayName =
+        displayName.isNotEmpty && displayName != username;
+
+    final String tier = _tierName(user['premiumTier']);
+
+    final double hashRate = _toDouble(user['hashRate']);
+
+    final String premiumStatus = _premiumStatus(user);
+
+    final Color premiumColor =
+        _premiumStatusColor(user);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -536,8 +511,7 @@ class _AdminDashboardPageState
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -552,8 +526,7 @@ class _AdminDashboardPageState
               const SizedBox(width: 11),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       username,
@@ -565,12 +538,25 @@ class _AdminDashboardPageState
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    if (showDisplayName) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
                     Text(
                       tier,
                       style: const TextStyle(
                         color: goldColor,
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -598,6 +584,27 @@ class _AdminDashboardPageState
               ),
             ],
           ),
+          const SizedBox(height: 11),
+          Row(
+            children: [
+              Icon(
+                Icons.workspace_premium_rounded,
+                color: premiumColor,
+                size: 15,
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  premiumStatus,
+                  style: TextStyle(
+                    color: premiumColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
           if (showMiningStatus) ...[
             const SizedBox(height: 11),
             _buildInfo(
@@ -609,7 +616,7 @@ class _AdminDashboardPageState
           if (user['premiumExpiryTime'] != null) ...[
             const SizedBox(height: 8),
             _buildInfo(
-              Icons.workspace_premium_rounded,
+              Icons.event_rounded,
               '${_text('Tilaus päättyy', 'Subscription ends')}: '
               '${_formatDate(user['premiumExpiryTime'])}',
             ),
@@ -618,6 +625,10 @@ class _AdminDashboardPageState
       ),
     );
   }
+
+  // ==========================================================
+  // MINING STATUS BADGE
+  // ==========================================================
 
   Widget _buildStatusBadge({
     required bool miningActive,
@@ -655,10 +666,11 @@ class _AdminDashboardPageState
     );
   }
 
-  Widget _buildInfo(
-    IconData icon,
-    String text,
-  ) {
+  // ==========================================================
+  // INFO ROW
+  // ==========================================================
+
+  Widget _buildInfo(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -756,9 +768,7 @@ class _AdminDashboardPageState
         actions: [
           IconButton(
             tooltip: _text('Päivitä', 'Refresh'),
-            onPressed: _loading
-                ? null
-                : _loadDashboard,
+            onPressed: _loading ? null : _loadDashboard,
             icon: const Icon(
               Icons.refresh_rounded,
               color: purpleColor,
@@ -791,8 +801,7 @@ class _AdminDashboardPageState
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: surfaceColor,
-                            borderRadius:
-                                BorderRadius.circular(17),
+                            borderRadius: BorderRadius.circular(17),
                             border: Border.all(
                               color: goldColor.withValues(
                                 alpha: 0.35,
@@ -819,8 +828,7 @@ class _AdminDashboardPageState
                                       ),
                                       style: const TextStyle(
                                         color: primaryTextColor,
-                                        fontWeight:
-                                            FontWeight.bold,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -865,8 +873,8 @@ class _AdminDashboardPageState
                           ),
                         _buildSectionTitle(
                           _text(
-                            'Käyttäjät',
-                            'Users',
+                            'Käyttäjät (50 uusinta)',
+                            'Users (latest 50)',
                           ),
                           Icons.people_alt_rounded,
                         ),
@@ -886,8 +894,7 @@ class _AdminDashboardPageState
                           ),
                         if (_generatedAt != null)
                           Padding(
-                            padding:
-                                const EdgeInsets.only(top: 12),
+                            padding: const EdgeInsets.only(top: 12),
                             child: Text(
                               '${_text('Päivitetty', 'Updated')}: '
                               '${_formatDate(_generatedAt!.toIso8601String())}',
@@ -904,6 +911,10 @@ class _AdminDashboardPageState
       ),
     );
   }
+
+  // ==========================================================
+  // EMPTY MESSAGE
+  // ==========================================================
 
   Widget _buildEmptyMessage(String message) {
     return Container(
