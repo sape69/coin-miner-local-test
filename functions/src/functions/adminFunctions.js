@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -60,6 +61,7 @@ function toIso(value) {
 
 function safeNumber(value, fallback = 0) {
   const parsed = Number(value);
+
   return Number.isFinite(parsed) && parsed >= 0
     ? parsed
     : fallback;
@@ -110,6 +112,7 @@ function buildUserRow(document, nowMs) {
         : "",
 
     miningActive,
+
     miningStartedAt: toIso(data.miningStartedAt),
     miningEndsAt: toIso(data.miningEndsAt),
 
@@ -144,12 +147,14 @@ const getAdminDashboard = onCall(
     requireAdmin(request);
 
     const requestedLimit = Number(request.data?.pageSize);
+
     const pageSize = Number.isInteger(requestedLimit)
       ? Math.min(Math.max(requestedLimit, 1), MAX_PAGE_SIZE)
       : DEFAULT_PAGE_SIZE;
 
     const now = Timestamp.now();
     const nowMs = now.toMillis();
+
     const endingSoonAt = Timestamp.fromMillis(
       nowMs + ENDING_SOON_MS
     );
@@ -160,9 +165,6 @@ const getAdminDashboard = onCall(
         .orderBy("updatedAt", "desc")
         .limit(pageSize);
 
-      // Sama varmennettujen Premium Plus -tilausten
-      // kenttärakenne, jota nykyinen automaattinen
-      // louhinta-ajastus käyttää.
       const premiumPlusQuery = db
         .collection("users")
         .where("premium", "==", true)
@@ -170,14 +172,18 @@ const getAdminDashboard = onCall(
         .where("premiumTier", "==", "premium_plus")
         .where("premiumExpiryTime", ">", now);
 
-      // Louhintajakson päättymisajan perusteella haetaan
-      // kaikki parhaillaan päättymättömät jaksot.
+      // Louhintajakson pitää olla jo alkanut
+      // ja sen päättymisajan pitää olla tulevaisuudessa.
       const activeMiningQuery = db
         .collection("users")
+        .where("miningStartedAt", "<=", now)
         .where("miningEndsAt", ">", now);
 
+      // Sama aktiivisuusehto sekä päättymisaika
+      // seuraavan tunnin sisällä.
       const endingSoonQuery = db
         .collection("users")
+        .where("miningStartedAt", "<=", now)
         .where("miningEndsAt", ">", now)
         .where("miningEndsAt", "<=", endingSoonAt);
 
@@ -190,10 +196,15 @@ const getAdminDashboard = onCall(
         endingSoonResult,
       ] = await Promise.all([
         usersQuery.get(),
+
         db.collection("users").count().get(),
+
         premiumPlusQuery.count().get(),
+
         activeMiningQuery.count().get(),
+
         activeMiningQuery.limit(MAX_PAGE_SIZE).get(),
+
         endingSoonQuery.count().get(),
       ]);
 
@@ -201,28 +212,27 @@ const getAdminDashboard = onCall(
         buildUserRow(document, nowMs)
       );
 
-      // Tarkistetaan myös aloitusaika, jotta tulevaisuuteen
-      // ajoitettu tai virheellinen jakso ei näy aktiivisena.
-      const activeMiners = activeMinersSnapshot.docs
+      const activeMinerList = activeMinersSnapshot.docs
         .map((document) => buildUserRow(document, nowMs))
         .filter((user) => user.miningActive);
 
       return {
         success: true,
+
         generatedAt: now.toDate().toISOString(),
 
         totalUsers: totalUsersResult.data().count,
+
         premiumPlusUsers: premiumPlusResult.data().count,
 
-        // Kokonaismäärä perustuu Firestore-kyselyyn.
         activeMiners: activeMinersResult.data().count,
+
         endingSoon: endingSoonResult.data().count,
 
-        // Enintään 100 aktiivisen louhijan tiedot.
-        activeMinerList: activeMiners,
+        activeMinerList,
 
-        // Viimeksi päivitetyt käyttäjäprofiilit.
         pageSize,
+
         users,
       };
     } catch (error) {
