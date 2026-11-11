@@ -839,18 +839,40 @@ class _ReferralsPageState extends State<ReferralsPage> {
         '3. Enter my invitation code during registration.';
   }
 
+  String get _shareCommunityLine {
+    if (_isFinnish) return 'Liity Stelluriinin yhteisöön!';
+    if (_isGerman) return 'Werde Teil der Stelluriini-Community!';
+    if (_isSpanish) return '¡Únete a la comunidad de Stelluriini!';
+    if (_isFrench) return 'Rejoins la communauté Stelluriini !';
+    if (_isChinese) return '加入 Stelluriini 社区！';
+    if (_isVietnamese) return 'Tham gia cộng đồng Stelluriini!';
+    if (_isJapanese) return 'Stelluriini コミュニティに参加しよう！';
+    return 'Join the Stelluriini community!';
+  }
+
+  String get _shareClosingLine {
+    if (_isFinnish) return 'Nähdään Stelluriinissa!';
+    if (_isGerman) return 'Wir sehen uns bei Stelluriini!';
+    if (_isSpanish) return '¡Nos vemos en Stelluriini!';
+    if (_isFrench) return 'À bientôt sur Stelluriini !';
+    if (_isChinese) return '我们在 Stelluriini 见！';
+    if (_isVietnamese) return 'Hẹn gặp bạn trên Stelluriini!';
+    if (_isJapanese) return 'Stelluriini で会いましょう！';
+    return 'See you in Stelluriini!';
+  }
+
   Future<void> _shareReferralCode() async {
     if (_referralCode.trim().isEmpty) return;
 
     final String shareText =
         '🐱✨ Stelluriini – Stella.app\n'
-        'Join the Stelluriini community!\n\n'
+        '$_shareCommunityLine\n\n'
         '$_shareInviteText\n'
         '🎁 ${_referralCode.trim().toUpperCase()}\n\n'
         '$_shareHowToJoin\n\n'
         '📲 $_shareDownloadLabel\n'
         '$_googlePlayUrl\n\n'
-        '💜 See you in Stelluriini!';
+        '💜 $_shareClosingLine';
 
     try {
       await SharePlus.instance.share(
