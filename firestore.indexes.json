@@ -1,0 +1,20 @@
+
+{
+  "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "miningStartedAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "miningEndsAt",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
