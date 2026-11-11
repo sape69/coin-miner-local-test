@@ -1,0 +1,60 @@
+
+name: Deploy Stelluriini Admin Dashboard Only
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-admin-dashboard:
+    name: Deploy Admin Dashboard Function Only
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Install Functions dependencies
+        working-directory: functions
+        run: npm install
+
+      - name: Check JavaScript syntax
+        working-directory: functions
+        run: |
+          set -e
+
+          node --check index.js
+          node --check src/functions/adminFunctions.js
+          node --check src/firebase/firebase.js
+
+          echo "JavaScript syntax checks passed."
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: stelluriini
+
+      - name: Deploy Admin Dashboard Function Only
+        run: |
+          firebase deploy \
+            --only functions:getAdminDashboard \
+            --project stelluriini \
+            --non-interactive
+
+      - name: Deployment completed
+        run: echo "Admin Dashboard function deployment completed."
