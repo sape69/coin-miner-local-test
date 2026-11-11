@@ -282,6 +282,8 @@ function createMiningHelpers({
   const VALID_PLAY_SUBSCRIPTION_STATES = new Set([
     "SUBSCRIPTION_STATE_ACTIVE",
     "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+    // A canceled subscription remains valid until its paid expiry time.
+    "SUBSCRIPTION_STATE_CANCELED",
   ]);
 
   function isActivePremiumPlus(data, nowMs) {
