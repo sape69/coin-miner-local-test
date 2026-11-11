@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'analytics_service.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 /// Stelluriini Premium -tilausten hallinta.
@@ -267,9 +268,28 @@ class PremiumSubscriptionService extends ChangeNotifier {
       final PurchaseParam purchaseParam =
           PurchaseParam(productDetails: product);
 
-      return await _inAppPurchase.buyNonConsumable(
+      final bool purchaseStarted =
+          await _inAppPurchase.buyNonConsumable(
         purchaseParam: purchaseParam,
       );
+
+      if (purchaseStarted) {
+        // Analytics ei saa estää varsinaista ostotapahtumaa.
+        try {
+          await AnalyticsService.logPremiumPurchaseStarted(
+            productId: productId,
+          );
+        } catch (error) {
+          debugPrint(
+            'Analytics Premium purchase-start event error: $error',
+          );
+        }
+      } else {
+        _purchasePending = false;
+        _notify();
+      }
+
+      return purchaseStarted;
     } catch (e) {
       if (!_disposed) {
         _purchasePending = false;
@@ -446,6 +466,22 @@ class PremiumSubscriptionService extends ChangeNotifier {
           : 'Premium on aktivoitu!';
 
       _error = null;
+
+      // Analyticsiin kirjataan valmistunut uusi ostotapahtuma
+      // vasta onnistuneen Firebase-palvelinvarmennuksen jälkeen.
+      // Palautettu vanha tilaus ei ole uusi ostotapahtuma.
+      if (purchase.status == PurchaseStatus.purchased) {
+        try {
+          await AnalyticsService.logPremiumPurchaseCompleted(
+            productId: productId,
+            tier: tier,
+          );
+        } catch (error) {
+          debugPrint(
+            'Analytics Premium purchase-completed event error: $error',
+          );
+        }
+      }
 
       // Ostoa voidaan kuitata vasta onnistuneen
       // palvelinvarmennuksen jälkeen.
