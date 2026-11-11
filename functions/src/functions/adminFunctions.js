@@ -127,13 +127,6 @@ function fallbackUsername(uid) {
 // ============================================================
 // FIREBASE AUTH DISPLAY NAME
 // ============================================================
-//
-// Haetaan displayName vain silloin, kun Firestore-profiilista
-// ei löydy käyttäjänimeä eikä displayName-arvoa.
-//
-// Virhe yksittäisen käyttäjän Auth-haussa ei estä
-// koko hallintanäkymän lataamista.
-// ============================================================
 
 async function getAuthDisplayName(uid) {
   try {
@@ -154,7 +147,11 @@ async function getAuthDisplayName(uid) {
 // USER ROW
 // ============================================================
 
-function buildUserRow(document, nowMs, authDisplayName = "") {
+function buildUserRow(
+  document,
+  nowMs,
+  authDisplayName = ""
+) {
   const data = document.data() || {};
 
   const startedAt = toDate(data.miningStartedAt);
@@ -208,24 +205,29 @@ function buildUserRow(document, nowMs, authDisplayName = "") {
 }
 
 // ============================================================
-// RESOLVE USER NAMES
+// RESOLVE USER ROWS BY UID
 // ============================================================
 //
-// Yhdistetään käyttäjälistan ja aktiivisten louhijoiden
-// dokumentit. Auth-haut tehdään vain käyttäjille, joiden
-// Firestore-profiilista puuttuu nimi.
+// Jokainen käyttäjä käsitellään UID-avaimella.
 //
-// Sähköpostiosoitteita ei palauteta.
+// Sama käyttäjä voi esiintyä sekä käyttäjälistassa
+// että aktiivisten louhijoiden listassa.
+//
+// Nimi haetaan Firebase Authista vain, jos Firestoresta
+// ei löydy username- tai displayName-arvoa.
+//
+// Palautetaan Map, jossa avain on aina dokumentin UID.
+// Näin käyttäjien nimet eivät voi sekoittua.
 // ============================================================
 
-async function buildUserRows(documents, nowMs) {
+async function buildUserRowsByUid(documents, nowMs) {
   const uniqueDocuments = new Map();
 
   for (const document of documents) {
     uniqueDocuments.set(document.id, document);
   }
 
-  const authNames = new Map();
+  const rowsByUid = new Map();
 
   const lookups = [];
 
@@ -236,25 +238,28 @@ async function buildUserRows(documents, nowMs) {
       cleanName(data.username) ||
       cleanName(data.displayName);
 
-    if (!firestoreName) {
-      lookups.push(
-        (async () => {
-          const name = await getAuthDisplayName(uid);
-          authNames.set(uid, name);
-        })()
-      );
-    }
+    lookups.push(
+      (async () => {
+        let authDisplayName = "";
+
+        if (!firestoreName) {
+          authDisplayName = await getAuthDisplayName(uid);
+        }
+
+        const row = buildUserRow(
+          document,
+          nowMs,
+          authDisplayName
+        );
+
+        rowsByUid.set(uid, row);
+      })()
+    );
   }
 
   await Promise.all(lookups);
 
-  return documents.map((document) =>
-    buildUserRow(
-      document,
-      nowMs,
-      authNames.get(document.id) || ""
-    )
-  );
+  return rowsByUid;
 }
 
 // ============================================================
@@ -354,7 +359,7 @@ const getAdminDashboard = onCall(
       ]);
 
       // ------------------------------------------------------
-      // RESOLVE USER NAMES
+      // RESOLVE USER ROWS BY UID
       // ------------------------------------------------------
 
       const allDocuments = [
@@ -362,45 +367,31 @@ const getAdminDashboard = onCall(
         ...activeMinersSnapshot.docs,
       ];
 
-      const resolvedRows = await buildUserRows(
+      const rowsByUid = await buildUserRowsByUid(
         allDocuments,
         nowMs
       );
 
       // ------------------------------------------------------
-      // MAP RESOLVED ROWS BACK TO DOCUMENT IDS
+      // USERS LIST
       // ------------------------------------------------------
 
-      const rowsById = new Map();
+      const users = usersSnapshot.docs
+        .map((document) =>
+          rowsByUid.get(document.id)
+        )
+        .filter(Boolean);
 
-      const uniqueIds = new Set();
-
-      for (const document of allDocuments) {
-        if (uniqueIds.has(document.id)) {
-          continue;
-        }
-
-        uniqueIds.add(document.id);
-      }
-
-      let rowIndex = 0;
-
-      for (const uid of uniqueIds) {
-        rowsById.set(uid, resolvedRows[rowIndex]);
-        rowIndex++;
-      }
-
-      const users = usersSnapshot.docs.map(
-        (document) =>
-          rowsById.get(document.id)
-      );
+      // ------------------------------------------------------
+      // ACTIVE MINERS LIST
+      // ------------------------------------------------------
 
       const activeMinerList = activeMinersSnapshot.docs
         .map((document) =>
-          rowsById.get(document.id)
+          rowsByUid.get(document.id)
         )
-        .filter((user) =>
-          user && user.miningActive
+        .filter(
+          (user) => user && user.miningActive
         );
 
       // ------------------------------------------------------
