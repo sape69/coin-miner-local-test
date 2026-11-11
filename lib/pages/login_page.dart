@@ -1,8 +1,10 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../localization.dart';
+import '../services/analytics_service.dart';
 import 'register_page.dart';
 
 // ============================================================
@@ -51,26 +53,13 @@ class _LoginPageState extends State<LoginPage> {
   // 🎨 STELLA COLORS
   // ==========================================================
 
-  static const Color backgroundColor =
-      Color(0xFF120B24);
-
-  static const Color cardColor =
-      Color(0xFF21113B);
-
-  static const Color accentColor =
-      Color(0xFFB58CFF);
-
-  static const Color pinkColor =
-      Color(0xFFFFB7E8);
-
-  static const Color goldColor =
-      Color(0xFFFFD166);
-
-  static const Color primaryTextColor =
-      Color(0xFFF8F4FF);
-
-  static const Color secondaryTextColor =
-      Color(0xFFBDB4D1);
+  static const Color backgroundColor = Color(0xFF120B24);
+  static const Color cardColor = Color(0xFF21113B);
+  static const Color accentColor = Color(0xFFB58CFF);
+  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color goldColor = Color(0xFFFFD166);
+  static const Color primaryTextColor = Color(0xFFF8F4FF);
+  static const Color secondaryTextColor = Color(0xFFBDB4D1);
 
   // ==========================================================
   // FIREBASE
@@ -110,7 +99,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-
     _initializeFirstInstallLanguage();
   }
 
@@ -124,10 +112,7 @@ class _LoginPageState extends State<LoginPage> {
           await SharedPreferences.getInstance();
 
       final bool initialized =
-          preferences.getBool(
-                _firstInstallLanguageKey,
-              ) ??
-              false;
+          preferences.getBool(_firstInstallLanguageKey) ?? false;
 
       if (initialized) {
         return;
@@ -160,21 +145,11 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-
     super.dispose();
   }
 
   // ==========================================================
   // 💬 MESSAGE
-  // ==========================================================
-  //
-  // Selkeä Stella-tyylinen ilmoituskortti.
-  //
-  // Tarkoitus:
-  // - ei huku tummaan taustaan
-  // - onnistuminen näkyy kultaisena
-  // - virhe näkyy pinkkinä
-  // - teksti on helposti luettava
   // ==========================================================
 
   void _showMessage(
@@ -239,8 +214,7 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
             child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   width: 46,
@@ -281,11 +255,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(width: 4),
                 IconButton(
-                  visualDensity:
-                      VisualDensity.compact,
+                  visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(
+                  constraints: const BoxConstraints(
                     minWidth: 34,
                     minHeight: 34,
                   ),
@@ -314,16 +286,11 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final String email =
-        _emailController.text.trim();
-
-    final String password =
-        _passwordController.text;
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showMessage(
-        _t.get('loginFillFields'),
-      );
+      _showMessage(_t.get('loginFillFields'));
       return;
     }
 
@@ -336,6 +303,16 @@ class _LoginPageState extends State<LoginPage> {
         email: email,
         password: password,
       );
+
+      // Analytics is non-critical.
+      // An analytics failure must never block login.
+      try {
+        await AnalyticsService.logLogin();
+      } catch (error) {
+        debugPrint(
+          'Analytics login event error: $error',
+        );
+      }
     } on FirebaseAuthException catch (error) {
       debugPrint(
         'Firebase login error: '
@@ -347,22 +324,16 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        _firebaseLoginErrorMessage(
-          error.code,
-        ),
+        _firebaseLoginErrorMessage(error.code),
       );
     } catch (error) {
-      debugPrint(
-        'Login error: $error',
-      );
+      debugPrint('Login error: $error');
 
       if (!mounted) {
         return;
       }
 
-      _showMessage(
-        _t.get('loginFailed'),
-      );
+      _showMessage(_t.get('loginFailed'));
     } finally {
       if (mounted) {
         setState(() {
@@ -381,20 +352,15 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final String email =
-        _emailController.text.trim();
+    final String email = _emailController.text.trim();
 
     if (email.isEmpty) {
-      _showMessage(
-        _t.get('passwordResetDescription'),
-      );
+      _showMessage(_t.get('passwordResetDescription'));
       return;
     }
 
     if (!_isValidEmail(email)) {
-      _showMessage(
-        _t.get('loginInvalidEmail'),
-      );
+      _showMessage(_t.get('loginInvalidEmail'));
       return;
     }
 
@@ -426,22 +392,16 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showMessage(
-        _firebaseResetErrorMessage(
-          error.code,
-        ),
+        _firebaseResetErrorMessage(error.code),
       );
     } catch (error) {
-      debugPrint(
-        'Password reset error: $error',
-      );
+      debugPrint('Password reset error: $error');
 
       if (!mounted) {
         return;
       }
 
-      _showMessage(
-        _t.get('passwordResetFailed'),
-      );
+      _showMessage(_t.get('passwordResetFailed'));
     } finally {
       if (mounted) {
         setState(() {
@@ -516,25 +476,17 @@ class _LoginPageState extends State<LoginPage> {
     return Align(
       alignment: Alignment.centerRight,
       child: PopupMenuButton<String>(
-        enabled:
-            !_loginLoading &&
-            !_resetPasswordLoading,
+        enabled: !_loginLoading && !_resetPasswordLoading,
         onSelected: _changeLanguage,
         color: cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         itemBuilder: (BuildContext context) {
-          return AppLocalizations
-              .supportedLanguages
-              .entries
-              .map(
-            (
-              MapEntry<String, String> entry,
-            ) {
+          return AppLocalizations.supportedLanguages.entries.map(
+            (MapEntry<String, String> entry) {
               final bool selected =
-                  entry.key ==
-                  widget.languageCode;
+                  entry.key == widget.languageCode;
 
               return PopupMenuItem<String>(
                 value: entry.key,
@@ -545,9 +497,7 @@ class _LoginPageState extends State<LoginPage> {
                           ? Icons.check_circle
                           : Icons.language,
                       size: 20,
-                      color: selected
-                          ? pinkColor
-                          : accentColor,
+                      color: selected ? pinkColor : accentColor,
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -612,9 +562,7 @@ class _LoginPageState extends State<LoginPage> {
   // LOGIN ERRORS
   // ==========================================================
 
-  String _firebaseLoginErrorMessage(
-    String code,
-  ) {
+  String _firebaseLoginErrorMessage(String code) {
     switch (code) {
       case 'invalid-email':
         return _t.get('loginInvalidEmail');
@@ -647,17 +595,13 @@ class _LoginPageState extends State<LoginPage> {
   // RESET PASSWORD ERRORS
   // ==========================================================
 
-  String _firebaseResetErrorMessage(
-    String code,
-  ) {
+  String _firebaseResetErrorMessage(String code) {
     switch (code) {
       case 'invalid-email':
         return _t.get('loginInvalidEmail');
 
       case 'user-not-found':
-        return _t.get(
-          'passwordResetUserNotFound',
-        );
+        return _t.get('passwordResetUserNotFound');
 
       case 'user-disabled':
         return _t.get('loginUserDisabled');
@@ -669,9 +613,7 @@ class _LoginPageState extends State<LoginPage> {
         return _t.get('loginNetworkError');
 
       case 'operation-not-allowed':
-        return _t.get(
-          'passwordResetNotAllowed',
-        );
+        return _t.get('passwordResetNotAllowed');
 
       default:
         return _t.get('passwordResetFailed');
@@ -685,8 +627,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final bool interactionLocked =
-        _loginLoading ||
-        _resetPasswordLoading;
+        _loginLoading || _resetPasswordLoading;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -694,10 +635,8 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           keyboardDismissBehavior:
-              ScrollViewKeyboardDismissBehavior
-                  .onDrag,
-          physics:
-              const AlwaysScrollableScrollPhysics(),
+              ScrollViewKeyboardDismissBehavior.onDrag,
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
             24,
             20,
@@ -706,17 +645,13 @@ class _LoginPageState extends State<LoginPage> {
           ),
           child: Column(
             children: [
-              // ==================================================
               // LANGUAGE SELECTOR
-              // ==================================================
 
               _buildLanguageSelector(),
 
               const SizedBox(height: 10),
 
-              // ==================================================
               // LOGO
-              // ==================================================
 
               Container(
                 width: 190,
@@ -756,9 +691,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
 
-              // ==================================================
               // TITLE
-              // ==================================================
 
               const Text(
                 'Stelluriini',
@@ -783,9 +716,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 35),
 
-              // ==================================================
               // LOGIN TITLE
-              // ==================================================
 
               Text(
                 _t.get('login'),
@@ -799,21 +730,16 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 28),
 
-              // ==================================================
               // EMAIL
-              // ==================================================
 
               TextField(
                 controller: _emailController,
                 enabled: !interactionLocked,
-                keyboardType:
-                    TextInputType.emailAddress,
-                textInputAction:
-                    TextInputAction.next,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 onSubmitted: (_) {
                   if (!interactionLocked) {
-                    FocusScope.of(context)
-                        .nextFocus();
+                    FocusScope.of(context).nextFocus();
                   }
                 },
                 style: const TextStyle(
@@ -832,22 +758,16 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   filled: true,
                   fillColor: cardColor,
-                  enabledBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
                       color: accentColor,
                       width: 2,
                     ),
                   ),
-                  focusedBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
                       color: pinkColor,
                       width: 3,
                     ),
@@ -857,20 +777,14 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
 
-              // ==================================================
               // PASSWORD
-              // ==================================================
 
               TextField(
-                controller:
-                    _passwordController,
+                controller: _passwordController,
                 enabled: !interactionLocked,
-                obscureText:
-                    _obscurePassword,
-                keyboardType:
-                    TextInputType.visiblePassword,
-                textInputAction:
-                    TextInputAction.done,
+                obscureText: _obscurePassword,
+                keyboardType: TextInputType.visiblePassword,
+                textInputAction: TextInputAction.done,
                 onSubmitted: (_) {
                   if (!interactionLocked) {
                     _login();
@@ -891,42 +805,33 @@ class _LoginPageState extends State<LoginPage> {
                     color: accentColor,
                   ),
                   suffixIcon: IconButton(
-                    onPressed:
-                        interactionLocked
-                            ? null
-                            : () {
-                                setState(() {
-                                  _obscurePassword =
-                                      !_obscurePassword;
-                                });
-                              },
+                    onPressed: interactionLocked
+                        ? null
+                        : () {
+                            setState(() {
+                              _obscurePassword =
+                                  !_obscurePassword;
+                            });
+                          },
                     icon: Icon(
                       _obscurePassword
-                          ? Icons
-                              .visibility_outlined
-                          : Icons
-                              .visibility_off_outlined,
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                       color: accentColor,
                     ),
                   ),
                   filled: true,
                   fillColor: cardColor,
-                  enabledBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
                       color: accentColor,
                       width: 2,
                     ),
                   ),
-                  focusedBorder:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
                       color: pinkColor,
                       width: 3,
                     ),
@@ -936,130 +841,98 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 10),
 
-              // ==================================================
               // FORGOT PASSWORD
-              // ==================================================
 
               Align(
-                alignment:
-                    Alignment.centerRight,
+                alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed:
-                      interactionLocked
-                          ? null
-                          : _resetPassword,
+                  onPressed: interactionLocked
+                      ? null
+                      : _resetPassword,
                   style: TextButton.styleFrom(
                     foregroundColor: pinkColor,
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 4,
                       vertical: 8,
                     ),
                   ),
-                  child:
-                      _resetPasswordLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: pinkColor,
-                              ),
-                            )
-                          : Text(
-                              _t.get(
-                                'forgotPassword',
-                              ),
-                              style:
-                                  const TextStyle(
-                                fontSize: 15,
-                                fontWeight:
-                                    FontWeight.w600,
-                              ),
-                            ),
+                  child: _resetPasswordLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: pinkColor,
+                          ),
+                        )
+                      : Text(
+                          _t.get('forgotPassword'),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
 
               const SizedBox(height: 18),
 
-              // ==================================================
               // LOGIN BUTTON
-              // ==================================================
 
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed:
-                      interactionLocked
-                          ? null
-                          : _login,
-                  style:
-                      ElevatedButton.styleFrom(
+                  onPressed: interactionLocked ? null : _login,
+                  style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
-                    foregroundColor:
-                        backgroundColor,
+                    foregroundColor: backgroundColor,
                     disabledBackgroundColor:
                         const Color(0xFF5E5274),
                     disabledForegroundColor:
                         const Color(0xFFD9D0E5),
                     elevation: 0,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child:
-                      _loginLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color:
-                                    backgroundColor,
-                              ),
-                            )
-                          : Text(
-                              _t.get('login'),
-                              style:
-                                  const TextStyle(
-                                fontSize: 17,
-                                fontWeight:
-                                    FontWeight.bold,
-                              ),
-                            ),
+                  child: _loginLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: backgroundColor,
+                          ),
+                        )
+                      : Text(
+                          _t.get('login'),
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              // ==================================================
               // REGISTER
-              // ==================================================
 
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton(
                   onPressed:
-                      interactionLocked
-                          ? null
-                          : _openRegisterPage,
-                  style:
-                      OutlinedButton.styleFrom(
+                      interactionLocked ? null : _openRegisterPage,
+                  style: OutlinedButton.styleFrom(
                     foregroundColor: pinkColor,
                     side: const BorderSide(
                       color: pinkColor,
                       width: 2,
                     ),
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: Text(
@@ -1067,8 +940,7 @@ class _LoginPageState extends State<LoginPage> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -1076,9 +948,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 70),
 
-              // ==================================================
               // FOOTER
-              // ==================================================
 
               const Text(
                 'STELLA • STELLURIINI • STL',
