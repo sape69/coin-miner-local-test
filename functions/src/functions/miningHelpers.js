@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -277,12 +276,24 @@ function createMiningHelpers({
   const PREMIUM_PLUS_BOOST_DURATION_MS =
     24 * 60 * 60 * 1000;
 
+  const PREMIUM_PLUS_PRODUCT_ID =
+    "stelluriini_premium_plus_monthly";
+
+  const VALID_PLAY_SUBSCRIPTION_STATES = new Set([
+    "SUBSCRIPTION_STATE_ACTIVE",
+    "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+  ]);
+
   function isActivePremiumPlus(data, nowMs) {
     if (
       !data ||
       data.premium !== true ||
       data.premiumVerified !== true ||
-      data.premiumTier !== "premium_plus"
+      data.premiumTier !== "premium_plus" ||
+      data.premiumProductId !== PREMIUM_PLUS_PRODUCT_ID ||
+      !VALID_PLAY_SUBSCRIPTION_STATES.has(
+        data.premiumSubscriptionState
+      )
     ) {
       return false;
     }
@@ -323,10 +334,6 @@ function createMiningHelpers({
           )
         : 0;
 
-    // --------------------------------------------------------
-    // COOLDOWN
-    // --------------------------------------------------------
-
     const lastRewardMs =
       timestampMs(source.lastAdRewardAt);
 
@@ -340,19 +347,11 @@ function createMiningHelpers({
           )
         : 0;
 
-    // --------------------------------------------------------
-    // BOOST TIMESTAMPS
-    // --------------------------------------------------------
-
     const boostStartMs =
       timestampMs(source.adBoostStartedAt);
 
     const boostEndMs =
       timestampMs(source.adBoostEndsAt);
-
-    // --------------------------------------------------------
-    // MINING WINDOW
-    // --------------------------------------------------------
 
     const window = miningWindow(source);
 
@@ -366,40 +365,11 @@ function createMiningHelpers({
       boostStartMs >= window.miningStartMs &&
       boostStartMs < window.miningEndMs;
 
-    // --------------------------------------------------------
-    // SUBSCRIPTION-BASED BOOST LIMIT
-    // --------------------------------------------------------
-    //
-    // FREE          = 4 hours
-    // PREMIUM       = 4 hours
-    // PREMIUM_PLUS  = 24 hours
-    //
-    // Premium Plus requires:
-    // - premium == true
-    // - premiumVerified == true
-    // - premiumTier == "premium_plus"
-    // - subscription expiry is still valid
-    //
-    // --------------------------------------------------------
-
     const allowedDurationMs =
       getAllowedBoostDurationMs(
         source,
         nowMs
       );
-
-    // --------------------------------------------------------
-    // EFFECTIVE BOOST END
-    // --------------------------------------------------------
-    //
-    // Vanha Firestoreen tallennettu 8 tunnin
-    // boost rajataan neljään tuntiin.
-    //
-    // Premium Plus saa enintään 24 tuntia.
-    //
-    // Louhintajakson loppua ei koskaan ylitetä.
-    //
-    // --------------------------------------------------------
 
     const maximumAllowedEndMs =
       boostStartMs > 0
@@ -416,10 +386,6 @@ function createMiningHelpers({
           )
         : 0;
 
-    // --------------------------------------------------------
-    // BOOST ACTIVE
-    // --------------------------------------------------------
-
     const boostActive =
       active &&
       effectiveEnd > nowMs;
@@ -428,10 +394,6 @@ function createMiningHelpers({
       boostActive
         ? effectiveEnd - nowMs
         : 0;
-
-    // --------------------------------------------------------
-    // RESULT
-    // --------------------------------------------------------
 
     return {
       adsToday,
@@ -524,12 +486,6 @@ function createMiningHelpers({
 
     snapshot.forEach((doc) => {
       const data = doc.data() || {};
-
-      // Hyväksytään sekä mainoksella saadut Boostit
-      // että Premium-tilauksen Boostit.
-      //
-      // Premium Plusin automaattinen Boost käyttää
-      // samaa premium_power_boost-tyyppiä.
 
       if (
         ![
