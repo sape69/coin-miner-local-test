@@ -15,7 +15,10 @@
 // - Mining cycle calculation
 // - Current unclaimed mining
 //
-// Käytetään miningFunctions-moduulien factory-funktioissa.
+// POWER BOOST:
+// FREE          = 4 hours
+// PREMIUM       = 4 hours
+// PREMIUM_PLUS  = 24 hours
 //
 // ============================================================
 
@@ -265,37 +268,93 @@ function createMiningHelpers({
   }
 
   // ==========================================================
+  // POWER BOOST DURATION
+  // ==========================================================
+
+  const NORMAL_BOOST_DURATION_MS =
+    4 * 60 * 60 * 1000;
+
+  const PREMIUM_PLUS_BOOST_DURATION_MS =
+    24 * 60 * 60 * 1000;
+
+  function isActivePremiumPlus(data, nowMs) {
+    if (
+      !data ||
+      data.premium !== true ||
+      data.premiumVerified !== true ||
+      data.premiumTier !== "premium_plus"
+    ) {
+      return false;
+    }
+
+    const expiryMs = timestampMs(
+      data.premiumExpiryTime
+    );
+
+    return expiryMs > nowMs;
+  }
+
+  function getAllowedBoostDurationMs(data, nowMs) {
+    return isActivePremiumPlus(data, nowMs)
+      ? PREMIUM_PLUS_BOOST_DURATION_MS
+      : NORMAL_BOOST_DURATION_MS;
+  }
+
+  // ==========================================================
   // AD STATUS
   // ==========================================================
 
   function adStatus(data, nowMs, today) {
+    const source =
+      data && typeof data === "object"
+        ? data
+        : {};
+
     const lastDate =
-      typeof data.lastAdDate === "string"
-        ? data.lastAdDate
+      typeof source.lastAdDate === "string"
+        ? source.lastAdDate
         : "";
 
     const adsToday =
       lastDate === today
         ? Math.max(
             0,
-            Math.floor(number(data.adsToday))
+            Math.floor(number(source.adsToday))
           )
         : 0;
 
-    const lastRewardMs = timestampMs(data.lastAdRewardAt);
+    // --------------------------------------------------------
+    // COOLDOWN
+    // --------------------------------------------------------
+
+    const lastRewardMs =
+      timestampMs(source.lastAdRewardAt);
 
     const cooldownRemainingMs =
       lastRewardMs > 0
         ? Math.max(
             0,
-            lastRewardMs + AD_COOLDOWN_MS - nowMs
+            lastRewardMs +
+              AD_COOLDOWN_MS -
+              nowMs
           )
         : 0;
 
-    const boostStartMs = timestampMs(data.adBoostStartedAt);
-    const boostEndMs = timestampMs(data.adBoostEndsAt);
+    // --------------------------------------------------------
+    // BOOST TIMESTAMPS
+    // --------------------------------------------------------
 
-    const window = miningWindow(data);
+    const boostStartMs =
+      timestampMs(source.adBoostStartedAt);
+
+    const boostEndMs =
+      timestampMs(source.adBoostEndsAt);
+
+    // --------------------------------------------------------
+    // MINING WINDOW
+    // --------------------------------------------------------
+
+    const window = miningWindow(source);
 
     const active =
       window.valid &&
@@ -307,17 +366,79 @@ function createMiningHelpers({
       boostStartMs >= window.miningStartMs &&
       boostStartMs < window.miningEndMs;
 
-    const effectiveEnd =
-      boostInsideMining && boostEndMs > boostStartMs
-        ? Math.min(boostEndMs, window.miningEndMs)
+    // --------------------------------------------------------
+    // SUBSCRIPTION-BASED BOOST LIMIT
+    // --------------------------------------------------------
+    //
+    // FREE          = 4 hours
+    // PREMIUM       = 4 hours
+    // PREMIUM_PLUS  = 24 hours
+    //
+    // Premium Plus requires:
+    // - premium == true
+    // - premiumVerified == true
+    // - premiumTier == "premium_plus"
+    // - subscription expiry is still valid
+    //
+    // --------------------------------------------------------
+
+    const allowedDurationMs =
+      getAllowedBoostDurationMs(
+        source,
+        nowMs
+      );
+
+    // --------------------------------------------------------
+    // EFFECTIVE BOOST END
+    // --------------------------------------------------------
+    //
+    // Vanha Firestoreen tallennettu 8 tunnin
+    // boost rajataan neljään tuntiin.
+    //
+    // Premium Plus saa enintään 24 tuntia.
+    //
+    // Louhintajakson loppua ei koskaan ylitetä.
+    //
+    // --------------------------------------------------------
+
+    const maximumAllowedEndMs =
+      boostStartMs > 0
+        ? boostStartMs + allowedDurationMs
         : 0;
 
+    const effectiveEnd =
+      boostInsideMining &&
+      boostEndMs > boostStartMs
+        ? Math.min(
+            boostEndMs,
+            maximumAllowedEndMs,
+            window.miningEndMs
+          )
+        : 0;
+
+    // --------------------------------------------------------
+    // BOOST ACTIVE
+    // --------------------------------------------------------
+
     const boostActive =
-      active && effectiveEnd > nowMs;
+      active &&
+      effectiveEnd > nowMs;
+
+    const remainingMs =
+      boostActive
+        ? effectiveEnd - nowMs
+        : 0;
+
+    // --------------------------------------------------------
+    // RESULT
+    // --------------------------------------------------------
 
     return {
       adsToday,
-      maxAdsPerDay: MAX_ADS_PER_DAY,
+
+      maxAdsPerDay:
+        MAX_ADS_PER_DAY,
+
       cooldownRemainingMs,
 
       canWatchAd:
@@ -326,12 +447,11 @@ function createMiningHelpers({
         cooldownRemainingMs === 0 &&
         !boostActive,
 
-      adBoostActive: boostActive,
+      adBoostActive:
+        boostActive,
 
       adBoostRemainingMs:
-        boostActive
-          ? effectiveEnd - nowMs
-          : 0,
+        remainingMs,
 
       adBoostStartedAt:
         boostActive
@@ -410,6 +530,7 @@ function createMiningHelpers({
       //
       // Premium Plusin automaattinen Boost käyttää
       // samaa premium_power_boost-tyyppiä.
+
       if (
         ![
           "ad_reward",
@@ -420,8 +541,11 @@ function createMiningHelpers({
         return;
       }
 
-      const start = timestampMs(data.boostStartedAt);
-      const end = timestampMs(data.boostEndsAt);
+      const start =
+        timestampMs(data.boostStartedAt);
+
+      const end =
+        timestampMs(data.boostEndsAt);
 
       if (
         start <= 0 ||
@@ -434,15 +558,22 @@ function createMiningHelpers({
       }
 
       boosts.push({
-        boostStartedMs: Math.max(start, startMs),
-        boostEndsMs: Math.min(end, endMs),
+        boostStartedMs:
+          Math.max(start, startMs),
+
+        boostEndsMs:
+          Math.min(end, endMs),
       });
     });
 
     return boosts;
   }
 
-  function boostMilliseconds(boosts, startMs, endMs) {
+  function boostMilliseconds(
+    boosts,
+    startMs,
+    endMs
+  ) {
     if (
       !Array.isArray(boosts) ||
       !startMs ||
@@ -492,7 +623,10 @@ function createMiningHelpers({
       }
     }
 
-    return Math.max(0, total + end - start);
+    return Math.max(
+      0,
+      total + end - start
+    );
   }
 
   // ==========================================================
