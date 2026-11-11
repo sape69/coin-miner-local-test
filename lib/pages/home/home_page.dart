@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../data/cat_facts.dart';
 import '../../localization.dart';
 import '../../services/app_update_service.dart';
+import '../../services/analytics_service.dart';
 import '../../services/mining_notification_service.dart';
 import '../../widgets/home_drawer.dart';
 import '../../widgets/stelluriini_space_background.dart';
@@ -1049,6 +1050,18 @@ class _HomePageState extends State<HomePage>
         );
       }
 
+      // ======================================================
+      // 📊 ANALYTICS: MINING STARTED SUCCESSFULLY
+      // ======================================================
+
+      try {
+        await AnalyticsService.logMiningStarted();
+      } catch (error) {
+        debugPrint(
+          'Analytics mining-start event error: $error',
+        );
+      }
+
       _boostTimer?.cancel();
 
       if (mounted) {
@@ -1213,6 +1226,18 @@ class _HomePageState extends State<HomePage>
         throw Exception(
           'Power Boost verification did not '
           'return an active boost.',
+        );
+      }
+
+      // ======================================================
+      // 📊 ANALYTICS: POWER BOOST CONFIRMED BY SERVER
+      // ======================================================
+
+      try {
+        await AnalyticsService.logPowerBoostUsed();
+      } catch (error) {
+        debugPrint(
+          'Analytics Power Boost event error: $error',
         );
       }
 
