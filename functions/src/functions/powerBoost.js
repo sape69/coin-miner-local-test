@@ -725,7 +725,7 @@ function createPowerBoost({
                   window.miningStartedAt,
 
                 miningEndsAt:
-                  window.miningEndMs,
+                  window.miningEndsAt,
 
                 miningHashRate: rate,
 
@@ -796,7 +796,7 @@ function createPowerBoost({
                 window.miningStartedAt.toISOString(),
 
               miningEndsAt:
-                window.miningEndMs.toISOString(),
+                window.miningEndsAt.toISOString(),
 
               miningHashRate: rate,
 
