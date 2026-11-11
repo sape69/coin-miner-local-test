@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -17,6 +16,23 @@
 // - muuta STL-laskentaa
 //
 // ============================================================
+
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
+
+const PREMIUM_PLUS_PRODUCT_ID =
+  "stelluriini_premium_plus_monthly";
+
+// Näiden tilojen aikana Google Play -tilaus voi edelleen
+// oikeuttaa Premium Plus -ominaisuuksiin.
+// CANCELED hyväksytään vain, jos expiryTime on tulevaisuudessa.
+const VALID_PLAY_SUBSCRIPTION_STATES = new Set([
+  "SUBSCRIPTION_STATE_ACTIVE",
+  "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+  "SUBSCRIPTION_STATE_CANCELED",
+]);
 
 
 // ============================================================
@@ -75,6 +91,29 @@ function timestampToMillis(value) {
       : 0;
   }
 
+  // Firestore Timestamp voi joissakin yhteyksissä tulla
+  // tavallisena serialisoituna objektina.
+  if (typeof value === "object") {
+    const seconds = value._seconds ?? value.seconds;
+    const nanos =
+      value._nanoseconds ??
+      value.nanoseconds ??
+      0;
+
+    if (
+      typeof seconds === "number" &&
+      Number.isFinite(seconds) &&
+      typeof nanos === "number" &&
+      Number.isFinite(nanos)
+    ) {
+      const result =
+        seconds * 1000 +
+        Math.floor(nanos / 1000000);
+
+      return result > 0 ? result : 0;
+    }
+  }
+
   return 0;
 }
 
@@ -116,8 +155,20 @@ function hasActiveVerifiedPremiumPlus(
     return false;
   }
 
-  // Tavallinen Premium ei oikeuta automaattiseen louhintaan.
-  if (data.premiumTier !== "premium_plus") {
+  // Vain oikea Google Play Premium Plus -tuote hyväksytään.
+  if (
+    data.premiumProductId !== PREMIUM_PLUS_PRODUCT_ID ||
+    data.premiumTier !== "premium_plus"
+  ) {
+    return false;
+  }
+
+  // TEST_ACTIVE, EXPIRED ja muut tuntemattomat tilat hylätään.
+  if (
+    !VALID_PLAY_SUBSCRIPTION_STATES.has(
+      data.premiumSubscriptionState
+    )
+  ) {
     return false;
   }
 
@@ -125,7 +176,7 @@ function hasActiveVerifiedPremiumPlus(
     data.premiumExpiryTime
   );
 
-  // Tilaus ei saa olla vanhentunut.
+  // Myös peruutetun tilauksen on oltava vielä voimassa.
   return (
     expiryMs > 0 &&
     expiryMs > referenceNowMs
