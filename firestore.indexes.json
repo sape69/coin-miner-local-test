@@ -14,6 +14,28 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "premium",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "premiumVerified",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "premiumTier",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "premiumExpiryTime",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
