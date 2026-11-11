@@ -378,11 +378,18 @@ function createMiningHelpers({
         ? boostStartMs + allowedDurationMs
         : 0;
 
+    // If a boost is still active, recalculate its end using the
+    // user's CURRENT verified subscription tier. This allows an
+    // upgrade to Premium Plus during an active boost to extend the
+    // same boost to the 24-hour limit, without starting a new boost.
+    // The original stored end is still used to ensure an already
+    // expired boost is never reactivated by a later subscription.
     const effectiveEnd =
       boostInsideMining &&
-      boostEndMs > boostStartMs
+      boostEndMs > nowMs &&
+      boostEndMs > boostStartMs &&
+      maximumAllowedEndMs > nowMs
         ? Math.min(
-            boostEndMs,
             maximumAllowedEndMs,
             window.miningEndMs
           )
