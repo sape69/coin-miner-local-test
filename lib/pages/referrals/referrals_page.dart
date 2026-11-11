@@ -776,13 +776,81 @@ class _ReferralsPageState extends State<ReferralsPage> {
   // 📤 SHARE INVITATION
   // ==========================================================
 
+  static const String _googlePlayUrl =
+      'https://play.google.com/store/apps/details?id=com.stelluriini.app';
+
+  String get _shareDownloadLabel {
+    if (_isFinnish) return 'Lataa Stelluriini Google Playsta:';
+    if (_isGerman) return 'Lade Stelluriini bei Google Play herunter:';
+    if (_isSpanish) return 'Descarga Stelluriini desde Google Play:';
+    if (_isFrench) return 'Télécharge Stelluriini sur Google Play :';
+    if (_isChinese) return '从 Google Play 下载 Stelluriini：';
+    if (_isVietnamese) return 'Tải Stelluriini từ Google Play:';
+    if (_isJapanese) return 'Google Play から Stelluriini をダウンロード：';
+    return 'Download Stelluriini from Google Play:';
+  }
+
+  String get _shareHowToJoin {
+    if (_isFinnish) {
+      return 'Näin pääset mukaan:\n'
+          '1. Lataa Stelluriini Google Playsta.\n'
+          '2. Luo käyttäjätili.\n'
+          '3. Syötä kutsukoodini rekisteröitymisen yhteydessä.';
+    }
+    if (_isGerman) {
+      return 'So kannst du teilnehmen:\n'
+          '1. Lade Stelluriini bei Google Play herunter.\n'
+          '2. Erstelle ein Konto.\n'
+          '3. Gib meinen Einladungscode bei der Registrierung ein.';
+    }
+    if (_isSpanish) {
+      return 'Cómo unirte:\n'
+          '1. Descarga Stelluriini desde Google Play.\n'
+          '2. Crea una cuenta.\n'
+          '3. Introduce mi código durante el registro.';
+    }
+    if (_isFrench) {
+      return 'Pour nous rejoindre :\n'
+          '1. Télécharge Stelluriini sur Google Play.\n'
+          '2. Crée un compte.\n'
+          '3. Saisis mon code lors de l’inscription.';
+    }
+    if (_isChinese) {
+      return '加入步骤：\n'
+          '1. 从 Google Play 下载 Stelluriini。\n'
+          '2. 创建账户。\n'
+          '3. 注册时输入我的邀请码。';
+    }
+    if (_isVietnamese) {
+      return 'Cách tham gia:\n'
+          '1. Tải Stelluriini từ Google Play.\n'
+          '2. Tạo tài khoản.\n'
+          '3. Nhập mã mời của tôi khi đăng ký.';
+    }
+    if (_isJapanese) {
+      return '参加方法：\n'
+          '1. Google Play から Stelluriini をダウンロード。\n'
+          '2. アカウントを作成。\n'
+          '3. 登録時に私の招待コードを入力。';
+    }
+    return 'How to join:\n'
+        '1. Download Stelluriini from Google Play.\n'
+        '2. Create an account.\n'
+        '3. Enter my invitation code during registration.';
+  }
+
   Future<void> _shareReferralCode() async {
-    if (_referralCode.isEmpty) return;
+    if (_referralCode.trim().isEmpty) return;
 
     final String shareText =
-        '🐱✨ Stelluriini\n\n'
+        '🐱✨ Stelluriini – Stella.app\n'
+        'Join the Stelluriini community!\n\n'
         '$_shareInviteText\n'
-        '$_referralCode';
+        '🎁 ${_referralCode.trim().toUpperCase()}\n\n'
+        '$_shareHowToJoin\n\n'
+        '📲 $_shareDownloadLabel\n'
+        '$_googlePlayUrl\n\n'
+        '💜 See you in Stelluriini!';
 
     try {
       await SharePlus.instance.share(
