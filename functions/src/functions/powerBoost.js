@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -5,8 +6,8 @@
 // ============================================================
 //
 // Power Boost duration:
-// FREE       = 4 hours
-// PREMIUM    = 4 hours
+// FREE         = 4 hours
+// PREMIUM      = 4 hours
 // PREMIUM_PLUS = 24 hours
 //
 // Premium users can activate without AdMob.
@@ -32,6 +33,7 @@ const PREMIUM_PLUS_PRODUCT_ID =
 const VALID_PLAY_SUBSCRIPTION_STATES = new Set([
   "SUBSCRIPTION_STATE_ACTIVE",
   "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+  "SUBSCRIPTION_STATE_CANCELED",
 ]);
 
 function timestampMs(value) {
@@ -84,12 +86,17 @@ function timestampMs(value) {
 // VERIFIED PREMIUM CHECK
 // ------------------------------------------------------------
 
-function hasActiveVerifiedPremium(data, referenceNowMs) {
+function hasActiveVerifiedPremium(
+  data,
+  referenceNowMs
+) {
   if (
     !data ||
     data.premium !== true ||
     data.premiumVerified !== true ||
-    !PREMIUM_PRODUCT_IDS.has(data.premiumProductId) ||
+    !PREMIUM_PRODUCT_IDS.has(
+      data.premiumProductId
+    ) ||
     !VALID_PLAY_SUBSCRIPTION_STATES.has(
       data.premiumSubscriptionState
     )
@@ -106,7 +113,10 @@ function hasActiveVerifiedPremium(data, referenceNowMs) {
     return false;
   }
 
-  return timestampMs(data.premiumExpiryTime) > referenceNowMs;
+  return (
+    timestampMs(data.premiumExpiryTime) >
+    referenceNowMs
+  );
 }
 
 // ------------------------------------------------------------
@@ -118,8 +128,12 @@ function hasActiveVerifiedPremiumPlus(
   referenceNowMs
 ) {
   return (
-    hasActiveVerifiedPremium(data, referenceNowMs) &&
-    data.premiumProductId === PREMIUM_PLUS_PRODUCT_ID &&
+    hasActiveVerifiedPremium(
+      data,
+      referenceNowMs
+    ) &&
+    data.premiumProductId ===
+      PREMIUM_PLUS_PRODUCT_ID &&
     data.premiumTier === "premium_plus"
   );
 }
@@ -375,9 +389,6 @@ function createPowerBoost({
                 nowMs
               );
 
-            // Premium Plus tarkistetaan erikseen.
-            // Tavallinen Premium ei saa 24 tunnin boostia.
-
             const premiumPlusActive =
               hasActiveVerifiedPremiumPlus(
                 data,
@@ -537,16 +548,6 @@ function createPowerBoost({
 
             // --------------------------------------------------
             // POWER BOOST DURATION
-            // --------------------------------------------------
-            //
-            // FREE       = 4 HOURS
-            // PREMIUM    = 4 HOURS
-            // PREMIUM_PLUS = 24 HOURS
-            //
-            // Only an active and verified Premium Plus
-            // subscription receives the 24-hour duration.
-            //
-            // The mining cycle end is always respected.
             // --------------------------------------------------
 
             const configuredBoostDurationMs =
@@ -724,7 +725,7 @@ function createPowerBoost({
                   window.miningStartedAt,
 
                 miningEndsAt:
-                  window.miningEndsAt,
+                  window.miningEndMs,
 
                 miningHashRate: rate,
 
@@ -795,7 +796,7 @@ function createPowerBoost({
                 window.miningStartedAt.toISOString(),
 
               miningEndsAt:
-                window.miningEndsAt.toISOString(),
+                window.miningEndMs.toISOString(),
 
               miningHashRate: rate,
 
