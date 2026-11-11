@@ -1,8 +1,10 @@
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../localization.dart';
 import '../localization/achievements/achievements_localization.dart';
+import '../pages/admin/admin_dashboard_page.dart';
 import 'cat_avatar.dart';
 
 // ============================================================
@@ -30,9 +32,6 @@ class HomeDrawer extends StatefulWidget {
   final VoidCallback onRoadmapPressed;
 
   final VoidCallback? onHalvingPressed;
-
-  // Premium-sivun avaus.
-  // Valinnainen, jotta nykyiset kutsut eivät rikkoudu.
   final VoidCallback? onPremiumPressed;
 
   final VoidCallback onAchievementsPressed;
@@ -66,6 +65,9 @@ class HomeDrawer extends StatefulWidget {
 // ============================================================
 
 class _HomeDrawerState extends State<HomeDrawer> {
+  bool _adminAccess = false;
+  bool _checkingAdmin = true;
+
   AppLocalizations get _localization =>
       AppLocalizations(widget.languageCode);
 
@@ -75,6 +77,118 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
   AchievementsLocalization get _achievementsLocalization =>
       AchievementsLocalization(widget.languageCode);
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminAccess();
+  }
+
+  // ==========================================================
+  // 🔐 ADMIN CLAIM CHECK
+  // ==========================================================
+
+  Future<void> _checkAdminAccess() async {
+    try {
+      final User? user =
+          FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            _adminAccess = false;
+            _checkingAdmin = false;
+          });
+        }
+        return;
+      }
+
+      // Haetaan tuore ID-token, jotta uusi admin-claim
+      // tulee varmasti näkyviin.
+      final IdTokenResult tokenResult =
+          await user.getIdTokenResult(true);
+
+      final bool isAdmin =
+          tokenResult.claims?['admin'] == true;
+
+      if (!mounted) return;
+
+      setState(() {
+        _adminAccess = isAdmin;
+        _checkingAdmin = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _adminAccess = false;
+        _checkingAdmin = false;
+      });
+    }
+  }
+
+  // ==========================================================
+  // 🛡️ OPEN ADMIN DASHBOARD
+  // ==========================================================
+
+  Future<void> _openAdminDashboard() async {
+    // Tarkistetaan claim vielä ennen sivun avaamista.
+    try {
+      final User? user =
+          FirebaseAuth.instance.currentUser;
+
+      if (user == null) return;
+
+      final IdTokenResult tokenResult =
+          await user.getIdTokenResult(true);
+
+      if (tokenResult.claims?['admin'] != true) {
+        if (!mounted) return;
+
+        setState(() {
+          _adminAccess = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.languageCode.toLowerCase().startsWith('fi')
+                  ? 'Ylläpitäjän oikeutta ei löytynyt.'
+                  : 'Administrator access was not found.',
+            ),
+            backgroundColor: cardColor,
+          ),
+        );
+
+        return;
+      }
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop();
+
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => AdminDashboardPage(
+            languageCode: widget.languageCode,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.languageCode.toLowerCase().startsWith('fi')
+                ? 'Hallintasivun avaaminen epäonnistui.'
+                : 'Could not open the admin dashboard.',
+          ),
+          backgroundColor: cardColor,
+        ),
+      );
+    }
+  }
 
   // ==========================================================
   // ✨ STELLA STAR
@@ -175,6 +289,24 @@ class _HomeDrawerState extends State<HomeDrawer> {
           ),
         ),
       ),
+    );
+  }
+
+  // ==========================================================
+  // 🛡️ ADMIN MENU ITEM
+  // ==========================================================
+
+  Widget _adminMenuItem() {
+    final bool isFinnish =
+        widget.languageCode.toLowerCase().startsWith('fi');
+
+    return _menuItem(
+      icon: Icons.admin_panel_settings_rounded,
+      title: isFinnish
+          ? 'Stelluriini Hallinta'
+          : 'Stelluriini Admin',
+      onTap: _openAdminDashboard,
+      iconColor: goldAccentColor,
     );
   }
 
@@ -681,6 +813,10 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   // PREMIUM
                   if (widget.onPremiumPressed != null)
                     _premiumItem(),
+
+                  // ADMIN
+                  if (!_checkingAdmin && _adminAccess)
+                    _adminMenuItem(),
 
                   // REFERRALS
                   _referralItem(),
