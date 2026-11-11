@@ -5,15 +5,20 @@
 // 🐱 STELLURIINI - ADMIN DASHBOARD FUNCTIONS
 // ============================================================
 //
-// Hallintatiedot haetaan aina palvelimelta.
-// Firestore-sääntöjä ei avata Flutter-sovellukselle.
+// Hallintatiedot haetaan palvelimelta.
 //
 // Pääsynhallinta:
 // - Firebase Authentication vaaditaan.
 // - Firebase Custom Claim: admin === true vaaditaan.
-// - Asiakkaan lähettämää UID:tä ei käytetä oikeuksien tarkistamiseen.
+// - Firestore-sääntöjä ei avata Flutter-sovellukselle.
 //
-// Palautetaan vain hallintanäkymän tarvitsemat tiedot.
+// Käyttäjänimen hakujärjestys:
+// 1. Firestore username
+// 2. Firestore displayName
+// 3. Firebase Authentication displayName
+// 4. Lyhennetty UID
+//
+// Sähköpostiosoitteita ei palauteta hallintanäkymään.
 // ============================================================
 
 const {
@@ -27,12 +32,17 @@ const {
 
 const {
   db,
+  auth,
 } = require("../firebase/firebase");
 
 const REGION = "us-central1";
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 const ENDING_SOON_MS = 60 * 60 * 1000;
+
+// ============================================================
+// DATE HELPERS
+// ============================================================
 
 function toDate(value) {
   if (!value) return null;
@@ -59,6 +69,10 @@ function toIso(value) {
   return date ? date.toISOString() : null;
 }
 
+// ============================================================
+// NUMBER HELPER
+// ============================================================
+
 function safeNumber(value, fallback = 0) {
   const parsed = Number(value);
 
@@ -66,6 +80,10 @@ function safeNumber(value, fallback = 0) {
     ? parsed
     : fallback;
 }
+
+// ============================================================
+// ADMIN ACCESS
+// ============================================================
 
 function requireAdmin(request) {
   if (!request.auth) {
@@ -83,7 +101,60 @@ function requireAdmin(request) {
   }
 }
 
-function buildUserRow(document, nowMs) {
+// ============================================================
+// USERNAME HELPERS
+// ============================================================
+
+function cleanName(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+}
+
+function fallbackUsername(uid) {
+  const shortUid = String(uid || "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 6)
+    .toUpperCase();
+
+  return shortUid
+    ? `Käyttäjä ${shortUid}`
+    : "Tuntematon käyttäjä";
+}
+
+// ============================================================
+// FIREBASE AUTH DISPLAY NAME
+// ============================================================
+//
+// Haetaan displayName vain silloin, kun Firestore-profiilista
+// ei löydy käyttäjänimeä eikä displayName-arvoa.
+//
+// Virhe yksittäisen käyttäjän Auth-haussa ei estä
+// koko hallintanäkymän lataamista.
+// ============================================================
+
+async function getAuthDisplayName(uid) {
+  try {
+    const userRecord = await auth.getUser(uid);
+
+    return cleanName(userRecord.displayName);
+  } catch (error) {
+    console.warn(
+      `Could not read Auth displayName for user ${uid}:`,
+      error.code || error.message
+    );
+
+    return "";
+  }
+}
+
+// ============================================================
+// USER ROW
+// ============================================================
+
+function buildUserRow(document, nowMs, authDisplayName = "") {
   const data = document.data() || {};
 
   const startedAt = toDate(data.miningStartedAt);
@@ -100,16 +171,15 @@ function buildUserRow(document, nowMs) {
     ? endsAt.getTime() - nowMs
     : null;
 
-  return {
-    username:
-      typeof data.username === "string" && data.username.trim()
-        ? data.username.trim()
-        : "—",
+  const username =
+    cleanName(data.username) ||
+    cleanName(data.displayName) ||
+    cleanName(authDisplayName) ||
+    fallbackUsername(document.id);
 
-    displayName:
-      typeof data.displayName === "string" && data.displayName.trim()
-        ? data.displayName.trim()
-        : "",
+  return {
+    username,
+    displayName: username,
 
     miningActive,
 
@@ -137,6 +207,60 @@ function buildUserRow(document, nowMs) {
   };
 }
 
+// ============================================================
+// RESOLVE USER NAMES
+// ============================================================
+//
+// Yhdistetään käyttäjälistan ja aktiivisten louhijoiden
+// dokumentit. Auth-haut tehdään vain käyttäjille, joiden
+// Firestore-profiilista puuttuu nimi.
+//
+// Sähköpostiosoitteita ei palauteta.
+// ============================================================
+
+async function buildUserRows(documents, nowMs) {
+  const uniqueDocuments = new Map();
+
+  for (const document of documents) {
+    uniqueDocuments.set(document.id, document);
+  }
+
+  const authNames = new Map();
+
+  const lookups = [];
+
+  for (const [uid, document] of uniqueDocuments.entries()) {
+    const data = document.data() || {};
+
+    const firestoreName =
+      cleanName(data.username) ||
+      cleanName(data.displayName);
+
+    if (!firestoreName) {
+      lookups.push(
+        (async () => {
+          const name = await getAuthDisplayName(uid);
+          authNames.set(uid, name);
+        })()
+      );
+    }
+  }
+
+  await Promise.all(lookups);
+
+  return documents.map((document) =>
+    buildUserRow(
+      document,
+      nowMs,
+      authNames.get(document.id) || ""
+    )
+  );
+}
+
+// ============================================================
+// ADMIN DASHBOARD CALLABLE FUNCTION
+// ============================================================
+
 const getAdminDashboard = onCall(
   {
     region: REGION,
@@ -149,7 +273,10 @@ const getAdminDashboard = onCall(
     const requestedLimit = Number(request.data?.pageSize);
 
     const pageSize = Number.isInteger(requestedLimit)
-      ? Math.min(Math.max(requestedLimit, 1), MAX_PAGE_SIZE)
+      ? Math.min(
+          Math.max(requestedLimit, 1),
+          MAX_PAGE_SIZE
+        )
       : DEFAULT_PAGE_SIZE;
 
     const now = Timestamp.now();
@@ -160,10 +287,18 @@ const getAdminDashboard = onCall(
     );
 
     try {
+      // ------------------------------------------------------
+      // ALL USERS
+      // ------------------------------------------------------
+
       const usersQuery = db
         .collection("users")
         .orderBy("updatedAt", "desc")
         .limit(pageSize);
+
+      // ------------------------------------------------------
+      // PREMIUM PLUS USERS
+      // ------------------------------------------------------
 
       const premiumPlusQuery = db
         .collection("users")
@@ -172,20 +307,28 @@ const getAdminDashboard = onCall(
         .where("premiumTier", "==", "premium_plus")
         .where("premiumExpiryTime", ">", now);
 
-      // Louhintajakson pitää olla jo alkanut
-      // ja sen päättymisajan pitää olla tulevaisuudessa.
+      // ------------------------------------------------------
+      // ACTIVE MINERS
+      // ------------------------------------------------------
+
       const activeMiningQuery = db
         .collection("users")
         .where("miningStartedAt", "<=", now)
         .where("miningEndsAt", ">", now);
 
-      // Sama aktiivisuusehto sekä päättymisaika
-      // seuraavan tunnin sisällä.
+      // ------------------------------------------------------
+      // MINING ENDING WITHIN ONE HOUR
+      // ------------------------------------------------------
+
       const endingSoonQuery = db
         .collection("users")
         .where("miningStartedAt", "<=", now)
         .where("miningEndsAt", ">", now)
         .where("miningEndsAt", "<=", endingSoonAt);
+
+      // ------------------------------------------------------
+      // LOAD DASHBOARD DATA
+      // ------------------------------------------------------
 
       const [
         usersSnapshot,
@@ -203,18 +346,66 @@ const getAdminDashboard = onCall(
 
         activeMiningQuery.count().get(),
 
-        activeMiningQuery.limit(MAX_PAGE_SIZE).get(),
+        activeMiningQuery
+          .limit(MAX_PAGE_SIZE)
+          .get(),
 
         endingSoonQuery.count().get(),
       ]);
 
-      const users = usersSnapshot.docs.map((document) =>
-        buildUserRow(document, nowMs)
+      // ------------------------------------------------------
+      // RESOLVE USER NAMES
+      // ------------------------------------------------------
+
+      const allDocuments = [
+        ...usersSnapshot.docs,
+        ...activeMinersSnapshot.docs,
+      ];
+
+      const resolvedRows = await buildUserRows(
+        allDocuments,
+        nowMs
+      );
+
+      // ------------------------------------------------------
+      // MAP RESOLVED ROWS BACK TO DOCUMENT IDS
+      // ------------------------------------------------------
+
+      const rowsById = new Map();
+
+      const uniqueIds = new Set();
+
+      for (const document of allDocuments) {
+        if (uniqueIds.has(document.id)) {
+          continue;
+        }
+
+        uniqueIds.add(document.id);
+      }
+
+      let rowIndex = 0;
+
+      for (const uid of uniqueIds) {
+        rowsById.set(uid, resolvedRows[rowIndex]);
+        rowIndex++;
+      }
+
+      const users = usersSnapshot.docs.map(
+        (document) =>
+          rowsById.get(document.id)
       );
 
       const activeMinerList = activeMinersSnapshot.docs
-        .map((document) => buildUserRow(document, nowMs))
-        .filter((user) => user.miningActive);
+        .map((document) =>
+          rowsById.get(document.id)
+        )
+        .filter((user) =>
+          user && user.miningActive
+        );
+
+      // ------------------------------------------------------
+      // RESPONSE
+      // ------------------------------------------------------
 
       return {
         success: true,
@@ -236,7 +427,10 @@ const getAdminDashboard = onCall(
         users,
       };
     } catch (error) {
-      console.error("getAdminDashboard failed:", error);
+      console.error(
+        "getAdminDashboard failed:",
+        error
+      );
 
       if (error instanceof HttpsError) {
         throw error;
@@ -249,6 +443,10 @@ const getAdminDashboard = onCall(
     }
   }
 );
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
   getAdminDashboard,
