@@ -278,41 +278,7 @@ class _AchievementsPageState
     final StellaLevelInfo level =
         _stellaLevel;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF321A55),
-            Color(0xFF24133F),
-            Color(0xFF1A0E31),
-          ],
-        ),
-        borderRadius:
-            BorderRadius.circular(24),
-        border: Border.all(
-          color:
-              accentColor.withValues(alpha: 0.38),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                accentColor.withValues(alpha: 0.12),
-            blurRadius: 20,
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color:
-                pinkColor.withValues(alpha: 0.06),
-            blurRadius: 26,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
+    return Column(
         children: [
           // ==================================================
           // HEADER
@@ -586,7 +552,6 @@ class _AchievementsPageState
             ],
           ),
         ],
-      ),
     );
   }
 
@@ -773,6 +738,21 @@ class _AchievementsPageState
               fontSize: 11,
             ),
           ),
+
+          const SizedBox(
+            height: 22,
+          ),
+
+          Container(
+            height: 1,
+            color: accentColor.withValues(alpha: 0.18),
+          ),
+
+          const SizedBox(
+            height: 18,
+          ),
+
+          _buildStellaLevelCard(),
         ],
       ),
     );
@@ -974,16 +954,6 @@ class _AchievementsPageState
 
                       const SizedBox(
                         height: 18,
-                      ),
-
-                      // ========================================
-                      // ⭐ STELLA LEVEL
-                      // ========================================
-
-                      _buildStellaLevelCard(),
-
-                      const SizedBox(
-                        height: 22,
                       ),
 
                       if (_error != null)
