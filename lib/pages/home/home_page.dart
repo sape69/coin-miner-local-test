@@ -22,6 +22,7 @@ import '../halving/halving_page.dart';
 import '../referrals/referrals_page.dart';
 import '../premium/premium_page.dart';
 import '../roadmap/roadmap_page.dart';
+import '../stella_world/stella_world_page.dart';
 import '../whitepaper/whitepaper_page.dart';
 import 'cat_fact_card.dart';
 import 'dialogs/app_update_dialog.dart';
@@ -1752,6 +1753,14 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  void _openStellaWorld() {
+    _openPage(
+      StellaWorldPage(
+        languageCode: widget.languageCode,
+      ),
+    );
+  }
+
   Future<void> _openPremium() async {
     await _openPage(
       PremiumPage(
@@ -2111,6 +2120,8 @@ class _HomePageState extends State<HomePage>
             _openTransactionHistory,
         onReferralPressed:
             _openReferrals,
+        onStellaWorldPressed:
+            _openStellaWorld,
         onPremiumPressed:
             _openPremium,
         onAccountDeletionPressed:
