@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Stella World - ensimmäinen pelattava näkymä.
 ///
@@ -31,11 +33,95 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   int _wallpaper = 0;
   int _floor = 0;
   int _furniture = 0;
+  bool _isLoadingDecor = true;
+  bool _isSavingDecor = false;
+  String? _saveError;
+
+  String get _decorStorageKey {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    return 'stella_world_decor_$userId';
+  }
 
   bool get _isFinnish =>
       widget.languageCode.toLowerCase().startsWith('fi');
 
   String _text(String fi, String en) => _isFinnish ? fi : en;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDecor();
+  }
+
+  Future<void> _loadDecor() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final savedDecor = preferences.getStringList(_decorStorageKey);
+
+      if (!mounted) return;
+
+      if (savedDecor != null && savedDecor.length == 3) {
+        final wallpaper = int.tryParse(savedDecor[0]) ?? 0;
+        final floor = int.tryParse(savedDecor[1]) ?? 0;
+        final furniture = int.tryParse(savedDecor[2]) ?? 0;
+
+        setState(() {
+          _wallpaper = wallpaper.clamp(0, _wallpapers.length - 1).toInt();
+          _floor = floor.clamp(0, _floors.length - 1).toInt();
+          _furniture = furniture.clamp(0, 3).toInt();
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saveError = _text(
+            'Sisustuksen lataaminen epäonnistui.',
+            'Could not load your room decoration.',
+          );
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingDecor = false);
+      }
+    }
+  }
+
+  Future<void> _saveDecor() async {
+    if (_isLoadingDecor) return;
+
+    setState(() {
+      _isSavingDecor = true;
+      _saveError = null;
+    });
+
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(_decorStorageKey, [
+        _wallpaper.toString(),
+        _floor.toString(),
+        _furniture.toString(),
+      ]);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saveError = _text(
+            'Sisustuksen tallentaminen epäonnistui.',
+            'Could not save your room decoration.',
+          );
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingDecor = false);
+      }
+    }
+  }
+
+  void _updateDecor(VoidCallback update) {
+    setState(update);
+    _saveDecor();
+  }
 
   final List<Color> _wallpapers = const [
     Color(0xFF8060B8),
@@ -410,6 +496,38 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           ),
           const SizedBox(height: 14),
           _buildOptions(),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(
+                _isSavingDecor
+                    ? Icons.sync_rounded
+                    : _saveError != null
+                        ? Icons.warning_amber_rounded
+                        : Icons.cloud_done_rounded,
+                size: 16,
+                color: _saveError != null ? pink : gold,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  _isLoadingDecor
+                      ? _text('Ladataan sisustusta...', 'Loading decoration...')
+                      : _saveError ??
+                          (_isSavingDecor
+                              ? _text('Tallennetaan...', 'Saving...')
+                              : _text(
+                                  'Sisustus tallennettu tähän laitteeseen',
+                                  'Decoration saved on this device',
+                                )),
+                  style: const TextStyle(
+                    color: secondaryText,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -450,7 +568,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           return InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () {
-              setState(() {
+              _updateDecor(() {
                 if (_selectedCategory == 0) {
                   _wallpaper = index;
                 } else if (_selectedCategory == 1) {
