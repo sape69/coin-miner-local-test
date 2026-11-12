@@ -34,6 +34,7 @@ class HomeDrawer extends StatefulWidget {
   final VoidCallback? onHalvingPressed;
   final VoidCallback? onPremiumPressed;
 
+  final VoidCallback? onStellaWorldPressed;
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onReferralPressed;
@@ -49,6 +50,7 @@ class HomeDrawer extends StatefulWidget {
     required this.onRoadmapPressed,
     this.onHalvingPressed,
     this.onPremiumPressed,
+    this.onStellaWorldPressed,
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onReferralPressed,
@@ -817,6 +819,19 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   // ADMIN
                   if (!_checkingAdmin && _adminAccess)
                     _adminMenuItem(),
+
+                  // STELLA WORLD
+                  if (widget.onStellaWorldPressed != null)
+                    _menuItem(
+                      icon: Icons.auto_awesome_rounded,
+                      title: widget.languageCode
+                              .toLowerCase()
+                              .startsWith('fi')
+                          ? 'Stella-maailma'
+                          : 'Stella World',
+                      onTap: widget.onStellaWorldPressed!,
+                      iconColor: accentColor,
+                    ),
 
                   // REFERRALS
                   _referralItem(),
