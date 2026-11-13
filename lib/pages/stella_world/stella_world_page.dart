@@ -274,6 +274,13 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
+              // Perusmatto kuuluu huoneeseen heti alusta alkaen.
+              Positioned(
+                left: roomWidth * 0.285,
+                bottom: 8,
+                child: _buildStarRug(),
+              ),
+
               // Stellan uusi raapimapuu sijoitetaan huoneen vasemmalle puolelle.
               Positioned(
                 left: roomWidth * 0.045,
@@ -370,6 +377,75 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStarRug() {
+    return SizedBox(
+      width: 132,
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 132,
+            height: 45,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF7652A6), Color(0xFF39245F)],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: pink.withValues(alpha: 0.88),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.24),
+                  blurRadius: 7,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.auto_awesome_rounded,
+            color: gold.withValues(alpha: 0.96),
+            size: 24,
+          ),
+          Positioned(
+            left: 19,
+            top: 15,
+            child: Icon(
+              Icons.star_rounded,
+              color: pink.withValues(alpha: 0.95),
+              size: 13,
+            ),
+          ),
+          Positioned(
+            right: 19,
+            top: 15,
+            child: Icon(
+              Icons.star_rounded,
+              color: pink.withValues(alpha: 0.95),
+              size: 13,
+            ),
+          ),
+          Positioned(
+            bottom: 2,
+            child: Container(
+              width: 48,
+              height: 3,
+              decoration: BoxDecoration(
+                color: gold.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
