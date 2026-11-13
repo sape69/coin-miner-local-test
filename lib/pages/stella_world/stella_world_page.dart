@@ -639,6 +639,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   }
 
 
+  Widget _buildStarRug() {
     return SizedBox(
       width: 132,
       height: 54,
