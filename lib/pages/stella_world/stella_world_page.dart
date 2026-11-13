@@ -252,7 +252,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
       builder: (context, constraints) {
         final roomWidth = constraints.maxWidth;
         return Container(
-          height: 330,
+          height: 360,
           width: double.infinity,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
@@ -287,6 +287,21 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
+              // Seinän värikerros: taustakuva säilyy, mutta valittu tapetin väri näkyy.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 94,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: _wallpapers[_wallpaper].withValues(alpha: 0.48),
+                      backgroundBlendMode: BlendMode.color,
+                    ),
+                  ),
+                ),
+              ),
               Positioned(
                 left: 0,
                 right: 0,
@@ -294,7 +309,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 height: 94,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: _floors[_floor].withValues(alpha: 0.34),
+                    color: _floors[_floor].withValues(alpha: 0.62),
                     border: Border(
                       top: BorderSide(
                         color: pink.withValues(alpha: 0.48),
@@ -304,24 +319,31 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
-              // Perusmatto kuuluu huoneeseen heti alusta alkaen.
+              // Matto: saavutuspalkinto korvaa perusmaton, eikä jää sen päälle.
               Positioned(
-                left: roomWidth * 0.285,
-                bottom: 8,
-                child: _buildStarRug(),
+                left: roomWidth * 0.34,
+                bottom: 10,
+                child: _completedAchievementCount >= 5
+                    ? _buildGoldStarRug()
+                    : _buildStarRug(),
               ),
-              if (_completedAchievementCount >= 5)
-                Positioned(
-                  left: roomWidth * 0.31,
-                  bottom: 48,
-                  child: _buildGoldStarRug(),
-                ),
+
+              // Raapimapuu vasemmalla, erillään sohvasta.
+              Positioned(
+                left: roomWidth * 0.025,
+                bottom: 170,
+                child: _buildScratchingPost(),
+              ),
+
+              // Saavutuksilla avattava kissapuu oikealle seinustalle.
               if (_completedAchievementCount >= 10)
                 Positioned(
-                  left: roomWidth * 0.24,
-                  bottom: 104,
+                  right: roomWidth * 0.055,
+                  bottom: 116,
                   child: _buildPinkCatTree(),
                 ),
+
+              // Kruunu pysyy ylhäällä eikä peitä muita koristeita.
               if (_completedAchievementCount >= 20)
                 Positioned(
                   top: 12,
@@ -329,28 +351,23 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   child: _buildCrystalChandelier(),
                 ),
 
-              // Stellan uusi raapimapuu sijoitetaan huoneen vasemmalle puolelle.
+              // Sohva vasemmalle etualalle.
               Positioned(
-                left: roomWidth * 0.045,
-                bottom: 104,
-                child: _buildScratchingPost(),
-              ),
-              Positioned(
-                bottom: 27,
-                left: roomWidth * 0.07,
+                bottom: 24,
+                left: roomWidth * 0.025,
                 child: _buildFurniture(),
               ),
 
-              // Stellan uusi oma peti.
+              // Kissanpeti sohvan ja Stellan väliin.
               Positioned(
-                bottom: 13,
-                left: roomWidth * 0.47,
+                bottom: 14,
+                left: roomWidth * 0.43,
                 child: _buildCatBed(),
               ),
 
               Positioned(
-                right: roomWidth * 0.075,
-                bottom: 8,
+                right: roomWidth * 0.025,
+                bottom: 3,
                 child: Container(
                   width: roomWidth * 0.27,
                   height: 12,
@@ -363,16 +380,16 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 ),
               ),
               Positioned(
-                right: roomWidth * 0.045,
+                right: roomWidth * 0.025,
                 bottom: 5,
-                width: roomWidth * 0.31,
+                width: roomWidth * 0.29,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
                       'assets/images/stella_sleeping_cartoon.gif',
-                      width: roomWidth * 0.29,
-                      height: 92,
+                      width: roomWidth * 0.27,
+                      height: 88,
                       fit: BoxFit.contain,
                       alignment: Alignment.bottomCenter,
                       errorBuilder: (context, error, stackTrace) =>
@@ -558,7 +575,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
         ]),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFFFF0BC), width: 2),
-        boxShadow: [BoxShadow(color: gold.withValues(alpha: 0.45), blurRadius: 9)],
+        boxShadow: [
+          BoxShadow(color: gold.withValues(alpha: 0.42), blurRadius: 12, offset: const Offset(0, 5)),
+          const BoxShadow(color: Color(0xFF6E451B), blurRadius: 2, offset: Offset(0, 3)),
+        ],
       ),
       child: const Icon(Icons.star_rounded, color: Color(0xFF8D5C22), size: 22),
     );
@@ -566,23 +586,23 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
 
   Widget _buildPinkCatTree() {
     return SizedBox(
-      width: 45,
-      height: 88,
+      width: 62,
+      height: 112,
       child: Stack(
         children: [
           Positioned(
             bottom: 1, left: 2, right: 2,
             child: Container(
-              height: 11,
+              height: 14,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFB7E8),
+                gradient: const LinearGradient(colors: [Color(0xFFFFE2F4), Color(0xFFB96FA5)]),
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: Colors.white70),
               ),
             ),
           ),
           Positioned(
-            bottom: 11, left: 17, width: 11, height: 59,
+            bottom: 13, left: 24, width: 15, height: 76,
             child: Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFDDA4C9),
@@ -594,9 +614,9 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           Positioned(
             top: 5, left: 3, right: 3,
             child: Container(
-              height: 24,
+              height: 29,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFFFFE0F2), Color(0xFFE89BCB)]),
+                gradient: const LinearGradient(colors: [Color(0xFFFFF0FA), Color(0xFFD77FB8), Color(0xFF9A5C9A)]),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white, width: 1.5),
               ),
@@ -623,7 +643,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
             color: const Color(0xFFB58CFF).withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0xFFFFE6A5), width: 1.5),
-            boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.65), blurRadius: 12)],
+            boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.65), blurRadius: 16), BoxShadow(color: gold.withValues(alpha: 0.35), blurRadius: 10)],
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
