@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,7 +37,7 @@ class _StellaWorldPageState extends State<StellaWorldPage>
   bool _isLoadingDecor = true;
   bool _isSavingDecor = false;
   String? _saveError;
-  late final AnimationController _stellaWalkController;
+  late final AnimationController _stellaRestController;
 
   String get _decorStorageKey {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
@@ -54,16 +52,18 @@ class _StellaWorldPageState extends State<StellaWorldPage>
   @override
   void initState() {
     super.initState();
-    _stellaWalkController = AnimationController(
+    _stellaRestController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 7),
+      duration: const Duration(milliseconds: 2400),
+      lowerBound: 0.0,
+      upperBound: 1.0,
     )..repeat(reverse: true);
     _loadDecor();
   }
 
   @override
   void dispose() {
-    _stellaWalkController.dispose();
+    _stellaRestController.dispose();
     super.dispose();
   }
 
@@ -354,58 +354,53 @@ class _StellaWorldPageState extends State<StellaWorldPage>
               ],
             ),
           ),
-          // Oikea Stella-hahmo liikkuu rauhallisesti huoneen lattialla.
-          // GIF toistuu automaattisesti Flutterin Image-widgetissä.
-          Positioned.fill(
+          // Piirretty Stella lepää lattialla. Hidas skaalaus luo
+          // hienovaraisen hengitysliikkeen ilman, että hahmo vaeltaa huoneessa.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 24,
             child: AnimatedBuilder(
-              animation: _stellaWalkController,
+              animation: _stellaRestController,
               builder: (context, child) {
-                final progress = _stellaWalkController.value;
-                final horizontalPosition = -0.38 + (progress * 0.72);
-                final bob = math.sin(progress * math.pi * 8) * 2.5;
-
-                return Align(
-                  alignment: Alignment(horizontalPosition, 0.52),
-                  child: Transform.translate(
-                    offset: Offset(0, bob),
-                    child: child,
-                  ),
+                final breathing =
+                    1.0 + (_stellaRestController.value * 0.025);
+                return Transform.scale(
+                  scale: breathing,
+                  child: child,
                 );
               },
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/images/stella_idle.gif',
-                      width: 112,
-                      height: 112,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const SizedBox(
-                          width: 112,
-                          height: 112,
-                          child: Icon(
-                            Icons.pets_rounded,
-                            color: primaryText,
-                            size: 68,
-                          ),
-                        );
-                      },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/stella_sleeping_cartoon.gif',
+                    width: 150,
+                    height: 118,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const SizedBox(
+                        width: 150,
+                        height: 118,
+                        child: Icon(
+                          Icons.pets_rounded,
+                          color: primaryText,
+                          size: 68,
+                        ),
+                      );
+                    },
+                  ),
+                  Text(
+                    'Stella',
+                    style: TextStyle(
+                      color: primaryText.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.bold,
+                      shadows: const [
+                        Shadow(color: Colors.black54, blurRadius: 5),
+                      ],
                     ),
-                    Text(
-                      'Stella',
-                      style: TextStyle(
-                        color: primaryText.withValues(alpha: 0.95),
-                        fontWeight: FontWeight.bold,
-                        shadows: const [
-                          Shadow(color: Colors.black54, blurRadius: 5),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
