@@ -19,8 +19,7 @@ class StellaWorldPage extends StatefulWidget {
   State<StellaWorldPage> createState() => _StellaWorldPageState();
 }
 
-class _StellaWorldPageState extends State<StellaWorldPage>
-    with SingleTickerProviderStateMixin {
+class _StellaWorldPageState extends State<StellaWorldPage> {
   static const Color background = Color(0xFF120B24);
   static const Color surface = Color(0xFF1A0E31);
   static const Color card = Color(0xFF21113B);
@@ -37,7 +36,6 @@ class _StellaWorldPageState extends State<StellaWorldPage>
   bool _isLoadingDecor = true;
   bool _isSavingDecor = false;
   String? _saveError;
-  late final AnimationController _stellaRestController;
 
   String get _decorStorageKey {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
@@ -52,19 +50,7 @@ class _StellaWorldPageState extends State<StellaWorldPage>
   @override
   void initState() {
     super.initState();
-    _stellaRestController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-      lowerBound: 0.0,
-      upperBound: 1.0,
-    )..repeat(reverse: true);
     _loadDecor();
-  }
-
-  @override
-  void dispose() {
-    _stellaRestController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadDecor() async {
@@ -262,192 +248,172 @@ class _StellaWorldPageState extends State<StellaWorldPage>
   }
 
   Widget _buildRoom() {
-    return Container(
-      height: 300,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: _wallpapers[_wallpaper],
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: purple.withValues(alpha: 0.5), width: 2),
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    _wallpapers[_wallpaper],
-                    _wallpapers[_wallpaper].withValues(alpha: 0.72),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final roomWidth = constraints.maxWidth;
+        return Container(
+          height: 330,
+          width: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: _wallpapers[_wallpaper],
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: purple.withValues(alpha: 0.55),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: purple.withValues(alpha: 0.18),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Yksityiskohtainen taustakuva: ikkuna, tähtitaivas,
+              // verhot, kasvit ja lämmin huonevalaistus.
+              Image.asset(
+                'assets/images/stella_room_background.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                errorBuilder: (context, error, stackTrace) {
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          _wallpapers[_wallpaper],
+                          _wallpapers[_wallpaper].withValues(alpha: 0.78),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // Valittu lattiasävy lisätään läpikuultavana kerroksena,
+              // jotta taustakuvan puulattian yksityiskohdat säilyvät.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 94,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: _floors[_floor].withValues(alpha: 0.34),
+                    border: Border(
+                      top: BorderSide(
+                        color: pink.withValues(alpha: 0.48),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Kalusteet ovat erillisiä Flutter-elementtejä taustasta.
+              Positioned(
+                bottom: 27,
+                left: roomWidth * 0.07,
+                child: _buildFurniture(),
+              ),
+              Positioned(
+                bottom: 22,
+                right: roomWidth * 0.08,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5D3A79),
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(color: pink, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: pink.withValues(alpha: 0.25),
+                            blurRadius: 9,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.toys_rounded, color: pink),
+                    ),
+                    const SizedBox(height: 3),
+                    Container(width: 7, height: 16, color: gold),
                   ],
                 ),
               ),
-            ),
-          ),
-          ..._buildStars(),
-          Positioned(
-            top: 42,
-            left: 22,
-            child: Container(
-              width: 92,
-              height: 105,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2C1B49),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: gold, width: 3),
-              ),
-              child: const Center(
-                child: Icon(Icons.nightlight_round, color: gold, size: 42),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 48,
-            right: 24,
-            child: Icon(
-              Icons.star_rounded,
-              color: gold.withValues(alpha: 0.9),
-              size: 35,
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 94,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _floors[_floor],
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.35),
-                    width: 3,
-                  ),
+              // Stella lepää omana kerroksenaan ja GIF toistuu automaattisesti.
+              Positioned(
+                left: roomWidth * 0.34,
+                right: roomWidth * 0.34,
+                bottom: 12,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/stella_sleeping_cartoon.gif',
+                      width: roomWidth * 0.32,
+                      height: 112,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const SizedBox(
+                          width: 112,
+                          height: 100,
+                          child: Icon(
+                            Icons.pets_rounded,
+                            color: primaryText,
+                            size: 66,
+                          ),
+                        );
+                      },
+                    ),
+                    Text(
+                      'Stella',
+                      style: TextStyle(
+                        color: primaryText.withValues(alpha: 0.98),
+                        fontWeight: FontWeight.bold,
+                        shadows: const [
+                          Shadow(color: Colors.black87, blurRadius: 6),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-          Positioned(
-            bottom: 34,
-            left: 26,
-            child: _buildFurniture(),
-          ),
-          Positioned(
-            bottom: 25,
-            right: 34,
-            child: Column(
-              children: [
-                Container(
-                  width: 58,
-                  height: 42,
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5D3A79),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: pink, width: 2),
-                  ),
-                  child: const Icon(Icons.toys_rounded, color: pink),
-                ),
-                const SizedBox(height: 3),
-                Container(width: 7, height: 17, color: gold),
-              ],
-            ),
-          ),
-          // Piirretty Stella lepää lattialla. Hidas skaalaus luo
-          // hienovaraisen hengitysliikkeen ilman, että hahmo vaeltaa huoneessa.
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 24,
-            child: AnimatedBuilder(
-              animation: _stellaRestController,
-              builder: (context, child) {
-                final breathing =
-                    1.0 + (_stellaRestController.value * 0.025);
-                return Transform.scale(
-                  scale: breathing,
-                  child: child,
-                );
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/images/stella_sleeping_cartoon.gif',
-                    width: 150,
-                    height: 118,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const SizedBox(
-                        width: 150,
-                        height: 118,
-                        child: Icon(
-                          Icons.pets_rounded,
-                          color: primaryText,
-                          size: 68,
-                        ),
-                      );
-                    },
-                  ),
-                  Text(
-                    'Stella',
-                    style: TextStyle(
-                      color: primaryText.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.bold,
-                      shadows: const [
-                        Shadow(color: Colors.black54, blurRadius: 5),
-                      ],
+                    color: background.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: pink.withValues(alpha: 0.45),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: background.withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _text('Stellan koti', 'Stella’s home'),
-                style: const TextStyle(
-                  color: primaryText,
-                  fontWeight: FontWeight.w600,
+                  child: Text(
+                    _text('Stellan koti', 'Stella’s home'),
+                    style: const TextStyle(
+                      color: primaryText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  List<Widget> _buildStars() {
-    const positions = <Offset>[
-      Offset(0.42, 0.18),
-      Offset(0.72, 0.30),
-      Offset(0.58, 0.48),
-      Offset(0.88, 0.16),
-      Offset(0.34, 0.42),
-    ];
-
-    return positions.map((position) {
-      return Positioned(
-        left: position.dx * 340,
-        top: position.dy * 270,
-        child: Icon(
-          Icons.star_rounded,
-          size: 13,
-          color: gold.withValues(alpha: 0.75),
-        ),
-      );
-    }).toList();
-  }
 
   Widget _buildFurniture() {
     final List<Color> furnitureColors = const [
