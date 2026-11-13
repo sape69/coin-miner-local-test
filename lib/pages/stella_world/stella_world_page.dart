@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../achievements/achievements_service.dart';
 
 /// Stella World - yksi sisustettava huone.
 class StellaWorldPage extends StatefulWidget {
@@ -32,6 +33,11 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   bool _isLoadingDecor = true;
   bool _isSavingDecor = false;
   String? _saveError;
+
+  final AchievementsService _achievementsService = AchievementsService();
+  int _completedAchievementCount = 0;
+  bool _isLoadingAchievements = true;
+  String? _achievementError;
 
   String get _decorStorageKey {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
@@ -77,6 +83,28 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   void initState() {
     super.initState();
     _loadDecor();
+    _loadAchievementCount();
+  }
+
+  Future<void> _loadAchievementCount() async {
+    try {
+      final count = await _achievementsService.getCompletedCount();
+      if (!mounted) return;
+      setState(() {
+        _completedAchievementCount = count < 0 ? 0 : count;
+        _achievementError = null;
+        _isLoadingAchievements = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _achievementError = _text(
+          'Saavutusten lataaminen epäonnistui. Yritä päivittää.',
+          'Could not load achievements. Please refresh.',
+        );
+        _isLoadingAchievements = false;
+      });
+    }
   }
 
   Future<void> _loadDecor() async {
@@ -155,6 +183,8 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
             _buildWelcomeCard(),
             const SizedBox(height: 16),
             _buildRoom(),
+            const SizedBox(height: 18),
+            _buildAchievementRewardsCard(),
             const SizedBox(height: 18),
             _buildDecorationPanel(),
             const SizedBox(height: 14),
@@ -280,6 +310,24 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 bottom: 8,
                 child: _buildStarRug(),
               ),
+              if (_completedAchievementCount >= 5)
+                Positioned(
+                  left: roomWidth * 0.31,
+                  bottom: 48,
+                  child: _buildGoldStarRug(),
+                ),
+              if (_completedAchievementCount >= 10)
+                Positioned(
+                  left: roomWidth * 0.24,
+                  bottom: 104,
+                  child: _buildPinkCatTree(),
+                ),
+              if (_completedAchievementCount >= 20)
+                Positioned(
+                  top: 12,
+                  right: roomWidth * 0.38,
+                  child: _buildCrystalChandelier(),
+                ),
 
               // Stellan uusi raapimapuu sijoitetaan huoneen vasemmalle puolelle.
               Positioned(
@@ -380,7 +428,217 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     );
   }
 
-  Widget _buildStarRug() {
+  Widget _buildAchievementRewardsCard() {
+    final rewards = [
+      (5, 'Kultainen tähtimatto', 'Gold Star Rug', Icons.star_rounded),
+      (10, 'Vaaleanpunainen kissapuu', 'Pink Cat Tree', Icons.pets_rounded),
+      (20, 'Kristallikruunu', 'Crystal Chandelier', Icons.diamond_rounded),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.emoji_events_rounded, color: gold, size: 23),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  _text('Tehtävien erikoispalkinnot', 'Achievement rewards'),
+                  style: const TextStyle(
+                    color: primaryText,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: _text('Päivitä saavutukset', 'Refresh achievements'),
+                onPressed: _isLoadingAchievements ? null : _loadAchievementCount,
+                icon: const Icon(Icons.refresh_rounded, color: purple),
+              ),
+            ],
+          ),
+          Text(
+            _isLoadingAchievements
+                ? _text('Haetaan saavutuksia palvelimelta...', 'Loading achievements from server...')
+                : _achievementError ?? _text(
+                    'Valmiita saavutuksia: $_completedAchievementCount',
+                    'Completed achievements: $_completedAchievementCount',
+                  ),
+            style: const TextStyle(color: secondaryText, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          ...rewards.map((reward) {
+            final int threshold = reward.$1;
+            final bool unlocked = _completedAchievementCount >= threshold;
+            final int progress = _completedAchievementCount >= threshold
+                ? threshold
+                : _completedAchievementCount;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 9),
+              child: Container(
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: unlocked ? gold.withValues(alpha: 0.65) : secondaryText.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(unlocked ? reward.$4 : Icons.lock_rounded,
+                        color: unlocked ? gold : secondaryText, size: 25),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isFinnish ? reward.$2 : reward.$3,
+                            style: TextStyle(
+                              color: unlocked ? primaryText : secondaryText,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            unlocked
+                                ? _text('Avattu – koriste näkyy huoneessa', 'Unlocked – decoration is in the room')
+                                : _text('$progress / $threshold saavutusta', '$progress / $threshold achievements'),
+                            style: const TextStyle(color: secondaryText, fontSize: 11),
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(5),
+                            child: LinearProgressIndicator(
+                              value: (progress / threshold).clamp(0.0, 1.0),
+                              minHeight: 5,
+                              backgroundColor: background,
+                              valueColor: AlwaysStoppedAnimation<Color>(unlocked ? gold : purple),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(unlocked ? Icons.check_circle_rounded : Icons.lock_outline_rounded,
+                        color: unlocked ? gold : secondaryText, size: 19),
+                  ],
+                ),
+              ),
+            );
+          }),
+          if (_achievementError != null)
+            TextButton.icon(
+              onPressed: _loadAchievementCount,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(_text('Yritä uudelleen', 'Try again')),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoldStarRug() {
+    return Container(
+      width: 72,
+      height: 30,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [
+          Color(0xFFFFE7A3), Color(0xFFD69B32), Color(0xFF8D5C22),
+        ]),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFF0BC), width: 2),
+        boxShadow: [BoxShadow(color: gold.withValues(alpha: 0.45), blurRadius: 9)],
+      ),
+      child: const Icon(Icons.star_rounded, color: Color(0xFF8D5C22), size: 22),
+    );
+  }
+
+  Widget _buildPinkCatTree() {
+    return SizedBox(
+      width: 45,
+      height: 88,
+      child: Stack(
+        children: [
+          Positioned(
+            bottom: 1, left: 2, right: 2,
+            child: Container(
+              height: 11,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB7E8),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: Colors.white70),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 11, left: 17, width: 11, height: 59,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDA4C9),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: const Color(0xFFFFE4F5)),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 5, left: 3, right: 3,
+            child: Container(
+              height: 24,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFFFE0F2), Color(0xFFE89BCB)]),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: const Icon(Icons.pets_rounded, color: Color(0xFF8C62B5), size: 17),
+            ),
+          ),
+          const Positioned(
+            right: 0, top: 35,
+            child: Icon(Icons.star_rounded, color: Color(0xFFFFD166), size: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCrystalChandelier() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 2, height: 13, color: const Color(0xFFFFE6A5)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFB58CFF).withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFFFE6A5), width: 1.5),
+            boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.65), blurRadius: 12)],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.diamond_rounded, color: Colors.white, size: 14),
+              Icon(Icons.diamond_rounded, color: Color(0xFFFFE6A5), size: 18),
+              Icon(Icons.diamond_rounded, color: Colors.white, size: 14),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
     return SizedBox(
       width: 132,
       height: 54,
