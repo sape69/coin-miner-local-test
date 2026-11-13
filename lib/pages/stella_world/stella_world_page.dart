@@ -274,6 +274,12 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
+              // Stellan uusi raapimapuu sijoitetaan huoneen vasemmalle puolelle.
+              Positioned(
+                left: roomWidth * 0.045,
+                bottom: 104,
+                child: _buildScratchingPost(),
+              ),
               Positioned(
                 bottom: 27,
                 left: roomWidth * 0.07,
@@ -364,6 +370,151 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildScratchingPost() {
+    return SizedBox(
+      width: 66,
+      height: 116,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Pyöreä, tukeva jalusta.
+          Positioned(
+            left: 2,
+            right: 2,
+            bottom: 2,
+            child: Container(
+              height: 15,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFD7EF), Color(0xFF9B6ABF)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFFE8F8), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Raapimapuun sisal-pylväs.
+          Positioned(
+            left: 25,
+            bottom: 14,
+            width: 16,
+            height: 76,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE8C59E), Color(0xFFB98B65)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(7),
+                border: Border.all(
+                  color: const Color(0xFFFFE3C3),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 3,
+                    offset: const Offset(1, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Container(
+                  width: 2,
+                  height: 65,
+                  color: const Color(0xFF8F684F).withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+          ),
+          // Ylempi taso.
+          Positioned(
+            left: 9,
+            top: 20,
+            width: 48,
+            height: 12,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFD8F0), Color(0xFFB58CFF)],
+                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFECFA), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.20),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Pieni pesä ylimmällä tasolla.
+          Positioned(
+            left: 5,
+            top: 4,
+            width: 56,
+            height: 22,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFE6F6), Color(0xFFE3B9F0)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: pink, width: 1.5),
+              ),
+              child: const Center(
+                child: Icon(Icons.pets_rounded, color: Color(0xFF8C62B5), size: 16),
+              ),
+            ),
+          ),
+          // Roikkuva tähtilelu ja naru.
+          Positioned(
+            right: 4,
+            top: 31,
+            child: Container(
+              width: 1.5,
+              height: 22,
+              color: const Color(0xFFFFE3A1),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 49,
+            child: Icon(
+              Icons.star_rounded,
+              color: gold,
+              size: 15,
+              shadows: [
+                Shadow(
+                  color: gold.withValues(alpha: 0.65),
+                  blurRadius: 7,
+                ),
+              ],
+            ),
+          ),
+          // Pienet koristeelliset tassunjäljet jalustassa.
+          const Positioned(
+            left: 12,
+            bottom: 5,
+            child: Icon(Icons.pets_rounded, color: Color(0xFF80579F), size: 9),
+          ),
+        ],
+      ),
     );
   }
 
