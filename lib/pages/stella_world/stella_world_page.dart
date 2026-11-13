@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Stella World - ensimmäinen pelattava näkymä.
-///
-/// Tämä ensimmäinen versio sisältää yhden sisustettavan huoneen.
-/// Sisustusvalinnat tallennetaan tällä hetkellä laitteen SharedPreferences-muistiin.
+/// Stella World - yksi sisustettava huone.
 class StellaWorldPage extends StatefulWidget {
   final String languageCode;
 
@@ -41,86 +38,8 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     return 'stella_world_decor_$userId';
   }
 
-  bool get _isFinnish =>
-      widget.languageCode.toLowerCase().startsWith('fi');
-
+  bool get _isFinnish => widget.languageCode.toLowerCase().startsWith('fi');
   String _text(String fi, String en) => _isFinnish ? fi : en;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDecor();
-  }
-
-  Future<void> _loadDecor() async {
-    try {
-      final preferences = await SharedPreferences.getInstance();
-      final savedDecor = preferences.getStringList(_decorStorageKey);
-
-      if (!mounted) return;
-
-      if (savedDecor != null && savedDecor.length == 3) {
-        final wallpaper = int.tryParse(savedDecor[0]) ?? 0;
-        final floor = int.tryParse(savedDecor[1]) ?? 0;
-        final furniture = int.tryParse(savedDecor[2]) ?? 0;
-
-        setState(() {
-          _wallpaper = wallpaper.clamp(0, _wallpapers.length - 1).toInt();
-          _floor = floor.clamp(0, _floors.length - 1).toInt();
-          _furniture = furniture.clamp(0, 3).toInt();
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _saveError = _text(
-            'Sisustuksen lataaminen epäonnistui.',
-            'Could not load your room decoration.',
-          );
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingDecor = false);
-      }
-    }
-  }
-
-  Future<void> _saveDecor() async {
-    if (_isLoadingDecor) return;
-
-    setState(() {
-      _isSavingDecor = true;
-      _saveError = null;
-    });
-
-    try {
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setStringList(_decorStorageKey, [
-        _wallpaper.toString(),
-        _floor.toString(),
-        _furniture.toString(),
-      ]);
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _saveError = _text(
-            'Sisustuksen tallentaminen epäonnistui.',
-            'Could not save your room decoration.',
-          );
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingDecor = false);
-      }
-    }
-  }
-
-  void _updateDecor(VoidCallback update) {
-    setState(update);
-    _saveDecor();
-  }
 
   final List<Color> _wallpapers = const [
     Color(0xFF8060B8),
@@ -137,25 +56,84 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   ];
 
   final List<String> _wallpaperNames = const [
-    'Laventeli',
-    'Vaaleanpunainen',
-    'Tähtiyö',
-    'Minttu',
+    'Laventeli', 'Vaaleanpunainen', 'Tähtiyö', 'Minttu',
   ];
-
   final List<String> _floorNames = const [
-    'Pehmeä matto',
-    'Kultainen puu',
-    'Yömatto',
-    'Metsämatto',
+    'Pehmeä matto', 'Kultainen puu', 'Yömatto', 'Metsämatto',
+  ];
+  final List<String> _furnitureNames = const [
+    'Mukava nojatuoli', 'Vaaleanpunainen sohva',
+    'Kuunvalon sohva', 'Tähtituoli',
   ];
 
-  final List<String> _furnitureNames = const [
-    'Mukava nojatuoli',
-    'Vaaleanpunainen sohva',
-    'Kuunvalon sohva',
-    'Tähtituoli',
+  static const List<Color> _furnitureColors = [
+    Color(0xFF6C4B91),
+    Color(0xFFB96F9C),
+    Color(0xFF526D9C),
+    Color(0xFF718C82),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDecor();
+  }
+
+  Future<void> _loadDecor() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = preferences.getStringList(_decorStorageKey);
+      if (!mounted) return;
+
+      if (saved != null && saved.length >= 3) {
+        setState(() {
+          _wallpaper =
+              (int.tryParse(saved[0]) ?? 0).clamp(0, _wallpapers.length - 1);
+          _floor = (int.tryParse(saved[1]) ?? 0).clamp(0, _floors.length - 1);
+          _furniture = (int.tryParse(saved[2]) ?? 0).clamp(0, 3);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saveError = _text(
+          'Sisustuksen lataaminen epäonnistui.',
+          'Could not load your room decoration.',
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingDecor = false);
+    }
+  }
+
+  Future<void> _saveDecor() async {
+    if (_isLoadingDecor) return;
+    setState(() {
+      _isSavingDecor = true;
+      _saveError = null;
+    });
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(_decorStorageKey, [
+        _wallpaper.toString(),
+        _floor.toString(),
+        _furniture.toString(),
+      ]);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saveError = _text(
+          'Sisustuksen tallentaminen epäonnistui.',
+          'Could not save your room decoration.',
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isSavingDecor = false);
+    }
+  }
+
+  void _updateDecor(VoidCallback update) {
+    setState(update);
+    _saveDecor();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,11 +186,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               color: pink.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.pets_rounded,
-              color: pink,
-              size: 34,
-            ),
+            child: const Icon(Icons.pets_rounded, color: pink, size: 34),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -233,10 +207,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     'Tutki, sisusta ja rakenna oma pieni tähtimaailmasi.',
                     'Explore, decorate and build your own little star world.',
                   ),
-                  style: const TextStyle(
-                    color: secondaryText,
-                    height: 1.35,
-                  ),
+                  style: const TextStyle(color: secondaryText, height: 1.35),
                 ),
               ],
             ),
@@ -257,10 +228,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           decoration: BoxDecoration(
             color: _wallpapers[_wallpaper],
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: purple.withValues(alpha: 0.55),
-              width: 2,
-            ),
+            border: Border.all(color: purple.withValues(alpha: 0.55), width: 2),
             boxShadow: [
               BoxShadow(
                 color: purple.withValues(alpha: 0.18),
@@ -276,20 +244,18 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 'assets/images/stella_room_background.png',
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
-                errorBuilder: (context, error, stackTrace) {
-                  return DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          _wallpapers[_wallpaper],
-                          _wallpapers[_wallpaper].withValues(alpha: 0.78),
-                        ],
-                      ),
+                errorBuilder: (context, error, stackTrace) => DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        _wallpapers[_wallpaper],
+                        _wallpapers[_wallpaper].withValues(alpha: 0.78),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
               Positioned(
                 left: 0,
@@ -313,36 +279,14 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 left: roomWidth * 0.07,
                 child: _buildFurniture(),
               ),
+
+              // Stellan uusi oma peti.
               Positioned(
-                bottom: 22,
-                right: roomWidth * 0.36,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5D3A79),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: pink, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: pink.withValues(alpha: 0.22),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.toys_rounded,
-                        color: pink,
-                        size: 21,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Container(width: 7, height: 13, color: gold),
-                  ],
-                ),
+                bottom: 13,
+                left: roomWidth * 0.47,
+                child: _buildCatBed(),
               ),
+
               Positioned(
                 right: roomWidth * 0.075,
                 bottom: 8,
@@ -370,17 +314,16 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                       height: 92,
                       fit: BoxFit.contain,
                       alignment: Alignment.bottomCenter,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const SizedBox(
-                          width: 104,
-                          height: 82,
-                          child: Icon(
-                            Icons.pets_rounded,
-                            color: primaryText,
-                            size: 62,
-                          ),
-                        );
-                      },
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox(
+                        width: 104,
+                        height: 82,
+                        child: Icon(
+                          Icons.pets_rounded,
+                          color: primaryText,
+                          size: 62,
+                        ),
+                      ),
                     ),
                     Text(
                       'Stella',
@@ -406,9 +349,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   decoration: BoxDecoration(
                     color: background.withValues(alpha: 0.78),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: pink.withValues(alpha: 0.45),
-                    ),
+                    border: Border.all(color: pink.withValues(alpha: 0.45)),
                   ),
                   child: Text(
                     _text('Stellan koti', 'Stella’s home'),
@@ -426,22 +367,106 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     );
   }
 
-  Widget _buildFurniture() {
-    const furnitureColors = [
-      Color(0xFF6C4B91),
-      Color(0xFFB96F9C),
-      Color(0xFF526D9C),
-      Color(0xFF718C82),
-    ];
-    final sofaColor = furnitureColors[_furniture];
+  Widget _buildCatBed() {
+    return SizedBox(
+      width: 86,
+      height: 59,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          Positioned(
+            bottom: 1,
+            left: 5,
+            right: 5,
+            child: Container(
+              height: 10,
+              decoration: BoxDecoration(
+                color: const Color(0xFF160D25).withValues(alpha: 0.34),
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+          // Pedin pehmeä ulkoreuna.
+          Positioned(
+            bottom: 5,
+            child: Container(
+              width: 84,
+              height: 43,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFFFD0EE),
+                    Color(0xFFB77AD8),
+                    Color(0xFF754B9D),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: const Color(0xFFFFE5F7), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.24),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                  BoxShadow(
+                    color: pink.withValues(alpha: 0.20),
+                    blurRadius: 9,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Sisäpehmuste.
+          Positioned(
+            bottom: 11,
+            child: Container(
+              width: 62,
+              height: 29,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFF0FA), Color(0xFFE9BCEB)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFDCA5E5),
+                  width: 1.2,
+                ),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFB58CFF),
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 5,
+            right: 10,
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              color: gold.withValues(alpha: 0.95),
+              size: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildFurniture() {
+    final sofaColor = _furnitureColors[_furniture];
     return SizedBox(
       width: 158,
       height: 91,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Sohvan pehmeä varjo.
           Positioned(
             left: 9,
             right: 9,
@@ -454,7 +479,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               ),
             ),
           ),
-          // Selkänoja: kolmiulotteinen liukuväri ja pehmeä reunus.
           Positioned(
             left: 10,
             right: 10,
@@ -472,10 +496,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: pink.withValues(alpha: 0.95),
-                  width: 2.5,
-                ),
+                border: Border.all(color: pink.withValues(alpha: 0.95), width: 2.5),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.24),
@@ -491,7 +512,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               ),
             ),
           ),
-          // Selkätyynyjen erottelu.
           Positioned(
             left: 34,
             top: 11,
@@ -506,7 +526,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
             height: 34,
             child: Container(color: Colors.white.withValues(alpha: 0.20)),
           ),
-          // Istuinosa.
           Positioned(
             left: 4,
             right: 4,
@@ -536,46 +555,21 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   decoration: BoxDecoration(
                     color: pink.withValues(alpha: 0.24),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: pink.withValues(alpha: 0.58),
-                    ),
+                    border: Border.all(color: pink.withValues(alpha: 0.58)),
                   ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: pink,
-                    size: 18,
-                  ),
+                  child: const Icon(Icons.favorite_rounded, color: pink, size: 18),
                 ),
               ),
             ),
           ),
-          // Pehmustetut käsinojat.
-          Positioned(
-            left: 0,
-            top: 37,
-            width: 20,
-            height: 42,
-            child: _sofaArm(sofaColor),
-          ),
-          Positioned(
-            right: 0,
-            top: 37,
-            width: 20,
-            height: 42,
-            child: _sofaArm(sofaColor),
-          ),
-          // Puiset jalat.
+          Positioned(left: 0, top: 37, width: 20, height: 42, child: _sofaArm(sofaColor)),
+          Positioned(right: 0, top: 37, width: 20, height: 42, child: _sofaArm(sofaColor)),
           Positioned(left: 14, bottom: 0, child: _sofaLeg()),
           Positioned(right: 14, bottom: 0, child: _sofaLeg()),
-          // Pieni kultainen tähtikoriste sohvan etureunassa.
           Positioned(
             right: 25,
             top: 49,
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              size: 11,
-              color: gold.withValues(alpha: 0.95),
-            ),
+            child: Icon(Icons.auto_awesome_rounded, size: 11, color: gold.withValues(alpha: 0.95)),
           ),
         ],
       ),
@@ -595,10 +589,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: pink.withValues(alpha: 0.92),
-          width: 2,
-        ),
+        border: Border.all(color: pink.withValues(alpha: 0.92), width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.18),
@@ -620,9 +611,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(3),
-        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.20),
@@ -635,7 +624,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   }
 
   Widget _buildDecorationPanel() {
-    final List<String> categories = [
+    final categories = [
       _text('Seinät', 'Walls'),
       _text('Lattia', 'Floor'),
       _text('Kalusteet', 'Furniture'),
@@ -706,10 +695,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                                   'Sisustus tallennettu tähän laitteeseen',
                                   'Decoration saved on this device',
                                 )),
-                  style: const TextStyle(
-                    color: secondaryText,
-                    fontSize: 11,
-                  ),
+                  style: const TextStyle(color: secondaryText, fontSize: 11),
                 ),
               ),
             ],
@@ -733,12 +719,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
       names = _floorNames;
       selected = _floor;
     } else {
-      colors = const [
-        Color(0xFF6C4B91),
-        Color(0xFFB96F9C),
-        Color(0xFF526D9C),
-        Color(0xFF718C82),
-      ];
+      colors = _furnitureColors;
       names = _furnitureNames;
       selected = _furniture;
     }
@@ -750,7 +731,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
         itemCount: colors.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          final bool isSelected = selected == index;
+          final isSelected = selected == index;
           return InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () {
@@ -794,10 +775,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     names[index],
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: primaryText,
-                      fontSize: 11,
-                    ),
+                    style: const TextStyle(color: primaryText, fontSize: 11),
                   ),
                 ],
               ),
@@ -825,10 +803,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 'Seuraavaksi Stella pääsee tutkimaan kristallikaivosta ja tähtimetsää!',
                 'Next, Stella will explore the Crystal Mine and the Star Forest!',
               ),
-              style: const TextStyle(
-                color: secondaryText,
-                height: 1.35,
-              ),
+              style: const TextStyle(color: secondaryText, height: 1.35),
             ),
           ),
         ],
