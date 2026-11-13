@@ -319,53 +319,76 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 left: roomWidth * 0.07,
                 child: _buildFurniture(),
               ),
+              // Lelut sijoitetaan huoneen keskiosaan, jotta ne eivät
+              // mene Stellan tai sohvan päälle.
               Positioned(
                 bottom: 22,
-                right: roomWidth * 0.08,
+                right: roomWidth * 0.36,
                 child: Column(
                   children: [
                     Container(
-                      width: 58,
-                      height: 44,
+                      width: 48,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: const Color(0xFF5D3A79),
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: pink, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: pink.withValues(alpha: 0.25),
-                            blurRadius: 9,
+                            color: pink.withValues(alpha: 0.22),
+                            blurRadius: 8,
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.toys_rounded, color: pink),
+                      child: const Icon(
+                        Icons.toys_rounded,
+                        color: pink,
+                        size: 21,
+                      ),
                     ),
                     const SizedBox(height: 3),
-                    Container(width: 7, height: 16, color: gold),
+                    Container(width: 7, height: 13, color: gold),
                   ],
                 ),
               ),
-              // Stella lepää omana kerroksenaan ja GIF toistuu automaattisesti.
+              // Stellan pehmeä varjo osuu lattiaan ja luo vaikutelman,
+              // että hän lepää lattialla eikä leiju ilmassa.
               Positioned(
-                left: roomWidth * 0.34,
-                right: roomWidth * 0.34,
-                bottom: 12,
+                right: roomWidth * 0.075,
+                bottom: 8,
+                child: Container(
+                  width: roomWidth * 0.27,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF160D25).withValues(alpha: 0.48),
+                    borderRadius: BorderRadius.all(
+                      Radius.elliptical(roomWidth * 0.14, 8),
+                    ),
+                  ),
+                ),
+              ),
+              // Stella on lattian oikealla puolella, erillään sohvasta.
+              Positioned(
+                right: roomWidth * 0.045,
+                bottom: 5,
+                width: roomWidth * 0.31,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
                       'assets/images/stella_sleeping_cartoon.gif',
-                      width: roomWidth * 0.32,
-                      height: 112,
+                      width: roomWidth * 0.29,
+                      height: 92,
                       fit: BoxFit.contain,
+                      alignment: Alignment.bottomCenter,
                       errorBuilder: (context, error, stackTrace) {
                         return const SizedBox(
-                          width: 112,
-                          height: 100,
+                          width: 104,
+                          height: 82,
                           child: Icon(
                             Icons.pets_rounded,
                             color: primaryText,
-                            size: 66,
+                            size: 62,
                           ),
                         );
                       },
