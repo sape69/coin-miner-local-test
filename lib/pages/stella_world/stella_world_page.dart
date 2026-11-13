@@ -5,8 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Stella World - ensimmäinen pelattava näkymä.
 ///
 /// Tämä ensimmäinen versio sisältää yhden sisustettavan huoneen.
-/// Sisustusvalinnat ovat tässä vaiheessa sivun muistissa eivätkä vielä
-/// tallennu Firebaseen tai käyttäjätilille.
+/// Sisustusvalinnat tallennetaan tällä hetkellä laitteen SharedPreferences-muistiin.
 class StellaWorldPage extends StatefulWidget {
   final String languageCode;
 
@@ -273,8 +272,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Yksityiskohtainen taustakuva: ikkuna, tähtitaivas,
-              // verhot, kasvit ja lämmin huonevalaistus.
               Image.asset(
                 'assets/images/stella_room_background.png',
                 fit: BoxFit.cover,
@@ -294,8 +291,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   );
                 },
               ),
-              // Valittu lattiasävy lisätään läpikuultavana kerroksena,
-              // jotta taustakuvan puulattian yksityiskohdat säilyvät.
               Positioned(
                 left: 0,
                 right: 0,
@@ -313,14 +308,11 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
-              // Kalusteet ovat erillisiä Flutter-elementtejä taustasta.
               Positioned(
                 bottom: 27,
                 left: roomWidth * 0.07,
                 child: _buildFurniture(),
               ),
-              // Lelut sijoitetaan huoneen keskiosaan, jotta ne eivät
-              // mene Stellan tai sohvan päälle.
               Positioned(
                 bottom: 22,
                 right: roomWidth * 0.36,
@@ -351,8 +343,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ],
                 ),
               ),
-              // Stellan pehmeä varjo osuu lattiaan ja luo vaikutelman,
-              // että hän lepää lattialla eikä leiju ilmassa.
               Positioned(
                 right: roomWidth * 0.075,
                 bottom: 8,
@@ -367,7 +357,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
-              // Stella on lattian oikealla puolella, erillään sohvasta.
               Positioned(
                 right: roomWidth * 0.045,
                 bottom: 5,
@@ -437,48 +426,211 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     );
   }
 
-
   Widget _buildFurniture() {
-    final List<Color> furnitureColors = const [
+    const furnitureColors = [
       Color(0xFF6C4B91),
       Color(0xFFB96F9C),
       Color(0xFF526D9C),
       Color(0xFF718C82),
     ];
+    final sofaColor = furnitureColors[_furniture];
 
-    return Column(
-      children: [
-        Container(
-          width: 112,
-          height: 50,
-          decoration: BoxDecoration(
-            color: furnitureColors[_furniture],
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(22),
-              bottom: Radius.circular(10),
+    return SizedBox(
+      width: 158,
+      height: 91,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Sohvan pehmeä varjo.
+          Positioned(
+            left: 9,
+            right: 9,
+            bottom: 3,
+            child: Container(
+              height: 10,
+              decoration: BoxDecoration(
+                color: const Color(0xFF160D25).withValues(alpha: 0.32),
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
-            border: Border.all(color: pink.withValues(alpha: 0.8), width: 2),
           ),
-          child: const Center(
-            child: Icon(Icons.favorite_rounded, color: pink, size: 22),
+          // Selkänoja: kolmiulotteinen liukuväri ja pehmeä reunus.
+          Positioned(
+            left: 10,
+            right: 10,
+            top: 2,
+            height: 57,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.lerp(sofaColor, Colors.white, 0.28)!,
+                    Color.lerp(sofaColor, Colors.white, 0.08)!,
+                    Color.lerp(sofaColor, Colors.black, 0.16)!,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: pink.withValues(alpha: 0.95),
+                  width: 2.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.24),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: pink.withValues(alpha: 0.14),
+                    blurRadius: 9,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        Row(
-          children: [
-            Container(
-              width: 9,
-              height: 18,
-              color: const Color(0xFF4B315E),
+          // Selkätyynyjen erottelu.
+          Positioned(
+            left: 34,
+            top: 11,
+            width: 1.5,
+            height: 34,
+            child: Container(color: Colors.white.withValues(alpha: 0.20)),
+          ),
+          Positioned(
+            right: 34,
+            top: 11,
+            width: 1.5,
+            height: 34,
+            child: Container(color: Colors.white.withValues(alpha: 0.20)),
+          ),
+          // Istuinosa.
+          Positioned(
+            left: 4,
+            right: 4,
+            top: 43,
+            height: 34,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.lerp(sofaColor, Colors.white, 0.20)!,
+                    sofaColor,
+                    Color.lerp(sofaColor, Colors.black, 0.10)!,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Color.lerp(sofaColor, Colors.white, 0.40)!,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  width: 34,
+                  height: 25,
+                  decoration: BoxDecoration(
+                    color: pink.withValues(alpha: 0.24),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: pink.withValues(alpha: 0.58),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: pink,
+                    size: 18,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 94),
-            Container(
-              width: 9,
-              height: 18,
-              color: const Color(0xFF4B315E),
+          ),
+          // Pehmustetut käsinojat.
+          Positioned(
+            left: 0,
+            top: 37,
+            width: 20,
+            height: 42,
+            child: _sofaArm(sofaColor),
+          ),
+          Positioned(
+            right: 0,
+            top: 37,
+            width: 20,
+            height: 42,
+            child: _sofaArm(sofaColor),
+          ),
+          // Puiset jalat.
+          Positioned(left: 14, bottom: 0, child: _sofaLeg()),
+          Positioned(right: 14, bottom: 0, child: _sofaLeg()),
+          // Pieni kultainen tähtikoriste sohvan etureunassa.
+          Positioned(
+            right: 25,
+            top: 49,
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 11,
+              color: gold.withValues(alpha: 0.95),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sofaArm(Color sofaColor) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(sofaColor, Colors.white, 0.30)!,
+            sofaColor,
+            Color.lerp(sofaColor, Colors.black, 0.18)!,
           ],
         ),
-      ],
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: pink.withValues(alpha: 0.92),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sofaLeg() {
+    return Container(
+      width: 9,
+      height: 13,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFD98A), Color(0xFF9B633E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.20),
+            blurRadius: 3,
+            offset: const Offset(1, 1),
+          ),
+        ],
+      ),
     );
   }
 
