@@ -247,6 +247,28 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     );
   }
 
+  Widget _buildRoomAsset(
+    String assetPath, {
+    required double width,
+    required double height,
+    required Widget fallback,
+    Alignment alignment = Alignment.bottomCenter,
+    ColorFilter? colorFilter,
+  }) {
+    final image = Image.asset(
+      assetPath,
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      alignment: alignment,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (context, error, stackTrace) => fallback,
+    );
+
+    if (colorFilter == null) return image;
+    return ColorFiltered(colorFilter: colorFilter, child: image);
+  }
+
   Widget _buildRoom() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -287,18 +309,15 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
               ),
-              // Seinän värikerros: taustakuva säilyy, mutta valittu tapetin väri näkyy.
+              // Seinän värikerros: läpikuultava pinta sävyttää taustakuvaa.
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
                 bottom: 94,
                 child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: _wallpapers[_wallpaper].withValues(alpha: 0.48),
-                      backgroundBlendMode: BlendMode.color,
-                    ),
+                  child: ColoredBox(
+                    color: _wallpapers[_wallpaper].withValues(alpha: 0.34),
                   ),
                 ),
               ),
@@ -335,34 +354,59 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 child: _buildScratchingPost(),
               ),
 
-              // Saavutuksilla avattava kissapuu oikealle seinustalle.
+              // Saavutuksilla avattava 3D-kissapuu oikealle seinustalle.
               if (_completedAchievementCount >= 10)
                 Positioned(
                   right: roomWidth * 0.055,
                   bottom: 116,
-                  child: _buildPinkCatTree(),
+                  child: _buildRoomAsset(
+                    'assets/images/stella_world/stella_cat_tree_3d.png',
+                    width: 92,
+                    height: 138,
+                    fallback: _buildPinkCatTree(),
+                  ),
                 ),
 
-              // Kruunu pysyy ylhäällä eikä peitä muita koristeita.
+              // 3D-kristallikruunu pysyy ylhäällä.
               if (_completedAchievementCount >= 20)
                 Positioned(
                   top: 12,
                   right: roomWidth * 0.38,
-                  child: _buildCrystalChandelier(),
+                  child: _buildRoomAsset(
+                    'assets/images/stella_world/stella_chandelier_3d.png',
+                    width: 104,
+                    height: 92,
+                    alignment: Alignment.topCenter,
+                    fallback: _buildCrystalChandelier(),
+                  ),
                 ),
 
-              // Sohva vasemmalle etualalle.
+              // 3D-sohva vasemmalla etualalla.
               Positioned(
                 bottom: 24,
-                left: roomWidth * 0.025,
-                child: _buildFurniture(),
+                left: roomWidth * 0.02,
+                child: _buildRoomAsset(
+                  'assets/images/stella_world/stella_sofa_3d.png',
+                  width: 140,
+                  height: 100,
+                  colorFilter: ColorFilter.mode(
+                    _furnitureColors[_furniture].withValues(alpha: 0.28),
+                    BlendMode.srcATop,
+                  ),
+                  fallback: _buildFurniture(),
+                ),
               ),
 
-              // Kissanpeti sohvan ja Stellan väliin.
+              // 3D-kissanpeti keskellä, erillään sohvasta ja Stellasta.
               Positioned(
                 bottom: 14,
-                left: roomWidth * 0.43,
-                child: _buildCatBed(),
+                left: roomWidth * 0.45,
+                child: _buildRoomAsset(
+                  'assets/images/stella_world/stella_cat_bed_3d.png',
+                  width: 78,
+                  height: 60,
+                  fallback: _buildCatBed(),
+                ),
               ),
 
               Positioned(
