@@ -351,14 +351,14 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               // alareunaan eli lattian päälle, ei seinän ja lattian rajalle.
               Positioned(
                 left: roomWidth * 0.025,
-                bottom: 0,
+                bottom: 94,
                 child: _buildScratchingPost(),
               ),
 
               // Saavutuksilla avattava 3D-kissapuu oikealle seinustalle.
               if (_completedAchievementCount >= 10)
                 Positioned(
-                  right: roomWidth * 0.055,
+                  right: roomWidth * 0.30,
                   bottom: 94,
                   child: _buildRoomAsset(
                     'assets/images/stella_world/stella_cat_tree_3d.png',
@@ -401,7 +401,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               // 3D-kissanpeti keskellä, erillään sohvasta ja Stellasta.
               Positioned(
                 bottom: 14,
-                left: roomWidth * 0.45,
+                left: roomWidth * 0.42,
                 child: _buildRoomAsset(
                   'assets/images/stella_world/stella_cat_bed_3d.png',
                   width: 78,
