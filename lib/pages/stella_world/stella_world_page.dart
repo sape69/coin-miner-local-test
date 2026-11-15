@@ -355,7 +355,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 child: _buildScratchingPost(),
               ),
 
-              // Saavutuksilla avattava 3D-kissapuu oikealle seinustalle.
+              // Saavutuksilla avattava 3D-raapimispuu oikealle seinustalle.
               if (_completedAchievementCount >= 10)
                 Positioned(
                   right: roomWidth * 0.30,
@@ -431,20 +431,26 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      'assets/images/stella_sleeping_cartoon.gif',
-                      width: roomWidth * 0.27,
-                      height: 88,
-                      fit: BoxFit.contain,
-                      alignment: Alignment.bottomCenter,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const SizedBox(
-                        width: 104,
-                        height: 82,
-                        child: Icon(
-                          Icons.pets_rounded,
-                          color: primaryText,
-                          size: 62,
+                    Transform.translate(
+                      // GIF-kuvassa on tyhjää läpinäkyvää tilaa alareunassa.
+                      // Siirretään vain Stellan kuvaa alaspäin, jotta tassut
+                      // osuvat visuaalisesti lattialla olevaan varjoon.
+                      offset: const Offset(0, 14),
+                      child: Image.asset(
+                        'assets/images/stella_sleeping_cartoon.gif',
+                        width: roomWidth * 0.27,
+                        height: 88,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.bottomCenter,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox(
+                          width: 104,
+                          height: 82,
+                          child: Icon(
+                            Icons.pets_rounded,
+                            color: primaryText,
+                            size: 62,
+                          ),
                         ),
                       ),
                     ),
@@ -493,7 +499,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   Widget _buildAchievementRewardsCard() {
     final rewards = [
       (5, 'Kultainen tähtimatto', 'Gold Star Rug', Icons.star_rounded),
-      (10, 'Vaaleanpunainen kissapuu', 'Pink Cat Tree', Icons.pets_rounded),
+      (10, 'Vaaleanpunainen raapimispuu', 'Pink Scratching Post', Icons.pets_rounded),
       (20, 'Kristallikruunu', 'Crystal Chandelier', Icons.diamond_rounded),
     ];
 
