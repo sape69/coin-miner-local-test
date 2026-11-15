@@ -404,61 +404,42 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
 
+              // Stellan varjo sijoitetaan tassujen kohdalle. Nimi jää sen alle,
+              // jotta teksti ei nosta kissakuvaa irti lattiasta.
               Positioned(
-                right: roomWidth * 0.025,
-                bottom: 3,
+                right: roomWidth * 0.035,
+                bottom: 23,
                 child: Container(
-                  width: roomWidth * 0.27,
-                  height: 12,
+                  width: roomWidth * 0.245,
+                  height: 10,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF160D25).withValues(alpha: 0.48),
+                    color: const Color(0xFF160D25).withValues(alpha: 0.58),
                     borderRadius: BorderRadius.all(
-                      Radius.elliptical(roomWidth * 0.14, 8),
+                      Radius.elliptical(roomWidth * 0.13, 7),
                     ),
                   ),
                 ),
               ),
               Positioned(
                 right: roomWidth * 0.025,
-                bottom: 5,
+                bottom: 2,
                 width: roomWidth * 0.29,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Transform.translate(
-                      // GIF-kuvassa on tyhjää läpinäkyvää tilaa alareunassa.
-                      // Siirretään vain Stellan kuvaa alaspäin, jotta tassut
-                      // osuvat visuaalisesti lattialla olevaan varjoon.
-                      offset: const Offset(0, 14),
-                      child: Image.asset(
-                        'assets/images/stella_sleeping_cartoon.gif',
-                        width: roomWidth * 0.27,
-                        height: 88,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.bottomCenter,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const SizedBox(
-                          width: 104,
-                          height: 82,
-                          child: Icon(
-                            Icons.pets_rounded,
-                            color: primaryText,
-                            size: 62,
-                          ),
-                        ),
-                      ),
+                child: Image.asset(
+                  'assets/images/stella_sleeping_cartoon.gif',
+                  width: roomWidth * 0.28,
+                  height: 100,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomCenter,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox(
+                    width: 104,
+                    height: 92,
+                    child: Icon(
+                      Icons.pets_rounded,
+                      color: primaryText,
+                      size: 62,
                     ),
-                    Text(
-                      'Stella',
-                      style: TextStyle(
-                        color: primaryText.withValues(alpha: 0.98),
-                        fontWeight: FontWeight.bold,
-                        shadows: const [
-                          Shadow(color: Colors.black87, blurRadius: 6),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               Positioned(
@@ -620,21 +601,79 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   }
 
   Widget _buildGoldStarRug() {
-    return Container(
-      width: 72,
-      height: 30,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [
-          Color(0xFFFFE7A3), Color(0xFFD69B32), Color(0xFF8D5C22),
-        ]),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFF0BC), width: 2),
-        boxShadow: [
-          BoxShadow(color: gold.withValues(alpha: 0.42), blurRadius: 12, offset: const Offset(0, 5)),
-          const BoxShadow(color: Color(0xFF6E451B), blurRadius: 2, offset: Offset(0, 3)),
+    return SizedBox(
+      width: 132,
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 132,
+            height: 45,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFFFE8A6),
+                  Color(0xFFE5B84F),
+                  Color(0xFF9B672C),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: const Color(0xFFFFF1C5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 7,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: gold.withValues(alpha: 0.22),
+                  blurRadius: 9,
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.star_rounded,
+            color: Color(0xFF8D5C22),
+            size: 25,
+          ),
+          const Positioned(
+            left: 19,
+            top: 15,
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              color: Color(0xFFFFF5D6),
+              size: 13,
+            ),
+          ),
+          const Positioned(
+            right: 19,
+            top: 15,
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              color: Color(0xFFFFF5D6),
+              size: 13,
+            ),
+          ),
+          Positioned(
+            bottom: 2,
+            child: Container(
+              width: 48,
+              height: 3,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF1C5).withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
         ],
       ),
-      child: const Icon(Icons.star_rounded, color: Color(0xFF8D5C22), size: 22),
     );
   }
 
