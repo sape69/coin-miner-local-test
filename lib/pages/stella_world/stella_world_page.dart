@@ -359,7 +359,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               if (_completedAchievementCount >= 10)
                 Positioned(
                   right: roomWidth * 0.055,
-                  bottom: 116,
+                  bottom: 94,
                   child: _buildRoomAsset(
                     'assets/images/stella_world/stella_cat_tree_3d.png',
                     width: 92,
