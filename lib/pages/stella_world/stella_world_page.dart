@@ -347,10 +347,11 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     : _buildStarRug(),
               ),
 
-              // Raapimapuu vasemmalla, erillään sohvasta.
+              // Raapimapuu vasemmalla: jalusta asetetaan huoneen
+              // alareunaan eli lattian päälle, ei seinän ja lattian rajalle.
               Positioned(
                 left: roomWidth * 0.025,
-                bottom: 170,
+                bottom: 0,
                 child: _buildScratchingPost(),
               ),
 
@@ -383,7 +384,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
 
               // 3D-sohva vasemmalla etualalla.
               Positioned(
-                bottom: 24,
+                bottom: 14,
                 left: roomWidth * 0.02,
                 child: _buildRoomAsset(
                   'assets/images/stella_world/stella_sofa_3d.png',
