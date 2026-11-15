@@ -347,14 +347,6 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     : _buildStarRug(),
               ),
 
-              // Raapimapuu vasemmalla: jalusta asetetaan huoneen
-              // alareunaan eli lattian päälle, ei seinän ja lattian rajalle.
-              Positioned(
-                left: roomWidth * 0.025,
-                bottom: 94,
-                child: _buildScratchingPost(),
-              ),
-
               // Saavutuksilla avattava 3D-raapimispuu oikealle seinustalle.
               if (_completedAchievementCount >= 10)
                 Positioned(
@@ -382,33 +374,35 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
 
-              // 3D-sohva vasemmalla etualalla.
-              Positioned(
-                bottom: 14,
-                left: roomWidth * 0.02,
-                child: _buildRoomAsset(
-                  'assets/images/stella_world/stella_sofa_3d.png',
-                  width: 140,
-                  height: 100,
-                  colorFilter: ColorFilter.mode(
-                    _furnitureColors[_furniture].withValues(alpha: 0.28),
-                    BlendMode.srcATop,
+              // 3D-sohva avautuu 15 saavutuksella.
+              if (_completedAchievementCount >= 15)
+                Positioned(
+                  bottom: 14,
+                  left: roomWidth * 0.02,
+                  child: _buildRoomAsset(
+                    'assets/images/stella_world/stella_sofa_3d.png',
+                    width: 140,
+                    height: 100,
+                    colorFilter: ColorFilter.mode(
+                      _furnitureColors[_furniture].withValues(alpha: 0.28),
+                      BlendMode.srcATop,
+                    ),
+                    fallback: _buildFurniture(),
                   ),
-                  fallback: _buildFurniture(),
                 ),
-              ),
 
-              // 3D-kissanpeti keskellä, erillään sohvasta ja Stellasta.
-              Positioned(
-                bottom: 14,
-                left: roomWidth * 0.42,
-                child: _buildRoomAsset(
-                  'assets/images/stella_world/stella_cat_bed_3d.png',
-                  width: 78,
-                  height: 60,
-                  fallback: _buildCatBed(),
+              // 3D-kissanpeti avautuu 23 saavutuksella.
+              if (_completedAchievementCount >= 23)
+                Positioned(
+                  bottom: 14,
+                  left: roomWidth * 0.42,
+                  child: _buildRoomAsset(
+                    'assets/images/stella_world/stella_cat_bed_3d.png',
+                    width: 78,
+                    height: 60,
+                    fallback: _buildCatBed(),
+                  ),
                 ),
-              ),
 
               Positioned(
                 right: roomWidth * 0.025,
@@ -500,7 +494,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     final rewards = [
       (5, 'Kultainen tähtimatto', 'Gold Star Rug', Icons.star_rounded),
       (10, 'Vaaleanpunainen raapimispuu', 'Pink Scratching Post', Icons.pets_rounded),
+      (15, '3D-sohva', '3D Sofa', Icons.weekend_rounded),
       (20, 'Kristallikruunu', 'Crystal Chandelier', Icons.diamond_rounded),
+      (23, 'Kissanpeti', 'Cat Bed', Icons.bed_rounded),
+      (26, 'Erikoistapetti ja lattia', 'Special Wallpaper & Floor', Icons.palette_rounded),
     ];
 
     return Container(
@@ -580,8 +577,14 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                           const SizedBox(height: 5),
                           Text(
                             unlocked
-                                ? _text('Avattu – koriste näkyy huoneessa', 'Unlocked – decoration is in the room')
-                                : _text('$progress / $threshold saavutusta', '$progress / $threshold achievements'),
+                                ? _text(
+                                    'Avattu – käytettävissä sisustuksessa',
+                                    'Unlocked – available in decoration options',
+                                  )
+                                : _text(
+                                    '$progress / $threshold saavutusta',
+                                    '$progress / $threshold achievements',
+                                  ),
                             style: const TextStyle(color: secondaryText, fontSize: 11),
                           ),
                           const SizedBox(height: 6),
@@ -1289,19 +1292,39 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = selected == index;
+          final isLocked = _selectedCategory == 2
+              ? _completedAchievementCount < 15
+              : index == 3 && _completedAchievementCount < 26;
+
           return InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: () {
-              _updateDecor(() {
-                if (_selectedCategory == 0) {
-                  _wallpaper = index;
-                } else if (_selectedCategory == 1) {
-                  _floor = index;
-                } else {
-                  _furniture = index;
-                }
-              });
-            },
+            onTap: isLocked
+                ? () {
+                    final requiredCount =
+                        _selectedCategory == 2 ? 15 : 26;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _text(
+                            'Avaa tämä vaihtoehto suorittamalla $requiredCount saavutusta.',
+                            'Complete $requiredCount achievements to unlock this option.',
+                          ),
+                        ),
+                        backgroundColor: surface,
+                      ),
+                    );
+                  }
+                : () {
+                    _updateDecor(() {
+                      if (_selectedCategory == 0) {
+                        _wallpaper = index;
+                      } else if (_selectedCategory == 1) {
+                        _floor = index;
+                      } else {
+                        _furniture = index;
+                      }
+                    });
+                  },
             child: Container(
               width: 104,
               padding: const EdgeInsets.all(8),
@@ -1322,9 +1345,11 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                         color: colors[index],
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: isSelected
-                          ? const Icon(Icons.check_circle, color: primaryText)
-                          : null,
+                      child: isLocked
+                          ? const Icon(Icons.lock_rounded, color: secondaryText)
+                          : isSelected
+                              ? const Icon(Icons.check_circle, color: primaryText)
+                              : null,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -1332,7 +1357,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     names[index],
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: primaryText, fontSize: 11),
+                    style: TextStyle(
+                      color: isLocked ? secondaryText : primaryText,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
