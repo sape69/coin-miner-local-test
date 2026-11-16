@@ -404,8 +404,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                   ),
                 ),
 
-              // Stellan varjo sijoitetaan tassujen kohdalle. Nimi jää sen alle,
-              // jotta teksti ei nosta kissakuvaa irti lattiasta.
+              // Stellan varjo sijoitetaan tassujen kohdalle.
               Positioned(
                 right: roomWidth * 0.035,
                 bottom: 23,
@@ -601,81 +600,77 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   }
 
   Widget _buildGoldStarRug() {
+    // Leveä, litteä soikea matto – ei nappimainen koroke.
     return SizedBox(
-      width: 132,
-      height: 54,
+      width: 178,
+      height: 64,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Container(
-            width: 132,
-            height: 45,
+            width: 178,
+            height: 58,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFFFFE8A6),
-                  Color(0xFFE5B84F),
-                  Color(0xFF9B672C),
+                  Color(0xFFFFE9B0),
+                  Color(0xFFE7BD68),
+                  Color(0xFFC18A43),
                 ],
               ),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: const Color(0xFFFFF1C5),
-                width: 2,
+                color: const Color(0xFFFFF1CC),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 7,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: gold.withValues(alpha: 0.22),
-                  blurRadius: 9,
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
           ),
+          Container(
+            width: 160,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: const Color(0xFFFFF0C2).withValues(alpha: 0.78),
+                width: 1,
+              ),
+            ),
+          ),
           const Icon(
             Icons.star_rounded,
-            color: Color(0xFF8D5C22),
-            size: 25,
+            color: Color(0xFF9A642B),
+            size: 23,
           ),
           const Positioned(
-            left: 19,
-            top: 15,
+            left: 27,
             child: Icon(
-              Icons.auto_awesome_rounded,
-              color: Color(0xFFFFF5D6),
-              size: 13,
+              Icons.star_rounded,
+              color: Color(0xFFFFF2D1),
+              size: 11,
             ),
           ),
           const Positioned(
-            right: 19,
-            top: 15,
+            right: 27,
             child: Icon(
-              Icons.auto_awesome_rounded,
-              color: Color(0xFFFFF5D6),
-              size: 13,
-            ),
-          ),
-          Positioned(
-            bottom: 2,
-            child: Container(
-              width: 48,
-              height: 3,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF1C5).withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(4),
-              ),
+              Icons.star_rounded,
+              color: Color(0xFFFFF2D1),
+              size: 11,
             ),
           ),
         ],
       ),
     );
   }
+
 
   Widget _buildPinkCatTree() {
     return SizedBox(
