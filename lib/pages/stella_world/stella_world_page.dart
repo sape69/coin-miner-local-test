@@ -29,7 +29,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   int _selectedCategory = 0;
   int _wallpaper = 0;
   int _floor = 0;
-  int _furniture = 0;
+  int _furniture = 0; // Sohvan väri.
+  int _scratchingPostColor = 0;
+  int _catBedColor = 0;
+  int _selectedFurnitureItem = 0; // 0 = sohva, 1 = raapimispuu, 2 = kissanpeti.
   bool _isLoadingDecor = true;
   bool _isSavingDecor = false;
   String? _saveError;
@@ -67,9 +70,17 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
   final List<String> _floorNames = const [
     'Pehmeä matto', 'Kultainen puu', 'Yömatto', 'Metsämatto',
   ];
-  final List<String> _furnitureNames = const [
-    'Mukava nojatuoli', 'Vaaleanpunainen sohva',
-    'Kuunvalon sohva', 'Tähtituoli',
+  final List<String> _furnitureItemNamesFi = const [
+    'Sohva', 'Raapimispuu', 'Kissanpeti',
+  ];
+  final List<String> _furnitureItemNamesEn = const [
+    'Sofa', 'Scratching post', 'Cat bed',
+  ];
+  final List<String> _furnitureColorNamesFi = const [
+    'Laventeli', 'Vaaleanpunainen', 'Yönsininen', 'Minttu',
+  ];
+  final List<String> _furnitureColorNamesEn = const [
+    'Lavender', 'Pink', 'Midnight blue', 'Mint',
   ];
 
   static const List<Color> _furnitureColors = [
@@ -92,6 +103,13 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
       if (!mounted) return;
       setState(() {
         _completedAchievementCount = count < 0 ? 0 : count;
+        // Valitse ensimmäinen avattu kaluste, jos aiempi valinta on lukittu.
+        if (_completedAchievementCount < 15 &&
+            _completedAchievementCount >= 10) {
+          _selectedFurnitureItem = 1;
+        } else if (_completedAchievementCount < 10) {
+          _selectedFurnitureItem = 0;
+        }
         _achievementError = null;
         _isLoadingAchievements = false;
       });
@@ -119,6 +137,13 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               (int.tryParse(saved[0]) ?? 0).clamp(0, _wallpapers.length - 1);
           _floor = (int.tryParse(saved[1]) ?? 0).clamp(0, _floors.length - 1);
           _furniture = (int.tryParse(saved[2]) ?? 0).clamp(0, 3);
+          if (saved.length >= 5) {
+            _scratchingPostColor = (int.tryParse(saved[3]) ?? 0).clamp(0, 3);
+            _catBedColor = (int.tryParse(saved[4]) ?? 0).clamp(0, 3);
+          }
+          if (saved.length >= 6) {
+            _selectedFurnitureItem = (int.tryParse(saved[5]) ?? 0).clamp(0, 2);
+          }
         });
       }
     } catch (_) {
@@ -145,6 +170,9 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
         _wallpaper.toString(),
         _floor.toString(),
         _furniture.toString(),
+        _scratchingPostColor.toString(),
+        _catBedColor.toString(),
+        _selectedFurnitureItem.toString(),
       ]);
     } catch (_) {
       if (mounted) {
@@ -356,6 +384,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     'assets/images/stella_world/stella_cat_tree_3d.png',
                     width: 92,
                     height: 138,
+                    colorFilter: ColorFilter.mode(
+                      _furnitureColors[_scratchingPostColor].withValues(alpha: 0.34),
+                      BlendMode.srcATop,
+                    ),
                     fallback: _buildPinkCatTree(),
                   ),
                 ),
@@ -384,7 +416,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     width: 140,
                     height: 100,
                     colorFilter: ColorFilter.mode(
-                      _furnitureColors[_furniture].withValues(alpha: 0.28),
+                      _furnitureColors[_furniture].withValues(alpha: 0.34),
                       BlendMode.srcATop,
                     ),
                     fallback: _buildFurniture(),
@@ -400,6 +432,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                     'assets/images/stella_world/stella_cat_bed_3d.png',
                     width: 78,
                     height: 60,
+                    colorFilter: ColorFilter.mode(
+                      _furnitureColors[_catBedColor].withValues(alpha: 0.34),
+                      BlendMode.srcATop,
+                    ),
                     fallback: _buildCatBed(),
                   ),
                 ),
@@ -1118,6 +1154,10 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
               );
             }),
           ),
+          if (_selectedCategory == 2) ...[
+            const SizedBox(height: 12),
+            _buildFurnitureItemSelector(),
+          ],
           const SizedBox(height: 14),
           _buildOptions(),
           const SizedBox(height: 10),
@@ -1154,10 +1194,61 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
     );
   }
 
+  Widget _buildFurnitureItemSelector() {
+    final names = _isFinnish ? _furnitureItemNamesFi : _furnitureItemNamesEn;
+    final requiredAchievements = [15, 10, 23];
+    final icons = [Icons.weekend_rounded, Icons.pets_rounded, Icons.bed_rounded];
+
+    return Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      children: List.generate(names.length, (index) {
+        final unlocked = _completedAchievementCount >= requiredAchievements[index];
+        final selected = _selectedFurnitureItem == index;
+        return ChoiceChip(
+          avatar: Icon(
+            unlocked ? icons[index] : Icons.lock_rounded,
+            size: 16,
+            color: selected ? background : secondaryText,
+          ),
+          label: Text(names[index]),
+          selected: selected,
+          onSelected: (_) {
+            if (!unlocked) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(_text(
+                    'Avaa tämä kaluste suorittamalla ${requiredAchievements[index]} saavutusta.',
+                    'Complete ${requiredAchievements[index]} achievements to unlock this furniture.',
+                  )),
+                  backgroundColor: surface,
+                ),
+              );
+              return;
+            }
+            setState(() => _selectedFurnitureItem = index);
+          },
+          selectedColor: purple,
+          backgroundColor: surface,
+          labelStyle: TextStyle(
+            color: selected ? background : (unlocked ? primaryText : secondaryText),
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+          ),
+          side: BorderSide(
+            color: selected ? purple : secondaryText.withValues(alpha: 0.25),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildOptions() {
     final List<Color> colors;
     final List<String> names;
     final int selected;
+    final bool furnitureSelection = _selectedCategory == 2;
+    int requiredAchievements = 0;
 
     if (_selectedCategory == 0) {
       colors = _wallpapers;
@@ -1169,9 +1260,21 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
       selected = _floor;
     } else {
       colors = _furnitureColors;
-      names = _furnitureNames;
-      selected = _furniture;
+      names = _isFinnish ? _furnitureColorNamesFi : _furnitureColorNamesEn;
+      if (_selectedFurnitureItem == 0) {
+        selected = _furniture;
+        requiredAchievements = 15;
+      } else if (_selectedFurnitureItem == 1) {
+        selected = _scratchingPostColor;
+        requiredAchievements = 10;
+      } else {
+        selected = _catBedColor;
+        requiredAchievements = 23;
+      }
     }
+
+    final furnitureLocked = furnitureSelection &&
+        _completedAchievementCount < requiredAchievements;
 
     return SizedBox(
       height: 88,
@@ -1181,24 +1284,23 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = selected == index;
-          final isLocked = _selectedCategory == 2
-              ? _completedAchievementCount < 15
+          final isLocked = furnitureSelection
+              ? furnitureLocked
               : index == 3 && _completedAchievementCount < 26;
 
           return InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: isLocked
                 ? () {
-                    final requiredCount =
-                        _selectedCategory == 2 ? 15 : 26;
+                    final requiredCount = furnitureSelection
+                        ? requiredAchievements
+                        : 26;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(
-                          _text(
-                            'Avaa tämä vaihtoehto suorittamalla $requiredCount saavutusta.',
-                            'Complete $requiredCount achievements to unlock this option.',
-                          ),
-                        ),
+                        content: Text(_text(
+                          'Avaa tämä vaihtoehto suorittamalla $requiredCount saavutusta.',
+                          'Complete $requiredCount achievements to unlock this option.',
+                        )),
                         backgroundColor: surface,
                       ),
                     );
@@ -1209,8 +1311,12 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                         _wallpaper = index;
                       } else if (_selectedCategory == 1) {
                         _floor = index;
-                      } else {
+                      } else if (_selectedFurnitureItem == 0) {
                         _furniture = index;
+                      } else if (_selectedFurnitureItem == 1) {
+                        _scratchingPostColor = index;
+                      } else {
+                        _catBedColor = index;
                       }
                     });
                   },
