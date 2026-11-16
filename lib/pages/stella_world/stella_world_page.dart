@@ -425,7 +425,7 @@ class _StellaWorldPageState extends State<StellaWorldPage> {
                 bottom: 2,
                 width: roomWidth * 0.29,
                 child: Image.asset(
-                  'assets/images/stella_sleeping_cartoon.gif',
+                  'assets/images/stella_sleeping_cartoon.png',
                   width: roomWidth * 0.28,
                   height: 100,
                   fit: BoxFit.contain,
