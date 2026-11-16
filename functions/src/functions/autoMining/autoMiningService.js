@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -10,7 +11,7 @@
 // - STL-saldon päivittäminen
 // - Mining achievementien käsittely
 // - Referral-palkkion käsittely
-// - Seuraavan 24h louhintajakson käynnistäminen
+// - Ensimmäisen tai seuraavan 24h louhintajakson käynnistäminen
 // - Automaattisen 24h Power Boostin käynnistäminen
 //
 // Premium Plus Power Boost:
@@ -49,10 +50,9 @@ function number(value, fallback = 0) {
 }
 
 function nonNegative(value, fallback = 0) {
-  const result = Number(value);
-
-  return Number.isFinite(result) && result >= 0
-    ? result
+  return Number.isFinite(Number(value)) &&
+    Number(value) >= 0
+    ? Number(value)
     : fallback;
 }
 
@@ -212,11 +212,14 @@ function createAutoMiningService({
         const previous =
           miningWindow(data);
 
+        // Jos käyttäjällä on voimassa oleva louhintajakso,
+        // sitä ei saa käynnistää uudelleen.
+        const hasPreviousCycle =
+          previous && previous.valid === true;
+
         if (
-          !isMiningCycleExpired(
-            previous,
-            nowMs
-          )
+          hasPreviousCycle &&
+          !isMiningCycleExpired(previous, nowMs)
         ) {
           return {
             success: true,
@@ -226,42 +229,54 @@ function createAutoMiningService({
         }
 
         // ----------------------------------------------------
-        // VERIFY HISTORICAL HASH RATE
+        // PREVIOUS HASH RATE
         // ----------------------------------------------------
 
-        const oldHashRate =
+        const historicalRate =
           historicalHashRate(data);
 
-        if (
-          !Number.isFinite(oldHashRate) ||
-          oldHashRate <= 0
-        ) {
-          return {
-            success: false,
-            skipped: true,
-            reason: "invalid_historical_hash_rate",
-          };
-        }
-
         // ----------------------------------------------------
-        // COLLECT PREVIOUS MINING CYCLE
+        // COLLECT PREVIOUS CYCLE ONLY WHEN ONE EXISTS
         // ----------------------------------------------------
 
-        const cycle =
-          await collectCompletedMiningCycle({
-            uid,
-            userData: data,
-            nowMs,
-            transaction,
-          });
+        // Uudella Premium Plus -käyttäjällä ei ole
+        // aikaisempaa louhintajaksoa kerättävänä.
+        let cycle = {
+          completed: true,
+          collected: 0,
+          baseMining: 0,
+          adBoostMining: 0,
+          boostMilliseconds: 0,
+        };
 
-        if (
-          !cycle ||
-          cycle.completed !== true
-        ) {
-          throw new Error(
-            "AUTO_MINING: Completed mining cycle calculation failed."
-          );
+        if (hasPreviousCycle) {
+          if (
+            !Number.isFinite(historicalRate) ||
+            historicalRate <= 0
+          ) {
+            return {
+              success: false,
+              skipped: true,
+              reason: "invalid_historical_hash_rate",
+            };
+          }
+
+          cycle =
+            await collectCompletedMiningCycle({
+              uid,
+              userData: data,
+              nowMs,
+              transaction,
+            });
+
+          if (
+            !cycle ||
+            cycle.completed !== true
+          ) {
+            throw new Error(
+              "AUTO_MINING: Completed mining cycle calculation failed."
+            );
+          }
         }
 
         const collected =
@@ -280,6 +295,15 @@ function createAutoMiningService({
 
         const rate =
           number(daily.dailyHashRate);
+
+        // Ensimmäisellä louhintakerralla ei ole aiempaa
+        // Hash Ratea. Käytetään silloin uutta päivittäistä
+        // Hash Ratea historiatiedoissa.
+        const oldHashRate =
+          Number.isFinite(historicalRate) &&
+          historicalRate > 0
+            ? historicalRate
+            : rate;
 
         if (rate <= 0) {
           throw new Error(
@@ -398,7 +422,7 @@ function createAutoMiningService({
         }
 
         // ----------------------------------------------------
-        // START NEXT MINING CYCLE
+        // START MINING CYCLE
         // ----------------------------------------------------
 
         const startedAt = now;
@@ -459,17 +483,17 @@ function createAutoMiningService({
             powerBoostTransactionId:
               autoBoostTransactionId,
 
-            // HUOM:
             // lastAdRewardAt jätetään ennalleen.
             // Automaattinen Premium Plus Boost ei ole
-            // AdMob-mainospalkinto eikä saa nollata
-            // tavallisen Power Boostin jäähdytysaikaa.
+            // AdMob-mainospalkinto eikä muuta jäähdytysaikaa.
 
             autoMiningLastRunAt:
               FieldValue.serverTimestamp(),
 
             autoMiningLastCycleEnd:
-              previous.miningEndsAt,
+              hasPreviousCycle
+                ? previous.miningEndsAt
+                : null,
 
             updatedAt:
               FieldValue.serverTimestamp(),
