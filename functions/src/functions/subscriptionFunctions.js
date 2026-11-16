@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -270,13 +271,8 @@ async function saveVerifiedSubscription({
       );
     }
 
-    // The incoming purchase has just been verified directly with
-    // Google Play and its productId was matched against the actual
-    // subscription line item. It is therefore the authoritative tier.
-    //
-    // Do not preserve a stale premium_plus value from the user document:
-    // doing so can incorrectly grant Premium Plus benefits to a regular
-    // Premium subscriber and can prevent premiumProductId from being saved.
+    // Google Playsta varmennettu tuote määrittää
+    // käyttäjän todellisen tilaustason.
     const updates = {
       premium: true,
       premiumVerified: true,
@@ -317,8 +313,11 @@ async function saveVerifiedSubscription({
 const verifyPlaySubscription = onCall(
   {
     region: REGION,
-    timeoutSeconds: 30,
-    memory: "256MiB",
+
+    // Varmennuksen jälkeen Premium Plus voi käynnistää
+    // louhinnan ja Power Boostin samalla palvelinkutsulla.
+    timeoutSeconds: 120,
+    memory: "512MiB",
   },
   async (request) => {
     if (!request.auth?.uid) {
@@ -348,6 +347,7 @@ const verifyPlaySubscription = onCall(
         productId
       );
 
+    // Tallennetaan varmennettu tilaus ensin.
     await saveVerifiedSubscription({
       uid,
       productId,
@@ -356,6 +356,58 @@ const verifyPlaySubscription = onCall(
       state: verified.state,
       expiryTime: verified.expiryTime,
     });
+
+    // --------------------------------------------------------
+    // START PREMIUM PLUS MINING AND POWER BOOST IMMEDIATELY
+    // --------------------------------------------------------
+
+    // Premium Plus -tilaus tallennetaan ensin Firestoreen.
+    // Sen jälkeen sama varmennuskutsu käynnistää
+    // automaattisen louhinnan ja 24h Power Boostin.
+    //
+    // Tavallinen Premium ei käynnistä tätä toimintoa.
+    // Viiden minuutin scheduler jää varmistusmekanismiksi.
+
+    let automaticMiningResult = null;
+
+    if (tier === "premium_plus") {
+      try {
+        // Ladataan louhintatoiminto vasta tarvittaessa.
+        const {
+          processAutoMiningUser,
+        } = require("./miningFunctions");
+
+        if (typeof processAutoMiningUser !== "function") {
+          throw new Error(
+            "processAutoMiningUser is not available."
+          );
+        }
+
+        automaticMiningResult =
+          await processAutoMiningUser(uid);
+
+        console.log(
+          "Premium Plus immediate auto mining result:",
+          uid,
+          automaticMiningResult
+        );
+      } catch (error) {
+        // Tilausta ei peruta, vaikka automaattinen
+        // louhinnan käynnistys epäonnistuisi.
+        // Scheduler yrittää uudelleen seuraavalla kierroksella.
+        console.error(
+          "Premium Plus immediate auto mining failed:",
+          uid,
+          error?.stack || error?.message || error
+        );
+
+        automaticMiningResult = {
+          success: false,
+          skipped: false,
+          reason: "immediate_auto_mining_failed",
+        };
+      }
+    }
 
     return {
       success: true,
@@ -367,6 +419,14 @@ const verifyPlaySubscription = onCall(
         verified.expiryTime
       ).toISOString(),
       subscriptionState: verified.state,
+
+      // Louhinta ja 24h Power Boost käynnistyvät
+      // samalla palvelintoiminnolla.
+      automaticMiningStarted:
+        automaticMiningResult?.success === true &&
+        automaticMiningResult?.skipped !== true,
+
+      automaticMiningResult,
     };
   }
 );
@@ -376,13 +436,6 @@ const verifyPlaySubscription = onCall(
 // ============================================================
 //
 // Tarkistaa kerran tunnissa päättyneet tilaukset.
-//
-// Tämä tarkistus käyttää palvelimelle tallennettua
-// tilauksen voimassaoloaikaa.
-//
-// Se ei yksin tunnista Google Playn uusimista.
-// Uusiminen päivitetään uudella varmennuksella tai
-// myöhemmin lisättävällä Google Play RTDN -integraatiolla.
 //
 // ============================================================
 
@@ -395,8 +448,6 @@ const expirePremiumSubscriptions = onSchedule(
     memory: "256MiB",
   },
   async () => {
-    // Tämä lokimerkintä auttaa varmistamaan,
-    // että ajastusfunktio käynnistyy.
     console.log("Premium expiry scheduler started.");
 
     const now = Timestamp.now();
