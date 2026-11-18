@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -12,16 +14,15 @@ import 'services/mining_notification_service.dart';
 // 🐱 STELLURIINI
 // ============================================================
 //
-// APP STARTUP
+// SAFE STARTUP
 //
-// 1. Firebase
-// 2. Google Analytics
-// 3. Google Mobile Ads
-// 4. Mining notifications
-// 5. Stelluriini app
+// 1. Initialize Firebase.
+// 2. Open the Stelluriini interface immediately.
+// 3. Initialize Analytics in the background.
+// 4. Initialize Google Mobile Ads in the background.
+// 5. Initialize mining notifications in the background.
 //
-// Startup errors are handled separately so that a failure in
-// an optional service does not prevent the app from opening.
+// Optional services must never prevent the app from opening.
 //
 // ============================================================
 
@@ -29,7 +30,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // ==========================================================
-  // FIREBASE
+  // FIREBASE INITIALIZATION
   // ==========================================================
 
   try {
@@ -53,6 +54,20 @@ Future<void> main() async {
     return;
   }
 
+  // ==========================================================
+  // OPEN APP IMMEDIATELY
+  // ==========================================================
+
+  runApp(
+    const StelluriiniApp(),
+  );
+}
+
+// ============================================================
+// BACKGROUND SERVICE INITIALIZATION
+// ============================================================
+
+Future<void> initializeBackgroundServices() async {
   // ==========================================================
   // GOOGLE ANALYTICS
   // ==========================================================
@@ -91,14 +106,6 @@ Future<void> main() async {
   // ==========================================================
   // MINING NOTIFICATIONS
   // ==========================================================
-  //
-  // Initialize the notification service, but do not request
-  // Android permissions automatically during app startup.
-  //
-  // Permissions can be requested later from an appropriate
-  // screen or user action.
-  //
-  // ==========================================================
 
   try {
     await MiningNotificationService.instance.initialize();
@@ -112,14 +119,6 @@ Future<void> main() async {
     );
     debugPrintStack(stackTrace: stackTrace);
   }
-
-  // ==========================================================
-  // START APP
-  // ==========================================================
-
-  runApp(
-    const StelluriiniApp(),
-  );
 }
 
 // ============================================================
@@ -248,6 +247,13 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
     super.initState();
 
     _loadLanguage();
+
+    // Start optional services only after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        initializeBackgroundServices(),
+      );
+    });
   }
 
   // ==========================================================
