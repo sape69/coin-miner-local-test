@@ -20,8 +20,8 @@ dependencies:
   cloud_functions: ^7.1.0
   firebase_analytics: ^13.1.0
 
-  # Google Mobile Ads
-  google_mobile_ads: ^6.0.0
+  # Google Mobile Ads - Gradle 9 compatible
+  google_mobile_ads: ^9.2.0
 
   # Google Play Billing - Premium subscriptions
   in_app_purchase: ^3.3.1
