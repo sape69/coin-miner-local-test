@@ -269,28 +269,7 @@ jobs:
 
           echo "AAB BUILD COMPLETED."
 
-      # 17. DIAGNOSE MERGED ANDROID MANIFEST
-      - name: Diagnose merged Android manifest
-        if: always()
-        run: |
-          echo "ANDROID MANIFEST DIAGNOSTICS"
-
-          grep -nE 'minSdk|minSdkVersion|targetSdk' \
-            android/app/build.gradle || true
-
-          find build/app -type f \
-            \( -iname '*manifest*report*' -o -name 'AndroidManifest.xml' \) \
-            -print 2>/dev/null | sort || true
-
-          REPORT="build/app/outputs/logs/manifest-merger-release-report.txt"
-
-          if [ -f "$REPORT" ]; then
-            cat "$REPORT"
-          else
-            echo "Manifest merger report not found."
-          fi
-
-      # 18. VERIFY APP BUNDLE
+      # 17. VERIFY APP BUNDLE
       - name: Verify App Bundle
         run: |
           AAB="build/app/outputs/bundle/release/app-release.aab"
@@ -303,7 +282,7 @@ jobs:
           echo "App Bundle successfully created:"
           ls -lh "$AAB"
 
-      # 19. BUILD RELEASE APK
+      # 18. BUILD RELEASE APK
       - name: Build release APK
         env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
@@ -314,7 +293,7 @@ jobs:
 
           flutter build apk --release
 
-      # 20. VERIFY APK
+      # 19. VERIFY APK
       - name: Verify APK
         run: |
           APK="build/app/outputs/flutter-apk/app-release.apk"
@@ -326,6 +305,125 @@ jobs:
 
           echo "APK successfully created:"
           ls -lh "$APK"
+
+      # 20. DIAGNOSE FINAL ANDROID SDK AND DEPENDENCIES
+      - name: Diagnose final Android SDK and dependencies
+        if: always()
+        run: |
+          echo "=================================================="
+          echo "STELLURIINI ANDROID SDK DIAGNOSTICS"
+          echo "=================================================="
+
+          echo ""
+          echo "1. CONFIGURED ANDROID SDK VALUES"
+
+          grep -nE 'minSdk|minSdkVersion|targetSdk' \
+            android/app/build.gradle || true
+
+          echo ""
+          echo "2. FINAL APK SDK INFORMATION"
+
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          AAPT="$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+
+          if [ -f "$APK" ] && [ -x "$AAPT" ]; then
+            "$AAPT" dump badging "$APK" \
+              | grep -E "^(package:|sdkVersion:|targetSdkVersion:|native-code:)" \
+              || true
+          else
+            echo "APK or aapt not available."
+          fi
+
+          echo ""
+          echo "3. ANDROID LIBRARY AAR MINIMUM SDK DECLARATIONS"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import zipfile
+
+          cache = (
+              Path.home()
+              / ".gradle"
+              / "caches"
+              / "modules-2"
+              / "files-2.1"
+          )
+
+          if not cache.exists():
+              print("Gradle dependency cache not found.")
+              raise SystemExit(0)
+
+          found = 0
+
+          for aar in cache.rglob("*.aar"):
+              try:
+                  with zipfile.ZipFile(aar) as archive:
+                      if "AndroidManifest.xml" not in archive.namelist():
+                          continue
+
+                      manifest = archive.read(
+                          "AndroidManifest.xml"
+                      ).decode("utf-8", errors="ignore")
+
+                  match = re.search(
+                      r"<uses-sdk\b[^>]*>",
+                      manifest,
+                      flags=re.IGNORECASE
+                  )
+
+                  if not match:
+                      continue
+
+                  sdk_tag = match.group(0)
+
+                  min_sdk = re.search(
+                      r'android:minSdkVersion\s*=\s*["\']([^"\']+)',
+                      sdk_tag
+                  )
+
+                  if min_sdk:
+                      print(
+                          "AAR:",
+                          aar,
+                          "| minSdkVersion:",
+                          min_sdk.group(1)
+                      )
+                      found += 1
+
+              except (OSError, zipfile.BadZipFile):
+                  continue
+
+          if found == 0:
+              print(
+                  "No readable AAR minSdkVersion declarations found."
+              )
+
+          print("AAR declarations found:", found)
+          PY
+
+          echo ""
+          echo "4. MERGED MANIFEST FILES"
+
+          find build/app -type f \
+            \( -iname '*manifest*report*' -o -name 'AndroidManifest.xml' \) \
+            -print 2>/dev/null | sort || true
+
+          echo ""
+          echo "5. MANIFEST MERGER REPORT"
+
+          REPORT="build/app/outputs/logs/manifest-merger-release-report.txt"
+
+          if [ -f "$REPORT" ]; then
+            grep -niE 'uses-sdk|minSdk|minSdkVersion|targetSdk' \
+              "$REPORT" || true
+          else
+            echo "Manifest merger report not found."
+          fi
+
+          echo ""
+          echo "ANDROID SDK DIAGNOSTICS COMPLETED"
+          echo "=================================================="
 
       # 21. UPLOAD RELEASE FILES
       - name: Upload release files
@@ -382,6 +480,7 @@ jobs:
           echo "Release keystore: VERIFIED"
           echo "App Bundle: PASSED"
           echo "APK build: PASSED"
+          echo "Android SDK diagnostics: COMPLETED"
           echo "Artifact: stelluriini-release"
           echo "Retention: 3 days"
           echo "=================================================="
