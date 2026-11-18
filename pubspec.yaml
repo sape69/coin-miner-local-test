@@ -7,18 +7,18 @@ publish_to: "none"
 version: 1.0.20+22
 
 environment:
-  sdk: ">=3.10.0 <4.0.0"
+  sdk: ">=3.12.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # Firebase
-  firebase_core: ^4.1.0
-  firebase_auth: ^6.5.3
-  cloud_firestore: ^6.8.0
-  cloud_functions: ^6.3.6
-  firebase_analytics: ^12.0.0
+  # Firebase - BoM 5.2.0
+  firebase_core: ^5.2.0
+  firebase_auth: ^7.1.0
+  cloud_firestore: ^7.2.0
+  cloud_functions: ^7.1.0
+  firebase_analytics: ^13.1.0
 
   # Google Mobile Ads
   google_mobile_ads: ^6.0.0
@@ -30,7 +30,7 @@ dependencies:
   shared_preferences: ^2.5.3
 
   # URLs
-  url_launcher: ^6.3.1
+  url_launcher: ^6.3.2
 
   # Native sharing
   share_plus: ^12.0.2
