@@ -151,7 +151,9 @@ class _PremiumPageState extends State<PremiumPage> {
         color: surfaceColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: service.isPremium ? goldColor : purpleColor.withValues(alpha: 0.35),
+          color: service.isPremium
+              ? goldColor
+              : purpleColor.withValues(alpha: 0.35),
         ),
       ),
       child: Column(
@@ -235,6 +237,7 @@ class _PremiumPageState extends State<PremiumPage> {
     required String price,
     required List<String> features,
     required bool isPlus,
+    required String buttonText,
     required VoidCallback? onPressed,
   }) {
     final accentColor = isPlus ? goldColor : purpleColor;
@@ -310,7 +313,7 @@ class _PremiumPageState extends State<PremiumPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  _text('/ kk', '/ month'),
+                  _text('/ kk', '/ month"),
                   style: const TextStyle(
                     color: secondaryTextColor,
                     fontSize: 13,
@@ -330,14 +333,15 @@ class _PremiumPageState extends State<PremiumPage> {
                 backgroundColor: accentColor,
                 foregroundColor: backgroundColor,
                 disabledBackgroundColor: accentColor.withValues(alpha: 0.3),
-                disabledForegroundColor: primaryTextColor.withValues(alpha: 0.6),
+                disabledForegroundColor:
+                    primaryTextColor.withValues(alpha: 0.6),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(13),
                 ),
               ),
               child: Text(
-                _text('Tilaa nyt', 'Subscribe now'),
+                buttonText,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -400,7 +404,8 @@ class _PremiumPageState extends State<PremiumPage> {
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: (isError ? errorColor : purpleColor).withValues(alpha: 0.12),
+        color: (isError ? errorColor : purpleColor)
+            .withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -451,6 +456,7 @@ class _PremiumPageState extends State<PremiumPage> {
     return Text(
       _text(
         'Tilaukset uusiutuvat automaattisesti kuukausittain, kunnes peruutat ne Google Playn tilausasetuksissa. Hinta ja maksuehdot näytetään Google Playn ostonäkymässä. Tilauksen voi peruuttaa Google Play -kaupan tilausasetuksista.',
+ 
         'Subscriptions renew automatically each month until canceled in Google Play subscription settings. The price and payment terms are shown in the Google Play purchase screen. You can cancel your subscription in Google Play settings.',
       ),
       textAlign: TextAlign.center,
@@ -465,12 +471,16 @@ class _PremiumPageState extends State<PremiumPage> {
   @override
   Widget build(BuildContext context) {
     final service = _subscriptionService;
+
     final busy = service.isPurchasePending ||
         service.isVerifying ||
         service.isLoading;
 
     final premiumAvailable = service.premiumProduct != null;
     final premiumPlusAvailable = service.premiumPlusProduct != null;
+
+    final premiumActive = service.activeTier == 'premium';
+    final premiumPlusActive = service.activeTier == 'premium_plus';
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -497,6 +507,8 @@ class _PremiumPageState extends State<PremiumPage> {
               const SizedBox(height: 25),
               _buildCurrentSubscription(),
               const SizedBox(height: 22),
+
+              // PREMIUM
               _buildPlanCard(
                 title: 'Premium',
                 subtitle: _text(
@@ -505,12 +517,31 @@ class _PremiumPageState extends State<PremiumPage> {
                 ),
                 price: service.premiumPrice,
                 features: [
-                  _text('Mainokseton louhintakokemus', 'Ad-free mining experience'),
+                  _text(
+                    'Mainokseton louhintakokemus',
+                    'Ad-free mining experience',
+                  ),
                 ],
                 isPlus: false,
-                onPressed: premiumAvailable && !busy ? _buyPremium : null,
+                buttonText: premiumPlusActive
+                    ? _text(
+                        'Premium sisältyy Plus-tilaukseen',
+                        'Included with Premium Plus',
+                      )
+                    : premiumActive
+                        ? _text('Nykyinen tilaus', 'Current subscription')
+                        : _text('Tilaa nyt', 'Subscribe now'),
+                onPressed: premiumAvailable &&
+                        !busy &&
+                        !premiumActive &&
+                        !premiumPlusActive
+                    ? _buyPremium
+                    : null,
               ),
+
               const SizedBox(height: 16),
+
+              // PREMIUM PLUS
               _buildPlanCard(
                 title: 'Premium Plus',
                 subtitle: _text(
@@ -519,18 +550,37 @@ class _PremiumPageState extends State<PremiumPage> {
                 ),
                 price: service.premiumPlusPrice,
                 features: [
-                  _text('Mainokseton louhintakokemus', 'Ad-free mining experience'),
-                  _text('Automaattinen Power Boost', 'Automatic Power Boost'),
+                  _text(
+                    'Mainokseton louhintakokemus',
+                    'Ad-free mining experience',
+                  ),
+                  _text(
+                    'Automaattinen Power Boost',
+                    'Automatic Power Boost',
+                  ),
                   _text(
                     'Automaattinen louhinnan aloitus',
                     'Automatic mining restart',
                   ),
                 ],
                 isPlus: true,
-                onPressed:
-                    premiumPlusAvailable && !busy ? _buyPremiumPlus : null,
+                buttonText: premiumPlusActive
+                    ? _text('Nykyinen tilaus', 'Current subscription')
+                    : premiumActive
+                        ? _text(
+                            'Päivitä Premium Plus -tilaukseen',
+                            'Upgrade to Premium Plus',
+                          )
+                        : _text('Tilaa nyt', 'Subscribe now'),
+                onPressed: premiumPlusAvailable &&
+                        !busy &&
+                        !premiumPlusActive
+                    ? _buyPremiumPlus
+                    : null,
               ),
+
               _buildStoreStatus(),
+
               if (!premiumAvailable || !premiumPlusAvailable) ...[
                 const SizedBox(height: 10),
                 Center(
@@ -538,7 +588,10 @@ class _PremiumPageState extends State<PremiumPage> {
                     onPressed: service.isLoading ? null : _reloadProducts,
                     icon: const Icon(Icons.refresh_rounded),
                     label: Text(
-                      _text('Lataa tuotteet uudelleen', 'Reload products'),
+                      _text(
+                        'Lataa tuotteet uudelleen',
+                        'Reload products',
+                      ),
                     ),
                     style: TextButton.styleFrom(
                       foregroundColor: purpleColor,
@@ -546,6 +599,7 @@ class _PremiumPageState extends State<PremiumPage> {
                   ),
                 ),
               ],
+
               const SizedBox(height: 12),
               Center(child: _buildRestoreButton()),
               const SizedBox(height: 20),
