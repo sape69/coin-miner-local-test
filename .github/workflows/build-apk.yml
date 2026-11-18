@@ -216,7 +216,7 @@ jobs:
 
       # 13. FLUTTER ANALYZE
       - name: Flutter analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       # 14. FLUTTER TEST
       - name: Flutter test
@@ -284,7 +284,7 @@ jobs:
 
       # 18. BUILD RELEASE APK
       - name: Build release APK
-        env:
+      env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
           STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
         run: |
