@@ -284,7 +284,7 @@ jobs:
 
       # 18. BUILD RELEASE APK
       - name: Build release APK
-      env:
+        env:
           STELLURIINI_KEYSTORE_PASSWORD: ${{ secrets.STELLURIINI_KEYSTORE_PASSWORD }}
           STELLURIINI_KEY_PASSWORD: ${{ secrets.STELLURIINI_KEY_PASSWORD }}
         run: |
