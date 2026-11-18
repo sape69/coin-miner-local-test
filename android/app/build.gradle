@@ -61,13 +61,16 @@ android {
         release {
             signingConfig = signingConfigs.release
 
-            // R8: poista käyttämätön koodi.
-            minifyEnabled true
+            // ==================================================
+            // DIAGNOSTIC TEST
+            // R8 optimization temporarily disabled.
+            // ==================================================
 
-            // Poista käyttämättömät Android-resurssit.
-            shrinkResources true
+            minifyEnabled false
 
-            // Androidin optimoidut oletussäännöt.
+            // Resource shrinking temporarily disabled.
+            shrinkResources false
+
             proguardFiles getDefaultProguardFile(
                 "proguard-android-optimize.txt"
             )
