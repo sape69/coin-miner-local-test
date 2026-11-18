@@ -1,3 +1,4 @@
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -19,23 +20,8 @@ import 'services/mining_notification_service.dart';
 // 4. Mining notifications
 // 5. Stelluriini app
 //
-// ANALYTICS
-//
-// - Google Analytics alustetaan sovelluksen käynnistyessä.
-// - Ruudunäkymien seuranta on käytössä NavigatorObserverilla.
-// - Analytics kerää käyttötilastoja raportointia varten.
-//
-// LANGUAGE
-//
-// Ensimmäisellä asennuksella oletuskieli on englanti.
-// Käyttäjän kielivalinta tallennetaan SharedPreferencesiin.
-//
-// NOTIFICATIONS
-//
-// - Paikalliset ilmoitukset alustetaan sovelluksen käynnistyessä.
-// - Androidin ilmoituslupa pyydetään tässä vaiheessa.
-// - Varsinainen louhinnan valmistumisilmoitus ajastetaan
-//   HomePagesta, kun louhinta käynnistetään.
+// Startup errors are handled separately so that a failure in
+// an optional service does not prevent the app from opening.
 //
 // ============================================================
 
@@ -46,7 +32,26 @@ Future<void> main() async {
   // FIREBASE
   // ==========================================================
 
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+
+    debugPrint(
+      '🐱 Stelluriini: Firebase initialized successfully.',
+    );
+  } catch (error, stackTrace) {
+    debugPrint(
+      '🐱 Stelluriini: Firebase initialization failed: $error',
+    );
+    debugPrintStack(stackTrace: stackTrace);
+
+    runApp(
+      StartupErrorApp(
+        message: error.toString(),
+      ),
+    );
+
+    return;
+  }
 
   // ==========================================================
   // GOOGLE ANALYTICS
@@ -59,10 +64,11 @@ Future<void> main() async {
     debugPrint(
       '🐱 Stelluriini: Google Analytics initialized.',
     );
-  } catch (error) {
+  } catch (error, stackTrace) {
     debugPrint(
-      '🐱 Stelluriini: Google Analytics initialization error: $error',
+      '🐱 Stelluriini: Google Analytics error: $error',
     );
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   // ==========================================================
@@ -73,36 +79,42 @@ Future<void> main() async {
     await MobileAds.instance.initialize();
 
     debugPrint(
-      '🐱 Stelluriini: Google Mobile Ads SDK initialized.',
+      '🐱 Stelluriini: Google Mobile Ads initialized.',
     );
-  } catch (error) {
+  } catch (error, stackTrace) {
     debugPrint(
-      '🐱 Stelluriini: Google Mobile Ads initialization error: $error',
+      '🐱 Stelluriini: Google Mobile Ads error: $error',
     );
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   // ==========================================================
   // MINING NOTIFICATIONS
   // ==========================================================
+  //
+  // Initialize the notification service, but do not request
+  // Android permissions automatically during app startup.
+  //
+  // Permissions can be requested later from an appropriate
+  // screen or user action.
+  //
+  // ==========================================================
 
   try {
-    final MiningNotificationService notificationService =
-        MiningNotificationService.instance;
-
-    await notificationService.initialize();
-    await notificationService.requestPermission();
+    await MiningNotificationService.instance.initialize();
 
     debugPrint(
       '🐱 Stelluriini: Mining notifications initialized.',
     );
-  } catch (error) {
+  } catch (error, stackTrace) {
     debugPrint(
-      '🐱 Stelluriini: Mining notification initialization error: $error',
+      '🐱 Stelluriini: Notification initialization error: $error',
     );
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   // ==========================================================
-  // APP
+  // START APP
   // ==========================================================
 
   runApp(
@@ -111,7 +123,91 @@ Future<void> main() async {
 }
 
 // ============================================================
-// APP
+// STARTUP ERROR APP
+// ============================================================
+
+class StartupErrorApp extends StatelessWidget {
+  final String message;
+
+  const StartupErrorApp({
+    super.key,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Stelluriini',
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF120B24),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFB58CFF),
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.pets,
+                    size: 64,
+                    color: Color(0xFFB58CFF),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Stelluriini',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFF8F4FF),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Sovelluksen käynnistys epäonnistui.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFFFFB7E8),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Firebase-palveluun ei saatu yhteyttä. '
+                    'Tarkista yhteys ja yritä uudelleen.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFBDB4D1),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SelectableText(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFBDB4D1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// STELLURIINI APP
 // ============================================================
 
 class StelluriiniApp extends StatefulWidget {
@@ -173,10 +269,11 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
       setState(() {
         _languageCode = savedLanguage;
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
       debugPrint(
         '🐱 Stelluriini: Language load error: $error',
       );
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
@@ -203,10 +300,11 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
       setState(() {
         _languageCode = language;
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
       debugPrint(
         '🐱 Stelluriini: Language save error: $error',
       );
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
@@ -220,11 +318,8 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
       navigatorObservers: <NavigatorObserver>[
         _analyticsObserver,
       ],
-
       debugShowCheckedModeBanner: false,
-
       title: 'Stelluriini',
-
       theme: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
@@ -237,11 +332,6 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
           secondary: const Color(0xFFFFB7E8),
         ),
       ),
-
-      // ========================================================
-      // AUTH GATE
-      // ========================================================
-
       home: AuthGate(
         languageCode: _languageCode,
         changeLanguage: _changeLanguage,
