@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -456,7 +457,6 @@ class _PremiumPageState extends State<PremiumPage> {
     return Text(
       _text(
         'Tilaukset uusiutuvat automaattisesti kuukausittain, kunnes peruutat ne Google Playn tilausasetuksissa. Hinta ja maksuehdot näytetään Google Playn ostonäkymässä. Tilauksen voi peruuttaa Google Play -kaupan tilausasetuksista.',
- 
         'Subscriptions renew automatically each month until canceled in Google Play subscription settings. The price and payment terms are shown in the Google Play purchase screen. You can cancel your subscription in Google Play settings.',
       ),
       textAlign: TextAlign.center,
