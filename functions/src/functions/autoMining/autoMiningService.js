@@ -221,10 +221,112 @@ function createAutoMiningService({
           hasPreviousCycle &&
           !isMiningCycleExpired(previous, nowMs)
         ) {
+          // Premium Plus purchased during an active mining cycle:
+          // activate Power Boost immediately, without restarting mining.
+          const miningEndValue = previous.miningEndsAt;
+          const miningEndMs =
+            miningEndValue instanceof Date
+              ? miningEndValue.getTime()
+              : miningEndValue &&
+                typeof miningEndValue.toDate === "function"
+                ? miningEndValue.toDate().getTime()
+                : typeof miningEndValue === "number"
+                  ? miningEndValue
+                  : typeof miningEndValue === "string"
+                    ? Date.parse(miningEndValue)
+                    : NaN;
+
+          if (
+            !Number.isFinite(miningEndMs) ||
+            miningEndMs <= nowMs
+          ) {
+            return {
+              success: false,
+              skipped: true,
+              reason: "invalid_active_mining_end",
+            };
+          }
+
+          const currentBoostEndValue = data.adBoostEndsAt;
+          const currentBoostEndMs =
+            currentBoostEndValue instanceof Date
+              ? currentBoostEndValue.getTime()
+              : currentBoostEndValue &&
+                typeof currentBoostEndValue.toDate === "function"
+                ? currentBoostEndValue.toDate().getTime()
+                : typeof currentBoostEndValue === "number"
+                  ? currentBoostEndValue
+                  : typeof currentBoostEndValue === "string"
+                    ? Date.parse(currentBoostEndValue)
+                    : NaN;
+
+          // Do not create a duplicate boost if one already reaches
+          // the current mining cycle's end.
+          if (
+            Number.isFinite(currentBoostEndMs) &&
+            currentBoostEndMs >= miningEndMs
+          ) {
+            return {
+              success: true,
+              skipped: true,
+              reason: "premium_plus_boost_already_active",
+            };
+          }
+
+          const boostStartedAt = new Date(nowMs);
+          const boostEndsAt = new Date(miningEndMs);
+          const boostDurationMs = miningEndMs - nowMs;
+          const autoBoostTransactionId =
+            `premium-plus-auto-cycle-${uid}-${nowMs}`;
+
+          transaction.set(
+            userRef,
+            {
+              adBoostStartedAt: boostStartedAt,
+              adBoostEndsAt: boostEndsAt,
+              powerBoostTransactionId: autoBoostTransactionId,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          transaction.set(
+            getHistoryCollection(uid).doc(),
+            {
+              type: "premium_power_boost",
+              title:
+                "Stelluriini Premium Plus Automatic Power Boost 🐱⚡",
+              amount: 0,
+              adRewardTransactionId: autoBoostTransactionId,
+              rewardPurpose: "power_boost",
+              premiumAdFreePowerBoost: true,
+              automaticPremiumPlusPowerBoost: true,
+              activatedDuringExistingMiningCycle: true,
+              adHashRateBonus: AD_HASH_RATE_BONUS,
+              boostStartedAt,
+              boostEndsAt,
+              boostDurationMs,
+              miningStartedAt: previous.miningStartedAt,
+              miningEndsAt: previous.miningEndsAt,
+              miningHashRate: number(
+                data.miningHashRate,
+                number(data.hashRate)
+              ),
+              createdAt: FieldValue.serverTimestamp(),
+            }
+          );
+
           return {
             success: true,
-            skipped: true,
-            reason: "mining_cycle_not_expired",
+            skipped: false,
+            reason: "premium_plus_boost_activated_for_active_mining_cycle",
+            uid,
+            adHashRateBonus: AD_HASH_RATE_BONUS,
+            boostDurationMs,
+            boostStartedAt: boostStartedAt.toISOString(),
+            boostEndsAt: boostEndsAt.toISOString(),
+            miningStartedAt: previous.miningStartedAt,
+            miningEndsAt: previous.miningEndsAt,
           };
         }
 
