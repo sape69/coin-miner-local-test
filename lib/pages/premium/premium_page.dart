@@ -314,7 +314,7 @@ class _PremiumPageState extends State<PremiumPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  _text('/ kk', '/ month"),
+                  _text('/ kk', '/ month'),
                   style: const TextStyle(
                     color: secondaryTextColor,
                     fontSize: 13,
