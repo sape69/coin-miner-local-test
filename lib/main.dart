@@ -11,67 +11,31 @@ import 'auth_gate.dart';
 import 'services/mining_notification_service.dart';
 
 // ============================================================
-// 🐱 STELLURIINI
+// 🐱 STELLURIINI - FAST STARTUP
 // ============================================================
 //
-// SAFE STARTUP
-//
-// 1. Initialize Firebase.
-// 2. Open the Stelluriini interface immediately.
-// 3. Initialize Analytics in the background.
-// 4. Initialize Google Mobile Ads in the background.
-// 5. Initialize mining notifications in the background.
-//
-// Optional services must never prevent the app from opening.
+// 1. Flutter UI opens immediately.
+// 2. Firebase initializes in the background.
+// 3. AuthGate opens after Firebase is ready.
+// 4. Optional services initialize after the first UI frame.
 //
 // ============================================================
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ==========================================================
-  // FIREBASE INITIALIZATION
-  // ==========================================================
-
-  try {
-    await Firebase.initializeApp();
-
-    debugPrint(
-      '🐱 Stelluriini: Firebase initialized successfully.',
-    );
-  } catch (error, stackTrace) {
-    debugPrint(
-      '🐱 Stelluriini: Firebase initialization failed: $error',
-    );
-    debugPrintStack(stackTrace: stackTrace);
-
-    runApp(
-      StartupErrorApp(
-        message: error.toString(),
-      ),
-    );
-
-    return;
-  }
-
-  // ==========================================================
-  // OPEN APP IMMEDIATELY
-  // ==========================================================
-
+  // Open Flutter UI immediately.
   runApp(
-    const StelluriiniApp(),
+    const StelluriiniBootstrapApp(),
   );
 }
 
 // ============================================================
-// BACKGROUND SERVICE INITIALIZATION
+// BACKGROUND SERVICES
 // ============================================================
 
 Future<void> initializeBackgroundServices() async {
-  // ==========================================================
   // GOOGLE ANALYTICS
-  // ==========================================================
-
   try {
     await FirebaseAnalytics.instance
         .setAnalyticsCollectionEnabled(true);
@@ -86,10 +50,7 @@ Future<void> initializeBackgroundServices() async {
     debugPrintStack(stackTrace: stackTrace);
   }
 
-  // ==========================================================
   // GOOGLE MOBILE ADS
-  // ==========================================================
-
   try {
     await MobileAds.instance.initialize();
 
@@ -103,10 +64,7 @@ Future<void> initializeBackgroundServices() async {
     debugPrintStack(stackTrace: stackTrace);
   }
 
-  // ==========================================================
   // MINING NOTIFICATIONS
-  // ==========================================================
-
   try {
     await MiningNotificationService.instance.initialize();
 
@@ -118,6 +76,157 @@ Future<void> initializeBackgroundServices() async {
       '🐱 Stelluriini: Notification initialization error: $error',
     );
     debugPrintStack(stackTrace: stackTrace);
+  }
+}
+
+// ============================================================
+// BOOTSTRAP APP
+// ============================================================
+
+class StelluriiniBootstrapApp extends StatefulWidget {
+  const StelluriiniBootstrapApp({
+    super.key,
+  });
+
+  @override
+  State<StelluriiniBootstrapApp> createState() =>
+      _StelluriiniBootstrapAppState();
+}
+
+class _StelluriiniBootstrapAppState
+    extends State<StelluriiniBootstrapApp> {
+  bool _firebaseReady = false;
+  String? _startupError;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Firebase initialization starts after Flutter UI is launched.
+    unawaited(
+      _initializeFirebase(),
+    );
+  }
+
+  Future<void> _initializeFirebase() async {
+    try {
+      await Firebase.initializeApp();
+
+      debugPrint(
+        '🐱 Stelluriini: Firebase initialized successfully.',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _firebaseReady = true;
+      });
+    } catch (error, stackTrace) {
+      debugPrint(
+        '🐱 Stelluriini: Firebase initialization failed: $error',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _startupError = error.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_startupError != null) {
+      return StartupErrorApp(
+        message: _startupError!,
+      );
+    }
+
+    if (!_firebaseReady) {
+      return const StelluriiniLoadingApp();
+    }
+
+    return const StelluriiniApp();
+  }
+}
+
+// ============================================================
+// IMMEDIATE LOADING SCREEN
+// ============================================================
+
+class StelluriiniLoadingApp extends StatelessWidget {
+  const StelluriiniLoadingApp({
+    super.key,
+  });
+
+  static const Color backgroundColor = Color(0xFF120B24);
+  static const Color purpleColor = Color(0xFFB58CFF);
+  static const Color pinkColor = Color(0xFFFFB7E8);
+  static const Color textColor = Color(0xFFF8F4FF);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Stelluriini',
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: backgroundColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: purpleColor,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: Scaffold(
+        backgroundColor: backgroundColor,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.pets,
+                  size: 76,
+                  color: purpleColor,
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Stelluriini',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Preparing Stella...',
+                  style: TextStyle(
+                    color: pinkColor,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                const SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: purpleColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -170,7 +279,7 @@ class StartupErrorApp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Sovelluksen käynnistys epäonnistui.',
+                    'Application startup failed.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
@@ -179,8 +288,8 @@ class StartupErrorApp extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Firebase-palveluun ei saatu yhteyttä. '
-                    'Tarkista yhteys ja yritä uudelleen.',
+                    'Firebase could not be initialized. '
+                    'Check your connection and try again.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color(0xFFBDB4D1),
@@ -220,27 +329,17 @@ class StelluriiniApp extends StatefulWidget {
 }
 
 class _StelluriiniAppState extends State<StelluriiniApp> {
-  // ==========================================================
   // LANGUAGE
-  // ==========================================================
-
   String _languageCode = 'en';
 
   static const String _languageKey =
       'stelluriini_language';
 
-  // ==========================================================
   // ANALYTICS
-  // ==========================================================
-
-  final FirebaseAnalyticsObserver _analyticsObserver =
+  late final FirebaseAnalyticsObserver _analyticsObserver =
       FirebaseAnalyticsObserver(
     analytics: FirebaseAnalytics.instance,
   );
-
-  // ==========================================================
-  // INIT
-  // ==========================================================
 
   @override
   void initState() {
@@ -248,7 +347,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
 
     _loadLanguage();
 
-    // Start optional services only after the first frame.
+    // Initialize optional services after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
         initializeBackgroundServices(),
@@ -256,10 +355,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
     });
   }
 
-  // ==========================================================
   // LOAD LANGUAGE
-  // ==========================================================
-
   Future<void> _loadLanguage() async {
     try {
       final SharedPreferences preferences =
@@ -283,10 +379,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
     }
   }
 
-  // ==========================================================
   // CHANGE LANGUAGE
-  // ==========================================================
-
   Future<void> _changeLanguage(
     String language,
   ) async {
@@ -314,10 +407,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
     }
   }
 
-  // ==========================================================
   // BUILD
-  // ==========================================================
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
