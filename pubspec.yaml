@@ -1,4 +1,3 @@
-
 name: stelluriini
 description: STELLURIINI Android app
 
@@ -19,6 +18,9 @@ dependencies:
   cloud_firestore: ^7.2.0
   cloud_functions: ^7.1.0
   firebase_analytics: ^13.1.0
+
+  # Firebase App Check - Play Integrity (Android)
+  firebase_app_check: ^0.5.2
 
   # Google Mobile Ads - Gradle 9 compatible
   google_mobile_ads: ^9.2.0
