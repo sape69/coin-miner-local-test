@@ -389,32 +389,31 @@ class _HomePageState extends State<HomePage>
   // ============================================================
 
   Future<void> _initialize() async {
-    try {
-      await _miningNotificationService.requestPermission();
-
-      await _loadAppVersion();
-      await _loadUsername();
-      await _loadMiningStatus();
-    } catch (e) {
-      if (mounted) {
-        _showMessage('⚠️ ${_errorText(e)}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+    // Render the Home page immediately. Optional network/device work happens
+    // in the background so it does not hold the initial loading screen.
+    if (mounted) {
+      setState(() {
+        _loading = false;
+      });
     }
 
     _startRefreshTimer();
 
+    // These tasks update the page when their results are ready.
+    // They are deliberately not awaited during startup.
+    unawaited(_loadAppVersion());
+    unawaited(_loadUsername());
+    unawaited(_loadMiningStatus());
+
+    // Ask for notification permission and check updates after the first frame.
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _checkForAppUpdate();
+        unawaited(_miningNotificationService.requestPermission());
+        unawaited(_checkForAppUpdate());
       });
     }
   }
+
 
   // ============================================================
   // 📱 LOAD APP VERSION
