@@ -1,7 +1,7 @@
-
 import 'dart:async';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -11,13 +11,19 @@ import 'auth_gate.dart';
 import 'services/mining_notification_service.dart';
 
 // ============================================================
-// 🐱 STELLURIINI - FAST STARTUP
+// 🐱 STELLURIINI - FAST STARTUP + FIREBASE APP CHECK
 // ============================================================
 //
 // 1. Flutter UI opens immediately.
 // 2. Firebase initializes in the background.
-// 3. AuthGate opens after Firebase is ready.
-// 4. Optional services initialize after the first UI frame.
+// 3. Firebase App Check starts with Play Integrity on Android.
+// 4. AuthGate opens after Firebase and App Check initialization.
+// 5. Optional services initialize after the first UI frame.
+//
+// App Check enforcement is NOT enabled here.
+// This client starts sending App Check tokens, but Firebase services
+// are not blocked for users without valid tokens until enforcement
+// is enabled separately in Firebase Console.
 //
 // ============================================================
 
@@ -37,8 +43,7 @@ Future<void> main() async {
 Future<void> initializeBackgroundServices() async {
   // GOOGLE ANALYTICS
   try {
-    await FirebaseAnalytics.instance
-        .setAnalyticsCollectionEnabled(true);
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
 
     debugPrint(
       '🐱 Stelluriini: Google Analytics initialized.',
@@ -115,6 +120,27 @@ class _StelluriiniBootstrapAppState
       debugPrint(
         '🐱 Stelluriini: Firebase initialized successfully.',
       );
+
+      // APP CHECK - PLAY INTEGRITY
+      //
+      // App Check is activated after Firebase initialization.
+      // Enforcement remains disabled in Firebase Console for now.
+      try {
+        await FirebaseAppCheck.instance.activate(
+          providerAndroid: const AndroidPlayIntegrityProvider(),
+        );
+
+        debugPrint(
+          '🐱 Stelluriini: Firebase App Check activated (Play Integrity).',
+        );
+      } catch (error, stackTrace) {
+        // App Check activation failure must not crash the app while
+        // enforcement is still disabled.
+        debugPrint(
+          '🐱 Stelluriini: App Check activation error: $error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
 
       if (!mounted) {
         return;
@@ -332,8 +358,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
   // LANGUAGE
   String _languageCode = 'en';
 
-  static const String _languageKey =
-      'stelluriini_language';
+  static const String _languageKey = 'stelluriini_language';
 
   // ANALYTICS
   late final FirebaseAnalyticsObserver _analyticsObserver =
@@ -380,9 +405,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
   }
 
   // CHANGE LANGUAGE
-  Future<void> _changeLanguage(
-    String language,
-  ) async {
+  Future<void> _changeLanguage(String language) async {
     try {
       final SharedPreferences preferences =
           await SharedPreferences.getInstance();
@@ -419,8 +442,7 @@ class _StelluriiniAppState extends State<StelluriiniApp> {
       theme: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
-        scaffoldBackgroundColor:
-            const Color(0xFF120B24),
+        scaffoldBackgroundColor: const Color(0xFF120B24),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFFB58CFF),
           brightness: Brightness.dark,
