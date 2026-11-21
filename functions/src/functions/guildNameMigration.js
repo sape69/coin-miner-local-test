@@ -1,4 +1,3 @@
-
 "use strict";
 
 // ============================================================
@@ -130,6 +129,7 @@ async function inspectGuildNames() {
         ? guildData.name.trim()
         : "";
 
+    // FIX: use the correctly defined originalName variable.
     const normalizedName =
       normalizeGuildName(originalName);
 
