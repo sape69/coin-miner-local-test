@@ -83,6 +83,11 @@ const {
   transferGuildLeadership,
 } = require("./src/functions/guildMemberFunctions");
 
+// 🐱 GUILD READ
+const {
+  getGuildData,
+} = require("./src/functions/guildReadFunctions");
+
 // 🐱 GUILD NAME MIGRATION
 const {
   migrateGuildNames,
@@ -181,6 +186,12 @@ exports.joinGuild = joinGuild;
 exports.leaveGuild = leaveGuild;
 exports.kickGuildMember = kickGuildMember;
 exports.transferGuildLeadership = transferGuildLeadership;
+
+// ============================================================
+// 🐱 GUILD READ EXPORT
+// ============================================================
+
+exports.getGuildData = getGuildData;
 
 // ============================================================
 // 🐱 GUILD NAME MIGRATION EXPORT
