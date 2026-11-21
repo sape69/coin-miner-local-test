@@ -5,17 +5,20 @@
 // 🐱 STELLURIINI - GUILD NAME MIGRATION
 // ============================================================
 //
-// One-time admin migration.
+// One-time admin migration for existing Guild names.
 //
-// Registers existing Guild names into:
+// Registry:
 // guildNames/{sha256(normalizedName)}
 //
 // Safety:
 // - Admin-only
-// - Duplicate detection before writes
+// - Dry-run preview supported
+// - Duplicate name detection
 // - Existing reservations are never overwritten
-// - Idempotent
-// - Firestore writes in batches of max 450
+// - Transaction-based migration lock
+// - Expired locks can be recovered
+// - Idempotent migration
+// - Firestore batches max 450 documents
 //
 // ============================================================
 
@@ -33,6 +36,7 @@ const {
 
 const REGION = "us-central1";
 const BATCH_SIZE = 450;
+const LOCK_TIMEOUT_MS = 15 * 60 * 1000;
 
 const MIGRATION_REF = db
   .collection("guildSystem")
@@ -105,7 +109,280 @@ function chunkArray(items, chunkSize) {
 }
 
 // ============================================================
-// 🚀 MIGRATION
+// 📋 LOAD AND VALIDATE GUILD NAMES
+// ============================================================
+
+async function inspectGuildNames() {
+  const guildSnapshot = await db
+    .collection(GUILDS_COLLECTION)
+    .get();
+
+  const guilds = guildSnapshot.docs;
+  const normalizedNames = new Map();
+  const reservations = [];
+  const conflicts = [];
+
+  for (const guildDocument of guilds) {
+    const guildData = guildDocument.data() || {};
+
+    const originalName =
+      typeof guildData.name === "string"
+        ? guildData.name.trim()
+        : "";
+
+    const normalizedName =
+      normalizeGuildName(originalName);
+
+    if (
+      normalizedName.length < 3 ||
+      normalizedName.length > 24
+    ) {
+      conflicts.push({
+        type: "invalid_name",
+        guildId: guildDocument.id,
+        name: originalName,
+        message:
+          "Guild-nimen pituus ei ole sallittu.",
+      });
+
+      continue;
+    }
+
+    const nameKey =
+      getGuildNameKey(normalizedName);
+
+    const existingGuildId =
+      normalizedNames.get(nameKey);
+
+    if (existingGuildId) {
+      conflicts.push({
+        type: "duplicate_name",
+        guildId: guildDocument.id,
+        otherGuildId: existingGuildId,
+        name: originalName,
+        message:
+          "Guild-nimi on käytössä toisella Guildilla.",
+      });
+
+      continue;
+    }
+
+    normalizedNames.set(
+      nameKey,
+      guildDocument.id,
+    );
+
+    reservations.push({
+      guildId: guildDocument.id,
+      name: originalName,
+      normalizedName,
+      nameKey,
+    });
+  }
+
+  // ----------------------------------------------------------
+  // CHECK EXISTING NAME RESERVATIONS
+  // ----------------------------------------------------------
+
+  const nameReferences = reservations.map(
+    (reservation) =>
+      db
+        .collection(NAMES_COLLECTION)
+        .doc(reservation.nameKey),
+  );
+
+  const existingReservations = [];
+
+  for (const referenceChunk of chunkArray(
+    nameReferences,
+    BATCH_SIZE,
+  )) {
+    const snapshots = await db.getAll(
+      ...referenceChunk,
+    );
+
+    existingReservations.push(...snapshots);
+  }
+
+  for (
+    let index = 0;
+    index < reservations.length;
+    index++
+  ) {
+    const reservation = reservations[index];
+    const existing = existingReservations[index];
+
+    if (!existing || !existing.exists) {
+      continue;
+    }
+
+    const existingData = existing.data() || {};
+
+    if (
+      existingData.guildId !==
+      reservation.guildId
+    ) {
+      conflicts.push({
+        type: "reservation_conflict",
+        guildId: reservation.guildId,
+        existingGuildId: existingData.guildId || null,
+        name: reservation.name,
+        message:
+          "Guild-nimen rekisterivarauksessa on ristiriita.",
+      });
+    }
+  }
+
+  return {
+    guilds,
+    reservations,
+    existingReservations,
+    conflicts,
+  };
+}
+
+// ============================================================
+// 🔍 DRY RUN
+// ============================================================
+
+async function previewGuildNameMigration() {
+  const inspection =
+    await inspectGuildNames();
+
+  const {
+    guilds,
+    reservations,
+    existingReservations,
+    conflicts,
+  } = inspection;
+
+  const alreadyRegistered =
+    existingReservations.filter(
+      (snapshot) => snapshot && snapshot.exists,
+    ).length;
+
+  const missingReservations =
+    reservations.filter(
+      (reservation, index) =>
+        !existingReservations[index] ||
+        !existingReservations[index].exists,
+    );
+
+  return {
+    success: conflicts.length === 0,
+    dryRun: true,
+    guildCount: guilds.length,
+    validGuildNames: reservations.length,
+    alreadyRegistered,
+    missingReservations: missingReservations.length,
+    conflictCount: conflicts.length,
+    conflicts,
+    message:
+      conflicts.length === 0
+        ? "Esitarkistus onnistui. Migraatio voidaan suorittaa."
+        : "Esitarkistuksessa löytyi ongelmia. Migraatiota ei pidä suorittaa.",
+  };
+}
+
+// ============================================================
+// 🔒 ACQUIRE MIGRATION LOCK
+// ============================================================
+
+async function acquireMigrationLock(lockId) {
+  await db.runTransaction(
+    async (transaction) => {
+      const snapshot =
+        await transaction.get(MIGRATION_REF);
+
+      const data =
+        snapshot.exists
+          ? snapshot.data() || {}
+          : {};
+
+      if (data.status === "completed") {
+        throw new HttpsError(
+          "already-exists",
+          "Guild-nimien migraatio on jo suoritettu.",
+        );
+      }
+
+      if (data.status === "running") {
+        const lockedAt =
+          data.lockedAt &&
+          typeof data.lockedAt.toMillis === "function"
+            ? data.lockedAt.toMillis()
+            : 0;
+
+        const lockExpired =
+          !lockedAt ||
+          Date.now() - lockedAt >
+            LOCK_TIMEOUT_MS;
+
+        if (!lockExpired) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Guild-nimien migraatio on jo käynnissä. Yritä myöhemmin.",
+          );
+        }
+      }
+
+      transaction.set(
+        MIGRATION_REF,
+        {
+          status: "running",
+          lockId,
+          lockedAt: FieldValue.serverTimestamp(),
+          startedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+          error: FieldValue.delete(),
+        },
+        { merge: true },
+      );
+    },
+  );
+}
+
+// ============================================================
+// 🔓 RELEASE / UPDATE MIGRATION STATUS
+// ============================================================
+
+async function updateMigrationStatus(
+  lockId,
+  data,
+) {
+  await db.runTransaction(
+    async (transaction) => {
+      const snapshot =
+        await transaction.get(MIGRATION_REF);
+
+      if (!snapshot.exists) {
+        return;
+      }
+
+      const current =
+        snapshot.data() || {};
+
+      // Never update a migration lock owned by another run.
+      if (current.lockId !== lockId) {
+        return;
+      }
+
+      transaction.set(
+        MIGRATION_REF,
+        {
+          ...data,
+          lockId: FieldValue.delete(),
+          lockedAt: FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    },
+  );
+}
+
+// ============================================================
+// 🚀 MIGRATION CALLABLE
 // ============================================================
 
 const migrateGuildNames = onCall(
@@ -117,193 +394,71 @@ const migrateGuildNames = onCall(
   async (request) => {
     requireAdmin(request);
 
+    // --------------------------------------------------------
+    // DRY RUN - NO WRITES TO THE NAME REGISTRY
+    // --------------------------------------------------------
+
+    if (request.data?.dryRun === true) {
+      return await previewGuildNameMigration();
+    }
+
+    const lockId = crypto.randomUUID();
+
+    let lockAcquired = false;
+
     try {
       // ------------------------------------------------------
-      // CHECK MIGRATION STATUS
+      // ACQUIRE LOCK
       // ------------------------------------------------------
 
-      const statusSnapshot =
-        await MIGRATION_REF.get();
+      await acquireMigrationLock(lockId);
+      lockAcquired = true;
 
-      if (
-        statusSnapshot.exists &&
-        statusSnapshot.data()?.status === "completed"
-      ) {
+      // ------------------------------------------------------
+      // INSPECT ALL GUILDS
+      // ------------------------------------------------------
+
+      const inspection =
+        await inspectGuildNames();
+
+      const {
+        guilds,
+        reservations,
+        existingReservations,
+        conflicts,
+      } = inspection;
+
+      // ------------------------------------------------------
+      // STOP IF ANY CONFLICTS
+      // ------------------------------------------------------
+
+      if (conflicts.length > 0) {
+        await updateMigrationStatus(
+          lockId,
+          {
+            status: "failed",
+            error:
+              "Guild-nimien tarkistuksessa löytyi ristiriitoja.",
+            conflictCount: conflicts.length,
+            conflicts,
+            failedAt:
+              FieldValue.serverTimestamp(),
+          },
+        );
+
         return {
-          success: true,
-          alreadyCompleted: true,
-          message: "Guild-nimien migraatio on jo suoritettu.",
+          success: false,
+          dryRun: false,
+          guildCount: guilds.length,
+          conflictCount: conflicts.length,
+          conflicts,
+          message:
+            "Migraatio keskeytettiin. Guild-nimien ristiriidat on korjattava ennen uudelleen yrittämistä.",
         };
       }
 
-      if (
-        statusSnapshot.exists &&
-        statusSnapshot.data()?.status === "running"
-      ) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Guild-nimien migraatio on jo käynnissä.",
-        );
-      }
-
       // ------------------------------------------------------
-      // LOCK MIGRATION
-      // ------------------------------------------------------
-
-      await db.runTransaction(
-        async (transaction) => {
-          const current =
-            await transaction.get(MIGRATION_REF);
-
-          if (
-            current.exists &&
-            current.data()?.status === "completed"
-          ) {
-            throw new HttpsError(
-              "already-exists",
-              "Migraatio on jo suoritettu.",
-            );
-          }
-
-          if (
-            current.exists &&
-            current.data()?.status === "running"
-          ) {
-            throw new HttpsError(
-              "failed-precondition",
-              "Migraatio on jo käynnissä.",
-            );
-          }
-
-          transaction.set(
-            MIGRATION_REF,
-            {
-              status: "running",
-              startedAt: FieldValue.serverTimestamp(),
-              updatedAt: FieldValue.serverTimestamp(),
-            },
-          );
-        },
-      );
-
-      // ------------------------------------------------------
-      // LOAD ALL GUILDS
-      // ------------------------------------------------------
-
-      const guildSnapshot =
-        await db
-          .collection(GUILDS_COLLECTION)
-          .get();
-
-      const guilds = guildSnapshot.docs;
-
-      // ------------------------------------------------------
-      // VALIDATE GUILD NAMES
-      // ------------------------------------------------------
-
-      const normalizedNames = new Map();
-      const reservations = [];
-
-      for (const guildDocument of guilds) {
-        const guildData =
-          guildDocument.data() || {};
-
-        const originalName =
-          typeof guildData.name === "string"
-            ? guildData.name.trim()
-            : "";
-
-        const normalizedName =
-          normalizeGuildName(originalName);
-
-        if (
-          normalizedName.length < 3 ||
-          normalizedName.length > 24
-        ) {
-          throw new Error(
-            `Guild ${guildDocument.id} has an invalid name.`,
-          );
-        }
-
-        const nameKey =
-          getGuildNameKey(normalizedName);
-
-        // Duplicate check
-        const existingGuildId =
-          normalizedNames.get(nameKey);
-
-        if (existingGuildId) {
-          throw new Error(
-            `Duplicate Guild name detected: "${originalName}"`,
-          );
-        }
-
-        normalizedNames.set(
-          nameKey,
-          guildDocument.id,
-        );
-
-        reservations.push({
-          guildId: guildDocument.id,
-          name: originalName,
-          normalizedName,
-          nameKey,
-        });
-      }
-
-      // ------------------------------------------------------
-      // CHECK EXISTING NAME RESERVATIONS
-      // ------------------------------------------------------
-
-      const nameReferences =
-        reservations.map((reservation) =>
-          db
-            .collection(NAMES_COLLECTION)
-            .doc(reservation.nameKey),
-        );
-
-      const existingReservations = [];
-
-      for (const referenceChunk of chunkArray(
-        nameReferences,
-        BATCH_SIZE,
-      )) {
-        const snapshots =
-          await db.getAll(...referenceChunk);
-
-        existingReservations.push(...snapshots);
-      }
-
-      for (
-        let index = 0;
-        index < reservations.length;
-        index++
-      ) {
-        const reservation =
-          reservations[index];
-
-        const existing =
-          existingReservations[index];
-
-        if (!existing.exists) {
-          continue;
-        }
-
-        const existingData =
-          existing.data() || {};
-
-        if (
-          existingData.guildId !==
-          reservation.guildId
-        ) {
-          throw new Error(
-            `Guild name reservation conflict: "${reservation.name}"`,
-          );
-        }
-      }
-
-      // ------------------------------------------------------
-      // WRITE NAME RESERVATIONS
+      // WRITE MISSING RESERVATIONS
       // ------------------------------------------------------
 
       let registeredCount = 0;
@@ -311,6 +466,7 @@ const migrateGuildNames = onCall(
       const missingReservations =
         reservations.filter(
           (reservation, index) =>
+            !existingReservations[index] ||
             !existingReservations[index].exists,
         );
 
@@ -318,8 +474,7 @@ const migrateGuildNames = onCall(
         missingReservations,
         BATCH_SIZE,
       )) {
-        const batch =
-          db.batch();
+        const batch = db.batch();
 
         for (const reservation of reservationChunk) {
           const reference =
@@ -327,7 +482,7 @@ const migrateGuildNames = onCall(
               .collection(NAMES_COLLECTION)
               .doc(reservation.nameKey);
 
-          batch.set(reference, {
+          batch.create(reference, {
             guildId: reservation.guildId,
             name: reservation.name,
             normalizedName:
@@ -338,7 +493,7 @@ const migrateGuildNames = onCall(
               FieldValue.serverTimestamp(),
           });
 
-          registeredCount += 1;
+          registeredCount++;
         }
 
         await batch.commit();
@@ -348,21 +503,23 @@ const migrateGuildNames = onCall(
       // MARK MIGRATION COMPLETE
       // ------------------------------------------------------
 
-      await MIGRATION_REF.set(
+      await updateMigrationStatus(
+        lockId,
         {
           status: "completed",
           guildCount: guilds.length,
           registeredCount,
+          alreadyRegistered:
+            guilds.length - registeredCount,
           completedAt:
             FieldValue.serverTimestamp(),
-          updatedAt:
-            FieldValue.serverTimestamp(),
+          error: FieldValue.delete(),
         },
-        { merge: true },
       );
 
       return {
         success: true,
+        dryRun: false,
         guildCount: guilds.length,
         registeredCount,
         alreadyRegistered:
@@ -377,28 +534,28 @@ const migrateGuildNames = onCall(
       );
 
       // ------------------------------------------------------
-      // MARK MIGRATION FAILED
+      // MARK FAILED ONLY IF WE OWN THE LOCK
       // ------------------------------------------------------
 
-      try {
-        await MIGRATION_REF.set(
-          {
-            status: "failed",
-            error:
-              String(error.message || error)
-                .slice(0, 500),
-            failedAt:
-              FieldValue.serverTimestamp(),
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-      } catch (statusError) {
-        console.error(
-          "Could not update Guild migration status:",
-          statusError,
-        );
+      if (lockAcquired) {
+        try {
+          await updateMigrationStatus(
+            lockId,
+            {
+              status: "failed",
+              error:
+                String(error.message || error)
+                  .slice(0, 500),
+              failedAt:
+                FieldValue.serverTimestamp(),
+            },
+          );
+        } catch (statusError) {
+          console.error(
+            "Could not update Guild migration status:",
+            statusError,
+          );
+        }
       }
 
       if (error instanceof HttpsError) {
