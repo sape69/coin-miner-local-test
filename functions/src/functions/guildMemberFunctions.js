@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -14,7 +15,8 @@
 // - Leader cannot leave without transferring leadership
 // - Only leader can kick members
 // - Only leader can transfer leadership
-// - Kicked / leaving members receive 24h Guild switch cooldown
+// - Leaving / kicked members receive 24h Guild switch cooldown
+// - Member count is verified from actual Firestore member documents
 // - All operations use Firestore transactions
 //
 // ============================================================
@@ -40,7 +42,6 @@ const {
 // ============================================================
 
 const {
-  GUILD_MAX_MEMBERS,
   GUILD_LEADER_ROLE,
   GUILD_MEMBER_ROLE,
   GUILD_SWITCH_COOLDOWN_MS,
@@ -74,8 +75,8 @@ function validateUid(uid) {
   if (
     typeof uid !== "string" ||
     !uid.trim() ||
-    uid.length > 128 ||
-    !/^[A-Za-z0-9._-]+$/.test(uid)
+    uid.trim().length > 128 ||
+    !/^[A-Za-z0-9._-]+$/.test(uid.trim())
   ) {
     throw new HttpsError(
       "invalid-argument",
@@ -95,7 +96,7 @@ function validateGuildId(guildId) {
   if (
     typeof guildId !== "string" ||
     !guildId.trim() ||
-    guildId.length > 128
+    guildId.trim().length > 128
   ) {
     throw new HttpsError(
       "invalid-argument",
@@ -108,7 +109,7 @@ function validateGuildId(guildId) {
 
 
 // ============================================================
-// REFERENCES
+// 📚 FIRESTORE REFERENCES
 // ============================================================
 
 function guildRef(guildId) {
@@ -129,6 +130,12 @@ function memberRef(guildId, uid) {
 }
 
 
+function membersCollection(guildId) {
+  return guildRef(guildId)
+    .collection("members");
+}
+
+
 function userRef(uid) {
   return db
     .collection("users")
@@ -139,91 +146,30 @@ function userRef(uid) {
 
 
 // ============================================================
-// ⏰ TIMESTAMP HELPER
+// 🔢 ACTUAL MEMBER COUNT
+// ============================================================
+//
+// The Guild member count is calculated from actual member
+// documents inside the transaction.
+//
+// This avoids trusting an outdated memberCount field.
+//
 // ============================================================
 
-function timestampToMs(value) {
-  if (!value) {
-    return 0;
-  }
-
-  if (
-    typeof value.toMillis === "function"
-  ) {
-    return value.toMillis();
-  }
-
-  if (
-    value instanceof Date
-  ) {
-    return value.getTime();
-  }
-
-  if (
-    typeof value === "number" &&
-    Number.isFinite(value)
-  ) {
-    return value;
-  }
-
-  return 0;
-}
-
-
-// ============================================================
-// ⏳ GUILD SWITCH COOLDOWN
-// ============================================================
-
-function getSwitchCooldownRemaining(
-  lastSwitchAt,
+function getActualMemberCount(
+  membersSnapshot,
 ) {
-  const lastSwitchMs =
-    timestampToMs(lastSwitchAt);
-
   if (
-    lastSwitchMs <= 0
-  ) {
-    return 0;
-  }
-
-  const elapsed =
-    Date.now() - lastSwitchMs;
-
-  if (
-    elapsed >=
-    GUILD_SWITCH_COOLDOWN_MS
-  ) {
-    return 0;
-  }
-
-  return (
-    GUILD_SWITCH_COOLDOWN_MS -
-    elapsed
-  );
-}
-
-
-// ============================================================
-// 🔢 MEMBER COUNT VALIDATION
-// ============================================================
-
-function getValidMemberCount(
-  guildData,
-) {
-  const count =
-    Number(guildData.memberCount);
-
-  if (
-    !Number.isFinite(count) ||
-    count < 0
+    !membersSnapshot ||
+    !Array.isArray(membersSnapshot.docs)
   ) {
     throw new HttpsError(
-      "failed-precondition",
-      "Guildin jäsenmäärä on virheellinen.",
+      "internal",
+      "Guildin jäsenmäärän tarkistaminen epäonnistui.",
     );
   }
 
-  return Math.floor(count);
+  return membersSnapshot.docs.length;
 }
 
 
@@ -231,12 +177,11 @@ function getValidMemberCount(
 // ⏳ COOLDOWN ERROR
 // ============================================================
 
-function throwCooldownError(
-  remainingMs,
-) {
+function throwCooldownError() {
   const remainingHours =
     Math.ceil(
-      remainingMs / 3600000,
+      GUILD_SWITCH_COOLDOWN_MS /
+        3600000,
     );
 
   throw new HttpsError(
@@ -261,11 +206,15 @@ const leaveGuild = onCall(
     return db.runTransaction(
       async (transaction) => {
         // ----------------------------------------------------
-        // READ USER
+        // REFERENCES
         // ----------------------------------------------------
 
         const userReference =
           userRef(uid);
+
+        // ----------------------------------------------------
+        // READ USER
+        // ----------------------------------------------------
 
         const userSnapshot =
           await transaction.get(
@@ -310,6 +259,9 @@ const leaveGuild = onCall(
             uid,
           );
 
+        const membersReference =
+          membersCollection(guildId);
+
         // ----------------------------------------------------
         // READ GUILD
         // ----------------------------------------------------
@@ -327,6 +279,19 @@ const leaveGuild = onCall(
           await transaction.get(
             memberReference,
           );
+
+        // ----------------------------------------------------
+        // READ ACTUAL MEMBERS
+        // ----------------------------------------------------
+
+        const membersSnapshot =
+          await transaction.get(
+            membersReference,
+          );
+
+        // ----------------------------------------------------
+        // VALIDATE DOCUMENTS
+        // ----------------------------------------------------
 
         if (
           !guildSnapshot.exists ||
@@ -350,7 +315,8 @@ const leaveGuild = onCall(
 
         if (
           guildData.leaderUid === uid ||
-          memberData.role === GUILD_LEADER_ROLE
+          memberData.role ===
+            GUILD_LEADER_ROLE
         ) {
           throw new HttpsError(
             "failed-precondition",
@@ -359,13 +325,22 @@ const leaveGuild = onCall(
         }
 
         // ----------------------------------------------------
-        // MEMBER COUNT
+        // ACTUAL MEMBER COUNT
         // ----------------------------------------------------
 
-        const memberCount =
-          getValidMemberCount(
-            guildData,
+        const actualMemberCount =
+          getActualMemberCount(
+            membersSnapshot,
           );
+
+        if (
+          actualMemberCount <= 0
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Guildin jäsenmäärä on virheellinen.",
+          );
+        }
 
         // ----------------------------------------------------
         // DELETE MEMBER
@@ -376,17 +351,14 @@ const leaveGuild = onCall(
         );
 
         // ----------------------------------------------------
-        // UPDATE GUILD
+        // UPDATE GUILD MEMBER COUNT
         // ----------------------------------------------------
 
         transaction.update(
           guildReference,
           {
             memberCount:
-              Math.max(
-                0,
-                memberCount - 1,
-              ),
+              actualMemberCount - 1,
 
             updatedAt:
               FieldValue.serverTimestamp(),
@@ -467,7 +439,7 @@ const kickGuildMember = onCall(
           userRef(targetUid);
 
         // ----------------------------------------------------
-        // READ LEADER
+        // READ LEADER USER
         // ----------------------------------------------------
 
         const leaderUserSnapshot =
@@ -476,7 +448,7 @@ const kickGuildMember = onCall(
           );
 
         // ----------------------------------------------------
-        // READ TARGET
+        // READ TARGET USER
         // ----------------------------------------------------
 
         const targetUserSnapshot =
@@ -489,7 +461,7 @@ const kickGuildMember = onCall(
         ) {
           throw new HttpsError(
             "not-found",
-            "Johtajan käyttäjää ei löytynyt.",
+            "Guildin johtajan käyttäjää ei löytynyt.",
           );
         }
 
@@ -521,7 +493,7 @@ const kickGuildMember = onCall(
         ) {
           throw new HttpsError(
             "failed-precondition",
-            "Et kuulu Guildiin.",
+        "Et kuulu Guildiin.",
           );
         }
 
@@ -530,7 +502,8 @@ const kickGuildMember = onCall(
         // ----------------------------------------------------
 
         if (
-          targetUserData.guildId !== guildId
+          targetUserData.guildId !==
+          guildId
         ) {
           throw new HttpsError(
             "failed-precondition",
@@ -556,6 +529,9 @@ const kickGuildMember = onCall(
             guildId,
             targetUid,
           );
+
+        const membersReference =
+          membersCollection(guildId);
 
         // ----------------------------------------------------
         // READ GUILD
@@ -584,6 +560,19 @@ const kickGuildMember = onCall(
             targetMemberReference,
           );
 
+        // ----------------------------------------------------
+        // READ ACTUAL MEMBERS
+        // ----------------------------------------------------
+
+        const membersSnapshot =
+          await transaction.get(
+            membersReference,
+          );
+
+        // ----------------------------------------------------
+        // VALIDATE DOCUMENTS
+        // ----------------------------------------------------
+
         if (
           !guildSnapshot.exists ||
           !leaderMemberSnapshot.exists ||
@@ -609,7 +598,8 @@ const kickGuildMember = onCall(
         // ----------------------------------------------------
 
         if (
-          guildData.leaderUid !== leaderUid ||
+          guildData.leaderUid !==
+            leaderUid ||
           leaderMemberData.role !==
             GUILD_LEADER_ROLE
         ) {
@@ -628,7 +618,8 @@ const kickGuildMember = onCall(
             GUILD_LEADER_ROLE ||
           targetMemberData.role ===
             GUILD_LEADER_ROLE ||
-          guildData.leaderUid === targetUid
+          guildData.leaderUid ===
+            targetUid
         ) {
           throw new HttpsError(
             "failed-precondition",
@@ -637,13 +628,22 @@ const kickGuildMember = onCall(
         }
 
         // ----------------------------------------------------
-        // MEMBER COUNT
+        // ACTUAL MEMBER COUNT
         // ----------------------------------------------------
 
-        const memberCount =
-          getValidMemberCount(
-            guildData,
+        const actualMemberCount =
+          getActualMemberCount(
+            membersSnapshot,
           );
+
+        if (
+          actualMemberCount <= 0
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Guildin jäsenmäärä on virheellinen.",
+          );
+        }
 
         // ----------------------------------------------------
         // DELETE MEMBER
@@ -661,10 +661,7 @@ const kickGuildMember = onCall(
           guildReference,
           {
             memberCount:
-              Math.max(
-                0,
-                memberCount - 1,
-              ),
+              actualMemberCount - 1,
 
             updatedAt:
               FieldValue.serverTimestamp(),
@@ -804,7 +801,8 @@ const transferGuildLeadership = onCall(
         // ----------------------------------------------------
 
         if (
-          targetUserData.guildId !== guildId
+          targetUserData.guildId !==
+          guildId
         ) {
           throw new HttpsError(
             "failed-precondition",
@@ -857,6 +855,10 @@ const transferGuildLeadership = onCall(
           await transaction.get(
             targetMemberReference,
           );
+
+        // ----------------------------------------------------
+        // VALIDATE DOCUMENTS
+        // ----------------------------------------------------
 
         if (
           !guildSnapshot.exists ||
