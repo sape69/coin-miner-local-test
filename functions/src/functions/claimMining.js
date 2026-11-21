@@ -94,6 +94,10 @@ function createClaimMining({
 
   processReferralMiningReward,
 
+  // Guild mining bonus snapshot (transaction-safe).
+  getGuildMiningBonusSnapshot,
+  recordGuildMiningActivity,
+
   number,
   nonNegative,
 
@@ -299,7 +303,7 @@ function createClaimMining({
         // FIRESTORE TRANSACTION
         // ======================================================
 
-        return await db.runTransaction(
+        const miningResult = await db.runTransaction(
           async (transaction) => {
             const now = new Date();
             const nowMs = now.getTime();
@@ -319,6 +323,37 @@ function createClaimMining({
             const data = userSnapshot.exists
               ? userSnapshot.data() || {}
               : {};
+
+            // ==================================================
+            // GUILD BONUS SNAPSHOT
+            // ==================================================
+            // Read Guild data before any transaction writes.
+            // The current miner is counted as active for this start.
+
+            const guildSnapshot =
+              typeof getGuildMiningBonusSnapshot === "function"
+                ? await getGuildMiningBonusSnapshot(
+                    transaction,
+                    userSnapshot,
+                    nowMs,
+                    uid
+                  )
+                : {
+                    success: true,
+                    inGuild: false,
+                    guildId: null,
+                    activeMembers: 0,
+                    totalMembers: 0,
+                    bonusPercent: 0,
+                  };
+
+            const guildBonusPercent =
+              guildSnapshot && guildSnapshot.success === true
+                ? Math.max(0, number(guildSnapshot.bonusPercent))
+                : 0;
+
+            const guildBonusMultiplier =
+              1 + guildBonusPercent / 100;
 
             const currentStreak =
               miningDailyStreak(data);
@@ -470,7 +505,11 @@ function createClaimMining({
               nowMs
             );
 
-            const rate = daily.dailyHashRate;
+            const baseRate = daily.dailyHashRate;
+
+            // Guild bonus applies to Hash Rate, not direct STL.
+            // The snapshot is locked for this mining cycle.
+            const rate = baseRate * guildBonusMultiplier;
 
             const oldBalance = nonNegative(
               data.miningBalance
@@ -592,13 +631,18 @@ function createClaimMining({
             // ==================================================
             // ACHIEVEMENT REWARDS
             // ==================================================
+            // Balance is updated reward by reward so that every
+            // history entry receives its correct balanceAfter.
 
             if (achievementReward > 0) {
-              newBalance += achievementReward;
+              for (const reward of achievementResult.rewards) {
+                const rewardAmount = Math.max(
+                  0,
+                  number(reward.reward)
+                );
 
-              for (
-                const reward of achievementResult.rewards
-              ) {
+                newBalance += rewardAmount;
+
                 transaction.set(
                   getHistoryCollection(uid).doc(),
                   {
@@ -609,9 +653,9 @@ function createClaimMining({
 
                     achievementId: reward.achievementId,
 
-                    amount: reward.reward,
+                    amount: rewardAmount,
                     balanceAfter: newBalance,
-                    reward: reward.reward,
+                    reward: rewardAmount,
 
                     createdAt:
                       FieldValue.serverTimestamp(),
@@ -641,6 +685,23 @@ function createClaimMining({
                 lastMiningDate: today,
 
                 miningHashRate: rate,
+
+                dailyHashRate: baseRate,
+
+                guildId:
+                  guildSnapshot && guildSnapshot.inGuild === true
+                    ? guildSnapshot.guildId
+                    : null,
+
+                guildMiningBonusPercent:
+                  guildBonusPercent,
+
+                guildActiveMembers:
+                  guildSnapshot && guildSnapshot.success === true
+                    ? guildSnapshot.activeMembers
+                    : 0,
+
+                guildBonusLockedAt: startedAt,
 
                 miningHalvingMultiplier:
                   newMiningHalvingMultiplier,
@@ -720,9 +781,22 @@ function createClaimMining({
                   title:
                     "Stella Daily Hash Rate 🐱✨",
 
-                  amount: rate,
+                  amount: baseRate,
                   hashRate: rate,
-                  dailyHashRate: rate,
+                  dailyHashRate: baseRate,
+
+                  guildId:
+                    guildSnapshot && guildSnapshot.inGuild === true
+                      ? guildSnapshot.guildId
+                      : null,
+
+                  guildMiningBonusPercent:
+                    guildBonusPercent,
+
+                  guildActiveMembers:
+                    guildSnapshot && guildSnapshot.success === true
+                      ? guildSnapshot.activeMembers
+                      : 0,
 
                   hashRateBefore:
                     historicalHashRate(data),
@@ -814,7 +888,20 @@ function createClaimMining({
 
                 hashRate: rate,
                 miningHashRate: rate,
-                dailyHashRate: rate,
+                dailyHashRate: baseRate,
+
+                guildId:
+                  guildSnapshot && guildSnapshot.inGuild === true
+                    ? guildSnapshot.guildId
+                    : null,
+
+                guildMiningBonusPercent:
+                  guildBonusPercent,
+
+                guildActiveMembers:
+                  guildSnapshot && guildSnapshot.success === true
+                    ? guildSnapshot.activeMembers
+                    : 0,
 
                 dailyHashRateBonus:
                   dailyHashRateBonus(daily.streak),
@@ -889,7 +976,10 @@ function createClaimMining({
 
               hashRate: rate,
               miningDay: daily.streak,
-              dailyHashRate: rate,
+
+              // FIX: Return base daily Hash Rate,
+              // not Guild-bonus-adjusted rate.
+              dailyHashRate: baseRate,
 
               dailyHashRateBonus:
                 dailyHashRateBonus(daily.streak),
@@ -912,6 +1002,21 @@ function createClaimMining({
                 ),
 
               miningHashRate: rate,
+
+              baseHashRate: baseRate,
+
+              guildId:
+                guildSnapshot && guildSnapshot.inGuild === true
+                  ? guildSnapshot.guildId
+                  : null,
+
+              guildBonusPercent:
+                guildBonusPercent,
+
+              guildActiveMembers:
+                guildSnapshot && guildSnapshot.success === true
+                  ? guildSnapshot.activeMembers
+                  : 0,
 
               miningDurationMs:
                 MINING_DURATION_MS,
@@ -952,13 +1057,33 @@ function createClaimMining({
                   : achievementReward > 0
                     ? `🐱🏆✨ Stella avasi achievement-palkinnon! +${achievementReward} STL.`
                     : completedPrevious
-                      ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
+                      ? `🐱✨ Stella keräsi STL:t ja aloitti uuden louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR${guildBonusPercent > 0 ? ` (Guild +${guildBonusPercent}%)` : ""}.`
                       : premiumMining
-                        ? `🐱✨ Stella aloitti mainosvapaan Premium-louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`
-                        : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR.`,
+                        ? `🐱✨ Stella aloitti mainosvapaan Premium-louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR${guildBonusPercent > 0 ? ` (Guild +${guildBonusPercent}%)` : ""}.`
+                        : `🐱✨ Stella aloitti louhinnan! Päivä ${daily.streak}, Hash Rate: ${rate.toFixed(4)} HR${guildBonusPercent > 0 ? ` (Guild +${guildBonusPercent}%)` : ""}.`,
             };
           }
         );
+
+        // Record Guild activity only after a successful committed start.
+        // Best-effort activity recording must not undo mining.
+
+        if (
+          miningResult &&
+          miningResult.started === true &&
+          typeof recordGuildMiningActivity === "function"
+        ) {
+          try {
+            await recordGuildMiningActivity(uid);
+          } catch (guildActivityError) {
+            console.warn(
+              "Guild mining activity recording failed:",
+              guildActivityError
+            );
+          }
+        }
+
+        return miningResult;
       } catch (error) {
         console.error(
           "claimMining error:",
