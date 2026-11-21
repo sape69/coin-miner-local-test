@@ -1,11 +1,8 @@
-
 "use strict";
 
 // ============================================================
 // 🐱 STELLURIINI - GUILD FUNCTIONS
 // ============================================================
-//
-// Guilds / Teams / Clans.
 //
 // Callable functions:
 // - createGuild
@@ -15,8 +12,11 @@
 // - Firebase Authentication required
 // - UID comes from Firebase Auth
 // - Firestore transactions
+// - Secure invite code generation
 // - Maximum 20 members
 // - One Guild per user
+// - 24h Guild creation cooldown
+// - 24h Guild switching cooldown after leaving
 //
 // ============================================================
 
@@ -29,6 +29,8 @@ const {
   onCall,
   HttpsError,
 } = require("firebase-functions/v2/https");
+
+const crypto = require("crypto");
 
 const {
   db,
@@ -47,6 +49,7 @@ const {
   GUILD_INVITE_CODE_LENGTH,
   GUILD_INVITE_CODE_CHARACTERS,
   GUILD_CREATION_COOLDOWN_MS,
+  GUILD_SWITCH_COOLDOWN_MS,
 } = require("../config/guildConfig");
 
 
@@ -66,12 +69,21 @@ const {
 
 
 // ============================================================
-// 🎟️ INVITE CODE GENERATOR
+// 🎟️ SECURE INVITE CODE GENERATOR
 // ============================================================
 
 function generateInviteCode() {
   const characters =
     GUILD_INVITE_CODE_CHARACTERS;
+
+  if (
+    typeof characters !== "string" ||
+    characters.length < 2
+  ) {
+    throw new Error(
+      "Invalid Guild invite characters configuration.",
+    );
+  }
 
   let code = "";
 
@@ -81,8 +93,9 @@ function generateInviteCode() {
     i++
   ) {
     const index =
-      Math.floor(
-        Math.random() * characters.length,
+      crypto.randomInt(
+        0,
+        characters.length,
       );
 
     code += characters[index];
@@ -117,7 +130,7 @@ function requireAuthenticatedUid(request) {
     );
   }
 
-  return uid;
+  return uid.trim();
 }
 
 
@@ -154,6 +167,33 @@ function timestampToMs(value) {
 
 
 // ============================================================
+// ⏳ COOLDOWN HELPER
+// ============================================================
+
+function getCooldownRemaining(
+  lastTimestamp,
+  cooldownMs,
+  now,
+) {
+  const lastTime =
+    timestampToMs(lastTimestamp);
+
+  if (lastTime <= 0) {
+    return 0;
+  }
+
+  const elapsed =
+    now - lastTime;
+
+  if (elapsed >= cooldownMs) {
+    return 0;
+  }
+
+  return cooldownMs - elapsed;
+}
+
+
+// ============================================================
 // 🐱 CREATE GUILD
 // ============================================================
 
@@ -165,6 +205,10 @@ const createGuild = onCall(
     try {
       const uid =
         requireAuthenticatedUid(request);
+
+      // --------------------------------------------------------
+      // VALIDATE NAME
+      // --------------------------------------------------------
 
       const rawName =
         request.data?.name;
@@ -199,20 +243,29 @@ const createGuild = onCall(
         db.collection("guilds").doc();
 
       // --------------------------------------------------------
-      // INVITE CODE
+      // USER REFERENCES
+      // --------------------------------------------------------
+
+      const userRef =
+        getUserRef(uid);
+
+      const memberRef =
+        getGuildMemberRef(
+          guildRef.id,
+          uid,
+        );
+
+      // --------------------------------------------------------
+      // GENERATE INVITE CODE
       // --------------------------------------------------------
 
       let inviteCode = "";
 
       let inviteRef = null;
 
-      // --------------------------------------------------------
-      // GENERATE UNIQUE INVITE
-      // --------------------------------------------------------
-
       for (
         let attempt = 0;
-        attempt < 10;
+        attempt < 20;
         attempt++
       ) {
         const candidate =
@@ -221,10 +274,12 @@ const createGuild = onCall(
         const candidateRef =
           getGuildInviteRef(candidate);
 
-        const existing =
+        const existingSnapshot =
           await candidateRef.get();
 
-        if (!existing.exists) {
+        if (
+          !existingSnapshot.exists
+        ) {
           inviteCode = candidate;
           inviteRef = candidateRef;
           break;
@@ -242,39 +297,38 @@ const createGuild = onCall(
       }
 
       // --------------------------------------------------------
-      // REFERENCES
-      // --------------------------------------------------------
-
-      const userRef =
-        getUserRef(uid);
-
-      const memberRef =
-        getGuildMemberRef(
-          guildRef.id,
-          uid,
-        );
-
-      // --------------------------------------------------------
       // TRANSACTION
       // --------------------------------------------------------
 
       const result =
         await db.runTransaction(
           async (transaction) => {
+            // ----------------------------------------------------
+            // READ DOCUMENTS
+            // ----------------------------------------------------
+
             const userSnapshot =
-              await transaction.get(userRef);
+              await transaction.get(
+                userRef,
+              );
 
             const inviteSnapshot =
-              await transaction.get(inviteRef);
+              await transaction.get(
+                inviteRef,
+              );
 
             const memberSnapshot =
-              await transaction.get(memberRef);
+              await transaction.get(
+                memberRef,
+              );
 
             // ----------------------------------------------------
             // USER PROFILE
             // ----------------------------------------------------
 
-            if (!userSnapshot.exists) {
+            if (
+              !userSnapshot.exists
+            ) {
               throw new HttpsError(
                 "not-found",
                 "Käyttäjäprofiilia ei löytynyt.",
@@ -315,7 +369,7 @@ const createGuild = onCall(
             }
 
             // ----------------------------------------------------
-            // INVITE CODE COLLISION
+            // INVITE COLLISION
             // ----------------------------------------------------
 
             if (
@@ -328,7 +382,7 @@ const createGuild = onCall(
             }
 
             // ----------------------------------------------------
-            // CREATION COOLDOWN
+            // GUILD CREATION COOLDOWN
             // ----------------------------------------------------
 
             const lastGuildCreatedAt =
@@ -336,23 +390,56 @@ const createGuild = onCall(
                 userData.guildCreatedAt,
               );
 
+            const creationElapsed =
+              now - lastGuildCreatedAt;
+
             if (
               lastGuildCreatedAt > 0 &&
-              now - lastGuildCreatedAt <
+              creationElapsed <
                 GUILD_CREATION_COOLDOWN_MS
             ) {
               const remainingMs =
                 GUILD_CREATION_COOLDOWN_MS -
-                (now - lastGuildCreatedAt);
+                creationElapsed;
+
+              const remainingHours =
+                Math.ceil(
+                  remainingMs / 3600000,
+                );
 
               throw new HttpsError(
                 "failed-precondition",
-                `Uuden Guildin luonti ei ole vielä mahdollista. Odota ${Math.ceil(remainingMs / 3600000)} tuntia.`,
+                `Uuden Guildin luonti ei ole vielä mahdollista. Odota ${remainingHours} tuntia.`,
               );
             }
 
             // ----------------------------------------------------
-            // GUILD DATA
+            // GUILD SWITCH COOLDOWN
+            // ----------------------------------------------------
+
+            const switchRemaining =
+              getCooldownRemaining(
+                userData.guildLastSwitchAt,
+                GUILD_SWITCH_COOLDOWN_MS,
+                now,
+              );
+
+            if (
+              switchRemaining > 0
+            ) {
+              const remainingHours =
+                Math.ceil(
+                  switchRemaining / 3600000,
+                );
+
+              throw new HttpsError(
+                "failed-precondition",
+                `Guildin vaihtaminen ei ole vielä mahdollista. Odota ${remainingHours} tuntia.`,
+              );
+            }
+
+            // ----------------------------------------------------
+            // CREATE GUILD DATA
             // ----------------------------------------------------
 
             const guildData =
@@ -363,7 +450,7 @@ const createGuild = onCall(
               });
 
             // ----------------------------------------------------
-            // LEADER DATA
+            // CREATE LEADER
             // ----------------------------------------------------
 
             const memberData =
@@ -373,7 +460,7 @@ const createGuild = onCall(
               });
 
             // ----------------------------------------------------
-            // INVITE DATA
+            // CREATE INVITE
             // ----------------------------------------------------
 
             const inviteData =
@@ -391,7 +478,7 @@ const createGuild = onCall(
             );
 
             // ----------------------------------------------------
-            // WRITE LEADER
+            // WRITE LEADER MEMBER
             // ----------------------------------------------------
 
             transaction.set(
@@ -427,13 +514,14 @@ const createGuild = onCall(
                 guildCreatedAt:
                   FieldValue.serverTimestamp(),
 
-                guildLastSwitchAt:
-                  FieldValue.serverTimestamp(),
-
                 updatedAt:
                   FieldValue.serverTimestamp(),
               },
             );
+
+            // ----------------------------------------------------
+            // RESULT
+            // ----------------------------------------------------
 
             return {
               guildId:
@@ -498,6 +586,10 @@ const joinGuild = onCall(
       const uid =
         requireAuthenticatedUid(request);
 
+      // --------------------------------------------------------
+      // VALIDATE INVITE
+      // --------------------------------------------------------
+
       const rawInviteCode =
         request.data?.inviteCode;
 
@@ -513,16 +605,21 @@ const joinGuild = onCall(
       const inviteCode =
         rawInviteCode.trim().toUpperCase();
 
+      const validCharacters =
+        new RegExp(
+          `^[${GUILD_INVITE_CODE_CHARACTERS}]+$`,
+        );
+
       if (
         inviteCode.length !==
           GUILD_INVITE_CODE_LENGTH ||
-        !new RegExp(
-          `^[${GUILD_INVITE_CODE_CHARACTERS}]+$`,
-        ).test(inviteCode)
+        !validCharacters.test(
+          inviteCode,
+        )
       ) {
         throw new HttpsError(
           "invalid-argument",
-          "Kutsukoodi muoto ei ole kelvollinen.",
+          "Kutsukoodin muoto ei ole kelvollinen.",
         );
       }
 
@@ -568,13 +665,18 @@ const joinGuild = onCall(
 
             if (
               inviteData.active !== true ||
-              typeof inviteData.guildId !== "string"
+              typeof inviteData.guildId !== "string" ||
+              !inviteData.guildId.trim()
             ) {
               throw new HttpsError(
                 "failed-precondition",
                 "Kutsukoodi ei ole aktiivinen.",
               );
             }
+
+            // ----------------------------------------------------
+            // GUILD REFERENCES
+            // ----------------------------------------------------
 
             const guildId =
               inviteData.guildId;
@@ -631,6 +733,9 @@ const joinGuild = onCall(
             const userData =
               userSnapshot.data() || {};
 
+            const now =
+              Date.now();
+
             // ----------------------------------------------------
             // VALIDATE GUILD
             // ----------------------------------------------------
@@ -666,12 +771,12 @@ const joinGuild = onCall(
 
               throw new HttpsError(
                 "failed-precondition",
-                "Olet jo toisen Guildin jäsen.",
+                "Olet jo toisen Guildin jäsen. Poistu nykyisestä Guildista ensin.",
               );
             }
 
             // ----------------------------------------------------
-            // EXISTING MEMBER
+            // EXISTING MEMBER DOCUMENT
             // ----------------------------------------------------
 
             if (
@@ -684,20 +789,54 @@ const joinGuild = onCall(
             }
 
             // ----------------------------------------------------
-            // MEMBER LIMIT
+            // SWITCH COOLDOWN
             // ----------------------------------------------------
+
+            const switchRemaining =
+              getCooldownRemaining(
+                userData.guildLastSwitchAt,
+                GUILD_SWITCH_COOLDOWN_MS,
+                now,
+              );
+
+            if (
+              switchRemaining > 0
+            ) {
+              const remainingHours =
+                Math.ceil(
+                  switchRemaining / 3600000,
+                );
+
+              throw new HttpsError(
+                "failed-precondition",
+                `Guildiin liittyminen ei ole vielä mahdollista. Odota ${remainingHours} tuntia.`,
+              );
+            }
+
+            // ----------------------------------------------------
+            // MEMBER COUNT
+            // ----------------------------------------------------
+
+            const rawMemberCount =
+              Number(
+                guildData.memberCount,
+              );
 
             const memberCount =
               Number.isFinite(
-                Number(guildData.memberCount),
+                rawMemberCount,
               )
                 ? Math.max(
                     0,
                     Math.floor(
-                      Number(guildData.memberCount),
+                      rawMemberCount,
                     ),
                   )
                 : 0;
+
+            // ----------------------------------------------------
+            // MAXIMUM MEMBERS
+            // ----------------------------------------------------
 
             if (
               memberCount >=
@@ -710,7 +849,7 @@ const joinGuild = onCall(
             }
 
             // ----------------------------------------------------
-            // JOIN
+            // CREATE MEMBER
             // ----------------------------------------------------
 
             transaction.set(
@@ -722,7 +861,7 @@ const joinGuild = onCall(
             );
 
             // ----------------------------------------------------
-            // UPDATE GUILD COUNT
+            // UPDATE GUILD MEMBER COUNT
             // ----------------------------------------------------
 
             transaction.update(
@@ -751,13 +890,14 @@ const joinGuild = onCall(
                 guildJoinedAt:
                   FieldValue.serverTimestamp(),
 
-                guildLastSwitchAt:
-                  FieldValue.serverTimestamp(),
-
                 updatedAt:
                   FieldValue.serverTimestamp(),
               },
             );
+
+            // ----------------------------------------------------
+            // RESULT
+            // ----------------------------------------------------
 
             return {
               guildId,
