@@ -42,8 +42,9 @@ const {
 const { deleteAccount } = require("./src/functions/accountFunctions");
 
 // 🌐 ACCOUNT DELETION REQUEST
-const { requestAccountDeletion } =
-  require("./src/functions/accountDeletionRequestFunctions");
+const {
+  requestAccountDeletion,
+} = require("./src/functions/accountDeletionRequestFunctions");
 
 // 🔗 REFERRAL
 const {
@@ -55,8 +56,9 @@ const {
 } = require("./src/functions/referralFunctions");
 
 // 🔍 REFERRAL CODE VALIDATION
-const { validateReferralCode } =
-  require("./src/functions/validateReferralCode");
+const {
+  validateReferralCode,
+} = require("./src/functions/validateReferralCode");
 
 // ⭐ GOOGLE PLAY SUBSCRIPTIONS
 const {
@@ -65,8 +67,21 @@ const {
 } = require("./src/functions/subscriptionFunctions");
 
 // 🛡️ ADMIN DASHBOARD
-const { getAdminDashboard } =
-  require("./src/functions/adminFunctions");
+const {
+  getAdminDashboard,
+} = require("./src/functions/adminFunctions");
+
+// 🐱 GUILD
+const {
+  createGuild,
+  joinGuild,
+} = require("./src/functions/guildFunctions");
+
+const {
+  leaveGuild,
+  kickGuildMember,
+  transferGuildLeadership,
+} = require("./src/functions/guildMemberFunctions");
 
 // 🐱 GUILD NAME MIGRATION
 const {
@@ -155,6 +170,17 @@ exports.expirePremiumSubscriptions = expirePremiumSubscriptions;
 // ============================================================
 
 exports.getAdminDashboard = getAdminDashboard;
+
+// ============================================================
+// 🐱 GUILD EXPORTS
+// ============================================================
+
+exports.createGuild = createGuild;
+exports.joinGuild = joinGuild;
+
+exports.leaveGuild = leaveGuild;
+exports.kickGuildMember = kickGuildMember;
+exports.transferGuildLeadership = transferGuildLeadership;
 
 // ============================================================
 // 🐱 GUILD NAME MIGRATION EXPORT
