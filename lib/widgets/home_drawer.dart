@@ -35,6 +35,7 @@ class HomeDrawer extends StatefulWidget {
   final VoidCallback? onPremiumPressed;
 
   final VoidCallback? onStellaWorldPressed;
+  final VoidCallback? onGuildPressed;
   final VoidCallback onAchievementsPressed;
   final VoidCallback onTransactionHistoryPressed;
   final VoidCallback onReferralPressed;
@@ -51,6 +52,7 @@ class HomeDrawer extends StatefulWidget {
     this.onHalvingPressed,
     this.onPremiumPressed,
     this.onStellaWorldPressed,
+    this.onGuildPressed,
     required this.onAchievementsPressed,
     required this.onTransactionHistoryPressed,
     required this.onReferralPressed,
@@ -345,6 +347,22 @@ class _HomeDrawerState extends State<HomeDrawer> {
           : 'Stelluriini Premium',
       onTap: widget.onPremiumPressed!,
       iconColor: goldAccentColor,
+    );
+  }
+
+  // ==========================================================
+  // 🐱 GUILD MENU ITEM
+  // ==========================================================
+
+  Widget _guildItem() {
+    final bool isFinnish =
+        widget.languageCode.toLowerCase().startsWith('fi');
+
+    return _menuItem(
+      icon: Icons.shield_rounded,
+      title: isFinnish ? 'Guild-yhteisö' : 'Guild Community',
+      onTap: widget.onGuildPressed!,
+      iconColor: accentColor,
     );
   }
 
@@ -819,6 +837,10 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   // ADMIN
                   if (!_checkingAdmin && _adminAccess)
                     _adminMenuItem(),
+
+                  // GUILD
+                  if (widget.onGuildPressed != null)
+                    _guildItem(),
 
                   // STELLA WORLD
                   if (widget.onStellaWorldPressed != null)
