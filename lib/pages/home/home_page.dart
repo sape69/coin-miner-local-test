@@ -19,6 +19,7 @@ import '../account/account_deletion_page.dart';
 import '../achievements/achievements_page.dart';
 import '../history/transaction_history_page.dart';
 import '../halving/halving_page.dart';
+import '../guild/guild_page.dart';
 import '../referrals/referrals_page.dart';
 import '../premium/premium_page.dart';
 import '../roadmap/roadmap_page.dart';
@@ -1752,6 +1753,14 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  void _openGuild() {
+    _openPage(
+      GuildPage(
+        languageCode: widget.languageCode,
+      ),
+    );
+  }
+
   void _openStellaWorld() {
     _openPage(
       StellaWorldPage(
@@ -2119,6 +2128,8 @@ class _HomePageState extends State<HomePage>
             _openTransactionHistory,
         onReferralPressed:
             _openReferrals,
+        onGuildPressed:
+            _openGuild,
         onStellaWorldPressed:
             _openStellaWorld,
         onPremiumPressed:
