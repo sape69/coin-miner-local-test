@@ -13,6 +13,7 @@
 // - powerBoost
 // - Premium Plus Auto Mining
 // - Guild mining activity
+// - Guild mining bonus snapshot
 //
 // ============================================================
 
@@ -150,6 +151,7 @@ const {
 
 const {
   recordGuildMiningActivity,
+  getGuildMiningBonusSnapshot,
 } = require("../services/guildActivityService");
 
 
@@ -359,8 +361,18 @@ const claimMining =
     collectCompletedMiningCycle:
       miningCycleService.collectCompletedMiningCycle,
 
-    // Guild activity kirjataan vain onnistuneesta
-    // Mining Start -tapahtumasta.
+    // --------------------------------------------------------
+    // GUILD BONUS SNAPSHOT
+    // --------------------------------------------------------
+    // Calculates and locks Guild bonus at mining cycle start.
+
+    getGuildMiningBonusSnapshot,
+
+    // --------------------------------------------------------
+    // GUILD ACTIVITY
+    // --------------------------------------------------------
+    // Activity is recorded after a successful mining start.
+
     recordGuildMiningActivity,
 
     ADMOB_TEST_MODE,
