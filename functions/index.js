@@ -1,99 +1,51 @@
+
 "use strict";
 
 // ============================================================
 // 🐱 STELLURIINI CLOUD FUNCTIONS
 // ============================================================
 
-
-// ============================================================
 // ⛏️ MINING
-// ============================================================
-
 const {
   getMiningStatus,
   claimMining,
   powerBoost,
 } = require("./src/functions/miningFunctions");
 
-
-// ============================================================
 // 🤖 PREMIUM PLUS AUTO MINING
-// ============================================================
-
 const {
   premiumPlusAutoMiningScheduler,
 } = require("./src/functions/autoMining/autoMiningScheduler");
 
-
-// ============================================================
 // 🎁 DAILY CHECK-IN
-// ============================================================
+const { dailyCheckIn } = require("./src/functions/dailyFunctions");
 
-const {
-  dailyCheckIn,
-} = require("./src/functions/dailyFunctions");
-
-
-// ============================================================
 // 📺 ADMOB SSV
-// ============================================================
+const { adMobReward } = require("./src/functions/adFunctions");
 
-const {
-  adMobReward,
-} = require("./src/functions/adFunctions");
-
-
-// ============================================================
 // 📜 TRANSACTION HISTORY
-// ============================================================
+const { getTransactionHistory } = require("./src/functions/historyFunctions");
 
-const {
-  getTransactionHistory,
-} = require("./src/functions/historyFunctions");
-
-
-// ============================================================
 // 🏆 ACHIEVEMENTS
-// ============================================================
-
 const {
   getAchievements,
   getAchievementsCompleted,
 } = require("./src/functions/achievementFunctions");
 
-
-// ============================================================
 // 👤 USER PROFILE
-// ============================================================
-
 const {
   ensureUserProfile,
   getUserProfile,
 } = require("./src/functions/userFunctions");
 
-
-// ============================================================
 // 🗑️ ACCOUNT
-// ============================================================
+const { deleteAccount } = require("./src/functions/accountFunctions");
 
-const {
-  deleteAccount,
-} = require("./src/functions/accountFunctions");
-
-
-// ============================================================
 // 🌐 ACCOUNT DELETION REQUEST
-// ============================================================
+const { requestAccountDeletion } =
+  require("./src/functions/accountDeletionRequestFunctions");
 
-const {
-  requestAccountDeletion,
-} = require("./src/functions/accountDeletionRequestFunctions");
-
-
-// ============================================================
 // 🔗 REFERRAL
-// ============================================================
-
 const {
   getReferralProfile,
   applyReferralCode,
@@ -102,34 +54,24 @@ const {
   getReferralDashboard,
 } = require("./src/functions/referralFunctions");
 
-
-// ============================================================
 // 🔍 REFERRAL CODE VALIDATION
-// ============================================================
+const { validateReferralCode } =
+  require("./src/functions/validateReferralCode");
 
-const {
-  validateReferralCode,
-} = require("./src/functions/validateReferralCode");
-
-
-// ============================================================
 // ⭐ GOOGLE PLAY SUBSCRIPTIONS
-// ============================================================
-
 const {
   verifyPlaySubscription,
   expirePremiumSubscriptions,
 } = require("./src/functions/subscriptionFunctions");
 
-
-// ============================================================
 // 🛡️ ADMIN DASHBOARD
-// ============================================================
+const { getAdminDashboard } =
+  require("./src/functions/adminFunctions");
 
+// 🐱 GUILD NAME MIGRATION
 const {
-  getAdminDashboard,
-} = require("./src/functions/adminFunctions");
-
+  migrateGuildNames,
+} = require("./src/functions/guildNameMigration");
 
 // ============================================================
 // ⛏️ MINING EXPORTS
@@ -139,7 +81,6 @@ exports.getMiningStatus = getMiningStatus;
 exports.claimMining = claimMining;
 exports.powerBoost = powerBoost;
 
-
 // ============================================================
 // 🤖 PREMIUM PLUS AUTO MINING EXPORT
 // ============================================================
@@ -147,13 +88,11 @@ exports.powerBoost = powerBoost;
 exports.premiumPlusAutoMiningScheduler =
   premiumPlusAutoMiningScheduler;
 
-
 // ============================================================
 // 🎁 DAILY CHECK-IN EXPORT
 // ============================================================
 
 exports.dailyCheckIn = dailyCheckIn;
-
 
 // ============================================================
 // 📺 ADMOB SSV EXPORT
@@ -161,13 +100,11 @@ exports.dailyCheckIn = dailyCheckIn;
 
 exports.adMobReward = adMobReward;
 
-
 // ============================================================
 // 📜 TRANSACTION HISTORY EXPORT
 // ============================================================
 
 exports.getTransactionHistory = getTransactionHistory;
-
 
 // ============================================================
 // 🏆 ACHIEVEMENT EXPORTS
@@ -176,7 +113,6 @@ exports.getTransactionHistory = getTransactionHistory;
 exports.getAchievements = getAchievements;
 exports.getAchievementsCompleted = getAchievementsCompleted;
 
-
 // ============================================================
 // 👤 USER PROFILE EXPORTS
 // ============================================================
@@ -184,20 +120,17 @@ exports.getAchievementsCompleted = getAchievementsCompleted;
 exports.ensureUserProfile = ensureUserProfile;
 exports.getUserProfile = getUserProfile;
 
-
 // ============================================================
 // 🗑️ ACCOUNT EXPORT
 // ============================================================
 
 exports.deleteAccount = deleteAccount;
 
-
 // ============================================================
 // 🌐 ACCOUNT DELETION REQUEST EXPORT
 // ============================================================
 
 exports.requestAccountDeletion = requestAccountDeletion;
-
 
 // ============================================================
 // 🔗 REFERRAL EXPORTS
@@ -210,7 +143,6 @@ exports.getReferralStatus = getReferralStatus;
 exports.getReferralDashboard = getReferralDashboard;
 exports.validateReferralCode = validateReferralCode;
 
-
 // ============================================================
 // ⭐ GOOGLE PLAY SUBSCRIPTION EXPORTS
 // ============================================================
@@ -218,14 +150,14 @@ exports.validateReferralCode = validateReferralCode;
 exports.verifyPlaySubscription = verifyPlaySubscription;
 exports.expirePremiumSubscriptions = expirePremiumSubscriptions;
 
-
 // ============================================================
 // 🛡️ ADMIN DASHBOARD EXPORT
 // ============================================================
 
 exports.getAdminDashboard = getAdminDashboard;
 
+// ============================================================
+// 🐱 GUILD NAME MIGRATION EXPORT
+// ============================================================
 
-// ============================================================
-// 🐱 END OF STELLURIINI CLOUD FUNCTIONS
-// ============================================================
+exports.migrateGuildNames = migrateGuildNames;
