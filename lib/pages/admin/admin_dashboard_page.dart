@@ -3,6 +3,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'guild_name_migration_page.dart';
+
 // ============================================================
 // 🐱 STELLURIINI - ADMIN DASHBOARD
 // ============================================================
@@ -438,6 +440,83 @@ class _AdminDashboardPageState
   }
 
   // ==========================================================
+  // 🛡️ GUILD NAME MIGRATION
+  // ==========================================================
+
+  Widget _buildGuildMigrationCard() {
+    return Container(
+      margin: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: purpleColor.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.groups_rounded,
+                color: purpleColor,
+                size: 26,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _text('Guild-nimien alustus', 'Guild Name Migration'),
+                  style: const TextStyle(
+                    color: primaryTextColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _text(
+              'Tarkista nimivaraukset ja suorita kertaluonteinen alustus.',
+              'Review name reservations and run the one-time initialization.',
+            ),
+            style: const TextStyle(
+              color: secondaryTextColor,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.settings_rounded),
+              label: Text(_text('Avaa Migration-työkalu', 'Open Migration Tool')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: purpleColor,
+                foregroundColor: backgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const GuildNameMigrationPage(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
   // SECTION TITLE
   // ==========================================================
 
@@ -849,6 +928,7 @@ class _AdminDashboardPageState
                           ),
                         ),
                         const SizedBox(height: 18),
+                        _buildGuildMigrationCard(),
                         _buildSummary(),
                         _buildSectionTitle(
                           _text(
