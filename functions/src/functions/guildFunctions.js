@@ -16,7 +16,7 @@
 // - 24h Guild creation cooldown
 // - 24h Guild switch cooldown
 // - Guild name migration must be completed before creation
-// - Firestore transaction-based name reservation
+// - Atomic Firestore transactions
 //
 // ============================================================
 
@@ -45,6 +45,7 @@ const {
 const {
   getGuildRef,
   getGuildMemberRef,
+  getGuildMembersCollection,
   getGuildInviteRef,
   getUserRef,
   createGuildData,
@@ -65,8 +66,7 @@ const guildNameMigrationRef = db
 // ============================================================
 
 function generateInviteCode() {
-  const characters =
-    GUILD_INVITE_CODE_CHARACTERS;
+  const characters = GUILD_INVITE_CODE_CHARACTERS;
 
   if (
     typeof characters !== "string" ||
@@ -74,6 +74,16 @@ function generateInviteCode() {
   ) {
     throw new Error(
       "Invalid Guild invite characters configuration.",
+    );
+  }
+
+  if (
+    !Number.isInteger(GUILD_INVITE_CODE_LENGTH) ||
+    GUILD_INVITE_CODE_LENGTH < 4 ||
+    GUILD_INVITE_CODE_LENGTH > 32
+  ) {
+    throw new Error(
+      "Invalid Guild invite code length configuration.",
     );
   }
 
@@ -172,16 +182,23 @@ function getCooldownRemaining(
   cooldownMs,
   now,
 ) {
-  const lastTime =
-    timestampToMs(lastTimestamp);
+  const lastTime = timestampToMs(lastTimestamp);
 
-  if (lastTime <= 0) return 0;
+  if (lastTime <= 0) {
+    return 0;
+  }
 
   const elapsed = now - lastTime;
 
-  if (elapsed >= cooldownMs) return 0;
+  if (elapsed >= cooldownMs) {
+    return 0;
+  }
 
   return cooldownMs - elapsed;
+}
+
+function getRemainingHours(milliseconds) {
+  return Math.ceil(milliseconds / 3600000);
 }
 
 // ============================================================
@@ -192,15 +209,13 @@ const createGuild = onCall(
   { region: "us-central1" },
   async (request) => {
     try {
-      const uid =
-        requireAuthenticatedUid(request);
+      const uid = requireAuthenticatedUid(request);
 
       // ------------------------------------------------------
       // VALIDATE NAME
       // ------------------------------------------------------
 
-      const rawName =
-        request.data?.name;
+      const rawName = request.data?.name;
 
       if (typeof rawName !== "string") {
         throw new HttpsError(
@@ -243,48 +258,27 @@ const createGuild = onCall(
         getGuildMemberRef(guildRef.id, uid);
 
       // ------------------------------------------------------
-      // FIND AVAILABLE INVITE CODE
+      // INVITE CODE + TRANSACTION
+      // ------------------------------------------------------
+      // Invite code is checked and reserved inside the transaction.
+      // A collision causes a new code to be generated.
       // ------------------------------------------------------
 
-      let inviteCode = "";
-      let inviteRef = null;
+      let finalResult = null;
 
       for (
         let attempt = 0;
-        attempt < 20;
+        attempt < 10;
         attempt++
       ) {
-        const candidate =
-          generateInviteCode();
+        const inviteCode = generateInviteCode();
 
-        const candidateRef =
-          getGuildInviteRef(candidate);
+        const inviteRef =
+          getGuildInviteRef(inviteCode);
 
-        const existing =
-          await candidateRef.get();
-
-        if (!existing.exists) {
-          inviteCode = candidate;
-          inviteRef = candidateRef;
-          break;
-        }
-      }
-
-      if (!inviteCode || !inviteRef) {
-        throw new HttpsError(
-          "resource-exhausted",
-          "Kutsukoodin luominen epäonnistui. Yritä uudelleen.",
-        );
-      }
-
-      // ------------------------------------------------------
-      // TRANSACTION
-      // ------------------------------------------------------
-
-      const result =
-        await db.runTransaction(
+        const result = await db.runTransaction(
           async (transaction) => {
-            // ALL TRANSACTION READS BEFORE WRITES
+            // All reads must happen before writes.
 
             const migrationSnapshot =
               await transaction.get(
@@ -294,17 +288,17 @@ const createGuild = onCall(
             const userSnapshot =
               await transaction.get(userRef);
 
-            const inviteSnapshot =
-              await transaction.get(inviteRef);
-
             const memberSnapshot =
               await transaction.get(memberRef);
 
             const nameSnapshot =
               await transaction.get(nameRef);
 
+            const inviteSnapshot =
+              await transaction.get(inviteRef);
+
             // --------------------------------------------------
-            // MIGRATION MUST BE COMPLETED
+            // MIGRATION CHECK
             // --------------------------------------------------
 
             if (
@@ -319,7 +313,7 @@ const createGuild = onCall(
             }
 
             // --------------------------------------------------
-            // USER VALIDATION
+            // USER CHECK
             // --------------------------------------------------
 
             if (!userSnapshot.exists) {
@@ -335,7 +329,7 @@ const createGuild = onCall(
             const now = Date.now();
 
             // --------------------------------------------------
-            // UNIQUE NAME CHECK
+            // NAME CHECK
             // --------------------------------------------------
 
             if (nameSnapshot.exists) {
@@ -346,7 +340,7 @@ const createGuild = onCall(
             }
 
             // --------------------------------------------------
-            // ALREADY IN GUILD
+            // MEMBERSHIP CHECK
             // --------------------------------------------------
 
             if (
@@ -366,11 +360,14 @@ const createGuild = onCall(
               );
             }
 
+            // --------------------------------------------------
+            // INVITE COLLISION
+            // --------------------------------------------------
+
             if (inviteSnapshot.exists) {
-              throw new HttpsError(
-                "already-exists",
-                "Kutsukoodi on jo käytössä. Yritä uudelleen.",
-              );
+              return {
+                inviteCollision: true,
+              };
             }
 
             // --------------------------------------------------
@@ -391,11 +388,9 @@ const createGuild = onCall(
                 GUILD_CREATION_COOLDOWN_MS
             ) {
               const remainingHours =
-                Math.ceil(
-                  (
-                    GUILD_CREATION_COOLDOWN_MS -
-                    creationElapsed
-                  ) / 3600000,
+                getRemainingHours(
+                  GUILD_CREATION_COOLDOWN_MS -
+                  creationElapsed,
                 );
 
               throw new HttpsError(
@@ -417,9 +412,7 @@ const createGuild = onCall(
 
             if (switchRemaining > 0) {
               const remainingHours =
-                Math.ceil(
-                  switchRemaining / 3600000,
-                );
+                getRemainingHours(switchRemaining);
 
               throw new HttpsError(
                 "failed-precondition",
@@ -453,29 +446,35 @@ const createGuild = onCall(
             // CREATE GUILD
             // --------------------------------------------------
 
-            transaction.set(guildRef, {
-              ...guildData,
-              normalizedName,
-              nameKey,
-            });
+            transaction.create(
+              guildRef,
+              {
+                ...guildData,
+                normalizedName,
+                nameKey,
+              },
+            );
 
             // --------------------------------------------------
-            // RESERVE NAME
+            // RESERVE GUILD NAME
             // --------------------------------------------------
 
-            transaction.set(nameRef, {
-              guildId: guildRef.id,
-              name: guildName,
-              normalizedName,
-              createdAt:
-                FieldValue.serverTimestamp(),
-            });
+            transaction.create(
+              nameRef,
+              {
+                guildId: guildRef.id,
+                name: guildName,
+                normalizedName,
+                createdAt:
+                  FieldValue.serverTimestamp(),
+              },
+            );
 
             // --------------------------------------------------
             // CREATE LEADER MEMBER
             // --------------------------------------------------
 
-            transaction.set(
+            transaction.create(
               memberRef,
               memberData,
             );
@@ -484,7 +483,7 @@ const createGuild = onCall(
             // CREATE INVITE
             // --------------------------------------------------
 
-            transaction.set(
+            transaction.create(
               inviteRef,
               inviteData,
             );
@@ -493,18 +492,22 @@ const createGuild = onCall(
             // UPDATE USER
             // --------------------------------------------------
 
-            transaction.update(userRef, {
-              guildId: guildRef.id,
-              guildRole: GUILD_LEADER_ROLE,
-              guildJoinedAt:
-                FieldValue.serverTimestamp(),
-              guildCreatedAt:
-                FieldValue.serverTimestamp(),
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            });
+            transaction.update(
+              userRef,
+              {
+                guildId: guildRef.id,
+                guildRole: GUILD_LEADER_ROLE,
+                guildJoinedAt:
+                  FieldValue.serverTimestamp(),
+                guildCreatedAt:
+                  FieldValue.serverTimestamp(),
+                updatedAt:
+                  FieldValue.serverTimestamp(),
+              },
+            );
 
             return {
+              inviteCollision: false,
               guildId: guildRef.id,
               guildName,
               inviteCode,
@@ -514,17 +517,29 @@ const createGuild = onCall(
           },
         );
 
+        if (result.inviteCollision) {
+          continue;
+        }
+
+        finalResult = result;
+        break;
+      }
+
+      if (!finalResult) {
+        throw new HttpsError(
+          "resource-exhausted",
+          "Kutsukoodin luominen epäonnistui. Yritä uudelleen.",
+        );
+      }
+
       return {
         success: true,
-        ...result,
+        ...finalResult,
         message:
           "Guild luotu onnistuneesti! 🐱",
       };
     } catch (error) {
-      console.error(
-        "createGuild error:",
-        error,
-      );
+      console.error("createGuild error:", error);
 
       if (error instanceof HttpsError) {
         throw error;
@@ -546,15 +561,16 @@ const joinGuild = onCall(
   { region: "us-central1" },
   async (request) => {
     try {
-      const uid =
-        requireAuthenticatedUid(request);
+      const uid = requireAuthenticatedUid(request);
+
+      // ------------------------------------------------------
+      // VALIDATE INVITE CODE
+      // ------------------------------------------------------
 
       const rawInviteCode =
         request.data?.inviteCode;
 
-      if (
-        typeof rawInviteCode !== "string"
-      ) {
+      if (typeof rawInviteCode !== "string") {
         throw new HttpsError(
           "invalid-argument",
           "Kutsukoodi puuttuu.",
@@ -562,9 +578,7 @@ const joinGuild = onCall(
       }
 
       const inviteCode =
-        rawInviteCode
-          .trim()
-          .toUpperCase();
+        rawInviteCode.trim().toUpperCase();
 
       const validCharacters =
         new RegExp(
@@ -592,185 +606,202 @@ const joinGuild = onCall(
       // TRANSACTION
       // ------------------------------------------------------
 
-      const result =
-        await db.runTransaction(
-          async (transaction) => {
-            const inviteSnapshot =
-              await transaction.get(inviteRef);
+      const result = await db.runTransaction(
+        async (transaction) => {
+          // --------------------------------------------------
+          // READ INVITE
+          // --------------------------------------------------
 
-            if (!inviteSnapshot.exists) {
-              throw new HttpsError(
-                "not-found",
-                "Kutsukoodia ei löytynyt.",
-              );
-            }
+          const inviteSnapshot =
+            await transaction.get(inviteRef);
 
-            const inviteData =
-              inviteSnapshot.data() || {};
+          if (!inviteSnapshot.exists) {
+            throw new HttpsError(
+              "not-found",
+              "Kutsukoodia ei löytynyt.",
+            );
+          }
 
-            if (
-              inviteData.active !== true ||
-              typeof inviteData.guildId !== "string" ||
-              !inviteData.guildId.trim()
-            ) {
-              throw new HttpsError(
-                "failed-precondition",
-                "Kutsukoodi ei ole aktiivinen.",
-              );
-            }
+          const inviteData =
+            inviteSnapshot.data() || {};
 
-            const guildId =
-              inviteData.guildId;
+          if (
+            inviteData.active !== true ||
+            typeof inviteData.guildId !== "string" ||
+            !inviteData.guildId.trim()
+          ) {
+            throw new HttpsError(
+              "failed-precondition",
+              "Kutsukoodi ei ole aktiivinen.",
+            );
+          }
 
-            const guildRef =
-              getGuildRef(guildId);
+          const guildId =
+            inviteData.guildId.trim();
 
-            const memberRef =
-              getGuildMemberRef(
-                guildId,
-                uid,
-              );
+          const guildRef =
+            getGuildRef(guildId);
 
-            const userSnapshot =
-              await transaction.get(userRef);
-
-            const guildSnapshot =
-              await transaction.get(guildRef);
-
-            const memberSnapshot =
-              await transaction.get(memberRef);
-
-            // --------------------------------------------------
-            // VALIDATE DOCUMENTS
-            // --------------------------------------------------
-
-            if (!userSnapshot.exists) {
-              throw new HttpsError(
-                "not-found",
-                "Käyttäjäprofiilia ei löytynyt.",
-              );
-            }
-
-            if (!guildSnapshot.exists) {
-              throw new HttpsError(
-                "not-found",
-                "Guildia ei löytynyt.",
-              );
-            }
-
-            const userData =
-              userSnapshot.data() || {};
-
-            const guildData =
-              guildSnapshot.data() || {};
-
-            const now = Date.now();
-
-            // --------------------------------------------------
-            // ALREADY IN GUILD
-            // --------------------------------------------------
-
-            if (
-              typeof userData.guildId === "string" &&
-              userData.guildId.trim()
-            ) {
-              if (
-                userData.guildId === guildId
-              ) {
-                throw new HttpsError(
-                  "already-exists",
-                  "Olet jo tämän Guildin jäsen.",
-                );
-              }
-
-              throw new HttpsError(
-                "failed-precondition",
-                "Olet jo toisen Guildin jäsen. Poistu nykyisestä Guildista ensin.",
-              );
-            }
-
-            if (memberSnapshot.exists) {
-              throw new HttpsError(
-                "already-exists",
-                "Guild-jäsenyys on jo olemassa.",
-              );
-            }
-
-            // --------------------------------------------------
-            // SWITCH COOLDOWN
-            // --------------------------------------------------
-
-            const switchRemaining =
-              getCooldownRemaining(
-                userData.guildLastSwitchAt,
-                GUILD_SWITCH_COOLDOWN_MS,
-                now,
-              );
-
-            if (switchRemaining > 0) {
-              const remainingHours =
-                Math.ceil(
-                  switchRemaining / 3600000,
-                );
-
-              throw new HttpsError(
-                "failed-precondition",
-                `Guildiin liittyminen ei ole vielä mahdollista. Odota ${remainingHours} tuntia.`,
-              );
-            }
-
-            // --------------------------------------------------
-            // MEMBER COUNT
-            // --------------------------------------------------
-
-            const rawMemberCount =
-              Number(guildData.memberCount);
-
-            const memberCount =
-              Number.isFinite(rawMemberCount)
-                ? Math.max(
-                    0,
-                    Math.floor(rawMemberCount),
-                  )
-                : 0;
-
-            if (
-              memberCount >= GUILD_MAX_MEMBERS
-            ) {
-              throw new HttpsError(
-                "resource-exhausted",
-                "Guild on täynnä (20/20 jäsentä).",
-              );
-            }
-
-            // --------------------------------------------------
-            // CREATE MEMBER
-            // --------------------------------------------------
-
-            transaction.set(
-              memberRef,
-              createGuildMemberData({
-                uid,
-                role: GUILD_MEMBER_ROLE,
-              }),
+          const memberRef =
+            getGuildMemberRef(
+              guildId,
+              uid,
             );
 
-            // --------------------------------------------------
-            // UPDATE GUILD COUNT
-            // --------------------------------------------------
+          const membersCollection =
+            getGuildMembersCollection(guildId);
 
-            transaction.update(guildRef, {
+          // --------------------------------------------------
+          // READ USER, GUILD AND MEMBER
+          // --------------------------------------------------
+
+          const userSnapshot =
+            await transaction.get(userRef);
+
+          const guildSnapshot =
+            await transaction.get(guildRef);
+
+          const memberSnapshot =
+            await transaction.get(memberRef);
+
+          // --------------------------------------------------
+          // COUNT MEMBERS INSIDE TRANSACTION
+          // --------------------------------------------------
+          // This prevents the 20-member limit from being bypassed
+          // by simultaneous joins.
+          // --------------------------------------------------
+
+          const membersSnapshot =
+            await transaction.get(
+              membersCollection,
+            );
+
+          // --------------------------------------------------
+          // VALIDATE DOCUMENTS
+          // --------------------------------------------------
+
+          if (!userSnapshot.exists) {
+            throw new HttpsError(
+              "not-found",
+              "Käyttäjäprofiilia ei löytynyt.",
+            );
+          }
+
+          if (!guildSnapshot.exists) {
+            throw new HttpsError(
+              "not-found",
+              "Guildia ei löytynyt.",
+            );
+          }
+
+          const userData =
+            userSnapshot.data() || {};
+
+          const guildData =
+            guildSnapshot.data() || {};
+
+          const now = Date.now();
+
+          // --------------------------------------------------
+          // MEMBERSHIP CHECK
+          // --------------------------------------------------
+
+          if (
+            typeof userData.guildId === "string" &&
+            userData.guildId.trim()
+          ) {
+            if (
+              userData.guildId === guildId
+            ) {
+              throw new HttpsError(
+                "already-exists",
+                "Olet jo tämän Guildin jäsen.",
+              );
+            }
+
+            throw new HttpsError(
+              "failed-precondition",
+              "Olet jo toisen Guildin jäsen. Poistu nykyisestä Guildista ensin.",
+            );
+          }
+
+          if (memberSnapshot.exists) {
+            throw new HttpsError(
+              "already-exists",
+              "Guild-jäsenyys on jo olemassa.",
+            );
+          }
+
+          // --------------------------------------------------
+          // SWITCH COOLDOWN
+          // --------------------------------------------------
+
+          const switchRemaining =
+            getCooldownRemaining(
+              userData.guildLastSwitchAt,
+              GUILD_SWITCH_COOLDOWN_MS,
+              now,
+            );
+
+          if (switchRemaining > 0) {
+            const remainingHours =
+              getRemainingHours(switchRemaining);
+
+            throw new HttpsError(
+              "failed-precondition",
+              `Guildiin liittyminen ei ole vielä mahdollista. Odota ${remainingHours} tuntia.`,
+            );
+          }
+
+          // --------------------------------------------------
+          // ACTUAL MEMBER COUNT
+          // --------------------------------------------------
+
+          const memberCount =
+            membersSnapshot.size;
+
+          if (
+            memberCount >= GUILD_MAX_MEMBERS
+          ) {
+            throw new HttpsError(
+              "resource-exhausted",
+              `Guild on täynnä (${memberCount}/${GUILD_MAX_MEMBERS} jäsentä).`,
+            );
+          }
+
+          // --------------------------------------------------
+          // CREATE MEMBER
+          // --------------------------------------------------
+
+          transaction.create(
+            memberRef,
+            createGuildMemberData({
+              uid,
+              role: GUILD_MEMBER_ROLE,
+            }),
+          );
+
+          // --------------------------------------------------
+          // UPDATE GUILD COUNT
+          // --------------------------------------------------
+
+          transaction.update(
+            guildRef,
+            {
               memberCount:
                 memberCount + 1,
               updatedAt:
                 FieldValue.serverTimestamp(),
-            });
+            },
+          );
 
-            // --------------------------------------------------
-            // UPDATE USER
-            // --------------------------------------------------
+          // --------------------------------------------------
+          // UPDATE USER
+          // --------------------------------------------------
 
-            transaction.update(userRef, {
+          transaction.update(
+            userRef,
+            {
               guildId,
               guildRole:
                 GUILD_MEMBER_ROLE,
@@ -778,21 +809,22 @@ const joinGuild = onCall(
                 FieldValue.serverTimestamp(),
               updatedAt:
                 FieldValue.serverTimestamp(),
-            });
+            },
+          );
 
-            return {
-              guildId,
-              guildName:
-                typeof guildData.name === "string"
-                  ? guildData.name
-                  : "Guild",
-              memberCount:
-                memberCount + 1,
-              role:
-                GUILD_MEMBER_ROLE,
-            };
-          },
-        );
+          return {
+            guildId,
+            guildName:
+              typeof guildData.name === "string"
+                ? guildData.name
+                : "Guild",
+            memberCount:
+              memberCount + 1,
+            role:
+              GUILD_MEMBER_ROLE,
+          };
+        },
+      );
 
       return {
         success: true,
@@ -801,10 +833,7 @@ const joinGuild = onCall(
           "Liityit Guildiin onnistuneesti! 🐱",
       };
     } catch (error) {
-      console.error(
-        "joinGuild error:",
-        error,
-      );
+      console.error("joinGuild error:", error);
 
       if (error instanceof HttpsError) {
         throw error;
