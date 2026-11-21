@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +11,7 @@ class GuildNameMigrationPage extends StatefulWidget {
       _GuildNameMigrationPageState();
 }
 
-class _GuildNameMigrationPageState
-    extends State<GuildNameMigrationPage> {
+class _GuildNameMigrationPageState extends State<GuildNameMigrationPage> {
   static const Color backgroundColor = Color(0xFF120B24);
   static const Color surfaceColor = Color(0xFF1A0E31);
   static const Color cardColor = Color(0xFF21113B);
@@ -25,68 +25,100 @@ class _GuildNameMigrationPageState
 
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(region: 'us-central1');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  bool _loading = false;
+  bool _loading = true;
   bool _isAdmin = false;
   bool _migrationCompleted = false;
+  bool _statusReadFailed = false;
 
   Map<String, dynamic>? _previewData;
   String? _errorMessage;
   String? _successMessage;
 
+  DocumentReference<Map<String, dynamic>> get _migrationRef =>
+      _firestore.collection('guildSystem').doc('guildNameMigration');
+
   @override
   void initState() {
     super.initState();
-    _checkAdmin();
+    _initializePage();
   }
 
-  // ============================================================
-  // ADMIN CHECK
-  // ============================================================
+  Future<void> _initializePage() async {
+    await _checkAdmin();
+    if (!mounted || !_isAdmin) return;
+    await _loadMigrationStatus();
+  }
 
+  // Admin token check.
   Future<void> _checkAdmin() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-
       if (user == null) {
-        throw Exception('You must be logged in.');
+        throw Exception('Kirjautuminen vaaditaan.');
       }
 
       final tokenResult = await user.getIdTokenResult(true);
-      final claims = tokenResult.claims ?? {};
-
-      final isAdmin = claims['admin'] == true;
+      final claims = tokenResult.claims ?? <String, dynamic>{};
+      final admin = claims['admin'] == true;
 
       if (!mounted) return;
-
       setState(() {
-        _isAdmin = isAdmin;
+        _isAdmin = admin;
         _loading = false;
+        if (!admin) _errorMessage = 'Admin-oikeus vaaditaan.';
       });
-
-      if (!isAdmin) {
-        setState(() {
-          _errorMessage = 'Admin access required.';
-        });
-      }
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
+        _isAdmin = false;
         _loading = false;
-        _errorMessage = e.toString();
+        _errorMessage = _cleanError(e);
       });
     }
   }
 
-  // ============================================================
-  // DRY RUN
-  // ============================================================
+  // Read the persisted migration status, so reopening this page still
+  // displays completion. This read is informational; backend callable remains
+  // the authority for whether migration can execute.
+  Future<void> _loadMigrationStatus() async {
+    try {
+      final snapshot = await _migrationRef.get();
+      final data = snapshot.data() ?? <String, dynamic>{};
+      final completed = data['status'] == 'completed';
+
+      if (!mounted) return;
+      setState(() {
+        _migrationCompleted = completed;
+        _statusReadFailed = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _statusReadFailed = true;
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>> _callMigration({required bool dryRun}) async {
+    final callable = _functions.httpsCallable(
+      'migrateGuildNames',
+      options: HttpsCallableOptions(timeout: const Duration(minutes: 9)),
+    );
+    final result = await callable.call(<String, dynamic>{'dryRun': dryRun});
+    if (result.data is! Map) {
+      throw Exception('Palvelin palautti virheellisen vastauksen.');
+    }
+    return Map<String, dynamic>.from(result.data as Map);
+  }
 
   Future<void> _runDryRun() async {
     setState(() {
@@ -97,67 +129,51 @@ class _GuildNameMigrationPageState
     });
 
     try {
-      final callable = _functions.httpsCallable('migrateGuildNames');
-
-      final result = await callable.call({
-        'dryRun': true,
-      });
-
-      final data = Map<String, dynamic>.from(result.data as Map);
-
+      final data = await _callMigration(dryRun: true);
       if (!mounted) return;
-
       setState(() {
         _previewData = data;
         _loading = false;
       });
 
       if (data['success'] == true) {
-        _showMessage('Dry Run completed successfully.');
+        _showMessage('Dry Run onnistui. Mitään ei kirjoitettu.');
       } else {
         setState(() {
-          _errorMessage =
-              data['message']?.toString() ?? 'Dry Run failed.';
+          _errorMessage = data['message']?.toString() ??
+              'Dry Run ei onnistunut.';
         });
       }
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _loading = false;
-        _errorMessage = e.toString();
+        _errorMessage = _cleanError(e);
       });
     }
   }
 
-  // ============================================================
-  // EXECUTE MIGRATION
-  // ============================================================
-
   Future<void> _executeMigration() async {
+    if (_migrationCompleted) {
+      _showError('Migraatio on jo merkitty valmiiksi.');
+      return;
+    }
+
     final preview = _previewData;
-
     if (preview == null) {
-      _showError('Run Dry Run before migration.');
+      _showError('Suorita Dry Run ennen migraatiota.');
       return;
     }
-
     if (preview['success'] != true) {
-      _showError('Dry Run was not successful.');
+      _showError('Dry Run ei onnistunut. Migraatiota ei suoriteta.');
       return;
     }
-
-    final conflicts = preview['conflictCount'] ?? 0;
-
-    if (conflicts != 0) {
-      _showError(
-        'Migration cannot run while conflicts exist.',
-      );
+    if (_asInt(preview['conflictCount']) != 0) {
+      _showError('Nimiristiriitoja löytyi. Korjaa ne ennen migraatiota.');
       return;
     }
 
     final confirmed = await _showMigrationConfirmation();
-
     if (confirmed != true || !mounted) return;
 
     setState(() {
@@ -167,152 +183,113 @@ class _GuildNameMigrationPageState
     });
 
     try {
-      // Recheck database immediately before the actual migration.
-      final dryRunCallable =
-          _functions.httpsCallable('migrateGuildNames');
-
-      final dryRunResult = await dryRunCallable.call({
-        'dryRun': true,
-      });
-
-      final latestPreview =
-          Map<String, dynamic>.from(dryRunResult.data as Map);
-
+      // Run a fresh preview immediately before attempting the migration.
+      final latestPreview = await _callMigration(dryRun: true);
       if (latestPreview['success'] != true) {
-        throw Exception(
-          'The latest Dry Run was not successful.',
-        );
+        throw Exception(latestPreview['message']?.toString() ??
+            'Viimeisin Dry Run ei onnistunut.');
+      }
+      if (_asInt(latestPreview['conflictCount']) != 0) {
+        throw Exception('Uusia nimiristiriitoja löytyi. Migraatio pysäytettiin.');
       }
 
-      if ((latestPreview['conflictCount'] ?? 0) != 0) {
-        throw Exception(
-          'Name conflicts were detected. Migration stopped.',
-        );
-      }
-
-      // Execute migration.
-      final migrationCallable =
-          _functions.httpsCallable('migrateGuildNames');
-
-      final migrationResult = await migrationCallable.call({
-        'dryRun': false,
-      });
-
-      final data =
-          Map<String, dynamic>.from(migrationResult.data as Map);
-
+      final result = await _callMigration(dryRun: false);
       if (!mounted) return;
 
-      if (data['success'] == true) {
+      if (result['success'] == true) {
         setState(() {
           _loading = false;
           _migrationCompleted = true;
-          _previewData = data;
-          _successMessage =
-              data['message']?.toString() ??
-                  'Guild name migration completed successfully.';
+          _previewData = result;
+          _successMessage = result['message']?.toString() ??
+              'Guild-nimien migraatio onnistui.';
         });
+        // Re-read the persisted state after successful execution.
+        await _loadMigrationStatus();
       } else {
         setState(() {
           _loading = false;
-          _errorMessage =
-              data['message']?.toString() ??
-                  'Migration failed.';
+          _errorMessage = result['message']?.toString() ??
+              'Migraatio epäonnistui.';
+          _previewData = result;
         });
       }
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _loading = false;
-        _errorMessage = e.toString();
+        _errorMessage = _cleanError(e);
       });
+      // The callable may have completed before a network error surfaced.
+      await _loadMigrationStatus();
     }
   }
-
-  // ============================================================
-  // CONFIRMATION
-  // ============================================================
 
   Future<bool?> _showMigrationConfirmation() {
     return showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: cardColor,
-          title: const Text(
-            'Run Guild Name Migration?',
-            style: TextStyle(color: textColor),
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: cardColor,
+        title: const Text(
+          'Suoritetaanko Guild-nimien migraatio?',
+          style: TextStyle(color: textColor),
+        ),
+        content: const Text(
+          'Tämä luo puuttuvat Guild-nimivaraukset ja merkitsee '
+          'migraation valmiiksi. Tarkista Dry Run ennen jatkamista. '
+          'Toiminto on tarkoitettu suoritettavaksi kerran.',
+          style: TextStyle(color: secondaryColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Peruuta', style: TextStyle(color: secondaryColor)),
           ),
-          content: const Text(
-            'This will register Guild name reservations '
-            'and mark the migration as completed.\n\n'
-            'This operation is intended to be performed once.',
-            style: TextStyle(color: secondaryColor),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: purpleColor,
+              foregroundColor: backgroundColor,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Suorita migraatio'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: secondaryColor),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: purpleColor,
-                foregroundColor: backgroundColor,
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Run Migration'),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 
-  // ============================================================
-  // MESSAGES
-  // ============================================================
+  String _cleanError(Object error) {
+    final text = error.toString();
+    return text.startsWith('Exception: ') ? text.substring(11) : text;
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
 
   void _showMessage(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: surfaceColor,
-      ),
+      SnackBar(content: Text(message), backgroundColor: surfaceColor),
     );
   }
 
   void _showError(String message) {
     if (!mounted) return;
-
     setState(() {
       _errorMessage = message;
     });
   }
 
-  // ============================================================
-  // UI HELPERS
-  // ============================================================
-
-  Widget _buildMetricCard(
-    String title,
-    dynamic value,
-    Color accent,
-    IconData icon,
-  ) {
+  Widget _metricCard(String title, dynamic value, Color accent, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -322,21 +299,11 @@ class _GuildNameMigrationPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: secondaryColor,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(title, style: const TextStyle(color: secondaryColor, fontSize: 12)),
                 const SizedBox(height: 5),
                 Text(
                   value?.toString() ?? '0',
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: accent, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -347,10 +314,15 @@ class _GuildNameMigrationPageState
   }
 
   Widget _buildStatusCard() {
-    final completed =
-        _migrationCompleted ||
+    final completed = _migrationCompleted ||
         _previewData?['migrationCompleted'] == true ||
         _previewData?['status'] == 'completed';
+
+    final statusText = _statusReadFailed
+        ? 'Tilaa ei voitu lukea Firestoresta. Backend tarkistaa tilan silti.'
+        : completed
+            ? 'Guild-nimien migraatio on merkitty valmiiksi.'
+            : 'Migraation valmistumista ei ole vahvistettu.';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -376,26 +348,21 @@ class _GuildNameMigrationPageState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  completed
-                      ? 'Migration Completed'
-                      : 'Migration Not Confirmed',
+                  completed ? 'Migraatio valmis' : 'Migraation tila',
                   style: TextStyle(
                     color: completed ? successColor : goldColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  completed
-                      ? 'Guild name initialization is complete.'
-                      : 'Run Dry Run to inspect the current status.',
-                  style: const TextStyle(
-                    color: secondaryColor,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(statusText, style: const TextStyle(color: secondaryColor, fontSize: 12)),
               ],
             ),
+          ),
+          IconButton(
+            tooltip: 'Päivitä tila',
+            onPressed: _loading ? null : _loadMigrationStatus,
+            icon: const Icon(Icons.refresh, color: purpleColor),
           ),
         ],
       ),
@@ -404,57 +371,40 @@ class _GuildNameMigrationPageState
 
   Widget _buildPreview() {
     final data = _previewData;
+    if (data == null) return const SizedBox.shrink();
 
-    if (data == null) {
-      return const SizedBox.shrink();
-    }
+    final isDryRun = data['dryRun'] == true;
+    final hasPreviewMetrics = data.containsKey('validGuildNames') ||
+        data.containsKey('missingReservations') ||
+        data.containsKey('conflictCount');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Migration Preview',
-          style: TextStyle(
-            color: pinkColor,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        Text(
+          isDryRun ? 'Dry Run - esikatselu' : 'Migraation tulos',
+          style: const TextStyle(color: pinkColor, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        _buildMetricCard(
-          'Guilds found',
-          data['guildCount'],
-          purpleColor,
-          Icons.groups,
-        ),
+        _metricCard('Guildit', data['guildCount'], purpleColor, Icons.groups),
         const SizedBox(height: 10),
-        _buildMetricCard(
-          'Valid Guild names',
-          data['validGuildNames'],
-          pinkColor,
-          Icons.verified,
-        ),
-        const SizedBox(height: 10),
-        _buildMetricCard(
-          'Already registered',
-          data['alreadyRegistered'],
-          successColor,
-          Icons.check_circle_outline,
-        ),
-        const SizedBox(height: 10),
-        _buildMetricCard(
-          'Missing reservations',
-          data['missingReservations'],
-          goldColor,
-          Icons.pending_actions,
-        ),
-        const SizedBox(height: 10),
-        _buildMetricCard(
-          'Conflicts',
+        if (hasPreviewMetrics) ...[
+          _metricCard('Kelvolliset nimet', data['validGuildNames'], pinkColor, Icons.verified),
+          const SizedBox(height: 10),
+          _metricCard('Jo rekisteröity', data['alreadyRegistered'], successColor, Icons.check_circle_outline),
+          const SizedBox(height: 10),
+          _metricCard('Puuttuvat varaukset', data['missingReservations'], goldColor, Icons.pending_actions),
+          const SizedBox(height: 10),
+        ] else ...[
+          _metricCard('Luodut varaukset', data['registeredCount'], successColor, Icons.add_task),
+          const SizedBox(height: 10),
+          _metricCard('Jo rekisteröity', data['alreadyRegistered'], pinkColor, Icons.check_circle_outline),
+          const SizedBox(height: 10),
+        ],
+        _metricCard(
+          'Ristiriidat',
           data['conflictCount'],
-          (data['conflictCount'] ?? 0) > 0
-              ? errorColor
-              : successColor,
+          _asInt(data['conflictCount']) > 0 ? errorColor : successColor,
           Icons.warning_amber_rounded,
         ),
         const SizedBox(height: 14),
@@ -462,20 +412,11 @@ class _GuildNameMigrationPageState
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: surfaceColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              data['message'].toString(),
-              style: const TextStyle(
-                color: secondaryColor,
-              ),
-            ),
+            decoration: BoxDecoration(color: surfaceColor, borderRadius: BorderRadius.circular(12)),
+            child: Text(data['message'].toString(), style: const TextStyle(color: secondaryColor)),
           ),
         const SizedBox(height: 12),
-        if ((data['conflicts'] is List) &&
-            (data['conflicts'] as List).isNotEmpty)
+        if (data['conflicts'] is List && (data['conflicts'] as List).isNotEmpty)
           _buildConflictList(data['conflicts'] as List),
       ],
     );
@@ -488,44 +429,30 @@ class _GuildNameMigrationPageState
       decoration: BoxDecoration(
         color: errorColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: errorColor.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: errorColor.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Detected conflicts',
-            style: TextStyle(
-              color: errorColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Havaitut ristiriidat', style: TextStyle(color: errorColor, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          ...conflicts.take(20).map(
-                (conflict) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    conflict.toString(),
-                    style: const TextStyle(
-                      color: textColor,
-                      fontSize: 12,
-                    ),
-                  ),
+          ...conflicts.take(20).map((conflict) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  conflict is Map
+                      ? '${conflict['type'] ?? 'Ristiriita'}: ${conflict['name'] ?? conflict['message'] ?? conflict}'
+                      : conflict.toString(),
+                  style: const TextStyle(color: textColor, fontSize: 12),
                 ),
-              ),
+              )),
           if (conflicts.length > 20)
-            Text(
-              '+ ${conflicts.length - 20} more conflicts',
-              style: const TextStyle(color: secondaryColor),
-            ),
+            Text('+ ${conflicts.length - 20} muuta ristiriitaa', style: const TextStyle(color: secondaryColor)),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton({
+  Widget _actionButton({
     required String label,
     required IconData icon,
     required VoidCallback? onPressed,
@@ -535,27 +462,18 @@ class _GuildNameMigrationPageState
       width: double.infinity,
       height: 52,
       child: ElevatedButton.icon(
-        onPressed: _loading ? null : onPressed,
+        onPressed: _loading || _migrationCompleted ? null : onPressed,
         icon: Icon(icon),
-        label: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: backgroundColor,
-          disabledBackgroundColor: color.withValues(alpha: 0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          disabledBackgroundColor: color.withValues(alpha: 0.25),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
     );
   }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -568,11 +486,7 @@ class _GuildNameMigrationPageState
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: purpleColor,
-                ),
-              )
+            ? const Center(child: CircularProgressIndicator(color: purpleColor))
             : !_isAdmin
                 ? _buildNotAdmin()
                 : _buildAdminContent(),
@@ -587,33 +501,22 @@ class _GuildNameMigrationPageState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.lock_outline,
-              color: errorColor,
-              size: 64,
-            ),
+            const Icon(Icons.lock_outline, color: errorColor, size: 64),
             const SizedBox(height: 16),
             const Text(
-              'Admin Access Required',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              'Admin access required',
+              style: TextStyle(color: textColor, fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
-              _errorMessage ?? 'You do not have permission to access this page.',
+              _errorMessage ?? 'Sinulla ei ole oikeutta avata tätä sivua.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: secondaryColor),
             ),
             const SizedBox(height: 20),
             TextButton(
-              onPressed: _checkAdmin,
-              child: const Text(
-                'Retry',
-                style: TextStyle(color: purpleColor),
-              ),
+              onPressed: _initializePage,
+              child: const Text('Yritä uudelleen', style: TextStyle(color: purpleColor)),
             ),
           ],
         ),
@@ -627,142 +530,88 @@ class _GuildNameMigrationPageState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [surfaceColor, cardColor],
-              ),
+              gradient: const LinearGradient(colors: [surfaceColor, cardColor]),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: purpleColor.withValues(alpha: 0.35),
-              ),
+              border: Border.all(color: purpleColor.withValues(alpha: 0.35)),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.groups_rounded,
-                  color: purpleColor,
-                  size: 36,
-                ),
+                Icon(Icons.groups_rounded, color: purpleColor, size: 36),
                 SizedBox(height: 12),
                 Text(
                   'Guild Name Initialization',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 21,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: textColor, fontSize: 21, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Initialize name reservations for existing Guilds. '
-                  'Run the preview before executing the migration.',
-                  style: TextStyle(
-                    color: secondaryColor,
-                    height: 1.5,
-                  ),
+                  'Tarkista nykyiset Guild-nimet. Dry Run ei tee tietokantakirjoituksia. '
+                  'Varsinainen migraatio luo puuttuvat nimivaraukset.',
+                  style: TextStyle(color: secondaryColor, height: 1.5),
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           _buildStatusCard(),
-
           const SizedBox(height: 20),
-
-          // Dry Run
-          _buildActionButton(
-            label: 'Run Dry Run',
+          _actionButton(
+            label: 'Suorita Dry Run',
             icon: Icons.preview,
             color: purpleColor,
             onPressed: _runDryRun,
           ),
-
           const SizedBox(height: 12),
-
-          // Actual migration
-          _buildActionButton(
-            label: 'Execute Migration',
+          _actionButton(
+            label: 'Suorita migraatio',
             icon: Icons.rocket_launch,
             color: goldColor,
-            onPressed: _migrationCompleted
-                ? null
-                : _executeMigration,
+            onPressed: _executeMigration,
           ),
-
           const SizedBox(height: 20),
-
           if (_successMessage != null)
-            _buildMessageCard(
-              _successMessage!,
-              successColor,
-              Icons.check_circle,
-            ),
-
+            _messageCard(_successMessage!, successColor, Icons.check_circle),
           if (_errorMessage != null)
-            _buildMessageCard(
-              _errorMessage!,
-              errorColor,
-              Icons.error_outline,
-            ),
-
+            _messageCard(_errorMessage!, errorColor, Icons.error_outline),
           if (_previewData != null) ...[
             const SizedBox(height: 16),
             _buildPreview(),
           ],
-
           const SizedBox(height: 24),
-
-          // Warning
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: goldColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: goldColor.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: goldColor.withValues(alpha: 0.3)),
             ),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: goldColor,
-                ),
+                Icon(Icons.warning_amber_rounded, color: goldColor),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Migration is intended to be run once. '
-                    'Always inspect Dry Run results before executing.',
-                    style: TextStyle(
-                      color: secondaryColor,
-                      height: 1.5,
-                    ),
+                    'Migraatio on kertaluonteinen. Tarkista Dry Run -tulos aina ennen suoritusta. '
+                    'Palvelin estää myös jo valmistuneen migraation uudelleensuorituksen.',
+                    style: TextStyle(color: secondaryColor, height: 1.5),
                   ),
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildMessageCard(
-    String message,
-    Color color,
-    IconData icon,
-  ) {
+  Widget _messageCard(String message, Color color, IconData icon) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -770,24 +619,14 @@ class _GuildNameMigrationPageState
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: color,
-                height: 1.4,
-              ),
-            ),
-          ),
+          Expanded(child: Text(message, style: TextStyle(color: color, height: 1.4))),
         ],
       ),
     );
