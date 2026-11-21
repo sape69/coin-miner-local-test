@@ -12,6 +12,7 @@
 // - claimMining
 // - powerBoost
 // - Premium Plus Auto Mining
+// - Guild mining activity
 //
 // ============================================================
 
@@ -141,6 +142,15 @@ const {
 const {
   getRegisteredUserCount,
 } = require("../services/halvingService");
+
+
+// ============================================================
+// GUILD ACTIVITY SERVICE
+// ============================================================
+
+const {
+  recordGuildMiningActivity,
+} = require("../services/guildActivityService");
 
 
 // ============================================================
@@ -348,6 +358,10 @@ const claimMining =
 
     collectCompletedMiningCycle:
       miningCycleService.collectCompletedMiningCycle,
+
+    // Guild activity kirjataan vain onnistuneesta
+    // Mining Start -tapahtumasta.
+    recordGuildMiningActivity,
 
     ADMOB_TEST_MODE,
     MINING_DURATION_MS,
