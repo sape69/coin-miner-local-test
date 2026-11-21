@@ -1,3 +1,4 @@
+
 "use strict";
 
 // ============================================================
@@ -9,8 +10,8 @@
 // Tämä tiedosto sisältää getMiningStatus Firebase Callable
 // -toiminnon erillään miningFunctions.js-tiedostosta.
 //
-// Louhintalaskennan apufunktiot annetaan factory-funktion
-// kautta. Näin laskentaa ei kopioida eikä muuteta.
+// Guild-bonus luetaan käyttäjän nykyisestä louhintajaksosta.
+// Bonus ei lasketa uudelleen status-haun aikana.
 //
 // ============================================================
 
@@ -37,12 +38,101 @@ function createGetMiningStatus({
   number,
   nonNegative,
 }) {
+  // ============================================================
+  // 🕒 SAFE TIMESTAMP CONVERSION
+  // ============================================================
+
+  function timestampToIsoString(value) {
+    try {
+      if (!value) {
+        return null;
+      }
+
+      if (
+        typeof value.toDate === "function"
+      ) {
+        const date = value.toDate();
+
+        return date instanceof Date &&
+                !Number.isNaN(date.getTime())
+            ? date.toISOString()
+            : null;
+      }
+
+      if (value instanceof Date) {
+        return !Number.isNaN(value.getTime())
+            ? value.toISOString()
+            : null;
+      }
+
+      if (typeof value === "string") {
+        const date = new Date(value);
+
+        return !Number.isNaN(date.getTime())
+            ? date.toISOString()
+            : null;
+      }
+
+      if (typeof value === "number") {
+        const date = new Date(value);
+
+        return !Number.isNaN(date.getTime())
+            ? date.toISOString()
+            : null;
+      }
+
+      if (
+        typeof value === "object" &&
+        value !== null
+      ) {
+        const seconds =
+          value.seconds ??
+          value._seconds;
+
+        const nanoseconds =
+          value.nanoseconds ??
+          value._nanoseconds ??
+          0;
+
+        if (
+          typeof seconds === "number" &&
+          typeof nanoseconds === "number"
+        ) {
+          const milliseconds =
+            seconds * 1000 +
+            Math.floor(
+              nanoseconds / 1000000
+            );
+
+          const date =
+            new Date(milliseconds);
+
+          return !Number.isNaN(date.getTime())
+              ? date.toISOString()
+              : null;
+        }
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ============================================================
+  // ⛏️ GET MINING STATUS
+  // ============================================================
+
   return onCall(
     {
       region: "us-central1",
     },
     async (request) => {
       try {
+        // ======================================================
+        // 🔐 AUTHENTICATION
+        // ======================================================
+
         if (!request.auth) {
           throw new HttpsError(
             "unauthenticated",
@@ -50,70 +140,132 @@ function createGetMiningStatus({
           );
         }
 
-        const uid = request.auth.uid;
+        const uid =
+          request.auth.uid;
 
-        const snapshot = await getUserRef(uid).get();
+        // ======================================================
+        // 👤 USER DATA
+        // ======================================================
 
-        const data = snapshot.exists
-          ? snapshot.data() || {}
-          : {};
+        const snapshot =
+          await getUserRef(uid).get();
 
-        const now = new Date();
-        const nowMs = now.getTime();
-        const today = getUtcDateString(now);
+        const data =
+          snapshot.exists
+              ? snapshot.data() || {}
+              : {};
 
-        const daily = getMiningDailyClaim(
-          data,
-          today,
-          nowMs
-        );
+        // ======================================================
+        // 🕒 TIME
+        // ======================================================
 
-        const window = miningWindow(data);
-        const storedRate = historicalHashRate(data);
+        const now =
+          new Date();
+
+        const nowMs =
+          now.getTime();
+
+        const today =
+          getUtcDateString(now);
+
+        // ======================================================
+        // 📅 DAILY MINING CLAIM
+        // ======================================================
+
+        const daily =
+          getMiningDailyClaim(
+            data,
+            today,
+            nowMs
+          );
+
+        // ======================================================
+        // ⛏️ MINING WINDOW
+        // ======================================================
+
+        const window =
+          miningWindow(data);
+
+        const storedRate =
+          historicalHashRate(data);
 
         const rate =
           window.valid && storedRate > 0
-            ? storedRate
-            : miningHashRate(
-                data,
-                daily.dailyHashRate
-              );
+              ? storedRate
+              : miningHashRate(
+                  data,
+                  daily.dailyHashRate
+                );
 
-        const status = calculateMiningStatus(
-          {
-            ...data,
-            hashRate: rate,
-          },
-          now
-        );
+        // ======================================================
+        // 📊 MINING STATUS
+        // ======================================================
 
-        const current = await currentUnclaimedMining(
-          uid,
-          data,
-          nowMs
-        );
+        const status =
+          calculateMiningStatus(
+            {
+              ...data,
+              hashRate: rate,
+            },
+            now
+          );
 
-        const ads = adStatus(
-          data,
-          nowMs,
-          today
-        );
+        // ======================================================
+        // 💰 CURRENT UNCLAIMED MINING
+        // ======================================================
 
-        const effectiveRate = ads.adBoostActive
-          ? rate + AD_HASH_RATE_BONUS
-          : rate;
+        const current =
+          await currentUnclaimedMining(
+            uid,
+            data,
+            nowMs
+          );
 
-        const balance = nonNegative(
-          data.miningBalance
-        );
+        // ======================================================
+        // 📺 AD STATUS
+        // ======================================================
 
-        const estimatedTotal = Math.max(
-          0,
-          balance + current.unclaimedMining
-        );
+        const ads =
+          adStatus(
+            data,
+            nowMs,
+            today
+          );
+
+        // ======================================================
+        // ⚡ EFFECTIVE HASH RATE
+        // ======================================================
+
+        const effectiveRate =
+          ads.adBoostActive
+              ? rate + AD_HASH_RATE_BONUS
+              : rate;
+
+        // ======================================================
+        // 💎 BALANCE
+        // ======================================================
+
+        const balance =
+          nonNegative(
+            data.miningBalance
+          );
+
+        const estimatedTotal =
+          Math.max(
+            0,
+            balance + current.unclaimedMining
+          );
+
+        // ======================================================
+        // 🔻 HALVING
+        // ======================================================
 
         const halvingMultiplier =
           getMiningHalvingMultiplier(data);
+
+        // ======================================================
+        // ⛏️ MINING RATE
+        // ======================================================
 
         const miningPerHour =
           rate *
@@ -125,33 +277,123 @@ function createGetMiningStatus({
           MINING_PER_HASH_PER_HOUR *
           halvingMultiplier;
 
-        const nextRate = getNextMiningDailyHashRate(
-          data,
-          today,
-          nowMs
-        );
+        // ======================================================
+        // 📅 NEXT DAILY HASH RATE
+        // ======================================================
 
-        const nextStreak = getNextMiningDailyStreak(
-          data,
-          today,
-          nowMs
-        );
+        const nextRate =
+          getNextMiningDailyHashRate(
+            data,
+            today,
+            nowMs
+          );
+
+        const nextStreak =
+          getNextMiningDailyStreak(
+            data,
+            today,
+            nowMs
+          );
+
+        // ======================================================
+        // 🏰 GUILD BONUS - LOCKED MINING CYCLE
+        // ======================================================
+        //
+        // Bonus luetaan nykyisestä louhintajaksosta.
+        // Sitä ei lasketa uudelleen status-haun aikana.
+        //
+        // ======================================================
+
+        const guildBonusPercent =
+          window.valid
+              ? Math.max(
+                  0,
+                  number(
+                    data.guildMiningBonusPercent
+                  )
+                )
+              : 0;
+
+        const guildActiveMembers =
+          window.valid
+              ? Math.max(
+                  0,
+                  Math.floor(
+                    number(
+                      data.guildActiveMembers
+                    )
+                  )
+                )
+              : 0;
+
+        const guildId =
+          window.valid &&
+          typeof data.guildId === "string" &&
+          data.guildId.trim()
+              ? data.guildId.trim()
+              : null;
+
+        const guildBonusLockedAt =
+          window.valid
+              ? timestampToIsoString(
+                  data.guildBonusLockedAt
+                )
+              : null;
+
+        const guildBonusActive =
+          window.valid &&
+          guildId !== null &&
+          guildBonusPercent > 0;
+
+        // ======================================================
+        // 📤 RESPONSE
+        // ======================================================
 
         return {
           success: true,
 
-          message: status.miningActive
-            ? "🐱⛏️ Stella louhii STL:ää!"
-            : status.miningFinished
-              ? "🐱✨ Louhinta on valmis kerättäväksi!"
-              : "🐱 Stella odottaa seuraavaa louhintaa.",
+          message:
+            status.miningActive
+                ? "🐱⛏️ Stella louhii STL:ää!"
+                : status.miningFinished
+                    ? "🐱✨ Louhinta on valmis kerättäväksi!"
+                    : "🐱 Stella odottaa seuraavaa louhintaa.",
 
-          hashRate: rate,
+          // ====================================================
+          // ⚡ HASH RATE
+          // ====================================================
+
+          hashRate:
+            rate,
 
           miningHalvingMultiplier:
             halvingMultiplier,
 
-          miningBalance: balance,
+          // ====================================================
+          // 🏰 GUILD BONUS
+          // ====================================================
+
+          guildId:
+            guildId,
+
+          guildBonusActive:
+            guildBonusActive,
+
+          guildMiningBonusPercent:
+            guildBonusPercent,
+
+          guildActiveMembers:
+            guildActiveMembers,
+
+          guildBonusLockedAt:
+            guildBonusLockedAt,
+
+          // ====================================================
+          // 💎 BALANCE
+          // ====================================================
+
+          miningBalance:
+            balance,
 
           unclaimedMining:
             current.unclaimedMining,
@@ -167,34 +409,51 @@ function createGetMiningStatus({
 
           estimatedTotal,
 
+          // ====================================================
+          // ⛏️ MINING STATUS
+          // ====================================================
+
           miningActive:
             status.miningActive === true,
 
           miningFinished:
             status.miningFinished === true,
 
-          miningRemainingMs: Math.max(
-            0,
-            number(status.miningRemainingMs)
-          ),
+          miningRemainingMs:
+            Math.max(
+              0,
+              number(
+                status.miningRemainingMs
+              )
+            ),
 
-          elapsedMs: Math.max(
-            0,
-            number(status.elapsedMs)
-          ),
+          elapsedMs:
+            Math.max(
+              0,
+              number(
+                status.elapsedMs
+              )
+            ),
 
           miningDurationMs:
             MINING_DURATION_MS,
 
-          miningStartedAt: window.valid
-            ? window.miningStartedAt.toISOString()
-            : null,
+          miningStartedAt:
+            window.valid
+                ? window.miningStartedAt.toISOString()
+                : null,
 
-          miningEndsAt: window.valid
-            ? window.miningEndsAt.toISOString()
-            : null,
+          miningEndsAt:
+            window.valid
+                ? window.miningEndsAt.toISOString()
+                : null,
 
-          miningPerHour,
+          // ====================================================
+          // 📈 MINING ESTIMATES
+          // ====================================================
+
+          miningPerHour:
+            miningPerHour,
 
           miningPerMinute:
             miningPerHour / 60,
@@ -202,7 +461,12 @@ function createGetMiningStatus({
           miningPerSecond:
             miningPerHour / 3600,
 
-          activeMiningPerHour,
+          activeMiningPerHour:
+            activeMiningPerHour,
+
+          // ====================================================
+          // 📅 DAILY STREAK
+          // ====================================================
 
           dailyClaimed:
             daily.claimedToday,
@@ -230,6 +494,10 @@ function createGetMiningStatus({
           nextDailyStreak:
             nextStreak,
 
+          // ====================================================
+          // 📺 ADS
+          // ====================================================
+
           adsToday:
             ads.adsToday,
 
@@ -250,17 +518,21 @@ function createGetMiningStatus({
 
           adBoostStartedAt:
             ads.adBoostStartedAt
-              ?.toISOString() || null,
+                ?.toISOString() || null,
 
           adBoostEndsAt:
             ads.adBoostEndsAt
-              ?.toISOString() || null,
+                ?.toISOString() || null,
 
           canWatchAd:
             ads.canWatchAd,
 
           cooldownRemainingMs:
             ads.cooldownRemainingMs,
+
+          // ====================================================
+          // ⚡ EFFECTIVE HASH RATE
+          // ====================================================
 
           effectiveHashRate:
             effectiveRate,
@@ -283,6 +555,10 @@ function createGetMiningStatus({
     }
   );
 }
+
+// ============================================================
+// 📦 EXPORT
+// ============================================================
 
 module.exports = {
   createGetMiningStatus,
